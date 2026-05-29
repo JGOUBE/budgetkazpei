@@ -1,58 +1,47 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import { languages } from "./i18n";
+import { useState } from "react";
 import LanguageSwitcher from "./components/LanguageSwitcher";
-import './App.css'
 
-function App() {
+export default function App() {
   const [lang, setLang] = useState("fr");
-  const t = languages[lang];
 
-  const [count, setCount] = useState(0);
+  const COLORS = {
+    bg: "#0A1628",
+    text: "#F1F5F9",
+    accent: "#F97316",
+    card: "#0F1E38",
+    border: "#1E3A5F",
+  };
 
   return (
-    <>
-      {/* LANGUE */}
-      <LanguageSwitcher lang={lang} setLang={setLang} />
+    <div
+      style={{
+        minHeight: "100vh",
+        background: COLORS.bg,
+        color: COLORS.text,
+        display: "flex",
+      }}
+    >
+      {/* SIDEBAR */}
+      <div
+        style={{
+          width: 220,
+          background: COLORS.card,
+          borderRight: `1px solid ${COLORS.border}`,
+          padding: 20,
+        }}
+      >
+        <h3>🌴 KazBudget</h3>
+        <p style={{ fontSize: 12, opacity: 0.6 }}>
+          Sidebar active
+        </p>
+      </div>
 
-      {/* TITRE TRADUIT */}
-      <h1>{t.dashboard}</h1>
-
-      {/* HERO SECTION */}
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((c) => c + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      {/* NEXT STEPS */}
-      <section id="next-steps">
-        <div id="docs">
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-        </div>
-      </section>
-    </>
-  )
-}
-
-export default App
+      {/* MAIN */}
+      <div style={{ flex: 1, padding: 20 }}>
+        
+        {/* TOP BAR */}
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            marginBottom: 
