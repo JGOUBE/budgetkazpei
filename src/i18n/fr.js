@@ -94,7 +94,7 @@ const fr = {
   },
   premium: {
     title: "Passe en Premium",
-    subtitle: "L'app budget la plus complète de La Réunion. Open Banking, bons plans locaux et assistant IA pour seulement 3€/mois.",
+    subtitle: "L'app qui gère ton budget ET trouve les aides auxquelles tu as droit à La Réunion. En moyenne nos utilisateurs découvrent 500€+ d'aides non réclamées. Alertes budget, assistant IA, simulateur d'aides personnalisé.",
     perMonth: "/mois",
     recommended: "RECOMMANDÉ",
     free: "GRATUIT",

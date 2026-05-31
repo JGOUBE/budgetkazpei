@@ -94,7 +94,7 @@ const kreol = {
   },
   premium: {
     title: "Vir Premium",
-    subtitle: "Lapli konplé app bidjé La Réyonion. Open Banking, bon plan lokal ek asistan IA pour 3€/mwa sèlman.",
+    subtitle: "Lapli ki gèr ou bidjé ÉK trouvé bann éd ou kapab gayn à La Réyonion. An mwayèn nou bann utilizatèr i découvr 500€+ éd. Alèrt bidjé, asistan IA, similatèr éd pèrsonalizé",
     perMonth: "/mwa",
     recommended: "KONSÉYÉ",
     free: "GRATIS",
