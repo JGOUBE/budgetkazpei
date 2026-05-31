@@ -92,6 +92,7 @@ export default function App() {
         onSignOut={signOut}
         user={user}
         isPremium={isPremium}
+        lang={lang}
         t={t}
       />
 

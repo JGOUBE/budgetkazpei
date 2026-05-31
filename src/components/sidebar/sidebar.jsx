@@ -1,3 +1,4 @@
+
 const COLORS = {
   card: "#0F1E38",
   border: "#1E3A5F",
@@ -15,7 +16,7 @@ const NAV_ITEMS = [
   { id: "profil",      emoji: "👤", section: "nav", key: "profil" },
 ]
 
-export default function Sidebar({ activeNav, onNavChange, onSignOut, user, isPremium, t }) {
+export default function Sidebar({ activeNav, onNavChange, onSignOut, user, isPremium, lang, t }) {
   const prenom = user?.user_metadata?.name || user?.email?.split("@")[0] || "toi"
 
   return (
@@ -87,8 +88,7 @@ export default function Sidebar({ activeNav, onNavChange, onSignOut, user, isPre
             background: activeNav === "premium" ? `${COLORS.yellow}22` : `${COLORS.yellow}11`,
             color: COLORS.yellow,
             fontSize: 14, fontFamily: "inherit", textAlign: "left",
-            transition: "all 0.2s", fontWeight: 600,
-            marginTop: 4,
+            transition: "all 0.2s", fontWeight: 600, marginTop: 4,
           }}
         >
           <span>⭐</span>
@@ -127,7 +127,7 @@ export default function Sidebar({ activeNav, onNavChange, onSignOut, user, isPre
           onMouseEnter={e => { e.currentTarget.style.borderColor = "#EF4444"; e.currentTarget.style.color = "#EF4444" }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = COLORS.border; e.currentTarget.style.color = COLORS.muted }}
         >
-          🚪 {t("signout", "") || (lang === "cr" ? "Dékonèkté" : "Se déconnecter")}
+          🚪 {t("signout", "")}
         </button>
       </div>
     </div>
