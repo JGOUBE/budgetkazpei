@@ -130,8 +130,8 @@ export default function App() {
               {transactions.length === 0 ? (
                 <div style={{ textAlign: "center", padding: "30px 0", color: COLORS.muted }}>
                   <div style={{ fontSize: 36, marginBottom: 10 }}>📭</div>
-                  <p style={{ fontSize: 14 }}>Aucune transaction pour le moment</p>
-                  <p style={{ fontSize: 12 }}>Clique sur ➕ pour en ajouter une</p>
+                  <p style={{ fontSize: 14 }}>{t("transactions", "noTransactions")}</p>
+                  <p style={{ fontSize: 12 }}>{t("transactions", "noTransactionsSub")}</p>
                 </div>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>

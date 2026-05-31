@@ -127,7 +127,7 @@ export default function Sidebar({ activeNav, onNavChange, onSignOut, user, isPre
           onMouseEnter={e => { e.currentTarget.style.borderColor = "#EF4444"; e.currentTarget.style.color = "#EF4444" }}
           onMouseLeave={e => { e.currentTarget.style.borderColor = COLORS.border; e.currentTarget.style.color = COLORS.muted }}
         >
-          🚪 {t("signout", "") || "Se déconnecter"}
+          🚪 {t("signout", "") || (lang === "cr" ? "Dékonèkté" : "Se déconnecter")}
         </button>
       </div>
     </div>
