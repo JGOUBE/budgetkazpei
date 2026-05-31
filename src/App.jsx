@@ -1,18 +1,21 @@
-import { useState, useEffect } from "react";
-import { useAuth } from "./hooks/useAuth";
-import { useLanguage } from "./hooks/useLanguage";
-import { useTransactions } from "./hooks/useTransactions";
-import { useBudgets } from "./hooks/useBudgets";
-import LoginPage from "./components/auth/LoginPage";
-import RegisterPage from "./components/auth/RegisterPage";
-import Sidebar from "./components/sidebar/Sidebar";
-import Header from "./components/header/Header";
-import AddTransactionModal from "./components/modals/AddTransactionModal";
-import Dashboard from "./components/dashboard/Dashboard";
-import ProfilePage from "./components/profile/ProfilePage";
-import { AIDES, ABONNEMENTS } from "./data/categories";
-import { AUTRES_AIDES } from "./data/aides";
-import { formatMontant } from "./utils/format";
+import { useState, useEffect } from "react"
+import { useAuth } from "./hooks/useAuth"
+import { useLanguage } from "./hooks/useLanguage"
+import { useTransactions } from "./hooks/useTransactions"
+import { useBudgets } from "./hooks/useBudgets"
+import { useSubscription } from "./hooks/useSubscription"
+import LoginPage from "./components/auth/LoginPage"
+import RegisterPage from "./components/auth/RegisterPage"
+import Sidebar from "./components/sidebar/Sidebar"
+import Header from "./components/header/Header"
+import AddTransactionModal from "./components/modals/AddTransactionModal"
+import Dashboard from "./components/dashboard/Dashboard"
+import ProfilePage from "./components/profile/ProfilePage"
+import PremiumPage from "./components/premium/PremiumPage"
+import { AIDES, ABONNEMENTS } from "./data/categories"
+import { AUTRES_AIDES } from "./data/aides"
+import { formatMontant } from "./utils/format"
+import { supabase } from "./services/supabase"
 
 const COLORS = {
   bg: "#0A1628",
@@ -24,20 +27,31 @@ const COLORS = {
   red: "#EF4444",
   muted: "#64748B",
   text: "#F1F5F9",
-};
+}
 
 export default function App() {
-  const { user, loading, signIn, signUp, signOut } = useAuth();
-  const [authPage, setAuthPage]   = useState("login");
-  const [activeNav, setActiveNav] = useState("dashboard");
-  const [showModal, setShowModal] = useState(false);
-  const [mounted, setMounted]     = useState(false);
+  const { user, loading, signIn, signUp, signOut } = useAuth()
+  const [authPage, setAuthPage]   = useState("login")
+  const [activeNav, setActiveNav] = useState("dashboard")
+  const [showModal, setShowModal] = useState(false)
+  const [mounted, setMounted]     = useState(false)
 
-  const { lang, toggleLang, t }                             = useLanguage();
-  const { transactions, addTransaction, deleteTransaction } = useTransactions(user?.id);
-  const { revenus, depenses, solde, byCategory, pieData }   = useBudgets(transactions);
+  const { lang, toggleLang, t }                             = useLanguage()
+  const { transactions, addTransaction, deleteTransaction } = useTransactions(user?.id)
+  const { revenus, depenses, solde, byCategory, pieData }   = useBudgets(transactions)
+  const { isPremium, activatePremium }                      = useSubscription(user?.id)
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => { setMounted(true) }, [])
+
+  // ── Vérifier retour Stripe ───────────────────────────────────
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get("premium") === "success" && user?.id) {
+      activatePremium()
+      setActiveNav("profil")
+      window.history.replaceState({}, "", window.location.pathname)
+    }
+  }, [user])
 
   // ── Chargement ──────────────────────────────────────────────
   if (loading) {
@@ -52,37 +66,23 @@ export default function App() {
           <p style={{ color: COLORS.muted, fontSize: 14 }}>Chargement...</p>
         </div>
       </div>
-    );
+    )
   }
 
   // ── Non connecté ────────────────────────────────────────────
   if (!user) {
     if (authPage === "register") {
-      return (
-        <RegisterPage
-          onRegister={signUp}
-          onGoLogin={() => setAuthPage("login")}
-        />
-      );
+      return <RegisterPage onRegister={signUp} onGoLogin={() => setAuthPage("login")} />
     }
-    return (
-      <LoginPage
-        onLogin={signIn}
-        onGoRegister={() => setAuthPage("register")}
-      />
-    );
+    return <LoginPage onLogin={signIn} onGoRegister={() => setAuthPage("register")} />
   }
 
   // ── Connecté ────────────────────────────────────────────────
   return (
     <div style={{
-      minHeight: "100vh",
-      background: COLORS.bg,
-      color: COLORS.text,
+      minHeight: "100vh", background: COLORS.bg, color: COLORS.text,
       fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif",
-      display: "flex",
-      opacity: mounted ? 1 : 0,
-      transition: "opacity 0.5s ease",
+      display: "flex", opacity: mounted ? 1 : 0, transition: "opacity 0.5s ease",
     }}>
 
       {/* ── SIDEBAR ── */}
@@ -91,6 +91,7 @@ export default function App() {
         onNavChange={setActiveNav}
         onSignOut={signOut}
         user={user}
+        isPremium={isPremium}
         t={t}
       />
 
@@ -126,7 +127,6 @@ export default function App() {
               <h3 style={{ margin: "0 0 16px", fontSize: 14, color: COLORS.muted, fontWeight: 500 }}>
                 {t("dashboard", "recentTransactions")}
               </h3>
-
               {transactions.length === 0 ? (
                 <div style={{ textAlign: "center", padding: "30px 0", color: COLORS.muted }}>
                   <div style={{ fontSize: 36, marginBottom: 10 }}>📭</div>
@@ -164,21 +164,15 @@ export default function App() {
                           {tx.amount >= 0 ? "+" : ""}{parseFloat(tx.amount).toFixed(2).replace(".", ",")} €
                         </span>
                         <button
-                          onClick={() => {
-                            if (window.confirm(`Supprimer "${tx.label}" ?`)) {
-                              deleteTransaction(tx.id);
-                            }
-                          }}
-                          title="Supprimer"
+                          onClick={() => { if (window.confirm(`Supprimer "${tx.label}" ?`)) deleteTransaction(tx.id) }}
                           style={{
-                            background: "transparent",
-                            border: `1px solid ${COLORS.border}`,
+                            background: "transparent", border: `1px solid ${COLORS.border}`,
                             borderRadius: 8, width: 32, height: 32,
                             display: "flex", alignItems: "center", justifyContent: "center",
                             cursor: "pointer", fontSize: 14, transition: "all 0.2s",
                           }}
-                          onMouseEnter={e => { e.currentTarget.style.borderColor = COLORS.red; e.currentTarget.style.background = `${COLORS.red}15`; }}
-                          onMouseLeave={e => { e.currentTarget.style.borderColor = COLORS.border; e.currentTarget.style.background = "transparent"; }}
+                          onMouseEnter={e => { e.currentTarget.style.borderColor = COLORS.red; e.currentTarget.style.background = `${COLORS.red}15` }}
+                          onMouseLeave={e => { e.currentTarget.style.borderColor = COLORS.border; e.currentTarget.style.background = "transparent" }}
                         >
                           🗑️
                         </button>
@@ -324,10 +318,14 @@ export default function App() {
         )}
 
         {/* ── PROFIL ── */}
-        {activeNav === "profil" && (
-          <ProfilePage user={user} t={t} />
-        )}
+{activeNav === "profil" && (
+  <ProfilePage user={user} isPremium={isPremium} t={t} />
+)}
 
+{/* ── PREMIUM ── */}
+{activeNav === "premium" && (
+  <PremiumPage user={user} isPremium={isPremium} t={t} />
+)}
       </div>
 
       {/* ── MODAL ── */}
@@ -348,5 +346,6 @@ export default function App() {
         select option { background: #0F1E38; }
       `}</style>
     </div>
-  );
+  )
 }
+
