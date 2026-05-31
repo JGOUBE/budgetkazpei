@@ -7,7 +7,7 @@ const fr = {
     abonnements: "Abonnements",
   },
   header: {
-    tagline: "Ton budget, à la réunionnaise",
+    tagline: "Gérez votre budget facilement",
     location: "Saint-Denis, La Réunion",
     addButton: "Ajouter",
   },

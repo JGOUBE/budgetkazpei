@@ -1,4 +1,3 @@
-// hooks/useLanguage.js
 import { useState } from "react";
 import { t } from "../i18n/index";
 

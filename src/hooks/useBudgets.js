@@ -1,4 +1,3 @@
-// hooks/useBudgets.js
 import { useMemo } from "react";
 import { CATEGORIES } from "../data/categories";
 import { calculateBudgetStats, calculateByCategory } from "../utils/calculateBudget";

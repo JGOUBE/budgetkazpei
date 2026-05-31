@@ -7,7 +7,7 @@ const kreol = {
     abonnements: "Abonman",
   },
   header: {
-    tagline: "To larzan, à la fason réyoné",
+    tagline: "Fasilman gèr ou larzan",
     location: "Sen-Déni, Lér Réyonion",
     addButton: "Azouté",
   },

@@ -1,4 +1,3 @@
-// data/categories.js
 export const CATEGORIES = [
   { id: "alimentaire", emoji: "🛒", color: "#F97316", budget: 600 },
   { id: "logement",    emoji: "🏠", color: "#38BDF8", budget: 800 },

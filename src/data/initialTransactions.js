@@ -1,4 +1,3 @@
-// data/initialTransactions.js
 export const INITIAL_TRANSACTIONS = [
   { id: 1,  label: "Super U Saint-Denis",   category: "alimentaire", amount: -87.50,  date: "2025-01-22", icon: "🛒" },
   { id: 2,  label: "EDF OI",                category: "energie",     amount: -112.00, date: "2025-01-21", icon: "⚡" },

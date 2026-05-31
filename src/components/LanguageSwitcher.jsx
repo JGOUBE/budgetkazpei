@@ -1,27 +1,34 @@
-export default function LanguageSwitcher({ lang, setLang }) {
-  return (
-    <div style={{ display: "flex", gap: 8 }}>
-      <button onClick={() => setLang("fr")}
-        style={{
-          padding: "6px 10px",
-          borderRadius: 8,
-          border: "1px solid #1E3A5F",
-          background: lang === "fr" ? "#F97316" : "transparent",
-          color: "white",
-        }}>
-        🇫🇷 FR
-      </button>
+const COLORS = {
+  card: "#0F1E38",
+  border: "#1E3A5F",
+  accent: "#F97316",
+  muted: "#64748B",
+  text: "#F1F5F9",
+};
 
-      <button onClick={() => setLang("kreol")}
-        style={{
-          padding: "6px 10px",
-          borderRadius: 8,
-          border: "1px solid #1E3A5F",
-          background: lang === "kreol" ? "#F97316" : "transparent",
-          color: "white",
-        }}>
-        🌴 KRÉOL
-      </button>
-    </div>
+export default function LanguageSwitcher({ lang, onToggle }) {
+  return (
+    <button
+      onClick={onToggle}
+      title={lang === "fr" ? "Passer en créole" : "Passer en français"}
+      style={{
+        background: "transparent",
+        border: `1px solid ${COLORS.border}`,
+        borderRadius: 8,
+        padding: "6px 12px",
+        color: COLORS.muted,
+        cursor: "pointer",
+        fontSize: 13,
+        fontFamily: "inherit",
+        display: "flex",
+        alignItems: "center",
+        gap: 6,
+        transition: "all 0.2s",
+      }}
+      onMouseEnter={e => { e.currentTarget.style.borderColor = COLORS.accent; e.currentTarget.style.color = COLORS.accent; }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = COLORS.border; e.currentTarget.style.color = COLORS.muted; }}
+    >
+      {lang === "fr" ? "🇷🇪 Kréol" : "🇫🇷 Français"}
+    </button>
   );
 }
