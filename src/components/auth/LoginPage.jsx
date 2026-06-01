@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState } from "react"
 
 const COLORS = {
   bg: "#0A1628",
@@ -12,22 +12,36 @@ const COLORS = {
   text: "#F1F5F9",
 }
 
-export default function LoginPage({ onLogin, onGoRegister }) {
-  const [email, setEmail]       = useState('')
+export default function LoginPage({ onLogin, onGoRegister, onGoogleLogin }) {
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError]       = useState('')
-  const [loading, setLoading]   = useState(false)
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
 
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
     setLoading(true)
+
     try {
       await onLogin(email, password)
     } catch (err) {
       setError(err.message || 'Erreur de connexion')
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function handleGoogleLogin() {
+    setError('')
+    setGoogleLoading(true)
+
+    try {
+      await onGoogleLogin()
+    } catch (err) {
+      setError(err.message || 'Erreur Google login')
+      setGoogleLoading(false)
     }
   }
 
@@ -41,8 +55,6 @@ export default function LoginPage({ onLogin, onGoRegister }) {
     width: "100%",
     outline: "none",
     fontFamily: "inherit",
-    boxSizing: "border-box",
-    transition: "border-color 0.2s",
   }
 
   return (
@@ -54,10 +66,7 @@ export default function LoginPage({ onLogin, onGoRegister }) {
       justifyContent: "center",
       fontFamily: "'DM Sans', sans-serif",
     }}>
-      <div style={{
-        width: 400,
-        maxWidth: "90vw",
-      }}>
+      <div style={{ width: 400, maxWidth: "90vw" }}>
 
         {/* Logo */}
         <div style={{ textAlign: "center", marginBottom: 36 }}>
@@ -82,44 +91,68 @@ export default function LoginPage({ onLogin, onGoRegister }) {
           borderRadius: 20,
           padding: 32,
         }}>
-          <h2 style={{ margin: "0 0 24px", fontSize: 20, color: COLORS.text, fontWeight: 600 }}>
+          <h2 style={{ margin: "0 0 24px", fontSize: 20, color: COLORS.text }}>
             Connexion
           </h2>
 
+          {/* 🔵 GOOGLE LOGIN BUTTON */}
+          <button
+            onClick={handleGoogleLogin}
+            disabled={googleLoading}
+            style={{
+              width: "100%",
+              padding: "12px",
+              borderRadius: 12,
+              border: `1px solid ${COLORS.border}`,
+              background: "#fff",
+              color: "#000",
+              fontWeight: 600,
+              cursor: googleLoading ? "not-allowed" : "pointer",
+              marginBottom: 16,
+            }}
+          >
+            {googleLoading ? "Connexion Google..." : "🔵 Continuer avec Google"}
+          </button>
+
+          {/* Divider */}
+          <div style={{
+            textAlign: "center",
+            color: COLORS.muted,
+            margin: "10px 0 20px",
+            fontSize: 12
+          }}>
+            ─── ou ───
+          </div>
+
+          {/* FORM */}
           <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+
             <div>
-              <label style={{ fontSize: 13, color: COLORS.muted, display: "block", marginBottom: 6 }}>
+              <label style={{ fontSize: 13, color: COLORS.muted, marginBottom: 6, display: "block" }}>
                 Email
               </label>
               <input
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                placeholder="ton@email.re"
-                required
                 style={inputStyle}
-                onFocus={e => e.target.style.borderColor = COLORS.accent}
-                onBlur={e => e.target.style.borderColor = COLORS.border}
+                required
               />
             </div>
 
             <div>
-              <label style={{ fontSize: 13, color: COLORS.muted, display: "block", marginBottom: 6 }}>
+              <label style={{ fontSize: 13, color: COLORS.muted, marginBottom: 6, display: "block" }}>
                 Mot de passe
               </label>
               <input
                 type="password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
                 style={inputStyle}
-                onFocus={e => e.target.style.borderColor = COLORS.accent}
-                onBlur={e => e.target.style.borderColor = COLORS.border}
+                required
               />
             </div>
 
-            {/* Erreur */}
             {error && (
               <div style={{
                 background: `${COLORS.red}15`,
@@ -144,17 +177,14 @@ export default function LoginPage({ onLogin, onGoRegister }) {
                 color: "#fff",
                 fontSize: 15,
                 fontWeight: 600,
-                fontFamily: "inherit",
                 cursor: loading ? "not-allowed" : "pointer",
-                marginTop: 6,
-                transition: "all 0.2s",
               }}
             >
               {loading ? "Connexion..." : "Se connecter"}
             </button>
           </form>
 
-          {/* Lien vers inscription */}
+          {/* REGISTER */}
           <p style={{ textAlign: "center", marginTop: 20, fontSize: 13, color: COLORS.muted }}>
             Pas encore de compte ?{" "}
             <button
@@ -164,10 +194,7 @@ export default function LoginPage({ onLogin, onGoRegister }) {
                 border: "none",
                 color: COLORS.accent,
                 cursor: "pointer",
-                fontSize: 13,
-                fontFamily: "inherit",
                 fontWeight: 600,
-                padding: 0,
               }}
             >
               Créer un compte
