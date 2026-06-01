@@ -15,7 +15,6 @@ import PremiumPage from "./components/premium/PremiumPage"
 import { AIDES, ABONNEMENTS } from "./data/categories"
 import { AUTRES_AIDES } from "./data/aides"
 import { formatMontant } from "./utils/format"
-import { supabase } from "./services/supabase"
 
 const COLORS = {
   bg: "#0A1628",
@@ -29,12 +28,24 @@ const COLORS = {
   text: "#F1F5F9",
 }
 
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768)
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < 768)
+    window.addEventListener("resize", handler)
+    return () => window.removeEventListener("resize", handler)
+  }, [])
+  return isMobile
+}
+
 export default function App() {
   const { user, loading, signIn, signUp, signOut } = useAuth()
-  const [authPage, setAuthPage]   = useState("login")
-  const [activeNav, setActiveNav] = useState("dashboard")
-  const [showModal, setShowModal] = useState(false)
-  const [mounted, setMounted]     = useState(false)
+  const [authPage, setAuthPage]     = useState("login")
+  const [activeNav, setActiveNav]   = useState("dashboard")
+  const [showModal, setShowModal]   = useState(false)
+  const [showSidebar, setShowSidebar] = useState(false)
+  const [mounted, setMounted]       = useState(false)
+  const isMobile                    = useIsMobile()
 
   const { lang, toggleLang, t }                             = useLanguage()
   const { transactions, addTransaction, deleteTransaction } = useTransactions(user?.id)
@@ -43,7 +54,6 @@ export default function App() {
 
   useEffect(() => { setMounted(true) }, [])
 
-  // ── Vérifier retour Stripe ───────────────────────────────────
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
     if (params.get("premium") === "success" && user?.id) {
@@ -53,7 +63,12 @@ export default function App() {
     }
   }, [user])
 
-  // ── Chargement ──────────────────────────────────────────────
+  // Ferme la sidebar quand on change de page sur mobile
+  function handleNavChange(nav) {
+    setActiveNav(nav)
+    setShowSidebar(false)
+  }
+
   if (loading) {
     return (
       <div style={{
@@ -69,7 +84,6 @@ export default function App() {
     )
   }
 
-  // ── Non connecté ────────────────────────────────────────────
   if (!user) {
     if (authPage === "register") {
       return <RegisterPage onRegister={signUp} onGoLogin={() => setAuthPage("login")} />
@@ -77,35 +91,134 @@ export default function App() {
     return <LoginPage onLogin={signIn} onGoRegister={() => setAuthPage("register")} />
   }
 
-  // ── Connecté ────────────────────────────────────────────────
   return (
     <div style={{
-      minHeight: "100vh", background: COLORS.bg, color: COLORS.text,
+      minHeight: "100vh",
+      background: COLORS.bg,
+      color: COLORS.text,
       fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif",
-      display: "flex", opacity: mounted ? 1 : 0, transition: "opacity 0.5s ease",
+      display: "flex",
+      flexDirection: isMobile ? "column" : "row",
+      opacity: mounted ? 1 : 0,
+      transition: "opacity 0.5s ease",
+      position: "relative",
     }}>
 
+      {/* ── HEADER MOBILE ── */}
+      {isMobile && (
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, zIndex: 50,
+          background: COLORS.card,
+          borderBottom: `1px solid ${COLORS.border}`,
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "12px 16px", height: 60,
+        }}>
+          <button
+            onClick={() => setShowSidebar(!showSidebar)}
+            style={{
+              background: "transparent", border: "none",
+              color: COLORS.text, fontSize: 22, cursor: "pointer",
+              padding: 4,
+            }}
+          >
+            {showSidebar ? "✕" : "☰"}
+          </button>
+
+          <div style={{ fontSize: 18, fontFamily: "'DM Serif Display', serif", color: COLORS.text }}>
+            🌴 BudgetKazPei
+          </div>
+
+          <button
+            onClick={() => setShowModal(true)}
+            style={{
+              background: COLORS.accent, border: "none", borderRadius: 10,
+              padding: "8px 14px", color: "#fff", cursor: "pointer",
+              fontSize: 13, fontWeight: 600, fontFamily: "inherit",
+            }}
+          >
+            ➕
+          </button>
+        </div>
+      )}
+
+      {/* ── OVERLAY MOBILE ── */}
+      {isMobile && showSidebar && (
+        <div
+          onClick={() => setShowSidebar(false)}
+          style={{
+            position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)",
+            zIndex: 40,
+          }}
+        />
+      )}
+
       {/* ── SIDEBAR ── */}
-      <Sidebar
-        activeNav={activeNav}
-        onNavChange={setActiveNav}
-        onSignOut={signOut}
-        user={user}
-        isPremium={isPremium}
-        lang={lang}
-        t={t}
-      />
+      {(!isMobile || showSidebar) && (
+        <div style={{
+          position: isMobile ? "fixed" : "sticky",
+          top: 0, left: 0,
+          zIndex: isMobile ? 45 : "auto",
+          height: isMobile ? "100vh" : "100vh",
+          transform: isMobile ? (showSidebar ? "translateX(0)" : "translateX(-100%)") : "none",
+          transition: "transform 0.3s ease",
+        }}>
+          <Sidebar
+            activeNav={activeNav}
+            onNavChange={handleNavChange}
+            onSignOut={signOut}
+            user={user}
+            isPremium={isPremium}
+            lang={lang}
+            t={t}
+          />
+        </div>
+      )}
 
       {/* ── MAIN ── */}
-      <div style={{ flex: 1, padding: "32px 28px", overflowY: "auto", maxHeight: "100vh" }}>
+      <div style={{
+        flex: 1,
+        padding: isMobile ? "76px 16px 24px" : "32px 28px",
+        overflowY: "auto",
+        maxHeight: isMobile ? "none" : "100vh",
+        minHeight: "100vh",
+      }}>
 
-        <Header
-          activeNav={activeNav}
-          onAdd={() => setShowModal(true)}
-          lang={lang}
-          onToggleLang={toggleLang}
-          t={t}
-        />
+        {/* Header desktop seulement */}
+        {!isMobile && (
+          <Header
+            activeNav={activeNav}
+            onAdd={() => setShowModal(true)}
+            lang={lang}
+            onToggleLang={toggleLang}
+            t={t}
+          />
+        )}
+
+        {/* Titre + langue sur mobile */}
+        {isMobile && (
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <div>
+              <h1 style={{ margin: 0, fontSize: 20, fontFamily: "'DM Serif Display', serif", fontWeight: 400 }}>
+                {activeNav === "dashboard" && t("nav", "dashboard")}
+                {activeNav === "depenses" && t("nav", "depenses")}
+                {activeNav === "aides" && t("nav", "aides")}
+                {activeNav === "abonnements" && t("nav", "abonnements")}
+                {activeNav === "profil" && t("nav", "profil")}
+                {activeNav === "premium" && t("nav", "premium")}
+              </h1>
+            </div>
+            <button
+              onClick={toggleLang}
+              style={{
+                background: "transparent", border: `1px solid ${COLORS.border}`,
+                borderRadius: 8, padding: "6px 10px", color: COLORS.muted,
+                cursor: "pointer", fontSize: 12, fontFamily: "inherit",
+              }}
+            >
+              {lang === "fr" ? "🇷🇪 Kréol" : "🇫🇷 Français"}
+            </button>
+          </div>
+        )}
 
         {/* ── DASHBOARD ── */}
         {activeNav === "dashboard" && (
@@ -115,6 +228,7 @@ export default function App() {
             pieData={pieData}
             transactions={transactions}
             t={t}
+            isMobile={isMobile}
           />
         )}
 
@@ -123,7 +237,7 @@ export default function App() {
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div style={{
               background: `linear-gradient(135deg, ${COLORS.card} 0%, ${COLORS.cardLight} 100%)`,
-              border: `1px solid ${COLORS.border}`, borderRadius: 16, padding: 20,
+              border: `1px solid ${COLORS.border}`, borderRadius: 16, padding: isMobile ? 14 : 20,
             }}>
               <h3 style={{ margin: "0 0 16px", fontSize: 14, color: COLORS.muted, fontWeight: 500 }}>
                 {t("dashboard", "recentTransactions")}
@@ -139,27 +253,28 @@ export default function App() {
                   {transactions.map(tx => (
                     <div key={tx.id} style={{
                       display: "flex", alignItems: "center", justifyContent: "space-between",
-                      padding: "12px 14px", borderRadius: 12,
+                      padding: isMobile ? "10px 12px" : "12px 14px", borderRadius: 12,
                       background: COLORS.bg, border: `1px solid ${COLORS.border}`,
                     }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                         <div style={{
-                          width: 38, height: 38, borderRadius: 10,
+                          width: 36, height: 36, borderRadius: 10,
                           background: COLORS.cardLight, display: "flex",
-                          alignItems: "center", justifyContent: "center", fontSize: 18,
+                          alignItems: "center", justifyContent: "center", fontSize: 16,
+                          flexShrink: 0,
                         }}>
                           {tx.icon}
                         </div>
                         <div>
-                          <div style={{ fontSize: 14, fontWeight: 500 }}>{tx.label}</div>
+                          <div style={{ fontSize: 13, fontWeight: 500 }}>{tx.label}</div>
                           <div style={{ fontSize: 11, color: COLORS.muted }}>
                             {tx.date} · {t("categories", tx.category)}
                           </div>
                         </div>
                       </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                         <span style={{
-                          fontSize: 15, fontWeight: 700,
+                          fontSize: 14, fontWeight: 700,
                           color: tx.amount >= 0 ? COLORS.green : COLORS.red,
                         }}>
                           {tx.amount >= 0 ? "+" : ""}{parseFloat(tx.amount).toFixed(2).replace(".", ",")} €
@@ -168,15 +283,11 @@ export default function App() {
                           onClick={() => { if (window.confirm(`Supprimer "${tx.label}" ?`)) deleteTransaction(tx.id) }}
                           style={{
                             background: "transparent", border: `1px solid ${COLORS.border}`,
-                            borderRadius: 8, width: 32, height: 32,
+                            borderRadius: 8, width: 30, height: 30,
                             display: "flex", alignItems: "center", justifyContent: "center",
-                            cursor: "pointer", fontSize: 14, transition: "all 0.2s",
+                            cursor: "pointer", fontSize: 13, flexShrink: 0,
                           }}
-                          onMouseEnter={e => { e.currentTarget.style.borderColor = COLORS.red; e.currentTarget.style.background = `${COLORS.red}15` }}
-                          onMouseLeave={e => { e.currentTarget.style.borderColor = COLORS.border; e.currentTarget.style.background = "transparent" }}
-                        >
-                          🗑️
-                        </button>
+                        >🗑️</button>
                       </div>
                     </div>
                   ))}
@@ -186,12 +297,12 @@ export default function App() {
           </div>
         )}
 
-        {/* ── AIDES & DROITS ── */}
+        {/* ── AIDES ── */}
         {activeNav === "aides" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div style={{
               background: `linear-gradient(135deg, ${COLORS.accent}15, ${COLORS.card})`,
-              border: `1px solid ${COLORS.accent}33`, borderRadius: 16, padding: 20,
+              border: `1px solid ${COLORS.accent}33`, borderRadius: 16, padding: isMobile ? 16 : 20,
             }}>
               <div style={{ fontSize: 20, marginBottom: 8 }}>🏛️</div>
               <h3 style={{ margin: "0 0 6px", fontSize: 16, fontFamily: "'DM Serif Display', serif" }}>
@@ -201,7 +312,8 @@ export default function App() {
                 {t("aides", "subtitle")}
               </p>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 14 }}>
+
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: 14 }}>
               {AIDES.map(aide => (
                 <div key={aide.id} style={{
                   background: `linear-gradient(135deg, ${COLORS.card} 0%, ${COLORS.cardLight} 100%)`,
@@ -232,9 +344,10 @@ export default function App() {
                 </div>
               ))}
             </div>
+
             <div style={{
               background: `linear-gradient(135deg, ${COLORS.card} 0%, ${COLORS.cardLight} 100%)`,
-              border: `1px solid ${COLORS.border}`, borderRadius: 16, padding: 20,
+              border: `1px solid ${COLORS.border}`, borderRadius: 16, padding: isMobile ? 16 : 20,
             }}>
               <h3 style={{ margin: "0 0 14px", fontSize: 14, color: COLORS.muted, fontWeight: 500 }}>
                 💡 {t("aides", "autresAides")}
@@ -265,37 +378,40 @@ export default function App() {
             {ABONNEMENTS.map(ab => (
               <div key={ab.id} style={{
                 background: `linear-gradient(135deg, ${COLORS.card} 0%, ${COLORS.cardLight} 100%)`,
-                border: `1px solid ${COLORS.border}`, borderRadius: 16, padding: "18px 20px",
+                border: `1px solid ${COLORS.border}`, borderRadius: 16,
+                padding: isMobile ? "14px 16px" : "18px 20px",
                 display: "flex", alignItems: "center", justifyContent: "space-between",
               }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <div style={{
-                    width: 44, height: 44, borderRadius: 12,
+                    width: 40, height: 40, borderRadius: 12,
                     background: `${ab.color}20`, display: "flex",
-                    alignItems: "center", justifyContent: "center", fontSize: 22,
-                    border: `1px solid ${ab.color}33`,
+                    alignItems: "center", justifyContent: "center", fontSize: 20,
+                    border: `1px solid ${ab.color}33`, flexShrink: 0,
                   }}>
                     {ab.emoji}
                   </div>
                   <div>
-                    <div style={{ fontSize: 15, fontWeight: 600, color: COLORS.text }}>{ab.nom}</div>
-                    <div style={{ fontSize: 12, color: COLORS.muted }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: COLORS.text }}>{ab.nom}</div>
+                    <div style={{ fontSize: 11, color: COLORS.muted }}>
                       {t("abonnements", ab.categoryKey)} · {t("transactions", "monthly") || "mensuel"}
                     </div>
                   </div>
                 </div>
                 <div style={{ textAlign: "right" }}>
-                  <div style={{ fontSize: 18, fontWeight: 700, color: ab.color, fontFamily: "'DM Serif Display', serif" }}>
+                  <div style={{ fontSize: 16, fontWeight: 700, color: ab.color, fontFamily: "'DM Serif Display', serif" }}>
                     {formatMontant(ab.montant)}
                   </div>
                   <div style={{ fontSize: 11, color: COLORS.muted }}>{t("abonnements", "perMonth")}</div>
                 </div>
               </div>
             ))}
+
             <div style={{
               background: `${COLORS.green}12`, border: `1px solid ${COLORS.green}33`,
-              borderRadius: 16, padding: "16px 20px",
-              display: "flex", alignItems: "center", gap: 14,
+              borderRadius: 16, padding: isMobile ? "14px 16px" : "16px 20px",
+              display: "flex", flexDirection: isMobile ? "column" : "row",
+              alignItems: isMobile ? "flex-start" : "center", gap: 14,
             }}>
               <span style={{ fontSize: 28 }}>💡</span>
               <div>
@@ -307,10 +423,11 @@ export default function App() {
                 </div>
               </div>
               <button style={{
-                marginLeft: "auto", background: COLORS.green, border: "none",
-                borderRadius: 10, padding: "8px 16px", color: "#fff",
+                marginLeft: isMobile ? 0 : "auto",
+                background: COLORS.green, border: "none",
+                borderRadius: 10, padding: "10px 16px", color: "#fff",
                 fontSize: 13, cursor: "pointer", fontFamily: "inherit", fontWeight: 600,
-                whiteSpace: "nowrap",
+                width: isMobile ? "100%" : "auto",
               }}>
                 {t("abonnements", "seeOffer")}
               </button>
@@ -319,15 +436,53 @@ export default function App() {
         )}
 
         {/* ── PROFIL ── */}
-{activeNav === "profil" && (
-  <ProfilePage user={user} isPremium={isPremium} t={t} />
-)}
+        {activeNav === "profil" && (
+          <ProfilePage user={user} isPremium={isPremium} t={t} />
+        )}
 
-{/* ── PREMIUM ── */}
-{activeNav === "premium" && (
-  <PremiumPage user={user} isPremium={isPremium} t={t} />
-)}
+        {/* ── PREMIUM ── */}
+        {activeNav === "premium" && (
+          <PremiumPage user={user} isPremium={isPremium} t={t} />
+        )}
       </div>
+
+      {/* ── BOTTOM NAV MOBILE ── */}
+      {isMobile && (
+        <div style={{
+          position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50,
+          background: COLORS.card, borderTop: `1px solid ${COLORS.border}`,
+          display: "flex", justifyContent: "space-around", padding: "8px 0 12px",
+        }}>
+          {[
+            { id: "dashboard", emoji: "🏠" },
+            { id: "depenses", emoji: "📊" },
+            { id: "aides", emoji: "🏛️" },
+            { id: "abonnements", emoji: "📋" },
+            { id: "profil", emoji: "👤" },
+          ].map(item => (
+            <button
+              key={item.id}
+              onClick={() => handleNavChange(item.id)}
+              style={{
+                background: "transparent", border: "none",
+                display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+                cursor: "pointer", padding: "4px 8px", borderRadius: 10,
+                color: activeNav === item.id ? COLORS.accent : COLORS.muted,
+                transition: "all 0.2s",
+              }}
+            >
+              <span style={{ fontSize: 20 }}>{item.emoji}</span>
+              <span style={{ fontSize: 9, fontFamily: "inherit" }}>
+                {item.id === "dashboard" ? t("nav", "dashboard").split(" ")[0] :
+                 item.id === "depenses" ? t("nav", "depenses") :
+                 item.id === "aides" ? "Aides" :
+                 item.id === "abonnements" ? t("nav", "abonnements") :
+                 "Profil"}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* ── MODAL ── */}
       {showModal && (
@@ -345,8 +500,8 @@ export default function App() {
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #1E3A5F; border-radius: 99px; }
         select option { background: #0F1E38; }
+        body { margin: 0; padding: 0; }
       `}</style>
     </div>
   )
 }
-
