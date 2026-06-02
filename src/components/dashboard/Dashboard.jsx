@@ -148,6 +148,116 @@ function SoldeDetails({ stats, onClose }) {
   )
 }
 
+function RevenusDetails({ stats, onClose }) {
+  const revenus = stats.revenus || 0
+  const chargesFixes = stats.chargesFixes || 0
+  const depensesVariables = stats.depensesVariables || 0
+  const resteAVivre = stats.resteAVivre || 0
+  const totalDepenses = chargesFixes + depensesVariables
+  const tauxDisponible = revenus > 0 ? Math.max((resteAVivre / revenus) * 100, 0).toFixed(0) : 0
+
+  return (
+    <TropicalCard variant="green" texture="🍃">
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 6 }}>
+        <h3 style={{ margin: 0, color: COLORS.text, fontSize: 16 }}>Détail des revenus du mois</h3>
+        <button
+          type="button"
+          onClick={onClose}
+          style={{
+            background: "rgba(255,255,255,.07)",
+            border: "1px solid rgba(255,255,255,.12)",
+            borderRadius: 999,
+            color: COLORS.whiteSoft,
+            cursor: "pointer",
+            padding: "5px 10px",
+            fontSize: 12,
+            fontFamily: "inherit",
+          }}
+        >
+          Fermer
+        </button>
+      </div>
+
+      <DetailItem icon="💵" label="Revenus enregistrés" value={formatMontant(revenus)} color="#BEF264" />
+      <DetailItem icon="📌" label="Charges fixes prévues" value={formatMontant(chargesFixes)} color={COLORS.accentSoft} />
+      <DetailItem icon="🛒" label="Dépenses variables" value={formatMontant(depensesVariables)} color={COLORS.blue} />
+      <DetailItem icon="🎯" label="Reste disponible estimé" value={formatMontant(resteAVivre)} color={resteAVivre >= 0 ? COLORS.green : COLORS.red} />
+
+      <div
+        style={{
+          marginTop: 14,
+          background: "rgba(132,204,22,.10)",
+          border: "1px solid rgba(132,204,22,.25)",
+          borderRadius: 14,
+          padding: "12px 14px",
+          color: COLORS.text,
+          fontSize: 13,
+          lineHeight: 1.5,
+        }}
+      >
+        Après dépenses et charges, il vous reste environ <strong style={{ color: "#BEF264" }}>{tauxDisponible} %</strong> de vos revenus disponibles.
+        {totalDepenses > 0 && (
+          <span> Total déjà engagé : <strong style={{ color: COLORS.accentSoft }}>{formatMontant(totalDepenses)}</strong>.</span>
+        )}
+      </div>
+    </TropicalCard>
+  )
+}
+
+function DepensesDetails({ stats, onClose }) {
+  const revenus = stats.revenus || 0
+  const depenses = stats.depenses || 0
+  const chargesFixes = stats.chargesFixes || 0
+  const depensesVariables = stats.depensesVariables || 0
+  const tauxCharges = revenus > 0 ? ((chargesFixes / revenus) * 100).toFixed(0) : 0
+  const tauxVariables = revenus > 0 ? ((depensesVariables / revenus) * 100).toFixed(0) : 0
+  const tauxTotal = revenus > 0 ? (((chargesFixes + depensesVariables) / revenus) * 100).toFixed(0) : 0
+
+  return (
+    <TropicalCard variant="coral" texture="🌞">
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 6 }}>
+        <h3 style={{ margin: 0, color: COLORS.text, fontSize: 16 }}>Détail des dépenses du mois</h3>
+        <button
+          type="button"
+          onClick={onClose}
+          style={{
+            background: "rgba(255,255,255,.07)",
+            border: "1px solid rgba(255,255,255,.12)",
+            borderRadius: 999,
+            color: COLORS.whiteSoft,
+            cursor: "pointer",
+            padding: "5px 10px",
+            fontSize: 12,
+            fontFamily: "inherit",
+          }}
+        >
+          Fermer
+        </button>
+      </div>
+
+      <DetailItem icon="📊" label="Dépenses du mois" value={formatMontant(depenses)} color="#FDBA74" />
+      <DetailItem icon="📌" label={`Charges fixes (${tauxCharges} % des revenus)`} value={formatMontant(chargesFixes)} color={COLORS.accentSoft} />
+      <DetailItem icon="🛒" label={`Dépenses variables (${tauxVariables} % des revenus)`} value={formatMontant(depensesVariables)} color={COLORS.blue} />
+      <DetailItem icon="⚖️" label="Total charges + variables" value={formatMontant(chargesFixes + depensesVariables)} color={(chargesFixes + depensesVariables) > revenus ? COLORS.red : COLORS.green} />
+
+      <div
+        style={{
+          marginTop: 14,
+          background: "rgba(251,146,60,.10)",
+          border: "1px solid rgba(251,146,60,.25)",
+          borderRadius: 14,
+          padding: "12px 14px",
+          color: COLORS.text,
+          fontSize: 13,
+          lineHeight: 1.5,
+        }}
+      >
+        Vos charges fixes et dépenses variables représentent <strong style={{ color: "#FDBA74" }}>{tauxTotal} %</strong> de vos revenus du mois.
+      </div>
+    </TropicalCard>
+  )
+}
+
 function ProgressBar({ value, max, color }) {
   const safeMax = max || 1
   const pct = Math.min((value / safeMax) * 100, 100)
@@ -171,8 +281,12 @@ function ProgressBar({ value, max, color }) {
 
 export default function Dashboard({ stats, byCategory, pieData, transactions, t, isMobile }) {
   const { revenus, depenses, solde } = stats
-  const [showSoldeDetails, setShowSoldeDetails] = useState(false)
+  const [openedDetails, setOpenedDetails] = useState(null)
   const ofIncome = revenus > 0 ? ((depenses / revenus) * 100).toFixed(0) : 0
+
+  function toggleDetails(section) {
+    setOpenedDetails(prev => (prev === section ? null : section))
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 14 : 22 }}>
@@ -192,7 +306,7 @@ export default function Dashboard({ stats, byCategory, pieData, transactions, t,
           color={solde >= 0 ? "#5EEAD4" : COLORS.red}
           sub={t("dashboard", "updatedToday")}
           actionLabel="Détails"
-          onAction={() => setShowSoldeDetails(prev => !prev)}
+          onAction={() => toggleDetails("solde")}
         />
         <StatCard
           label={t("dashboard", "revenus")}
@@ -202,6 +316,8 @@ export default function Dashboard({ stats, byCategory, pieData, transactions, t,
           texture="🍃"
           color="#BEF264"
           sub={t("dashboard", "salaryAndAids")}
+          actionLabel="Détails"
+          onAction={() => toggleDetails("revenus")}
         />
         <StatCard
           label={t("dashboard", "depenses")}
@@ -211,10 +327,14 @@ export default function Dashboard({ stats, byCategory, pieData, transactions, t,
           texture="🌞"
           color="#FDBA74"
           sub={`${ofIncome}% ${t("dashboard", "ofIncome")}`}
+          actionLabel="Détails"
+          onAction={() => toggleDetails("depenses")}
         />
       </div>
 
-      {showSoldeDetails && <SoldeDetails stats={stats} onClose={() => setShowSoldeDetails(false)} />}
+      {openedDetails === "solde" && <SoldeDetails stats={stats} onClose={() => setOpenedDetails(null)} />}
+      {openedDetails === "revenus" && <RevenusDetails stats={stats} onClose={() => setOpenedDetails(null)} />}
+      {openedDetails === "depenses" && <DepensesDetails stats={stats} onClose={() => setOpenedDetails(null)} />}
 
       <div
         style={{
