@@ -101,7 +101,7 @@ export default function Sidebar({
           background: `${COLORS.accent}15`,
           border: `1px solid ${COLORS.accent}33`,
           borderRadius: 12,
-          padding: "8px 12px",
+          padding: "14px 14px",
           marginBottom: 12,
         }}
       >
@@ -121,7 +121,8 @@ export default function Sidebar({
 
         <div
           style={{
-            fontSize: 14,
+            fontSize: 18,
+fontFamily: "'Baloo 2', sans-serif",
             color: COLORS.text,
             fontWeight: 700,
             marginTop: 3,
