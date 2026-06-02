@@ -1,40 +1,42 @@
-import { useState } from 'react'
+import { useState } from "react"
 
 const COLORS = {
   bg: "#0A1628",
   card: "#0F1E38",
-  cardLight: "#152444",
-  border: "#1E3A5F",
+  ink: "#05080C",
+  cream: "#F8ECD0",
+  paper: "#FFF6DE",
   accent: "#F97316",
-  green: "#22C55E",
   red: "#EF4444",
-  muted: "#64748B",
+  muted: "#8AA0BD",
   text: "#F1F5F9",
 }
 
 export default function RegisterPage({ onRegister, onGoLogin }) {
-  const [nom, setNom]           = useState('')
-  const [email, setEmail]       = useState('')
-  const [password, setPassword] = useState('')
-  const [confirm, setConfirm]   = useState('')
-  const [error, setError]       = useState('')
-  const [success, setSuccess]   = useState(false)
-  const [loading, setLoading]   = useState(false)
+  const [nom, setNom] = useState("")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [confirm, setConfirm] = useState("")
+  const [error, setError] = useState("")
+  const [success, setSuccess] = useState(false)
+  const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e) {
     e.preventDefault()
-    setError('')
+    setError("")
 
     if (password !== confirm) {
-      setError('Les mots de passe ne correspondent pas')
+      setError("Les mots de passe ne correspondent pas")
       return
     }
+
     if (password.length < 6) {
-      setError('Le mot de passe doit faire au moins 6 caractères')
+      setError("Le mot de passe doit faire au moins 6 caractères")
       return
     }
 
     setLoading(true)
+
     try {
       await onRegister(email, password, nom)
       setSuccess(true)
@@ -46,46 +48,40 @@ export default function RegisterPage({ onRegister, onGoLogin }) {
   }
 
   const inputStyle = {
-    background: COLORS.cardLight,
-    border: `1px solid ${COLORS.border}`,
-    borderRadius: 10,
-    padding: "12px 16px",
-    color: COLORS.text,
-    fontSize: 14,
     width: "100%",
+    background: COLORS.paper,
+    border: `3px solid ${COLORS.ink}`,
+    borderRadius: 10,
+    padding: "13px 16px",
+    color: COLORS.ink,
+    fontSize: 15,
+    fontWeight: 800,
     outline: "none",
     fontFamily: "inherit",
-    boxSizing: "border-box",
-    transition: "border-color 0.2s",
+    boxShadow: `5px 5px 0 ${COLORS.ink}`,
+  }
+
+  const labelStyle = {
+    display: "block",
+    textAlign: "center",
+    marginBottom: 8,
+    color: COLORS.cream,
+    fontSize: 12,
+    fontWeight: 900,
+    letterSpacing: 0.8,
+    textTransform: "uppercase",
+    textShadow: `2px 2px 0 ${COLORS.ink}`,
   }
 
   if (success) {
     return (
-      <div style={{
-        minHeight: "100vh", background: COLORS.bg,
-        display: "flex", alignItems: "center", justifyContent: "center",
-        fontFamily: "'DM Sans', sans-serif",
-      }}>
-        <div style={{
-          background: COLORS.card, border: `1px solid ${COLORS.border}`,
-          borderRadius: 20, padding: 40, textAlign: "center", maxWidth: 400,
-        }}>
-          <div style={{ fontSize: 48, marginBottom: 16 }}>📧</div>
-          <h2 style={{ margin: "0 0 12px", color: COLORS.text, fontFamily: "'DM Serif Display', serif" }}>
-            Vérifie ta boîte mail !
-          </h2>
-          <p style={{ color: COLORS.muted, fontSize: 14, lineHeight: 1.6 }}>
-            On t'a envoyé un lien de confirmation à <strong style={{ color: COLORS.text }}>{email}</strong>.
-            Clique dessus pour activer ton compte.
+      <div style={pageStyle}>
+        <div style={cardStyle}>
+          <h2 style={titleStyle}>Vérifie ta boîte mail !</h2>
+          <p style={{ color: COLORS.muted, textAlign: "center" }}>
+            Un lien de confirmation a été envoyé à {email}.
           </p>
-          <button
-            onClick={onGoLogin}
-            style={{
-              marginTop: 24, background: COLORS.accent, border: "none",
-              borderRadius: 12, padding: "12px 28px", color: "#fff",
-              fontSize: 14, fontWeight: 600, cursor: "pointer", fontFamily: "inherit",
-            }}
-          >
+          <button onClick={onGoLogin} style={buttonStyle}>
             Retour à la connexion
           </button>
         </div>
@@ -94,156 +90,194 @@ export default function RegisterPage({ onRegister, onGoLogin }) {
   }
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      background: COLORS.bg,
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      fontFamily: "'DM Sans', sans-serif",
-    }}>
-      <div style={{ width: 400, maxWidth: "90vw" }}>
+    <div style={pageStyle}>
+      <div style={{ width: 440, maxWidth: "94vw" }}>
+        <div style={{ textAlign: "center", marginBottom: 18 }}>
+          <img
+            src="/icons-creole/logo-budgetkazpei.png"
+            alt="BudgetKazPei"
+            style={{
+              width: 195,
+              maxWidth: "80vw",
+              height: "auto",
+              margin: "0 auto",
+              display: "block",
+              objectFit: "contain",
+              pointerEvents: "none",
+              filter: "drop-shadow(3px 5px 0 rgba(5,8,12,.65))",
+            }}
+          />
 
-        {/* Logo */}
-        <div style={{ textAlign: "center", marginBottom: 36 }}>
-          <div style={{ fontSize: 40, marginBottom: 8 }}>🌴</div>
-          <h1 style={{
-            margin: 0, fontSize: 28,
-            fontFamily: "'DM Serif Display', serif", color: COLORS.text,
-          }}>
-            BudgetKazPei
-          </h1>
-          <p style={{ margin: "6px 0 0", color: COLORS.muted, fontSize: 14 }}>
+          <p
+            style={{
+              margin: "-30px 0 0",
+              color: "#23D3D6",
+              fontSize: 15,
+              fontWeight: 700,
+              fontFamily: "Poppins, 'DM Sans', sans-serif",
+              textAlign: "center",
+            }}
+          >
             Crée ton compte gratuitement
           </p>
         </div>
 
-        {/* Card */}
-        <div style={{
-          background: COLORS.card,
-          border: `1px solid ${COLORS.border}`,
-          borderRadius: 20,
-          padding: 32,
-        }}>
-          <h2 style={{ margin: "0 0 24px", fontSize: 20, color: COLORS.text, fontWeight: 600 }}>
-            Inscription
-          </h2>
+        <div style={cardStyle}>
+          <img
+            src="/icons-creole/palmier.png"
+            alt=""
+            aria-hidden="true"
+            style={{
+              position: "absolute",
+              width: 210,
+              height: 210,
+              right: -80,
+              top: -50,
+              opacity: 0.07,
+              transform: "rotate(-18deg)",
+              pointerEvents: "none",
+            }}
+          />
 
-          <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <div>
-              <label style={{ fontSize: 13, color: COLORS.muted, display: "block", marginBottom: 6 }}>
-                Prénom ou pseudo
-              </label>
-              <input
-                type="text"
-                value={nom}
-                onChange={e => setNom(e.target.value)}
-                placeholder="Ex: Jacky"
-                required
-                style={inputStyle}
-                onFocus={e => e.target.style.borderColor = COLORS.accent}
-                onBlur={e => e.target.style.borderColor = COLORS.border}
-              />
-            </div>
+          <div style={{ position: "relative", zIndex: 1 }}>
+            <h2 style={titleStyle}>Inscription</h2>
 
-            <div>
-              <label style={{ fontSize: 13, color: COLORS.muted, display: "block", marginBottom: 6 }}>
-                Email
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                placeholder="ton@email.re"
-                required
-                style={inputStyle}
-                onFocus={e => e.target.style.borderColor = COLORS.accent}
-                onBlur={e => e.target.style.borderColor = COLORS.border}
-              />
-            </div>
-
-            <div>
-              <label style={{ fontSize: 13, color: COLORS.muted, display: "block", marginBottom: 6 }}>
-                Mot de passe
-              </label>
-              <input
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                placeholder="6 caractères minimum"
-                required
-                style={inputStyle}
-                onFocus={e => e.target.style.borderColor = COLORS.accent}
-                onBlur={e => e.target.style.borderColor = COLORS.border}
-              />
-            </div>
-
-            <div>
-              <label style={{ fontSize: 13, color: COLORS.muted, display: "block", marginBottom: 6 }}>
-                Confirmer le mot de passe
-              </label>
-              <input
-                type="password"
-                value={confirm}
-                onChange={e => setConfirm(e.target.value)}
-                placeholder="••••••••"
-                required
-                style={inputStyle}
-                onFocus={e => e.target.style.borderColor = COLORS.accent}
-                onBlur={e => e.target.style.borderColor = COLORS.border}
-              />
-            </div>
-
-            {/* Erreur */}
-            {error && (
-              <div style={{
-                background: `${COLORS.red}15`,
-                border: `1px solid ${COLORS.red}33`,
-                borderRadius: 8, padding: "10px 14px",
-                fontSize: 13, color: COLORS.red,
-              }}>
-                ⚠️ {error}
+            <form
+              onSubmit={handleSubmit}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 16,
+              }}
+            >
+              <div>
+                <label style={labelStyle}>Prénom ou pseudo</label>
+                <input
+                  type="text"
+                  value={nom}
+                  onChange={e => setNom(e.target.value)}
+                  required
+                  style={inputStyle}
+                />
               </div>
-            )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              style={{
-                background: loading ? COLORS.muted : COLORS.accent,
-                border: "none", borderRadius: 12,
-                padding: "13px 0", color: "#fff",
-                fontSize: 15, fontWeight: 600,
-                fontFamily: "inherit",
-                cursor: loading ? "not-allowed" : "pointer",
-                marginTop: 6, transition: "all 0.2s",
-              }}
-            >
-              {loading ? "Création..." : "Créer mon compte"}
-            </button>
-          </form>
+              <div>
+                <label style={labelStyle}>Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  required
+                  style={inputStyle}
+                />
+              </div>
 
-          {/* Lien vers connexion */}
-          <p style={{ textAlign: "center", marginTop: 20, fontSize: 13, color: COLORS.muted }}>
-            Déjà un compte ?{" "}
-            <button
-              onClick={onGoLogin}
-              style={{
-                background: "none", border: "none",
-                color: COLORS.accent, cursor: "pointer",
-                fontSize: 13, fontFamily: "inherit",
-                fontWeight: 600, padding: 0,
-              }}
-            >
-              Se connecter
-            </button>
-          </p>
+              <div>
+                <label style={labelStyle}>Mot de passe</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  required
+                  style={inputStyle}
+                />
+              </div>
+
+              <div>
+                <label style={labelStyle}>Confirmer le mot de passe</label>
+                <input
+                  type="password"
+                  value={confirm}
+                  onChange={e => setConfirm(e.target.value)}
+                  required
+                  style={inputStyle}
+                />
+              </div>
+
+              {error && (
+                <div
+                  style={{
+                    background: `${COLORS.red}18`,
+                    border: `2px solid ${COLORS.red}`,
+                    borderRadius: 10,
+                    padding: "10px 14px",
+                    color: "#FFD6D6",
+                    fontWeight: 700,
+                    fontSize: 13,
+                  }}
+                >
+                  ⚠️ {error}
+                </div>
+              )}
+
+              <button type="submit" disabled={loading} style={buttonStyle}>
+                {loading ? "Création..." : "Créer mon compte"}
+              </button>
+            </form>
+
+            <p style={{ textAlign: "center", marginTop: 22, color: COLORS.muted }}>
+              Déjà un compte ?{" "}
+              <button
+                onClick={onGoLogin}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: COLORS.accent,
+                  cursor: "pointer",
+                  fontWeight: 900,
+                }}
+              >
+                Se connecter
+              </button>
+            </p>
+          </div>
         </div>
       </div>
-
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&display=swap');
-      `}</style>
     </div>
   )
+}
+
+const pageStyle = {
+  minHeight: "100vh",
+  background:
+    "radial-gradient(circle at top, rgba(35,211,214,.12), transparent 35%), #0A1628",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  fontFamily: "'DM Sans', sans-serif",
+  padding: "32px 18px",
+}
+
+const cardStyle = {
+  position: "relative",
+  overflow: "hidden",
+  background:
+    "linear-gradient(145deg, rgba(10,31,61,.98), rgba(13,52,92,.96), rgba(24,92,138,.92))",
+  border: `3px solid ${COLORS.ink}`,
+  borderRadius: 22,
+  padding: "34px 28px 30px",
+  boxShadow: `9px 9px 0 ${COLORS.ink}, 0 26px 70px rgba(0,0,0,.35)`,
+}
+
+const titleStyle = {
+  margin: "0 0 26px",
+  fontSize: 26,
+  color: COLORS.cream,
+  textAlign: "center",
+  fontFamily: "Impact, 'Arial Black', 'DM Serif Display', serif",
+  textShadow: `3px 3px 0 ${COLORS.ink}`,
+}
+
+const buttonStyle = {
+  width: "100%",
+  background: COLORS.accent,
+  border: `3px solid ${COLORS.ink}`,
+  borderRadius: 12,
+  padding: "14px 0",
+  color: "#fff",
+  fontSize: 17,
+  fontWeight: 900,
+  cursor: "pointer",
+  fontFamily: "inherit",
+  boxShadow: `5px 5px 0 ${COLORS.ink}`,
 }
