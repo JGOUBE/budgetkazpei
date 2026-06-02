@@ -15,6 +15,7 @@ import PremiumPage from "./components/premium/PremiumPage"
 import { AIDES, ABONNEMENTS } from "./data/categories"
 import { AUTRES_AIDES } from "./data/aides"
 import { formatMontant } from "./utils/format"
+import EditTransactionModal from "./components/modals/EditTransactionModal"
 
 const COLORS = {
   bg: "#0A1628", card: "#0F1E38", cardLight: "#152444",
@@ -43,9 +44,11 @@ export default function App() {
   const isMobile                      = useIsMobile()
 
   const { lang, toggleLang, t }                             = useLanguage()
-  const { transactions, addTransaction, deleteTransaction } = useTransactions(user?.id)
+  const { transactions, addTransaction, updateTransaction, deleteTransaction } = useTransactions(user?.id)
   const { revenus, depenses, solde, byCategory, pieData }   = useBudgets(transactions)
   const { isPremium, activatePremium }                      = useSubscription(user?.id)
+  const [editingTransaction, setEditingTransaction] = useState(null)
+
 
   useEffect(() => { setMounted(true) }, [])
 
@@ -237,6 +240,24 @@ export default function App() {
                         <span style={{ fontSize: 14, fontWeight: 700, color: tx.amount >= 0 ? COLORS.green : COLORS.red }}>
                           {tx.amount >= 0 ? "+" : ""}{parseFloat(tx.amount).toFixed(2).replace(".", ",")} €
                         </span>
+                        <button
+  onClick={() => setEditingTransaction(tx)}
+  style={{
+    background: "transparent",
+    border: `1px solid ${COLORS.border}`,
+    borderRadius: 8,
+    width: 30,
+    height: 30,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    fontSize: 13,
+    flexShrink: 0,
+  }}
+>
+  ✏️
+</button>
                         <button onClick={() => { if (window.confirm(`Supprimer "${tx.label}" ?`)) deleteTransaction(tx.id) }}
                           style={{
                             background: "transparent", border: `1px solid ${COLORS.border}`,
@@ -420,7 +441,14 @@ export default function App() {
       {showModal && (
         <AddTransactionModal onAdd={addTransaction} onClose={() => setShowModal(false)} t={t} />
       )}
-
+{editingTransaction && (
+  <EditTransactionModal
+    transaction={editingTransaction}
+    onSave={updateTransaction}
+    onClose={() => setEditingTransaction(null)}
+    t={t}
+  />
+)}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&display=swap');
         * { box-sizing: border-box; }

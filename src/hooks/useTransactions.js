@@ -5,7 +5,7 @@ export function useTransactions(userId) {
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // ── Charger les transactions depuis Supabase ────────────────
+  // ── Charger les transactions ────────────────────────────────
   useEffect(() => {
     if (!userId) return;
 
@@ -17,18 +17,15 @@ export function useTransactions(userId) {
         .eq("user_id", userId)
         .order("date", { ascending: false });
 
-      if (error) {
-        console.error("Erreur chargement transactions:", error);
-      } else {
-        setTransactions(data || []);
-      }
+      if (error) console.error("Erreur chargement transactions:", error);
+      else setTransactions(data || []);
       setLoading(false);
     }
 
     fetchTransactions();
   }, [userId]);
 
-  // ── Ajouter une transaction ─────────────────────────────────
+  // ── Ajouter ─────────────────────────────────────────────────
   async function addTransaction(transaction) {
     const newTransaction = {
       ...transaction,
@@ -42,28 +39,33 @@ export function useTransactions(userId) {
       .select()
       .single();
 
-    if (error) {
-      console.error("Erreur ajout transaction:", error);
-      return;
-    }
-
+    if (error) { console.error("Erreur ajout transaction:", error); return; }
     setTransactions(prev => [data, ...prev]);
   }
 
-  // ── Supprimer une transaction ───────────────────────────────
+  // ── Modifier ─────────────────────────────────────────────────
+  async function updateTransaction(id, updates) {
+    const { data, error } = await supabase
+      .from("transactions")
+      .update(updates)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (error) { console.error("Erreur modification transaction:", error); return; }
+    setTransactions(prev => prev.map(t => t.id === id ? data : t));
+  }
+
+  // ── Supprimer ────────────────────────────────────────────────
   async function deleteTransaction(id) {
     const { error } = await supabase
       .from("transactions")
       .delete()
       .eq("id", id);
 
-    if (error) {
-      console.error("Erreur suppression transaction:", error);
-      return;
-    }
-
+    if (error) { console.error("Erreur suppression transaction:", error); return; }
     setTransactions(prev => prev.filter(t => t.id !== id));
   }
 
-  return { transactions, loading, addTransaction, deleteTransaction };
+  return { transactions, loading, addTransaction, updateTransaction, deleteTransaction };
 }
