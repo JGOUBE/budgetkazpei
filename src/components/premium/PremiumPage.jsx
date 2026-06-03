@@ -14,82 +14,36 @@ const COLORS = {
   cyan: "#23D3D6",
 }
 
-const FREE_FEATURES = [
-  {
-    icon: "📊",
-    label: "Tableau de bord budget",
-    desc: "Visualisez rapidement vos revenus, dépenses et votre reste à vivre.",
-  },
-  {
-    icon: "➕",
-    label: "Ajout de transactions",
-    desc: "Ajoutez vos revenus et dépenses manuellement en quelques secondes.",
-  },
-  {
-    icon: "🏷️",
-    label: "Suivi des catégories",
-    desc: "Suivez vos dépenses par catégorie pour mieux comprendre où part votre argent.",
-  },
-  {
-    icon: "🌴",
-    label: "Traduction créole",
-    desc: "Utilisez l'application en français ou en créole réunionnais.",
-  },
-  {
-    icon: "🏛️",
-    label: "Aides & droits",
-    desc: "Consultez les aides disponibles et les pistes utiles à La Réunion.",
-  },
-]
+const FEATURE_DESCRIPTIONS_FR = {
+  "Tout le gratuit inclus": "Tu gardes toutes les fonctionnalités gratuites avec les outils avancés en plus.",
+  "🔔 Alertes budget intelligentes": "Sois prévenu quand tu dépasses un budget ou qu'une charge importante approche.",
+  "🤖 Assistant IA personnalisé": "Pose tes questions budget et reçois des conseils adaptés à ta situation.",
+  "🎯 Bons plans locaux exclusifs": "Découvre des aides, offres et bons plans utiles à La Réunion.",
+  "📊 Historique avancé": "Analyse ton évolution sur plusieurs mois pour mieux anticiper.",
+  "🏦 Open Banking — import automatique": "Bientôt : importe automatiquement tes mouvements bancaires.",
+  "📄 Export PDF mensuel": "Télécharge un récapitulatif propre de ton mois en PDF.",
+  "🚀 Nouveautés en avant-première": "Teste les nouvelles fonctionnalités avant tout le monde.",
+}
 
-const PREMIUM_FEATURES = [
-  {
-    icon: "✅",
-    label: "Tout le gratuit inclus",
-    desc: "Vous gardez toutes les fonctionnalités gratuites, avec les outils avancés en plus.",
-  },
-  {
-    icon: "🔔",
-    label: "Alertes budget intelligentes",
-    desc: "Soyez prévenu quand vous dépassez un budget ou qu'une charge importante approche.",
-  },
-  {
-    icon: "🤖",
-    label: "Assistant IA personnalisé",
-    desc: "Posez vos questions budget et recevez des conseils adaptés à votre situation.",
-  },
-  {
-    icon: "🌴",
-    label: "Bons plans locaux exclusifs",
-    desc: "Découvrez des aides, offres et bons plans utiles pour La Réunion.",
-  },
-  {
-    icon: "📈",
-    label: "Historique avancé",
-    desc: "Analysez votre évolution sur plusieurs mois pour mieux anticiper.",
-  },
-  {
-    icon: "🏦",
-    label: "Open Banking — import automatique",
-    desc: "Bientôt : connectez votre compte bancaire pour importer vos mouvements automatiquement.",
-    soon: true,
-  },
-  {
-    icon: "📄",
-    label: "Export PDF mensuel",
-    desc: "Téléchargez un récapitulatif propre de votre mois en PDF.",
-  },
-  {
-    icon: "🚀",
-    label: "Nouveautés en avant-première",
-    desc: "Accédez en priorité aux nouvelles fonctionnalités BudgetKazPei.",
-  },
-]
+const FEATURE_DESCRIPTIONS_KR = {
+  "Tout sa i gratis déza": "Ou gard tout bann fonksion gratis, avèk bann zouti avansé an plis.",
+  "🔔 Alèrt bidjé entèlizan": "Ou lé avèrti kan ou dépass in bidjé ou kan in gro dépans i ariv.",
+  "🤖 Asistan IA pèrsonalizé": "Poz out késtion bidjé é gagn bann konsey adapté pou ou sitiasion.",
+  "🎯 Bon plan lokal èksklizif": "Découv bann éd, lofr é bon plan itil pou La Rényon.",
+  "📊 Istorik avansé": "Gard koman ou bidjé i évolu pou mieux antisipé.",
+  "🏦 Open Banking — import otomatik": "Biento : import otomatikman ou bann mouvman bankèr.",
+  "📄 Èksport PDF chak mwa": "Télécharg in rékap prop pou chak mwa.",
+  "🚀 Nouvo fonksionalité avan tout moun": "Test bann nouvo fonksionalité avan tout moun.",
+}
 
-function FeatureItem({ feature, premium }) {
+function isSoonFeature(text) {
+  return text?.toLowerCase().includes("open banking")
+}
+
+function FeatureItem({ feature, description, soonLabel, premium }) {
   return (
     <div
-      title={feature.desc}
+      title={description}
       style={{
         display: "flex",
         alignItems: "flex-start",
@@ -99,7 +53,9 @@ function FeatureItem({ feature, premium }) {
         cursor: "help",
       }}
     >
-      <span style={{ fontSize: 15, marginTop: 1 }}>{feature.icon}</span>
+      <span style={{ color: premium ? COLORS.yellow : COLORS.green, fontSize: 15 }}>
+        {premium ? "✓" : "✓"}
+      </span>
 
       <div style={{ flex: 1 }}>
         <div
@@ -113,9 +69,9 @@ function FeatureItem({ feature, premium }) {
             color: premium ? COLORS.text : COLORS.muted,
           }}
         >
-          {feature.label}
+          {feature}
 
-          {feature.soon && (
+          {isSoonFeature(feature) && (
             <span
               style={{
                 background: "rgba(252,211,77,.16)",
@@ -127,21 +83,23 @@ function FeatureItem({ feature, premium }) {
                 fontWeight: 900,
               }}
             >
-              Bientôt
+              {soonLabel}
             </span>
           )}
         </div>
 
-        <div
-          style={{
-            marginTop: 4,
-            fontSize: 11,
-            lineHeight: 1.45,
-            color: COLORS.muted,
-          }}
-        >
-          {feature.desc}
-        </div>
+        {description && (
+          <div
+            style={{
+              marginTop: 4,
+              fontSize: 11,
+              lineHeight: 1.45,
+              color: COLORS.muted,
+            }}
+          >
+            {description}
+          </div>
+        )}
       </div>
     </div>
   )
@@ -150,6 +108,12 @@ function FeatureItem({ feature, premium }) {
 export default function PremiumPage({ user, isPremium, t }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
+
+  const featuresFree = t("premium", "featuresFree")
+  const featuresPremium = t("premium", "featuresPremium")
+  const isKreol = t("premium", "perMonth") === "/mwa"
+
+  const descriptions = isKreol ? FEATURE_DESCRIPTIONS_KR : FEATURE_DESCRIPTIONS_FR
 
   async function handleSubscribe() {
     setLoading(true)
@@ -179,6 +143,8 @@ export default function PremiumPage({ user, isPremium, t }) {
       <div style={{ display: "flex", flexDirection: "column", gap: 20, maxWidth: 780 }}>
         <div
           style={{
+            position: "relative",
+            overflow: "hidden",
             background: `linear-gradient(135deg, ${COLORS.yellow}22, ${COLORS.card})`,
             border: `2px solid ${COLORS.yellow}55`,
             borderRadius: 22,
@@ -186,21 +152,28 @@ export default function PremiumPage({ user, isPremium, t }) {
             textAlign: "center",
           }}
         >
-          <div style={{ fontSize: 48, marginBottom: 12 }}>🌴⭐</div>
-
-          <h2
+          <div
             style={{
-              margin: "0 0 8px",
-              fontSize: 26,
-              color: COLORS.yellow,
-              fontFamily: "'DM Serif Display', serif",
+              position: "absolute",
+              right: -20,
+              bottom: -28,
+              fontSize: 140,
+              opacity: 0.045,
+              pointerEvents: "none",
+              transform: "rotate(-12deg)",
             }}
           >
-            Vous êtes Premium
+            🌴
+          </div>
+
+          <div style={{ fontSize: 48, marginBottom: 12 }}>🌴⭐</div>
+
+          <h2 style={{ margin: "0 0 8px", fontSize: 26, color: COLORS.yellow, fontFamily: "'DM Serif Display', serif" }}>
+            {t("premium", "alreadyPremium")}
           </h2>
 
           <p style={{ color: COLORS.muted, fontSize: 14, margin: 0 }}>
-            Vous profitez déjà des fonctionnalités avancées BudgetKazPei.
+            {t("premium", "alreadyPremiumSub")}
           </p>
         </div>
 
@@ -213,11 +186,17 @@ export default function PremiumPage({ user, isPremium, t }) {
           }}
         >
           <h3 style={{ margin: "0 0 16px", fontSize: 16, color: COLORS.text }}>
-            Vos avantages Premium
+            {t("premium", "activePerks")}
           </h3>
 
-          {PREMIUM_FEATURES.map((feature, i) => (
-            <FeatureItem key={i} feature={feature} premium />
+          {(Array.isArray(featuresPremium) ? featuresPremium : []).map((feature, i) => (
+            <FeatureItem
+              key={i}
+              feature={feature}
+              premium
+              soonLabel={t("premium", "openBankingSoon")}
+              description={descriptions[feature]}
+            />
           ))}
         </div>
       </div>
@@ -228,6 +207,8 @@ export default function PremiumPage({ user, isPremium, t }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 22, maxWidth: 820 }}>
       <div
         style={{
+          position: "relative",
+          overflow: "hidden",
           background: `linear-gradient(135deg, ${COLORS.yellow}22, ${COLORS.accent}14, ${COLORS.card})`,
           border: `1px solid ${COLORS.yellow}44`,
           borderRadius: 24,
@@ -235,7 +216,35 @@ export default function PremiumPage({ user, isPremium, t }) {
           textAlign: "center",
         }}
       >
-        <div style={{ fontSize: 44, marginBottom: 10 }}>🌴⭐</div>
+        <div
+          style={{
+            position: "absolute",
+            right: -20,
+            bottom: -25,
+            fontSize: 150,
+            opacity: 0.045,
+            pointerEvents: "none",
+            transform: "rotate(-12deg)",
+          }}
+        >
+          🌴
+        </div>
+
+        <div
+          style={{
+            position: "absolute",
+            left: -15,
+            top: -18,
+            fontSize: 90,
+            opacity: 0.035,
+            pointerEvents: "none",
+            transform: "rotate(20deg)",
+          }}
+        >
+          🍃
+        </div>
+
+        <div style={{ fontSize: 44, marginBottom: 10, position: "relative" }}>🌴⭐</div>
 
         <h2
           style={{
@@ -243,9 +252,10 @@ export default function PremiumPage({ user, isPremium, t }) {
             fontSize: 30,
             color: COLORS.yellow,
             fontFamily: "'DM Serif Display', serif",
+            position: "relative",
           }}
         >
-          Passe en Premium
+          {t("premium", "title")}
         </h2>
 
         <p
@@ -255,11 +265,10 @@ export default function PremiumPage({ user, isPremium, t }) {
             margin: "0 auto 18px",
             lineHeight: 1.65,
             maxWidth: 620,
+            position: "relative",
           }}
         >
-          Reprends le contrôle de ton budget avec des outils avancés, des alertes intelligentes
-          et des avantages pensés pour La Réunion. Anticipe tes dépenses et pilote ton argent
-          plus sereinement.
+          {t("premium", "subtitle")}
         </p>
 
         <div
@@ -268,6 +277,7 @@ export default function PremiumPage({ user, isPremium, t }) {
             fontWeight: 900,
             color: COLORS.yellow,
             fontFamily: "'DM Serif Display', serif",
+            position: "relative",
           }}
         >
           3€
@@ -279,12 +289,12 @@ export default function PremiumPage({ user, isPremium, t }) {
               marginLeft: 5,
             }}
           >
-            / mois
+            {t("premium", "perMonth")}
           </span>
         </div>
 
-        <div style={{ marginTop: 6, fontSize: 12, color: COLORS.muted }}>
-          Sans engagement
+        <div style={{ marginTop: 6, fontSize: 12, color: COLORS.muted, position: "relative" }}>
+          {t("premium", "noCommitment")}
         </div>
       </div>
 
@@ -303,34 +313,39 @@ export default function PremiumPage({ user, isPremium, t }) {
             padding: 22,
           }}
         >
-          <div
-            style={{
-              fontSize: 13,
-              color: COLORS.muted,
-              fontWeight: 900,
-              marginBottom: 14,
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
-            }}
-          >
-            Gratuit
+          <div style={{ fontSize: 13, color: COLORS.muted, fontWeight: 900, marginBottom: 14, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+            {t("premium", "free")}
           </div>
 
-          {FREE_FEATURES.map((feature, i) => (
+          {(Array.isArray(featuresFree) ? featuresFree : []).map((feature, i) => (
             <FeatureItem key={i} feature={feature} />
           ))}
         </div>
 
         <div
           style={{
+            position: "relative",
+            overflow: "hidden",
             background: `linear-gradient(135deg, ${COLORS.yellow}18, ${COLORS.card})`,
             border: `2px solid ${COLORS.yellow}55`,
             borderRadius: 18,
             padding: 22,
-            position: "relative",
             boxShadow: `0 0 30px ${COLORS.yellow}12`,
           }}
         >
+          <div
+            style={{
+              position: "absolute",
+              right: -18,
+              bottom: -28,
+              fontSize: 120,
+              opacity: 0.035,
+              pointerEvents: "none",
+            }}
+          >
+            🌿
+          </div>
+
           <div
             style={{
               position: "absolute",
@@ -345,24 +360,21 @@ export default function PremiumPage({ user, isPremium, t }) {
               letterSpacing: "0.05em",
             }}
           >
-            Recommandé
+            {t("premium", "recommended")}
           </div>
 
-          <div
-            style={{
-              fontSize: 13,
-              color: COLORS.yellow,
-              fontWeight: 900,
-              marginBottom: 14,
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
-            }}
-          >
-            Premium — 3€/mois
+          <div style={{ fontSize: 13, color: COLORS.yellow, fontWeight: 900, marginBottom: 14, textTransform: "uppercase", letterSpacing: "0.08em", position: "relative" }}>
+            {t("premium", "premiumLabel")}
           </div>
 
-          {PREMIUM_FEATURES.map((feature, i) => (
-            <FeatureItem key={i} feature={feature} premium />
+          {(Array.isArray(featuresPremium) ? featuresPremium : []).map((feature, i) => (
+            <FeatureItem
+              key={i}
+              feature={feature}
+              premium
+              soonLabel={t("premium", "openBankingSoon")}
+              description={descriptions[feature]}
+            />
           ))}
         </div>
       </div>
@@ -386,9 +398,7 @@ export default function PremiumPage({ user, isPremium, t }) {
         onClick={handleSubscribe}
         disabled={loading}
         style={{
-          background: loading
-            ? COLORS.muted
-            : `linear-gradient(135deg, ${COLORS.yellow}, ${COLORS.accent})`,
+          background: loading ? COLORS.muted : `linear-gradient(135deg, ${COLORS.yellow}, ${COLORS.accent})`,
           border: "none",
           borderRadius: 16,
           padding: "17px 0",
@@ -400,14 +410,12 @@ export default function PremiumPage({ user, isPremium, t }) {
           boxShadow: `0 8px 28px ${COLORS.yellow}33`,
           transition: "all 0.2s",
         }}
-        onMouseEnter={e => !loading && (e.currentTarget.style.transform = "scale(1.015)")}
-        onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
       >
-        {loading ? "Redirection..." : "Débloquer Premium • 3€/mois"}
+        {loading ? t("premium", "subscribing") : t("premium", "subscribe")}
       </button>
 
       <p style={{ textAlign: "center", fontSize: 11, color: COLORS.muted, margin: 0 }}>
-        Paiement sécurisé via Stripe. Résiliation possible à tout moment.
+        {t("premium", "securePayment")}
       </p>
     </div>
   )
