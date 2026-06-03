@@ -420,9 +420,39 @@ export default function Dashboard({ stats, byCategory, pieData, transactions, t,
       </div>
 
       <TropicalCard variant="gold" texture="🌿" style={{ padding: isMobile ? 16 : 24 }}>
-        <h3 style={{ margin: "0 0 20px", fontSize: 16, color: COLORS.whiteSoft, fontWeight: 800, textAlign: "center" }}>
-          {t("dashboard", "budgetByCategory")}
-        </h3>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: isMobile ? "flex-start" : "center",
+            gap: 12,
+            marginBottom: 20,
+            flexDirection: isMobile ? "column" : "row",
+          }}
+        >
+          <h3 style={{ margin: 0, fontSize: 16, color: COLORS.whiteSoft, fontWeight: 800 }}>
+            {t("dashboard", "budgetByCategory")}
+          </h3>
+
+          <button
+            type="button"
+            onClick={() => alert("Fonction Premium : personnalisez vos budgets et recevez des alertes.")}
+            style={{
+              background: "linear-gradient(135deg, rgba(252,211,77,.22), rgba(245,158,11,.14))",
+              border: "1px solid rgba(252,211,77,.35)",
+              borderRadius: 999,
+              color: "#FDE68A",
+              cursor: "pointer",
+              padding: "7px 12px",
+              fontSize: 12,
+              fontWeight: 900,
+              fontFamily: "inherit",
+              boxShadow: "0 0 18px rgba(245,158,11,.10)",
+            }}
+          >
+            🔒 Budgets personnalisés
+          </button>
+        </div>
         <div
           style={{
             display: "grid",

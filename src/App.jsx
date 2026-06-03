@@ -5,7 +5,7 @@ import { useTransactions } from "./hooks/useTransactions"
 import { useBudgets } from "./hooks/useBudgets"
 import { useSubscription } from "./hooks/useSubscription"
 import { useUserAbonnements } from "./hooks/useUserAbonnements"
-
+import { useCustomBudgets } from "./hooks/useCustomBudgets"
 import LoginPage from "./components/auth/LoginPage"
 import RegisterPage from "./components/auth/RegisterPage"
 import Sidebar from "./components/sidebar/Sidebar"
@@ -57,6 +57,7 @@ export default function App() {
   const { lang, toggleLang, t } = useLanguage()
   const { transactions, addTransaction, updateTransaction, deleteTransaction } = useTransactions(user?.id)
   const { isPremium, activatePremium } = useSubscription(user?.id)
+  const { customBudgets, saveBudgets } = useCustomBudgets(user?.id, isPremium)
   const {
     abonnements,
     updateAbonnement,
@@ -75,7 +76,7 @@ export default function App() {
     tauxChargesFixes,
     byCategory,
     pieData,
-  } = useBudgets(transactions, abonnements)
+  } = useBudgets(transactions, abonnements, customBudgets)
 
   useEffect(() => {
     setMounted(true)
@@ -337,19 +338,29 @@ export default function App() {
             </button>
           </div>
         )}
-
-        {activeNav === "dashboard" && (
-          <Dashboard
-            stats={{ revenus, depenses, solde, chargesFixes, depensesVariables, resteAVivre, tauxChargesFixes }}
-            byCategory={byCategory}
-            pieData={pieData}
-            transactions={transactions}
-            t={t}
-            isMobile={isMobile}
-          />
-        )}
-
-        {activeNav === "depenses" && (
+{activeNav === "dashboard" && (
+  <Dashboard
+    stats={{
+      revenus,
+      depenses,
+      solde,
+      chargesFixes,
+      depensesVariables,
+      resteAVivre,
+      tauxChargesFixes,
+    }}
+    byCategory={byCategory}
+    pieData={pieData}
+    transactions={transactions}
+    t={t}
+    isMobile={isMobile}
+    isPremium={isPremium}
+    customBudgets={customBudgets}
+    onSaveBudgets={saveBudgets}
+    onGoPremium={() => setActiveNav("premium")}
+  />
+)}
+            {activeNav === "depenses" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div
               style={{

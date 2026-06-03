@@ -1,35 +1,72 @@
-import { useState, useEffect } from 'react'
-import { supabase } from '../services/supabase'
+import { useEffect, useState } from "react"
+import { supabase } from "../services/supabase"
 
 export function useSubscription(userId) {
   const [isPremium, setIsPremium] = useState(false)
-  const [loading, setLoading]     = useState(true)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!userId) return
+    let mounted = true
 
     async function checkPremium() {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('premium')
-        .eq('id', userId)
-        .single()
+      if (!userId) {
+        if (mounted) {
+          setIsPremium(false)
+          setLoading(false)
+        }
+        return
+      }
 
-      if (!error && data) setIsPremium(data.premium)
-      setLoading(false)
+      setLoading(true)
+
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("premium")
+          .eq("id", userId)
+          .maybeSingle()
+
+        if (!mounted) return
+
+        if (error) {
+          console.error("Erreur useSubscription:", error.message)
+          setIsPremium(false)
+        } else {
+          setIsPremium(Boolean(data?.premium))
+        }
+      } catch (err) {
+        console.error("Erreur useSubscription:", err)
+        if (mounted) setIsPremium(false)
+      } finally {
+        if (mounted) setLoading(false)
+      }
     }
 
     checkPremium()
+
+    return () => {
+      mounted = false
+    }
   }, [userId])
 
   async function activatePremium() {
-    const { error } = await supabase
-      .from('profiles')
-      .update({ premium: true })
-      .eq('id', userId)
+    if (!userId) return
 
-    if (!error) setIsPremium(true)
+    const { error } = await supabase
+      .from("profiles")
+      .update({ premium: true })
+      .eq("id", userId)
+
+    if (!error) {
+      setIsPremium(true)
+    } else {
+      console.error("Erreur activatePremium:", error.message)
+    }
   }
 
-  return { isPremium, loading, activatePremium }
+  return {
+    isPremium,
+    loading,
+    activatePremium,
+  }
 }
