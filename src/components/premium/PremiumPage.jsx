@@ -62,71 +62,106 @@ function Watermark({ size = 210, right = -45, bottom = -55 }) {
 }
 
 function FeatureItem({ feature, description, soonLabel, premium }) {
+  const [open, setOpen] = useState(false)
+
   return (
     <div
-      title={description}
       style={{
-        display: "flex",
-        alignItems: "center",
-        gap: 9,
         padding: "10px 0",
         borderBottom: `1px solid ${COLORS.border}`,
-        cursor: description ? "help" : "default",
         position: "relative",
         zIndex: 1,
       }}
     >
-      <span style={{ color: premium ? COLORS.yellow : COLORS.green, fontSize: 15, fontWeight: 900 }}>
-        ✓
-      </span>
-
-      <span
+      <div
         style={{
-          flex: 1,
-          fontSize: 13,
-          color: premium ? COLORS.text : COLORS.muted,
-          fontWeight: premium ? 800 : 700,
-          lineHeight: 1.3,
+          display: "flex",
+          alignItems: "center",
+          gap: 9,
         }}
       >
-        {feature}
-      </span>
-
-      {description && (
         <span
           style={{
-            width: 18,
-            height: 18,
-            borderRadius: 999,
-            border: "1px solid rgba(142,164,197,.35)",
+            color: premium ? COLORS.yellow : COLORS.green,
+            fontSize: 15,
+            fontWeight: 900,
+          }}
+        >
+          ✓
+        </span>
+
+        <span
+          style={{
+            flex: 1,
+            fontSize: 13,
+            color: premium ? COLORS.text : COLORS.muted,
+            fontWeight: premium ? 800 : 700,
+            lineHeight: 1.3,
+          }}
+        >
+          {feature}
+        </span>
+
+        {isOpenBanking(feature) && (
+          <span
+            style={{
+              background: "rgba(252,211,77,.16)",
+              border: "1px solid rgba(252,211,77,.35)",
+              color: COLORS.yellow,
+              borderRadius: 999,
+              padding: "3px 8px",
+              fontSize: 10,
+              fontWeight: 900,
+              flexShrink: 0,
+            }}
+          >
+            {soonLabel}
+          </span>
+        )}
+
+        {description && (
+          <button
+            type="button"
+            onClick={() => setOpen(!open)}
+            title={description}
+            style={{
+              width: 22,
+              height: 22,
+              borderRadius: 999,
+              border: "1px solid rgba(142,164,197,.35)",
+              background: open ? "rgba(252,211,77,.18)" : "rgba(15,30,56,.55)",
+              color: open ? COLORS.yellow : COLORS.muted,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 12,
+              fontWeight: 900,
+              flexShrink: 0,
+              cursor: "pointer",
+              fontFamily: "inherit",
+            }}
+          >
+            i
+          </button>
+        )}
+      </div>
+
+      {open && description && (
+        <div
+          style={{
+            marginTop: 8,
+            marginLeft: 24,
+            background: "rgba(10,22,40,.75)",
+            border: "1px solid rgba(56,189,248,.22)",
+            borderRadius: 12,
+            padding: "9px 11px",
             color: COLORS.muted,
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
             fontSize: 11,
-            fontWeight: 900,
-            flexShrink: 0,
+            lineHeight: 1.45,
           }}
         >
-          i
-        </span>
-      )}
-
-      {isOpenBanking(feature) && (
-        <span
-          style={{
-            background: "rgba(252,211,77,.16)",
-            border: "1px solid rgba(252,211,77,.35)",
-            color: COLORS.yellow,
-            borderRadius: 999,
-            padding: "3px 8px",
-            fontSize: 10,
-            fontWeight: 900,
-            flexShrink: 0,
-          }}
-        >
-          {soonLabel}
-        </span>
+          {description}
+        </div>
       )}
     </div>
   )
