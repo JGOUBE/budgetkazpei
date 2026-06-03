@@ -18,7 +18,6 @@ const COLORS = {
   text: "#F1F5F9",
   yellow: "#FCD34D",
   cyan: "#23D3D6",
-  red: "#EF4444",
 }
 
 const NAV_ITEMS = [
@@ -35,7 +34,6 @@ export default function Sidebar({
   onSignOut,
   user,
   isPremium,
-  lang,
   t,
 }) {
   const prenom =
@@ -43,8 +41,6 @@ export default function Sidebar({
     user?.user_metadata?.full_name ||
     user?.email?.split("@")[0] ||
     "Utilisateur"
-
-  const signOutLabel = lang === "kr" ? "Dékonèkté" : "Se déconnecter"
 
   return (
     <aside
@@ -232,35 +228,34 @@ export default function Sidebar({
             {t("bonPlan", "message")}
           </div>
         </div>
-      </div>
 
-      <button
-        type="button"
-        onClick={onSignOut}
-        style={{
-          flexShrink: 0,
-          width: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 8,
-          marginTop: 10,
-          padding: "11px 13px",
-          borderRadius: 14,
-          border: "1px solid rgba(239,68,68,.38)",
-          background:
-            "linear-gradient(135deg, rgba(239,68,68,.13), rgba(15,30,56,.95))",
-          color: "#FCA5A5",
-          cursor: "pointer",
-          fontSize: 14,
-          fontWeight: 900,
-          fontFamily: "inherit",
-          boxShadow: "0 -8px 20px rgba(10,22,40,.55)",
-        }}
-      >
-        <LogOut size={17} />
-        {signOutLabel}
-      </button>
+        <button
+          type="button"
+          onClick={onSignOut}
+          style={{
+            width: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+            marginTop: 12,
+            marginBottom: 90,
+            padding: "11px 13px",
+            borderRadius: 14,
+            border: "1px solid rgba(239,68,68,.38)",
+            background:
+              "linear-gradient(135deg, rgba(239,68,68,.13), rgba(15,30,56,.95))",
+            color: "#FCA5A5",
+            cursor: "pointer",
+            fontSize: 14,
+            fontWeight: 900,
+            fontFamily: "inherit",
+          }}
+        >
+          <LogOut size={17} />
+          {t("nav", "signOut")}
+        </button>
+      </div>
     </aside>
   )
 }

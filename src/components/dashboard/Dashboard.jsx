@@ -305,7 +305,7 @@ export default function Dashboard({ stats, byCategory, pieData, transactions, t,
           texture="🌴"
           color={solde >= 0 ? "#5EEAD4" : COLORS.red}
           sub={t("dashboard", "updatedToday")}
-          actionLabel="Détails"
+          actionLabel={t("dashboard", "details")}
           onAction={() => toggleDetails("solde")}
         />
         <StatCard
@@ -316,7 +316,7 @@ export default function Dashboard({ stats, byCategory, pieData, transactions, t,
           texture="🍃"
           color="#BEF264"
           sub={t("dashboard", "salaryAndAids")}
-          actionLabel="Détails"
+          actionLabel={t("dashboard", "details")}
           onAction={() => toggleDetails("revenus")}
         />
         <StatCard
@@ -327,7 +327,7 @@ export default function Dashboard({ stats, byCategory, pieData, transactions, t,
           texture="🌞"
           color="#FDBA74"
           sub={`${ofIncome}% ${t("dashboard", "ofIncome")}`}
-          actionLabel="Détails"
+          actionLabel={t("dashboard", "details")}
           onAction={() => toggleDetails("depenses")}
         />
       </div>

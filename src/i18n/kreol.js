@@ -6,6 +6,7 @@ const kreol = {
     abonnements: "Abonman",
     profil: "Mon Profil",
     premium: "Vir Premium",
+    signOut: "Sorti",
   },
   header: {
     tagline: "Fasilman gèr ou larzan",
@@ -22,6 +23,7 @@ const kreol = {
     repartition: "Koman larzan i sorti",
     recentTransactions: "Dèrnyé mouvman",
     budgetByCategory: "Bidjé par katégori",
+    details: "Detay",
   },
   categories: {
     alimentaire: "Manzé",
@@ -93,41 +95,44 @@ const kreol = {
     loading: "Sharjman profil...",
   },
   premium: {
-    title: "Vir Premium",
-    subtitle: "Lapli ki gèr ou bidjé ÉK trouvé bann éd ou kapab gayn à La Réyonion. An mwayèn nou bann utilizatèr i découvr 500€+ éd. Alèrt bidjé, asistan IA, similatèr éd pèrsonalizé",
-    perMonth: "/mwa",
-    recommended: "KONSÉYÉ",
-    free: "GRATIS",
-    premiumLabel: "⭐ PREMIUM — 3€/MWA",
-    subscribe: "⭐ Abonné pou 3€/mwa",
-    subscribing: "Rédirèksion...",
-    securePayment: "Payeman sékirizé par Stripe · Réziliyabl nenpor ki lèr",
-    alreadyPremium: "Ou lé Premium !",
-    alreadyPremiumSub: "Ou bénéfisié tout bann fonksionalité avansé BudgetKazPei.",
-    activePerks: "✅ Ou bann avantaj aktif",
-    featuresFree: [
-      "Tablo bidjé manyèl",
-      "Azouté bann mouvman",
-      "Swiv bann katégori",
-      "Éd & drwa",
-      "Trakdiksion kréol",
-      "Paz profil",
-    ],
-    featuresPremium: [
-      "Tout gratis inkli",
-      "🏦 Open Banking — inport otomatik",
-      "🎯 Bon plan lokal èksklizif",
-      "🤖 Asistan IA pèrsonalizé",
-      "📊 Istorik sur 12 mwa",
-      "🔔 Alèrt intélijant",
-      "📄 Èksport PDF chak mwa",
-    ],
-  },
-  signout: "Dékonèkté",
-  common: {
-    perMonth: "€/mwa",
-    perYear: "€/an",
-  },
-};
+  title: "Pas an Premium",
+  subtitle:
+    "Pran kontrol su ou bidjé avèk bann zouti avansé, bann alèrt entèlizan é bann avantaj fèt pou La Rényon.",
+  perMonth: "/mwa",
+  noCommitment: "San langazman",
+  recommended: "NOU KONSEY",
+  free: "GRATIS",
+  premiumLabel: "⭐ PREMIUM — 3€/MWA",
+  subscribe: "⭐ Pas an Premium • 3€/mwa",
+  subscribing: "Rédirèksion...",
+  securePayment: "Payman sékirizé par Stripe · Ou pé arrêt kan ou vlé",
 
+  alreadyPremium: "Ou lé Premium !",
+  alreadyPremiumSub:
+    "Ou bénéfisié déza tout bann fonksionalité avansé BudgetKazPei.",
+  activePerks: "✅ Bann avantaj actif",
+
+  openBankingSoon: "Biento",
+
+  featuresFree: [
+    "Tablo bidjé",
+    "Azout mouvman",
+    "Swiv katégori",
+    "Éd & drwa",
+    "Version kréol",
+    "Profil utilizatèr",
+  ],
+
+  featuresPremium: [
+    "Tout sa i gratis déza",
+    "🔔 Alèrt bidjé entèlizan",
+    "🤖 Asistan IA pèrsonalizé",
+    "🎯 Bon plan lokal èksklizif",
+    "📊 Istorik avansé",
+    "🏦 Open Banking — import otomatik",
+    "📄 Èksport PDF chak mwa",
+    "🚀 Nouvo fonksionalité avan tout moun",
+  ],
+},
+};
 export default kreol;

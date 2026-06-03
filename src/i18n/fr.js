@@ -6,6 +6,7 @@ const fr = {
     abonnements: "Abonnements",
     profil: "Mon Profil",
     premium: "Passer Premium",
+    signOut: "Se déconnecter",
   },
   header: {
     tagline: "Fasilman gère ou larzan",
@@ -22,6 +23,7 @@ const fr = {
     repartition: "Répartition des dépenses",
     recentTransactions: "Dernières transactions",
     budgetByCategory: "Budgets par catégorie",
+    details: "Détails",
   },
   categories: {
     alimentaire: "Alimentaire",
@@ -93,41 +95,45 @@ const fr = {
     loading: "Chargement du profil...",
   },
   premium: {
-    title: "Passe en Premium",
-    subtitle: "L'app qui gère ton budget ET trouve les aides auxquelles tu as droit à La Réunion. En moyenne nos utilisateurs découvrent 500€+ d'aides non réclamées. Alertes budget, assistant IA, simulateur d'aides personnalisé.",
-    perMonth: "/mois",
-    recommended: "RECOMMANDÉ",
-    free: "GRATUIT",
-    premiumLabel: "⭐ PREMIUM — 3€/MOIS",
-    subscribe: "⭐ S'abonner pour 3€/mois",
-    subscribing: "Redirection...",
-    securePayment: "Paiement sécurisé par Stripe · Résiliable à tout moment",
-    alreadyPremium: "Tu es Premium !",
-    alreadyPremiumSub: "Tu bénéficies de toutes les fonctionnalités avancées de BudgetKazPei.",
-    activePerks: "✅ Tes avantages actifs",
-    featuresFree: [
-      "Dashboard budget manuel",
-      "Ajout de transactions",
-      "Suivi des catégories",
-      "Aides & droits",
-      "Traduction créole",
-      "Page profil",
-    ],
-    featuresPremium: [
-      "Tout le gratuit inclus",
-      "🏦 Open Banking — import automatique",
-      "🎯 Bons plans locaux exclusifs",
-      "🤖 Assistant IA personnalisé",
-      "📊 Historique sur 12 mois",
-      "🔔 Alertes intelligentes",
-      "📄 Export PDF mensuel",
-    ],
-  },
-  signout: "Se déconnecter",
-  common: {
-    perMonth: "€/mois",
-    perYear: "€/an",
-  },
+  title: "Passe en Premium",
+  subtitle:
+    "Reprends le contrôle de ton budget avec des outils avancés, des alertes intelligentes et des avantages pensés pour La Réunion.",
+  perMonth: "/mois",
+  noCommitment: "Sans engagement",
+  recommended: "RECOMMANDÉ",
+  free: "GRATUIT",
+  premiumLabel: "⭐ PREMIUM — 3€/MOIS",
+  subscribe: "⭐ Débloquer Premium • 3€/mois",
+  subscribing: "Redirection...",
+  securePayment: "Paiement sécurisé par Stripe · Résiliable à tout moment",
+
+  alreadyPremium: "Tu es Premium !",
+  alreadyPremiumSub:
+    "Tu bénéficies déjà de toutes les fonctionnalités avancées de BudgetKazPei.",
+  activePerks: "✅ Tes avantages actifs",
+
+  openBankingSoon: "Bientôt",
+
+  featuresFree: [
+    "Dashboard budget",
+    "Ajout de transactions",
+    "Suivi des catégories",
+    "Aides & droits",
+    "Version créole",
+    "Profil utilisateur",
+  ],
+
+  featuresPremium: [
+    "Tout le gratuit inclus",
+    "🔔 Alertes budget intelligentes",
+    "🤖 Assistant IA personnalisé",
+    "🎯 Bons plans locaux exclusifs",
+    "📊 Historique avancé",
+    "🏦 Open Banking — import automatique",
+    "📄 Export PDF mensuel",
+    "🚀 Nouveautés en avant-première",
+  ],
+},
 };
 
 export default fr;
