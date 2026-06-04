@@ -1,12 +1,13 @@
 export const CATEGORIES = [
   { id: "alimentaire", emoji: "🛒", color: "#F97316", budget: 600 },
-  { id: "logement",    emoji: "🏠", color: "#38BDF8", budget: 800 },
-  { id: "transport",   emoji: "🚗", color: "#A78BFA", budget: 250 },
-  { id: "energie",     emoji: "⚡", color: "#FCD34D", budget: 120 },
-  { id: "telecom",     emoji: "📱", color: "#22C55E", budget: 80  },
-  { id: "sante",       emoji: "💊", color: "#F472B6", budget: 100 },
-  { id: "loisirs",     emoji: "🌴", color: "#34D399", budget: 150 },
-  { id: "divers",      emoji: "📦", color: "#94A3B8", budget: 200 },
+  { id: "logement", emoji: "🏠", color: "#38BDF8", budget: 800 },
+  { id: "transport", emoji: "🚗", color: "#A78BFA", budget: 250 },
+  { id: "energie", emoji: "⚡", color: "#FCD34D", budget: 120 },
+  { id: "telecom", emoji: "📱", color: "#22C55E", budget: 80 },
+  { id: "assurances", emoji: "🛡️", color: "#60A5FA", budget: 150 },
+  { id: "sante", emoji: "💊", color: "#F472B6", budget: 100 },
+  { id: "loisirs", emoji: "🌴", color: "#34D399", budget: 150 },
+  { id: "divers", emoji: "📦", color: "#94A3B8", budget: 200 },
 ];
 
 export const ABONNEMENTS = [

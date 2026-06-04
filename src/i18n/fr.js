@@ -58,12 +58,13 @@ const fr = {
     alimentaire: "Alimentaire",
     logement: "Logement",
     transport: "Transport",
-    energie: "Énergie (EDF OI)",
-    telecom: "Télécom",
+    energie: "Énergie (EDF EAU)",
+    telecom: "Téléphonie",
     sante: "Santé",
     loisirs: "Loisirs",
     divers: "Divers",
     revenus: "Revenus",
+    assurances: "Assurances",
   },
   transactions: {
     addTitle: "Nouvelle transaction",
@@ -122,6 +123,7 @@ const fr = {
     saving: "Sauvegarde...",
     addFixedCharge: "+ Ajouter une charge fixe",
     reset: "Réinitialiser",
+    category: "Catégorie",
   },
   bonPlan: {
     title: "💡 Bon plan",

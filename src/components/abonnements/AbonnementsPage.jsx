@@ -35,6 +35,7 @@ const CATEGORY_META = {
   sante: { emoji: "💊", color: "#F472B6" },
   loisirs: { emoji: "🌴", color: "#34D399" },
   divers: { emoji: "📦", color: "#94A3B8" },
+  assurances: { emoji: "🛡️", color: "#60A5FA" },
 }
 
 function totalMensuel(abonnements) {
@@ -244,13 +245,20 @@ export default function AbonnementsPage({
                   </label>
 
                   <input
-                    value={abonnement.nom || ""}
-                    onChange={e =>
-                      saveField(abonnement.id, { nom: e.target.value })
-                    }
-                    placeholder="Ex: Loyer, EDF, Internet, Crédit voiture"
-                    style={inputStyle}
-                  />
+                  value={abonnement.nom || ""}
+                  onChange={e => {
+                    onUpdate(
+                      abonnement.id,
+                      { nom: e.target.value },
+                      { localOnly: true }
+                    )
+                  }}
+                  onBlur={e => {
+                    saveField(abonnement.id, { nom: e.target.value })
+                  }}
+                  placeholder="Ex: Loyer, EDF, Internet, Crédit voiture"
+                  style={inputStyle}
+                />
                 </div>
               </div>
 
