@@ -19,6 +19,16 @@ const COLORS = {
   whiteSoft: "rgba(248,250,252,.82)",
 }
 
+function tr(t, section, key, fallback) {
+  const value = t?.(section, key)
+  return value || fallback
+}
+
+function moneyValue(value) {
+  return Number(String(value ?? 0).replace(",", ".")) || 0
+}
+
+
 function StatCard({ label, value, sub, color, emoji, actionLabel, onAction, variant, texture }) {
   const theme = TROPICAL_VARIANTS[variant] || TROPICAL_VARIANTS.lagoon
 
@@ -84,32 +94,104 @@ function StatCard({ label, value, sub, color, emoji, actionLabel, onAction, vari
   )
 }
 
-function DetailItem({ icon, label, value, color }) {
+function DetailItem({ icon, label, value, color, onClick, info }) {
   return (
-    <div
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={!onClick}
       style={{
+        width: "100%",
+        background: "transparent",
+        border: "none",
+        borderBottom: "1px solid rgba(255,255,255,.08)",
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
         gap: 12,
         padding: "10px 0",
-        borderBottom: "1px solid rgba(255,255,255,.08)",
+        cursor: onClick ? "pointer" : "default",
+        fontFamily: "inherit",
+        textAlign: "left",
       }}
     >
       <span style={{ color: COLORS.text, fontSize: 14 }}>
         <span style={{ marginRight: 8 }}>{icon}</span>
         {label}
+        {info && <span style={{ marginLeft: 6, color: COLORS.blue, fontWeight: 900 }}>ⓘ</span>}
       </span>
       <strong style={{ color, fontSize: 15 }}>{value}</strong>
+    </button>
+  )
+}
+
+function DetailList({ title, items, emptyText, total, color }) {
+  return (
+    <div
+      style={{
+        marginTop: 12,
+        background: "rgba(10,22,40,.42)",
+        border: "1px solid rgba(255,255,255,.08)",
+        borderRadius: 14,
+        padding: 12,
+      }}
+    >
+      <div style={{ fontSize: 13, fontWeight: 900, color: COLORS.text, marginBottom: 8 }}>
+        {title}
+      </div>
+
+      {items.length === 0 ? (
+        <div style={{ fontSize: 12, color: COLORS.muted }}>{emptyText}</div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+          {items.map((item, index) => (
+            <div
+              key={`${item.label}-${index}`}
+              style={{ display: "flex", justifyContent: "space-between", gap: 12, fontSize: 12 }}
+            >
+              <span
+                style={{
+                  color: COLORS.whiteSoft,
+                  minWidth: 0,
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                {item.icon ? `${item.icon} ` : ""}
+                {item.label}
+              </span>
+              <strong style={{ color, flexShrink: 0 }}>{formatMontant(item.amount)}</strong>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div
+        style={{
+          marginTop: 10,
+          paddingTop: 10,
+          borderTop: "1px solid rgba(255,255,255,.08)",
+          display: "flex",
+          justifyContent: "space-between",
+          fontSize: 13,
+          fontWeight: 900,
+        }}
+      >
+        <span style={{ color: COLORS.text }}>Total</span>
+        <span style={{ color }}>{formatMontant(total)}</span>
+      </div>
     </div>
   )
 }
 
-function SoldeDetails({ stats, onClose }) {
+function SoldeDetails({ stats, onClose, t }) {
   return (
     <TropicalCard variant="lagoon" texture="🌴">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 6 }}>
-        <h3 style={{ margin: 0, color: COLORS.text, fontSize: 16 }}>Détail du solde disponible</h3>
+        <h3 style={{ margin: 0, color: COLORS.text, fontSize: 16 }}>
+          {tr(t, "dashboard", "soldeDetailsTitle", "Détail du solde disponible")}
+        </h3>
         <button
           type="button"
           onClick={onClose}
@@ -124,13 +206,13 @@ function SoldeDetails({ stats, onClose }) {
             fontFamily: "inherit",
           }}
         >
-          Fermer
+          {tr(t, "common", "close", "Fermer")}
         </button>
       </div>
 
-      <DetailItem icon="📊" label="Charges fixes ce mois-ci" value={formatMontant(stats.chargesFixes || 0)} color={COLORS.accentSoft} />
-      <DetailItem icon="💰" label="Dépenses variables" value={formatMontant(stats.depensesVariables || 0)} color={COLORS.blue} />
-      <DetailItem icon="🎯" label="Reste à vivre" value={formatMontant(stats.resteAVivre || 0)} color={(stats.resteAVivre || 0) >= 0 ? COLORS.green : COLORS.red} />
+      <DetailItem icon="📊" label={tr(t, "dashboard", "fixedChargesMonth", "Charges fixes ce mois-ci")} value={formatMontant(stats.chargesFixes || 0)} color={COLORS.accentSoft} />
+      <DetailItem icon="💰" label={tr(t, "dashboard", "variableExpenses", "Dépenses variables")} value={formatMontant(stats.depensesVariables || 0)} color={COLORS.blue} />
+      <DetailItem icon="🎯" label={tr(t, "dashboard", "resteAVivre", "Reste à vivre")} value={formatMontant(stats.resteAVivre || 0)} color={(stats.resteAVivre || 0) >= 0 ? COLORS.green : COLORS.red} />
 
       <div
         style={{
@@ -144,13 +226,17 @@ function SoldeDetails({ stats, onClose }) {
           lineHeight: 1.5,
         }}
       >
-        Vos charges fixes représentent <strong style={{ color: COLORS.blue }}>{stats.tauxChargesFixes || 0} %</strong> de vos revenus.
+        {tr(t, "dashboard", "fixedChargesPercentText", "Vos charges fixes représentent")}{" "}
+        <strong style={{ color: COLORS.blue }}>{stats.tauxChargesFixes || 0} %</strong>{" "}
+        {tr(t, "dashboard", "ofYourIncome", "de vos revenus.")}
       </div>
     </TropicalCard>
   )
 }
 
-function RevenusDetails({ stats, onClose }) {
+function RevenusDetails({ stats, transactions = [], abonnements = [], onClose, t }) {
+  const [openedLine, setOpenedLine] = useState(null)
+
   const revenus = stats.revenus || 0
   const chargesFixes = stats.chargesFixes || 0
   const depensesVariables = stats.depensesVariables || 0
@@ -158,10 +244,34 @@ function RevenusDetails({ stats, onClose }) {
   const totalDepenses = chargesFixes + depensesVariables
   const tauxDisponible = revenus > 0 ? Math.max((resteAVivre / revenus) * 100, 0).toFixed(0) : 0
 
+  const revenusItems = transactions
+    .filter(tx => Number(tx.amount) > 0)
+    .map(tx => ({
+      label: tx.label || tx.nom || tr(t, "dashboard", "income", "Revenu"),
+      icon: tx.icon || "💵",
+      amount: Number(tx.amount) || 0,
+    }))
+
+  const chargesItems = abonnements.map(abonnement => ({
+    label: abonnement.nom || tr(t, "dashboard", "fixedCharge", "Charge fixe"),
+    icon: abonnement.emoji || "📌",
+    amount: moneyValue(abonnement.montant),
+  }))
+
+  const depensesItems = transactions
+    .filter(tx => Number(tx.amount) < 0)
+    .map(tx => ({
+      label: tx.label || tx.nom || tr(t, "dashboard", "expense", "Dépense"),
+      icon: tx.icon || "🛒",
+      amount: Math.abs(Number(tx.amount) || 0),
+    }))
+
   return (
     <TropicalCard variant="green" texture="🍃">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 6 }}>
-        <h3 style={{ margin: 0, color: COLORS.text, fontSize: 16 }}>Détail des revenus du mois</h3>
+        <h3 style={{ margin: 0, color: COLORS.text, fontSize: 16 }}>
+          {tr(t, "dashboard", "revenusDetailsTitle", "Détail des revenus du mois")}
+        </h3>
         <button
           type="button"
           onClick={onClose}
@@ -176,14 +286,93 @@ function RevenusDetails({ stats, onClose }) {
             fontFamily: "inherit",
           }}
         >
-          Fermer
+          {tr(t, "common", "close", "Fermer")}
         </button>
       </div>
 
-      <DetailItem icon="💵" label="Revenus enregistrés" value={formatMontant(revenus)} color="#BEF264" />
-      <DetailItem icon="📌" label="Charges fixes prévues" value={formatMontant(chargesFixes)} color={COLORS.accentSoft} />
-      <DetailItem icon="🛒" label="Dépenses variables" value={formatMontant(depensesVariables)} color={COLORS.blue} />
-      <DetailItem icon="🎯" label="Reste disponible estimé" value={formatMontant(resteAVivre)} color={resteAVivre >= 0 ? COLORS.green : COLORS.red} />
+      <DetailItem
+        icon="💵"
+        label={tr(t, "dashboard", "revenusRegistered", "Revenus enregistrés")}
+        value={formatMontant(revenus)}
+        color="#BEF264"
+        onClick={() => setOpenedLine(openedLine === "revenus" ? null : "revenus")}
+        info
+      />
+
+      {openedLine === "revenus" && (
+        <DetailList
+          title={tr(t, "dashboard", "revenusListTitle", "Liste des revenus")}
+          items={revenusItems}
+          emptyText={tr(t, "dashboard", "noRevenus", "Aucun revenu enregistré ce mois-ci.")}
+          total={revenus}
+          color="#BEF264"
+        />
+      )}
+
+      <DetailItem
+        icon="📌"
+        label={tr(t, "dashboard", "fixedCharges", "Charges fixes prévues")}
+        value={formatMontant(chargesFixes)}
+        color={COLORS.accentSoft}
+        onClick={() => setOpenedLine(openedLine === "charges" ? null : "charges")}
+        info
+      />
+
+      {openedLine === "charges" && (
+        <>
+          <DetailList
+            title={tr(t, "dashboard", "fixedChargesListTitle", "Liste des charges fixes")}
+            items={chargesItems}
+            emptyText={tr(t, "dashboard", "noFixedCharges", "Aucune charge fixe enregistrée.")}
+            total={chargesFixes}
+            color={COLORS.accentSoft}
+          />
+
+          <div
+            style={{
+              marginTop: 10,
+              background: "rgba(251,146,60,.10)",
+              border: "1px solid rgba(251,146,60,.22)",
+              borderRadius: 12,
+              padding: "10px 12px",
+              color: COLORS.text,
+              fontSize: 12,
+              lineHeight: 1.5,
+            }}
+          >
+            <strong style={{ color: COLORS.accentSoft }}>
+              {tr(t, "dashboard", "fixedChargesInfoTitle", "À savoir :")}
+            </strong>{" "}
+            {tr(
+              t,
+              "dashboard",
+              "fixedChargesInfo",
+              "Les charges fixes regroupent les abonnements, le loyer, les crédits et toutes les dépenses récurrentes."
+            )}
+          </div>
+        </>
+      )}
+
+      <DetailItem
+        icon="🛒"
+        label={tr(t, "dashboard", "variableExpenses", "Dépenses variables")}
+        value={formatMontant(depensesVariables)}
+        color={COLORS.blue}
+        onClick={() => setOpenedLine(openedLine === "depenses" ? null : "depenses")}
+        info
+      />
+
+      {openedLine === "depenses" && (
+        <DetailList
+          title={tr(t, "dashboard", "variableExpensesListTitle", "Liste des dépenses variables")}
+          items={depensesItems}
+          emptyText={tr(t, "dashboard", "noVariableExpenses", "Aucune dépense variable enregistrée ce mois-ci.")}
+          total={depensesVariables}
+          color={COLORS.blue}
+        />
+      )}
+
+      <DetailItem icon="🎯" label={tr(t, "dashboard", "estimatedAvailable", "Reste disponible estimé")} value={formatMontant(resteAVivre)} color={resteAVivre >= 0 ? COLORS.green : COLORS.red} />
 
       <div
         style={{
@@ -197,16 +386,22 @@ function RevenusDetails({ stats, onClose }) {
           lineHeight: 1.5,
         }}
       >
-        Après dépenses et charges, il vous reste environ <strong style={{ color: "#BEF264" }}>{tauxDisponible} %</strong> de vos revenus disponibles.
+        {tr(t, "dashboard", "afterExpensesText", "Après dépenses et charges, il vous reste environ")}{" "}
+        <strong style={{ color: "#BEF264" }}>{tauxDisponible} %</strong>{" "}
+        {tr(t, "dashboard", "incomeAvailableText", "de vos revenus disponibles.")}
         {totalDepenses > 0 && (
-          <span> Total déjà engagé : <strong style={{ color: COLORS.accentSoft }}>{formatMontant(totalDepenses)}</strong>.</span>
+          <span>
+            {" "}
+            {tr(t, "dashboard", "totalCommitted", "Total déjà engagé :")}{" "}
+            <strong style={{ color: COLORS.accentSoft }}>{formatMontant(totalDepenses)}</strong>.
+          </span>
         )}
       </div>
     </TropicalCard>
   )
 }
 
-function DepensesDetails({ stats, onClose }) {
+function DepensesDetails({ stats, onClose, t }) {
   const revenus = stats.revenus || 0
   const depenses = stats.depenses || 0
   const chargesFixes = stats.chargesFixes || 0
@@ -218,7 +413,9 @@ function DepensesDetails({ stats, onClose }) {
   return (
     <TropicalCard variant="coral" texture="🌞">
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 6 }}>
-        <h3 style={{ margin: 0, color: COLORS.text, fontSize: 16 }}>Détail des dépenses du mois</h3>
+        <h3 style={{ margin: 0, color: COLORS.text, fontSize: 16 }}>
+          {tr(t, "dashboard", "depensesDetailsTitle", "Détail des dépenses du mois")}
+        </h3>
         <button
           type="button"
           onClick={onClose}
@@ -233,14 +430,14 @@ function DepensesDetails({ stats, onClose }) {
             fontFamily: "inherit",
           }}
         >
-          Fermer
+          {tr(t, "common", "close", "Fermer")}
         </button>
       </div>
 
-      <DetailItem icon="📊" label="Dépenses du mois" value={formatMontant(depenses)} color="#FDBA74" />
-      <DetailItem icon="📌" label={`Charges fixes (${tauxCharges} % des revenus)`} value={formatMontant(chargesFixes)} color={COLORS.accentSoft} />
-      <DetailItem icon="🛒" label={`Dépenses variables (${tauxVariables} % des revenus)`} value={formatMontant(depensesVariables)} color={COLORS.blue} />
-      <DetailItem icon="⚖️" label="Total charges + variables" value={formatMontant(chargesFixes + depensesVariables)} color={(chargesFixes + depensesVariables) > revenus ? COLORS.red : COLORS.green} />
+      <DetailItem icon="📊" label={tr(t, "dashboard", "depenses", "Dépenses du mois")} value={formatMontant(depenses)} color="#FDBA74" />
+      <DetailItem icon="📌" label={`${tr(t, "dashboard", "fixedCharges", "Charges fixes")} (${tauxCharges} % ${tr(t, "dashboard", "ofIncome", "des revenus")})`} value={formatMontant(chargesFixes)} color={COLORS.accentSoft} />
+      <DetailItem icon="🛒" label={`${tr(t, "dashboard", "variableExpenses", "Dépenses variables")} (${tauxVariables} % ${tr(t, "dashboard", "ofIncome", "des revenus")})`} value={formatMontant(depensesVariables)} color={COLORS.blue} />
+      <DetailItem icon="⚖️" label={tr(t, "dashboard", "totalChargesVariables", "Total charges + variables")} value={formatMontant(chargesFixes + depensesVariables)} color={(chargesFixes + depensesVariables) > revenus ? COLORS.red : COLORS.green} />
 
       <div
         style={{
@@ -254,7 +451,9 @@ function DepensesDetails({ stats, onClose }) {
           lineHeight: 1.5,
         }}
       >
-        Vos charges fixes et dépenses variables représentent <strong style={{ color: "#FDBA74" }}>{tauxTotal} %</strong> de vos revenus du mois.
+        {tr(t, "dashboard", "expensesRatioText", "Vos charges fixes et dépenses variables représentent")}{" "}
+        <strong style={{ color: "#FDBA74" }}>{tauxTotal} %</strong>{" "}
+        {tr(t, "dashboard", "ofYourMonthlyIncome", "de vos revenus du mois.")}
       </div>
     </TropicalCard>
   )
@@ -281,7 +480,7 @@ function ProgressBar({ value, max, color }) {
   )
 }
 
-export default function Dashboard({ stats, byCategory, pieData, transactions, t, isMobile, isPremium = false, customBudgets = [], onSaveBudgets, onGoPremium }) {
+export default function Dashboard({ stats, byCategory, pieData, transactions, abonnements = [], t, isMobile, isPremium = false, customBudgets = [], onSaveBudgets, onGoPremium }) {
   const { revenus, depenses, solde } = stats
   const [openedDetails, setOpenedDetails] = useState(null)
   const [showBudgetModal, setShowBudgetModal] = useState(false)
@@ -335,9 +534,9 @@ export default function Dashboard({ stats, byCategory, pieData, transactions, t,
         />
       </div>
 
-      {openedDetails === "solde" && <SoldeDetails stats={stats} onClose={() => setOpenedDetails(null)} />}
-      {openedDetails === "revenus" && <RevenusDetails stats={stats} onClose={() => setOpenedDetails(null)} />}
-      {openedDetails === "depenses" && <DepensesDetails stats={stats} onClose={() => setOpenedDetails(null)} />}
+      {openedDetails === "solde" && <SoldeDetails stats={stats} onClose={() => setOpenedDetails(null)} t={t} />}
+      {openedDetails === "revenus" && <RevenusDetails stats={stats} transactions={transactions} abonnements={abonnements} onClose={() => setOpenedDetails(null)} t={t} />}
+      {openedDetails === "depenses" && <DepensesDetails stats={stats} onClose={() => setOpenedDetails(null)} t={t} />}
 
       <div
         style={{

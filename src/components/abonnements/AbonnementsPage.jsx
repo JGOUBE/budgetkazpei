@@ -11,6 +11,7 @@ const COLORS = {
   red: "#EF4444",
   muted: "#64748B",
   text: "#F1F5F9",
+  cyan: "#38BDF8",
 }
 
 const inputStyle = {
@@ -38,7 +39,8 @@ const CATEGORY_META = {
 
 function totalMensuel(abonnements) {
   return abonnements.reduce(
-    (total, abonnement) => total + (Number(String(abonnement.montant).replace(",", ".")) || 0),
+    (total, abonnement) =>
+      total + (Number(String(abonnement.montant).replace(",", ".")) || 0),
     0
   )
 }
@@ -54,6 +56,7 @@ export default function AbonnementsPage({
   t,
 }) {
   const [savingId, setSavingId] = useState(null)
+  const [showInfo, setShowInfo] = useState(false)
   const total = totalMensuel(abonnements)
 
   async function saveField(id, updates) {
@@ -83,7 +86,7 @@ export default function AbonnementsPage({
           color: COLORS.muted,
         }}
       >
-        Chargement des abonnements...
+        {t("abonnements", "loading")}
       </div>
     )
   }
@@ -108,9 +111,31 @@ export default function AbonnementsPage({
           }}
         >
           <div>
-            <h3 style={{ margin: 0, fontSize: 18, color: COLORS.text }}>
-              Abonnements modifiables
-            </h3>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <h3 style={{ margin: 0, fontSize: 18, color: COLORS.text }}>
+                {t("abonnements", "title")}
+              </h3>
+
+              <button
+                type="button"
+                onClick={() => setShowInfo(prev => !prev)}
+                style={{
+                  width: 22,
+                  height: 22,
+                  borderRadius: 999,
+                  border: `1px solid ${COLORS.cyan}55`,
+                  background: "rgba(56,189,248,.10)",
+                  color: COLORS.cyan,
+                  cursor: "pointer",
+                  fontWeight: 900,
+                  fontSize: 12,
+                  fontFamily: "inherit",
+                }}
+              >
+                i
+              </button>
+            </div>
+
             <p
               style={{
                 margin: "6px 0 0",
@@ -119,7 +144,7 @@ export default function AbonnementsPage({
                 lineHeight: 1.5,
               }}
             >
-              Ces abonnements sont enregistrés dans Supabase pour ton compte.
+              {t("abonnements", "description")}
             </p>
           </div>
 
@@ -132,13 +157,38 @@ export default function AbonnementsPage({
                 fontWeight: 700,
               }}
             >
-              Total mensuel estimé
+              {t("abonnements", "totalFixedCharges")}
             </div>
+
             <div style={{ fontSize: 26, color: COLORS.accent, fontWeight: 800 }}>
               {formatMontant(total)}
             </div>
           </div>
         </div>
+
+        {showInfo && (
+          <div
+            style={{
+              marginTop: 14,
+              background: "rgba(56,189,248,.10)",
+              border: "1px solid rgba(56,189,248,.22)",
+              borderRadius: 14,
+              padding: "12px 14px",
+              color: COLORS.text,
+              fontSize: 13,
+              lineHeight: 1.55,
+            }}
+          >
+            <strong style={{ color: COLORS.cyan }}>
+              {t("abonnements", "infoTitle")}
+            </strong>
+            <br />
+            {t("abonnements", "infoText1")}
+            <br />
+            <br />
+            {t("abonnements", "infoText2")}
+          </div>
+        )}
       </div>
 
       <div
@@ -190,12 +240,15 @@ export default function AbonnementsPage({
                       marginBottom: 5,
                     }}
                   >
-                    Nom de l'abonnement
+                    {t("abonnements", "fixedChargeName")}
                   </label>
+
                   <input
                     value={abonnement.nom || ""}
-                    onChange={e => saveField(abonnement.id, { nom: e.target.value })}
-                    placeholder="Ex: EDF, Eau, Canal+"
+                    onChange={e =>
+                      saveField(abonnement.id, { nom: e.target.value })
+                    }
+                    placeholder="Ex: Loyer, EDF, Internet, Crédit voiture"
                     style={inputStyle}
                   />
                 </div>
@@ -218,7 +271,7 @@ export default function AbonnementsPage({
                       marginBottom: 5,
                     }}
                   >
-                    Catégorie
+                    {t("abonnements", "category")}
                   </label>
 
                   <select
@@ -231,7 +284,7 @@ export default function AbonnementsPage({
                   >
                     {CATEGORIES.map(cat => (
                       <option key={cat.id} value={cat.id}>
-                        {cat.emoji} {t ? t("categories", cat.id) : cat.id}
+                        {cat.emoji} {t("categories", cat.id)}
                       </option>
                     ))}
                   </select>
@@ -246,7 +299,7 @@ export default function AbonnementsPage({
                       marginBottom: 5,
                     }}
                   >
-                    Montant mensuel
+                    {t("abonnements", "monthlyAmount")}
                   </label>
 
                   <input
@@ -286,8 +339,9 @@ export default function AbonnementsPage({
                       marginBottom: 5,
                     }}
                   >
-                    Couleur
+                    {t("abonnements", "color")}
                   </label>
+
                   <input
                     type="color"
                     value={abonnement.color || meta.color || COLORS.accent}
@@ -302,7 +356,11 @@ export default function AbonnementsPage({
                   <button
                     type="button"
                     onClick={() => {
-                      if (window.confirm(`Supprimer "${abonnement.nom}" ?`)) {
+                      if (
+                        window.confirm(
+                          `${t("abonnements", "delete")} "${abonnement.nom}" ?`
+                        )
+                      ) {
                         onDelete(abonnement.id)
                       }
                     }}
@@ -319,15 +377,15 @@ export default function AbonnementsPage({
                       fontFamily: "inherit",
                     }}
                   >
-                    Supprimer
+                    {t("abonnements", "delete")}
                   </button>
                 </div>
               </div>
 
               <div style={{ marginTop: 12, fontSize: 12, color: COLORS.muted }}>
                 {savingId === abonnement.id
-                  ? "Sauvegarde..."
-                  : "Sauvegardé dans Supabase"}
+                  ? t("abonnements", "saving")
+                  : t("abonnements", "saved")}
               </div>
             </div>
           )
@@ -355,13 +413,13 @@ export default function AbonnementsPage({
             fontFamily: "inherit",
           }}
         >
-          + Ajouter un abonnement
+          {t("abonnements", "addFixedCharge")}
         </button>
 
         <button
           type="button"
           onClick={() => {
-            if (window.confirm("Revenir aux abonnements par défaut ?")) onReset()
+            if (window.confirm(t("abonnements", "resetConfirm"))) onReset()
           }}
           style={{
             background: "transparent",
@@ -374,7 +432,7 @@ export default function AbonnementsPage({
             fontFamily: "inherit",
           }}
         >
-          Réinitialiser
+          {t("abonnements", "reset")}
         </button>
       </div>
     </div>
