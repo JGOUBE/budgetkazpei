@@ -2,6 +2,8 @@ import { useState } from "react"
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts"
 import { formatAmount, formatMontant } from "../../utils/format"
 import TropicalCard, { TROPICAL_VARIANTS } from "./TropicalCard"
+import BudgetSettingsModal from "../budgets/BudgetSettingModal"
+import { CATEGORIES } from "../../data/categories"
 
 const COLORS = {
   card: "#0F1E38",
@@ -279,9 +281,10 @@ function ProgressBar({ value, max, color }) {
   )
 }
 
-export default function Dashboard({ stats, byCategory, pieData, transactions, t, isMobile }) {
+export default function Dashboard({ stats, byCategory, pieData, transactions, t, isMobile, isPremium = false, customBudgets = [], onSaveBudgets, onGoPremium }) {
   const { revenus, depenses, solde } = stats
   const [openedDetails, setOpenedDetails] = useState(null)
+  const [showBudgetModal, setShowBudgetModal] = useState(false)
   const ofIncome = revenus > 0 ? ((depenses / revenus) * 100).toFixed(0) : 0
 
   function toggleDetails(section) {
@@ -419,6 +422,36 @@ export default function Dashboard({ stats, byCategory, pieData, transactions, t,
         </TropicalCard>
       </div>
 
+      {isPremium && byCategory.some(cat => cat.budget > 0 && cat.depense >= cat.budget) && (
+        <TropicalCard variant="coral" texture="⚠️" style={{ padding: isMobile ? 16 : 20 }}>
+          <h3 style={{ margin: "0 0 12px", fontSize: 16, color: COLORS.text, fontWeight: 900 }}>
+            Alertes budget
+          </h3>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            {byCategory
+              .filter(cat => cat.budget > 0 && cat.depense >= cat.budget)
+              .map(cat => (
+                <div
+                  key={`alert-${cat.id}`}
+                  style={{
+                    background: "rgba(239,68,68,.12)",
+                    border: "1px solid rgba(239,68,68,.25)",
+                    color: "#FCA5A5",
+                    padding: "11px 13px",
+                    borderRadius: 14,
+                    fontWeight: 800,
+                    fontSize: 13,
+                  }}
+                >
+                  ⚠️ Budget {t("categories", cat.id)} dépassé de{" "}
+                  {(cat.depense - cat.budget).toFixed(0)} €
+                </div>
+              ))}
+          </div>
+        </TropicalCard>
+      )}
+
       <TropicalCard variant="gold" texture="🌿" style={{ padding: isMobile ? 16 : 24 }}>
         <div
           style={{
@@ -436,23 +469,51 @@ export default function Dashboard({ stats, byCategory, pieData, transactions, t,
 
           <button
             type="button"
-            onClick={() => alert("Fonction Premium : personnalisez vos budgets et recevez des alertes.")}
+            onClick={() => {
+              if (isPremium) {
+                setShowBudgetModal(true)
+              } else if (onGoPremium) {
+                onGoPremium()
+              }
+            }}
             style={{
-              background: "linear-gradient(135deg, rgba(252,211,77,.22), rgba(245,158,11,.14))",
-              border: "1px solid rgba(252,211,77,.35)",
+              background: isPremium
+                ? "rgba(255,255,255,.09)"
+                : "linear-gradient(135deg, rgba(252,211,77,.22), rgba(245,158,11,.14))",
+              border: isPremium
+                ? "1px solid rgba(255,255,255,.14)"
+                : "1px solid rgba(252,211,77,.35)",
               borderRadius: 999,
-              color: "#FDE68A",
+              color: isPremium ? COLORS.whiteSoft : "#FDE68A",
               cursor: "pointer",
               padding: "7px 12px",
               fontSize: 12,
               fontWeight: 900,
               fontFamily: "inherit",
-              boxShadow: "0 0 18px rgba(245,158,11,.10)",
+              boxShadow: isPremium ? "none" : "0 0 18px rgba(245,158,11,.10)",
             }}
           >
-            🔒 Budgets personnalisés
+            {isPremium ? "⚙️ Modifier mes budgets" : "🔒 Budgets personnalisés"}
           </button>
         </div>
+        {!isPremium && (
+          <div
+            style={{
+              marginBottom: 16,
+              background: "rgba(252,211,77,.10)",
+              border: "1px solid rgba(252,211,77,.22)",
+              borderRadius: 14,
+              padding: "11px 13px",
+              color: "#FDE68A",
+              fontSize: 13,
+              fontWeight: 700,
+              lineHeight: 1.5,
+            }}
+          >
+            Fonction Premium : personnalisez vos budgets par catégorie et recevez des alertes de dépassement.
+          </div>
+        )}
+
         <div
           style={{
             display: "grid",
@@ -475,6 +536,15 @@ export default function Dashboard({ stats, byCategory, pieData, transactions, t,
           ))}
         </div>
       </TropicalCard>
+      {showBudgetModal && (
+        <BudgetSettingsModal
+          categories={CATEGORIES}
+          currentBudgets={customBudgets}
+          onSave={onSaveBudgets}
+          onClose={() => setShowBudgetModal(false)}
+          t={t}
+        />
+      )}
     </div>
   )
 }

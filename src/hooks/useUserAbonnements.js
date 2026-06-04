@@ -2,11 +2,74 @@ import { useEffect, useState } from "react"
 import { supabase } from "../services/supabase"
 import { ABONNEMENTS } from "../data/categories"
 
+function parseMontant(value) {
+  if (value === "" || value === null || value === undefined) return 0
+
+  const normalized = String(value)
+    .replace(",", ".")
+    .replace(/[^\d.]/g, "")
+
+  const parts = normalized.split(".")
+  const clean =
+    parts.length > 1
+      ? `${parts[0]}.${parts.slice(1).join("")}`
+      : normalized
+
+  const number = Number(clean)
+
+  return Number.isFinite(number) ? number : 0
+}
+
+function normalizeCategorie(value) {
+  const categorie = String(value || "").toLowerCase().trim()
+
+  if (["electricity", "edf", "energy", "energie", "énergie"].includes(categorie)) {
+    return "energie"
+  }
+
+  if (
+    [
+      "internet",
+      "mobile",
+      "telephone",
+      "téléphone",
+      "telecom",
+      "télécom",
+      "zeop",
+      "only",
+    ].includes(categorie)
+  ) {
+    return "telecom"
+  }
+
+  if (["water", "eau", "dilo", "cinor", "logement", "kaz"].includes(categorie)) {
+    return "logement"
+  }
+
+  if (["streaming", "netflix", "loisirs", "loisir"].includes(categorie)) {
+    return "loisirs"
+  }
+
+  if (["sante", "santé", "mutuelle"].includes(categorie)) {
+    return "sante"
+  }
+
+  if (["transport", "essence", "carburant"].includes(categorie)) {
+    return "transport"
+  }
+
+  if (["alimentaire", "alimentation", "courses"].includes(categorie)) {
+    return "alimentaire"
+  }
+
+  return "divers"
+}
+
 function defaultAbonnements(userId) {
   return ABONNEMENTS.map(abonnement => ({
     user_id: userId,
     nom: abonnement.nom,
-    categorie: abonnement.categoryKey || abonnement.id,
+    categorie: normalizeCategorie(abonnement.categoryKey || abonnement.id),
     montant: Number(abonnement.montant) || 0,
     emoji: abonnement.emoji || "📋",
     color: abonnement.color || "#64748B",
@@ -75,10 +138,10 @@ export function useUserAbonnements(userId) {
       .insert({
         user_id: userId,
         nom: "Nouvel abonnement",
-        categorie: "autre",
+        categorie: "divers",
         montant: 0,
-        emoji: "📋",
-        color: "#38BDF8",
+        emoji: "📦",
+        color: "#94A3B8",
       })
       .select("*")
       .single()
@@ -91,14 +154,42 @@ export function useUserAbonnements(userId) {
     setAbonnements(prev => [...prev, data])
   }
 
-  async function updateAbonnement(id, updates) {
-    const cleanedUpdates = {
-      ...updates,
-      montant: updates.montant !== undefined ? Number(updates.montant) || 0 : updates.montant,
+  function updateAbonnementLocal(id, updates) {
+    setAbonnements(prev =>
+      prev.map(abonnement =>
+        abonnement.id === id
+          ? {
+              ...abonnement,
+              ...updates,
+            }
+          : abonnement
+      )
+    )
+  }
+
+  async function updateAbonnement(id, updates, options = {}) {
+    const localUpdates = { ...updates }
+
+    if (localUpdates.categorie !== undefined) {
+      localUpdates.categorie = normalizeCategorie(localUpdates.categorie)
+    }
+
+    updateAbonnementLocal(id, localUpdates)
+
+    if (options.localOnly) {
+      return { data: null, error: null }
+    }
+
+    const cleanedUpdates = { ...localUpdates }
+
+    if (cleanedUpdates.montant !== undefined) {
+      cleanedUpdates.montant = parseMontant(cleanedUpdates.montant)
     }
 
     Object.keys(cleanedUpdates).forEach(key => {
-      if (cleanedUpdates[key] === undefined) delete cleanedUpdates[key]
+      if (cleanedUpdates[key] === undefined) {
+        delete cleanedUpdates[key]
+      }
     })
 
     const { data, error } = await supabase
@@ -111,10 +202,14 @@ export function useUserAbonnements(userId) {
 
     if (error) {
       console.error("Erreur modification abonnement:", error)
-      return
+      return { error }
     }
 
-    setAbonnements(prev => prev.map(abonnement => abonnement.id === id ? data : abonnement))
+    setAbonnements(prev =>
+      prev.map(abonnement => (abonnement.id === id ? data : abonnement))
+    )
+
+    return { data, error: null }
   }
 
   async function deleteAbonnement(id) {
@@ -151,6 +246,7 @@ export function useUserAbonnements(userId) {
     loading,
     addAbonnement,
     updateAbonnement,
+    updateAbonnementLocal,
     deleteAbonnement,
     resetAbonnements,
   }
