@@ -8,6 +8,8 @@ import {
   LogOut,
   Sparkles,
   Lightbulb,
+  Lock,
+  CalendarClock,
 } from "lucide-react"
 
 const COLORS = {
@@ -25,6 +27,7 @@ const NAV_ITEMS = [
   { id: "depenses", icon: BarChart3, section: "nav", key: "depenses" },
   { id: "aides", icon: Landmark, section: "nav", key: "aides" },
   { id: "abonnements", icon: ClipboardList, section: "nav", key: "abonnements" },
+  { id: "historique", icon: CalendarClock, section: "nav", key: "monthlyHistory", premiumOnly: true },
   { id: "profil", icon: User, section: "nav", key: "profil" },
 ]
 
@@ -69,25 +72,25 @@ export default function Sidebar({
             src="/icons-creole/logo-budgetkazpei.png"
             alt="BudgetKazPei"
             style={{
-            width: "100%",
-            maxWidth: 700,
-            height: "auto",
-            display: "block",
-            margin: "35px auto -35px",
-            objectFit: "contain",
-            filter: "drop-shadow(2px 5px 0 rgba(5,8,12,.75))",
-          }}
+              width: "100%",
+              maxWidth: 700,
+              height: "auto",
+              display: "block",
+              margin: "35px auto -35px",
+              objectFit: "contain",
+              filter: "drop-shadow(2px 5px 0 rgba(5,8,12,.75))",
+            }}
           />
 
           <div
             style={{
-            marginTop: -45,
-            fontSize: 13,
-            color: COLORS.cyan,
-            fontWeight: 900,
-            fontFamily: "Poppins, 'DM Sans', sans-serif",
-            whiteSpace: "nowrap",
-          }}
+              marginTop: -45,
+              fontSize: 13,
+              color: COLORS.cyan,
+              fontWeight: 900,
+              fontFamily: "Poppins, 'DM Sans', sans-serif",
+              whiteSpace: "nowrap",
+            }}
           >
             {t("header", "tagline")}
           </div>
@@ -134,12 +137,19 @@ export default function Sidebar({
           {NAV_ITEMS.map(item => {
             const Icon = item.icon
             const active = activeNav === item.id
+            const locked = item.premiumOnly && !isPremium
 
             return (
               <button
                 key={item.id}
                 type="button"
-                onClick={() => onNavChange(item.id)}
+                onClick={() => {
+                  if (locked) {
+                    onNavChange("premium")
+                  } else {
+                    onNavChange(item.id)
+                  }
+                }}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -149,18 +159,29 @@ export default function Sidebar({
                   borderRadius: 12,
                   border: active
                     ? `1px solid ${COLORS.accent}66`
-                    : "1px solid transparent",
-                  background: active ? "rgba(249,115,22,.15)" : "transparent",
-                  color: active ? COLORS.accent : COLORS.muted,
+                    : locked
+                      ? `1px solid ${COLORS.yellow}35`
+                      : "1px solid transparent",
+                  background: active
+                    ? "rgba(249,115,22,.15)"
+                    : locked
+                      ? "rgba(252,211,77,.08)"
+                      : "transparent",
+                  color: active
+                    ? COLORS.accent
+                    : locked
+                      ? COLORS.yellow
+                      : COLORS.muted,
                   cursor: "pointer",
                   fontSize: 14,
-                  fontWeight: active ? 900 : 700,
+                  fontWeight: active || locked ? 900 : 700,
                   fontFamily: "inherit",
                   textAlign: "left",
                 }}
               >
                 <Icon size={17} />
-                <span>{t(item.section, item.key)}</span>
+                <span style={{ flex: 1 }}>{t(item.section, item.key)}</span>
+                {locked && <Lock size={14} />}
               </button>
             )
           })}

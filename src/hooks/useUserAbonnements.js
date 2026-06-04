@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react"
 import { supabase } from "../services/supabase"
-import { ABONNEMENTS } from "../data/categories"
 
 function parseMontant(value) {
   if (value === "" || value === null || value === undefined) return 0
@@ -23,7 +22,7 @@ function parseMontant(value) {
 function normalizeCategorie(value) {
   const categorie = String(value || "").toLowerCase().trim()
 
-  if (["electricity", "edf", "energy", "energie", "énergie"].includes(categorie)) {
+  if (["electricity", "edf", "energy", "energie", "énergie", "eau", "water", "dilo", "cinor"].includes(categorie)) {
     return "energie"
   }
 
@@ -35,6 +34,8 @@ function normalizeCategorie(value) {
       "téléphone",
       "telecom",
       "télécom",
+      "telephonie",
+      "téléphonie",
       "zeop",
       "only",
     ].includes(categorie)
@@ -42,7 +43,11 @@ function normalizeCategorie(value) {
     return "telecom"
   }
 
-  if (["water", "eau", "dilo", "cinor", "logement", "kaz"].includes(categorie)) {
+  if (["assurance", "assurances", "lasirans", "mutuelle"].includes(categorie)) {
+    return "assurances"
+  }
+
+  if (["logement", "kaz", "loyer", "loyé", "credit", "crédit"].includes(categorie)) {
     return "logement"
   }
 
@@ -50,7 +55,7 @@ function normalizeCategorie(value) {
     return "loisirs"
   }
 
-  if (["sante", "santé", "mutuelle"].includes(categorie)) {
+  if (["sante", "santé", "pharmacie"].includes(categorie)) {
     return "sante"
   }
 
@@ -63,17 +68,6 @@ function normalizeCategorie(value) {
   }
 
   return "divers"
-}
-
-function defaultAbonnements(userId) {
-  return ABONNEMENTS.map(abonnement => ({
-    user_id: userId,
-    nom: abonnement.nom,
-    categorie: normalizeCategorie(abonnement.categoryKey || abonnement.id),
-    montant: Number(abonnement.montant) || 0,
-    emoji: abonnement.emoji || "📋",
-    color: abonnement.color || "#64748B",
-  }))
 }
 
 export function useUserAbonnements(userId) {
@@ -106,29 +100,9 @@ export function useUserAbonnements(userId) {
       return
     }
 
-    if (!data || data.length === 0) {
-      await createDefaultAbonnements()
-      return
-    }
-
-    setAbonnements(data)
-    setLoading(false)
-  }
-
-  async function createDefaultAbonnements() {
-    const { data, error } = await supabase
-      .from("abonnements")
-      .insert(defaultAbonnements(userId))
-      .select("*")
-      .order("created_at", { ascending: true })
-
-    if (error) {
-      console.error("Erreur creation abonnements par defaut:", error)
-      setAbonnements([])
-    } else {
-      setAbonnements(data || [])
-    }
-
+    // Nouvel utilisateur : aucun abonnement par défaut.
+    // Les charges fixes restent à 0 tant que l'utilisateur n'en ajoute pas.
+    setAbonnements(data || [])
     setLoading(false)
   }
 
@@ -137,7 +111,7 @@ export function useUserAbonnements(userId) {
       .from("abonnements")
       .insert({
         user_id: userId,
-        nom: "Nouvel abonnement",
+        nom: "Nouvelle charge fixe",
         categorie: "divers",
         montant: 0,
         emoji: "📦",
@@ -148,10 +122,11 @@ export function useUserAbonnements(userId) {
 
     if (error) {
       console.error("Erreur ajout abonnement:", error)
-      return
+      return { error }
     }
 
     setAbonnements(prev => [...prev, data])
+    return { data, error: null }
   }
 
   function updateAbonnementLocal(id, updates) {
@@ -221,24 +196,27 @@ export function useUserAbonnements(userId) {
 
     if (error) {
       console.error("Erreur suppression abonnement:", error)
-      return
+      return { error }
     }
 
     setAbonnements(prev => prev.filter(abonnement => abonnement.id !== id))
+    return { error: null }
   }
 
   async function resetAbonnements() {
-    const { error: deleteError } = await supabase
+    const { error } = await supabase
       .from("abonnements")
       .delete()
       .eq("user_id", userId)
 
-    if (deleteError) {
-      console.error("Erreur reinitialisation abonnements:", deleteError)
-      return
+    if (error) {
+      console.error("Erreur reinitialisation abonnements:", error)
+      return { error }
     }
 
-    await createDefaultAbonnements()
+    // Réinitialiser = vider les charges fixes, pas recréer des abonnements par défaut.
+    setAbonnements([])
+    return { error: null }
   }
 
   return {
