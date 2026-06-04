@@ -51,7 +51,7 @@ export default function Sidebar({
         borderRight: `1px solid ${COLORS.border}`,
         display: "flex",
         flexDirection: "column",
-        padding: "14px 16px",
+        padding: "20px 16px 14px",
         overflow: "hidden",
       }}
     >
@@ -64,29 +64,30 @@ export default function Sidebar({
           paddingBottom: 10,
         }}
       >
-        <div style={{ textAlign: "center", marginBottom: 10 }}>
+        <div style={{ textAlign: "center", marginBottom: 14 }}>
           <img
             src="/icons-creole/logo-budgetkazpei.png"
             alt="BudgetKazPei"
             style={{
-              width: 150,
-              height: "auto",
-              display: "block",
-              margin: "0 auto",
-              objectFit: "contain",
-              filter: "drop-shadow(2px 4px 0 rgba(5,8,12,.75))",
-            }}
+            width: "100%",
+            maxWidth: 700,
+            height: "auto",
+            display: "block",
+            margin: "35px auto -35px",
+            objectFit: "contain",
+            filter: "drop-shadow(2px 5px 0 rgba(5,8,12,.75))",
+          }}
           />
 
           <div
             style={{
-              marginTop: -6,
-              fontSize: 12,
-              color: COLORS.cyan,
-              fontWeight: 800,
-              fontFamily: "Poppins, 'DM Sans', sans-serif",
-              whiteSpace: "nowrap",
-            }}
+            marginTop: -45,
+            fontSize: 13,
+            color: COLORS.cyan,
+            fontWeight: 900,
+            fontFamily: "Poppins, 'DM Sans', sans-serif",
+            whiteSpace: "nowrap",
+          }}
           >
             {t("header", "tagline")}
           </div>

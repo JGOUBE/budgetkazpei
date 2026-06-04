@@ -9,6 +9,7 @@ const COLORS = {
   accent: "#F97316",
   red: "#EF4444",
   muted: "#8AA0BD",
+  cyan: "#23D3D6",
 }
 
 export default function LoginPage({ onLogin, onGoRegister, onGoogleLogin }) {
@@ -46,7 +47,7 @@ export default function LoginPage({ onLogin, onGoRegister, onGoogleLogin }) {
 
   const fieldWrapStyle = {
     width: "100%",
-    maxWidth: 340,
+    maxWidth: 350,
     margin: "0 auto",
   }
 
@@ -56,24 +57,24 @@ export default function LoginPage({ onLogin, onGoRegister, onGoogleLogin }) {
     boxSizing: "border-box",
     background: COLORS.paper,
     border: `3px solid ${COLORS.ink}`,
-    borderRadius: 10,
-    padding: "13px 16px",
+    borderRadius: 12,
+    padding: "15px 17px",
     color: COLORS.ink,
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: 800,
     outline: "none",
     fontFamily: "inherit",
-    boxShadow: `5px 5px 0 ${COLORS.ink}`,
+    boxShadow: `6px 6px 0 ${COLORS.ink}`,
   }
 
   const labelStyle = {
     display: "block",
     textAlign: "center",
-    marginBottom: 9,
+    marginBottom: 10,
     color: COLORS.cream,
-    fontSize: 13,
+    fontSize: 14,
     fontWeight: 900,
-    letterSpacing: 0.8,
+    letterSpacing: 0.9,
     textTransform: "uppercase",
     textShadow: `2px 2px 0 ${COLORS.ink}`,
   }
@@ -83,58 +84,109 @@ export default function LoginPage({ onLogin, onGoRegister, onGoogleLogin }) {
       style={{
         minHeight: "100vh",
         background:
-  "radial-gradient(circle at top, rgba(35,211,214,.12), transparent 35%), #0A1628",
+          "radial-gradient(circle at top, rgba(35,211,214,.18), transparent 36%), linear-gradient(180deg, #06111F 0%, #0A1628 55%, #06111F 100%)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         fontFamily: "'DM Sans', sans-serif",
-        padding: "32px 18px",
+        padding: "18px 18px 36px",
+        overflow: "hidden",
       }}
     >
-      <div style={{ width: 440, maxWidth: "94vw" }}>
-        {/* Logo */}
-        <div style={{ textAlign: "center", marginBottom: 18 }}>
+      <div
+        style={{
+          width: 460,
+          maxWidth: "94vw",
+          position: "relative",
+        }}
+      >
+        <img
+          src="/icons-creole/palmier.png"
+          alt=""
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            width: 380,
+            height: 380,
+            objectFit: "contain",
+            right: -160,
+            top: -120,
+            opacity: 0.22,
+            transform: "rotate(-18deg)",
+            pointerEvents: "none",
+            filter: "drop-shadow(0 0 26px rgba(35,211,214,.18))",
+          }}
+        />
+
+        <img
+          src="/icons-creole/palmier.png"
+          alt=""
+          aria-hidden="true"
+          style={{
+            position: "absolute",
+            width: 340,
+            height: 340,
+            objectFit: "contain",
+            left: -165,
+            bottom: 40,
+            opacity: 0.18,
+            transform: "rotate(18deg)",
+            pointerEvents: "none",
+            filter: "drop-shadow(0 0 26px rgba(35,211,214,.14))",
+          }}
+        />
+
+        <div
+          style={{
+            textAlign: "center",
+            marginBottom: 18,
+            position: "relative",
+            zIndex: 1,
+          }}
+        >
           <img
             src="/icons-creole/logo-budgetkazpei.png"
             alt="BudgetKazPei"
             style={{
               display: "block",
-              width: "min(270px, 78vw)",
+              width: "min(480px, 98vw)",
               height: "auto",
-              margin: "0 auto",
+              margin: "20px auto -45px",
               objectFit: "contain",
-              filter: "drop-shadow(3px 5px 0 rgba(5, 8, 12, 0.65))",
+              filter:
+                "drop-shadow(3px 6px 0 rgba(5,8,12,.82)) drop-shadow(0 0 18px rgba(35,211,214,.24))",
             }}
           />
 
           <p
             style={{
-              margin: "-20px 0 0",
-              color: "#23D3D6",
-              fontSize: 15,
-              fontWeight: 700,
+              margin: "-38px 0 0",
+              color: COLORS.cyan,
+              fontSize: 18,
+              fontWeight: 900,
               fontFamily: "Poppins, 'DM Sans', sans-serif",
-              letterSpacing: 0.2,
-              textShadow: "1px 1px 0 rgba(5, 8, 12, 0.8)",
+              letterSpacing: 0.1,
+              textShadow:
+                "2px 2px 0 rgba(5,8,12,.85), 0 0 16px rgba(35,211,214,.36)",
             }}
           >
-            Gérez votre budget facilement
+            Fasilman gèr ou larzan
           </p>
         </div>
 
-        {/* Card */}
         <div
           style={{
             position: "relative",
             overflow: "hidden",
             background: `
-              linear-gradient(145deg, rgba(7, 16, 31, 0.98) 0%, rgba(13, 36, 68, 0.97) 58%, rgba(24, 82, 128, 0.93) 100%),
+              linear-gradient(145deg, rgba(7,16,31,.96) 0%, rgba(13,36,68,.96) 56%, rgba(24,82,128,.92) 100%),
               ${COLORS.card}
             `,
             border: `3px solid ${COLORS.ink}`,
-            borderRadius: 22,
-            padding: "34px 28px 30px",
-            boxShadow: `9px 9px 0 ${COLORS.ink}, 0 26px 70px rgba(0, 0, 0, 0.35)`,
+            borderRadius: 28,
+            padding: "38px 30px 32px",
+            boxShadow:
+              `10px 10px 0 ${COLORS.ink}, 0 30px 80px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.06)`,
           }}
         >
           <img
@@ -143,14 +195,15 @@ export default function LoginPage({ onLogin, onGoRegister, onGoogleLogin }) {
             aria-hidden="true"
             style={{
               position: "absolute",
-              width: 220,
-              height: 220,
+              width: 380,
+              height: 380,
               objectFit: "contain",
-              right: -76,
-              top: -48,
-              opacity: 0.09,
-              transform: "rotate(-18deg)",
+              right: -100,
+              top: -82,
+              opacity: 0.32,
+              transform: "rotate(-16deg)",
               pointerEvents: "none",
+              filter: "drop-shadow(0 0 25px rgba(35,211,214,.22))",
             }}
           />
 
@@ -160,14 +213,15 @@ export default function LoginPage({ onLogin, onGoRegister, onGoogleLogin }) {
             aria-hidden="true"
             style={{
               position: "absolute",
-              width: 200,
-              height: 200,
+              width: 390,
+              height: 390,
               objectFit: "contain",
-              left: -84,
-              bottom: 10,
-              opacity: 0.07,
-              transform: "rotate(22deg)",
+              left: -140,
+              bottom: 130,
+              opacity: 0.28,
+              transform: "rotate(21deg)",
               pointerEvents: "none",
+              filter: "drop-shadow(0 0 25px rgba(35,211,214,.18))",
             }}
           />
 
@@ -177,53 +231,57 @@ export default function LoginPage({ onLogin, onGoRegister, onGoogleLogin }) {
             aria-hidden="true"
             style={{
               position: "absolute",
-              width: 140,
-              height: 140,
+              width: 310,
+              height: 310,
               objectFit: "contain",
-              right: 26,
-              bottom: -50,
-              opacity: 0.06,
+              right: -30,
+              bottom: -82,
+              opacity: 0.24,
               transform: "rotate(8deg)",
               pointerEvents: "none",
+              filter: "drop-shadow(0 0 25px rgba(35,211,214,.16))",
             }}
           />
 
           <div style={{ position: "relative", zIndex: 1 }}>
             <h2
               style={{
-                margin: "0 0 26px",
-                fontSize: 26,
+                margin: "0 0 28px",
+                fontSize: 34,
                 color: COLORS.cream,
                 textAlign: "center",
                 fontFamily:
                   "Impact, 'Arial Black', 'DM Serif Display', Georgia, serif",
                 letterSpacing: 0.3,
-                textShadow: `3px 3px 0 ${COLORS.ink}`,
+                textShadow:
+                  `4px 4px 0 ${COLORS.ink}, 0 0 18px rgba(248,236,208,.18)`,
               }}
             >
               Connexion
             </h2>
 
-            <div style={{ width: "100%", maxWidth: 340, margin: "0 auto" }}>
+            <div style={{ width: "100%", maxWidth: 350, margin: "0 auto" }}>
               <button
                 onClick={handleGoogleLogin}
                 disabled={googleLoading}
                 style={{
                   width: "100%",
-                  padding: "11px 16px",
-                  borderRadius: 12,
+                  padding: "15px 18px",
+                  borderRadius: 14,
                   border: `3px solid ${COLORS.ink}`,
-                  background: COLORS.paper,
+                  background:
+                    "linear-gradient(180deg, #FFF9E9 0%, #FFF2D0 100%)",
                   color: COLORS.ink,
                   fontWeight: 900,
                   cursor: googleLoading ? "not-allowed" : "pointer",
-                  marginBottom: 18,
-                  boxShadow: `5px 5px 0 ${COLORS.ink}`,
-                  fontSize: 15,
+                  marginBottom: 20,
+                  boxShadow: `6px 6px 0 ${COLORS.ink}`,
+                  fontSize: 17,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  gap: 10,
+                  gap: 6,
+                  fontFamily: "inherit",
                 }}
               >
                 {!googleLoading && (
@@ -232,13 +290,14 @@ export default function LoginPage({ onLogin, onGoRegister, onGoogleLogin }) {
                     alt=""
                     aria-hidden="true"
                     style={{
-                      width: 28,
-                      height: 28,
+                      width: 52,
+                      height: 52,
                       objectFit: "contain",
                       flexShrink: 0,
                     }}
                   />
                 )}
+
                 <span>
                   {googleLoading
                     ? "Connexion Google..."
@@ -251,20 +310,20 @@ export default function LoginPage({ onLogin, onGoRegister, onGoogleLogin }) {
               style={{
                 display: "flex",
                 alignItems: "center",
-                gap: 12,
+                gap: 13,
                 width: "100%",
-                maxWidth: 260,
-                margin: "16px auto 24px",
+                maxWidth: 300,
+                margin: "18px auto 26px",
                 color: COLORS.muted,
-                fontSize: 12,
-                fontWeight: 800,
+                fontSize: 14,
+                fontWeight: 900,
               }}
             >
               <span
                 style={{
                   height: 2,
                   flex: 1,
-                  background: "rgba(248, 236, 208, 0.28)",
+                  background: "rgba(248,236,208,.34)",
                 }}
               />
               <span>OU</span>
@@ -272,7 +331,7 @@ export default function LoginPage({ onLogin, onGoRegister, onGoogleLogin }) {
                 style={{
                   height: 2,
                   flex: 1,
-                  background: "rgba(248, 236, 208, 0.28)",
+                  background: "rgba(248,236,208,.34)",
                 }}
               />
             </div>
@@ -283,7 +342,7 @@ export default function LoginPage({ onLogin, onGoRegister, onGoogleLogin }) {
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                gap: 18,
+                gap: 20,
               }}
             >
               <div style={fieldWrapStyle}>
@@ -312,15 +371,15 @@ export default function LoginPage({ onLogin, onGoRegister, onGoogleLogin }) {
                 <div
                   style={{
                     width: "100%",
-                    maxWidth: 340,
+                    maxWidth: 350,
                     margin: "0 auto",
                     background: `${COLORS.red}18`,
                     border: `2px solid ${COLORS.red}`,
-                    borderRadius: 10,
+                    borderRadius: 12,
                     padding: "10px 14px",
                     fontSize: 13,
                     color: "#FFD6D6",
-                    fontWeight: 700,
+                    fontWeight: 800,
                   }}
                 >
                   ⚠️ {error}
@@ -332,18 +391,21 @@ export default function LoginPage({ onLogin, onGoRegister, onGoogleLogin }) {
                 disabled={loading}
                 style={{
                   width: "100%",
-                  maxWidth: 340,
-                  margin: "2px auto 0",
-                  background: loading ? COLORS.muted : COLORS.accent,
+                  maxWidth: 350,
+                  margin: "4px auto 0",
+                  background: loading
+                    ? COLORS.muted
+                    : "linear-gradient(135deg, #FF8A1F 0%, #F97316 55%, #EA580C 100%)",
                   border: `3px solid ${COLORS.ink}`,
-                  borderRadius: 12,
-                  padding: "14px 0",
+                  borderRadius: 14,
+                  padding: "16px 0",
                   color: "#fff",
-                  fontSize: 17,
+                  fontSize: 20,
                   fontWeight: 900,
                   cursor: loading ? "not-allowed" : "pointer",
-                  boxShadow: `5px 5px 0 ${COLORS.ink}`,
-                  textShadow: `1px 1px 0 ${COLORS.ink}`,
+                  boxShadow: `6px 6px 0 ${COLORS.ink}`,
+                  textShadow: `2px 2px 0 ${COLORS.ink}`,
+                  fontFamily: "inherit",
                 }}
               >
                 {loading ? "Connexion..." : "Se connecter"}
