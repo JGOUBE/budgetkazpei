@@ -92,6 +92,11 @@ const kreol = {
     bonsAlimentaires: "Bon manzé CCAS",
     mobilite: "Éd transport Réjion",
     microcredit: "Ti krédition sosyal",
+    bonPlanPei: "Bon plan péi",
+    monthlyPayment: "Larzan i rent chak mwa",
+    housingAid: "Éd pou kaz",
+    energySupport: "Soutien kouran",
+    aidToRequest: "Éd pou dmandé",
   },
   abonnements: {
     savingDetected: "Nout a trouvé koman ou kapab ékonomi",

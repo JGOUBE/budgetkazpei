@@ -26,28 +26,28 @@ const CARD_VARIANTS = [
     border: "rgba(34,197,94,.40)",
     glow: "rgba(34,197,94,.16)",
     Icon: Wallet,
-    label: "Versement mensuel estimé",
+    labelKey: "monthlyPayment",
   },
   {
     bg: "linear-gradient(135deg, rgba(14,165,233,.30), rgba(15,30,56,.96))",
     border: "rgba(14,165,233,.40)",
     glow: "rgba(14,165,233,.16)",
     Icon: Home,
-    label: "Aide au logement",
+    labelKey: "housingAid",
   },
   {
     bg: "linear-gradient(135deg, rgba(250,204,21,.28), rgba(15,30,56,.96))",
     border: "rgba(250,204,21,.40)",
     glow: "rgba(250,204,21,.14)",
     Icon: Sun,
-    label: "Soutien énergie",
+    labelKey: "energySupport",
   },
   {
     bg: "linear-gradient(135deg, rgba(249,115,22,.30), rgba(15,30,56,.96))",
     border: "rgba(249,115,22,.40)",
     glow: "rgba(249,115,22,.16)",
     Icon: Zap,
-    label: "Aide à demander",
+    labelKey: "aidToRequest",
   },
 ]
 
@@ -133,7 +133,7 @@ export default function AidesPage({ isMobile, t }) {
             }}
           >
             <Sparkles size={15} />
-            Bon plan péi
+            {t("aides", "bonPlanPei")}
           </div>
 
           <h3
@@ -146,7 +146,7 @@ export default function AidesPage({ isMobile, t }) {
               letterSpacing: ".2px",
             }}
           >
-            Aides actuelles & disponibles
+            {t("aides", "title")}
           </h3>
 
           <p
@@ -270,7 +270,7 @@ export default function AidesPage({ isMobile, t }) {
                     fontWeight: 600,
                   }}
                 >
-                  {theme.label}
+                  {t("aides", theme.labelKey)}
                 </p>
 
                 {aide.statutKey !== "statutActif" && (
@@ -291,7 +291,7 @@ export default function AidesPage({ isMobile, t }) {
                       boxShadow: "0 10px 20px rgba(0,0,0,.20)",
                     }}
                   >
-                    Faire la demande →
+                    {t("aides", "cta")} →
                   </button>
                 )}
               </div>
@@ -323,7 +323,7 @@ export default function AidesPage({ isMobile, t }) {
           }}
         >
           <Landmark size={20} />
-          Aides supplémentaires à explorer
+          {t("aides", "autresAides")}
         </h3>
 
         <div
@@ -399,7 +399,7 @@ export default function AidesPage({ isMobile, t }) {
                   }}
                 >
                   <SearchCheck size={14} />
-                  Vérifier
+                  {t("aides", "check")}
                 </button>
               </div>
             )

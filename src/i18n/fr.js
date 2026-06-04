@@ -92,6 +92,11 @@ const fr = {
     bonsAlimentaires: "Bons alimentaires CCAS",
     mobilite: "Aide mobilité Région",
     microcredit: "Microcrédit social",
+    bonPlanPei: "Bon plan péi",
+    monthlyPayment: "Versement mensuel estimé",
+    housingAid: "Aide au logement",
+    energySupport: "Soutien énergie",
+    aidToRequest: "Aide à demander",
   },
   abonnements: {
     savingDetected: "Économie potentielle détectée",
