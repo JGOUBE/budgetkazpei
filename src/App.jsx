@@ -6,6 +6,8 @@ import { useBudgets } from "./hooks/useBudgets"
 import { useSubscription } from "./hooks/useSubscription"
 import { useUserAbonnements } from "./hooks/useUserAbonnements"
 import { useCustomBudgets } from "./hooks/useCustomBudgets"
+import { useMonthlyHistory } from "./hooks/useMonthlyHistory"
+
 import LoginPage from "./components/auth/LoginPage"
 import RegisterPage from "./components/auth/RegisterPage"
 import Sidebar from "./components/sidebar/Sidebar"
@@ -17,6 +19,7 @@ import ProfilePage from "./components/profile/ProfilePage"
 import PremiumPage from "./components/premium/PremiumPage"
 import AbonnementsPage from "./components/abonnements/AbonnementsPage"
 import AidesPage from "./components/aides/AidesPage"
+import HistoriquePage from "./components/historique/HistoriquePage"
 
 const COLORS = {
   bg: "#0A1628",
@@ -44,6 +47,8 @@ function useIsMobile() {
 
 export default function App() {
   const { user, loading, signIn, signUp, signOut, signInWithGoogle } = useAuth()
+  console.log("USER CONNECTÉ =", user?.id)
+console.log("EMAIL =", user?.email)
 
   const [authPage, setAuthPage] = useState("login")
   const [activeNav, setActiveNav] = useState("dashboard")
@@ -55,16 +60,35 @@ export default function App() {
   const isMobile = useIsMobile()
 
   const { lang, toggleLang, t } = useLanguage()
-  const { transactions, addTransaction, updateTransaction, deleteTransaction } = useTransactions(user?.id)
+
+  const {
+    transactions,
+    addTransaction,
+    updateTransaction,
+    deleteTransaction,
+  } = useTransactions(user?.id)
+
   const { isPremium, activatePremium } = useSubscription(user?.id)
-  const { customBudgets, saveBudgets } = useCustomBudgets(user?.id, isPremium)
+
+  const { customBudgets, saveBudgets } = useCustomBudgets(
+    user?.id,
+    isPremium
+  )
+
   const {
     abonnements,
+    loading: abonnementsLoading,
     updateAbonnement,
     addAbonnement,
     deleteAbonnement,
     resetAbonnements,
   } = useUserAbonnements(user?.id)
+
+  const {
+  historiques,
+  loading: historiqueLoading,
+  savePreviousMonthHistory,
+} = useMonthlyHistory(user?.id, isPremium)
 
   const {
     revenus,
@@ -90,8 +114,6 @@ export default function App() {
     }
   }, [user])
 
-  // Correctif important : si on repasse en desktop, on ferme le menu mobile
-  // pour éviter le voile noir bloqué qui empêche de cliquer.
   useEffect(() => {
     if (!isMobile) {
       setShowSidebar(false)
@@ -99,15 +121,13 @@ export default function App() {
   }, [isMobile])
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search)
+  if (!user?.id || !isPremium) return
+  if (typeof savePreviousMonthHistory !== "function") return
 
-    if (params.get("premium") === "success" && user?.id) {
-      activatePremium()
-      setActiveNav("profil")
-      window.history.replaceState({}, "", window.location.pathname)
-    }
-  }, [user, activatePremium])
-
+  savePreviousMonthHistory().catch(error => {
+    console.error("Erreur archivage automatique mensuel:", error)
+  })
+}, [user?.id, isPremium, savePreviousMonthHistory])
   function handleNavChange(nav) {
     setActiveNav(nav)
     setShowSidebar(false)
@@ -134,7 +154,12 @@ export default function App() {
 
   if (!user) {
     if (authPage === "register") {
-      return <RegisterPage onRegister={signUp} onGoLogin={() => setAuthPage("login")} />
+      return (
+        <RegisterPage
+          onRegister={signUp}
+          onGoLogin={() => setAuthPage("login")}
+        />
+      )
     }
 
     return (
@@ -158,7 +183,6 @@ export default function App() {
         display: isMobile ? "block" : "flex",
       }}
     >
-      {/* Header mobile */}
       {isMobile && (
         <div
           style={{
@@ -177,6 +201,7 @@ export default function App() {
           }}
         >
           <button
+            type="button"
             onClick={() => setShowSidebar(prev => !prev)}
             style={{
               background: "transparent",
@@ -201,6 +226,7 @@ export default function App() {
           </div>
 
           <button
+            type="button"
             onClick={() => setShowModal(true)}
             style={{
               background: COLORS.accent,
@@ -219,7 +245,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Overlay mobile : actif uniquement sur mobile ET quand le menu est ouvert */}
       {user && isMobile && showSidebar && (
         <div
           onClick={() => setShowSidebar(false)}
@@ -232,7 +257,6 @@ export default function App() {
         />
       )}
 
-      {/* Sidebar */}
       {isMobile ? (
         <div
           style={{
@@ -276,7 +300,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Main content */}
       <div
         style={{
           flex: 1,
@@ -317,11 +340,13 @@ export default function App() {
               {activeNav === "depenses" && t("nav", "depenses")}
               {activeNav === "aides" && t("nav", "aides")}
               {activeNav === "abonnements" && t("nav", "abonnements")}
+              {activeNav === "historique" && t("nav", "monthlyHistory")}
               {activeNav === "profil" && t("nav", "profil")}
               {activeNav === "premium" && t("nav", "premium")}
             </h1>
 
             <button
+              type="button"
               onClick={toggleLang}
               style={{
                 background: "transparent",
@@ -338,29 +363,32 @@ export default function App() {
             </button>
           </div>
         )}
-{activeNav === "dashboard" && (
-  <Dashboard
-    stats={{
-      revenus,
-      depenses,
-      solde,
-      chargesFixes,
-      depensesVariables,
-      resteAVivre,
-      tauxChargesFixes,
-    }}
-    byCategory={byCategory}
-    pieData={pieData}
-    transactions={transactions}
-    t={t}
-    isMobile={isMobile}
-    isPremium={isPremium}
-    customBudgets={customBudgets}
-    onSaveBudgets={saveBudgets}
-    onGoPremium={() => setActiveNav("premium")}
-  />
-)}
-            {activeNav === "depenses" && (
+
+        {activeNav === "dashboard" && (
+          <Dashboard
+            stats={{
+              revenus,
+              depenses,
+              solde,
+              chargesFixes,
+              depensesVariables,
+              resteAVivre,
+              tauxChargesFixes,
+            }}
+            byCategory={byCategory}
+            pieData={pieData}
+            transactions={transactions}
+            abonnements={abonnements}
+            t={t}
+            isMobile={isMobile}
+            isPremium={isPremium}
+            customBudgets={customBudgets}
+            onSaveBudgets={saveBudgets}
+            onGoPremium={() => setActiveNav("premium")}
+          />
+        )}
+
+        {activeNav === "depenses" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div
               style={{
@@ -370,15 +398,32 @@ export default function App() {
                 padding: isMobile ? 14 : 20,
               }}
             >
-              <h3 style={{ margin: "0 0 16px", fontSize: 14, color: COLORS.muted, fontWeight: 500 }}>
+              <h3
+                style={{
+                  margin: "0 0 16px",
+                  fontSize: 14,
+                  color: COLORS.muted,
+                  fontWeight: 500,
+                }}
+              >
                 {t("dashboard", "recentTransactions")}
               </h3>
 
               {transactions.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "30px 0", color: COLORS.muted }}>
+                <div
+                  style={{
+                    textAlign: "center",
+                    padding: "30px 0",
+                    color: COLORS.muted,
+                  }}
+                >
                   <div style={{ fontSize: 36, marginBottom: 10 }}>📭</div>
-                  <p style={{ fontSize: 14 }}>{t("transactions", "noTransactions")}</p>
-                  <p style={{ fontSize: 12 }}>{t("transactions", "noTransactionsSub")}</p>
+                  <p style={{ fontSize: 14 }}>
+                    {t("transactions", "noTransactions")}
+                  </p>
+                  <p style={{ fontSize: 12 }}>
+                    {t("transactions", "noTransactionsSub")}
+                  </p>
                 </div>
               ) : (
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -411,8 +456,11 @@ export default function App() {
                         >
                           {tx.icon}
                         </div>
+
                         <div>
-                          <div style={{ fontSize: 13, fontWeight: 500 }}>{tx.label}</div>
+                          <div style={{ fontSize: 13, fontWeight: 500 }}>
+                            {tx.label}
+                          </div>
                           <div style={{ fontSize: 11, color: COLORS.muted }}>
                             {tx.date} · {t("categories", tx.category)}
                           </div>
@@ -432,6 +480,7 @@ export default function App() {
                         </span>
 
                         <button
+                          type="button"
                           onClick={() => setEditingTransaction(tx)}
                           style={{
                             background: "transparent",
@@ -451,6 +500,7 @@ export default function App() {
                         </button>
 
                         <button
+                          type="button"
                           onClick={() => {
                             if (window.confirm(`Supprimer "${tx.label}" ?`)) {
                               deleteTransaction(tx.id)
@@ -481,13 +531,12 @@ export default function App() {
           </div>
         )}
 
-        {activeNav === "aides" && (
-          <AidesPage isMobile={isMobile} t={t} />
-        )}
+        {activeNav === "aides" && <AidesPage isMobile={isMobile} t={t} />}
 
         {activeNav === "abonnements" && (
           <AbonnementsPage
             abonnements={abonnements}
+            loading={abonnementsLoading}
             onUpdate={updateAbonnement}
             onAdd={addAbonnement}
             onDelete={deleteAbonnement}
@@ -497,11 +546,25 @@ export default function App() {
           />
         )}
 
-        {activeNav === "profil" && <ProfilePage user={user} isPremium={isPremium} t={t} />}
-        {activeNav === "premium" && <PremiumPage user={user} isPremium={isPremium} t={t} />}
+        {activeNav === "historique" && (
+          <HistoriquePage
+            historiques={historiques}
+            loading={historiqueLoading}
+            isPremium={isPremium}
+            onGoPremium={() => setActiveNav("premium")}
+            t={t}
+          />
+        )}
+
+        {activeNav === "profil" && (
+          <ProfilePage user={user} isPremium={isPremium} t={t} />
+        )}
+
+        {activeNav === "premium" && (
+          <PremiumPage user={user} isPremium={isPremium} t={t} />
+        )}
       </div>
 
-      {/* Bottom nav mobile */}
       {isMobile && (
         <div
           style={{
@@ -522,10 +585,11 @@ export default function App() {
             { id: "depenses", emoji: "📊", label: t("nav", "depenses") },
             { id: "aides", emoji: "🏛️", label: "Aides" },
             { id: "abonnements", emoji: "📋", label: t("nav", "abonnements") },
-            { id: "profil", emoji: "👤", label: "Profil" },
+            { id: "profil", emoji: "👤", label: t("nav", "profil") },
           ].map(item => (
             <button
               key={item.id}
+              type="button"
               onClick={() => handleNavChange(item.id)}
               style={{
                 background: "transparent",
@@ -542,13 +606,21 @@ export default function App() {
               }}
             >
               <span style={{ fontSize: 20 }}>{item.emoji}</span>
-              <span style={{ fontSize: 9, fontFamily: "inherit" }}>{item.label}</span>
+              <span style={{ fontSize: 9, fontFamily: "inherit" }}>
+                {item.label}
+              </span>
             </button>
           ))}
         </div>
       )}
 
-      {showModal && <AddTransactionModal onAdd={addTransaction} onClose={() => setShowModal(false)} t={t} />}
+      {showModal && (
+        <AddTransactionModal
+          onAdd={addTransaction}
+          onClose={() => setShowModal(false)}
+          t={t}
+        />
+      )}
 
       {editingTransaction && (
         <EditTransactionModal

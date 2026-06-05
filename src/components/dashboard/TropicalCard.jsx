@@ -75,19 +75,23 @@ export default function TropicalCard({
         padding: 20,
         background: theme.bg,
         border: `1px solid ${theme.border}`,
-        boxShadow: `0 18px 38px rgba(0,0,0,.20), inset 0 1px 0 rgba(255,255,255,.08), 0 0 30px ${theme.glow}`,
+        boxShadow:
+          `0 18px 38px rgba(0,0,0,.20), inset 0 1px 0 rgba(255,255,255,.08), 0 0 30px ${theme.glow}`,
         backdropFilter: "blur(16px)",
         WebkitBackdropFilter: "blur(16px)",
-        transition: "transform .25s ease, box-shadow .25s ease, border-color .25s ease",
+        transition:
+          "transform .25s ease, box-shadow .25s ease, border-color .25s ease",
         ...style,
       }}
       onMouseEnter={e => {
-        e.currentTarget.style.transform = "translateY(-2px)"
-        e.currentTarget.style.boxShadow = `0 22px 48px rgba(0,0,0,.26), inset 0 1px 0 rgba(255,255,255,.1), 0 0 38px ${theme.glow}`
+        e.currentTarget.style.transform = "translateY(-3px)"
+        e.currentTarget.style.boxShadow =
+          `0 22px 48px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.10), 0 0 38px ${theme.glow}`
       }}
       onMouseLeave={e => {
         e.currentTarget.style.transform = "translateY(0)"
-        e.currentTarget.style.boxShadow = `0 18px 38px rgba(0,0,0,.20), inset 0 1px 0 rgba(255,255,255,.08), 0 0 30px ${theme.glow}`
+        e.currentTarget.style.boxShadow =
+          `0 18px 38px rgba(0,0,0,.20), inset 0 1px 0 rgba(255,255,255,.08), 0 0 30px ${theme.glow}`
       }}
     >
       <div
@@ -99,11 +103,12 @@ export default function TropicalCard({
           pointerEvents: "none",
         }}
       />
+
       <div
         style={{
           position: "absolute",
           inset: 0,
-          opacity: 0.08,
+          opacity: 0.04,
           backgroundImage:
             "linear-gradient(rgba(255,255,255,.22) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.16) 1px, transparent 1px)",
           backgroundSize: "18px 18px",
@@ -111,21 +116,23 @@ export default function TropicalCard({
           pointerEvents: "none",
         }}
       />
+
       <div
         style={{
           position: "absolute",
-          right: -18,
-          top: -8,
-          fontSize: 88,
-          opacity: 0.11,
+          right: -12,
+          top: -4,
+          fontSize: 72,
+          opacity: 0.05,
           lineHeight: 1,
-          transform: "rotate(-12deg)",
+          transform: "rotate(-18deg)",
           pointerEvents: "none",
           filter: "grayscale(.05)",
         }}
       >
         {motif}
       </div>
+
       {emoji && (
         <div
           style={{
@@ -147,7 +154,10 @@ export default function TropicalCard({
           {emoji}
         </div>
       )}
-      <div style={{ position: "relative", zIndex: 1, ...innerStyle }}>{children}</div>
+
+      <div style={{ position: "relative", zIndex: 1, ...innerStyle }}>
+        {children}
+      </div>
     </div>
   )
 }

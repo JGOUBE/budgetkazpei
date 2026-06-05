@@ -4,7 +4,7 @@ const kreol = {
     depenses: "Dépans",
     aides: "Éd & Drwa",
     monthlyHistory: "Istorik chak mwa",
-    Abonnements: "Abonman",
+    abonnements: "Sarz fix",
     profil: "Mon Profil",
     premium: "Vir Premium",
     signOut: "Sorti",
@@ -145,49 +145,65 @@ const kreol = {
     comptePremium: "Kont Premium",
     loading: "Sharjman profil...",
   },
+  historique: {
+    premiumTitle: "Istorik chak mwa Premium",
+    premiumSubtitle: "Retrouv chak mwa ou bilan bidjé ek ou bann PDF.",
+    unlockPremium: "Déblok avèk Premium",
+    loading: "Sharjman istorik chak mwa...",
+    title: "Istorik chak mwa",
+    subtitle: "Ou bann bilan bidjé chak mwa va aparèt isi avèk bann PDF.",
+    empty: "Nana pa istorik chak mwa pou linstan.",
+    revenus: "Larzan rantre",
+    depenses: "Dépans",
+    chargesFixes: "Shaj fix",
+    solde: "Larzan i reste",
+    downloadPdf: "Télésharj PDF",
+    generatingPdf: "PDF i prépar...",
+  },
   premium: {
-  title: "Pas an Premium",
-  subtitle:
-    "Pran kontrol su ou bidjé avèk bann zouti avansé, bann alèrt entèlizan é bann avantaj fèt pou La Rényon.",
-  perMonth: "/mwa",
-  noCommitment: "San langazman",
-  recommended: "NOU KONSEY",
-  free: "GRATIS",
-  premiumLabel: "⭐ PREMIUM — 3€/MWA",
-  subscribe: "⭐ Pas an Premium • 3€/mwa",
-  subscribing: "Rédirèksion...",
-  securePayment: "Payman sékirizé par Stripe · Ou pé arrêt kan ou vlé",
+    title: "Pas an Premium",
+    subtitle:
+      "Pran kontrol su ou bidjé avèk bann zouti avansé, bann alèrt entèlizan é bann avantaj fèt pou La Rényon.",
+    perMonth: "/mwa",
+    noCommitment: "San langazman",
+    recommended: "NOU KONSEY",
+    free: "GRATIS",
+    premiumLabel: "⭐ PREMIUM — 3€/MWA",
+    subscribe: "⭐ Pas an Premium • 3€/mwa",
+    subscribing: "Rédirèksion...",
+    securePayment: "Payman sékirizé par Stripe · Ou pé arrêt kan ou vlé",
 
-  alreadyPremium: "Ou lé Premium !",
-  alreadyPremiumSub:
-    "Ou bénéfisié déza tout bann fonksionalité avansé BudgetKazPei.",
-  activePerks: "✅ Bann avantaj actif",
+    alreadyPremium: "Ou lé Premium !",
+    alreadyPremiumSub:
+      "Ou bénéfisié déza tout bann fonksionalité avansé BudgetKazPei.",
+    activePerks: "✅ Bann avantaj actif",
 
-  openBankingSoon: "Biento",
+    openBankingSoon: "Biento",
 
-  fixedCharges: "Shaj fix prévwar",
-fixedChargesInfo:
-  "Shaj fix sé tout bann dépans i revien chak mwa : loyé, kredi, abonnman, internet, téléfon, lasirans...",
+    fixedCharges: "Shaj fix prévwar",
+    fixedChargesInfo:
+      "Shaj fix sé tout bann dépans i revien chak mwa : loyé, kredi, abonnman, internet, téléfon, lasirans...",
 
-  featuresFree: [
-    "Tablo bidjé",
-    "Azout mouvman",
-    "Swiv katégori",
-    "Éd & drwa",
-    "Version kréol",
-    "Profil utilizatèr",
-  ],
+    featuresFree: [
+      "Tablo bidjé",
+      "Azout mouvman",
+      "Swiv katégori",
+      "Éd & drwa",
+      "Version kréol",
+      "Profil utilizatèr",
+    ],
 
-  featuresPremium: [
-    "Tout sa i gratis déza",
-    "🔔 Alèrt bidjé entèlizan",
-    "🤖 Asistan IA pèrsonalizé",
-    "🎯 Bon plan lokal èksklizif",
-    "📊 Istorik avansé",
-    "🏦 Open Banking — import otomatik",
-    "📄 Èksport PDF chak mwa",
-    "🚀 Nouvo fonksionalité avan tout moun",
-  ],
-},
-};
-export default kreol;
+    featuresPremium: [
+      "Tout sa i gratis déza",
+      "🔔 Alèrt bidjé entèlizan",
+      "🤖 Asistan IA pèrsonalizé",
+      "🎯 Bon plan lokal èksklizif",
+      "📊 Istorik avansé",
+      "🏦 Open Banking — import otomatik",
+      "📄 Èksport PDF chak mwa",
+      "🚀 Nouvo fonksionalité avan tout moun",
+    ],
+  },
+}
+
+export default kreol
