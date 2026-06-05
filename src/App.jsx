@@ -20,6 +20,7 @@ import PremiumPage from "./components/premium/PremiumPage"
 import AbonnementsPage from "./components/abonnements/AbonnementsPage"
 import AidesPage from "./components/aides/AidesPage"
 import HistoriquePage from "./components/historique/HistoriquePage"
+import { TruckElectricIcon } from "lucide-react"
 
 const COLORS = {
   bg: "#0A1628",
@@ -68,7 +69,7 @@ console.log("EMAIL =", user?.email)
     deleteTransaction,
   } = useTransactions(user?.id)
 
-  const { isPremium, activatePremium } = useSubscription(user?.id)
+  const { isPremium, activatePremium } = useSubscription(user?.id) 
 
   const { customBudgets, saveBudgets } = useCustomBudgets(
     user?.id,
@@ -533,10 +534,11 @@ console.log("EMAIL =", user?.email)
 
         {activeNav === "aides" && (
   <AidesPage
-    isMobile={isMobile}
-    t={t}
-    isPremium={isPremium}
-  />
+  isMobile={isMobile}
+  t={t}
+  isPremium={isPremium}
+  user={user}
+/>
 )}
 
 {activeNav === "abonnements" && (

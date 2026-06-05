@@ -1,5 +1,6 @@
 import { useState } from "react"
-import { Bot, Lock, Send, Sparkles } from "lucide-react"
+import { Lock, Send, Sparkles, Star, SearchCheck } from "lucide-react"
+import { supabase } from "../../services/supabase"
 
 const COLORS = {
   card: "#0F1E38",
@@ -8,19 +9,169 @@ const COLORS = {
   accent: "#F97316",
   yellow: "#FCD34D",
   cyan: "#23D3D6",
+  green: "#22C55E",
   text: "#F1F5F9",
   muted: "#8EA4C5",
 }
 
-export default function AssistantAides({ isPremium, isMobile, t }) {
+function safeT(t, section, key, fallback) {
+  if (typeof t !== "function") return fallback
+  return t(section, key) || fallback
+}
+
+function formatValue(value, fallback = "Non renseigné") {
+  if (value === null || value === undefined || value === "") return fallback
+  return value
+}
+
+function formatMoney(value) {
+  const number = Number(value)
+  if (!Number.isFinite(number) || number <= 0) return "Non renseigné"
+  return `${number.toFixed(0).replace(".", ",")} € / mois`
+}
+
+function formatSituation(value) {
+  const map = {
+    celibataire: "Célibataire",
+    couple: "En couple",
+    marie: "Marié(e)",
+    parent_isole: "Parent isolé",
+    locataire: "Locataire",
+    proprietaire: "Propriétaire",
+    heberge: "Hébergé gratuitement",
+    salarie: "Salarié",
+    independant: "Indépendant",
+    demandeur_emploi: "Demandeur d’emploi",
+    etudiant: "Étudiant",
+    retraite: "Retraité",
+  }
+
+  return map[value] || formatValue(value)
+}
+
+function buildProfileSummary(profile = {}) {
+  return `📍 Commune : ${formatValue(profile.commune)}
+👨‍👩‍👧‍👦 Situation familiale : ${formatSituation(profile.situation_familiale)}
+👶 Nombre d’enfants : ${formatValue(profile.nombre_enfants)}
+🏠 Logement : ${formatSituation(profile.logement)}
+💼 Situation professionnelle : ${formatSituation(profile.situation_professionnelle)}
+💰 Revenus du foyer : ${formatMoney(profile.revenus_foyer)}`
+}
+
+export default function AssistantAides({ isPremium, isMobile, t, user }) {
   const [question, setQuestion] = useState("")
   const [response, setResponse] = useState("")
+  const [profile, setProfile] = useState(null)
+  const [loadingProfile, setLoadingProfile] = useState(false)
 
-  function handleAnalyze() {
-    if (!question.trim()) return
+  const txt = (key, fallback) => safeT(t, "aides", key, fallback)
+
+  async function fetchProfile() {
+    if (!user?.id) return null
+
+    setLoadingProfile(true)
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .select(
+        "commune,situation_familiale,nombre_enfants,logement,revenus_foyer,situation_professionnelle"
+      )
+      .eq("id", user.id)
+      .maybeSingle()
+
+    setLoadingProfile(false)
+
+    if (error) {
+      console.error("Erreur chargement profil assistant:", error)
+      return null
+    }
+
+    setProfile(data)
+    return data
+  }
+
+  async function fetchAides() {
+  const { data, error } = await supabase
+    .from("aides_reunion")
+    .select("*")
+
+  console.log("AIDES =", data)
+  console.log("ERREUR =", error)
+
+    if (error) {
+      console.error("Erreur chargement aides:", error)
+      return []
+    }
+
+    return data || []
+  }
+
+  async function handleScanProfile() {
+    const currentProfile = profile || (await fetchProfile())
+
+    if (!currentProfile) {
+      setResponse(
+        "Impossible de charger votre profil pour le moment. Vérifiez que votre profil est bien complété."
+      )
+      return
+    }
+
+    const aides = await fetchAides()
+
+    console.log("PROFIL :", currentProfile)
+    console.log("AIDES :", aides)
+
+    const topAides = aides.slice(0, 5)
+
+setResponse(
+`Profil analysé avec succès.
+
+${buildProfileSummary(currentProfile)}
+
+🎯 Aides recommandées pour votre profil :
+
+${topAides
+  .map(
+    aide => `
+✅ ${aide.nom}
+💰 Montant estimé : ${aide.montant || "Variable"} €/mois
+📄 ${aide.description || ""}
+`
+  )
+  .join("\n")}
+
+📊 ${aides.length} aides, droits et dispositifs analysés.
+
+BudgetKazPei continuera d'améliorer ses recommandations en fonction de votre profil, de votre commune et de votre situation familiale.`
+)
+  }
+
+  async function handleAnalyze() {
+    const currentProfile = profile || (await fetchProfile())
+
+    if (!currentProfile) {
+      setResponse(
+        "Impossible de charger votre profil pour le moment. Vérifiez que votre profil est bien complété."
+      )
+      return
+    }
+
+    const aides = await fetchAides()
+
+    console.log("QUESTION :", question)
+    console.log("PROFIL :", currentProfile)
+    console.log("AIDES :", aides)
 
     setResponse(
-      "D'après votre situation, BudgetKazPei vous conseille de vérifier en priorité : CAF, APL, Prime d’activité, chèque énergie, CCAS de votre commune et aides Région Réunion. Cette première analyse sera bientôt enrichie par l’IA Premium."
+      `Question enregistrée :
+
+"${question || "Aucune question précisée"}"
+
+${buildProfileSummary(currentProfile)}
+
+📊 ${aides.length} aides disponibles ont été analysées.
+
+L’assistant BudgetKazPei va ensuite croiser votre profil avec ces aides pour afficher les dispositifs les plus pertinents.`
     )
   }
 
@@ -37,13 +188,34 @@ export default function AssistantAides({ isPremium, isMobile, t }) {
         <Lock size={26} color={COLORS.yellow} />
 
         <h3 style={{ color: COLORS.text, margin: "12px 0 8px" }}>
-          🤖 Assistant IA Premium
+          {txt("assistantPremiumTitle", "⭐ Assistant Personnel Premium")}
         </h3>
 
-        <p style={{ color: COLORS.muted, lineHeight: 1.6, margin: 0 }}>
-          Débloquez Premium pour obtenir une analyse personnalisée de vos aides,
-          droits et dispositifs disponibles à La Réunion.
+        <p style={{ color: COLORS.yellow, lineHeight: 1.6, margin: "0 0 8px", fontWeight: 900 }}>
+          {txt("assistantPremiumIntro", "Certaines aides sont peu connues.")}
         </p>
+
+        <p style={{ color: COLORS.muted, lineHeight: 1.6, margin: 0 }}>
+          {txt(
+            "assistantPremiumDescription",
+            "BudgetKazPei analyse votre situation parmi plus de 30 aides, droits et dispositifs disponibles à La Réunion pour vous aider à identifier rapidement ceux qui pourraient vous concerner."
+          )}
+        </p>
+
+        <div style={{ marginTop: 14, display: "grid", gap: 7 }}>
+          <div style={{ color: COLORS.text, fontWeight: 800 }}>
+            {txt("assistantPremiumBenefit1", "🎯 Analyse personnalisée")}
+          </div>
+          <div style={{ color: COLORS.text, fontWeight: 800 }}>
+            {txt("assistantPremiumBenefit2", "📄 Accompagnement dans les démarches")}
+          </div>
+          <div style={{ color: COLORS.text, fontWeight: 800 }}>
+            {txt("assistantPremiumBenefit3", "💬 Français et créole réunionnais")}
+          </div>
+          <div style={{ color: COLORS.text, fontWeight: 800 }}>
+            {txt("assistantPremiumBenefit4", "🔔 Suivi des nouvelles aides disponibles")}
+          </div>
+        </div>
 
         <button
           type="button"
@@ -60,7 +232,7 @@ export default function AssistantAides({ isPremium, isMobile, t }) {
             fontFamily: "inherit",
           }}
         >
-          Débloquer Premium
+          {txt("assistantPremiumButton", "Découvrir Premium")}
         </button>
       </section>
     )
@@ -76,20 +248,55 @@ export default function AssistantAides({ isPremium, isMobile, t }) {
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <Bot size={26} color={COLORS.cyan} />
+        <Star size={26} color={COLORS.cyan} />
         <h3 style={{ color: COLORS.text, margin: 0 }}>
-          Assistant IA BudgetKazPei
+          {txt("assistantTitle", "Mon assistant personnel")}
         </h3>
       </div>
 
       <p style={{ color: COLORS.muted, lineHeight: 1.6 }}>
-        Posez une question sur vos aides, droits ou votre situation.
+        {txt(
+          "assistantSubtitle",
+          "Posez une question sur vos aides, vos droits, vos démarches ou votre situation à La Réunion."
+        )}
       </p>
+
+      <p style={{ color: COLORS.cyan, lineHeight: 1.6, marginTop: -6, fontWeight: 800 }}>
+        {txt("assistantLanguages", "💬 Réponses possibles en français et en créole réunionnais.")}
+      </p>
+
+      <button
+        type="button"
+        onClick={handleScanProfile}
+        disabled={loadingProfile}
+        style={{
+          marginBottom: 12,
+          background: loadingProfile ? COLORS.muted : COLORS.cyan,
+          color: "#0A1628",
+          border: "none",
+          borderRadius: 12,
+          padding: "11px 16px",
+          fontWeight: 900,
+          cursor: loadingProfile ? "not-allowed" : "pointer",
+          fontFamily: "inherit",
+          display: "flex",
+          alignItems: "center",
+          gap: 8,
+        }}
+      >
+        <SearchCheck size={16} />
+        {loadingProfile
+          ? txt("assistantScanning", "Analyse en cours...")
+          : txt("assistantScan", "Scanner mon profil")}
+      </button>
 
       <textarea
         value={question}
         onChange={e => setQuestion(e.target.value)}
-        placeholder="Ex : Je suis parent isolé avec 2 enfants à Saint-Leu, quelles aides puis-je vérifier ?"
+        placeholder={txt(
+          "assistantPlaceholder",
+          "Ex : Je suis parent isolé avec 2 enfants à Saint-Leu, quelles aides puis-je vérifier ?"
+        )}
         style={{
           width: "100%",
           minHeight: 100,
@@ -107,15 +314,16 @@ export default function AssistantAides({ isPremium, isMobile, t }) {
       <button
         type="button"
         onClick={handleAnalyze}
+        disabled={loadingProfile}
         style={{
           marginTop: 12,
-          background: COLORS.accent,
+          background: loadingProfile ? COLORS.muted : COLORS.accent,
           color: "#fff",
           border: "none",
           borderRadius: 12,
           padding: "11px 16px",
           fontWeight: 900,
-          cursor: "pointer",
+          cursor: loadingProfile ? "not-allowed" : "pointer",
           fontFamily: "inherit",
           display: "flex",
           alignItems: "center",
@@ -123,7 +331,7 @@ export default function AssistantAides({ isPremium, isMobile, t }) {
         }}
       >
         <Send size={16} />
-        Analyser ma situation
+        {txt("assistantAnalyze", "Analyser ma situation")}
       </button>
 
       {response && (
@@ -136,11 +344,23 @@ export default function AssistantAides({ isPremium, isMobile, t }) {
             padding: 16,
             color: COLORS.text,
             lineHeight: 1.6,
+            whiteSpace: "pre-line",
           }}
         >
-          <div style={{ color: COLORS.cyan, fontWeight: 900, marginBottom: 8 }}>
-            <Sparkles size={16} /> Réponse de l’assistant
+          <div
+            style={{
+              color: COLORS.cyan,
+              fontWeight: 900,
+              marginBottom: 8,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            <Sparkles size={16} />
+            {txt("assistantResponseTitle", "Réponse de l’assistant")}
           </div>
+
           {response}
         </div>
       )}

@@ -99,6 +99,52 @@ const kreol = {
     housingAid: "Éd pou kaz",
     energySupport: "Soutien kouran",
     aidToRequest: "Éd pou dmandé",
+    assistantPremiumTitle: "⭐ Asistan Pèsonèl Premium",
+
+    assistantPremiumIntro:
+      "Sertin zéd lé pa vréman koné.",
+
+    assistantPremiumDescription:
+      "BudgetKazPei analiz out sitiasyon parmi plis ki 30 zéd, drwa ek dispozitif disponib La Rényon pou aid aou trouv rapidman bann zéd ki kapav korespond avèk out sitiasyon.",
+
+    assistantPremiumBenefit1:
+      "🎯 Analiz pèsonalizé",
+
+    assistantPremiumBenefit2:
+      "📄 Akonpagnman dann bann démars",
+
+    assistantPremiumBenefit3:
+      "💬 An fransé ék kréol rényoné",
+
+    assistantPremiumBenefit4:
+      "🔔 Sivi bann nouvo zéd disponib",
+
+    assistantPremiumButton:
+      "Découv Premium",
+
+    assistantTitle:
+      "Mon asistan pèsonèl",
+
+    assistantSubtitle:
+      "Poz out kestyon su bann zéd, drwa, démars ou out sitiasyon La Rényon.",
+
+    assistantLanguages:
+      "💬 Répons an fransé ék kréol rényoné.",
+
+    assistantScan:
+      "Analiz mon profil",
+
+    assistantScanning:
+      "Analiz an kour...",
+
+    assistantAnalyze:
+      "Analiz mon sitiasyon",
+
+    assistantResponseTitle:
+      "Répons l’asistan",
+
+    assistantPlaceholder:
+      "Ex : Mi lé parent isolé ek 2 marmay Saint-Leu, kèl zéd mi peut vérifié ?",
   },
   abonnements: {
     savingDetected: "Nout a trouvé koman ou kapab ékonomi",
@@ -145,7 +191,8 @@ const kreol = {
     comptePremium: "Kont Premium",
     loading: "Sharjman profil...",
     aidesInfoTitle: "⭐ Ransèyman pou trouv out bann éd *",
-    aidesInfoText: "Sa bann ransèyman-la lé pa obligatwar. Dan version Premium, zot va éd l’assistant IA trouv pli vit bann éd, drwa ek dispozitif adapté pou out sitiasyon La Rényon.",
+    aidesInfoText:
+"Sa bann ransèyman-la lé pa obligatwar. Dan version Premium, zot va éd l’asistan pèsonèl trouv pli vit bann zéd, drwa ek dispozitif adapté pou out sitiasyon La Rényon.",
   },
   historique: {
     premiumTitle: "Istorik chak mwa Premium",
@@ -170,8 +217,8 @@ const kreol = {
     noCommitment: "San langazman",
     recommended: "NOU KONSEY",
     free: "GRATIS",
-    premiumLabel: "⭐ PREMIUM — 3€/MWA",
-    subscribe: "⭐ Pas an Premium • 3€/mwa",
+    premiumLabel: "⭐ PREMIUM — 2,99€/MWA",
+    subscribe: "⭐ Pas an Premium • 2,99€/mwa",
     subscribing: "Rédirèksion...",
     securePayment: "Payman sékirizé par Stripe · Ou pé arrêt kan ou vlé",
 
@@ -194,17 +241,18 @@ const kreol = {
       "Version kréol",
       "Profil utilizatèr",
     ],
-
-    featuresPremium: [
-      "Tout sa i gratis déza",
-      "🔔 Alèrt bidjé entèlizan",
-      "🤖 Asistan IA pèrsonalizé",
-      "🎯 Bon plan lokal èksklizif",
-      "📊 Istorik avansé",
-      "🏦 Open Banking — import otomatik",
-      "📄 Èksport PDF chak mwa",
-      "🚀 Nouvo fonksionalité avan tout moun",
-    ],
+featuresPremium: [
+    "Tout sa i gratis déza",
+    "⭐ Asistan pèsonèl an fransé ék kréol",
+    "🎯 Analiz plis ki 30 zéd ék drwa",
+    "📄 Akonpagnman dann bann démars",
+    "🔔 Alèrt bidjé entèlizan",
+    "🎯 Bon plan lokal èksklizif",
+    "📊 Istorik avansé",
+    "🏦 Open Banking — import otomatik",
+    "📄 Èksport PDF chak mwa",
+    "🚀 Nouvo fonksionalité avan tout moun",
+],
   },
 }
 

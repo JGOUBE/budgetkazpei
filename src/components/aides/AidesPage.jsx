@@ -15,6 +15,7 @@ import {
 import { AIDES } from "../../data/categories"
 import { AUTRES_AIDES } from "../../data/aides"
 import AssistantAides from "./AssistantAides"
+
 const COLORS = {
   text: "#F1F5F9",
   muted: "#8EA4C5",
@@ -61,15 +62,19 @@ const OTHER_AIDES_ICONS = {
 const AIDE_LINKS = {
   rsa: "https://www.caf.fr/allocataires/aides-et-demarches/mes-demarches",
   apl: "https://wwwd.caf.fr/wps/portal/caffr/aidesetdemarches/mesdemarches/faireunedemandedeprestation?codeThematique=Logement",
-  aideEnergie: "https://www.regionreunion.com/aides-services/article/energie-dispositifs-region-reunion-finances-par-l-union-europeenne",
+  aideEnergie:
+    "https://www.regionreunion.com/aides-services/article/energie-dispositifs-region-reunion-finances-par-l-union-europeenne",
   chequeEnergie: "https://chequeenergie.gouv.fr/",
 }
 
 const OTHER_AIDES_LINKS = {
-  gardeEnfants: "https://www.caf.fr/allocataires/aides-et-demarches/droits-et-prestations/vie-personnelle/le-complement-de-libre-choix-du-mode-de-garde-cmg",
-  bonsAlimentaires: "https://www.saintleu.re/les-dispositifs-daides-a-la-mairie-de-saint-leu",
+  gardeEnfants:
+    "https://www.caf.fr/allocataires/aides-et-demarches/droits-et-prestations/vie-personnelle/le-complement-de-libre-choix-du-mode-de-garde-cmg",
+  bonsAlimentaires:
+    "https://www.saintleu.re/les-dispositifs-daides-a-la-mairie-de-saint-leu",
   mobilite: "https://www.departement974.fr/aide/aide-r-mobilite",
-  microcredit: "https://www.banque-france.fr/fr/a-votre-service/particuliers/annuaire-microcredit",
+  microcredit:
+    "https://www.banque-france.fr/fr/a-votre-service/particuliers/annuaire-microcredit",
 }
 
 function getAideLink(aide) {
@@ -77,8 +82,19 @@ function getAideLink(aide) {
 
   if (normalizedLabel.includes("rsa")) return AIDE_LINKS.rsa
   if (normalizedLabel.includes("apl")) return AIDE_LINKS.apl
-  if (normalizedLabel.includes("chèque") || normalizedLabel.includes("cheque")) return AIDE_LINKS.chequeEnergie
-  if (normalizedLabel.includes("énergie") || normalizedLabel.includes("energie")) return AIDE_LINKS.aideEnergie
+  if (
+    normalizedLabel.includes("chèque") ||
+    normalizedLabel.includes("cheque")
+  ) {
+    return AIDE_LINKS.chequeEnergie
+  }
+
+  if (
+    normalizedLabel.includes("énergie") ||
+    normalizedLabel.includes("energie")
+  ) {
+    return AIDE_LINKS.aideEnergie
+  }
 
   return "https://www.caf.fr/allocataires/aides-et-demarches/mes-demarches"
 }
@@ -87,11 +103,11 @@ function openExternalLink(url) {
   window.open(url, "_blank", "noopener,noreferrer")
 }
 
-export default function AidesPage({ isMobile, t, isPremium }) {
+export default function AidesPage({ isMobile, t, isPremium, user }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
       <section
-           style={{
+        style={{
           position: "relative",
           overflow: "hidden",
           background:
@@ -158,15 +174,17 @@ export default function AidesPage({ isMobile, t, isPremium }) {
               maxWidth: 760,
             }}
           >
-            Basé sur votre profil, voici les aides identifiées pour vous à La Réunion.
+            {t("aides", "subtitle")}
           </p>
         </div>
       </section>
-            <AssistantAides
-  isPremium={isPremium}
-  isMobile={isMobile}
-  t={t}
-/>
+
+      <AssistantAides
+      isPremium={isPremium}
+      isMobile={isMobile}
+      t={t}
+      user={user}
+    />
       <section
         style={{
           display: "grid",
@@ -380,12 +398,18 @@ export default function AidesPage({ isMobile, t, isPremium }) {
                   >
                     <Icon size={17} />
                   </span>
+
                   {t("aides", aide.key)}
                 </span>
 
                 <button
                   type="button"
-                  onClick={() => openExternalLink(OTHER_AIDES_LINKS[aide.id] || "https://www.mesdroitssociaux.gouv.fr/")}
+                  onClick={() =>
+                    openExternalLink(
+                      OTHER_AIDES_LINKS[aide.id] ||
+                        "https://www.mesdroitssociaux.gouv.fr/"
+                    )
+                  }
                   style={{
                     display: "flex",
                     alignItems: "center",

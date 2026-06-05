@@ -99,6 +99,27 @@ const fr = {
     housingAid: "Aide au logement",
     energySupport: "Soutien énergie",
     aidToRequest: "Aide à demander",
+
+    assistantPremiumTitle: "⭐ Assistant Personnel Premium",
+    assistantPremiumIntro: "Certaines aides sont peu connues.",
+    assistantPremiumDescription:
+      "BudgetKazPei analyse votre situation parmi plus de 30 aides, droits et dispositifs disponibles à La Réunion pour vous aider à identifier rapidement ceux qui pourraient vous concerner.",
+    assistantPremiumBenefit1: "🎯 Analyse personnalisée",
+    assistantPremiumBenefit2: "📄 Accompagnement dans les démarches",
+    assistantPremiumBenefit3: "💬 Français et créole réunionnais",
+    assistantPremiumBenefit4: "🔔 Suivi des nouvelles aides disponibles",
+    assistantPremiumButton: "Découvrir Premium",
+
+    assistantTitle: "Mon assistant personnel",
+    assistantSubtitle:
+      "Posez une question sur vos aides, vos droits, vos démarches ou votre situation à La Réunion.",
+    assistantLanguages: "💬 Réponses possibles en français et en créole réunionnais.",
+    assistantScan: "Scanner mon profil",
+    assistantScanning: "Analyse en cours...",
+    assistantAnalyze: "Analyser ma situation",
+    assistantResponseTitle: "Réponse de l’assistant",
+    assistantPlaceholder:
+      "Ex : Je suis parent isolé avec 2 enfants à Saint-Leu, quelles aides puis-je vérifier ?",
   },
   abonnements: {
     savingDetected: "Économie potentielle détectée",
@@ -145,7 +166,8 @@ const fr = {
     comptePremium: "Compte Premium",
     loading: "Chargement du profil...",
     aidesInfoTitle: "⭐ Informations pour vos aides *",
-    aidesInfoText: "Ces informations sont facultatives. En version Premium, elles permettront à l’assistant IA de détecter plus rapidement les aides, droits et dispositifs adaptés à votre situation à La Réunion.",
+    aidesInfoText:
+      "Ces informations sont facultatives. En version Premium, elles permettront à l’assistant personnel de détecter plus rapidement les aides, droits et dispositifs adaptés à votre situation à La Réunion.",
   },
   historique: {
     premiumTitle: "Historique mensuel Premium",
@@ -164,13 +186,14 @@ const fr = {
   },
   premium: {
     title: "Passe en Premium",
-    subtitle: "Reprends le contrôle de ton budget avec des outils avancés, des alertes intelligentes et des avantages pensés pour La Réunion.",
+    subtitle:
+      "Reprends le contrôle de ton budget avec des outils avancés, un assistant personnel et des avantages pensés pour La Réunion.",
     perMonth: "/mois",
     noCommitment: "Sans engagement",
     recommended: "RECOMMANDÉ",
     free: "GRATUIT",
-    premiumLabel: "⭐ PREMIUM — 3€/MOIS",
-    subscribe: "⭐ Débloquer Premium • 3€/mois",
+    premiumLabel: "⭐ PREMIUM — 2,99€/MOIS",
+    subscribe: "⭐ Débloquer Premium • 2,99€/mois",
     subscribing: "Redirection...",
     securePayment: "Paiement sécurisé par Stripe · Résiliable à tout moment",
     alreadyPremium: "Tu es Premium !",
@@ -189,8 +212,10 @@ const fr = {
     ],
     featuresPremium: [
       "Tout le gratuit inclus",
+      "⭐ Assistant personnel en français et créole",
+      "🎯 Analyse de plus de 30 aides et droits",
+      "📄 Accompagnement dans les démarches",
       "🔔 Alertes budget intelligentes",
-      "🤖 Assistant IA personnalisé",
       "🎯 Bons plans locaux exclusifs",
       "📊 Historique avancé",
       "🏦 Open Banking — import automatique",
