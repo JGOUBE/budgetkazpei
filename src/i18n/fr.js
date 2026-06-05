@@ -144,6 +144,8 @@ const fr = {
     compteGratuit: "Compte Gratuit",
     comptePremium: "Compte Premium",
     loading: "Chargement du profil...",
+    aidesInfoTitle: "⭐ Informations pour vos aides *",
+    aidesInfoText: "Ces informations sont facultatives. En version Premium, elles permettront à l’assistant IA de détecter plus rapidement les aides, droits et dispositifs adaptés à votre situation à La Réunion.",
   },
   historique: {
     premiumTitle: "Historique mensuel Premium",

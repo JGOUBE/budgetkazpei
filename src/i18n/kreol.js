@@ -144,6 +144,8 @@ const kreol = {
     compteGratuit: "Kont Gratis",
     comptePremium: "Kont Premium",
     loading: "Sharjman profil...",
+    aidesInfoTitle: "⭐ Ransèyman pou trouv out bann éd *",
+    aidesInfoText: "Sa bann ransèyman-la lé pa obligatwar. Dan version Premium, zot va éd l’assistant IA trouv pli vit bann éd, drwa ek dispozitif adapté pou out sitiasyon La Rényon.",
   },
   historique: {
     premiumTitle: "Istorik chak mwa Premium",

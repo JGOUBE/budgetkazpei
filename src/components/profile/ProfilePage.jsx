@@ -12,6 +12,7 @@ const COLORS = {
   muted: "#64748B",
   text: "#F1F5F9",
   yellow: "#FCD34D",
+  cyan: "#23D3D6",
 }
 
 const COMMUNES = [
@@ -39,17 +40,22 @@ const inputStyle = {
 
 export default function ProfilePage({ user, isPremium, t }) {
   const { profile, loading, saving, updateProfile, uploadAvatar } = useProfile(user?.id)
-  const [form, setForm]           = useState(null)
-  const [success, setSuccess]     = useState(false)
-  const [error, setError]         = useState("")
+  const [form, setForm] = useState(null)
+  const [success, setSuccess] = useState(false)
+  const [error, setError] = useState("")
   const [avatarPreview, setAvatarPreview] = useState(null)
   const fileRef = useRef()
 
   if (profile && !form) {
     setForm({
-      nom:       profile.nom       || user?.user_metadata?.name || "",
-      commune:   profile.commune   || "Saint-Denis",
+      nom: profile.nom || user?.user_metadata?.name || "",
+      commune: profile.commune || "Saint-Denis",
       telephone: profile.telephone || "",
+      situation_familiale: profile.situation_familiale || "",
+      nombre_enfants: profile.nombre_enfants ?? "",
+      logement: profile.logement || "",
+      revenus_foyer: profile.revenus_foyer ?? "",
+      situation_professionnelle: profile.situation_professionnelle || "",
     })
   }
 
@@ -57,6 +63,7 @@ export default function ProfilePage({ user, isPremium, t }) {
     e.preventDefault()
     setError("")
     setSuccess(false)
+
     try {
       await updateProfile(form)
       setSuccess(true)
@@ -69,9 +76,11 @@ export default function ProfilePage({ user, isPremium, t }) {
   async function handleAvatarChange(e) {
     const file = e.target.files[0]
     if (!file) return
+
     const reader = new FileReader()
-    reader.onload = (ev) => setAvatarPreview(ev.target.result)
+    reader.onload = ev => setAvatarPreview(ev.target.result)
     reader.readAsDataURL(file)
+
     try {
       await uploadAvatar(file)
     } catch {
@@ -88,48 +97,68 @@ export default function ProfilePage({ user, isPremium, t }) {
   }
 
   const avatarUrl = avatarPreview || profile?.avatar_url
-  const initiale  = (form.nom || user?.email || "?")[0].toUpperCase()
+  const initiale = (form.nom || user?.email || "?")[0].toUpperCase()
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20, maxWidth: 600 }}>
-
-      {/* ── Carte avatar ── */}
-      <div style={{
-        background: `linear-gradient(135deg, ${COLORS.card} 0%, ${COLORS.cardLight} 100%)`,
-        border: `1px solid ${COLORS.border}`, borderRadius: 20, padding: 28,
-        display: "flex", alignItems: "center", gap: 24,
-      }}>
+      <div
+        style={{
+          background: `linear-gradient(135deg, ${COLORS.card} 0%, ${COLORS.cardLight} 100%)`,
+          border: `1px solid ${COLORS.border}`,
+          borderRadius: 20,
+          padding: 28,
+          display: "flex",
+          alignItems: "center",
+          gap: 24,
+        }}
+      >
         <div style={{ position: "relative" }}>
           <div
             onClick={() => fileRef.current.click()}
             style={{
-              width: 80, height: 80, borderRadius: "50%",
+              width: 80,
+              height: 80,
+              borderRadius: "50%",
               background: avatarUrl ? "transparent" : `${COLORS.accent}33`,
               border: `3px solid ${COLORS.accent}`,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              cursor: "pointer", overflow: "hidden",
-              fontSize: 32, color: COLORS.accent, fontWeight: 700,
-              transition: "opacity 0.2s",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              overflow: "hidden",
+              fontSize: 32,
+              color: COLORS.accent,
+              fontWeight: 700,
             }}
-            onMouseEnter={e => e.currentTarget.style.opacity = "0.8"}
-            onMouseLeave={e => e.currentTarget.style.opacity = "1"}
           >
-            {avatarUrl
-              ? <img src={avatarUrl} alt="avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              : initiale
-            }
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            ) : (
+              initiale
+            )}
           </div>
+
           <div
             onClick={() => fileRef.current.click()}
             style={{
-              position: "absolute", bottom: 0, right: 0,
-              width: 24, height: 24, borderRadius: "50%",
-              background: COLORS.accent, display: "flex",
-              alignItems: "center", justifyContent: "center",
-              fontSize: 12, cursor: "pointer",
+              position: "absolute",
+              bottom: 0,
+              right: 0,
+              width: 24,
+              height: 24,
+              borderRadius: "50%",
+              background: COLORS.accent,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 12,
+              cursor: "pointer",
               border: `2px solid ${COLORS.card}`,
             }}
-          >✏️</div>
+          >
+            ✏️
+          </div>
+
           <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleAvatarChange} />
         </div>
 
@@ -137,102 +166,191 @@ export default function ProfilePage({ user, isPremium, t }) {
           <div style={{ fontSize: 20, fontWeight: 700, color: COLORS.text, fontFamily: "'DM Serif Display', serif" }}>
             {form.nom || t("profil", "title")}
           </div>
+
           <div style={{ fontSize: 13, color: COLORS.muted, marginTop: 4 }}>📧 {user?.email}</div>
           <div style={{ fontSize: 13, color: COLORS.muted, marginTop: 2 }}>📍 {form.commune}</div>
-          <div style={{
-            marginTop: 8, display: "inline-flex", alignItems: "center", gap: 6,
-            background: isPremium ? `${COLORS.yellow}22` : `${COLORS.muted}22`,
-            border: `1px solid ${isPremium ? COLORS.yellow : COLORS.muted}44`,
-            borderRadius: 99, padding: "3px 10px", fontSize: 11,
-            color: isPremium ? COLORS.yellow : COLORS.muted, fontWeight: 600,
-          }}>
+
+          <div
+            style={{
+              marginTop: 8,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              background: isPremium ? `${COLORS.yellow}22` : `${COLORS.muted}22`,
+              border: `1px solid ${isPremium ? COLORS.yellow : COLORS.muted}44`,
+              borderRadius: 99,
+              padding: "3px 10px",
+              fontSize: 11,
+              color: isPremium ? COLORS.yellow : COLORS.muted,
+              fontWeight: 600,
+            }}
+          >
             {isPremium ? "⭐" : "🆓"} {isPremium ? t("profil", "comptePremium") : t("profil", "compteGratuit")}
           </div>
         </div>
       </div>
 
-      {/* ── Formulaire ── */}
-      <div style={{
-        background: `linear-gradient(135deg, ${COLORS.card} 0%, ${COLORS.cardLight} 100%)`,
-        border: `1px solid ${COLORS.border}`, borderRadius: 20, padding: 28,
-      }}>
+      <div
+        style={{
+          background: `linear-gradient(135deg, ${COLORS.card} 0%, ${COLORS.cardLight} 100%)`,
+          border: `1px solid ${COLORS.border}`,
+          borderRadius: 20,
+          padding: 28,
+        }}
+      >
         <h3 style={{ margin: "0 0 20px", fontSize: 16, color: COLORS.text, fontWeight: 600 }}>
           ✏️ {t("profil", "modifier")}
         </h3>
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-
-          <div>
-            <label style={{ fontSize: 13, color: COLORS.muted, display: "block", marginBottom: 6 }}>
-              {t("profil", "prenom")}
-            </label>
+          <Field label={t("profil", "prenom")}>
             <input
               type="text"
               value={form.nom}
               onChange={e => setForm(f => ({ ...f, nom: e.target.value }))}
               style={inputStyle}
-              onFocus={e => e.target.style.borderColor = COLORS.accent}
-              onBlur={e => e.target.style.borderColor = COLORS.border}
             />
-          </div>
+          </Field>
 
-          <div>
-            <label style={{ fontSize: 13, color: COLORS.muted, display: "block", marginBottom: 6 }}>
-              {t("profil", "email")}
-            </label>
-            <input
-              type="email"
-              value={user?.email || ""}
-              disabled
-              style={{ ...inputStyle, opacity: 0.5, cursor: "not-allowed" }}
-            />
-            <p style={{ fontSize: 11, color: COLORS.muted, margin: "4px 0 0" }}>
-              {t("profil", "emailNote")}
-            </p>
-          </div>
+          <Field label={t("profil", "email")}>
+            <input type="email" value={user?.email || ""} disabled style={{ ...inputStyle, opacity: 0.5, cursor: "not-allowed" }} />
+            <p style={{ fontSize: 11, color: COLORS.muted, margin: "4px 0 0" }}>{t("profil", "emailNote")}</p>
+          </Field>
 
-          <div>
-            <label style={{ fontSize: 13, color: COLORS.muted, display: "block", marginBottom: 6 }}>
-              {t("profil", "commune")}
-            </label>
+          <Field label={t("profil", "commune")}>
             <select
               value={form.commune}
               onChange={e => setForm(f => ({ ...f, commune: e.target.value }))}
               style={inputStyle}
-              onFocus={e => e.target.style.borderColor = COLORS.accent}
-              onBlur={e => e.target.style.borderColor = COLORS.border}
             >
-              {COMMUNES.map(c => <option key={c} value={c}>{c}</option>)}
+              {COMMUNES.map(c => (
+                <option key={c} value={c}>{c}</option>
+              ))}
             </select>
-          </div>
+          </Field>
 
-          <div>
-            <label style={{ fontSize: 13, color: COLORS.muted, display: "block", marginBottom: 6 }}>
-              {t("profil", "telephone")}
-            </label>
+          <Field label={t("profil", "telephone")}>
             <input
               type="tel"
               value={form.telephone}
               onChange={e => setForm(f => ({ ...f, telephone: e.target.value }))}
               placeholder="0692 XX XX XX"
               style={inputStyle}
-              onFocus={e => e.target.style.borderColor = COLORS.accent}
-              onBlur={e => e.target.style.borderColor = COLORS.border}
             />
+          </Field>
+
+          <div
+            style={{
+              marginTop: 10,
+              background: "rgba(35,211,214,.08)",
+              border: "1px solid rgba(35,211,214,.28)",
+              borderRadius: 16,
+              padding: 18,
+            }}
+          >
+            <h3 style={{ margin: "0 0 8px", fontSize: 15, color: COLORS.cyan, fontWeight: 800 }}>
+              {t("profil", "aidesInfoTitle")}
+            </h3>
+
+            <p style={{ margin: "0 0 16px", color: COLORS.muted, fontSize: 12.5, lineHeight: 1.5 }}>
+              {t("profil", "aidesInfoText")}
+            </p>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <Field label="Situation familiale">
+                <select
+                  value={form.situation_familiale}
+                  onChange={e => setForm(f => ({ ...f, situation_familiale: e.target.value }))}
+                  style={inputStyle}
+                >
+                  <option value="">Non renseigné</option>
+                  <option value="celibataire">Célibataire</option>
+                  <option value="couple">En couple</option>
+                  <option value="marie">Marié(e)</option>
+                  <option value="parent_isole">Parent isolé</option>
+                </select>
+              </Field>
+
+              <Field label="Nombre d’enfants">
+                <input
+                  type="number"
+                  min="0"
+                  value={form.nombre_enfants}
+                  onChange={e => setForm(f => ({ ...f, nombre_enfants: e.target.value }))}
+                  placeholder="Ex : 2"
+                  style={inputStyle}
+                />
+              </Field>
+
+              <Field label="Situation logement">
+                <select
+                  value={form.logement}
+                  onChange={e => setForm(f => ({ ...f, logement: e.target.value }))}
+                  style={inputStyle}
+                >
+                  <option value="">Non renseigné</option>
+                  <option value="locataire">Locataire</option>
+                  <option value="proprietaire">Propriétaire</option>
+                  <option value="heberge">Hébergé gratuitement</option>
+                </select>
+              </Field>
+
+              <Field label="Revenus mensuels du foyer">
+                <input
+                  type="number"
+                  min="0"
+                  value={form.revenus_foyer}
+                  onChange={e => setForm(f => ({ ...f, revenus_foyer: e.target.value }))}
+                  placeholder="Ex : 2200"
+                  style={inputStyle}
+                />
+              </Field>
+
+              <Field label="Situation professionnelle">
+                <select
+                  value={form.situation_professionnelle}
+                  onChange={e => setForm(f => ({ ...f, situation_professionnelle: e.target.value }))}
+                  style={inputStyle}
+                >
+                  <option value="">Non renseigné</option>
+                  <option value="salarie">Salarié</option>
+                  <option value="independant">Indépendant</option>
+                  <option value="demandeur_emploi">Demandeur d’emploi</option>
+                  <option value="etudiant">Étudiant</option>
+                  <option value="retraite">Retraité</option>
+                </select>
+              </Field>
+            </div>
           </div>
 
           {error && (
-            <div style={{
-              background: `${COLORS.red}15`, border: `1px solid ${COLORS.red}33`,
-              borderRadius: 8, padding: "10px 14px", fontSize: 13, color: COLORS.red,
-            }}>⚠️ {error}</div>
+            <div
+              style={{
+                background: `${COLORS.red}15`,
+                border: `1px solid ${COLORS.red}33`,
+                borderRadius: 8,
+                padding: "10px 14px",
+                fontSize: 13,
+                color: COLORS.red,
+              }}
+            >
+              ⚠️ {error}
+            </div>
           )}
 
           {success && (
-            <div style={{
-              background: `${COLORS.green}15`, border: `1px solid ${COLORS.green}33`,
-              borderRadius: 8, padding: "10px 14px", fontSize: 13, color: COLORS.green,
-            }}>✅ {t("profil", "success")}</div>
+            <div
+              style={{
+                background: `${COLORS.green}15`,
+                border: `1px solid ${COLORS.green}33`,
+                borderRadius: 8,
+                padding: "10px 14px",
+                fontSize: 13,
+                color: COLORS.green,
+              }}
+            >
+              ✅ {t("profil", "success")}
+            </div>
           )}
 
           <button
@@ -240,12 +358,14 @@ export default function ProfilePage({ user, isPremium, t }) {
             disabled={saving}
             style={{
               background: saving ? COLORS.muted : COLORS.accent,
-              border: "none", borderRadius: 12,
-              padding: "13px 0", color: "#fff",
-              fontSize: 15, fontWeight: 600,
+              border: "none",
+              borderRadius: 12,
+              padding: "13px 0",
+              color: "#fff",
+              fontSize: 15,
+              fontWeight: 600,
               fontFamily: "inherit",
               cursor: saving ? "not-allowed" : "pointer",
-              transition: "all 0.2s",
             }}
           >
             {saving ? t("profil", "saving") : t("profil", "save")}
@@ -253,13 +373,19 @@ export default function ProfilePage({ user, isPremium, t }) {
         </form>
       </div>
 
-      {/* ── Section Premium ── */}
       {!isPremium && (
-        <div style={{
-          background: `linear-gradient(135deg, ${COLORS.yellow}15, ${COLORS.card})`,
-          border: `1px solid ${COLORS.yellow}33`, borderRadius: 20, padding: 24,
-          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16,
-        }}>
+        <div
+          style={{
+            background: `linear-gradient(135deg, ${COLORS.yellow}15, ${COLORS.card})`,
+            border: `1px solid ${COLORS.yellow}33`,
+            borderRadius: 20,
+            padding: 24,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 16,
+          }}
+        >
           <div>
             <div style={{ fontSize: 16, fontWeight: 700, color: COLORS.yellow, marginBottom: 6 }}>
               ⭐ {t("nav", "premium")}
@@ -271,16 +397,37 @@ export default function ProfilePage({ user, isPremium, t }) {
               3€ {t("premium", "perMonth")}
             </div>
           </div>
-          <button style={{
-            background: COLORS.yellow, border: "none", borderRadius: 12,
-            padding: "12px 20px", color: "#0A1628",
-            fontSize: 14, fontWeight: 700, cursor: "pointer",
-            fontFamily: "inherit", whiteSpace: "nowrap",
-          }}>
+
+          <button
+            type="button"
+            style={{
+              background: COLORS.yellow,
+              border: "none",
+              borderRadius: 12,
+              padding: "12px 20px",
+              color: "#0A1628",
+              fontSize: 14,
+              fontWeight: 700,
+              cursor: "pointer",
+              fontFamily: "inherit",
+              whiteSpace: "nowrap",
+            }}
+          >
             {t("nav", "premium")} →
           </button>
         </div>
       )}
+    </div>
+  )
+}
+
+function Field({ label, children }) {
+  return (
+    <div>
+      <label style={{ fontSize: 13, color: COLORS.muted, display: "block", marginBottom: 6 }}>
+        {label}
+      </label>
+      {children}
     </div>
   )
 }
