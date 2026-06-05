@@ -531,30 +531,36 @@ console.log("EMAIL =", user?.email)
           </div>
         )}
 
-        {activeNav === "aides" && <AidesPage isMobile={isMobile} t={t} />}
+        {activeNav === "aides" && (
+  <AidesPage
+    isMobile={isMobile}
+    t={t}
+    isPremium={isPremium}
+  />
+)}
 
-        {activeNav === "abonnements" && (
-          <AbonnementsPage
-            abonnements={abonnements}
-            loading={abonnementsLoading}
-            onUpdate={updateAbonnement}
-            onAdd={addAbonnement}
-            onDelete={deleteAbonnement}
-            onReset={resetAbonnements}
-            isMobile={isMobile}
-            t={t}
-          />
-        )}
+{activeNav === "abonnements" && (
+  <AbonnementsPage
+    abonnements={abonnements}
+    loading={abonnementsLoading}
+    onUpdate={updateAbonnement}
+    onAdd={addAbonnement}
+    onDelete={deleteAbonnement}
+    onReset={resetAbonnements}
+    isMobile={isMobile}
+    t={t}
+  />
+)}
 
-        {activeNav === "historique" && (
-          <HistoriquePage
-            historiques={historiques}
-            loading={historiqueLoading}
-            isPremium={isPremium}
-            onGoPremium={() => setActiveNav("premium")}
-            t={t}
-          />
-        )}
+{activeNav === "historique" && (
+  <HistoriquePage
+    historiques={historiques}
+    loading={historiqueLoading}
+    isPremium={isPremium}
+    onGoPremium={() => setActiveNav("premium")}
+    t={t}
+  />
+)}
 
         {activeNav === "profil" && (
           <ProfilePage user={user} isPremium={isPremium} t={t} />
