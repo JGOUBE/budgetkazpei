@@ -14,7 +14,7 @@ import {
 
 import { AIDES } from "../../data/categories"
 import { AUTRES_AIDES } from "../../data/aides"
-
+import AssistantAides from "./AssistantAides"
 const COLORS = {
   text: "#F1F5F9",
   muted: "#8EA4C5",
@@ -87,11 +87,11 @@ function openExternalLink(url) {
   window.open(url, "_blank", "noopener,noreferrer")
 }
 
-export default function AidesPage({ isMobile, t }) {
+export default function AidesPage({ isMobile, t, isPremium }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
       <section
-        style={{
+           style={{
           position: "relative",
           overflow: "hidden",
           background:
@@ -162,7 +162,11 @@ export default function AidesPage({ isMobile, t }) {
           </p>
         </div>
       </section>
-
+            <AssistantAides
+  isPremium={isPremium}
+  isMobile={isMobile}
+  t={t}
+/>
       <section
         style={{
           display: "grid",
