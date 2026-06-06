@@ -13,6 +13,7 @@ const COLORS = {
   text: "#F1F5F9",
   yellow: "#FCD34D",
   cyan: "#23D3D6",
+  purple: "#A78BFA",
 }
 
 const COMMUNES = [
@@ -37,7 +38,7 @@ const inputStyle = {
   boxSizing: "border-box",
 }
 
-export default function ProfilePage({ user, isPremium, t }) {
+export default function ProfilePage({ user, t }) {
   const { profile, loading, saving, updateProfile, uploadAvatar } = useProfile(user?.id)
   const [form, setForm] = useState(null)
   const [success, setSuccess] = useState(false)
@@ -108,6 +109,24 @@ export default function ProfilePage({ user, isPremium, t }) {
 
   const avatarUrl = avatarPreview || profile?.avatar_url
   const initiale = (form.nom || user?.email || "?")[0].toUpperCase()
+
+  const plan = profile?.plan || "free"
+  const isPremiumPlus = plan === "premium_plus"
+  const isPremiumClassic = plan === "premium"
+  const hasPremiumAccess = isPremiumClassic || isPremiumPlus
+
+  const accountLabel = isPremiumPlus
+    ? "Compte Premium+"
+    : isPremiumClassic
+      ? "Compte Premium"
+      : "Compte Gratuit"
+
+  const accountIcon = isPremiumPlus ? "👑" : isPremiumClassic ? "⭐" : "🆓"
+  const accountColor = isPremiumPlus ? COLORS.purple : hasPremiumAccess ? COLORS.yellow : COLORS.muted
+
+  function openPremiumOptions() {
+    window.open("https://budgetkazpei.vercel.app/premium", "_blank", "noopener,noreferrer")
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20, maxWidth: 600 }}>
@@ -186,16 +205,16 @@ export default function ProfilePage({ user, isPremium, t }) {
               display: "inline-flex",
               alignItems: "center",
               gap: 6,
-              background: isPremium ? `${COLORS.yellow}22` : `${COLORS.muted}22`,
-              border: `1px solid ${isPremium ? COLORS.yellow : COLORS.muted}44`,
+              background: hasPremiumAccess ? `${accountColor}22` : `${COLORS.muted}22`,
+              border: `1px solid ${hasPremiumAccess ? accountColor : COLORS.muted}44`,
               borderRadius: 99,
               padding: "3px 10px",
               fontSize: 11,
-              color: isPremium ? COLORS.yellow : COLORS.muted,
+              color: hasPremiumAccess ? accountColor : COLORS.muted,
               fontWeight: 600,
             }}
           >
-            {isPremium ? "⭐" : "🆓"} {isPremium ? t("profil", "comptePremium") : t("profil", "compteGratuit")}
+            {accountIcon} {accountLabel}
           </div>
         </div>
       </div>
@@ -339,33 +358,60 @@ export default function ProfilePage({ user, isPremium, t }) {
         </form>
       </div>
 
-      {!isPremium && (
+      {!hasPremiumAccess && (
         <div
           style={{
-            background: `linear-gradient(135deg, ${COLORS.yellow}15, ${COLORS.card})`,
+            background: `linear-gradient(135deg, ${COLORS.yellow}12, ${COLORS.card})`,
             border: `1px solid ${COLORS.yellow}33`,
             borderRadius: 20,
             padding: 24,
             display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
+            flexDirection: "column",
             gap: 16,
           }}
         >
           <div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: COLORS.yellow, marginBottom: 6 }}>
-              ⭐ {t("nav", "premium")}
+            <div style={{ fontSize: 17, fontWeight: 800, color: COLORS.yellow, marginBottom: 6 }}>
+              ⭐ Découvrir Premium
             </div>
             <div style={{ fontSize: 13, color: COLORS.muted, lineHeight: 1.6 }}>
-              {t("premium", "subtitle")}
+              Comparez les options Premium et Premium+ sur le site BudgetKazPei.
             </div>
-            <div style={{ fontSize: 20, fontWeight: 700, color: COLORS.yellow, marginTop: 8 }}>
-              2,99€ {t("premium", "perMonth")}
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 10 }}>
+            <div
+              style={{
+                background: "rgba(252,211,77,.08)",
+                border: "1px solid rgba(252,211,77,.22)",
+                borderRadius: 14,
+                padding: 14,
+              }}
+            >
+              <div style={{ color: COLORS.yellow, fontWeight: 800, marginBottom: 6 }}>⭐ Premium</div>
+              <div style={{ color: COLORS.muted, fontSize: 13, lineHeight: 1.55 }}>
+                Assistant aides, suivi des démarches, documents à préparer, bons plans intelligents et créole réunionnais.
+              </div>
+            </div>
+
+            <div
+              style={{
+                background: "rgba(167,139,250,.08)",
+                border: "1px solid rgba(167,139,250,.25)",
+                borderRadius: 14,
+                padding: 14,
+              }}
+            >
+              <div style={{ color: COLORS.purple, fontWeight: 800, marginBottom: 6 }}>👑 Premium+</div>
+              <div style={{ color: COLORS.muted, fontSize: 13, lineHeight: 1.55 }}>
+                Conseiller IA avancé, aide administrative personnalisée, courriers et accompagnement plus complet.
+              </div>
             </div>
           </div>
 
           <button
             type="button"
+            onClick={openPremiumOptions}
             style={{
               background: COLORS.yellow,
               border: "none",
@@ -373,13 +419,13 @@ export default function ProfilePage({ user, isPremium, t }) {
               padding: "12px 20px",
               color: "#0A1628",
               fontSize: 14,
-              fontWeight: 700,
+              fontWeight: 800,
               cursor: "pointer",
               fontFamily: "inherit",
-              whiteSpace: "nowrap",
+              alignSelf: "flex-start",
             }}
           >
-            {t("nav", "premium")} →
+            Voir les options Premium →
           </button>
         </div>
       )}

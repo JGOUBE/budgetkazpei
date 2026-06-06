@@ -3,7 +3,7 @@ import { useAuth } from "./hooks/useAuth"
 import { useLanguage } from "./hooks/useLanguage"
 import { useTransactions } from "./hooks/useTransactions"
 import { useBudgets } from "./hooks/useBudgets"
-import { useSubscription } from "./hooks/useSubscription"
+import { useProfile } from "./hooks/useProfile"
 import { useUserAbonnements } from "./hooks/useUserAbonnements"
 import { useCustomBudgets } from "./hooks/useCustomBudgets"
 import { useMonthlyHistory } from "./hooks/useMonthlyHistory"
@@ -20,7 +20,6 @@ import PremiumPage from "./components/premium/PremiumPage"
 import AbonnementsPage from "./components/abonnements/AbonnementsPage"
 import AidesPage from "./components/aides/AidesPage"
 import HistoriquePage from "./components/historique/HistoriquePage"
-import { TruckElectricIcon } from "lucide-react"
 
 const COLORS = {
   bg: "#0A1628",
@@ -69,7 +68,13 @@ console.log("EMAIL =", user?.email)
     deleteTransaction,
   } = useTransactions(user?.id)
 
-const { isPremium, activatePremium } = useSubscription(user?.id)
+const { profile } = useProfile(user?.id)
+
+const isPremium =
+  profile?.plan === "premium" ||
+  profile?.plan === "premium_plus"
+
+const isPremiumPlus = profile?.plan === "premium_plus"
 
 
   const { customBudgets, saveBudgets } = useCustomBudgets(
@@ -538,6 +543,7 @@ const { isPremium, activatePremium } = useSubscription(user?.id)
   isMobile={isMobile}
   t={t}
   isPremium={isPremium}
+  isPremiumPlus={isPremiumPlus}
   user={user}
 />
 )}
@@ -566,11 +572,11 @@ const { isPremium, activatePremium } = useSubscription(user?.id)
 )}
 
         {activeNav === "profil" && (
-          <ProfilePage user={user} isPremium={isPremium} t={t} />
+          <ProfilePage user={user} isPremium={isPremium} isPremiumPlus={isPremiumPlus} t={t} />
         )}
 
         {activeNav === "premium" && (
-          <PremiumPage user={user} isPremium={isPremium} t={t} />
+          <PremiumPage user={user} isPremium={isPremium} isPremiumPlus={isPremiumPlus} t={t} />
         )}
       </div>
 
