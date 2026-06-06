@@ -264,6 +264,8 @@ function PlanCard({ icon, title, subtitle, features, color, badge, descriptions 
               padding: "4px 10px",
               borderRadius: 999,
               whiteSpace: "nowrap",
+              textTransform: "uppercase",
+              letterSpacing: "0.04em",
             }}
           >
             {badge}
@@ -306,6 +308,14 @@ export default function PremiumPage({ user, isPremium, isPremiumPlus = false, t 
   const freeFeatures = isKreol ? FREE_FEATURES_KR : FREE_FEATURES_FR
   const premiumFeatures = isKreol ? PREMIUM_FEATURES_KR : PREMIUM_FEATURES_FR
   const premiumPlusFeatures = isKreol ? PREMIUM_PLUS_FEATURES_KR : PREMIUM_PLUS_FEATURES_FR
+
+  const premiumBadge = isPremium && !isPremiumPlus
+    ? (isKreol ? "ACTIF" : "ACTIF")
+    : (isKreol ? "POPILÈR" : "POPULAIRE")
+
+  const premiumPlusBadge = isPremiumPlus
+    ? (isKreol ? "ACTIF" : "ACTIF")
+    : (isKreol ? "REKOMANDÉ ++" : "RECOMMANDÉ ++")
 
   function openPremiumOptions() {
     window.open(PREMIUM_URL, "_blank", "noopener,noreferrer")
@@ -414,7 +424,7 @@ export default function PremiumPage({ user, isPremium, isPremiumPlus = false, t 
           }
           features={premiumFeatures}
           color={COLORS.yellow}
-          badge={isPremium && !isPremiumPlus ? (isKreol ? "Actif" : "Actif") : null}
+          badge={premiumBadge}
           descriptions={descriptions}
         />
 
@@ -428,7 +438,7 @@ export default function PremiumPage({ user, isPremium, isPremiumPlus = false, t 
           }
           features={premiumPlusFeatures}
           color={COLORS.purple}
-          badge={isPremiumPlus ? (isKreol ? "Actif" : "Actif") : isKreol ? "IA" : "IA"}
+          badge={premiumPlusBadge}
           descriptions={descriptions}
         />
       </div>

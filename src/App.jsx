@@ -20,6 +20,7 @@ import PremiumPage from "./components/premium/PremiumPage"
 import AbonnementsPage from "./components/abonnements/AbonnementsPage"
 import AidesPage from "./components/aides/AidesPage"
 import HistoriquePage from "./components/historique/HistoriquePage"
+import PremiumLandingPage from "./pages/PremiumLandingPage"
 
 const COLORS = {
   bg: "#0A1628",
@@ -46,6 +47,17 @@ function useIsMobile() {
 }
 
 export default function App() {
+  const currentPath = typeof window !== "undefined" ? window.location.pathname : ""
+  const isPremiumLanding = currentPath === "/premium" || currentPath.startsWith("/premium/")
+
+  if (isPremiumLanding) {
+    return <PremiumLandingPage />
+  }
+
+  return <BudgetKazPeiApp />
+}
+
+function BudgetKazPeiApp() {
   const { user, loading, signIn, signUp, signOut, signInWithGoogle } = useAuth()
   console.log("USER CONNECTÉ =", user?.id)
 console.log("EMAIL =", user?.email)
@@ -302,6 +314,7 @@ const isPremiumPlus = profile?.plan === "premium_plus"
             onSignOut={signOut}
             user={user}
             isPremium={isPremium}
+            isPremiumPlus={isPremiumPlus}
             lang={lang}
             t={t}
           />
