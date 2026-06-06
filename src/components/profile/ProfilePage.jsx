@@ -35,7 +35,6 @@ const inputStyle = {
   outline: "none",
   fontFamily: "inherit",
   boxSizing: "border-box",
-  transition: "border-color 0.2s",
 }
 
 export default function ProfilePage({ user, isPremium, t }) {
@@ -56,7 +55,18 @@ export default function ProfilePage({ user, isPremium, t }) {
       logement: profile.logement || "",
       revenus_foyer: profile.revenus_foyer ?? "",
       situation_professionnelle: profile.situation_professionnelle || "",
+      age: profile.age ?? "",
+      etudiant: Boolean(profile.etudiant),
+      retraite: Boolean(profile.retraite),
+      handicap: Boolean(profile.handicap),
+      allocataire_caf: Boolean(profile.allocataire_caf),
+      permis_conduire: Boolean(profile.permis_conduire),
+      vehicule_personnel: Boolean(profile.vehicule_personnel),
     })
+  }
+
+  function updateField(key, value) {
+    setForm(f => ({ ...f, [key]: value }))
   }
 
   async function handleSubmit(e) {
@@ -204,12 +214,7 @@ export default function ProfilePage({ user, isPremium, t }) {
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <Field label={t("profil", "prenom")}>
-            <input
-              type="text"
-              value={form.nom}
-              onChange={e => setForm(f => ({ ...f, nom: e.target.value }))}
-              style={inputStyle}
-            />
+            <input type="text" value={form.nom} onChange={e => updateField("nom", e.target.value)} style={inputStyle} />
           </Field>
 
           <Field label={t("profil", "email")}>
@@ -218,11 +223,7 @@ export default function ProfilePage({ user, isPremium, t }) {
           </Field>
 
           <Field label={t("profil", "commune")}>
-            <select
-              value={form.commune}
-              onChange={e => setForm(f => ({ ...f, commune: e.target.value }))}
-              style={inputStyle}
-            >
+            <select value={form.commune} onChange={e => updateField("commune", e.target.value)} style={inputStyle}>
               {COMMUNES.map(c => (
                 <option key={c} value={c}>{c}</option>
               ))}
@@ -230,13 +231,7 @@ export default function ProfilePage({ user, isPremium, t }) {
           </Field>
 
           <Field label={t("profil", "telephone")}>
-            <input
-              type="tel"
-              value={form.telephone}
-              onChange={e => setForm(f => ({ ...f, telephone: e.target.value }))}
-              placeholder="0692 XX XX XX"
-              style={inputStyle}
-            />
+            <input type="tel" value={form.telephone} onChange={e => updateField("telephone", e.target.value)} placeholder="0692 XX XX XX" style={inputStyle} />
           </Field>
 
           <div
@@ -257,12 +252,12 @@ export default function ProfilePage({ user, isPremium, t }) {
             </p>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <Field label="Âge">
+                <input type="number" min="0" value={form.age} onChange={e => updateField("age", e.target.value)} placeholder="Ex : 34" style={inputStyle} />
+              </Field>
+
               <Field label="Situation familiale">
-                <select
-                  value={form.situation_familiale}
-                  onChange={e => setForm(f => ({ ...f, situation_familiale: e.target.value }))}
-                  style={inputStyle}
-                >
+                <select value={form.situation_familiale} onChange={e => updateField("situation_familiale", e.target.value)} style={inputStyle}>
                   <option value="">Non renseigné</option>
                   <option value="celibataire">Célibataire</option>
                   <option value="couple">En couple</option>
@@ -272,22 +267,11 @@ export default function ProfilePage({ user, isPremium, t }) {
               </Field>
 
               <Field label="Nombre d’enfants">
-                <input
-                  type="number"
-                  min="0"
-                  value={form.nombre_enfants}
-                  onChange={e => setForm(f => ({ ...f, nombre_enfants: e.target.value }))}
-                  placeholder="Ex : 2"
-                  style={inputStyle}
-                />
+                <input type="number" min="0" value={form.nombre_enfants} onChange={e => updateField("nombre_enfants", e.target.value)} placeholder="Ex : 2" style={inputStyle} />
               </Field>
 
               <Field label="Situation logement">
-                <select
-                  value={form.logement}
-                  onChange={e => setForm(f => ({ ...f, logement: e.target.value }))}
-                  style={inputStyle}
-                >
+                <select value={form.logement} onChange={e => updateField("logement", e.target.value)} style={inputStyle}>
                   <option value="">Non renseigné</option>
                   <option value="locataire">Locataire</option>
                   <option value="proprietaire">Propriétaire</option>
@@ -296,59 +280,41 @@ export default function ProfilePage({ user, isPremium, t }) {
               </Field>
 
               <Field label="Revenus mensuels du foyer">
-                <input
-                  type="number"
-                  min="0"
-                  value={form.revenus_foyer}
-                  onChange={e => setForm(f => ({ ...f, revenus_foyer: e.target.value }))}
-                  placeholder="Ex : 2200"
-                  style={inputStyle}
-                />
+                <input type="number" min="0" value={form.revenus_foyer} onChange={e => updateField("revenus_foyer", e.target.value)} placeholder="Ex : 2200" style={inputStyle} />
               </Field>
 
               <Field label="Situation professionnelle">
-                <select
-                  value={form.situation_professionnelle}
-                  onChange={e => setForm(f => ({ ...f, situation_professionnelle: e.target.value }))}
-                  style={inputStyle}
-                >
-                  <option value="">Non renseigné</option>
-                  <option value="salarie">Salarié</option>
-                  <option value="independant">Indépendant</option>
-                  <option value="demandeur_emploi">Demandeur d’emploi</option>
-                  <option value="etudiant">Étudiant</option>
-                  <option value="retraite">Retraité</option>
-                </select>
-              </Field>
+  <select
+    value={form.situation_professionnelle}
+    onChange={e => updateField("situation_professionnelle", e.target.value)}
+    style={inputStyle}
+  >
+    <option value="">Non renseigné</option>
+    <option value="salarie">Salarié</option>
+    <option value="independant">Indépendant</option>
+    <option value="demandeur_emploi">Demandeur d’emploi</option>
+  </select>
+</Field>
+
+              <div style={{ display: "grid", gap: 10, marginTop: 4 }}>
+                <Checkbox label="Étudiant" checked={form.etudiant} onChange={value => updateField("etudiant", value)} />
+                <Checkbox label="Retraité" checked={form.retraite} onChange={value => updateField("retraite", value)} />
+                <Checkbox label="Situation de handicap" checked={form.handicap} onChange={value => updateField("handicap", value)} />
+                <Checkbox label="Allocataire CAF" checked={form.allocataire_caf} onChange={value => updateField("allocataire_caf", value)} />
+                <Checkbox label="Permis de conduire" checked={form.permis_conduire} onChange={value => updateField("permis_conduire", value)} />
+                <Checkbox label="Véhicule personnel" checked={form.vehicule_personnel} onChange={value => updateField("vehicule_personnel", value)} />
+              </div>
             </div>
           </div>
 
           {error && (
-            <div
-              style={{
-                background: `${COLORS.red}15`,
-                border: `1px solid ${COLORS.red}33`,
-                borderRadius: 8,
-                padding: "10px 14px",
-                fontSize: 13,
-                color: COLORS.red,
-              }}
-            >
+            <div style={{ background: `${COLORS.red}15`, border: `1px solid ${COLORS.red}33`, borderRadius: 8, padding: "10px 14px", fontSize: 13, color: COLORS.red }}>
               ⚠️ {error}
             </div>
           )}
 
           {success && (
-            <div
-              style={{
-                background: `${COLORS.green}15`,
-                border: `1px solid ${COLORS.green}33`,
-                borderRadius: 8,
-                padding: "10px 14px",
-                fontSize: 13,
-                color: COLORS.green,
-              }}
-            >
+            <div style={{ background: `${COLORS.green}15`, border: `1px solid ${COLORS.green}33`, borderRadius: 8, padding: "10px 14px", fontSize: 13, color: COLORS.green }}>
               ✅ {t("profil", "success")}
             </div>
           )}
@@ -394,7 +360,7 @@ export default function ProfilePage({ user, isPremium, t }) {
               {t("premium", "subtitle")}
             </div>
             <div style={{ fontSize: 20, fontWeight: 700, color: COLORS.yellow, marginTop: 8 }}>
-              3€ {t("premium", "perMonth")}
+              2,99€ {t("premium", "perMonth")}
             </div>
           </div>
 
@@ -429,5 +395,33 @@ function Field({ label, children }) {
       </label>
       {children}
     </div>
+  )
+}
+
+function Checkbox({ label, checked, onChange }) {
+  return (
+    <label
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        color: COLORS.text,
+        fontSize: 13,
+        fontWeight: 700,
+        background: "rgba(255,255,255,.04)",
+        border: `1px solid ${COLORS.border}`,
+        borderRadius: 12,
+        padding: "10px 12px",
+        cursor: "pointer",
+      }}
+    >
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={e => onChange(e.target.checked)}
+        style={{ width: 16, height: 16, accentColor: COLORS.accent }}
+      />
+      {label}
+    </label>
   )
 }

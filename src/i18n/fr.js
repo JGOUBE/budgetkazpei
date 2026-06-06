@@ -168,6 +168,36 @@ const fr = {
     aidesInfoTitle: "⭐ Informations pour vos aides *",
     aidesInfoText:
       "Ces informations sont facultatives. En version Premium, elles permettront à l’assistant personnel de détecter plus rapidement les aides, droits et dispositifs adaptés à votre situation à La Réunion.",
+
+    age: "Âge",
+    situationFamiliale: "Situation familiale",
+    nombreEnfants: "Nombre d’enfants",
+    logement: "Situation logement",
+    revenusFoyer: "Revenus mensuels du foyer",
+    situationProfessionnelle: "Situation professionnelle",
+
+    nonRenseigne: "Non renseigné",
+    celibataire: "Célibataire",
+    couple: "En couple",
+    marie: "Marié(e)",
+    parentIsole: "Parent isolé",
+    locataire: "Locataire",
+    proprietaire: "Propriétaire",
+    heberge: "Hébergé gratuitement",
+    salarie: "Salarié",
+    independant: "Indépendant",
+    demandeurEmploi: "Demandeur d’emploi",
+
+    etudiant: "Étudiant",
+    retraite: "Retraité",
+    handicap: "Situation de handicap",
+    allocataireCaf: "Allocataire CAF",
+    permisConduire: "Permis de conduire",
+    vehiculePersonnel: "Véhicule personnel",
+
+    agePlaceholder: "Ex : 34",
+    enfantsPlaceholder: "Ex : 2",
+    revenusPlaceholder: "Ex : 2200",
   },
   historique: {
     premiumTitle: "Historique mensuel Premium",

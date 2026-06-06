@@ -82,6 +82,7 @@ function getAideLink(aide) {
 
   if (normalizedLabel.includes("rsa")) return AIDE_LINKS.rsa
   if (normalizedLabel.includes("apl")) return AIDE_LINKS.apl
+
   if (
     normalizedLabel.includes("chèque") ||
     normalizedLabel.includes("cheque")
@@ -103,7 +104,14 @@ function openExternalLink(url) {
   window.open(url, "_blank", "noopener,noreferrer")
 }
 
+function getLanguageKey(t) {
+  if (typeof t !== "function") return "fr"
+  return t("nav", "dashboard") || "fr"
+}
+
 export default function AidesPage({ isMobile, t, isPremium, user }) {
+  const languageKey = getLanguageKey(t)
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
       <section
@@ -180,11 +188,13 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
       </section>
 
       <AssistantAides
-      isPremium={isPremium}
-      isMobile={isMobile}
-      t={t}
-      user={user}
-    />
+        key={`assistant-aides-${languageKey}`}
+        isPremium={isPremium}
+        isMobile={isMobile}
+        t={t}
+        user={user}
+      />
+
       <section
         style={{
           display: "grid",

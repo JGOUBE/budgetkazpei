@@ -4,14 +4,32 @@ import { supabase } from "../services/supabase"
 function cleanProfileUpdates(updates = {}) {
   return {
     ...updates,
+
+    age:
+      updates.age === "" || updates.age === null || updates.age === undefined
+        ? null
+        : Number(updates.age),
+
     nombre_enfants:
-      updates.nombre_enfants === "" || updates.nombre_enfants === null
+      updates.nombre_enfants === "" ||
+      updates.nombre_enfants === null ||
+      updates.nombre_enfants === undefined
         ? null
         : Number(updates.nombre_enfants),
+
     revenus_foyer:
-      updates.revenus_foyer === "" || updates.revenus_foyer === null
+      updates.revenus_foyer === "" ||
+      updates.revenus_foyer === null ||
+      updates.revenus_foyer === undefined
         ? null
         : Number(updates.revenus_foyer),
+
+    etudiant: Boolean(updates.etudiant),
+    retraite: Boolean(updates.retraite),
+    handicap: Boolean(updates.handicap),
+    allocataire_caf: Boolean(updates.allocataire_caf),
+    permis_conduire: Boolean(updates.permis_conduire),
+    vehicule_personnel: Boolean(updates.vehicule_personnel),
   }
 }
 

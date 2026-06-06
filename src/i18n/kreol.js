@@ -99,50 +99,25 @@ const kreol = {
     housingAid: "Éd pou kaz",
     energySupport: "Soutien kouran",
     aidToRequest: "Éd pou dmandé",
+
     assistantPremiumTitle: "⭐ Asistan Pèsonèl Premium",
-
-    assistantPremiumIntro:
-      "Sertin zéd lé pa vréman koné.",
-
+    assistantPremiumIntro: "Sertin zéd lé pa vréman koné.",
     assistantPremiumDescription:
       "BudgetKazPei analiz out sitiasyon parmi plis ki 30 zéd, drwa ek dispozitif disponib La Rényon pou aid aou trouv rapidman bann zéd ki kapav korespond avèk out sitiasyon.",
+    assistantPremiumBenefit1: "🎯 Analiz pèsonalizé",
+    assistantPremiumBenefit2: "📄 Akonpagnman dann bann démars",
+    assistantPremiumBenefit3: "💬 An fransé ék kréol rényoné",
+    assistantPremiumBenefit4: "🔔 Sivi bann nouvo zéd disponib",
+    assistantPremiumButton: "Découv Premium",
 
-    assistantPremiumBenefit1:
-      "🎯 Analiz pèsonalizé",
-
-    assistantPremiumBenefit2:
-      "📄 Akonpagnman dann bann démars",
-
-    assistantPremiumBenefit3:
-      "💬 An fransé ék kréol rényoné",
-
-    assistantPremiumBenefit4:
-      "🔔 Sivi bann nouvo zéd disponib",
-
-    assistantPremiumButton:
-      "Découv Premium",
-
-    assistantTitle:
-      "Mon asistan pèsonèl",
-
+    assistantTitle: "Mon asistan pèsonèl",
     assistantSubtitle:
       "Poz out kestyon su bann zéd, drwa, démars ou out sitiasyon La Rényon.",
-
-    assistantLanguages:
-      "💬 Répons an fransé ék kréol rényoné.",
-
-    assistantScan:
-      "Analiz mon profil",
-
-    assistantScanning:
-      "Analiz an kour...",
-
-    assistantAnalyze:
-      "Analiz mon sitiasyon",
-
-    assistantResponseTitle:
-      "Répons l’asistan",
-
+    assistantLanguages: "💬 Répons an fransé ék kréol rényoné.",
+    assistantScan: "Analiz mon profil",
+    assistantScanning: "Analiz an kour...",
+    assistantAnalyze: "Analiz mon sitiasyon",
+    assistantResponseTitle: "Répons l’asistan",
     assistantPlaceholder:
       "Ex : Mi lé parent isolé ek 2 marmay Saint-Leu, kèl zéd mi peut vérifié ?",
   },
@@ -192,7 +167,37 @@ const kreol = {
     loading: "Sharjman profil...",
     aidesInfoTitle: "⭐ Ransèyman pou trouv out bann éd *",
     aidesInfoText:
-"Sa bann ransèyman-la lé pa obligatwar. Dan version Premium, zot va éd l’asistan pèsonèl trouv pli vit bann zéd, drwa ek dispozitif adapté pou out sitiasyon La Rényon.",
+      "Sa bann ransèyman-la lé pa obligatwar. Dan version Premium, zot va éd l’asistan pèsonèl trouv pli vit bann zéd, drwa ek dispozitif adapté pou out sitiasyon La Rényon.",
+
+    age: "Laz",
+    situationFamiliale: "Sitiasyon famiy",
+    nombreEnfants: "Nomb marmay",
+    logement: "Sitiasyon kaz",
+    revenusFoyer: "Larzan rant dan kaz chak mwa",
+    situationProfessionnelle: "Sitiasyon profesyonèl",
+
+    nonRenseigne: "Pa ransényé",
+    celibataire: "Sèl",
+    couple: "An koup",
+    marie: "Maryé",
+    parentIsole: "Parent tousèl",
+    locataire: "Lokatèr",
+    proprietaire: "Propriyétèr",
+    heberge: "Ébèrzé gratwi",
+    salarie: "Salarié",
+    independant: "Travay pou son kont",
+    demandeurEmploi: "Domandèr d'emploi",
+
+    etudiant: "Étidyan",
+    retraite: "Retraité",
+    handicap: "Sitiasyon andikap",
+    allocataireCaf: "Allocatèr CAF",
+    permisConduire: "Permi konduir",
+    vehiculePersonnel: "Véyikil pèsonèl",
+
+    agePlaceholder: "Ex : 34",
+    enfantsPlaceholder: "Ex : 2",
+    revenusPlaceholder: "Ex : 2200",
   },
   historique: {
     premiumTitle: "Istorik chak mwa Premium",
@@ -221,14 +226,11 @@ const kreol = {
     subscribe: "⭐ Pas an Premium • 2,99€/mwa",
     subscribing: "Rédirèksion...",
     securePayment: "Payman sékirizé par Stripe · Ou pé arrêt kan ou vlé",
-
     alreadyPremium: "Ou lé Premium !",
     alreadyPremiumSub:
       "Ou bénéfisié déza tout bann fonksionalité avansé BudgetKazPei.",
     activePerks: "✅ Bann avantaj actif",
-
     openBankingSoon: "Biento",
-
     fixedCharges: "Shaj fix prévwar",
     fixedChargesInfo:
       "Shaj fix sé tout bann dépans i revien chak mwa : loyé, kredi, abonnman, internet, téléfon, lasirans...",
@@ -241,18 +243,18 @@ const kreol = {
       "Version kréol",
       "Profil utilizatèr",
     ],
-featuresPremium: [
-    "Tout sa i gratis déza",
-    "⭐ Asistan pèsonèl an fransé ék kréol",
-    "🎯 Analiz plis ki 30 zéd ék drwa",
-    "📄 Akonpagnman dann bann démars",
-    "🔔 Alèrt bidjé entèlizan",
-    "🎯 Bon plan lokal èksklizif",
-    "📊 Istorik avansé",
-    "🏦 Open Banking — import otomatik",
-    "📄 Èksport PDF chak mwa",
-    "🚀 Nouvo fonksionalité avan tout moun",
-],
+    featuresPremium: [
+      "Tout sa i gratis déza",
+      "⭐ Asistan pèsonèl an fransé ék kréol",
+      "🎯 Analiz plis ki 30 zéd ék drwa",
+      "📄 Akonpagnman dann bann démars",
+      "🔔 Alèrt bidjé entèlizan",
+      "🎯 Bon plan lokal èksklizif",
+      "📊 Istorik avansé",
+      "🏦 Open Banking — import otomatik",
+      "📄 Èksport PDF chak mwa",
+      "🚀 Nouvo fonksionalité avan tout moun",
+    ],
   },
 }
 
