@@ -69,8 +69,7 @@ console.log("EMAIL =", user?.email)
     deleteTransaction,
   } = useTransactions(user?.id)
 
-  const { activatePremium } = useSubscription(user?.id)
-const isPremium = true 
+  const { isPremium, activatePremium } = useSubscription(user?.id)
 
   const { customBudgets, saveBudgets } = useCustomBudgets(
     user?.id,
