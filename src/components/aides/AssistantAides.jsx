@@ -6,6 +6,7 @@ import {
   Star,
   SearchCheck,
   ExternalLink,
+  MessageCircle,
 } from "lucide-react"
 import { supabase } from "../../services/supabase"
 
@@ -50,9 +51,11 @@ function formatValue(value, fallback = "Non renseigné") {
 
 function formatMoney(value, isKreol = false) {
   const number = Number(value)
+
   if (!Number.isFinite(number) || number <= 0) {
     return isKreol ? "Pa ransényé" : "Non renseigné"
   }
+
   return `${number.toFixed(0).replace(".", ",")} € / mois`
 }
 
@@ -113,6 +116,199 @@ function buildProfileSummary(profile = {}, isKreol = false) {
     `🎂 Âge : ${formatValue(profile.age)}`,
     `💰 Revenus du foyer : ${formatMoney(profile.revenus_foyer)}`,
   ].join("\n")
+}
+
+function getQuestionIntent(question = "") {
+  const q = normalizeText(question)
+
+  if (!q.trim()) return []
+
+  const intents = []
+
+  if (
+    q.includes("vacance") ||
+    q.includes("vacances") ||
+    q.includes("loisir") ||
+    q.includes("loisirs") ||
+    q.includes("sortie") ||
+    q.includes("centre aere") ||
+    q.includes("centre aéré") ||
+    q.includes("colonies") ||
+    q.includes("colo") ||
+    q.includes("vacaf") ||
+    q.includes("pass colo")
+  ) {
+    intents.push("vacances", "loisirs", "jeunesse", "famille", "commune", "sport", "culture")
+  }
+
+  if (
+    q.includes("cantine") ||
+    q.includes("repas") ||
+    q.includes("manger") ||
+    q.includes("alimentaire") ||
+    q.includes("alimentation")
+  ) {
+    intents.push("alimentaire", "cantine", "famille", "commune", "social")
+  }
+
+  if (
+    q.includes("loyer") ||
+    q.includes("logement") ||
+    q.includes("apl") ||
+    q.includes("maison") ||
+    q.includes("kaz") ||
+    q.includes("location")
+  ) {
+    intents.push("logement", "apl", "loyer")
+  }
+
+  if (
+    q.includes("energie") ||
+    q.includes("electricite") ||
+    q.includes("edf") ||
+    q.includes("eau") ||
+    q.includes("facture") ||
+    q.includes("courant") ||
+    q.includes("kouran")
+  ) {
+    intents.push("energie", "facture", "social")
+  }
+
+  if (
+    q.includes("enfant") ||
+    q.includes("enfants") ||
+    q.includes("marmay") ||
+    q.includes("ecole") ||
+    q.includes("scolaire") ||
+    q.includes("garde")
+  ) {
+    intents.push("famille", "jeunesse", "transport", "scolaire")
+  }
+
+  if (
+    q.includes("travail") ||
+    q.includes("emploi") ||
+    q.includes("formation") ||
+    q.includes("chomage") ||
+    q.includes("chômage") ||
+    q.includes("france travail")
+  ) {
+    intents.push("emploi", "mobilite", "formation")
+  }
+
+  if (
+    q.includes("permis") ||
+    q.includes("voiture") ||
+    q.includes("transport") ||
+    q.includes("mobilite") ||
+    q.includes("mobilité") ||
+    q.includes("bus")
+  ) {
+    intents.push("mobilite", "transport")
+  }
+
+  if (
+    q.includes("etudiant") ||
+    q.includes("étudiant") ||
+    q.includes("etude") ||
+    q.includes("étude") ||
+    q.includes("bourse") ||
+    q.includes("universite") ||
+    q.includes("université")
+  ) {
+    intents.push("etudiant")
+  }
+
+  if (
+    q.includes("handicap") ||
+    q.includes("mdph") ||
+    q.includes("aah") ||
+    q.includes("pch")
+  ) {
+    intents.push("handicap")
+  }
+
+  if (
+    q.includes("retraite") ||
+    q.includes("senior") ||
+    q.includes("gramoun") ||
+    q.includes("apa")
+  ) {
+    intents.push("senior")
+  }
+
+  if (
+    q.includes("sante") ||
+    q.includes("santé") ||
+    q.includes("mutuelle") ||
+    q.includes("css") ||
+    q.includes("ameli")
+  ) {
+    intents.push("sante", "social")
+  }
+
+  if (
+    q.includes("commune") ||
+    q.includes("mairie") ||
+    q.includes("ccas")
+  ) {
+    intents.push("commune", "social")
+  }
+
+  return [...new Set(intents)]
+}
+
+function getMainIntent(question = "") {
+  const q = normalizeText(question)
+
+  if (
+    q.includes("vacance") ||
+    q.includes("loisir") ||
+    q.includes("centre aere") ||
+    q.includes("centre aéré") ||
+    q.includes("colo") ||
+    q.includes("vacaf")
+  ) {
+    return "vacances"
+  }
+
+  if (q.includes("cantine") || q.includes("repas") || q.includes("alimentaire")) {
+    return "cantine"
+  }
+
+  if (q.includes("loyer") || q.includes("logement") || q.includes("apl") || q.includes("location")) {
+    return "logement"
+  }
+
+  if (q.includes("facture") || q.includes("edf") || q.includes("electricite") || q.includes("energie") || q.includes("eau")) {
+    return "facture"
+  }
+
+  if (q.includes("transport") || q.includes("bus") || q.includes("mobilite") || q.includes("permis")) {
+    return "transport"
+  }
+
+  if (q.includes("emploi") || q.includes("travail") || q.includes("formation") || q.includes("chomage")) {
+    return "emploi"
+  }
+
+  if (q.includes("etudiant") || q.includes("bourse") || q.includes("universite")) {
+    return "etudiant"
+  }
+
+  if (q.includes("handicap") || q.includes("aah") || q.includes("pch") || q.includes("mdph")) {
+    return "handicap"
+  }
+
+  if (q.includes("retraite") || q.includes("senior") || q.includes("apa") || q.includes("gramoun")) {
+    return "senior"
+  }
+
+  if (q.includes("sante") || q.includes("mutuelle") || q.includes("css") || q.includes("ameli")) {
+    return "sante"
+  }
+
+  return "general"
 }
 
 function formatAideAmount(aide, isKreol = false) {
@@ -214,50 +410,100 @@ function shouldExcludeAide(aide = {}, profile = {}, isKreol = false) {
 
   if (Number.isFinite(age) && age > 0) {
     if (Number.isFinite(ageMin) && ageMin > 0 && age < ageMin) {
-      addExcluded(excluded, `Âge inférieur au minimum demandé (${ageMin} ans).`, `Out laz lé pli ba ke minimum demandé (${ageMin} an).`, isKreol)
+      addExcluded(
+        excluded,
+        `Âge inférieur au minimum demandé (${ageMin} ans).`,
+        `Out laz lé pli ba ke minimum demandé (${ageMin} an).`,
+        isKreol
+      )
     }
 
     if (Number.isFinite(ageMax) && ageMax > 0 && age > ageMax) {
-      addExcluded(excluded, `Âge supérieur au maximum demandé (${ageMax} ans).`, `Out laz lé pli o ke maximum demandé (${ageMax} an).`, isKreol)
+      addExcluded(
+        excluded,
+        `Âge supérieur au maximum demandé (${ageMax} ans).`,
+        `Out laz lé pli o ke maximum demandé (${ageMax} an).`,
+        isKreol
+      )
     }
   }
 
   if (isTrue(aide.besoin_enfant) && Number(profile.nombre_enfants || 0) <= 0) {
-    addExcluded(excluded, "Cette aide nécessite d’avoir au moins un enfant à charge.", "Sa zéd-la i domann davoir omwin in marmay a chaj.", isKreol)
+    addExcluded(
+      excluded,
+      "Cette aide nécessite d’avoir au moins un enfant à charge.",
+      "Sa zéd-la i domann davoir omwin in marmay a chaj.",
+      isKreol
+    )
   }
 
   if (isTrue(aide.besoin_locataire) && profile.logement && profile.logement !== "locataire") {
-    addExcluded(excluded, "Cette aide concerne les locataires.", "Sa zéd-la i konsern bann lokatèr.", isKreol)
+    addExcluded(
+      excluded,
+      "Cette aide concerne les locataires.",
+      "Sa zéd-la i konsern bann lokatèr.",
+      isKreol
+    )
   }
 
   if (isTrue(aide.besoin_proprietaire) && profile.logement && profile.logement !== "proprietaire") {
-    addExcluded(excluded, "Cette aide concerne les propriétaires.", "Sa zéd-la i konsern bann propriyétèr.", isKreol)
+    addExcluded(
+      excluded,
+      "Cette aide concerne les propriétaires.",
+      "Sa zéd-la i konsern bann propriyétèr.",
+      isKreol
+    )
   }
 
   if (isTrue(aide.besoin_etudiant) && !isTrue(profile.etudiant) && profile.situation_professionnelle !== "etudiant") {
-    addExcluded(excluded, "Cette aide concerne les étudiants.", "Sa zéd-la i konsern bann étidyan.", isKreol)
+    addExcluded(
+      excluded,
+      "Cette aide concerne les étudiants.",
+      "Sa zéd-la i konsern bann étidyan.",
+      isKreol
+    )
   }
 
   if (isTrue(aide.besoin_handicap) && !isTrue(profile.handicap)) {
-    addExcluded(excluded, "Cette aide nécessite une situation de handicap.", "Sa zéd-la i domann in sitiasyon handicap.", isKreol)
+    addExcluded(
+      excluded,
+      "Cette aide nécessite une situation de handicap.",
+      "Sa zéd-la i domann in sitiasyon handicap.",
+      isKreol
+    )
   }
 
   if (isTrue(aide.besoin_retraite) && !isTrue(profile.retraite) && profile.situation_professionnelle !== "retraite") {
-    addExcluded(excluded, "Cette aide concerne les retraités ou les seniors.", "Sa zéd-la i konsern bann retraité ou gramoun.", isKreol)
+    addExcluded(
+      excluded,
+      "Cette aide concerne les retraités ou les seniors.",
+      "Sa zéd-la i konsern bann retraité ou gramoun.",
+      isKreol
+    )
   }
 
   if (isTrue(aide.besoin_demandeur_emploi) && profile.situation_professionnelle && profile.situation_professionnelle !== "demandeur_emploi") {
-    addExcluded(excluded, "Cette aide concerne surtout les demandeurs d’emploi.", "Sa zéd-la i konsern sirtou bann domandèr d'emploi.", isKreol)
+    addExcluded(
+      excluded,
+      "Cette aide concerne surtout les demandeurs d’emploi.",
+      "Sa zéd-la i konsern sirtou bann domandèr d'emploi.",
+      isKreol
+    )
   }
 
   if (aide.commune && profile.commune && normalizeText(aide.commune) !== normalizeText(profile.commune)) {
-    addExcluded(excluded, `Cette aide semble réservée à la commune de ${aide.commune}.`, `Sa zéd-la i sanm réservé pou komin ${aide.commune}.`, isKreol)
+    addExcluded(
+      excluded,
+      `Cette aide semble réservée à la commune de ${aide.commune}.`,
+      `Sa zéd-la i sanm réservé pou komin ${aide.commune}.`,
+      isKreol
+    )
   }
 
   return excluded
 }
 
-function scoreAide(aide = {}, profile = {}, isKreol = false) {
+function scoreAide(aide = {}, profile = {}, isKreol = false, question = "") {
   const excludedReasons = shouldExcludeAide(aide, profile, isKreol)
 
   if (excludedReasons.length > 0) {
@@ -276,52 +522,138 @@ function scoreAide(aide = {}, profile = {}, isKreol = false) {
 
   const reasons = []
   const missing = []
+  const intents = getQuestionIntent(question)
 
-  const aideText = normalizeText(`${aide.nom || ""} ${aide.categorie || ""} ${aide.description || ""} ${aide.description_fr || ""}`)
+  const aideText = normalizeText(
+    `${aide.nom || ""} ${aide.nom_kreol || ""} ${aide.categorie || ""} ${aide.description || ""} ${aide.description_fr || ""} ${aide.description_kreol || ""} ${aide.demarches_fr || ""} ${aide.demarches_kreol || ""}`
+  )
 
   const enfants = Number(profile.nombre_enfants || 0)
   const revenus = Number(profile.revenus_foyer || 0)
   const age = Number(profile.age || 0)
 
+  if (intents.length > 0) {
+    const matchedIntents = intents.filter(intent => aideText.includes(intent))
+
+    if (matchedIntents.length > 0) {
+      score += Math.min(45, matchedIntents.length * 16)
+      addReason(
+        reasons,
+        "Cette aide correspond directement à votre question.",
+        "Sa zéd-la i korespond dirèk ek out kestion.",
+        isKreol
+      )
+    }
+  }
+
+  if (question && normalizeText(question).length > 3) {
+    const words = normalizeText(question)
+      .split(" ")
+      .filter(word => word.length >= 4)
+
+    const matches = words.filter(word => aideText.includes(word)).length
+
+    if (matches > 0) {
+      score += Math.min(25, matches * 6)
+      addReason(
+        reasons,
+        "Plusieurs mots de votre question correspondent à cette aide.",
+        "Plizièr mo dann out kestion i korespond ek sa zéd-la.",
+        isKreol
+      )
+    }
+  }
+
   if (isTrue(aide.besoin_enfant) && enfants > 0) {
     score += 30
     addReason(reasons, "Vous avez des enfants à charge.", "Ou na marmay a chaj.", isKreol)
-  } else if (enfants > 0 && (aideText.includes("famille") || aideText.includes("enfant") || aideText.includes("scolaire"))) {
-    score += 15
-    addReason(reasons, "Cette aide peut concerner les familles avec enfants.", "Sa zéd-la i pé konsern bann famiy ek marmay.", isKreol)
+  } else if (
+    enfants > 0 &&
+    (aideText.includes("famille") ||
+      aideText.includes("enfant") ||
+      aideText.includes("scolaire") ||
+      aideText.includes("jeunesse") ||
+      aideText.includes("vacances") ||
+      aideText.includes("loisirs"))
+  ) {
+    score += 18
+    addReason(
+      reasons,
+      "Cette aide peut concerner les familles avec enfants.",
+      "Sa zéd-la i pé konsern bann famiy ek marmay.",
+      isKreol
+    )
   }
 
   if (isTrue(aide.besoin_locataire) && profile.logement === "locataire") {
     score += 30
-    addReason(reasons, "Votre profil indique que vous êtes locataire.", "Out profil i indik ou lé lokatèr.", isKreol)
-  } else if (profile.logement === "locataire" && (aideText.includes("logement") || aideText.includes("loyer") || aideText.includes("apl"))) {
+    addReason(
+      reasons,
+      "Votre profil indique que vous êtes locataire.",
+      "Out profil i indik ou lé lokatèr.",
+      isKreol
+    )
+  } else if (
+    profile.logement === "locataire" &&
+    (aideText.includes("logement") || aideText.includes("loyer") || aideText.includes("apl"))
+  ) {
     score += 18
-    addReason(reasons, "Votre situation de logement peut ouvrir droit à cette aide.", "Out sitiasyon kaz i pé donn drwa a sa zéd-la.", isKreol)
+    addReason(
+      reasons,
+      "Votre situation de logement peut ouvrir droit à cette aide.",
+      "Out sitiasyon kaz i pé donn drwa a sa zéd-la.",
+      isKreol
+    )
   }
 
   if (isTrue(aide.besoin_proprietaire) && profile.logement === "proprietaire") {
     score += 25
-    addReason(reasons, "Votre profil indique que vous êtes propriétaire.", "Out profil i indik ou lé propriyétèr.", isKreol)
+    addReason(
+      reasons,
+      "Votre profil indique que vous êtes propriétaire.",
+      "Out profil i indik ou lé propriyétèr.",
+      isKreol
+    )
   }
 
   if (isTrue(aide.besoin_etudiant) && (isTrue(profile.etudiant) || profile.situation_professionnelle === "etudiant")) {
     score += 35
-    addReason(reasons, "Votre profil indique une situation étudiante.", "Out profil i indik ou lé étidyan.", isKreol)
+    addReason(
+      reasons,
+      "Votre profil indique une situation étudiante.",
+      "Out profil i indik ou lé étidyan.",
+      isKreol
+    )
   }
 
   if (isTrue(aide.besoin_handicap) && isTrue(profile.handicap)) {
     score += 40
-    addReason(reasons, "Votre profil indique une situation de handicap.", "Out profil i indik in sitiasyon handicap.", isKreol)
+    addReason(
+      reasons,
+      "Votre profil indique une situation de handicap.",
+      "Out profil i indik in sitiasyon handicap.",
+      isKreol
+    )
   }
 
   if (isTrue(aide.besoin_retraite) && (isTrue(profile.retraite) || profile.situation_professionnelle === "retraite")) {
     score += 35
-    addReason(reasons, "Votre profil indique une situation de retraité.", "Out profil i indik ou lé retraité.", isKreol)
+    addReason(
+      reasons,
+      "Votre profil indique une situation de retraité.",
+      "Out profil i indik ou lé retraité.",
+      isKreol
+    )
   }
 
   if (isTrue(aide.besoin_demandeur_emploi) && profile.situation_professionnelle === "demandeur_emploi") {
     score += 35
-    addReason(reasons, "Votre profil indique que vous êtes demandeur d’emploi.", "Out profil i indik ou lé domandèr d'emploi.", isKreol)
+    addReason(
+      reasons,
+      "Votre profil indique que vous êtes demandeur d’emploi.",
+      "Out profil i indik ou lé domandèr d'emploi.",
+      isKreol
+    )
   }
 
   if (isTrue(aide.besoin_allocataire_caf)) {
@@ -334,9 +666,19 @@ function scoreAide(aide = {}, profile = {}, isKreol = false) {
   }
 
   if (Number.isFinite(revenus) && revenus > 0) {
-    if (aideText.includes("ressource") || aideText.includes("revenu") || aideText.includes("modeste") || aideText.includes("social")) {
+    if (
+      aideText.includes("ressource") ||
+      aideText.includes("revenu") ||
+      aideText.includes("modeste") ||
+      aideText.includes("social")
+    ) {
       score += 8
-      addReason(reasons, "Cette aide peut dépendre des ressources du foyer.", "Sa zéd-la i pé depan revenu la kaz.", isKreol)
+      addReason(
+        reasons,
+        "Cette aide peut dépendre des ressources du foyer.",
+        "Sa zéd-la i pé depan revenu la kaz.",
+        isKreol
+      )
     }
   } else {
     missing.push(isKreol ? "Revenu à compléter" : "Revenus à compléter")
@@ -345,7 +687,12 @@ function scoreAide(aide = {}, profile = {}, isKreol = false) {
   if (Number.isFinite(age) && age > 0) {
     if (aide.age_min || aide.age_max) {
       score += 10
-      addReason(reasons, "Votre âge est compatible avec les critères renseignés.", "Out laz lé konpatib ek bann kritèr ransényé.", isKreol)
+      addReason(
+        reasons,
+        "Votre âge est compatible avec les critères renseignés.",
+        "Out laz lé konpatib ek bann kritèr ransényé.",
+        isKreol
+      )
     }
   } else if (aide.age_min || aide.age_max) {
     missing.push(isKreol ? "Laz à compléter" : "Âge à compléter")
@@ -353,27 +700,55 @@ function scoreAide(aide = {}, profile = {}, isKreol = false) {
 
   if (profile.commune && aide.commune) {
     score += 25
-    addReason(reasons, "Cette aide correspond à votre commune.", "Sa zéd-la i korespond out komin.", isKreol)
+    addReason(
+      reasons,
+      "Cette aide correspond à votre commune.",
+      "Sa zéd-la i korespond out komin.",
+      isKreol
+    )
   } else if (aideText.includes("ccas") || aideText.includes("commune")) {
     score += 10
-    addReason(reasons, "Cette aide peut dépendre de votre commune ou du CCAS.", "Sa zéd-la i pé depan out komin ou CCAS.", isKreol)
+    addReason(
+      reasons,
+      "Cette aide peut dépendre de votre commune ou du CCAS.",
+      "Sa zéd-la i pé depan out komin ou CCAS.",
+      isKreol
+    )
   }
 
-  if (profile.situation_familiale === "parent_isole" && (aideText.includes("parent") || aideText.includes("famille") || aideText.includes("enfant"))) {
+  if (
+    profile.situation_familiale === "parent_isole" &&
+    (aideText.includes("parent") || aideText.includes("famille") || aideText.includes("enfant"))
+  ) {
     score += 20
-    addReason(reasons, "Votre situation de parent isolé peut renforcer votre éligibilité.", "Out sitiasyon parent tousèl i pé ogmant out drwa.", isKreol)
+    addReason(
+      reasons,
+      "Votre situation de parent isolé peut renforcer votre éligibilité.",
+      "Out sitiasyon parent tousèl i pé ogmant out drwa.",
+      isKreol
+    )
   }
 
   if (profile.situation_professionnelle === "salarie" && aideText.includes("activite")) {
     score += 18
-    addReason(reasons, "Votre activité professionnelle peut être prise en compte.", "Out travay i pé rant dann kondisyon sa zéd-la.", isKreol)
+    addReason(
+      reasons,
+      "Votre activité professionnelle peut être prise en compte.",
+      "Out travay i pé rant dann kondisyon sa zéd-la.",
+      isKreol
+    )
   }
 
   score = Math.max(0, Math.min(100, score))
 
   if (reasons.length === 0) {
     score = Math.min(score, 45)
-    addReason(reasons, "Cette aide peut être intéressante, mais elle nécessite une vérification.", "Sa zéd-la i pé intérésan, mé fo vérifi.", isKreol)
+    addReason(
+      reasons,
+      "Cette aide peut être intéressante, mais elle nécessite une vérification.",
+      "Sa zéd-la i pé intérésan, mé fo vérifi.",
+      isKreol
+    )
   }
 
   return {
@@ -386,9 +761,9 @@ function scoreAide(aide = {}, profile = {}, isKreol = false) {
   }
 }
 
-function getRecommendedAides(aides = [], profile = {}, isKreol = false) {
+function getRecommendedAides(aides = [], profile = {}, isKreol = false, question = "") {
   return aides
-    .map(aide => scoreAide(aide, profile, isKreol))
+    .map(aide => scoreAide(aide, profile, isKreol, question))
     .filter(aide => !aide.excluded && aide.score >= 35)
     .sort((a, b) => b.score - a.score)
     .slice(0, 7)
@@ -396,7 +771,7 @@ function getRecommendedAides(aides = [], profile = {}, isKreol = false) {
 
 function getExcludedAides(aides = [], profile = {}, isKreol = false) {
   return aides
-    .map(aide => scoreAide(aide, profile, isKreol))
+    .map(aide => scoreAide(aide, profile, isKreol, ""))
     .filter(aide => aide.excluded)
     .slice(0, 5)
 }
@@ -404,6 +779,116 @@ function getExcludedAides(aides = [], profile = {}, isKreol = false) {
 function openExternalLink(url) {
   if (!url) return
   window.open(url, "_blank", "noopener,noreferrer")
+}
+
+function buildSmartAnswer(responseData, isKreol = false, recommendedAides = []) {
+  if (!responseData?.profile) return ""
+
+  const profile = responseData.profile
+  const question = responseData.question || ""
+  const mainIntent = getMainIntent(question)
+  const children = Number(profile.nombre_enfants || 0)
+  const commune = profile.commune
+  const job = profile.situation_professionnelle
+  const logement = profile.logement
+
+  const topNames = recommendedAides
+    .slice(0, 3)
+    .map(aide => getAideName(aide, isKreol))
+    .filter(Boolean)
+
+  const profileParts = []
+
+  if (children > 0) {
+    profileParts.push(
+      isKreol
+        ? `${children} marmay`
+        : `${children} enfant${children > 1 ? "s" : ""}`
+    )
+  }
+
+  if (commune) profileParts.push(commune)
+  if (job === "demandeur_emploi") profileParts.push(isKreol ? "domandèr d'emploi" : "demandeur d’emploi")
+  if (job === "salarie") profileParts.push(isKreol ? "salarié" : "salarié")
+  if (logement === "locataire") profileParts.push(isKreol ? "lokatèr" : "locataire")
+
+  const profileText = profileParts.length > 0 ? profileParts.join(", ") : ""
+
+  if (!question.trim()) {
+    return isKreol
+      ? `Bonzour 👋 Mi analiz out profil${profileText ? ` (${profileText})` : ""}. Mi sava rode bann zéd ki pé korespond ek out sitiasyon, é mi va klase azot pou ou.`
+      : `Bonjour 👋 J’ai analysé votre profil${profileText ? ` (${profileText})` : ""}. Je vais rechercher les aides qui peuvent correspondre à votre situation et vous les classer par priorité.`
+  }
+
+  if (mainIntent === "vacances") {
+    return isKreol
+      ? `Bonzour 👋 Mi konpran out demande : ou rod bann zéd pou vakans ou loisirs${children > 0 ? ` pou out ${children} marmay` : ""}. La priorité lé vérifié VACAF/CAF, bann zéd loisirs, Pass Sport/Pass Culture selon laz marmay, é CCAS out komin${commune ? ` (${commune})` : ""}. Mi met anba bann pistes pli sérieuses pou out profil.`
+      : `Bonjour 👋 Je comprends votre demande : vous cherchez des aides pour les vacances ou les loisirs${children > 0 ? ` de vos ${children} enfants` : ""}. Les priorités à vérifier sont VACAF/CAF, les aides loisirs, Pass Sport/Pass Culture selon l’âge des enfants, ainsi que le CCAS de votre commune${commune ? ` (${commune})` : ""}. Je vous affiche ci-dessous les pistes les plus sérieuses pour votre profil.`
+  }
+
+  if (mainIntent === "cantine") {
+    return isKreol
+      ? `Bonzour 👋 Mi konpran : ou rod in zéd pou cantine ou repas marmay. Pou sa, fo regard la mairie, CCAS, zéd alimentaire, é bann dispositifs famille/scolaire. Mi classe bann options pli proches anba.`
+      : `Bonjour 👋 Je comprends : vous cherchez une aide pour la cantine ou les repas des enfants. Les pistes à vérifier sont la mairie, le CCAS, les aides alimentaires et les dispositifs famille/scolaire. Je vous classe les options les plus proches ci-dessous.`
+  }
+
+  if (mainIntent === "logement") {
+    return isKreol
+      ? `Bonzour 👋 Mi konpran : out demande konsern logement ou loyer. Si ou lé lokatèr, fo vérifié APL/CAF, FSL, CCAS, é parfois Action Logement. Mi afish bann zéd adaptées anba.`
+      : `Bonjour 👋 Je comprends : votre demande concerne le logement ou le loyer. Si vous êtes locataire, les pistes principales sont l’APL/CAF, le FSL, le CCAS et parfois Action Logement. Je vous affiche les aides adaptées ci-dessous.`
+  }
+
+  if (mainIntent === "facture") {
+    return isKreol
+      ? `Bonzour 👋 Mi konpran : ou rod in zéd pou in facture. Selon facture-la, fo vérifié chèque énergie, zéd eau, CCAS, CAF ou service social. Mi met bann dispositifs pli pertinents anba.`
+      : `Bonjour 👋 Je comprends : vous cherchez une aide pour une facture. Selon le type de facture, il faut vérifier le chèque énergie, les aides eau, le CCAS, la CAF ou un service social. Je vous affiche les dispositifs les plus pertinents ci-dessous.`
+  }
+
+  if (mainIntent === "transport") {
+    return isKreol
+      ? `Bonzour 👋 Mi konpran : out demande konsern transport, mobilité ou permis. Bann pistes principales lé Département, Région, France Travail, mission locale, ou dispositifs jeunes. Mi classe bann aides anba.`
+      : `Bonjour 👋 Je comprends : votre demande concerne le transport, la mobilité ou le permis. Les pistes principales sont le Département, la Région, France Travail, la mission locale ou les dispositifs jeunes. Je vous classe les aides ci-dessous.`
+  }
+
+  if (mainIntent === "emploi") {
+    return isKreol
+      ? `Bonzour 👋 Mi konpran : out demande lé liée à l’emploi ou formation. Fo regard France Travail, Région, mobilité, formation ou création d’activité selon out profil. Mi détaille bann pistes anba.`
+      : `Bonjour 👋 Je comprends : votre demande est liée à l’emploi ou la formation. Il faut regarder France Travail, la Région, les aides mobilité, la formation ou la création d’activité selon votre profil. Je détaille les pistes ci-dessous.`
+  }
+
+  if (mainIntent === "etudiant") {
+    return isKreol
+      ? `Bonzour 👋 Mi konpran : ou rod bann zéd étudiant. Fo vérifier bourses, Région, Département, logement étudiant, mobilité, équipement informatique. Mi afish bann pistes anba.`
+      : `Bonjour 👋 Je comprends : vous cherchez des aides étudiantes. Il faut vérifier les bourses, les aides Région/Département, le logement étudiant, la mobilité et l’équipement informatique. Je vous affiche les pistes ci-dessous.`
+  }
+
+  if (mainIntent === "handicap") {
+    return isKreol
+      ? `Bonzour 👋 Mi konpran : out demande konsern handicap. Bann pistes importantes lé MDPH, AAH, PCH, santé, accompagnement social. Mi classe bann dispositifs anba.`
+      : `Bonjour 👋 Je comprends : votre demande concerne le handicap. Les pistes importantes sont la MDPH, l’AAH, la PCH, la santé et l’accompagnement social. Je vous classe les dispositifs ci-dessous.`
+  }
+
+  if (mainIntent === "senior") {
+    return isKreol
+      ? `Bonzour 👋 Mi konpran : out demande konsern retraite, gramoun ou autonomie. Fo regarder APA, Département, CCAS, santé, accompagnement à domicile. Mi afish bann pistes anba.`
+      : `Bonjour 👋 Je comprends : votre demande concerne la retraite, les seniors ou l’autonomie. Il faut regarder l’APA, le Département, le CCAS, la santé et l’accompagnement à domicile. Je vous affiche les pistes ci-dessous.`
+  }
+
+  if (mainIntent === "sante") {
+    return isKreol
+      ? `Bonzour 👋 Mi konpran : out demande konsern santé ou mutuelle. Fo vérifier Complémentaire Santé Solidaire, Ameli, CAF ou accompagnement social selon out revenu. Mi afish bann pistes anba.`
+      : `Bonjour 👋 Je comprends : votre demande concerne la santé ou la mutuelle. Il faut vérifier la Complémentaire Santé Solidaire, Ameli, la CAF ou l’accompagnement social selon vos revenus. Je vous affiche les pistes ci-dessous.`
+  }
+
+  if (topNames.length > 0) {
+    return isKreol
+      ? `Bonzour 👋 Mi konpran out kestion. Dapré out profil${profileText ? ` (${profileText})` : ""}, bann pistes pli intéressantes pou vérifier lé : ${topNames.join(", ")}. Mi détaille azot anba.`
+      : `Bonjour 👋 Je comprends votre question. D’après votre profil${profileText ? ` (${profileText})` : ""}, les pistes les plus intéressantes à vérifier sont : ${topNames.join(", ")}. Je vous les détaille ci-dessous.`
+  }
+
+  return isKreol
+    ? "Bonzour 👋 Mi konpran out kestion, mé mi trouv pa in zéd évidente tout de suite. Mi afish kan même bann pistes à vérifier anba."
+    : "Bonjour 👋 Je comprends votre question, mais je ne vois pas d’aide évidente immédiatement. Je vous affiche quand même les pistes à vérifier ci-dessous."
 }
 
 export default function AssistantAides({ isPremium, isMobile, t, user }) {
@@ -417,7 +902,12 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
 
   const recommendedAides = useMemo(() => {
     if (!responseData?.profile || !responseData?.aides) return []
-    return getRecommendedAides(responseData.aides, responseData.profile, isKreol)
+    return getRecommendedAides(
+      responseData.aides,
+      responseData.profile,
+      isKreol,
+      responseData.question || ""
+    )
   }, [responseData, isKreol])
 
   const excludedAides = useMemo(() => {
@@ -472,6 +962,7 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
 
     setResponseData({
       type: "scan",
+      question: "",
       profile: currentProfile,
       aides,
     })
@@ -570,124 +1061,166 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <Star size={26} color={COLORS.cyan} />
         <h3 style={{ color: COLORS.text, margin: 0 }}>
-          {txt("assistantTitle", "Mon assistant personnel")}
+          {isKreol ? "Mon konseye zéd Premium" : "Mon conseiller aides Premium"}
         </h3>
       </div>
 
       <p style={{ color: COLORS.muted, lineHeight: 1.6 }}>
-        {txt(
-          "assistantSubtitle",
-          "Posez une question sur vos aides, vos droits, vos démarches ou votre situation à La Réunion."
-        )}
+        {isKreol
+          ? "Poz out kestion. Mon konseye i analiz out profil, i répond aou, é i klase bann zéd pli utiles pou ou."
+          : "Posez votre question. Votre conseiller analyse votre profil, vous répond clairement, puis classe les aides les plus utiles pour vous."}
       </p>
 
-      <p style={{ color: COLORS.cyan, lineHeight: 1.6, marginTop: -6, fontWeight: 800 }}>
-        {txt("assistantLanguages", "💬 Réponses possibles en français et en créole réunionnais.")}
-      </p>
-
-      <button
-        type="button"
-        onClick={handleScanProfile}
-        disabled={loadingProfile}
+      <div
         style={{
-          marginBottom: 12,
-          background: loadingProfile ? COLORS.muted : COLORS.cyan,
-          color: "#0A1628",
-          border: "none",
-          borderRadius: 12,
-          padding: "11px 16px",
-          fontWeight: 900,
-          cursor: loadingProfile ? "not-allowed" : "pointer",
-          fontFamily: "inherit",
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
-        }}
-      >
-        <SearchCheck size={16} />
-        {loadingProfile
-          ? txt("assistantScanning", "Analyse en cours...")
-          : txt("assistantScan", "Scanner mon profil")}
-      </button>
-
-      <textarea
-        value={question}
-        onChange={e => setQuestion(e.target.value)}
-        placeholder={txt(
-          "assistantPlaceholder",
-          "Ex : Je suis parent isolé avec 2 enfants à Saint-Leu, quelles aides puis-je vérifier ?"
-        )}
-        style={{
-          width: "100%",
-          minHeight: 100,
-          background: COLORS.cardLight,
+          background: "rgba(255,255,255,.05)",
           border: `1px solid ${COLORS.border}`,
-          borderRadius: 14,
-          padding: 14,
-          color: COLORS.text,
-          fontFamily: "inherit",
-          resize: "vertical",
-          outline: "none",
-        }}
-      />
-
-      <button
-        type="button"
-        onClick={handleAnalyze}
-        disabled={loadingProfile}
-        style={{
-          marginTop: 12,
-          background: loadingProfile ? COLORS.muted : COLORS.accent,
-          color: "#fff",
-          border: "none",
-          borderRadius: 12,
-          padding: "11px 16px",
-          fontWeight: 900,
-          cursor: loadingProfile ? "not-allowed" : "pointer",
-          fontFamily: "inherit",
-          display: "flex",
-          alignItems: "center",
-          gap: 8,
+          borderRadius: 18,
+          padding: 16,
+          display: "grid",
+          gap: 12,
         }}
       >
-        <Send size={16} />
-        {txt("assistantAnalyze", "Analyser ma situation")}
-      </button>
-
-      {responseData?.type === "error" && (
         <div
           style={{
-            marginTop: 16,
-            background: "rgba(251,113,133,.10)",
-            border: "1px solid rgba(251,113,133,.35)",
-            borderRadius: 16,
-            padding: 16,
-            color: COLORS.text,
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            color: COLORS.cyan,
+            fontWeight: 900,
           }}
         >
-          {isKreol
-            ? "Inposib sharj out profil pou linstan. Vérifi si out profil lé bien ranpli."
-            : "Impossible de charger votre profil pour le moment. Vérifiez que votre profil est bien complété."}
+          <MessageCircle size={17} />
+          {isKreol ? "Diskité ek mon konseye" : "Discuter avec mon conseiller"}
         </div>
-      )}
 
-      {responseData?.profile && (
-        <div
+        <textarea
+          value={question}
+          onChange={e => setQuestion(e.target.value)}
+          placeholder={
+            isKreol
+              ? "Ex : Bonzour, mi na 2 marmay, est-ce que mi pé gagn zéd pou vakans ?"
+              : "Ex : Bonjour, j’ai 2 enfants, est-ce que je peux avoir des aides pour les vacances ?"
+          }
           style={{
-            marginTop: 16,
-            display: "grid",
-            gap: 16,
+            width: "100%",
+            minHeight: 105,
+            background: COLORS.cardLight,
+            border: `1px solid ${COLORS.border}`,
+            borderRadius: 14,
+            padding: 14,
+            color: COLORS.text,
+            fontFamily: "inherit",
+            resize: "vertical",
+            outline: "none",
           }}
-        >
+        />
+
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+          {[
+            isKreol ? "Zéd pou vakans marmay" : "Aides vacances enfants",
+            isKreol ? "Zéd cantine" : "Aide cantine",
+            isKreol ? "Zéd facture EDF" : "Aide facture EDF",
+            isKreol ? "Zéd logement" : "Aide logement",
+          ].map(example => (
+            <button
+              key={example}
+              type="button"
+              onClick={() => setQuestion(example)}
+              style={{
+                background: "rgba(35,211,214,.08)",
+                border: "1px solid rgba(35,211,214,.25)",
+                borderRadius: 999,
+                padding: "7px 11px",
+                color: COLORS.cyan,
+                fontSize: 12,
+                cursor: "pointer",
+                fontFamily: "inherit",
+                fontWeight: 800,
+              }}
+            >
+              {example}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+          <button
+            type="button"
+            onClick={handleAnalyze}
+            disabled={loadingProfile}
+            style={{
+              background: loadingProfile ? COLORS.muted : COLORS.accent,
+              color: "#fff",
+              border: "none",
+              borderRadius: 12,
+              padding: "11px 16px",
+              fontWeight: 900,
+              cursor: loadingProfile ? "not-allowed" : "pointer",
+              fontFamily: "inherit",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            <Send size={16} />
+            {loadingProfile
+              ? isKreol
+                ? "Analyse en cours..."
+                : "Analyse en cours..."
+              : isKreol
+                ? "Diskité ek mon konseye"
+                : "Discuter avec mon conseiller"}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleScanProfile}
+            disabled={loadingProfile}
+            style={{
+              background: loadingProfile ? COLORS.muted : COLORS.cyan,
+              color: "#0A1628",
+              border: "none",
+              borderRadius: 12,
+              padding: "11px 16px",
+              fontWeight: 900,
+              cursor: loadingProfile ? "not-allowed" : "pointer",
+              fontFamily: "inherit",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            <SearchCheck size={16} />
+            {isKreol ? "Scanner mon profil" : "Scanner mon profil"}
+          </button>
+        </div>
+
+        {responseData?.type === "error" && (
           <div
             style={{
-              background: "rgba(255,255,255,.05)",
-              border: `1px solid ${COLORS.border}`,
+              background: "rgba(251,113,133,.10)",
+              border: "1px solid rgba(251,113,133,.35)",
+              borderRadius: 16,
+              padding: 14,
+              color: COLORS.text,
+            }}
+          >
+            {isKreol
+              ? "Inposib sharj out profil pou linstan. Vérifi si out profil lé bien ranpli."
+              : "Impossible de charger votre profil pour le moment. Vérifiez que votre profil est bien complété."}
+          </div>
+        )}
+
+        {responseData?.profile && (
+          <div
+            style={{
+              background: "rgba(35,211,214,.08)",
+              border: "1px solid rgba(35,211,214,.22)",
               borderRadius: 16,
               padding: 16,
               color: COLORS.text,
               lineHeight: 1.6,
-              whiteSpace: "pre-line",
             }}
           >
             <div
@@ -701,27 +1234,57 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
               }}
             >
               <Sparkles size={16} />
-              {txt("assistantResponseTitle", "Réponse de l’assistant")}
+              {isKreol ? "Répons mon konseye" : "Réponse de votre conseiller"}
             </div>
 
             {responseData.type === "question" && (
               <p style={{ margin: "0 0 12px", color: COLORS.muted }}>
-                {isKreol ? "Kestion analizé :" : "Question analysée :"}{" "}
+                {isKreol ? "Out kestion :" : "Votre question :"}{" "}
                 <strong style={{ color: COLORS.text }}>
                   {responseData.question || (isKreol ? "Ou la pa mark kestion" : "Aucune question précisée")}
                 </strong>
               </p>
             )}
 
-            <strong style={{ color: COLORS.green }}>
-              {isKreol ? "Profil analizé avèk siksé." : "Profil analysé avec succès."}
-            </strong>
+            <p style={{ margin: "0 0 12px" }}>
+              {buildSmartAnswer(responseData, isKreol, recommendedAides)}
+            </p>
 
-            <div style={{ marginTop: 10 }}>
-              {buildProfileSummary(responseData.profile, isKreol)}
-            </div>
+            <details
+              style={{
+                marginTop: 12,
+                background: "rgba(255,255,255,.04)",
+                border: `1px solid ${COLORS.border}`,
+                borderRadius: 12,
+                padding: 12,
+              }}
+            >
+              <summary
+                style={{
+                  cursor: "pointer",
+                  color: COLORS.green,
+                  fontWeight: 900,
+                }}
+              >
+                {isKreol ? "Voir profil analizé" : "Voir le profil analysé"}
+              </summary>
+
+              <div
+                style={{
+                  marginTop: 10,
+                  whiteSpace: "pre-line",
+                  color: COLORS.text,
+                }}
+              >
+                {buildProfileSummary(responseData.profile, isKreol)}
+              </div>
+            </details>
           </div>
+        )}
+      </div>
 
+      {responseData?.profile && (
+        <div style={{ marginTop: 16, display: "grid", gap: 16 }}>
           <div>
             <h4 style={{ margin: "0 0 10px", color: COLORS.text, fontSize: 18 }}>
               🎯 {isKreol ? "Bann zéd rekomandé" : "Aides recommandées"}
@@ -729,8 +1292,8 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
 
             <p style={{ margin: "0 0 14px", color: COLORS.muted }}>
               {isKreol
-                ? `${responseData.aides.length} zéd analizé. Bann zéd pa adapté lé ékarté.`
-                : `${responseData.aides.length} aides analysées. Les aides non adaptées sont écartées.`}
+                ? `${responseData.aides.length} zéd analizé. Bann résultats lé klasé selon out profil ek out kestion.`
+                : `${responseData.aides.length} aides analysées. Les résultats sont classés selon votre profil et votre question.`}
             </p>
 
             {recommendedAides.length === 0 ? (
@@ -744,8 +1307,8 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
                 }}
               >
                 {isKreol
-                  ? "Nana pa zéd assez probab pou linstan. Ranpli out profil pou gagn bann rekomandasyon pli présiz."
-                  : "Aucune aide suffisamment probable pour le moment. Complétez votre profil pour obtenir des recommandations plus précises."}
+                  ? "Nana pa zéd assez probab pou linstan. Essaye écrit in kestion pli précise."
+                  : "Aucune aide suffisamment probable pour le moment. Essayez d’écrire une question plus précise."}
               </div>
             ) : (
               <div style={{ display: "grid", gap: 14 }}>
