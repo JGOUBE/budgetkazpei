@@ -1,5 +1,4 @@
 import { useState } from "react"
-import { stripePromise, PRICE_ID } from "../../services/stripe"
 
 const COLORS = {
   card: "#0F1E38",
@@ -11,34 +10,107 @@ const COLORS = {
   muted: "#8EA4C5",
   text: "#F1F5F9",
   yellow: "#FCD34D",
+  cyan: "#23D3D6",
+  purple: "#A78BFA",
 }
 
 const WATERMARK = "/icons-creole/palmier.png"
+const PREMIUM_URL = "https://budgetkazpei.vercel.app/premium"
+
+const FREE_FEATURES_FR = [
+  "Tableau de bord budget",
+  "Ajout des dépenses et revenus",
+  "Charges fixes",
+  "Historique simple",
+  "Profil utilisateur",
+  "Aides & droits en version simple",
+  "Interface français / créole",
+]
+
+const PREMIUM_FEATURES_FR = [
+  "Tout le gratuit inclus",
+  "Assistant Aides Réunion 🇷🇪",
+  "Réponses en français ou créole réunionnais",
+  "Analyse personnalisée des aides",
+  "Classement : très probable, probable, à vérifier",
+  "Suivi des démarches administratives",
+  "Documents à préparer avec checklist",
+  "Alertes budget intelligentes",
+  "Bons plans intelligents",
+  "Historique avancé",
+  "Export PDF mensuel",
+]
+
+const PREMIUM_PLUS_FEATURES_FR = [
+  "Tout Premium inclus",
+  "Conseiller IA BudgetKazPei",
+  "Conversation libre en français ou créole",
+  "Analyse budgétaire avancée",
+  "Génération de courriers administratifs",
+  "Préparation de dossiers complets",
+  "Conseils personnalisés selon le profil",
+  "Veille automatique des droits et nouvelles aides",
+  "Futures automatisations Premium+",
+]
+
+const FREE_FEATURES_KR = [
+  "Tablo débor bidjé",
+  "Azout dépans é larzan rantre",
+  "Sarz fix",
+  "Istorik simpl",
+  "Profil itilizatèr",
+  "Zéd & drwa an version simpl",
+  "Interface fransé / kréol",
+]
+
+const PREMIUM_FEATURES_KR = [
+  "Tout sa lé gratis déza inclus",
+  "Asistan Zéd Rényon 🇷🇪",
+  "Répons an fransé ou kréol rényoné",
+  "Analiz personnalisée bann zéd",
+  "Klasman : tré probab, probab, pou vérifié",
+  "Suivi bann démarches administratives",
+  "Dokiman pou préparé ek checklist",
+  "Alèrt bidjé entèlizan",
+  "Bon plan entèlizan",
+  "Istorik avansé",
+  "Export PDF chak mwa",
+]
+
+const PREMIUM_PLUS_FEATURES_KR = [
+  "Tout Premium inclus",
+  "Konseye IA BudgetKazPei",
+  "Diskision libre an fransé ou kréol",
+  "Analiz bidjé pli avansé",
+  "Kréation courrier administratif",
+  "Préparasyon dosyé konplé",
+  "Konsey personnalisés selon out profil",
+  "Veille otomatik bann drwa é nouvo zéd",
+  "Futures otomatisations Premium+",
+]
 
 const DESCRIPTIONS_FR = {
-  "Tout le gratuit inclus": "Tu gardes toutes les fonctionnalités gratuites, avec les outils avancés en plus.",
-  "🔔 Alertes budget intelligentes": "Sois prévenu quand tu dépasses un budget ou qu’une charge importante approche.",
-  "🤖 Assistant IA personnalisé": "Pose tes questions budget et reçois des conseils adaptés à ta situation.",
-  "🎯 Bons plans locaux exclusifs": "Découvre des aides, offres et bons plans utiles à La Réunion.",
-  "📊 Historique avancé": "Analyse ton évolution sur plusieurs mois pour mieux anticiper.",
-  "🏦 Open Banking — import automatique": "Bientôt : importe automatiquement tes mouvements bancaires.",
-  "📄 Export PDF mensuel": "Télécharge un récapitulatif propre de ton mois en PDF.",
-  "🚀 Nouveautés en avant-première": "Teste les nouvelles fonctionnalités avant tout le monde.",
+  "Assistant Aides Réunion 🇷🇪": "Un assistant spécialisé sur les aides utiles à La Réunion : CAF, Région, Département, CCAS et dispositifs locaux.",
+  "Réponses en français ou créole réunionnais": "L’utilisateur peut comprendre les aides plus facilement, dans la langue qui lui parle le mieux.",
+  "Analyse personnalisée des aides": "L’app utilise le profil : commune, revenus, enfants, logement, CAF, situation professionnelle et autres critères.",
+  "Suivi des démarches administratives": "Chaque aide peut passer par les étapes : à vérifier, dossier à préparer, demande envoyée, en attente, acceptée ou refusée.",
+  "Documents à préparer avec checklist": "L’utilisateur sait quels justificatifs préparer et peut cocher les documents déjà prêts.",
+  "Bons plans intelligents": "Une rubrique pensée pour afficher des bons plans utiles selon le profil et les besoins.",
+  "Conseiller IA BudgetKazPei": "Un conseiller plus avancé, capable d’échanger librement et d’aider sur le budget, les aides et les démarches.",
+  "Génération de courriers administratifs": "Premium+ pourra aider à rédiger des courriers pour la CAF, le CCAS, la Région, le Département ou d’autres organismes.",
+  "Veille automatique des droits et nouvelles aides": "Premium+ préparera les futures alertes personnalisées quand une nouvelle aide peut concerner l’utilisateur.",
 }
 
 const DESCRIPTIONS_KR = {
-  "Tout sa i gratis déza": "Ou gard tout bann fonksion gratis, avèk bann zouti avansé an plis.",
-  "🔔 Alèrt bidjé entèlizan": "Ou lé avèrti kan ou dépass in bidjé ou kan in gro dépans i ariv.",
-  "🤖 Asistan IA pèrsonalizé": "Poz out késtion bidjé é gagn bann konsey adapté pou ou sitiasion.",
-  "🎯 Bon plan lokal èksklizif": "Découv bann éd, lofr é bon plan itil pou La Rényon.",
-  "📊 Istorik avansé": "Gard koman ou bidjé i évolu pou mieux antisipé.",
-  "🏦 Open Banking — import otomatik": "Biento : import otomatikman ou bann mouvman bankèr.",
-  "📄 Èksport PDF chak mwa": "Télécharg in rékap prop pou chak mwa.",
-  "🚀 Nouvo fonksionalité avan tout moun": "Test bann nouvo fonksionalité avan tout moun.",
-}
-
-function isOpenBanking(text) {
-  return String(text || "").toLowerCase().includes("open banking")
+  "Asistan Zéd Rényon 🇷🇪": "In asistan spécial pou bann zéd itil La Rényon : CAF, Région, Département, CCAS é dispositifs lokal.",
+  "Répons an fransé ou kréol rényoné": "Lutilizatèr i pé konprann bann zéd pli fasilman, dan langaz i koz ek li.",
+  "Analiz personnalisée bann zéd": "L’app i utiliz profil : komin, revenu, marmay, kaz, CAF, sitiasyon travay é lezot kritèr.",
+  "Suivi bann démarches administratives": "Sak zéd i pé pas par bann etap : pou vérifié, dosyé pou préparé, domann envoyée, an atant, aksepté ou refizé.",
+  "Dokiman pou préparé ek checklist": "Lutilizatèr i koné ki papye pou préparé é i pé coché sak dokiman déza prêt.",
+  "Bon plan entèlizan": "In rubrique pou afficher bann bon plan itil selon profil é besoin.",
+  "Konseye IA BudgetKazPei": "In konseye pli avansé, kapab diskité libreman é aide su bidjé, zéd é démarches.",
+  "Kréation courrier administratif": "Premium+ va aide rédiz courrier pou CAF, CCAS, Région, Département ou lezot organismes.",
+  "Veille otomatik bann drwa é nouvo zéd": "Premium+ va prépar bann alertes personnalisées kan in nouvo zéd i pé konsern lutilizatèr.",
 }
 
 function Watermark({ size = 210, right = -45, bottom = -55 }) {
@@ -61,7 +133,7 @@ function Watermark({ size = 210, right = -45, bottom = -55 }) {
   )
 }
 
-function FeatureItem({ feature, description, soonLabel, premium }) {
+function FeatureItem({ feature, description, color = COLORS.green }) {
   const [open, setOpen] = useState(false)
 
   return (
@@ -73,51 +145,20 @@ function FeatureItem({ feature, description, soonLabel, premium }) {
         zIndex: 1,
       }}
     >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 9,
-        }}
-      >
-        <span
-          style={{
-            color: premium ? COLORS.yellow : COLORS.green,
-            fontSize: 15,
-            fontWeight: 900,
-          }}
-        >
-          ✓
-        </span>
+      <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+        <span style={{ color, fontSize: 15, fontWeight: 900 }}>✓</span>
 
         <span
           style={{
             flex: 1,
             fontSize: 13,
-            color: premium ? COLORS.text : COLORS.muted,
-            fontWeight: premium ? 800 : 700,
-            lineHeight: 1.3,
+            color: COLORS.text,
+            fontWeight: 800,
+            lineHeight: 1.35,
           }}
         >
           {feature}
         </span>
-
-        {isOpenBanking(feature) && (
-          <span
-            style={{
-              background: "rgba(252,211,77,.16)",
-              border: "1px solid rgba(252,211,77,.35)",
-              color: COLORS.yellow,
-              borderRadius: 999,
-              padding: "3px 8px",
-              fontSize: 10,
-              fontWeight: 900,
-              flexShrink: 0,
-            }}
-          >
-            {soonLabel}
-          </span>
-        )}
 
         {description && (
           <button
@@ -129,8 +170,8 @@ function FeatureItem({ feature, description, soonLabel, premium }) {
               height: 22,
               borderRadius: 999,
               border: "1px solid rgba(142,164,197,.35)",
-              background: open ? "rgba(252,211,77,.18)" : "rgba(15,30,56,.55)",
-              color: open ? COLORS.yellow : COLORS.muted,
+              background: open ? `${color}22` : "rgba(15,30,56,.55)",
+              color: open ? color : COLORS.muted,
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
@@ -152,7 +193,7 @@ function FeatureItem({ feature, description, soonLabel, premium }) {
             marginTop: 8,
             marginLeft: 24,
             background: "rgba(10,22,40,.75)",
-            border: "1px solid rgba(56,189,248,.22)",
+            border: `1px solid ${color}33`,
             borderRadius: 12,
             padding: "9px 11px",
             color: COLORS.muted,
@@ -167,48 +208,114 @@ function FeatureItem({ feature, description, soonLabel, premium }) {
   )
 }
 
-export default function PremiumPage({ user, isPremium, t }) {
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState("")
+function PlanCard({ icon, title, subtitle, features, color, badge, descriptions }) {
+  return (
+    <div
+      style={{
+        position: "relative",
+        overflow: "hidden",
+        background: `linear-gradient(135deg, ${color}14, ${COLORS.card})`,
+        border: `2px solid ${color}55`,
+        borderRadius: 18,
+        padding: 22,
+        boxShadow: `0 0 30px ${color}10`,
+        minHeight: "100%",
+      }}
+    >
+      <Watermark size={190} right={-45} bottom={-60} />
 
-  const featuresFree = Array.isArray(t("premium", "featuresFree"))
-    ? t("premium", "featuresFree")
-    : []
+      <div
+        style={{
+          position: "relative",
+          zIndex: 1,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "flex-start",
+          gap: 10,
+          marginBottom: 14,
+        }}
+      >
+        <div>
+          <div style={{ fontSize: 31, marginBottom: 6 }}>{icon}</div>
+          <div
+            style={{
+              color,
+              fontWeight: 900,
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+              fontSize: 13,
+            }}
+          >
+            {title}
+          </div>
+          <p style={{ margin: "8px 0 0", color: COLORS.muted, fontSize: 12.5, lineHeight: 1.45 }}>
+            {subtitle}
+          </p>
+        </div>
 
-  const featuresPremium = Array.isArray(t("premium", "featuresPremium"))
-    ? t("premium", "featuresPremium")
-    : []
+        {badge && (
+          <span
+            style={{
+              background: `${color}22`,
+              border: `1px solid ${color}55`,
+              color,
+              fontSize: 10,
+              fontWeight: 900,
+              padding: "4px 10px",
+              borderRadius: 999,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {badge}
+          </span>
+        )}
+      </div>
 
-  const isKreol = t("premium", "perMonth") === "/mwa"
+      {features.map((feature, index) => (
+        <FeatureItem key={`${title}-${index}`} feature={feature} description={descriptions?.[feature]} color={color} />
+      ))}
+    </div>
+  )
+}
+
+export default function PremiumPage({ user, isPremium, isPremiumPlus = false, t }) {
+  const isKreol = t("nav", "dashboard") === "Tablo débor"
   const descriptions = isKreol ? DESCRIPTIONS_KR : DESCRIPTIONS_FR
 
-  async function handleSubscribe() {
-    setLoading(true)
-    setError("")
+  const hasPremiumAccess = isPremium || isPremiumPlus
+  const accountLabel = isPremiumPlus
+    ? isKreol
+      ? "Ou lé Premium+"
+      : "Vous êtes Premium+"
+    : isPremium
+      ? isKreol
+        ? "Ou lé Premium"
+        : "Vous êtes Premium"
+      : isKreol
+        ? "Découv bann options Premium"
+        : "Découvrez les options Premium"
 
-    try {
-      const stripe = await stripePromise
-      const { error } = await stripe.redirectToCheckout({
-        lineItems: [{ price: PRICE_ID, quantity: 1 }],
-        mode: "subscription",
-        successUrl: `${window.location.origin}?premium=success`,
-        cancelUrl: `${window.location.origin}?premium=cancel`,
-        customerEmail: user?.email,
-      })
+  const headline = isKreol
+    ? "Débloque plis pouvwar pou out bidjé"
+    : "Débloquez plus de puissance pour votre budget"
 
-      if (error) setError(error.message)
-    } catch {
-      setError("Erreur lors de la redirection vers le paiement")
-    } finally {
-      setLoading(false)
-    }
+  const subline = isKreol
+    ? "BudgetKazPei propose in version gratuite, in offre Premium pou zéd, démarches é bon plan, é in offre Premium+ pou in vrai konseye IA."
+    : "BudgetKazPei propose une version gratuite, une offre Premium pour les aides, démarches et bons plans, et une offre Premium+ pour un vrai conseiller IA."
+
+  const freeFeatures = isKreol ? FREE_FEATURES_KR : FREE_FEATURES_FR
+  const premiumFeatures = isKreol ? PREMIUM_FEATURES_KR : PREMIUM_FEATURES_FR
+  const premiumPlusFeatures = isKreol ? PREMIUM_PLUS_FEATURES_KR : PREMIUM_PLUS_FEATURES_FR
+
+  function openPremiumOptions() {
+    window.open(PREMIUM_URL, "_blank", "noopener,noreferrer")
   }
 
   return (
     <div
       style={{
         width: "100%",
-        maxWidth: 920,
+        maxWidth: 1040,
         margin: "0 auto",
         display: "flex",
         flexDirection: "column",
@@ -219,16 +326,16 @@ export default function PremiumPage({ user, isPremium, t }) {
         style={{
           position: "relative",
           overflow: "hidden",
-          background: `linear-gradient(135deg, ${COLORS.yellow}22, ${COLORS.accent}14, ${COLORS.card})`,
+          background: `linear-gradient(135deg, ${COLORS.yellow}22, ${COLORS.purple}16, ${COLORS.card})`,
           border: `1px solid ${COLORS.yellow}44`,
           borderRadius: 24,
           padding: "34px 28px",
           textAlign: "center",
         }}
       >
-        <Watermark size={260} right={-55} bottom={-75} />
+        <Watermark size={280} right={-60} bottom={-85} />
 
-        <div style={{ fontSize: 44, marginBottom: 10, position: "relative", zIndex: 1 }}>🌴⭐</div>
+        <div style={{ fontSize: 46, marginBottom: 10, position: "relative", zIndex: 1 }}>🌴⭐👑</div>
 
         <h2
           style={{
@@ -240,52 +347,43 @@ export default function PremiumPage({ user, isPremium, t }) {
             zIndex: 1,
           }}
         >
-          {isPremium ? t("premium", "alreadyPremium") : t("premium", "title")}
+          {accountLabel}
         </h2>
 
         <p
           style={{
             color: COLORS.muted,
             fontSize: 15,
-            margin: "0 auto 18px",
+            margin: "0 auto",
             lineHeight: 1.65,
-            maxWidth: 650,
+            maxWidth: 720,
             position: "relative",
             zIndex: 1,
           }}
         >
-          {isPremium ? t("premium", "alreadyPremiumSub") : t("premium", "subtitle")}
+          {hasPremiumAccess ? headline : subline}
         </p>
 
-        {!isPremium && (
-          <>
-            <div
-              style={{
-                fontSize: 42,
-                fontWeight: 900,
-                color: COLORS.yellow,
-                fontFamily: "'DM Serif Display', serif",
-                position: "relative",
-                zIndex: 1,
-              }}
-            >
-              3€
-              <span
-                style={{
-                  fontSize: 16,
-                  color: COLORS.muted,
-                  fontFamily: "'DM Sans', sans-serif",
-                  marginLeft: 5,
-                }}
-              >
-                {t("premium", "perMonth")}
-              </span>
-            </div>
-
-            <div style={{ marginTop: 6, fontSize: 12, color: COLORS.muted, position: "relative", zIndex: 1 }}>
-              {t("premium", "noCommitment")}
-            </div>
-          </>
+        {hasPremiumAccess && (
+          <div
+            style={{
+              margin: "18px auto 0",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              background: isPremiumPlus ? `${COLORS.purple}22` : `${COLORS.yellow}22`,
+              border: `1px solid ${isPremiumPlus ? COLORS.purple : COLORS.yellow}55`,
+              borderRadius: 999,
+              padding: "8px 14px",
+              color: isPremiumPlus ? COLORS.purple : COLORS.yellow,
+              fontWeight: 900,
+              fontSize: 13,
+              position: "relative",
+              zIndex: 1,
+            }}
+          >
+            {isPremiumPlus ? "👑 Premium+ actif" : "⭐ Premium actif"}
+          </div>
         )}
       </div>
 
@@ -297,145 +395,74 @@ export default function PremiumPage({ user, isPremium, t }) {
           alignItems: "stretch",
         }}
       >
-        {!isPremium && (
-          <div
-            style={{
-              background: `linear-gradient(135deg, ${COLORS.card} 0%, ${COLORS.cardLight} 100%)`,
-              border: `1px solid ${COLORS.border}`,
-              borderRadius: 18,
-              padding: 22,
-            }}
-          >
-            <div
-              style={{
-                fontSize: 13,
-                color: COLORS.muted,
-                fontWeight: 900,
-                marginBottom: 14,
-                textTransform: "uppercase",
-                letterSpacing: "0.08em",
-              }}
-            >
-              {t("premium", "free")}
-            </div>
+        <PlanCard
+          icon="🆓"
+          title={isKreol ? "Gratuit" : "Gratuit"}
+          subtitle={isKreol ? "Pou démarré ek out bidjé." : "Pour démarrer avec la gestion de votre budget."}
+          features={freeFeatures}
+          color={COLORS.green}
+          descriptions={{}}
+        />
 
-            {featuresFree.map((feature, i) => (
-              <FeatureItem key={i} feature={feature} />
-            ))}
-          </div>
-        )}
+        <PlanCard
+          icon="⭐"
+          title="Premium"
+          subtitle={
+            isKreol
+              ? "Pou bann zéd, démarches, dokiman é bon plan an fransé ou kréol."
+              : "Pour les aides, démarches, documents et bons plans en français ou créole."
+          }
+          features={premiumFeatures}
+          color={COLORS.yellow}
+          badge={isPremium && !isPremiumPlus ? (isKreol ? "Actif" : "Actif") : null}
+          descriptions={descriptions}
+        />
 
-        <div
-          style={{
-            position: "relative",
-            overflow: "hidden",
-            background: `linear-gradient(135deg, ${COLORS.yellow}18, ${COLORS.card})`,
-            border: `2px solid ${COLORS.yellow}55`,
-            borderRadius: 18,
-            padding: 22,
-            boxShadow: `0 0 30px ${COLORS.yellow}12`,
-          }}
-        >
-          <Watermark size={190} right={-45} bottom={-60} />
-
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 10,
-              marginBottom: 14,
-              position: "relative",
-              zIndex: 1,
-            }}
-          >
-            <div
-              style={{
-                fontSize: 13,
-                color: COLORS.yellow,
-                fontWeight: 900,
-                textTransform: "uppercase",
-                letterSpacing: "0.08em",
-              }}
-            >
-              {t("premium", "premiumLabel")}
-            </div>
-
-            {!isPremium && (
-              <span
-                style={{
-                  background: COLORS.yellow,
-                  color: COLORS.card,
-                  fontSize: 10,
-                  fontWeight: 900,
-                  padding: "4px 10px",
-                  borderRadius: 999,
-                  letterSpacing: "0.05em",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {t("premium", "recommended")}
-              </span>
-            )}
-          </div>
-
-          {featuresPremium.map((feature, i) => (
-            <FeatureItem
-              key={i}
-              feature={feature}
-              premium
-              description={descriptions[feature]}
-              soonLabel={t("premium", "openBankingSoon")}
-            />
-          ))}
-        </div>
+        <PlanCard
+          icon="👑"
+          title="Premium+"
+          subtitle={
+            isKreol
+              ? "Pou in vrai konseye IA BudgetKazPei, pli avansé é pli personnalisée."
+              : "Pour un vrai conseiller IA BudgetKazPei, plus avancé et plus personnalisé."
+          }
+          features={premiumPlusFeatures}
+          color={COLORS.purple}
+          badge={isPremiumPlus ? (isKreol ? "Actif" : "Actif") : isKreol ? "IA" : "IA"}
+          descriptions={descriptions}
+        />
       </div>
 
-      {error && (
-        <div
-          style={{
-            background: `${COLORS.red}15`,
-            border: `1px solid ${COLORS.red}33`,
-            borderRadius: 12,
-            padding: "12px 16px",
-            fontSize: 13,
-            color: COLORS.red,
-          }}
-        >
-          ⚠️ {error}
-        </div>
-      )}
+      <button
+        type="button"
+        onClick={openPremiumOptions}
+        style={{
+          width: "100%",
+          background: `linear-gradient(135deg, ${COLORS.yellow}, ${COLORS.accent})`,
+          border: "none",
+          borderRadius: 16,
+          padding: "17px 0",
+          color: COLORS.card,
+          fontSize: 17,
+          fontWeight: 900,
+          fontFamily: "inherit",
+          cursor: "pointer",
+          boxShadow: `0 8px 28px ${COLORS.yellow}33`,
+        }}
+      >
+        {isPremiumPlus
+          ? (isKreol ? "Gèr mon offre Premium+" : "Gérer mon offre Premium+")
+          : isPremium
+            ? (isKreol ? "Pass Premium+" : "Passer à Premium+")
+            : (isKreol ? "Voir bann options Premium" : "Voir les options Premium")
+        }
+      </button>
 
-      {!isPremium && (
-        <>
-          <button
-            type="button"
-            onClick={handleSubscribe}
-            disabled={loading}
-            style={{
-              width: "100%",
-              background: loading
-                ? COLORS.muted
-                : `linear-gradient(135deg, ${COLORS.yellow}, ${COLORS.accent})`,
-              border: "none",
-              borderRadius: 16,
-              padding: "17px 0",
-              color: COLORS.card,
-              fontSize: 17,
-              fontWeight: 900,
-              fontFamily: "inherit",
-              cursor: loading ? "not-allowed" : "pointer",
-              boxShadow: `0 8px 28px ${COLORS.yellow}33`,
-            }}
-          >
-            {loading ? t("premium", "subscribing") : t("premium", "subscribe")}
-          </button>
-
-          <p style={{ textAlign: "center", fontSize: 11, color: COLORS.muted, margin: 0 }}>
-            {t("premium", "securePayment")}
-          </p>
-        </>
-      )}
+      <p style={{ textAlign: "center", fontSize: 11.5, color: COLORS.muted, margin: 0, lineHeight: 1.5 }}>
+        {isKreol
+          ? "Bann détails des offres i affichent su site BudgetKazPei. L’application i garde in bouton neutre pou respecter bann règles stores."
+          : "Les détails des offres sont présentés sur le site BudgetKazPei. L’application garde un bouton neutre pour respecter les règles des stores."}
+      </p>
     </div>
   )
 }

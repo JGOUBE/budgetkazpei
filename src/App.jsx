@@ -282,6 +282,7 @@ const isPremiumPlus = profile?.plan === "premium_plus"
             onSignOut={signOut}
             user={user}
             isPremium={isPremium}
+            isPremiumPlus={isPremiumPlus}
             lang={lang}
             t={t}
           />

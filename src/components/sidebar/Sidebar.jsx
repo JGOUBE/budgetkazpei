@@ -20,6 +20,7 @@ const COLORS = {
   text: "#F1F5F9",
   yellow: "#FCD34D",
   cyan: "#23D3D6",
+  purple: "#A78BFA",
 }
 
 const NAV_ITEMS = [
@@ -37,6 +38,7 @@ export default function Sidebar({
   onSignOut,
   user,
   isPremium,
+  isPremiumPlus = false,
   t,
 }) {
   const prenom =
@@ -44,6 +46,15 @@ export default function Sidebar({
     user?.user_metadata?.full_name ||
     user?.email?.split("@")[0] ||
     "Utilisateur"
+
+  const premiumButtonLabel = isPremiumPlus
+    ? "Gérer Premium+"
+    : isPremium
+      ? "Passer Premium+"
+      : t("nav", "premium")
+
+  const premiumButtonIcon = isPremiumPlus ? "👑" : isPremium ? "👑" : null
+  const premiumColor = isPremiumPlus || isPremium ? COLORS.purple : COLORS.yellow
 
   return (
     <aside
@@ -187,33 +198,34 @@ export default function Sidebar({
           })}
         </nav>
 
-        {!isPremium && (
-          <button
-            type="button"
-            onClick={() => onNavChange("premium")}
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 9,
-              width: "100%",
-              marginTop: 10,
-              padding: "11px 13px",
-              borderRadius: 13,
-              border: `1px solid ${COLORS.yellow}55`,
-              background:
-                "linear-gradient(135deg, rgba(252,211,77,.22), rgba(245,158,11,.12))",
-              color: COLORS.yellow,
-              cursor: "pointer",
-              fontSize: 14,
-              fontWeight: 900,
-              fontFamily: "inherit",
-              textAlign: "left",
-            }}
-          >
+        <button
+          type="button"
+          onClick={() => onNavChange("premium")}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 9,
+            width: "100%",
+            marginTop: 10,
+            padding: "11px 13px",
+            borderRadius: 13,
+            border: `1px solid ${premiumColor}55`,
+            background: `linear-gradient(135deg, ${premiumColor}22, rgba(245,158,11,.10))`,
+            color: premiumColor,
+            cursor: "pointer",
+            fontSize: 14,
+            fontWeight: 900,
+            fontFamily: "inherit",
+            textAlign: "left",
+          }}
+        >
+          {premiumButtonIcon ? (
+            <span style={{ fontSize: 17 }}>{premiumButtonIcon}</span>
+          ) : (
             <Star size={17} fill={COLORS.yellow} />
-            <span>{t("nav", "premium")}</span>
-          </button>
-        )}
+          )}
+          <span>{premiumButtonLabel}</span>
+        </button>
 
         <div
           style={{
