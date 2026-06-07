@@ -25,12 +25,12 @@ const CONTENT = {
     switchLang: "🇷🇪 Kréol",
     heroBadge: "🇷🇪 Pensé pour La Réunion",
     heroTitle: "💰 Plus d'argent. Moins de stress.",
-    heroText: "Aides, économies et bons plans : ne laissez plus les opportunités vous échapper.",
+    heroText:
+      "Aides, économies et bons plans : ne laissez plus les opportunités vous échapper.",
     heroButton: "⭐ Voir les avantages Premium",
-
     problemTitle: "💡 Aides, économies, réductions, dispositifs locaux...",
-    problemText: "Chaque mois, des opportunités passent inaperçues. BudgetKazPei Premium vous aide à les identifier pour améliorer votre budget et augmenter votre pouvoir d'achat.",
-
+    problemText:
+      "Chaque mois, des opportunités passent inaperçues. BudgetKazPei Premium vous aide à les identifier pour améliorer votre budget et augmenter votre pouvoir d'achat.",
     imagineTitle: "🌴 Imaginez votre prochain mois",
     imagineItems: [
       "Une vision claire de votre budget",
@@ -40,7 +40,6 @@ const CONTENT = {
       "Moins de mauvaises surprises",
       "Plus de sérénité",
     ],
-
     analysisTitle: "🔎 Exemple d'analyse BudgetKazPei Premium",
     analysisItems: [
       "Situation analysée",
@@ -50,16 +49,17 @@ const CONTENT = {
       "Documents à préparer",
     ],
     analysisLocked: "Débloquez l'analyse complète avec Premium",
-
     reunionTitle: "🇷🇪 Pourquoi BudgetKazPei ?",
-    reunionText: "Le coût de la vie augmente. Les aides existent. Les bons plans aussi. Encore faut-il les connaître. BudgetKazPei Premium vous aide à identifier les opportunités qui pourraient améliorer votre quotidien et votre pouvoir d'achat.",
-
+    reunionText:
+      "Le coût de la vie augmente. Les aides existent. Les bons plans aussi. Encore faut-il les connaître. BudgetKazPei Premium vous aide à identifier les opportunités qui pourraient améliorer votre quotidien et votre pouvoir d'achat.",
     freeTitle: "Gratuit",
     premiumTitle: "Premium",
     premiumPlusTitle: "Premium+",
     freeSubtitle: "Découvrir BudgetKazPei et suivre l'essentiel.",
-    premiumSubtitle: "Pour ceux qui veulent identifier davantage d'opportunités et rester informés.",
-    premiumPlusSubtitle: "Votre copilote BudgetKazPei. Analyse, accompagnement et futures fonctionnalités IA.",
+    premiumSubtitle:
+      "Pour ceux qui veulent identifier davantage d'opportunités et rester informés.",
+    premiumPlusSubtitle:
+      "Votre copilote BudgetKazPei. Analyse, accompagnement et futures fonctionnalités IA.",
     freeButton: "🔍 Voir mes aides possibles",
     premiumButton: "⭐ Débloquer Premium",
     premiumPlusButton: "👑 Passer à Premium+",
@@ -68,21 +68,40 @@ const CONTENT = {
     recommendedPlusBadge: "RECOMMANDÉ ++",
     premiumSoon: "Le paiement Premium sera branché à Stripe à l'étape suivante.",
     premiumPlusSoon: "Le paiement Premium+ sera branché à Stripe à l'étape suivante.",
-
     trustTitle: "💬 BudgetKazPei évolue avec ses utilisateurs",
-    trustText: "Chaque retour compte. Vos remarques permettront d'améliorer l'application et d'ajouter les fonctionnalités les plus utiles aux Réunionnais.",
-
+    trustText:
+      "Chaque retour compte. Vos remarques permettront d'améliorer l'application et d'ajouter les fonctionnalités les plus utiles aux Réunionnais.",
     faqTitle: "Questions fréquentes",
     faq: [
-      ["Puis-je résilier mon abonnement ?", "Oui. Vous pourrez mettre fin à votre abonnement à tout moment depuis l'espace prévu sur le site. Votre accès restera actif jusqu'à la fin de la période déjà réglée."],
-      ["Puis-je changer d'offre ?", "Oui. Vous pourrez passer de Premium à Premium+ si vous souhaitez accéder au futur Conseiller IA BudgetKazPei et aux fonctionnalités avancées."],
-      ["Mes données sont-elles conservées ?", "Oui. Vos données restent associées à votre compte BudgetKazPei et sont stockées de manière sécurisée. Elles ne sont pas revendues à des tiers."],
-      ["Pourquoi une offre Premium ?", "Les offres Premium permettent de financer l'évolution de BudgetKazPei tout en proposant davantage d'outils, d'alertes et d'opportunités aux utilisateurs qui veulent aller plus loin."],
-      ["BudgetKazPei est-il réservé aux bénéficiaires d'aides ?", "Non. BudgetKazPei s'adresse à tous les Réunionnais qui veulent mieux gérer leur budget, suivre leurs dépenses, identifier des aides possibles et découvrir des bons plans utiles."],
-      ["Le Conseiller IA est-il déjà disponible ?", "Le Conseiller IA BudgetKazPei est en cours de développement. Il sera progressivement enrichi pour accompagner les utilisateurs dans leur budget, leurs démarches et leurs décisions du quotidien."],
-      ["Les fonctionnalités vont-elles évoluer ?", "Oui. De nouvelles aides, de nouveaux bons plans, de nouvelles alertes et de nouveaux outils seront ajoutés régulièrement grâce aux retours des utilisateurs."],
+      [
+        "Puis-je résilier mon abonnement ?",
+        "Oui. Vous pourrez mettre fin à votre abonnement à tout moment depuis l'espace prévu sur le site. Votre accès restera actif jusqu'à la fin de la période déjà réglée.",
+      ],
+      [
+        "Puis-je changer d'offre ?",
+        "Oui. Vous pourrez passer de Premium à Premium+ si vous souhaitez accéder au futur Conseiller IA BudgetKazPei et aux fonctionnalités avancées.",
+      ],
+      [
+        "Mes données sont-elles conservées ?",
+        "Oui. Vos données restent associées à votre compte BudgetKazPei et sont stockées de manière sécurisée. Elles ne sont pas revendues à des tiers.",
+      ],
+      [
+        "Pourquoi une offre Premium ?",
+        "Les offres Premium permettent de financer l'évolution de BudgetKazPei tout en proposant davantage d'outils, d'alertes, d'opportunités et de bons plans aux utilisateurs qui veulent aller plus loin.",
+      ],
+      [
+        "BudgetKazPei est-il réservé aux bénéficiaires d'aides ?",
+        "Non. BudgetKazPei s'adresse à tous les Réunionnais qui veulent mieux gérer leur budget, suivre leurs dépenses et rester informés des aides, économies et bons plans existants.",
+      ],
+      [
+        "Le Conseiller IA est-il déjà disponible ?",
+        "Le Conseiller IA BudgetKazPei est en cours de développement. Il sera progressivement enrichi pour accompagner les utilisateurs dans leur budget et leurs démarches.",
+      ],
+      [
+        "Les fonctionnalités vont-elles évoluer ?",
+        "Oui. BudgetKazPei évoluera régulièrement grâce aux retours des utilisateurs, avec de nouvelles aides, de nouveaux bons plans, de nouveaux outils et des améliorations.",
+      ],
     ],
-
     freeFeatures: [
       "Tableau de bord budget",
       "Dépenses et revenus",
@@ -113,51 +132,50 @@ const CONTENT = {
       "Analyse budgétaire avancée",
       "Génération de courriers administratifs",
       "Préparation de dossiers complets",
-      "Accompagnement personnalisé",
-      "Futures fonctionnalités IA",
+      "Conseils personnalisés selon le profil",
+      "Veille automatique des droits et nouvelles aides",
     ],
   },
-
   kr: {
     back: "Retour dann l'app",
     switchLang: "🇫🇷 Français",
     heroBadge: "🇷🇪 Fait pou La Rényon",
-    heroTitle: "💰 Plis larzan. Mwins stress.",
-    heroText: "Zéd, économies é bon plan : laisse pa bann opportunités chap aou.",
+    heroTitle: "💰 Pli de larzan. Mwins stress.",
+    heroText:
+      "Zéd, lékonomi é bon plan : laisse pa bann opportunités échappe aou.",
     heroButton: "⭐ Voir bann avantages Premium",
-
-    problemTitle: "💡 Zéd, économies, réductions, dispositifs lokal...",
-    problemText: "Chak mwa, nana bann opportunités i passe inaperçues. BudgetKazPei Premium i aide aou trouv sak i pourrait améliore out bidjé é augmente out pouvoir d'achat.",
-
+    problemTitle: "💡 Zéd, lékonomi, réductions, dispositifs lokal...",
+    problemText:
+      "Chak mwa, bann opportunités i passe inaperçues. BudgetKazPei Premium i aide aou trouv sa ke pourrait améliore out bidjé é augmente out pouvoir d'achat.",
     imagineTitle: "🌴 Imagine out prochain mwa",
     imagineItems: [
       "In vision kler de out bidjé",
       "Bann zéd identifiées",
-      "Bann économies réalisées",
+      "Bann lékonomi réalisées",
       "Bann bon plan découverts",
       "Mwins mauvaise surprise",
       "Plis trankilité",
     ],
-
     analysisTitle: "🔎 Egzanp analiz BudgetKazPei Premium",
     analysisItems: [
       "Sitiasyon analizée",
       "Zéd potentielles détectées",
-      "Économies possibles identifiées",
+      "Lékonomi possibles identifiées",
       "Bon plan lokal détectés",
       "Dokiman pou préparé",
     ],
     analysisLocked: "Débloque analiz konplète ek Premium",
-
     reunionTitle: "🇷🇪 Poukoi BudgetKazPei ?",
-    reunionText: "La vie lé chère. Bann zéd i existe. Bann bon plan osi. Mé fo koné zot. BudgetKazPei Premium i aide aou trouv bann opportunités ke pourrait améliore out quotidien é out pouvoir d'achat.",
-
+    reunionText:
+      "La vie i augmente. Bann zéd i existe. Bann bon plan aussi. Mé encore faut connaître azot. BudgetKazPei Premium i aide aou trouv bann opportunités ke pourrait améliore out quotidien é out pouvoir d'achat.",
     freeTitle: "Gratis",
     premiumTitle: "Premium",
     premiumPlusTitle: "Premium+",
     freeSubtitle: "Découv BudgetKazPei é suivre lessentiel.",
-    premiumSubtitle: "Pou bann moun ke i veu trouv plis opportunités é reste informés.",
-    premiumPlusSubtitle: "Out copilote BudgetKazPei. Analiz, accompagnement é futures fonctionnalités IA.",
+    premiumSubtitle:
+      "Pou bann moun ke i veu trouv plis opportunités é reste informés.",
+    premiumPlusSubtitle:
+      "Out copilote BudgetKazPei. Analiz, accompagnement é futures fonctionnalités IA.",
     freeButton: "🔍 Voir mon bann zéd possibles",
     premiumButton: "⭐ Débloque Premium",
     premiumPlusButton: "👑 Pass Premium+",
@@ -166,21 +184,40 @@ const CONTENT = {
     recommendedPlusBadge: "REKOMANDÉ ++",
     premiumSoon: "Paiement Premium va être branché ek Stripe dann prochaine étape.",
     premiumPlusSoon: "Paiement Premium+ va être branché ek Stripe dann prochaine étape.",
-
     trustTitle: "💬 BudgetKazPei i évolue ek bann utilisateurs",
-    trustText: "Sak retour lé important. Out remarques i va aide améliore l'application é ajoute bann fonctionnalités pli utiles pou bann Rényoné.",
-
+    trustText:
+      "Sak retour lé important. Out remarques i va aide améliore l'application é ajoute bann fonctionnalités pli utiles pou bann Rényoné.",
     faqTitle: "Kestion souvan",
     faq: [
-      ["Mi pé résilié mon abonnement ?", "Wi. Ou pourra arrêt out abonnement à tout moment depi lespas prévu su site. Out accès i reste actif ziska la fin période déjà réglée."],
-      ["Mi pé changer doffre ?", "Wi. Ou pourra pass Premium à Premium+ si ou veu accès au futur Konseye IA BudgetKazPei é fonctionnalités avancées."],
-      ["Mon bann données lé gardées ?", "Wi. Out données i reste liées ek out compte BudgetKazPei é stockées de manière sécurisée. Zot lé pa revendues à des tiers."],
-      ["Poukoi in offre Premium ?", "Bann offres Premium i permet finance évolution BudgetKazPei é proposé plis zouti, alertes é opportunités pou bann utilisateurs ke i veu allé pli loin."],
-      ["BudgetKazPei lé réservé pou bann bénéficiaires daides ?", "Non. BudgetKazPei lé pou tout bann Rényoné ke i veu mieux gérer zot bidjé, suivre zot dépans, trouv zéd possibles é découv bon plan utiles."],
-      ["Konseye IA lé déjà disponible ?", "Konseye IA BudgetKazPei lé en développement. Li sera enrichi progressivement pou aide su bidjé, démarches é décisions du quotidien."],
-      ["Fonctionnalités i va évolué ?", "Wi. Nouvo zéd, nouvo bon plan, nouvo alertes é nouvo zouti va être ajoutés régulièrement grâce aux retours utilisateurs."],
+      [
+        "Mi pé résilié mon abonnement ?",
+        "Wi. Ou pourra arrêt out abonnement à tout moment depi lespas prévu su site. Out accès i reste actif ziska la fin période déjà réglée.",
+      ],
+      [
+        "Mi pé changer doffre ?",
+        "Wi. Ou pourra pass Premium à Premium+ si ou veu accès au futur Konseye IA BudgetKazPei é fonctionnalités avancées.",
+      ],
+      [
+        "Mon bann données lé gardées ?",
+        "Wi. Out données i reste liées ek out compte BudgetKazPei é stockées de manière sécurisée. Zot lé pa revendues à des tiers.",
+      ],
+      [
+        "Poukoi in offre Premium ?",
+        "Bann offres Premium i permet finance évolution BudgetKazPei é proposé plis zouti, alertes, opportunités é bons plans pou bann utilisateurs ke i veu allé pli loin.",
+      ],
+      [
+        "BudgetKazPei lé réservé pou bann bénéficiaires daides ?",
+        "Non. BudgetKazPei lé pou tout bann Rényoné ke i veu mieux gérer zot bidjé, suivre zot dépans é reste informés bann zéd, lékonomi é bons plans existants.",
+      ],
+      [
+        "Konseye IA lé déjà disponible ?",
+        "Konseye IA BudgetKazPei lé en développement. Li sera enrichi progressivement pou aide su bidjé é démarches.",
+      ],
+      [
+        "Fonctionnalités i va évolué ?",
+        "Wi. BudgetKazPei i va évolué régulièrement grâce aux retours utilisateurs, ek nouvo zéd, bon plan, zouti é améliorations.",
+      ],
     ],
-
     freeFeatures: [
       "Tablo débor bidjé",
       "Dépans é larzan rantre",
@@ -200,7 +237,7 @@ const CONTENT = {
       "Alèrt bidjé entèlizan",
       "Nouveautés zéd é dispositifs",
       "Bon plan lokal",
-      "Opportunités & économies",
+      "Opportunités & lékonomi",
       "Istorik avansé",
       "Export PDF chak mwa",
     ],
@@ -211,8 +248,8 @@ const CONTENT = {
       "Analiz bidjé pli avansé",
       "Kréation courrier administratif",
       "Préparasyon dosyé konplé",
-      "Accompagnement personnalisé",
-      "Futures fonctionnalités IA",
+      "Konsey personnalisés selon out profil",
+      "Veille otomatik bann drwa é nouvo zéd",
     ],
   },
 }
@@ -283,7 +320,18 @@ function ValueCard({ title, text, color = COLORS.cyan, children }) {
         >
           {title}
         </h2>
-        {text && <p style={{ color: COLORS.muted, margin: 0, lineHeight: 1.65, fontSize: 16 }}>{text}</p>}
+        {text && (
+          <p
+            style={{
+              color: COLORS.muted,
+              margin: 0,
+              lineHeight: 1.65,
+              fontSize: 16,
+            }}
+          >
+            {text}
+          </p>
+        )}
         {children}
       </div>
     </section>
@@ -292,7 +340,14 @@ function ValueCard({ title, text, color = COLORS.cyan, children }) {
 
 function MiniCheckList({ items, color = COLORS.green }) {
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10, marginTop: 16 }}>
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+        gap: 10,
+        marginTop: 16,
+      }}
+    >
       {items.map((item, index) => (
         <div
           key={index}
@@ -323,7 +378,7 @@ function AnalysisPreview({ c }) {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
+          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
           gap: 12,
           marginTop: 14,
         }}
@@ -339,10 +394,36 @@ function AnalysisPreview({ c }) {
               minHeight: 82,
             }}
           >
-            <div style={{ color: COLORS.yellow, fontWeight: 900, fontSize: 19, marginBottom: 8 }}>✓</div>
-            <div style={{ color: COLORS.text, fontWeight: 900, fontSize: 14 }}>{item}</div>
-            <div style={{ marginTop: 8, height: 7, borderRadius: 99, background: "rgba(142,164,197,.22)", overflow: "hidden" }}>
-              <div style={{ width: `${48 + index * 9}%`, height: "100%", background: COLORS.yellow, opacity: 0.55 }} />
+            <div
+              style={{
+                color: COLORS.yellow,
+                fontWeight: 900,
+                fontSize: 19,
+                marginBottom: 8,
+              }}
+            >
+              ✓
+            </div>
+            <div style={{ color: COLORS.text, fontWeight: 900, fontSize: 14 }}>
+              {item}
+            </div>
+            <div
+              style={{
+                marginTop: 8,
+                height: 7,
+                borderRadius: 99,
+                background: "rgba(142,164,197,.22)",
+                overflow: "hidden",
+              }}
+            >
+              <div
+                style={{
+                  width: `${45 + index * 9}%`,
+                  height: "100%",
+                  background: COLORS.yellow,
+                  opacity: 0.55,
+                }}
+              />
             </div>
           </div>
         ))}
@@ -366,7 +447,19 @@ function AnalysisPreview({ c }) {
   )
 }
 
-function PlanCard({ icon, title, price, subtitle, features, color, badge, buttonText, onClick, perMonth, featured = false }) {
+function PlanCard({
+  icon,
+  title,
+  price,
+  subtitle,
+  features,
+  color,
+  badge,
+  buttonText,
+  onClick,
+  perMonth,
+  featured = false,
+}) {
   return (
     <article
       style={{
@@ -404,17 +497,39 @@ function PlanCard({ icon, title, price, subtitle, features, color, badge, button
 
       <div style={{ position: "relative", zIndex: 1 }}>
         <div style={{ fontSize: 42, marginBottom: 10 }}>{icon}</div>
-        <h2 style={{ margin: 0, color, fontSize: 25, fontFamily: "'DM Serif Display', serif" }}>{title}</h2>
-        <p style={{ color: COLORS.muted, minHeight: 54, lineHeight: 1.5, fontSize: 14 }}>{subtitle}</p>
+        <h2
+          style={{
+            margin: 0,
+            color,
+            fontSize: 25,
+            fontFamily: "'DM Serif Display', serif",
+          }}
+        >
+          {title}
+        </h2>
+        <p style={{ color: COLORS.muted, minHeight: 54, lineHeight: 1.5, fontSize: 14 }}>
+          {subtitle}
+        </p>
 
         <div style={{ margin: "16px 0 18px" }}>
-          <span style={{ color, fontSize: 36, fontWeight: 900, fontFamily: "'DM Serif Display', serif" }}>{price}</span>
+          <span
+            style={{
+              color,
+              fontSize: 36,
+              fontWeight: 900,
+              fontFamily: "'DM Serif Display', serif",
+            }}
+          >
+            {price}
+          </span>
           {price !== "0 €" && <span style={{ color: COLORS.muted, marginLeft: 6 }}>{perMonth}</span>}
         </div>
 
         <div style={{ display: "grid", gap: 0 }}>
           {features.map((feature, index) => (
-            <Feature key={index} color={color}>{feature}</Feature>
+            <Feature key={index} color={color}>
+              {feature}
+            </Feature>
           ))}
         </div>
 
@@ -452,17 +567,23 @@ export default function PremiumLandingPage() {
   }
 
   function goHome() {
-    window.location.href = "/"
-  }
+  window.location.href = "/?app=true"
+}
 
   function scrollToPlans() {
-    document.getElementById("offres")?.scrollIntoView({ behavior: "smooth", block: "start" })
+    document.getElementById("offres")?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    })
   }
 
   return (
     <main
       style={{
         minHeight: "100vh",
+        width: "100vw",
+        maxWidth: "100vw",
+        overflowX: "hidden",
         background: `radial-gradient(circle at 20% 0%, rgba(35,211,214,.18), transparent 34%), radial-gradient(circle at 80% 8%, rgba(249,115,22,.14), transparent 30%), ${COLORS.bg}`,
         color: COLORS.text,
         fontFamily: "'DM Sans', sans-serif",
@@ -472,12 +593,32 @@ export default function PremiumLandingPage() {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;700;900&display=swap');
         * { box-sizing: border-box; }
-        body { margin: 0; }
+        html, body, #root {
+          margin: 0;
+          padding: 0;
+          width: 100%;
+          min-height: 100%;
+          background: ${COLORS.bg};
+          overflow-x: hidden;
+        }
       `}</style>
 
-      <div style={{ maxWidth: 1180, margin: "0 auto" }}>
-        <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, marginBottom: 30, flexWrap: "wrap" }}>
-          <img src="/icons-creole/logo-budgetkazpei.png" alt="BudgetKazPei" style={{ width: 145, height: "auto" }} />
+      <div style={{ width: "100%", maxWidth: 1180, margin: "0 auto" }}>
+        <header
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 16,
+            marginBottom: 30,
+            flexWrap: "wrap",
+          }}
+        >
+          <img
+            src="/icons-creole/logo-budgetkazpei.png"
+            alt="BudgetKazPei"
+            style={{ width: 145, height: "auto" }}
+          />
 
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <button
@@ -553,7 +694,7 @@ export default function PremiumLandingPage() {
                 margin: 0,
                 color: COLORS.yellow,
                 fontFamily: "'DM Serif Display', serif",
-                fontSize: "clamp(36px, 6vw, 66px)",
+                fontSize: "clamp(38px, 7vw, 72px)",
                 lineHeight: 1.04,
                 fontWeight: 400,
               }}
@@ -561,7 +702,16 @@ export default function PremiumLandingPage() {
               {c.heroTitle}
             </h1>
 
-            <p style={{ color: COLORS.text, maxWidth: 760, margin: "18px auto 0", lineHeight: 1.62, fontSize: 18, fontWeight: 700 }}>
+            <p
+              style={{
+                color: COLORS.text,
+                maxWidth: 820,
+                margin: "18px auto 0",
+                lineHeight: 1.62,
+                fontSize: 18,
+                fontWeight: 800,
+              }}
+            >
               {c.heroText}
             </p>
 
@@ -675,8 +825,12 @@ export default function PremiumLandingPage() {
             padding: 22,
           }}
         >
-          <h2 style={{ margin: "0 0 8px", color: COLORS.cyan, fontSize: 22 }}>{c.trustTitle}</h2>
-          <p style={{ margin: 0, color: COLORS.muted, lineHeight: 1.6, fontWeight: 700 }}>{c.trustText}</p>
+          <h2 style={{ margin: "0 0 8px", color: COLORS.cyan, fontSize: 22 }}>
+            {c.trustTitle}
+          </h2>
+          <p style={{ margin: 0, color: COLORS.muted, lineHeight: 1.6, fontWeight: 700 }}>
+            {c.trustText}
+          </p>
         </section>
 
         <section
@@ -688,7 +842,9 @@ export default function PremiumLandingPage() {
             padding: 22,
           }}
         >
-          <h2 style={{ margin: "0 0 14px", color: COLORS.text, fontSize: 22 }}>{c.faqTitle}</h2>
+          <h2 style={{ margin: "0 0 14px", color: COLORS.text, fontSize: 22 }}>
+            {c.faqTitle}
+          </h2>
           <div style={{ display: "grid", gap: 12, color: COLORS.muted, lineHeight: 1.55 }}>
             {c.faq.map(([question, answer]) => (
               <p key={question} style={{ margin: 0 }}>

@@ -8,6 +8,7 @@ import { useUserAbonnements } from "./hooks/useUserAbonnements"
 import { useCustomBudgets } from "./hooks/useCustomBudgets"
 import { useMonthlyHistory } from "./hooks/useMonthlyHistory"
 
+
 import LoginPage from "./components/auth/LoginPage"
 import RegisterPage from "./components/auth/RegisterPage"
 import Sidebar from "./components/sidebar/Sidebar"
@@ -20,6 +21,7 @@ import PremiumPage from "./components/premium/PremiumPage"
 import AbonnementsPage from "./components/abonnements/AbonnementsPage"
 import AidesPage from "./components/aides/AidesPage"
 import HistoriquePage from "./components/historique/HistoriquePage"
+import OpportunitesPage from "./components/opportunites/OpportunitesPage"
 import PremiumLandingPage from "./pages/PremiumLandingPage"
 
 const COLORS = {
@@ -47,10 +49,29 @@ function useIsMobile() {
 }
 
 export default function App() {
-  const currentPath = typeof window !== "undefined" ? window.location.pathname : ""
-  const isPremiumLanding = currentPath === "/premium" || currentPath.startsWith("/premium/")
+  const currentPath =
+    typeof window !== "undefined"
+      ? window.location.pathname
+      : ""
 
-  if (isPremiumLanding) {
+  const forceApp =
+    typeof window !== "undefined" &&
+    window.location.search.includes("app=true")
+
+  const isPremiumLanding =
+    currentPath === "/premium" ||
+    currentPath.startsWith("/premium/")
+
+  useEffect(() => {
+    if (
+      typeof window !== "undefined" &&
+      window.location.search.includes("app=true")
+    ) {
+      window.history.replaceState({}, "", "/")
+    }
+  }, [])
+
+  if (isPremiumLanding && !forceApp) {
     return <PremiumLandingPage />
   }
 
@@ -83,10 +104,14 @@ console.log("EMAIL =", user?.email)
 const { profile } = useProfile(user?.id)
 
 const isPremium =
+  profile?.premium === true ||
+  profile?.premium_plus === true ||
   profile?.plan === "premium" ||
   profile?.plan === "premium_plus"
 
-const isPremiumPlus = profile?.plan === "premium_plus"
+const isPremiumPlus =
+  profile?.premium_plus === true ||
+  profile?.plan === "premium_plus"
 
 
   const { customBudgets, saveBudgets } = useCustomBudgets(
@@ -361,6 +386,7 @@ const isPremiumPlus = profile?.plan === "premium_plus"
               {activeNav === "depenses" && t("nav", "depenses")}
               {activeNav === "aides" && t("nav", "aides")}
               {activeNav === "abonnements" && t("nav", "abonnements")}
+              {activeNav === "opportunites" && "Opportunités"}
               {activeNav === "historique" && t("nav", "monthlyHistory")}
               {activeNav === "profil" && t("nav", "profil")}
               {activeNav === "premium" && t("nav", "premium")}
@@ -387,26 +413,30 @@ const isPremiumPlus = profile?.plan === "premium_plus"
 
         {activeNav === "dashboard" && (
           <Dashboard
-            stats={{
-              revenus,
-              depenses,
-              solde,
-              chargesFixes,
-              depensesVariables,
-              resteAVivre,
-              tauxChargesFixes,
-            }}
-            byCategory={byCategory}
-            pieData={pieData}
-            transactions={transactions}
-            abonnements={abonnements}
-            t={t}
-            isMobile={isMobile}
-            isPremium={isPremium}
-            customBudgets={customBudgets}
-            onSaveBudgets={saveBudgets}
-            onGoPremium={() => setActiveNav("premium")}
-          />
+              stats={{
+                revenus,
+                depenses,
+                solde,
+                chargesFixes,
+                depensesVariables,
+                resteAVivre,
+                tauxChargesFixes,
+              }}
+              byCategory={byCategory}
+              pieData={pieData}
+              transactions={transactions}
+              abonnements={abonnements}
+              t={t}
+              isMobile={isMobile}
+              isPremium={isPremium}
+              customBudgets={customBudgets}
+              onSaveBudgets={saveBudgets}
+              onGoPremium={() => setActiveNav("premium")}
+
+              opportunitiesCount={5}
+              commune={profile?.commune || ""}
+              onOpenOpportunities={() => setActiveNav("opportunites")}
+            />
         )}
 
         {activeNav === "depenses" && (
@@ -561,7 +591,14 @@ const isPremiumPlus = profile?.plan === "premium_plus"
   user={user}
 />
 )}
-
+{activeNav === "opportunites" && (
+  <OpportunitesPage
+  isMobile={isMobile}
+  isPremium={isPremium}
+  t={t}
+  user={user}
+/>
+)}
 {activeNav === "abonnements" && (
   <AbonnementsPage
     abonnements={abonnements}

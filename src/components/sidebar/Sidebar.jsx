@@ -27,6 +27,7 @@ const NAV_ITEMS = [
   { id: "dashboard", icon: Home, section: "nav", key: "dashboard" },
   { id: "depenses", icon: BarChart3, section: "nav", key: "depenses" },
   { id: "aides", icon: Landmark, section: "nav", key: "aides" },
+  { id: "opportunites", icon: Lightbulb, section: "nav", key: "opportunites", premiumOnly: true },
   { id: "abonnements", icon: ClipboardList, section: "nav", key: "abonnements" },
   { id: "historique", icon: CalendarClock, section: "nav", key: "monthlyHistory", premiumOnly: true },
   { id: "profil", icon: User, section: "nav", key: "profil" },

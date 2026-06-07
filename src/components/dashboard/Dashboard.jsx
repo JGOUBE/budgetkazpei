@@ -480,7 +480,105 @@ function ProgressBar({ value, max, color }) {
   )
 }
 
-export default function Dashboard({ stats, byCategory, pieData, transactions, abonnements = [], t, isMobile, isPremium = false, customBudgets = [], onSaveBudgets, onGoPremium }) {
+
+function MoneyDetectedCard({ t, isMobile, opportunitiesCount = 0, commune = "", onOpenOpportunities }) {
+  const isKreol = t("nav", "dashboard") === "Tablo débor"
+
+  return (
+    <TropicalCard
+      variant="gold"
+      texture="💰"
+      style={{ padding: isMobile ? 16 : 22 }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: isMobile ? "flex-start" : "center",
+          gap: 14,
+          flexDirection: isMobile ? "column" : "row",
+        }}
+      >
+        <div style={{ minWidth: 0 }}>
+          <div
+            style={{
+              color: "#FCD34D",
+              fontWeight: 900,
+              fontSize: 13,
+              marginBottom: 5,
+            }}
+          >
+            {isKreol ? "💰 Larzan détecté pou ou" : "💰 Argent détecté pour vous"}
+          </div>
+
+          <div
+            style={{
+              color: COLORS.text,
+              fontSize: isMobile ? 20 : 24,
+              fontWeight: 900,
+              lineHeight: 1.15,
+            }}
+          >
+            {opportunitiesCount} {isKreol ? "opportunité(s)" : "opportunité(s)"}
+          </div>
+
+          <div
+            style={{
+              color: COLORS.muted,
+              fontSize: 13,
+              marginTop: 6,
+              lineHeight: 1.45,
+            }}
+          >
+            📍 {commune || (isKreol ? "La Rényon" : "La Réunion")}
+            <br />
+            {isKreol
+              ? "Bann éd, bon plan ek économies adapté pou ou."
+              : "Aides, bons plans et économies adaptés à votre profil."}
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={onOpenOpportunities}
+          style={{
+            width: isMobile ? "100%" : "auto",
+            background:
+              "linear-gradient(135deg, rgba(252,211,77,.25), rgba(249,115,22,.22))",
+            border: "1px solid rgba(252,211,77,.35)",
+            borderRadius: 14,
+            color: "#FDE68A",
+            padding: "11px 15px",
+            cursor: "pointer",
+            fontWeight: 900,
+            fontFamily: "inherit",
+            whiteSpace: "nowrap",
+            boxShadow: "0 0 18px rgba(245,158,11,.10)",
+          }}
+        >
+          {isKreol ? "War bann opportunités" : "Voir les opportunités"}
+        </button>
+      </div>
+    </TropicalCard>
+  )
+}
+
+export default function Dashboard({
+  stats,
+  byCategory,
+  pieData,
+  transactions,
+  abonnements = [],
+  t,
+  isMobile,
+  isPremium = false,
+  customBudgets = [],
+  onSaveBudgets,
+  onGoPremium,
+  opportunitiesCount = 0,
+  commune = "",
+  onOpenOpportunities,
+}) {
   const { revenus, depenses, solde } = stats
   const [openedDetails, setOpenedDetails] = useState(null)
   const [showBudgetModal, setShowBudgetModal] = useState(false)
@@ -537,6 +635,14 @@ export default function Dashboard({ stats, byCategory, pieData, transactions, ab
       {openedDetails === "solde" && <SoldeDetails stats={stats} onClose={() => setOpenedDetails(null)} t={t} />}
       {openedDetails === "revenus" && <RevenusDetails stats={stats} transactions={transactions} abonnements={abonnements} onClose={() => setOpenedDetails(null)} t={t} />}
       {openedDetails === "depenses" && <DepensesDetails stats={stats} onClose={() => setOpenedDetails(null)} t={t} />}
+
+      <MoneyDetectedCard
+        t={t}
+        isMobile={isMobile}
+        opportunitiesCount={opportunitiesCount}
+        commune={commune}
+        onOpenOpportunities={onOpenOpportunities || onGoPremium}
+      />
 
       <div
         style={{
