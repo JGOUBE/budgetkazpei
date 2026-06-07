@@ -50,6 +50,12 @@ function getCategoryLabel(category, isKreol) {
     mobilite: "🚗 Mobilité",
     loisirs: "🎉 Loisirs",
     famille: "👨‍👩‍👧‍👦 Famille",
+    logement: "🏠 Logement",
+    ccas: "🏛️ CCAS",
+    emploi: "💼 Emploi",
+    sante: "🩺 Santé",
+    scolaire: "🎒 Scolaire",
+    transport: "🚌 Transport",
     general: "💡 Général",
   }
 
@@ -62,6 +68,12 @@ function getCategoryLabel(category, isKreol) {
     mobilite: "🚗 Déplasman",
     loisirs: "🎉 Lozir",
     famille: "👨‍👩‍👧‍👦 Fami",
+    logement: "🏠 Lozman",
+    ccas: "🏛️ CCAS",
+    emploi: "💼 Travay",
+    sante: "🩺 Santé",
+    scolaire: "🎒 Lékol",
+    transport: "🚌 Transport",
     general: "💡 Bon plan",
   }
 
@@ -88,6 +100,110 @@ function normalizeText(value) {
   return String(value || "").trim().toLowerCase()
 }
 
+function getProfileTags(profile) {
+  const tags = ["tous"]
+
+  const enfants = Number(profile?.nombre_enfants || 0)
+  const logement = normalizeText(profile?.logement || profile?.situation_logement)
+  const situationFamiliale = normalizeText(profile?.situation_familiale)
+  const situationPro = normalizeText(profile?.situation_professionnelle)
+
+  if (enfants > 0) tags.push("famille", "enfants")
+  if (situationFamiliale === "parent_isole") tags.push("parent_isole", "famille")
+  if (profile?.allocataire_caf) tags.push("caf", "famille")
+  if (logement) tags.push(logement)
+  if (logement === "locataire") tags.push("logement")
+  if (logement === "proprietaire") tags.push("energie")
+  if (profile?.etudiant) tags.push("etudiant")
+  if (profile?.retraite) tags.push("retraite", "senior")
+  if (profile?.handicap) tags.push("handicap")
+  if (situationPro) tags.push(situationPro)
+  if (profile?.permis_conduire) tags.push("permis")
+  if (profile?.vehicule_personnel) tags.push("vehicule", "mobilite")
+
+  return [...new Set(tags.map(normalizeText).filter(Boolean))]
+}
+
+function getOpportunityTargets(item) {
+  const raw = item?.target_profiles
+
+  if (Array.isArray(raw)) {
+    return raw.map(normalizeText).filter(Boolean)
+  }
+
+  if (typeof raw === "string") {
+    return raw
+      .replace(/[{}[\]"]/g, "")
+      .split(",")
+      .map(normalizeText)
+      .filter(Boolean)
+  }
+
+  return []
+}
+
+function getRecommendationScore(item, profile) {
+  const profileTags = getProfileTags(profile)
+  const targets = getOpportunityTargets(item)
+  const category = normalizeText(item?.category)
+  const title = normalizeText(item?.title)
+  const priority = Number(item?.priority || 50)
+
+  let score = priority
+  const reasons = []
+
+  if (targets.includes("tous")) {
+    score += 10
+    reasons.push("Profil général")
+  }
+
+  targets.forEach(target => {
+    if (profileTags.includes(target)) {
+      score += 35
+      reasons.push(target)
+    }
+  })
+
+  if (category === "famille" && Number(profile?.nombre_enfants || 0) > 0) {
+    score += 45
+    reasons.push("enfants")
+  }
+
+  if ((category === "logement" || title.includes("logement")) && normalizeText(profile?.logement) === "locataire") {
+    score += 40
+    reasons.push("locataire")
+  }
+
+  if ((category === "energie" || title.includes("énergie")) && profile?.commune) {
+    score += 25
+    reasons.push("énergie")
+  }
+
+  if ((category === "ccas" || title.includes("ccas")) && profile?.commune) {
+    score += 35
+    reasons.push("commune")
+  }
+
+  if ((category === "mobilite" || category === "transport") && (profile?.permis_conduire || profile?.vehicule_personnel)) {
+    score += 20
+    reasons.push("mobilité")
+  }
+
+  if (profile?.allocataire_caf && (title.includes("caf") || category === "famille")) {
+    score += 35
+    reasons.push("CAF")
+  }
+
+  if (profile?.etudiant && targets.includes("etudiant")) score += 35
+  if (profile?.retraite && (targets.includes("retraite") || targets.includes("senior"))) score += 35
+  if (profile?.handicap && targets.includes("handicap")) score += 35
+
+  return {
+    score,
+    reasons: [...new Set(reasons)].slice(0, 3),
+  }
+}
+
 export default function OpportunitesPage({ isPremium, t, user }) {
   const [opportunities, setOpportunities] = useState([])
   const [profile, setProfile] = useState(null)
@@ -110,6 +226,17 @@ export default function OpportunitesPage({ isPremium, t, user }) {
     })
   }, [opportunities, allowedTerritories])
 
+  const recommendedOpportunities = useMemo(() => {
+    return filteredOpportunities
+      .map(item => ({
+        ...item,
+        recommendation: getRecommendationScore(item, profile),
+      }))
+      .filter(item => item.recommendation.score >= 80)
+      .sort((a, b) => b.recommendation.score - a.recommendation.score)
+      .slice(0, 3)
+  }, [filteredOpportunities, profile])
+
   useEffect(() => {
     fetchData()
   }, [user?.id])
@@ -122,7 +249,7 @@ export default function OpportunitesPage({ isPremium, t, user }) {
     if (user?.id) {
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
-        .select("id, commune, premium, is_premium, plan")
+        .select("*")
         .eq("id", user.id)
         .single()
 
@@ -157,12 +284,12 @@ export default function OpportunitesPage({ isPremium, t, user }) {
   if (selectedOpportunity) {
     return (
       <DetailOpportunite
-  item={selectedOpportunity}
-  profile={profile}
-  isPremium={isPremium}
-  isKreol={isKreol}
-  onBack={() => setSelectedOpportunity(null)}
-/>
+        item={selectedOpportunity}
+        profile={profile}
+        isPremium={isPremium}
+        isKreol={isKreol}
+        onBack={() => setSelectedOpportunity(null)}
+      />
     )
   }
 
@@ -201,52 +328,124 @@ export default function OpportunitesPage({ isPremium, t, user }) {
             marginBottom: 22,
           }}
         >
+          <SummaryCard
+            color={COLORS.cyan}
+            label={isKreol ? "Opportunités détectées" : "Opportunités détectées"}
+            value={filteredOpportunities.length}
+          />
+
+          <SummaryCard
+            color={COLORS.accent}
+            label={isKreol ? "Komin" : "Commune"}
+            value={commune || (isKreol ? "Non renseignée" : "Non renseignée")}
+          />
+
+          <SummaryCard
+            color={COLORS.yellow}
+            label="Zone"
+            value={zone || (isKreol ? "Toute La Rényon" : "Toute La Réunion")}
+          />
+        </div>
+      )}
+
+      {!loading && recommendedOpportunities.length > 0 && (
+        <div
+          style={{
+            background: `linear-gradient(135deg, rgba(252,211,77,.13), rgba(249,115,22,.08), ${COLORS.card})`,
+            border: `1px solid ${COLORS.yellow}44`,
+            borderRadius: 20,
+            padding: 18,
+            marginBottom: 22,
+          }}
+        >
           <div
             style={{
-              background: "rgba(35,211,214,.10)",
-              border: `1px solid ${COLORS.cyan}44`,
-              borderRadius: 16,
-              padding: 16,
+              color: COLORS.yellow,
+              fontSize: 17,
+              fontWeight: 900,
+              marginBottom: 5,
             }}
           >
-            <div style={{ color: COLORS.cyan, fontSize: 12, fontWeight: 900 }}>
-              {isKreol ? "Opportunités détectées" : "Opportunités détectées"}
-            </div>
-            <div style={{ color: COLORS.text, fontSize: 28, fontWeight: 900 }}>
-              {filteredOpportunities.length}
-            </div>
+            {isKreol ? "🎯 Rekomandé pou ou" : "🎯 Recommandé pour vous"}
           </div>
+
+          <p
+            style={{
+              margin: "0 0 14px",
+              color: COLORS.muted,
+              fontSize: 13,
+              lineHeight: 1.5,
+            }}
+          >
+            {isKreol
+              ? "Selon out profil, sa bann opportunités i pé être pli utiles pou ou."
+              : "Selon votre profil, ces opportunités semblent les plus pertinentes."}
+          </p>
 
           <div
             style={{
-              background: "rgba(249,115,22,.10)",
-              border: `1px solid ${COLORS.accent}44`,
-              borderRadius: 16,
-              padding: 16,
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+              gap: 12,
             }}
           >
-            <div style={{ color: COLORS.accent, fontSize: 12, fontWeight: 900 }}>
-              {isKreol ? "Komin" : "Commune"}
-            </div>
-            <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 900 }}>
-              {commune || (isKreol ? "Non renseignée" : "Non renseignée")}
-            </div>
-          </div>
+            {recommendedOpportunities.map(item => {
+              const title = isKreol ? item.title_kr || item.title : item.title
+              const locked = item.is_premium && !isPremium
 
-          <div
-            style={{
-              background: "rgba(252,211,77,.10)",
-              border: `1px solid ${COLORS.yellow}44`,
-              borderRadius: 16,
-              padding: 16,
-            }}
-          >
-            <div style={{ color: COLORS.yellow, fontSize: 12, fontWeight: 900 }}>
-              Zone
-            </div>
-            <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 900 }}>
-              {zone || (isKreol ? "Toute La Rényon" : "Toute La Réunion")}
-            </div>
+              return (
+                <button
+                  key={`recommended-${item.id}`}
+                  type="button"
+                  onClick={() => {
+                    if (!locked) setSelectedOpportunity(item)
+                  }}
+                  style={{
+                    background: "rgba(10,22,40,.55)",
+                    border: `1px solid ${locked ? COLORS.yellow : COLORS.border}`,
+                    borderRadius: 16,
+                    padding: 14,
+                    textAlign: "left",
+                    cursor: locked ? "default" : "pointer",
+                    fontFamily: "inherit",
+                  }}
+                >
+                  <div
+                    style={{
+                      color: COLORS.cyan,
+                      fontSize: 11,
+                      fontWeight: 900,
+                      marginBottom: 7,
+                    }}
+                  >
+                    {getCategoryLabel(item.category, isKreol)}
+                  </div>
+
+                  <div
+                    style={{
+                      color: COLORS.text,
+                      fontWeight: 900,
+                      fontSize: 14,
+                      lineHeight: 1.35,
+                    }}
+                  >
+                    {locked ? "🔒 " : "⭐ "}
+                    {title}
+                  </div>
+
+                  <div
+                    style={{
+                      marginTop: 8,
+                      color: COLORS.yellow,
+                      fontSize: 11,
+                      fontWeight: 800,
+                    }}
+                  >
+                    Score : {Math.min(item.recommendation.score, 100)}
+                  </div>
+                </button>
+              )
+            })}
           </div>
         </div>
       )}
@@ -442,6 +641,34 @@ export default function OpportunitesPage({ isPremium, t, user }) {
           })}
         </div>
       )}
+    </div>
+  )
+}
+
+function SummaryCard({ color, label, value }) {
+  return (
+    <div
+      style={{
+        background: `${color}14`,
+        border: `1px solid ${color}44`,
+        borderRadius: 16,
+        padding: 16,
+      }}
+    >
+      <div style={{ color, fontSize: 12, fontWeight: 900 }}>
+        {label}
+      </div>
+
+      <div
+        style={{
+          color: COLORS.text,
+          fontSize: typeof value === "number" ? 28 : 18,
+          fontWeight: 900,
+          marginTop: 4,
+        }}
+      >
+        {value}
+      </div>
     </div>
   )
 }

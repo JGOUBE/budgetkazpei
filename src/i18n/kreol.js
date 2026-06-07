@@ -15,6 +15,15 @@ const kreol = {
     tagline: "Fasilman gèr ou larzan",
     location: "Sen-Déni, Lér Réyonion",
     addButton: "Azouté",
+    profil: {
+  children: "Nomb marmay",
+  housing: "Lozman",
+  job: "Travay",
+  caf: "Allocataire CAF",
+  handicap: "Handicap",
+  retired: "Retraité",
+  student: "Étidyan",
+}
   },
   dashboard: {
     solde: "Larzan i reste",
