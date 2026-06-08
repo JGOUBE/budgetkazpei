@@ -508,7 +508,9 @@ function MoneyDetectedCard({ t, isMobile, opportunitiesCount = 0, commune = "", 
               marginBottom: 5,
             }}
           >
-            {isKreol ? "💰 Larzan détecté pou ou" : "💰 Argent détecté pour vous"}
+            {isKreol
+            ? "🎯 Bon plan détecté pou ou"
+            : "🎯 Opportunités détectées pour vous"}
           </div>
 
           <div
@@ -519,7 +521,7 @@ function MoneyDetectedCard({ t, isMobile, opportunitiesCount = 0, commune = "", 
               lineHeight: 1.15,
             }}
           >
-            {opportunitiesCount} {isKreol ? "opportunité(s)" : "opportunité(s)"}
+            {opportunitiesCount} {isKreol ? "bon plan pertinent(s)" : "opportunité(s) pertinente(s)"}
           </div>
 
           <div
@@ -533,8 +535,8 @@ function MoneyDetectedCard({ t, isMobile, opportunitiesCount = 0, commune = "", 
             📍 {commune || (isKreol ? "La Rényon" : "La Réunion")}
             <br />
             {isKreol
-              ? "Bann éd, bon plan ek économies adapté pou ou."
-              : "Aides, bons plans et économies adaptés à votre profil."}
+          ? "Bann éd, bon plan ek démarches susceptibles concerne aou."
+          : "Aides, bons plans et démarches susceptibles de vous concerner."}
           </div>
         </div>
 
@@ -556,7 +558,7 @@ function MoneyDetectedCard({ t, isMobile, opportunitiesCount = 0, commune = "", 
             boxShadow: "0 0 18px rgba(245,158,11,.10)",
           }}
         >
-          {isKreol ? "War bann opportunités" : "Voir les opportunités"}
+          {isKreol ? "War bann bon plan" : "Voir mes opportunités"}
         </button>
       </div>
     </TropicalCard>

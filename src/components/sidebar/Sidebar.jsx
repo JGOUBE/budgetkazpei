@@ -42,6 +42,8 @@ export default function Sidebar({
   isPremiumPlus = false,
   t,
 }) {
+  const isKreol = t("nav", "dashboard") === "Tablo débor"
+
   const prenom =
     user?.user_metadata?.name ||
     user?.user_metadata?.full_name ||
@@ -56,6 +58,14 @@ export default function Sidebar({
 
   const premiumButtonIcon = isPremiumPlus ? "👑" : isPremium ? "👑" : null
   const premiumColor = isPremiumPlus || isPremium ? COLORS.purple : COLORS.yellow
+
+  function getNavLabel(item) {
+    if (item.id === "opportunites") {
+      return isKreol ? "🎯 Bon plan détecté" : "🎯 Opportunités détectées"
+    }
+
+    return t(item.section, item.key)
+  }
 
   return (
     <aside
@@ -192,7 +202,7 @@ export default function Sidebar({
                 }}
               >
                 <Icon size={17} />
-                <span style={{ flex: 1 }}>{t(item.section, item.key)}</span>
+                <span style={{ flex: 1 }}>{getNavLabel(item)}</span>
                 {locked && <Lock size={14} />}
               </button>
             )

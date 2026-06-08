@@ -23,6 +23,23 @@ const kreol = {
   handicap: "Handicap",
   retired: "Retraité",
   student: "Étidyan",
+},
+eligibility: {
+  resultIndicatif: "Résilta indicatif",
+  probability: "Probabilité",
+  strong: "forte",
+  medium: "à vérifié",
+  weak: "féb",
+  zoneMatch: "Lo bon plan i correspond a out zone.",
+  logementReason: "Bann éd logement i dépend souvent out sitiasyon, out revenus é out logement.",
+  cafReason: "Out profil i pé être concerné par bann éd CAF.",
+  familyReason: "Out sitiasyon famiyal i pé être concernée.",
+  energyReason: "Bann éd énergie i pé concerné plusieurs foyers selon logement ek revenus.",
+  ccasReason: "Out komin lé renseignée, nou pé orient aou vers bon CCAS.",
+  communeMissing: "Renseigne out komin pou mieux cibler lo CCAS.",
+  disclaimer: "Cette estimation lé indicative. Vérifie toujours su site officiel.",
+  noAnalysis: "Aucune analyse disponible pou le moman.",
+  checkOfficial: "Vérifie toujours bann kondisyon su site officiel.",
 }
   },
   dashboard: {

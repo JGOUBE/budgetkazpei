@@ -18,14 +18,21 @@ function normalize(value) {
   return String(value || "").toLowerCase()
 }
 
+function getText(t, isKreol, section, key, fallback) {
+  if (!isKreol) return fallback
+  return t?.(section, key) || fallback
+}
+
 function analyzeEligibility(item, profile) {
   const title = normalize(item?.title)
   const category = normalize(item?.category)
   const commune = profile?.commune || ""
+
   const hasChildren =
     Number(profile?.nombre_enfants || profile?.enfants || 0) > 0 ||
     profile?.situation_familiale === "parent" ||
-    profile?.situation_familiale === "famille"
+    profile?.situation_familiale === "famille" ||
+    profile?.situation_familiale === "parent_isole"
 
   const hasCommune = Boolean(commune)
 
@@ -34,48 +41,48 @@ function analyzeEligibility(item, profile) {
 
   if (item?.territory === "Toutes" || item?.territory === commune) {
     score += 15
-    reasons.push("L’opportunité correspond à votre zone.")
+    reasons.push("zoneMatch")
   }
 
   if (category === "famille" || title.includes("caf")) {
     if (hasChildren) {
       score += 25
-      reasons.push("Votre profil indique une situation familiale pouvant être concernée.")
+      reasons.push("familyReason")
     } else {
       score += 5
-      reasons.push("Certaines aides CAF peuvent dépendre de votre situation familiale et de vos revenus.")
+      reasons.push("cafReason")
     }
   }
 
   if (category === "energie" || title.includes("énergie")) {
     score += 15
-    reasons.push("Les aides énergie peuvent concerner de nombreux foyers selon le logement et les revenus.")
+    reasons.push("energyReason")
   }
 
   if (title.includes("ccas")) {
     if (hasCommune) {
       score += 20
-      reasons.push("Votre commune est renseignée, ce qui permet de vous orienter vers le bon CCAS.")
+      reasons.push("ccasReason")
     } else {
-      reasons.push("Renseignez votre commune pour mieux cibler le CCAS concerné.")
+      reasons.push("communeMissing")
     }
   }
 
   if (category === "logement") {
     score += 15
-    reasons.push("Les aides logement dépendent souvent de votre situation, revenus et logement.")
+    reasons.push("logementReason")
   }
 
   if (item?.is_premium) {
     score += 5
-    reasons.push("Cette opportunité fait partie du suivi Premium.")
+    reasons.push("premiumReason")
   }
 
   const finalScore = Math.min(score, 95)
 
   if (finalScore >= 75) {
     return {
-      level: "forte",
+      level: "strong",
       color: COLORS.green,
       percent: finalScore,
       reasons,
@@ -84,7 +91,7 @@ function analyzeEligibility(item, profile) {
 
   if (finalScore >= 50) {
     return {
-      level: "à vérifier",
+      level: "medium",
       color: COLORS.yellow,
       percent: finalScore,
       reasons,
@@ -92,11 +99,47 @@ function analyzeEligibility(item, profile) {
   }
 
   return {
-    level: "faible",
+    level: "weak",
     color: COLORS.red,
     percent: finalScore,
     reasons,
   }
+}
+
+function getReasonText(reasonKey, isKreol, t) {
+  const fr = {
+    zoneMatch: "L’opportunité correspond à votre zone.",
+    familyReason:
+      "Votre profil indique une situation familiale pouvant être concernée.",
+    cafReason:
+      "Certaines aides CAF peuvent dépendre de votre situation familiale et de vos revenus.",
+    energyReason:
+      "Les aides énergie peuvent concerner de nombreux foyers selon le logement et les revenus.",
+    ccasReason:
+      "Votre commune est renseignée, ce qui permet de vous orienter vers le bon CCAS.",
+    communeMissing:
+      "Renseignez votre commune pour mieux cibler le CCAS concerné.",
+    logementReason:
+      "Les aides logement dépendent souvent de votre situation, revenus et logement.",
+    premiumReason:
+      "Cette opportunité fait partie du suivi Premium.",
+  }
+
+  if (!isKreol) return fr[reasonKey] || reasonKey
+
+  return t?.("eligibility", reasonKey) || fr[reasonKey] || reasonKey
+}
+
+function getLevelText(level, isKreol, t) {
+  const fr = {
+    strong: "forte",
+    medium: "à vérifier",
+    weak: "faible",
+  }
+
+  if (!isKreol) return fr[level] || level
+
+  return t?.("eligibility", level) || fr[level] || level
 }
 
 export default function DetailOpportunite({
@@ -104,6 +147,7 @@ export default function DetailOpportunite({
   profile,
   isPremium,
   isKreol,
+  t,
   onBack,
 }) {
   const [showEligibility, setShowEligibility] = useState(false)
@@ -132,6 +176,8 @@ export default function DetailOpportunite({
     [item, profile]
   )
 
+  const eligibilityLevel = getLevelText(eligibility.level, isKreol, t)
+
   return (
     <div>
       <button
@@ -148,7 +194,7 @@ export default function DetailOpportunite({
           cursor: "pointer",
         }}
       >
-        ← {isKreol ? "Retour" : "Retour"}
+        ← {getText(t, isKreol, "common", "back", "Retour")}
       </button>
 
       <div
@@ -167,7 +213,10 @@ export default function DetailOpportunite({
             marginBottom: 10,
           }}
         >
-          📍 {item.territory || item.commune || (isKreol ? "La Rényon" : "La Réunion")}
+          📍{" "}
+          {item.territory ||
+            item.commune ||
+            (isKreol ? "La Rényon" : "La Réunion")}
         </div>
 
         <h1
@@ -221,7 +270,14 @@ export default function DetailOpportunite({
             fontFamily: "inherit",
           }}
         >
-          ✨ {isKreol ? "Mi pé avoir droit ?" : "Suis-je éligible ?"}
+          ✨{" "}
+          {getText(
+            t,
+            isKreol,
+            "eligibility",
+            "button",
+            "Suis-je éligible ?"
+          )}
         </button>
 
         {showEligibility && (
@@ -242,7 +298,13 @@ export default function DetailOpportunite({
                 marginBottom: 8,
               }}
             >
-              {isKreol ? "Résultat indicatif" : "Résultat indicatif"}
+              {getText(
+                t,
+                isKreol,
+                "eligibility",
+                "resultIndicatif",
+                "Résultat indicatif"
+              )}
             </div>
 
             <div
@@ -253,9 +315,8 @@ export default function DetailOpportunite({
                 marginBottom: 10,
               }}
             >
-              {isKreol
-                ? `Probabilité : ${eligibility.level}`
-                : `Probabilité : ${eligibility.level}`}
+              {getText(t, isKreol, "eligibility", "probability", "Probabilité")}{" "}
+              : {eligibilityLevel}
             </div>
 
             <div
@@ -285,10 +346,16 @@ export default function DetailOpportunite({
               }}
             >
               {eligibility.reasons.length > 0
-                ? eligibility.reasons.map(reason => `• ${reason}`).join("\n")
-                : isKreol
-                  ? "Aucune analyse disponible pou le moman."
-                  : "Aucune analyse disponible pour le moment."}
+                ? eligibility.reasons
+                    .map(reason => `• ${getReasonText(reason, isKreol, t)}`)
+                    .join("\n")
+                : getText(
+                    t,
+                    isKreol,
+                    "eligibility",
+                    "noAnalysis",
+                    "Aucune analyse disponible pour le moment."
+                  )}
             </div>
 
             <div
@@ -300,26 +367,69 @@ export default function DetailOpportunite({
                 fontWeight: 800,
               }}
             >
-              {isKreol
-                ? "Cette estimation lé indicative. Vérifie toujours su site officiel."
-                : "Cette estimation est indicative. Vérifiez toujours les conditions sur le site officiel."}
+              {getText(
+                t,
+                isKreol,
+                "eligibility",
+                "disclaimer",
+                "Cette estimation est indicative. Vérifiez toujours les conditions sur le site officiel."
+              )}
             </div>
           </div>
         )}
 
         <InfoBlock
-          title={isKreol ? "✅ Kondisyon" : "✅ Conditions"}
-          text={conditions || (isKreol ? "Détay pou ajouté." : "Détails à ajouter.")}
+          title={getText(t, isKreol, "opportunityDetail", "conditions", "✅ Conditions")}
+          text={
+            conditions ||
+            getText(
+              t,
+              isKreol,
+              "opportunityDetail",
+              "detailsToAdd",
+              "Détails à ajouter."
+            )
+          }
         />
 
         <InfoBlock
-          title={isKreol ? "📄 Dokiman pou préparé" : "📄 Documents à prévoir"}
-          text={documents || (isKreol ? "Dokiman pou ajouté." : "Documents à ajouter.")}
+          title={getText(
+            t,
+            isKreol,
+            "opportunityDetail",
+            "documents",
+            "📄 Documents à prévoir"
+          )}
+          text={
+            documents ||
+            getText(
+              t,
+              isKreol,
+              "opportunityDetail",
+              "documentsToAdd",
+              "Documents à ajouter."
+            )
+          }
         />
 
         <InfoBlock
-          title={isKreol ? "➡️ Bann etap pou suiv" : "➡️ Étapes à suivre"}
-          text={steps || (isKreol ? "Bann etap pou ajouté." : "Étapes à ajouter.")}
+          title={getText(
+            t,
+            isKreol,
+            "opportunityDetail",
+            "steps",
+            "➡️ Étapes à suivre"
+          )}
+          text={
+            steps ||
+            getText(
+              t,
+              isKreol,
+              "opportunityDetail",
+              "stepsToAdd",
+              "Étapes à ajouter."
+            )
+          }
         />
 
         {item.url && (
@@ -339,7 +449,13 @@ export default function DetailOpportunite({
               fontWeight: 900,
             }}
           >
-            {isKreol ? "Aller su site officiel" : "Aller sur le site officiel"}
+            {getText(
+              t,
+              isKreol,
+              "opportunityDetail",
+              "officialSite",
+              "Aller sur le site officiel"
+            )}
           </a>
         )}
       </div>

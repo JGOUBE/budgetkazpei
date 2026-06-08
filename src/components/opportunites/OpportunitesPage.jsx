@@ -330,7 +330,7 @@ export default function OpportunitesPage({ isPremium, t, user }) {
         >
           <SummaryCard
             color={COLORS.cyan}
-            label={isKreol ? "Opportunités détectées" : "Opportunités détectées"}
+            label={isKreol ? "Bon plan detecté" : "Opportunités détectées"}
             value={filteredOpportunities.length}
           />
 
