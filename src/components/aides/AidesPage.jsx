@@ -137,12 +137,50 @@ function formatDate(value) {
   return new Date(value).toLocaleDateString("fr-FR")
 }
 
+function getDaysLeft(deadline) {
+  if (!deadline) return null
+
+  const today = new Date()
+  const limit = new Date(deadline)
+
+  today.setHours(0, 0, 0, 0)
+  limit.setHours(0, 0, 0, 0)
+
+  return Math.ceil((limit - today) / (1000 * 60 * 60 * 24))
+}
+
+function getDaysSince(value) {
+  if (!value) return 0
+
+  const today = new Date()
+  const date = new Date(value)
+
+  today.setHours(0, 0, 0, 0)
+  date.setHours(0, 0, 0, 0)
+
+  return Math.floor((today - date) / (1000 * 60 * 60 * 24))
+}
+
+function getDemarcheProgress(demarche) {
+  const status = demarche.status || "a_faire"
+
+  if (status === "accepte") return 100
+  if (status === "refuse") return 0
+  if (status === "documents_envoyes") return 75
+  if (status === "en_attente") return 75
+  if (status === "commence") return demarche.documents_ready ? 55 : 35
+  if (demarche.documents_ready) return 45
+
+  return 10
+}
+
 export default function AidesPage({ isMobile, t, isPremium, user }) {
   const languageKey = getLanguageKey(t)
   const isKreol = isKreolLang(t)
 
   const [demarches, setDemarches] = useState([])
   const [loadingDemarches, setLoadingDemarches] = useState(true)
+  const [savingId, setSavingId] = useState(null)
 
   const totalDemarches = demarches.length
 
@@ -150,17 +188,34 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
   const nbCommence = demarches.filter(d => d.status === "commence").length
   const nbAttente = demarches.filter(d => d.status === "en_attente").length
   const nbAccepte = demarches.filter(d => d.status === "accepte").length
-  const nbDocumentsEnvoyes = demarches.filter(
-    d => d.status === "documents_envoyes"
-  ).length
+  const nbDocumentsEnvoyes = demarches.filter(d => d.status === "documents_envoyes").length
+  const nbDocumentsPrets = demarches.filter(d => d.documents_ready).length
+
+  const nbDeadlinesProches = demarches.filter(d => {
+    const days = getDaysLeft(d.deadline)
+    return days !== null && days >= 0 && days <= 7
+  }).length
+
+  const nbDeadlinesDepassees = demarches.filter(d => {
+    const days = getDaysLeft(d.deadline)
+    return days !== null && days < 0 && d.status !== "accepte"
+  }).length
+
+  const nbAttenteLongue = demarches.filter(d => {
+    const referenceDate = d.updated_at || d.created_at
+    return d.status === "en_attente" && getDaysSince(referenceDate) >= 14
+  }).length
+
+  const nbDocumentsApreparer = demarches.filter(d => {
+    return !d.documents_ready && !["documents_envoyes", "en_attente", "accepte"].includes(d.status)
+  }).length
 
   const progression =
     totalDemarches === 0
       ? 0
       : Math.round(
-          ((nbCommence + nbAttente + nbDocumentsEnvoyes + nbAccepte * 2) /
-            (totalDemarches * 2)) *
-            100
+          demarches.reduce((sum, demarche) => sum + getDemarcheProgress(demarche), 0) /
+            totalDemarches
         )
 
   useEffect(() => {
@@ -192,25 +247,34 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
     setLoadingDemarches(false)
   }
 
-  async function updateDemarcheStatus(id, status) {
+  async function updateDemarche(id, updates) {
     const updatedAt = new Date().toISOString()
+
+    setSavingId(id)
 
     const { error } = await supabase
       .from("aide_demarches")
       .update({
-        status,
+        ...updates,
         updated_at: updatedAt,
       })
       .eq("id", id)
 
+    setSavingId(null)
+
     if (error) {
       console.error("Erreur mise à jour démarche:", error)
+      alert(
+        isKreol
+          ? "Erreur pendant la mise à jour."
+          : "Erreur pendant la mise à jour."
+      )
       return
     }
 
     setDemarches(prev =>
       prev.map(item =>
-        item.id === id ? { ...item, status, updated_at: updatedAt } : item
+        item.id === id ? { ...item, ...updates, updated_at: updatedAt } : item
       )
     )
   }
@@ -404,10 +468,70 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
             >
               <span>🟡 {nbAFaire} {isKreol ? "pou fé" : "à faire"}</span>
               <span>🔵 {nbCommence} {isKreol ? "commencé" : "commencée(s)"}</span>
+              <span>✅ {nbDocumentsPrets} {isKreol ? "dokiman prêts" : "documents prêts"}</span>
               <span>🟣 {nbDocumentsEnvoyes} {isKreol ? "dokiman envoyés" : "documents envoyés"}</span>
               <span>🟠 {nbAttente} {isKreol ? "en attente" : "en attente"}</span>
               <span>🟢 {nbAccepte} {isKreol ? "accepté" : "acceptée(s)"}</span>
+              <span>⏰ {nbDeadlinesProches} {isKreol ? "date proche" : "date limite proche"}</span>
             </div>
+
+            {(nbDeadlinesProches > 0 ||
+              nbDeadlinesDepassees > 0 ||
+              nbAttenteLongue > 0 ||
+              nbDocumentsApreparer > 0) && (
+              <div
+                style={{
+                  marginTop: 14,
+                  display: "grid",
+                  gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)",
+                  gap: 10,
+                }}
+              >
+                {nbDeadlinesDepassees > 0 && (
+                  <AlertBox
+                    color={COLORS.red}
+                    text={
+                      isKreol
+                        ? `⚠️ ${nbDeadlinesDepassees} date limite dépassée`
+                        : `⚠️ ${nbDeadlinesDepassees} date limite dépassée`
+                    }
+                  />
+                )}
+
+                {nbDeadlinesProches > 0 && (
+                  <AlertBox
+                    color={COLORS.yellow}
+                    text={
+                      isKreol
+                        ? `⏰ ${nbDeadlinesProches} date limite i approche`
+                        : `⏰ ${nbDeadlinesProches} date limite approche`
+                    }
+                  />
+                )}
+
+                {nbAttenteLongue > 0 && (
+                  <AlertBox
+                    color={COLORS.accent}
+                    text={
+                      isKreol
+                        ? `🔔 ${nbAttenteLongue} dossier en attente depuis 14 jours`
+                        : `🔔 ${nbAttenteLongue} dossier en attente depuis 14 jours`
+                    }
+                  />
+                )}
+
+                {nbDocumentsApreparer > 0 && (
+                  <AlertBox
+                    color={COLORS.cyan}
+                    text={
+                      isKreol
+                        ? `📄 ${nbDocumentsApreparer} dossier avec dokiman à préparé`
+                        : `📄 ${nbDocumentsApreparer} dossier avec documents à préparer`
+                    }
+                  />
+                )}
+              </div>
+            )}
           </div>
         )}
 
@@ -438,6 +562,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
               const title = isKreol
                 ? demarche.title_kr || demarche.title
                 : demarche.title
+              const daysLeft = getDaysLeft(demarche.deadline)
 
               return (
                 <div
@@ -450,7 +575,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                     display: "grid",
                     gridTemplateColumns: isMobile ? "1fr" : "1fr auto auto",
                     gap: 12,
-                    alignItems: "center",
+                    alignItems: "start",
                   }}
                 >
                   <div>
@@ -495,8 +620,43 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                       </div>
                     )}
 
+                    {demarche.deadline && (
+                      <div
+                        style={{
+                          marginTop: 6,
+                          color:
+                            daysLeft !== null && (daysLeft <= 7 || daysLeft < 0)
+                              ? COLORS.yellow
+                              : COLORS.muted,
+                          fontSize: 12,
+                          fontWeight: daysLeft !== null && daysLeft <= 7 ? 800 : 600,
+                        }}
+                      >
+                        ⏰ {isKreol ? "Date limite" : "Date limite"} :{" "}
+                        {formatDate(demarche.deadline)}
+                        {daysLeft !== null && daysLeft >= 0
+                          ? ` • ${daysLeft} ${isKreol ? "jour restant" : "jour(s) restant(s)"}`
+                          : ""}
+                        {daysLeft !== null && daysLeft < 0
+                          ? ` • ${isKreol ? "dépassée" : "dépassée"}`
+                          : ""}
+                      </div>
+                    )}
+
                     {demarche.notes && (
-                      <div style={{ marginTop: 8, color: COLORS.text, fontSize: 12 }}>
+                      <div
+                        style={{
+                          marginTop: 8,
+                          color: COLORS.text,
+                          fontSize: 12,
+                          background: "rgba(255,255,255,.045)",
+                          border: "1px solid rgba(255,255,255,.08)",
+                          borderRadius: 10,
+                          padding: 10,
+                          lineHeight: 1.5,
+                          whiteSpace: "pre-line",
+                        }}
+                      >
                         📝 {demarche.notes}
                       </div>
                     )}
@@ -507,17 +667,113 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                           marginTop: 6,
                           color: COLORS.green,
                           fontSize: 12,
-                          fontWeight: 700,
+                          fontWeight: 800,
                         }}
                       >
                         ✅ {isKreol ? "Dokiman préparé" : "Documents prêts"}
                       </div>
                     )}
+
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: isMobile ? "1fr" : "1fr 180px",
+                        gap: 10,
+                        marginTop: 12,
+                      }}
+                    >
+                      <textarea
+                        value={demarche.notes || ""}
+                        onChange={e =>
+                          setDemarches(prev =>
+                            prev.map(item =>
+                              item.id === demarche.id
+                                ? { ...item, notes: e.target.value }
+                                : item
+                            )
+                          )
+                        }
+                        onBlur={e =>
+                          updateDemarche(demarche.id, {
+                            notes: e.target.value,
+                          })
+                        }
+                        placeholder={
+                          isKreol
+                            ? "📝 Note : appel CAF, RDV, pièce manquante..."
+                            : "📝 Note : appel CAF, RDV, pièce manquante..."
+                        }
+                        style={{
+                          minHeight: 70,
+                          background: COLORS.card,
+                          border: `1px solid ${COLORS.border}`,
+                          borderRadius: 12,
+                          padding: 10,
+                          color: COLORS.text,
+                          fontSize: 12,
+                          fontFamily: "inherit",
+                          resize: "vertical",
+                        }}
+                      />
+
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        <label
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                            color: COLORS.text,
+                            fontSize: 12,
+                            fontWeight: 800,
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={Boolean(demarche.documents_ready)}
+                            onChange={e =>
+                              updateDemarche(demarche.id, {
+                                documents_ready: e.target.checked,
+                              })
+                            }
+                          />
+                          {isKreol ? "Dokiman prêts" : "Documents prêts"}
+                        </label>
+
+                        <input
+                          type="date"
+                          value={demarche.deadline || ""}
+                          onChange={e =>
+                            updateDemarche(demarche.id, {
+                              deadline: e.target.value || null,
+                            })
+                          }
+                          style={{
+                            background: COLORS.card,
+                            border: `1px solid ${COLORS.border}`,
+                            borderRadius: 10,
+                            padding: "9px 10px",
+                            color: COLORS.text,
+                            fontSize: 12,
+                            fontFamily: "inherit",
+                          }}
+                        />
+
+                        {savingId === demarche.id && (
+                          <div style={{ color: COLORS.cyan, fontSize: 11 }}>
+                            {isKreol ? "Sauvegarde..." : "Sauvegarde..."}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
 
                   <select
                     value={demarche.status || "a_faire"}
-                    onChange={e => updateDemarcheStatus(demarche.id, e.target.value)}
+                    onChange={e =>
+                      updateDemarche(demarche.id, {
+                        status: e.target.value,
+                      })
+                    }
                     style={{
                       background: COLORS.card,
                       border: `1px solid ${COLORS.border}`,
@@ -812,6 +1068,25 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
           })}
         </div>
       </section>
+    </div>
+  )
+}
+
+function AlertBox({ color, text }) {
+  return (
+    <div
+      style={{
+        background: `${color}14`,
+        border: `1px solid ${color}44`,
+        borderRadius: 12,
+        color,
+        padding: "10px 12px",
+        fontSize: 12,
+        fontWeight: 800,
+        lineHeight: 1.45,
+      }}
+    >
+      {text}
     </div>
   )
 }
