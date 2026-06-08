@@ -174,6 +174,81 @@ function getDemarcheProgress(demarche) {
   return 10
 }
 
+
+function getDemarchePriority(demarche) {
+  const status = demarche.status || "a_faire"
+  const daysLeft = getDaysLeft(demarche.deadline)
+
+  if (status === "accepte") return 90
+  if (status === "refuse") return 95
+  if (daysLeft !== null && daysLeft < 0 && status !== "accepte") return 1
+  if (daysLeft !== null && daysLeft <= 3 && status !== "accepte") return 2
+  if (daysLeft !== null && daysLeft <= 7 && status !== "accepte") return 3
+  if (!demarche.documents_ready && !["documents_envoyes", "en_attente", "accepte", "refuse"].includes(status)) return 4
+  if (status === "a_faire") return 5
+  if (status === "commence") return 6
+  if (status === "en_attente") return 7
+  if (status === "documents_envoyes") return 8
+
+  return 50
+}
+
+function getDemarchePriorityLabel(demarche, isKreol) {
+  const status = demarche.status || "a_faire"
+  const daysLeft = getDaysLeft(demarche.deadline)
+
+  if (status === "accepte") {
+    return {
+      color: COLORS.green,
+      text: isKreol ? "✅ Dossier accepté" : "✅ Dossier accepté",
+    }
+  }
+
+  if (status === "refuse") {
+    return {
+      color: COLORS.red,
+      text: isKreol ? "❌ Dossier refusé" : "❌ Dossier refusé",
+    }
+  }
+
+  if (daysLeft !== null && daysLeft < 0) {
+    return {
+      color: COLORS.red,
+      text: isKreol ? "🚨 Date limite dépassée" : "🚨 Date limite dépassée",
+    }
+  }
+
+  if (daysLeft !== null && daysLeft <= 3) {
+    return {
+      color: COLORS.yellow,
+      text: isKreol ? "🔥 Urgent" : "🔥 Urgent",
+    }
+  }
+
+  if (daysLeft !== null && daysLeft <= 7) {
+    return {
+      color: COLORS.yellow,
+      text: isKreol ? "⏰ Date proche" : "⏰ Date proche",
+    }
+  }
+
+  if (!demarche.documents_ready && !["documents_envoyes", "en_attente", "accepte", "refuse"].includes(status)) {
+    return {
+      color: COLORS.cyan,
+      text: isKreol ? "📄 Dokiman à préparé" : "📄 Documents à préparer",
+    }
+  }
+
+  if (status === "en_attente") {
+    return {
+      color: COLORS.accent,
+      text: isKreol ? "⏳ En attente" : "⏳ En attente",
+    }
+  }
+
+  return null
+}
+
 export default function AidesPage({ isMobile, t, isPremium, user }) {
   const languageKey = getLanguageKey(t)
   const isKreol = isKreolLang(t)
@@ -218,6 +293,21 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
           demarches.reduce((sum, demarche) => sum + getDemarcheProgress(demarche), 0) /
             totalDemarches
         )
+
+  const sortedDemarches = [...demarches].sort((a, b) => {
+    const priorityDiff = getDemarchePriority(a) - getDemarchePriority(b)
+
+    if (priorityDiff !== 0) return priorityDiff
+
+    const aDays = getDaysLeft(a.deadline)
+    const bDays = getDaysLeft(b.deadline)
+
+    if (aDays !== null && bDays !== null) return aDays - bDays
+    if (aDays !== null) return -1
+    if (bDays !== null) return 1
+
+    return new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at)
+  })
 
   useEffect(() => {
     fetchDemarches()
@@ -583,7 +673,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {demarches.map(demarche => {
+            {sortedDemarches.map(demarche => {
               const status = getStatus(demarche.status, isKreol)
               const title = isKreol
                 ? demarche.title_kr || demarche.title
@@ -615,6 +705,27 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                     >
                       {title}
                     </div>
+
+                    {getDemarchePriorityLabel(demarche, isKreol) && (
+                      <div
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 6,
+                          background: `${getDemarchePriorityLabel(demarche, isKreol).color}18`,
+                          border: `1px solid ${getDemarchePriorityLabel(demarche, isKreol).color}44`,
+                          color: getDemarchePriorityLabel(demarche, isKreol).color,
+                          borderRadius: 999,
+                          padding: "4px 9px",
+                          fontSize: 11,
+                          fontWeight: 900,
+                          marginBottom: 8,
+                          marginRight: 8,
+                        }}
+                      >
+                        {getDemarchePriorityLabel(demarche, isKreol).text}
+                      </div>
+                    )}
 
                     <div
                       style={{
