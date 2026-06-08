@@ -103,14 +103,8 @@ function getAideLink(aide) {
 
   if (normalizedLabel.includes("rsa")) return AIDE_LINKS.rsa
   if (normalizedLabel.includes("apl")) return AIDE_LINKS.apl
-
-  if (normalizedLabel.includes("chèque") || normalizedLabel.includes("cheque")) {
-    return AIDE_LINKS.chequeEnergie
-  }
-
-  if (normalizedLabel.includes("énergie") || normalizedLabel.includes("energie")) {
-    return AIDE_LINKS.aideEnergie
-  }
+  if (normalizedLabel.includes("chèque") || normalizedLabel.includes("cheque")) return AIDE_LINKS.chequeEnergie
+  if (normalizedLabel.includes("énergie") || normalizedLabel.includes("energie")) return AIDE_LINKS.aideEnergie
 
   return "https://www.caf.fr/allocataires/aides-et-demarches/mes-demarches"
 }
@@ -131,10 +125,16 @@ function isKreolLang(t) {
 function getStatus(status, isKreol) {
   const found = STATUS_OPTIONS.find(item => item.value === status)
   if (!found) return STATUS_OPTIONS[0]
+
   return {
     ...found,
     label: isKreol ? found.kr : found.fr,
   }
+}
+
+function formatDate(value) {
+  if (!value) return ""
+  return new Date(value).toLocaleDateString("fr-FR")
 }
 
 export default function AidesPage({ isMobile, t, isPremium, user }) {
@@ -143,6 +143,25 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
 
   const [demarches, setDemarches] = useState([])
   const [loadingDemarches, setLoadingDemarches] = useState(true)
+
+  const totalDemarches = demarches.length
+
+  const nbAFaire = demarches.filter(d => d.status === "a_faire").length
+  const nbCommence = demarches.filter(d => d.status === "commence").length
+  const nbAttente = demarches.filter(d => d.status === "en_attente").length
+  const nbAccepte = demarches.filter(d => d.status === "accepte").length
+  const nbDocumentsEnvoyes = demarches.filter(
+    d => d.status === "documents_envoyes"
+  ).length
+
+  const progression =
+    totalDemarches === 0
+      ? 0
+      : Math.round(
+          ((nbCommence + nbAttente + nbDocumentsEnvoyes + nbAccepte * 2) /
+            (totalDemarches * 2)) *
+            100
+        )
 
   useEffect(() => {
     fetchDemarches()
@@ -174,11 +193,13 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
   }
 
   async function updateDemarcheStatus(id, status) {
+    const updatedAt = new Date().toISOString()
+
     const { error } = await supabase
       .from("aide_demarches")
       .update({
         status,
-        updated_at: new Date().toISOString(),
+        updated_at: updatedAt,
       })
       .eq("id", id)
 
@@ -188,7 +209,9 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
     }
 
     setDemarches(prev =>
-      prev.map(item => (item.id === id ? { ...item, status } : item))
+      prev.map(item =>
+        item.id === id ? { ...item, status, updated_at: updatedAt } : item
+      )
     )
   }
 
@@ -323,9 +346,74 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
           {isKreol ? "Mes démarches en cours" : "Mes démarches en cours"}
         </h3>
 
+        {demarches.length > 0 && (
+          <div
+            style={{
+              background: "rgba(255,255,255,.04)",
+              border: "1px solid rgba(255,255,255,.08)",
+              borderRadius: 16,
+              padding: 16,
+              marginBottom: 14,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                gap: 12,
+                marginBottom: 10,
+                color: COLORS.text,
+                fontWeight: 900,
+                fontSize: 14,
+              }}
+            >
+              <span>
+                📋 {totalDemarches}{" "}
+                {isKreol ? "démarche(s)" : "démarche(s)"}
+              </span>
+              <span>{progression}%</span>
+            </div>
+
+            <div
+              style={{
+                height: 10,
+                background: "rgba(255,255,255,.08)",
+                borderRadius: 999,
+                overflow: "hidden",
+                marginBottom: 12,
+              }}
+            >
+              <div
+                style={{
+                  width: `${progression}%`,
+                  height: "100%",
+                  background: `linear-gradient(90deg, ${COLORS.green}, ${COLORS.cyan})`,
+                }}
+              />
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                gap: 10,
+                flexWrap: "wrap",
+                fontSize: 12,
+                color: COLORS.muted,
+                lineHeight: 1.6,
+              }}
+            >
+              <span>🟡 {nbAFaire} {isKreol ? "pou fé" : "à faire"}</span>
+              <span>🔵 {nbCommence} {isKreol ? "commencé" : "commencée(s)"}</span>
+              <span>🟣 {nbDocumentsEnvoyes} {isKreol ? "dokiman envoyés" : "documents envoyés"}</span>
+              <span>🟠 {nbAttente} {isKreol ? "en attente" : "en attente"}</span>
+              <span>🟢 {nbAccepte} {isKreol ? "accepté" : "acceptée(s)"}</span>
+            </div>
+          </div>
+        )}
+
         {loadingDemarches ? (
           <div style={{ color: COLORS.muted, fontSize: 13 }}>
-            {isKreol ? "Chargement..." : "Chargement..."}
+            Chargement...
           </div>
         ) : demarches.length === 0 ? (
           <div
@@ -389,10 +477,42 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                         padding: "4px 9px",
                         fontSize: 11,
                         fontWeight: 900,
+                        marginBottom: 8,
                       }}
                     >
                       ● {status.label}
                     </div>
+
+                    <div style={{ color: COLORS.muted, fontSize: 12, lineHeight: 1.6 }}>
+                      📅 {isKreol ? "Ajouté le" : "Ajouté le"}{" "}
+                      {formatDate(demarche.created_at)}
+                    </div>
+
+                    {demarche.updated_at && (
+                      <div style={{ color: COLORS.muted, fontSize: 12 }}>
+                        🔄 {isKreol ? "Miz à jour" : "Mis à jour"}{" "}
+                        {formatDate(demarche.updated_at)}
+                      </div>
+                    )}
+
+                    {demarche.notes && (
+                      <div style={{ marginTop: 8, color: COLORS.text, fontSize: 12 }}>
+                        📝 {demarche.notes}
+                      </div>
+                    )}
+
+                    {demarche.documents_ready && (
+                      <div
+                        style={{
+                          marginTop: 6,
+                          color: COLORS.green,
+                          fontSize: 12,
+                          fontWeight: 700,
+                        }}
+                      >
+                        ✅ {isKreol ? "Dokiman préparé" : "Documents prêts"}
+                      </div>
+                    )}
                   </div>
 
                   <select
