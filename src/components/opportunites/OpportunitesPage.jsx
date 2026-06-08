@@ -290,6 +290,15 @@ export default function OpportunitesPage({ isPremium, t, user }) {
         isKreol={isKreol}
         t={t}
         onBack={() => setSelectedOpportunity(null)}
+        onGoDemarches={() => {
+          setSelectedOpportunity(null)
+
+          window.dispatchEvent(
+            new CustomEvent("budgetkazpei:navigate", {
+              detail: "aides",
+            })
+          )
+        }}
       />
     )
   }

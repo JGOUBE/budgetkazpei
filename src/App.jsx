@@ -177,6 +177,27 @@ const isPremiumPlus =
     setShowSidebar(false)
   }
 
+  useEffect(() => {
+    function handleExternalNavigate(event) {
+      const target = event?.detail
+
+      if (!target) return
+
+      setActiveNav(target)
+      setShowSidebar(false)
+
+      if (typeof window !== "undefined") {
+        window.scrollTo({ top: 0, behavior: "smooth" })
+      }
+    }
+
+    window.addEventListener("budgetkazpei:navigate", handleExternalNavigate)
+
+    return () => {
+      window.removeEventListener("budgetkazpei:navigate", handleExternalNavigate)
+    }
+  }, [])
+
   if (loading) {
     return (
       <div
@@ -597,6 +618,7 @@ const isPremiumPlus =
   isPremium={isPremium}
   t={t}
   user={user}
+  onNavigate={handleNavChange}
 />
 )}
 {activeNav === "abonnements" && (

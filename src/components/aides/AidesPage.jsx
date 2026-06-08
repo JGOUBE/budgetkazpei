@@ -181,6 +181,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
   const [demarches, setDemarches] = useState([])
   const [loadingDemarches, setLoadingDemarches] = useState(true)
   const [savingId, setSavingId] = useState(null)
+  const [noteDrafts, setNoteDrafts] = useState({})
 
   const totalDemarches = demarches.length
 
@@ -277,6 +278,39 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
         item.id === id ? { ...item, ...updates, updated_at: updatedAt } : item
       )
     )
+  }
+
+  async function addFollowUpNote(demarche) {
+    const rawNote = noteDrafts[demarche.id] || ""
+    const note = rawNote.trim()
+
+    if (!note) {
+      alert(
+        isKreol
+          ? "Écris une note avant d'ajouter."
+          : "Écrivez une note avant d'ajouter."
+      )
+      return
+    }
+
+    const now = new Date()
+    const dateLabel = now.toLocaleDateString("fr-FR")
+    const timeLabel = now.toLocaleTimeString("fr-FR", {
+      hour: "2-digit",
+      minute: "2-digit",
+    })
+
+    const newLine = `${dateLabel} à ${timeLabel} - ${note}`
+    const previousNotes = demarche.notes ? `${demarche.notes}\n${newLine}` : newLine
+
+    await updateDemarche(demarche.id, {
+      notes: previousNotes,
+    })
+
+    setNoteDrafts(prev => ({
+      ...prev,
+      [demarche.id]: "",
+    }))
   }
 
   async function deleteDemarche(id) {
@@ -490,11 +524,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                 {nbDeadlinesDepassees > 0 && (
                   <AlertBox
                     color={COLORS.red}
-                    text={
-                      isKreol
-                        ? `⚠️ ${nbDeadlinesDepassees} date limite dépassée`
-                        : `⚠️ ${nbDeadlinesDepassees} date limite dépassée`
-                    }
+                    text={`⚠️ ${nbDeadlinesDepassees} date limite dépassée`}
                   />
                 )}
 
@@ -512,11 +542,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                 {nbAttenteLongue > 0 && (
                   <AlertBox
                     color={COLORS.accent}
-                    text={
-                      isKreol
-                        ? `🔔 ${nbAttenteLongue} dossier en attente depuis 14 jours`
-                        : `🔔 ${nbAttenteLongue} dossier en attente depuis 14 jours`
-                    }
+                    text={`🔔 ${nbAttenteLongue} dossier en attente depuis 14 jours`}
                   />
                 )}
 
@@ -625,21 +651,20 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                         style={{
                           marginTop: 6,
                           color:
-                            daysLeft !== null && (daysLeft <= 7 || daysLeft < 0)
-                              ? COLORS.yellow
-                              : COLORS.muted,
+                            daysLeft !== null && daysLeft < 0
+                              ? COLORS.red
+                              : daysLeft !== null && daysLeft <= 7
+                                ? COLORS.yellow
+                                : COLORS.muted,
                           fontSize: 12,
                           fontWeight: daysLeft !== null && daysLeft <= 7 ? 800 : 600,
                         }}
                       >
-                        ⏰ {isKreol ? "Date limite" : "Date limite"} :{" "}
-                        {formatDate(demarche.deadline)}
+                        ⏰ Date limite : {formatDate(demarche.deadline)}
                         {daysLeft !== null && daysLeft >= 0
-                          ? ` • ${daysLeft} ${isKreol ? "jour restant" : "jour(s) restant(s)"}`
+                          ? ` • ${daysLeft} jour(s) restant(s)`
                           : ""}
-                        {daysLeft !== null && daysLeft < 0
-                          ? ` • ${isKreol ? "dépassée" : "dépassée"}`
-                          : ""}
+                        {daysLeft !== null && daysLeft < 0 ? " • dépassée" : ""}
                       </div>
                     )}
 
@@ -653,11 +678,20 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                           border: "1px solid rgba(255,255,255,.08)",
                           borderRadius: 10,
                           padding: 10,
-                          lineHeight: 1.5,
+                          lineHeight: 1.55,
                           whiteSpace: "pre-line",
                         }}
                       >
-                        📝 {demarche.notes}
+                        <div
+                          style={{
+                            color: COLORS.cyan,
+                            fontWeight: 900,
+                            marginBottom: 6,
+                          }}
+                        >
+                          📝 {isKreol ? "Journal suivi" : "Journal de suivi"}
+                        </div>
+                        {demarche.notes}
                       </div>
                     )}
 
@@ -682,39 +716,57 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                         marginTop: 12,
                       }}
                     >
-                      <textarea
-                        value={demarche.notes || ""}
-                        onChange={e =>
-                          setDemarches(prev =>
-                            prev.map(item =>
-                              item.id === demarche.id
-                                ? { ...item, notes: e.target.value }
-                                : item
-                            )
-                          )
-                        }
-                        onBlur={e =>
-                          updateDemarche(demarche.id, {
-                            notes: e.target.value,
-                          })
-                        }
-                        placeholder={
-                          isKreol
-                            ? "📝 Note : appel CAF, RDV, pièce manquante..."
-                            : "📝 Note : appel CAF, RDV, pièce manquante..."
-                        }
-                        style={{
-                          minHeight: 70,
-                          background: COLORS.card,
-                          border: `1px solid ${COLORS.border}`,
-                          borderRadius: 12,
-                          padding: 10,
-                          color: COLORS.text,
-                          fontSize: 12,
-                          fontFamily: "inherit",
-                          resize: "vertical",
-                        }}
-                      />
+                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                        <textarea
+                          value={noteDrafts[demarche.id] || ""}
+                          onChange={e =>
+                            setNoteDrafts(prev => ({
+                              ...prev,
+                              [demarche.id]: e.target.value,
+                            }))
+                          }
+                          placeholder={
+                            isKreol
+                              ? "📝 Ajoute une note : appel CAF, RDV, pièce manquante..."
+                              : "📝 Ajouter une note : appel CAF, RDV, pièce manquante..."
+                          }
+                          style={{
+                            minHeight: 70,
+                            background: COLORS.card,
+                            border: `1px solid ${COLORS.border}`,
+                            borderRadius: 12,
+                            padding: 10,
+                            color: COLORS.text,
+                            fontSize: 12,
+                            fontFamily: "inherit",
+                            resize: "vertical",
+                          }}
+                        />
+
+                        <button
+                          type="button"
+                          onClick={() => addFollowUpNote(demarche)}
+                          disabled={savingId === demarche.id}
+                          style={{
+                            alignSelf: "flex-start",
+                            background:
+                              savingId === demarche.id
+                                ? "rgba(142,164,197,.25)"
+                                : `linear-gradient(135deg, ${COLORS.cyan}, ${COLORS.accent})`,
+                            border: "none",
+                            borderRadius: 10,
+                            color: COLORS.card,
+                            padding: "8px 12px",
+                            cursor:
+                              savingId === demarche.id ? "not-allowed" : "pointer",
+                            fontSize: 12,
+                            fontWeight: 900,
+                            fontFamily: "inherit",
+                          }}
+                        >
+                          {isKreol ? "➕ Ajout note" : "➕ Ajouter au journal"}
+                        </button>
+                      </div>
 
                       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                         <label
@@ -760,7 +812,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
 
                         {savingId === demarche.id && (
                           <div style={{ color: COLORS.cyan, fontSize: 11 }}>
-                            {isKreol ? "Sauvegarde..." : "Sauvegarde..."}
+                            Sauvegarde...
                           </div>
                         )}
                       </div>
