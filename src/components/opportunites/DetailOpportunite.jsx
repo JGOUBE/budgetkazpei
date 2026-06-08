@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react"
+import { supabase } from "../../services/supabase"
 
 const COLORS = {
   card: "#0F1E38",
@@ -121,8 +122,7 @@ function getReasonText(reasonKey, isKreol, t) {
       "Renseignez votre commune pour mieux cibler le CCAS concerné.",
     logementReason:
       "Les aides logement dépendent souvent de votre situation, revenus et logement.",
-    premiumReason:
-      "Cette opportunité fait partie du suivi Premium.",
+    premiumReason: "Cette opportunité fait partie du suivi Premium.",
   }
 
   if (!isKreol) return fr[reasonKey] || reasonKey
@@ -149,8 +149,10 @@ export default function DetailOpportunite({
   isKreol,
   t,
   onBack,
+  onGoDemarches,
 }) {
   const [showEligibility, setShowEligibility] = useState(false)
+  const [saving, setSaving] = useState(false)
 
   if (!item) return null
 
@@ -167,9 +169,7 @@ export default function DetailOpportunite({
     ? item.documents_kr || item.documents
     : item.documents
 
-  const steps = isKreol
-    ? item.steps_kr || item.steps
-    : item.steps
+  const steps = isKreol ? item.steps_kr || item.steps : item.steps
 
   const eligibility = useMemo(
     () => analyzeEligibility(item, profile),
@@ -177,6 +177,47 @@ export default function DetailOpportunite({
   )
 
   const eligibilityLevel = getLevelText(eligibility.level, isKreol, t)
+
+  async function addToDemarches() {
+    try {
+      setSaving(true)
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+
+      if (!user) {
+        alert(isKreol ? "Ou doit être connecté." : "Vous devez être connecté.")
+        return
+      }
+
+      const { error } = await supabase.from("aide_demarches").insert({
+        user_id: user.id,
+        opportunity_id: item.id,
+        title: item.title,
+        title_kr: item.title_kr,
+        status: "a_faire",
+      })
+
+      if (error) {
+        console.error("Erreur ajout démarche:", error)
+        alert(`Erreur lors de l'ajout : ${error.message || "erreur inconnue"}`)
+        return
+      }
+
+      const goToDemarches = window.confirm(
+        isKreol
+          ? "✅ Démarche ajoutée. Ou retrouve ali dan Éd & Drwa. Ouvrir maintenant ?"
+          : "✅ Démarche ajoutée. Retrouvez-la dans Aides & Droits. Ouvrir maintenant ?"
+      )
+
+      if (goToDemarches && onGoDemarches) {
+        onGoDemarches()
+      }
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
     <div>
@@ -379,7 +420,13 @@ export default function DetailOpportunite({
         )}
 
         <InfoBlock
-          title={getText(t, isKreol, "opportunityDetail", "conditions", "✅ Conditions")}
+          title={getText(
+            t,
+            isKreol,
+            "opportunityDetail",
+            "conditions",
+            "✅ Conditions"
+          )}
           text={
             conditions ||
             getText(
@@ -432,6 +479,32 @@ export default function DetailOpportunite({
           }
         />
 
+        <button
+          type="button"
+          onClick={addToDemarches}
+          disabled={saving}
+          style={{
+            width: "100%",
+            marginTop: 18,
+            background: saving
+              ? "rgba(142,164,197,.35)"
+              : `linear-gradient(135deg, ${COLORS.green}, ${COLORS.cyan})`,
+            color: COLORS.card,
+            border: "none",
+            borderRadius: 14,
+            padding: "14px 16px",
+            fontWeight: 900,
+            cursor: saving ? "not-allowed" : "pointer",
+            fontFamily: "inherit",
+          }}
+        >
+          {saving
+            ? "Ajout..."
+            : isKreol
+              ? "➕ Azout dann mes démarches"
+              : "➕ Ajouter à mes démarches"}
+        </button>
+
         {item.url && (
           <a
             href={item.url}
@@ -440,7 +513,7 @@ export default function DetailOpportunite({
             style={{
               display: "block",
               textAlign: "center",
-              marginTop: 20,
+              marginTop: 14,
               textDecoration: "none",
               background: `linear-gradient(135deg, ${COLORS.yellow}, ${COLORS.accent})`,
               color: COLORS.card,

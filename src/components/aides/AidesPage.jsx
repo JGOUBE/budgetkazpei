@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react"
 import {
   Landmark,
   Sparkles,
@@ -10,8 +11,11 @@ import {
   ShoppingBasket,
   Bus,
   Coins,
+  ClipboardCheck,
+  Trash2,
 } from "lucide-react"
 
+import { supabase } from "../../services/supabase"
 import { AIDES } from "../../data/categories"
 import { AUTRES_AIDES } from "../../data/aides"
 import AssistantAides from "./AssistantAides"
@@ -19,6 +23,14 @@ import AssistantAides from "./AssistantAides"
 const COLORS = {
   text: "#F1F5F9",
   muted: "#8EA4C5",
+  card: "#0F1E38",
+  cardLight: "#152444",
+  border: "#1E3A5F",
+  accent: "#F97316",
+  yellow: "#FCD34D",
+  cyan: "#23D3D6",
+  green: "#22C55E",
+  red: "#FB7185",
 }
 
 const CARD_VARIANTS = [
@@ -77,23 +89,26 @@ const OTHER_AIDES_LINKS = {
     "https://www.banque-france.fr/fr/a-votre-service/particuliers/annuaire-microcredit",
 }
 
+const STATUS_OPTIONS = [
+  { value: "a_faire", fr: "À faire", kr: "Pou fé", color: COLORS.yellow },
+  { value: "commence", fr: "Dossier commencé", kr: "Dossier commencé", color: COLORS.cyan },
+  { value: "documents_envoyes", fr: "Documents envoyés", kr: "Dokiman envoyés", color: COLORS.green },
+  { value: "en_attente", fr: "En attente", kr: "En attente", color: COLORS.accent },
+  { value: "accepte", fr: "Accepté", kr: "Accepté", color: COLORS.green },
+  { value: "refuse", fr: "Refusé", kr: "Refusé", color: COLORS.red },
+]
+
 function getAideLink(aide) {
   const normalizedLabel = `${aide.id || ""} ${aide.label || ""}`.toLowerCase()
 
   if (normalizedLabel.includes("rsa")) return AIDE_LINKS.rsa
   if (normalizedLabel.includes("apl")) return AIDE_LINKS.apl
 
-  if (
-    normalizedLabel.includes("chèque") ||
-    normalizedLabel.includes("cheque")
-  ) {
+  if (normalizedLabel.includes("chèque") || normalizedLabel.includes("cheque")) {
     return AIDE_LINKS.chequeEnergie
   }
 
-  if (
-    normalizedLabel.includes("énergie") ||
-    normalizedLabel.includes("energie")
-  ) {
+  if (normalizedLabel.includes("énergie") || normalizedLabel.includes("energie")) {
     return AIDE_LINKS.aideEnergie
   }
 
@@ -109,8 +124,93 @@ function getLanguageKey(t) {
   return t("nav", "dashboard") || "fr"
 }
 
+function isKreolLang(t) {
+  return t?.("nav", "dashboard") === "Tablo débor"
+}
+
+function getStatus(status, isKreol) {
+  const found = STATUS_OPTIONS.find(item => item.value === status)
+  if (!found) return STATUS_OPTIONS[0]
+  return {
+    ...found,
+    label: isKreol ? found.kr : found.fr,
+  }
+}
+
 export default function AidesPage({ isMobile, t, isPremium, user }) {
   const languageKey = getLanguageKey(t)
+  const isKreol = isKreolLang(t)
+
+  const [demarches, setDemarches] = useState([])
+  const [loadingDemarches, setLoadingDemarches] = useState(true)
+
+  useEffect(() => {
+    fetchDemarches()
+  }, [user?.id])
+
+  async function fetchDemarches() {
+    if (!user?.id) {
+      setDemarches([])
+      setLoadingDemarches(false)
+      return
+    }
+
+    setLoadingDemarches(true)
+
+    const { data, error } = await supabase
+      .from("aide_demarches")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+
+    if (error) {
+      console.error("Erreur chargement démarches:", error)
+      setDemarches([])
+    } else {
+      setDemarches(data || [])
+    }
+
+    setLoadingDemarches(false)
+  }
+
+  async function updateDemarcheStatus(id, status) {
+    const { error } = await supabase
+      .from("aide_demarches")
+      .update({
+        status,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+
+    if (error) {
+      console.error("Erreur mise à jour démarche:", error)
+      return
+    }
+
+    setDemarches(prev =>
+      prev.map(item => (item.id === id ? { ...item, status } : item))
+    )
+  }
+
+  async function deleteDemarche(id) {
+    const confirmText = isKreol
+      ? "Supprim cette démarche ?"
+      : "Supprimer cette démarche ?"
+
+    if (!window.confirm(confirmText)) return
+
+    const { error } = await supabase
+      .from("aide_demarches")
+      .delete()
+      .eq("id", id)
+
+    if (error) {
+      console.error("Erreur suppression démarche:", error)
+      return
+    }
+
+    setDemarches(prev => prev.filter(item => item.id !== id))
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
@@ -157,7 +257,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
             }}
           >
             <Sparkles size={15} />
-            {t("aides", "bonPlanPei")}
+            {isKreol ? "Suivi bann démarches" : "Suivi des démarches"}
           </div>
 
           <h3
@@ -170,7 +270,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
               letterSpacing: ".2px",
             }}
           >
-            {t("aides", "title")}
+            {isKreol ? "🏛️ Mes éd & démarches" : "🏛️ Mes aides & démarches"}
           </h3>
 
           <p
@@ -182,7 +282,9 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
               maxWidth: 760,
             }}
           >
-            {t("aides", "subtitle")}
+            {isKreol
+              ? "Suiv bann aides ajouté depuis les opportunités, prépare out dokiman et pose out question à l’assistant."
+              : "Suivez les aides ajoutées depuis vos opportunités, préparez vos documents et posez vos questions à l’assistant."}
           </p>
         </div>
       </section>
@@ -194,6 +296,152 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
         t={t}
         user={user}
       />
+
+      <section
+        style={{
+          background:
+            "linear-gradient(135deg, rgba(35,211,214,.16), rgba(15,30,56,.96))",
+          border: "1px solid rgba(35,211,214,.28)",
+          borderRadius: 22,
+          padding: isMobile ? 18 : 22,
+          boxShadow: "0 14px 32px rgba(0,0,0,.16)",
+        }}
+      >
+        <h3
+          style={{
+            margin: "0 0 14px",
+            fontSize: 18,
+            color: COLORS.text,
+            fontFamily: "'Baloo 2', sans-serif",
+            fontWeight: 800,
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+          }}
+        >
+          <ClipboardCheck size={20} />
+          {isKreol ? "Mes démarches en cours" : "Mes démarches en cours"}
+        </h3>
+
+        {loadingDemarches ? (
+          <div style={{ color: COLORS.muted, fontSize: 13 }}>
+            {isKreol ? "Chargement..." : "Chargement..."}
+          </div>
+        ) : demarches.length === 0 ? (
+          <div
+            style={{
+              background: "rgba(255,255,255,.045)",
+              border: "1px solid rgba(255,255,255,.08)",
+              borderRadius: 16,
+              padding: 16,
+              color: COLORS.muted,
+              fontSize: 13,
+              lineHeight: 1.6,
+            }}
+          >
+            {isKreol
+              ? "Aucune démarche pou le moman. Alé dann Bon plan détecté, ouvre une aide, puis clique su “Azout dann mes démarches”."
+              : "Aucune démarche pour le moment. Allez dans Opportunités détectées, ouvrez une aide, puis cliquez sur “Ajouter à mes démarches”."}
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            {demarches.map(demarche => {
+              const status = getStatus(demarche.status, isKreol)
+              const title = isKreol
+                ? demarche.title_kr || demarche.title
+                : demarche.title
+
+              return (
+                <div
+                  key={demarche.id}
+                  style={{
+                    background: "rgba(255,255,255,.045)",
+                    border: "1px solid rgba(255,255,255,.08)",
+                    borderRadius: 16,
+                    padding: 16,
+                    display: "grid",
+                    gridTemplateColumns: isMobile ? "1fr" : "1fr auto auto",
+                    gap: 12,
+                    alignItems: "center",
+                  }}
+                >
+                  <div>
+                    <div
+                      style={{
+                        color: COLORS.text,
+                        fontWeight: 900,
+                        fontSize: 15,
+                        marginBottom: 6,
+                      }}
+                    >
+                      {title}
+                    </div>
+
+                    <div
+                      style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
+                        background: `${status.color}18`,
+                        border: `1px solid ${status.color}44`,
+                        color: status.color,
+                        borderRadius: 999,
+                        padding: "4px 9px",
+                        fontSize: 11,
+                        fontWeight: 900,
+                      }}
+                    >
+                      ● {status.label}
+                    </div>
+                  </div>
+
+                  <select
+                    value={demarche.status || "a_faire"}
+                    onChange={e => updateDemarcheStatus(demarche.id, e.target.value)}
+                    style={{
+                      background: COLORS.card,
+                      border: `1px solid ${COLORS.border}`,
+                      borderRadius: 10,
+                      padding: "9px 11px",
+                      color: COLORS.text,
+                      fontSize: 12,
+                      fontFamily: "inherit",
+                    }}
+                  >
+                    {STATUS_OPTIONS.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {isKreol ? option.kr : option.fr}
+                      </option>
+                    ))}
+                  </select>
+
+                  <button
+                    type="button"
+                    onClick={() => deleteDemarche(demarche.id)}
+                    style={{
+                      background: "rgba(251,113,133,.10)",
+                      border: "1px solid rgba(251,113,133,.28)",
+                      borderRadius: 10,
+                      color: COLORS.red,
+                      padding: "9px 11px",
+                      cursor: "pointer",
+                      fontWeight: 900,
+                      fontFamily: "inherit",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 6,
+                    }}
+                  >
+                    <Trash2 size={14} />
+                    {isMobile ? "" : isKreol ? "Supprim" : "Supprimer"}
+                  </button>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </section>
 
       <section
         style={{

@@ -288,6 +288,7 @@ export default function OpportunitesPage({ isPremium, t, user }) {
         profile={profile}
         isPremium={isPremium}
         isKreol={isKreol}
+        t={t}
         onBack={() => setSelectedOpportunity(null)}
       />
     )

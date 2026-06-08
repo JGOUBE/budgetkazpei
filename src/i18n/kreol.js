@@ -25,22 +25,48 @@ const kreol = {
   student: "Étidyan",
 },
 eligibility: {
-  resultIndicatif: "Résilta indicatif",
+  button: "Mi lé éligib ?",
+  resultIndicatif: "Résilta indikatif",
   probability: "Probabilité",
-  strong: "forte",
+
+  strong: "for",
   medium: "à vérifié",
-  weak: "féb",
+  weak: "fèb",
+
   zoneMatch: "Lo bon plan i correspond a out zone.",
-  logementReason: "Bann éd logement i dépend souvent out sitiasyon, out revenus é out logement.",
-  cafReason: "Out profil i pé être concerné par bann éd CAF.",
-  familyReason: "Out sitiasyon famiyal i pé être concernée.",
-  energyReason: "Bann éd énergie i pé concerné plusieurs foyers selon logement ek revenus.",
-  ccasReason: "Out komin lé renseignée, nou pé orient aou vers bon CCAS.",
-  communeMissing: "Renseigne out komin pou mieux cibler lo CCAS.",
-  disclaimer: "Cette estimation lé indicative. Vérifie toujours su site officiel.",
-  noAnalysis: "Aucune analyse disponible pou le moman.",
-  checkOfficial: "Vérifie toujours bann kondisyon su site officiel.",
-}
+  logementReason:
+    "Bann éd logement i dépend souvent out sitiasyon, revenus é logement.",
+  cafReason:
+    "Bann éd CAF i pé dépend out sitiasyon famiyal ek revenus.",
+  familyReason:
+    "Out profil i montre in sitiasyon famiyal concernée.",
+  energyReason:
+    "Bann éd énergie i pé concerné plusieurs foyers selon logement ek revenus.",
+  ccasReason:
+    "Out komin lé renseignée, nou pé orient aou vers bon CCAS.",
+  communeMissing:
+    "Renseigne out komin pou mieux cibler lo CCAS.",
+  premiumReason:
+    "Sa bon plan la i fait partie suivi Premium.",
+
+  noAnalysis: "Pa ni analiz disponible pou linstan.",
+  disclaimer:
+    "Sa lé in estimasyon. Vérifie toultan bann kondisyon su site officiel.",
+  checkOfficial:
+    "Vérifie toultan bann kondisyon su site officiel.",
+},
+
+opportunityDetail: {
+  conditions: "✅ Kondisyon",
+  documents: "📄 Dokiman pou préparé",
+  steps: "➡️ Bann etap pou suiv",
+
+  detailsToAdd: "Détay pou ajouté.",
+  documentsToAdd: "Dokiman pou ajouté.",
+  stepsToAdd: "Bann etap pou ajouté.",
+
+  officialSite: "Alé su site officiel",
+},
   },
   dashboard: {
     solde: "Larzan i reste",
