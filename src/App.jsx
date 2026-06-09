@@ -103,13 +103,17 @@ console.log("EMAIL =", user?.email)
 
 const { profile } = useProfile(user?.id)
 
+const isAdmin = profile?.is_admin === true
+
 const isPremium =
+  isAdmin ||
   profile?.premium === true ||
   profile?.premium_plus === true ||
   profile?.plan === "premium" ||
   profile?.plan === "premium_plus"
 
 const isPremiumPlus =
+  isAdmin ||
   profile?.premium_plus === true ||
   profile?.plan === "premium_plus"
 

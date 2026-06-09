@@ -126,6 +126,14 @@ function getQuestionIntent(question = "") {
 
   const intents = []
 
+  if (q.includes("credit") || q.includes("crédit") || q.includes("pret") || q.includes("prêt") || q.includes("emprunt") || q.includes("microcredit") || q.includes("microcrédit") || q.includes("financement")) {
+    intents.push("credit", "microcredit", "social", "budget")
+  }
+
+  if (q.includes("dette") || q.includes("surendettement") || q.includes("decouvert") || q.includes("découvert") || q.includes("banque de france") || q.includes("interdit bancaire") || q.includes("fichage") || q.includes("fiche banque") || q.includes("fiché banque")) {
+    intents.push("dette", "surendettement", "budget", "social")
+  }
+
   if (q.includes("vacance") || q.includes("loisir") || q.includes("sortie") || q.includes("centre aere") || q.includes("centre aéré") || q.includes("colo") || q.includes("vacaf") || q.includes("pass colo")) {
     intents.push("vacances", "loisirs", "jeunesse", "famille", "commune", "sport", "culture")
   }
@@ -134,33 +142,41 @@ function getQuestionIntent(question = "") {
     intents.push("alimentaire", "cantine", "famille", "commune", "social")
   }
 
-  if (q.includes("loyer") || q.includes("logement") || q.includes("apl") || q.includes("maison") || q.includes("kaz") || q.includes("location")) {
-    intents.push("logement", "apl", "loyer")
+  if (q.includes("loyer") || q.includes("logement") || q.includes("apl") || q.includes("maison") || q.includes("kaz") || q.includes("location") || q.includes("fsl")) {
+    intents.push("logement", "apl", "loyer", "fsl")
   }
 
-  if (q.includes("energie") || q.includes("electricite") || q.includes("edf") || q.includes("eau") || q.includes("facture") || q.includes("courant") || q.includes("kouran")) {
+  if (q.includes("energie") || q.includes("énergie") || q.includes("electricite") || q.includes("électricité") || q.includes("edf") || q.includes("eau") || q.includes("facture") || q.includes("courant") || q.includes("kouran") || q.includes("coupure")) {
     intents.push("energie", "facture", "social")
   }
 
-  if (q.includes("enfant") || q.includes("marmay") || q.includes("ecole") || q.includes("scolaire") || q.includes("garde")) {
+  if (q.includes("enfant") || q.includes("marmay") || q.includes("ecole") || q.includes("école") || q.includes("scolaire") || q.includes("garde")) {
     intents.push("famille", "jeunesse", "transport", "scolaire")
   }
 
-  if (q.includes("travail") || q.includes("emploi") || q.includes("formation") || q.includes("chomage") || q.includes("chômage") || q.includes("france travail")) {
+  if (q.includes("travail") || q.includes("emploi") || q.includes("formation") || q.includes("chomage") || q.includes("chômage") || q.includes("france travail") || q.includes("mission locale") || q.includes("insertion")) {
     intents.push("emploi", "mobilite", "formation")
   }
 
-  if (q.includes("permis") || q.includes("voiture") || q.includes("transport") || q.includes("mobilite") || q.includes("mobilité") || q.includes("bus")) {
-    intents.push("mobilite", "transport")
+  if (q.includes("permis") || q.includes("voiture") || q.includes("vehicule") || q.includes("véhicule") || q.includes("transport") || q.includes("mobilite") || q.includes("mobilité") || q.includes("bus") || q.includes("car jaune") || q.includes("réparation voiture") || q.includes("panne voiture")) {
+    intents.push("mobilite", "transport", "permis", "voiture", "emploi", "microcredit")
   }
 
-  if (q.includes("etudiant") || q.includes("étudiant") || q.includes("etude") || q.includes("étude") || q.includes("bourse") || q.includes("universite") || q.includes("université")) {
+  if (q.includes("etudiant") || q.includes("étudiant") || q.includes("etude") || q.includes("étude") || q.includes("bourse") || q.includes("universite") || q.includes("université") || q.includes("crous")) {
     intents.push("etudiant")
+  }
+
+  if (q.includes("creation") || q.includes("création") || q.includes("entreprise") || q.includes("auto entrepreneur") || q.includes("micro entreprise") || q.includes("projet pro") || q.includes("artisan")) {
+    intents.push("creation_entreprise", "emploi", "formation", "microcredit")
+  }
+
+  if (q.includes("separation") || q.includes("séparation") || q.includes("divorce") || q.includes("conjoint") || q.includes("parent isolé") || q.includes("parent isole")) {
+    intents.push("separation", "famille", "logement", "social")
   }
 
   if (q.includes("handicap") || q.includes("mdph") || q.includes("aah") || q.includes("pch")) intents.push("handicap")
   if (q.includes("retraite") || q.includes("senior") || q.includes("gramoun") || q.includes("apa")) intents.push("senior")
-  if (q.includes("sante") || q.includes("santé") || q.includes("mutuelle") || q.includes("css") || q.includes("ameli")) intents.push("sante", "social")
+  if (q.includes("sante") || q.includes("santé") || q.includes("mutuelle") || q.includes("css") || q.includes("ameli") || q.includes("soin")) intents.push("sante", "social")
   if (q.includes("commune") || q.includes("mairie") || q.includes("ccas")) intents.push("commune", "social")
 
   return [...new Set(intents)]
@@ -168,17 +184,233 @@ function getQuestionIntent(question = "") {
 
 function getMainIntent(question = "") {
   const q = normalizeText(question)
-  if (q.includes("vacance") || q.includes("loisir") || q.includes("centre aere") || q.includes("centre aéré") || q.includes("colo") || q.includes("vacaf")) return "vacances"
+  if (!q.trim()) return "general"
+
+  if (q.includes("credit") || q.includes("crédit") || q.includes("pret") || q.includes("prêt") || q.includes("emprunt") || q.includes("microcredit") || q.includes("microcrédit") || q.includes("financement")) return "credit"
+  if (q.includes("dette") || q.includes("surendettement") || q.includes("decouvert") || q.includes("découvert") || q.includes("banque de france") || q.includes("interdit bancaire") || q.includes("fichage") || q.includes("fiché banque")) return "dette"
+  if (q.includes("permis") || q.includes("voiture") || q.includes("vehicule") || q.includes("véhicule") || q.includes("transport") || q.includes("bus") || q.includes("mobilite") || q.includes("mobilité") || q.includes("car jaune") || q.includes("réparation voiture") || q.includes("panne voiture")) return "transport"
+  if (q.includes("facture") || q.includes("edf") || q.includes("electricite") || q.includes("électricité") || q.includes("energie") || q.includes("énergie") || q.includes("eau") || q.includes("coupure")) return "facture"
+  if (q.includes("loyer") || q.includes("logement") || q.includes("apl") || q.includes("location") || q.includes("fsl")) return "logement"
   if (q.includes("cantine") || q.includes("repas") || q.includes("alimentaire")) return "cantine"
-  if (q.includes("loyer") || q.includes("logement") || q.includes("apl") || q.includes("location")) return "logement"
-  if (q.includes("facture") || q.includes("edf") || q.includes("electricite") || q.includes("energie") || q.includes("eau")) return "facture"
-  if (q.includes("transport") || q.includes("bus") || q.includes("mobilite") || q.includes("permis")) return "transport"
-  if (q.includes("emploi") || q.includes("travail") || q.includes("formation") || q.includes("chomage")) return "emploi"
-  if (q.includes("etudiant") || q.includes("bourse") || q.includes("universite")) return "etudiant"
+  if (q.includes("vacance") || q.includes("loisir") || q.includes("centre aere") || q.includes("centre aéré") || q.includes("colo") || q.includes("vacaf")) return "vacances"
+  if (q.includes("emploi") || q.includes("travail") || q.includes("formation") || q.includes("chomage") || q.includes("chômage") || q.includes("france travail") || q.includes("mission locale")) return "emploi"
+  if (q.includes("creation") || q.includes("création") || q.includes("entreprise") || q.includes("auto entrepreneur") || q.includes("micro entreprise")) return "creation_entreprise"
+  if (q.includes("separation") || q.includes("séparation") || q.includes("divorce") || q.includes("parent isolé") || q.includes("parent isole")) return "separation"
+  if (q.includes("etudiant") || q.includes("étudiant") || q.includes("bourse") || q.includes("universite") || q.includes("université") || q.includes("crous")) return "etudiant"
   if (q.includes("handicap") || q.includes("aah") || q.includes("pch") || q.includes("mdph")) return "handicap"
   if (q.includes("retraite") || q.includes("senior") || q.includes("apa") || q.includes("gramoun")) return "senior"
-  if (q.includes("sante") || q.includes("mutuelle") || q.includes("css") || q.includes("ameli")) return "sante"
+  if (q.includes("sante") || q.includes("santé") || q.includes("mutuelle") || q.includes("css") || q.includes("ameli") || q.includes("soin")) return "sante"
   return "general"
+}
+
+function hasFocusedQuestion(question = "") {
+  return getMainIntent(question) !== "general"
+}
+
+function getAideSearchText(aide = "") {
+  return normalizeText(
+    `${aide.nom || ""} ${aide.nom_kreol || ""} ${aide.aide_nom || ""} ${aide.categorie || ""} ${aide.category || ""} ${aide.type || ""} ${aide.tags || ""} ${aide.description || ""} ${aide.description_fr || ""} ${aide.description_kreol || ""} ${aide.demarches_fr || ""} ${aide.demarches_kreol || ""} ${aide.organisme || ""} ${aide.lien_officiel || ""}`
+  )
+}
+
+const INTENT_KEYWORDS = {
+  // V3.5 : mots vraiment discriminants.
+  // On évite les mots trop génériques comme "ccas", "social" ou "famille"
+  // dans les intentions fortes, sinon l'assistant remonte des aides hors sujet.
+  credit: [
+    "microcredit", "microcrédit", "credit", "crédit", "pret", "prêt",
+    "emprunt", "financement", "banque", "banque de france",
+    "point conseil budget", "pcb", "udaf", "adie"
+  ],
+  dette: [
+    "dette", "dettes", "impaye", "impayé", "impayes", "impayés",
+    "surendettement", "banque de france", "decouvert", "découvert",
+    "fichage", "interdit bancaire", "point conseil budget", "pcb"
+  ],
+  transport: [
+    "mobilite", "mobilité", "transport", "permis", "voiture",
+    "vehicule", "véhicule", "réparation", "reparation", "garage",
+    "bus", "car jaune", "france travail", "mission locale",
+    "aide permis", "aide mobilité", "insertion"
+  ],
+  facture: [
+    "facture", "edf", "energie", "énergie", "electricite", "électricité",
+    "eau", "cheque energie", "chèque énergie", "fournisseur",
+    "coupure", "echeancier", "échéancier"
+  ],
+  logement: [
+    "logement", "apl", "loyer", "fsl", "fonds solidarite logement",
+    "fonds solidarité logement", "bail", "caution", "depot de garantie",
+    "dépôt de garantie", "retard de loyer", "expulsion", "action logement"
+  ],
+  cantine: [
+    "cantine", "scolaire", "repas", "alimentaire", "service scolaire"
+  ],
+  vacances: [
+    "vacances", "vacaf", "loisirs", "sport", "culture", "pass sport",
+    "pass culture", "centre aere", "centre aéré", "colo", "colonie"
+  ],
+  emploi: [
+    "emploi", "travail", "formation", "france travail", "mission locale",
+    "insertion", "reprise d'emploi", "reprise emploi", "region", "région"
+  ],
+  creation_entreprise: [
+    "creation", "création", "entreprise", "auto entrepreneur",
+    "micro entreprise", "adie", "bpi", "initiative", "cci", "cma",
+    "microcredit professionnel", "microcrédit professionnel"
+  ],
+  separation: [
+    "separation", "séparation", "divorce", "parent isole", "parent isolé",
+    "pension", "asf", "violence", "familiale"
+  ],
+  etudiant: [
+    "etudiant", "étudiant", "bourse", "crous", "universite", "université",
+    "scolarite", "scolarité"
+  ],
+  handicap: [
+    "handicap", "mdph", "aah", "pch", "carte mobilité", "carte mobilite"
+  ],
+  senior: [
+    "retraite", "senior", "gramoun", "apa", "maintien domicile",
+    "caisse retraite"
+  ],
+  sante: [
+    "sante", "santé", "mutuelle", "css", "complémentaire santé solidaire",
+    "complementaire sante solidaire", "cpam", "ameli", "soin", "medical", "médical"
+  ],
+}
+
+const INTENT_PRIORITY_RULES = {
+  credit: [
+    { keywords: ["microcredit social", "microcrédit social"], priority: 130 },
+    { keywords: ["point conseil budget", "pcb"], priority: 125 },
+    { keywords: ["banque de france"], priority: 120 },
+    { keywords: ["dettes", "impayés", "impayes", "découvert", "decouvert"], priority: 110 },
+    { keywords: ["microcredit", "microcrédit", "credit", "crédit", "pret", "prêt", "financement"], priority: 105 },
+  ],
+  dette: [
+    { keywords: ["banque de france", "surendettement"], priority: 130 },
+    { keywords: ["point conseil budget", "pcb"], priority: 125 },
+    { keywords: ["dettes", "impayés", "impayes", "découvert", "decouvert"], priority: 120 },
+    { keywords: ["microcredit social", "microcrédit social"], priority: 90 },
+  ],
+  transport: [
+    { keywords: ["permis france travail", "aide permis", "permis"], priority: 130 },
+    { keywords: ["mobilite france travail", "mobilité france travail", "aide mobilité", "aide mobilite"], priority: 125 },
+    { keywords: ["réparation véhicule", "reparation vehicule", "réparation loto", "garage"], priority: 120 },
+    { keywords: ["achat véhicule", "achat vehicule", "voiture", "vehicule", "véhicule"], priority: 115 },
+    { keywords: ["mission locale"], priority: 110 },
+    { keywords: ["microcredit social", "microcrédit social"], priority: 100 },
+  ],
+  facture: [
+    { keywords: ["facture edf", "edf", "energie", "énergie", "chèque énergie", "cheque energie"], priority: 130 },
+    { keywords: ["echeancier", "échéancier", "fournisseur"], priority: 120 },
+    { keywords: ["facture eau", "eau"], priority: 115 },
+    { keywords: ["secours urgence", "ccas"], priority: 90 },
+  ],
+  logement: [
+    { keywords: ["fonds solidarite logement", "fonds solidarité logement", "fsl"], priority: 130 },
+    { keywords: ["retard de loyer", "loyer", "expulsion"], priority: 125 },
+    { keywords: ["depot de garantie", "dépôt de garantie", "caution"], priority: 120 },
+    { keywords: ["apl", "logement"], priority: 110 },
+  ],
+  cantine: [
+    { keywords: ["cantine"], priority: 130 },
+    { keywords: ["alimentaire", "repas"], priority: 110 },
+    { keywords: ["ccas"], priority: 90 },
+  ],
+  vacances: [
+    { keywords: ["vacances", "vacaf"], priority: 130 },
+    { keywords: ["loisirs", "sport", "culture", "centre aere", "centre aéré"], priority: 115 },
+  ],
+  emploi: [
+    { keywords: ["france travail"], priority: 130 },
+    { keywords: ["formation", "région", "region"], priority: 120 },
+    { keywords: ["mission locale"], priority: 115 },
+    { keywords: ["garde d’enfants reprise emploi", "garde d'enfants reprise emploi"], priority: 110 },
+  ],
+  creation_entreprise: [
+    { keywords: ["microcredit professionnel", "microcrédit professionnel", "adie"], priority: 130 },
+    { keywords: ["creation entreprise", "création entreprise"], priority: 125 },
+    { keywords: ["cci", "cma", "initiative"], priority: 110 },
+  ],
+  separation: [
+    { keywords: ["separation", "séparation", "violence"], priority: 130 },
+    { keywords: ["parent isole", "parent isolé", "asf"], priority: 120 },
+    { keywords: ["logement", "ccas"], priority: 90 },
+  ],
+  etudiant: [
+    { keywords: ["crous", "etudiant", "étudiant", "bourse"], priority: 130 },
+  ],
+  handicap: [
+    { keywords: ["mdph", "handicap", "aah", "pch"], priority: 130 },
+  ],
+  senior: [
+    { keywords: ["retraite", "apa", "maintien domicile"], priority: 130 },
+  ],
+  sante: [
+    { keywords: ["complementaire sante solidaire", "complémentaire santé solidaire", "css"], priority: 130 },
+    { keywords: ["cpam", "ameli", "mutuelle", "sante", "santé"], priority: 115 },
+  ],
+}
+
+function getIntentPriority(aide = {}, mainIntent = "general") {
+  if (!mainIntent || mainIntent === "general") return 0
+
+  const text = getAideSearchText(aide)
+  const rules = INTENT_PRIORITY_RULES[mainIntent] || []
+
+  for (const rule of rules) {
+    if (rule.keywords.some(keyword => text.includes(normalizeText(keyword)))) {
+      return rule.priority
+    }
+  }
+
+  return 0
+}
+
+function aideMatchesMainIntent(aide = {}, mainIntent = "general") {
+  if (!mainIntent || mainIntent === "general") return false
+  const keywords = INTENT_KEYWORDS[mainIntent] || []
+  if (keywords.length === 0) return false
+  const text = getAideSearchText(aide)
+  return keywords.some(keyword => text.includes(normalizeText(keyword)))
+}
+
+function getIntentBoost(aide = {}, mainIntent = "general") {
+  if (!mainIntent || mainIntent === "general") {
+    return { boost: 0, match: false, priority: 0, matchedKeywords: [] }
+  }
+
+  const text = getAideSearchText(aide)
+  const name = normalizeText(`${aide.nom || ""} ${aide.nom_kreol || ""} ${aide.aide_nom || ""}`)
+  const keywords = INTENT_KEYWORDS[mainIntent] || []
+  const matchedKeywords = keywords.filter(keyword => text.includes(normalizeText(keyword)))
+  const priority = getIntentPriority(aide, mainIntent)
+
+  // V3.5 : une aide peut être pertinente soit par mot-clé direct,
+  // soit par règle prioritaire explicite.
+  const match = matchedKeywords.length > 0 || priority > 0
+
+  if (!match) {
+    // Forte pénalité quand la question est précise.
+    // Exemple : "crédit" ne doit plus remonter "vacances CCAS" ou "APL".
+    return { boost: -70, match: false, priority: 0, matchedKeywords: [] }
+  }
+
+  let boost = 85
+
+  if (priority >= 130) boost += 45
+  else if (priority >= 120) boost += 35
+  else if (priority >= 110) boost += 25
+  else if (priority >= 100) boost += 15
+
+  if (matchedKeywords.length >= 2) boost += 12
+  if (matchedKeywords.length >= 4) boost += 8
+
+  if (keywords.some(keyword => name.includes(normalizeText(keyword)))) boost += 20
+
+  return { boost, match: true, priority, matchedKeywords }
 }
 
 function formatAideAmount(aide, isKreol = false) {
@@ -220,6 +452,158 @@ function getAideDemarches(aide, isKreol = false) {
 
 function getOfficialLink(aide) {
   return aide.lien_officiel || aide.url || ""
+}
+
+
+function getActionContacts(aide = {}, profile = {}, isKreol = false) {
+  const text = getAideSearchText(aide)
+  const commune = profile?.commune
+  const mairie = commune ? `Mairie / CCAS de ${commune}` : "Mairie / CCAS de votre commune"
+
+  if (text.includes("microcredit") || text.includes("microcrédit") || text.includes("credit") || text.includes("crédit") || text.includes("pret") || text.includes("prêt")) {
+    return isKreol
+      ? [mairie, "Point Conseil Budget", "UDAF ou association partenaire", "Assistante sociale"]
+      : [mairie, "Point Conseil Budget", "UDAF ou association partenaire", "Assistante sociale"]
+  }
+
+  if (text.includes("banque de france") || text.includes("surendettement") || text.includes("dette") || text.includes("impaye") || text.includes("impayé")) {
+    return isKreol
+      ? ["Banque de France", "Point Conseil Budget", mairie, "Assistante sociale"]
+      : ["Banque de France", "Point Conseil Budget", mairie, "Assistante sociale"]
+  }
+
+  if (text.includes("france travail") || text.includes("permis") || text.includes("mobilite") || text.includes("mobilité") || text.includes("vehicule") || text.includes("véhicule") || text.includes("voiture")) {
+    return isKreol
+      ? ["Conseiller France Travail", "Mission Locale si jeune", mairie, "Microcrédit social si besoin de financement"]
+      : ["Conseiller France Travail", "Mission Locale si jeune", mairie, "Microcrédit social si besoin de financement"]
+  }
+
+  if (text.includes("logement") || text.includes("loyer") || text.includes("fsl") || text.includes("apl") || text.includes("caution")) {
+    return isKreol
+      ? ["CAF", mairie, "Bailleur", "Assistante sociale / Département"]
+      : ["CAF", mairie, "Bailleur", "Assistante sociale / Département"]
+  }
+
+  if (text.includes("energie") || text.includes("énergie") || text.includes("edf") || text.includes("eau") || text.includes("facture")) {
+    return isKreol
+      ? ["Fournisseur concerné", mairie, "CAF ou assistante sociale", "Site chèque énergie si concerné"]
+      : ["Fournisseur concerné", mairie, "CAF ou assistante sociale", "Site chèque énergie si concerné"]
+  }
+
+  if (text.includes("cantine") || text.includes("scolaire") || text.includes("enfant") || text.includes("vacances")) {
+    return isKreol
+      ? ["Service scolaire de la mairie", mairie, "CAF", "Association locale si besoin"]
+      : ["Service scolaire de la mairie", mairie, "CAF", "Association locale si besoin"]
+  }
+
+  if (text.includes("sante") || text.includes("santé") || text.includes("css") || text.includes("mutuelle") || text.includes("cpam") || text.includes("ameli")) {
+    return isKreol
+      ? ["CPAM / Ameli", "Assistante sociale", mairie]
+      : ["CPAM / Ameli", "Assistante sociale", mairie]
+  }
+
+  return isKreol
+    ? [mairie, "CAF ou organisme officiel", "Assistante sociale si besoin"]
+    : [mairie, "CAF ou organisme officiel", "Assistante sociale si besoin"]
+}
+
+function getImmediateActionSteps(aide = {}, profile = {}, isKreol = false) {
+  const text = getAideSearchText(aide)
+  const commune = profile?.commune
+
+  if (text.includes("microcredit") || text.includes("microcrédit")) {
+    return isKreol
+      ? [
+          commune ? `Contacte le CCAS ou la mairie de ${commune}.` : "Contacte out CCAS ou mairie.",
+          "Demande une orientation vers un microcrédit social.",
+          "Prépare un petit résumé : montant demandé, projet, revenus, charges.",
+          "Ajoute cette aide dans tes démarches pour suivre les relances.",
+        ]
+      : [
+          commune ? `Contactez le CCAS ou la mairie de ${commune}.` : "Contactez votre CCAS ou votre mairie.",
+          "Demandez une orientation vers un microcrédit social.",
+          "Préparez un résumé : montant demandé, projet, revenus, charges.",
+          "Ajoutez cette aide à vos démarches pour suivre les relances.",
+        ]
+  }
+
+  if (text.includes("france travail") || text.includes("permis") || text.includes("mobilite") || text.includes("mobilité")) {
+    return isKreol
+      ? [
+          "Contacte ton conseiller France Travail avant d'engager la dépense.",
+          "Prépare un devis ou justificatif : auto-école, transport, réparation, formation.",
+          "Explique pourquoi cette dépense aide ton retour à l'emploi.",
+          "Ajoute la démarche pour suivre date, documents et relances.",
+        ]
+      : [
+          "Contactez votre conseiller France Travail avant d'engager la dépense.",
+          "Préparez un devis ou justificatif : auto-école, transport, réparation, formation.",
+          "Expliquez pourquoi cette dépense facilite votre retour à l'emploi.",
+          "Ajoutez la démarche pour suivre la date, les documents et les relances.",
+        ]
+  }
+
+  if (text.includes("banque de france") || text.includes("surendettement") || text.includes("dette") || text.includes("impaye") || text.includes("impayé")) {
+    return isKreol
+      ? [
+          "Liste toutes tes dettes, retards, crédits et charges fixes.",
+          "Contacte un Point Conseil Budget ou une assistante sociale.",
+          "Si la situation est lourde, demande conseil à la Banque de France.",
+          "Évite de reprendre un crédit sans accompagnement.",
+        ]
+      : [
+          "Listez vos dettes, retards, crédits et charges fixes.",
+          "Contactez un Point Conseil Budget ou une assistante sociale.",
+          "Si la situation est lourde, demandez conseil à la Banque de France.",
+          "Évitez de reprendre un crédit sans accompagnement.",
+        ]
+  }
+
+  if (text.includes("logement") || text.includes("loyer") || text.includes("fsl") || text.includes("apl") || text.includes("caution")) {
+    return isKreol
+      ? [
+          "Vérifie CAF/APL puis FSL si retard ou difficulté logement.",
+          "Prépare bail, quittance, revenus, RIB et justificatif domicile.",
+          "Contacte bailleur, CAF, CCAS ou assistante sociale rapidement.",
+          "Ajoute la démarche pour suivre les documents manquants.",
+        ]
+      : [
+          "Vérifiez CAF/APL puis FSL en cas de retard ou difficulté logement.",
+          "Préparez bail, quittance, revenus, RIB et justificatif de domicile.",
+          "Contactez rapidement bailleur, CAF, CCAS ou assistante sociale.",
+          "Ajoutez la démarche pour suivre les documents manquants.",
+        ]
+  }
+
+  if (text.includes("energie") || text.includes("énergie") || text.includes("edf") || text.includes("eau") || text.includes("facture")) {
+    return isKreol
+      ? [
+          "Contacte le fournisseur avant coupure ou majoration.",
+          "Demande un échéancier si tu ne peux pas payer d'un coup.",
+          "Prépare facture, revenus, charges et justificatif domicile.",
+          "Contacte le CCAS si la facture met le foyer en difficulté.",
+        ]
+      : [
+          "Contactez le fournisseur avant coupure ou majoration.",
+          "Demandez un échéancier si vous ne pouvez pas payer en une fois.",
+          "Préparez facture, revenus, charges et justificatif de domicile.",
+          "Contactez le CCAS si la facture met le foyer en difficulté.",
+        ]
+  }
+
+  return isKreol
+    ? [
+        "Lis les conditions de l'aide sur le site officiel.",
+        "Prépare les documents indiqués ci-dessous.",
+        "Contacte l'organisme ou le CCAS si tu as un doute.",
+        "Ajoute la démarche pour suivre l'avancement.",
+      ]
+    : [
+        "Consultez les conditions de l'aide sur le site officiel.",
+        "Préparez les documents indiqués ci-dessous.",
+        "Contactez l'organisme ou le CCAS en cas de doute.",
+        "Ajoutez la démarche pour suivre l'avancement.",
+      ]
 }
 
 function getAideKey(aide = {}) {
@@ -438,14 +822,28 @@ function scoreAide(aide = {}, profile = {}, isKreol = false, question = "") {
   const reasons = []
   const missing = []
   const intents = getQuestionIntent(question)
+  const mainIntent = getMainIntent(question)
+  const intentMeta = getIntentBoost(aide, mainIntent)
+  const intentPriority = intentMeta.priority || getIntentPriority(aide, mainIntent)
 
-  const aideText = normalizeText(
-    `${aide.nom || ""} ${aide.nom_kreol || ""} ${aide.categorie || ""} ${aide.description || ""} ${aide.description_fr || ""} ${aide.description_kreol || ""} ${aide.demarches_fr || ""} ${aide.demarches_kreol || ""}`
-  )
+  const aideText = getAideSearchText(aide)
 
   const enfants = Number(profile.nombre_enfants || 0)
   const revenus = Number(profile.revenus_foyer || 0)
   const age = Number(profile.age || 0)
+
+  if (hasFocusedQuestion(question)) {
+    score += intentMeta.boost
+
+    if (intentMeta.match) {
+      addReason(
+        reasons,
+        "Cette piste correspond au sujet précis de votre question.",
+        "Sa piste-la i korespond ek sujet précis out kestion.",
+        isKreol
+      )
+    }
+  }
 
   if (intents.length > 0) {
     const matchedIntents = intents.filter(intent => aideText.includes(intent))
@@ -557,14 +955,52 @@ function scoreAide(aide = {}, profile = {}, isKreol = false, question = "") {
     addReason(reasons, "Cette aide peut être intéressante, mais elle nécessite une vérification.", "Sa zéd-la i pé intérésan, mé fo vérifi.", isKreol)
   }
 
-  return { ...aide, score, excluded: false, level: getLevel(score, isKreol), reasons, missing }
+  return {
+    ...aide,
+    score,
+    excluded: false,
+    level: getLevel(score, isKreol),
+    reasons,
+    missing,
+    intentMatch: intentMeta.match,
+    intentPriority,
+    mainIntent,
+  }
 }
 
 function getRecommendedAides(aides = [], profile = {}, isKreol = false, question = "") {
-  return aides
+  const mainIntent = getMainIntent(question)
+  const focusedQuestion = hasFocusedQuestion(question)
+
+  const scored = aides
     .map(aide => scoreAide(aide, profile, isKreol, question))
-    .filter(aide => !aide.excluded && aide.score >= 35)
-    .sort((a, b) => b.score - a.score)
+    .filter(aide => !aide.excluded)
+    .sort((a, b) => {
+      const priorityDiff = (b.intentPriority || 0) - (a.intentPriority || 0)
+      if (priorityDiff !== 0) return priorityDiff
+      return b.score - a.score
+    })
+
+  if (focusedQuestion) {
+    const focusedAides = scored
+      .filter(aide => aide.intentMatch && aide.score >= 25)
+      .sort((a, b) => {
+        const priorityDiff = (b.intentPriority || 0) - (a.intentPriority || 0)
+        if (priorityDiff !== 0) return priorityDiff
+        return b.score - a.score
+      })
+
+    if (focusedAides.length > 0) return focusedAides.slice(0, 7)
+
+    // Pour les demandes comme crédit, dette ou permis, mieux vaut ne rien afficher
+    // plutôt que de remonter APL/ARS/CMG qui ne répondent pas à la question.
+    if (["credit", "dette", "transport", "creation_entreprise"].includes(mainIntent)) {
+      return []
+    }
+  }
+
+  return scored
+    .filter(aide => aide.score >= 35)
     .slice(0, 7)
 }
 
@@ -625,41 +1061,348 @@ function getSmartAlerts(recommendedAides = [], trackedDemarches = {}, isKreol = 
   return alerts.slice(0, 2)
 }
 
+function getProfileSignals(profile = {}, isKreol = false) {
+  const signals = []
+  const children = Number(profile.nombre_enfants || 0)
+
+  if (profile.commune) signals.push(isKreol ? `komin ${profile.commune}` : `commune de ${profile.commune}`)
+  if (children > 0) signals.push(isKreol ? `${children} marmay` : `${children} enfant(s)`)
+  if (profile.situation_familiale === "parent_isole") signals.push(isKreol ? "parent tousèl" : "parent isolé")
+  if (profile.logement === "locataire") signals.push(isKreol ? "lokatèr" : "locataire")
+  if (profile.logement === "proprietaire") signals.push(isKreol ? "propriyétèr" : "propriétaire")
+  if (profile.situation_professionnelle === "demandeur_emploi") signals.push(isKreol ? "domandèr d'emploi" : "demandeur d’emploi")
+  if (profile.situation_professionnelle === "etudiant" || isTrue(profile.etudiant)) signals.push(isKreol ? "étidyan" : "étudiant")
+  if (isTrue(profile.handicap)) signals.push(isKreol ? "sitiasyon handicap" : "situation de handicap")
+  if (isTrue(profile.allocataire_caf)) signals.push(isKreol ? "allocatèr CAF" : "allocataire CAF")
+  if (profile.revenus_foyer) signals.push(isKreol ? `revenu déclaré : ${profile.revenus_foyer} €/mwa` : `revenus déclarés : ${profile.revenus_foyer} €/mois`)
+
+  return signals
+}
+
+function getIntentAdvice(mainIntent, profile = {}, isKreol = false) {
+  const commune = profile.commune
+  const hasChildren = Number(profile.nombre_enfants || 0) > 0
+  const isParentIsole = profile.situation_familiale === "parent_isole"
+
+  const commonFr = [
+    "Vérifiez toujours les conditions exactes sur le site officiel.",
+    commune ? `Contactez aussi la mairie ou le CCAS de ${commune}, car certaines aides sont communales.` : "Complétez votre commune dans le profil pour mieux cibler les aides CCAS.",
+    "Gardez vos justificatifs à portée de main : identité, domicile, revenus, RIB et situation familiale.",
+  ]
+
+  const commonKr = [
+    "Vérifie toultan bann kondisyon su site officiel.",
+    commune ? `Pran kontak osi ek mairie ou CCAS ${commune}, akoz na bann zéd i dépend la komin.` : "Complète out komin dann profil pou mieux trouvé bann zéd CCAS.",
+    "Prépare bann papye : pièce identité, justificatif domicile, revenus, RIB, livret famille si ou na marmay.",
+  ]
+
+  const map = {
+    credit: {
+      fr: [
+        "Je ne peux pas confirmer qu’une banque acceptera un crédit classique : cela dépend des revenus réguliers, des charges, des crédits en cours et de la situation bancaire.",
+        "Pour une dépense utile ou indispensable, vérifiez surtout le microcrédit social : il est accompagné par un organisme social et peut parfois financer permis, véhicule, formation, équipement ou urgence.",
+        commune ? `Priorité : prenez contact avec le CCAS ou la mairie de ${commune}, puis demandez une orientation vers un microcrédit social ou un Point Conseil Budget.` : "Priorité : renseignez votre commune puis contactez votre CCAS ou mairie pour une orientation microcrédit social.",
+        "Questions à préciser : montant souhaité, projet exact, revenus actuels, crédits déjà en cours et éventuels retards de paiement.",
+      ],
+      kr: [
+        "Mi pé pa confirmé si banque va accepté crédit classique : sa dépend revenus réguliers, charges, crédits en cours ek situation bancaire.",
+        "Pou in dépense utile ou indispensable, vérifie surtout microcrédit social : lé accompagné par organisme social é i pé financer permis, voiture, formation, équipement ou urgence.",
+        commune ? `Priorité : contacte CCAS ou mairie ${commune}, puis demande orientation vers microcrédit social ou Point Conseil Budget.` : "Priorité : renseigne out komin puis contacte CCAS ou mairie pou orientation microcrédit social.",
+        "Questions à préciser : montant ou veut, projet exact, revenus actuels, crédits déjà en cours ek retards paiement si na.",
+      ],
+    },
+    dette: {
+      fr: [
+        "S’il y a des dettes, retards ou découverts, la priorité n’est pas de reprendre un crédit trop vite : il faut d’abord sécuriser le budget.",
+        "Pistes prioritaires : Point Conseil Budget, assistante sociale, CCAS, Banque de France si la situation devient lourde ou répétée.",
+        "Si vous avez plusieurs crédits ou retards, demandez un accompagnement avant de signer un nouveau prêt.",
+        commune ? `Le CCAS de ${commune} peut vous orienter vers le bon interlocuteur.` : "Renseignez votre commune pour cibler le CCAS compétent.",
+      ],
+      kr: [
+        "Si ou na dettes, retards ou découvert, priorité lé pa reprendre crédit trop vite : fo sécurise budget dabor.",
+        "Pistes prioritaires : Point Conseil Budget, assistante sociale, CCAS, Banque de France si situation lé lourde ou répétée.",
+        "Si ou na plusieurs crédits ou retards, demande accompagnement avan signe nouveau prêt.",
+        commune ? `CCAS ${commune} i pé oriente aou vers bon interlocuteur.` : "Renseigne out komin pou cible CCAS compétent.",
+      ],
+    },
+    creation_entreprise: {
+      fr: [
+        "Pour une création d’entreprise, regardez les aides à l’accompagnement avant de chercher seulement un financement.",
+        "Pistes : ADIE, Initiative Réunion, BPI/France Travail selon profil, Région Réunion, Chambre de Métiers ou CCI selon l’activité.",
+        "Le microcrédit professionnel peut être plus adapté qu’un crédit bancaire classique au démarrage.",
+        "Préparez : activité prévue, budget de départ, devis, statut envisagé et besoin exact de financement.",
+      ],
+      kr: [
+        "Pou création entreprise, regarde accompagnement avan cherche seulement financement.",
+        "Pistes : ADIE, Initiative Réunion, BPI/France Travail selon profil, Région Réunion, Chambre de Métiers ou CCI selon activité.",
+        "Microcrédit professionnel i pé être pli adapté qu’un crédit bancaire classique au démarrage.",
+        "Prépare : activité prévue, budget départ, devis, statut envisagé ek besoin exact financement.",
+      ],
+    },
+    separation: {
+      fr: [
+        "En cas de séparation, il faut vérifier rapidement les droits CAF, le logement, les aides pour parent isolé et l’accompagnement social.",
+        "Pistes : CAF, ASF si pension alimentaire absente ou impayée, APL, CCAS, assistante sociale, médiation familiale si besoin.",
+        "Mettez à jour votre situation familiale dès que possible auprès des organismes concernés.",
+        commune ? `Le CCAS de ${commune} peut vous orienter localement.` : "Renseignez votre commune pour cibler l’aide locale.",
+      ],
+      kr: [
+        "Si séparation, fo vérifié vite droits CAF, logement, aides parent tousèl ek accompagnement social.",
+        "Pistes : CAF, ASF si pension alimentaire lé absente ou impayée, APL, CCAS, assistante sociale, médiation familiale si besoin.",
+        "Mets à jour out sitiasyon famiyal vitman auprès organismes concernés.",
+        commune ? `CCAS ${commune} i pé oriente aou localement.` : "Renseigne out komin pou cible aide locale.",
+      ],
+    },
+    vacances: {
+      fr: [
+        hasChildren ? "Regardez d’abord les aides CAF liées aux vacances/enfants, puis les dispositifs loisirs, sport et culture." : "Regardez les aides loisirs, vacances, sport et culture selon votre situation.",
+        "Pistes utiles : CAF/VACAF si disponible, mairie, CCAS, associations locales, Pass Sport ou Pass Culture selon l’âge.",
+        isParentIsole ? "Votre situation de parent isolé peut renforcer certaines demandes sociales." : "",
+      ],
+      kr: [
+        hasChildren ? "Regarde dabor bann zéd CAF pou vakans/marmay, apré loisirs, sport ek culture." : "Regarde bann zéd loisirs, vakans, sport ek culture selon out sitiasyon.",
+        "Pistes utiles : CAF/VACAF si disponible, mairie, CCAS, associations, Pass Sport ou Pass Culture selon laz.",
+        isParentIsole ? "Out sitiasyon parent tousèl i pé renforcé certaines demandes sociales." : "",
+      ],
+    },
+    cantine: {
+      fr: [
+        "La cantine dépend souvent de la mairie : quotient familial, revenus et composition du foyer.",
+        commune ? `Priorité : contactez le service scolaire/mairie de ${commune}, puis le CCAS si la facture est difficile à payer.` : "Priorité : renseignez votre commune, puis contactez le service scolaire de la mairie.",
+        "Demandez aussi s’il existe une aide alimentaire ou un secours ponctuel.",
+      ],
+      kr: [
+        "Cantine i dépend souvent mairie : quotient familial, revenus ek composition la kaz.",
+        commune ? `Priorité : contacte service scolaire/mairie ${commune}, apré CCAS si facture lé difficile.` : "Priorité : renseigne out komin, apré contacte service scolaire la mairie.",
+        "Demande osi si na aide alimentaire ou secours ponctuel.",
+      ],
+    },
+    logement: {
+      fr: [
+        "Priorité : APL/CAF si vous êtes locataire, puis FSL, CCAS et parfois Action Logement.",
+        "Si vous avez un retard de loyer, n’attendez pas : contactez rapidement CAF, bailleur, assistante sociale ou CCAS.",
+        "Documents fréquents : bail, quittance, avis d’imposition, revenus, RIB, justificatif de domicile.",
+      ],
+      kr: [
+        "Priorité : APL/CAF si ou lé lokatèr, apré FSL, CCAS, parfois Action Logement.",
+        "Si ou na retard loyé, atend pa : contacte CAF, bailleur, assistante sociale ou CCAS vitman.",
+        "Papye souvent demandé : bail, quittance, avis impôt, revenus, RIB, justificatif domicile.",
+      ],
+    },
+    facture: {
+      fr: [
+        "Pour une facture, les pistes principales sont : chèque énergie, fournisseur, CCAS, CAF ou assistante sociale.",
+        "En cas d’urgence, contactez le fournisseur avant coupure et demandez un échéancier.",
+        "Un microcrédit social peut parfois aider pour une dépense indispensable, mais il faut se renseigner auprès d’un CCAS, d’une association partenaire ou d’un point conseil budget.",
+      ],
+      kr: [
+        "Pou in facture, regarde : chèque énergie, fournisseur, CCAS, CAF ou assistante sociale.",
+        "Si lé urgent, contacte fournisseur avan coupure é demande in échéancier.",
+        "Microcrédit social i pé parfois aide pou dépense indispensable, mé fo renseigné auprès CCAS, association partenaire ou point conseil budget.",
+      ],
+    },
+    transport: {
+      fr: [
+        "Regardez les aides mobilité : Région, Département, France Travail, commune ou dispositifs jeunes selon votre profil.",
+        "Pour le permis ou un véhicule nécessaire au travail, renseignez-vous auprès de France Travail, mission locale, CCAS, microcrédit social ou associations d’insertion.",
+        "Si vous avez un entretien, une formation ou une reprise d’emploi, notez-le : cela peut appuyer la demande.",
+      ],
+      kr: [
+        "Regarde bann zéd mobilité : Région, Département, France Travail, komin, dispositifs jeunes selon out profil.",
+        "Pou permis ou véhicule nécessaire pou travay, renseigne auprès France Travail, mission locale, CCAS, microcrédit social ou associations insertion.",
+        "Si ou na entretien, formation ou reprise travail, note ali : sa i pé appuyer demande.",
+      ],
+    },
+    emploi: {
+      fr: [
+        "Pistes prioritaires : France Travail, Mission Locale si jeune, Région Réunion pour formation/mobilité, aides à la reprise d’emploi.",
+        "Demandez aussi les aides transport, garde d’enfant ou équipement si elles bloquent votre retour à l’emploi.",
+        "Préparez une explication simple : votre objectif, le coût à financer, et en quoi cela facilite le retour au travail.",
+      ],
+      kr: [
+        "Pistes prioritaires : France Travail, Mission Locale si jeune, Région Réunion pou formation/mobilité, aides reprise emploi.",
+        "Demande osi aides transport, garde marmay ou équipement si sa i bloque out retour travail.",
+        "Prépare in explication simple : out objectif, le coût, é comment sa i aide aou retrouv travail.",
+      ],
+    },
+    etudiant: {
+      fr: [
+        "Pistes : CROUS, bourses, aides logement, aides transport, mutuelle/CSS, aides numériques ou communales.",
+        "Si la difficulté est urgente, contactez le service social étudiant.",
+        "Préparez certificat de scolarité, revenus, avis d’imposition et RIB.",
+      ],
+      kr: [
+        "Pistes : CROUS, bourses, logement, transport, mutuelle/CSS, aides numérique ou communales.",
+        "Si lé urgent, contacte service social étudiant.",
+        "Prépare certificat scolarité, revenus, avis impôt ek RIB.",
+      ],
+    },
+    handicap: {
+      fr: [
+        "Pistes : MDPH, AAH, PCH, aides transport, logement adapté, complémentaire santé.",
+        "Le dossier peut être long : gardez une trace des dates, courriers et pièces envoyées.",
+        "Demandez de l’aide à une assistante sociale si le dossier est complexe.",
+      ],
+      kr: [
+        "Pistes : MDPH, AAH, PCH, transport, logement adapté, complémentaire santé.",
+        "Dossier i pé pran tan : garde trace dates, courriers ek papye envoyés.",
+        "Demande aide assistante sociale si dossier lé compliqué.",
+      ],
+    },
+    senior: {
+      fr: [
+        "Pistes : APA, caisse de retraite, CCAS, aides maintien à domicile, mutuelle/CSS, adaptation du logement.",
+        "Contactez le CCAS ou le Département pour être orienté.",
+        "Notez les besoins concrets : aide à domicile, transport, repas, logement, santé.",
+      ],
+      kr: [
+        "Pistes : APA, caisse retraite, CCAS, maintien domicile, mutuelle/CSS, adaptation logement.",
+        "Contacte CCAS ou Département pou être orienté.",
+        "Note besoins concrets : aide domicile, transport, repas, logement, santé.",
+      ],
+    },
+    sante: {
+      fr: [
+        "Pistes : Complémentaire santé solidaire, CPAM/Ameli, mutuelle, CCAS, associations selon la situation.",
+        "Si vous renoncez à des soins faute d’argent, contactez une assistante sociale rapidement.",
+        "Préparez attestation de droits, revenus, avis d’imposition et justificatifs médicaux si nécessaires.",
+      ],
+      kr: [
+        "Pistes : Complémentaire santé solidaire, CPAM/Ameli, mutuelle, CCAS, associations selon sitiasyon.",
+        "Si ou renonce soins akoz larzan, contacte assistante sociale vitman.",
+        "Prépare attestation droits, revenus, avis impôt ek justificatifs médicaux si besoin.",
+      ],
+    },
+    general: {
+      fr: [
+        "Commencez par vérifier les aides les plus probables affichées ci-dessous.",
+        "Si vous êtes bloqué financièrement, pensez aussi au CCAS, à une assistante sociale, au microcrédit social ou à un point conseil budget.",
+        "Ajoutez les aides intéressantes dans vos démarches pour suivre les dates, documents et relances.",
+      ],
+      kr: [
+        "Commence par vérifié bann zéd pli probab affichées anba.",
+        "Si ou lé bloqué financièrement, pense osi CCAS, assistante sociale, microcrédit social ou point conseil budget.",
+        "Azout bann zéd intéressantes dann démarches pou suivre dates, papye ek relances.",
+      ],
+    },
+  }
+
+  const selected = map[mainIntent] || map.general
+  const specific = (isKreol ? selected.kr : selected.fr).filter(Boolean)
+  return [...specific, ...(isKreol ? commonKr : commonFr)]
+}
+
+function buildNextActions(recommendedAides = [], profile = {}, isKreol = false) {
+  const top = recommendedAides.slice(0, 3)
+  if (top.length === 0) {
+    return isKreol
+      ? [
+          "Complète out profil : komin, revenus, logement, situation famiyal.",
+          "Pose une question précise : facture, logement, cantine, transport, santé...",
+          "Vérifie auprès CCAS ou mairie si ou na urgence sociale.",
+        ]
+      : [
+          "Complétez votre profil : commune, revenus, logement, situation familiale.",
+          "Posez une question précise : facture, logement, cantine, transport, santé...",
+          "Vérifiez auprès du CCAS ou de la mairie si vous avez une urgence sociale.",
+        ]
+  }
+
+  const actions = top.map((aide, index) => {
+    const name = getAideName(aide, isKreol)
+    const amount = formatAideAmount(aide, isKreol)
+    const level = getLevel(aide.score, isKreol)
+
+    return isKreol
+      ? `${index + 1}. ${level.emoji} ${name} — ${level.label} (${amount}). Vérifie kondisyon, prépare papye, puis azout dann démarches si sa lé pertinent.`
+      : `${index + 1}. ${level.emoji} ${name} — ${level.label} (${amount}). Vérifiez les conditions, préparez les documents, puis ajoutez-la à vos démarches si c’est pertinent.`
+  })
+
+  return actions
+}
+
 function buildSmartAnswer(responseData, isKreol = false, recommendedAides = []) {
   if (!responseData?.profile) return ""
 
   const profile = responseData.profile
   const question = responseData.question || ""
   const mainIntent = getMainIntent(question)
-  const children = Number(profile.nombre_enfants || 0)
-  const commune = profile.commune
+  const signals = getProfileSignals(profile, isKreol)
+  const topAides = recommendedAides.slice(0, 3)
+  const advice = getIntentAdvice(mainIntent, profile, isKreol).slice(0, 5)
+  const nextActions = buildNextActions(recommendedAides, profile, isKreol)
 
   if (!question.trim()) {
     return isKreol
-      ? "Bonzour 👋 Mi analiz out profil. Mi rode bann zéd ki pé korespond ek out sitiasyon, mi klase azot pou ou, é ou pé azouté bann zéd dann out démarches."
-      : "Bonjour 👋 J’ai analysé votre profil. Je recherche les aides qui peuvent correspondre à votre situation, je les classe par priorité, puis vous pouvez les ajouter à vos démarches."
+      ? [
+          "Bonzour 👋 Mi analiz out profil pou rode bann zéd ki pé korespond ek out sitiasyon.",
+          "",
+          signals.length > 0 ? `📌 Mi pran en compte : ${signals.join(", ")}.` : "📌 Out profil lé encore incomplet : plus ou complète, plus l’analyse lé précise.",
+          "",
+          "🎯 Mi classe bann zéd par priorité, mi montre poukossa zot lé pertinentes, é ou pé azouté zot dann out démarches pou suivre dossier, documents, dates limites ek relances.",
+          "",
+          "👉 Pose une question précise, par exemple : “Mi na une facture EDF difficile”, “Mi cherche aide cantine”, “Mi veux aide vacances marmay”, ou clique sur Scanner mon profil.",
+        ].join("\n")
+      : [
+          "Bonjour 👋 J’analyse votre profil pour repérer les aides qui peuvent correspondre à votre situation.",
+          "",
+          signals.length > 0 ? `📌 Je prends en compte : ${signals.join(", ")}.` : "📌 Votre profil est encore incomplet : plus il est complet, plus l’analyse sera précise.",
+          "",
+          "🎯 Je classe les aides par priorité, j’explique pourquoi elles peuvent vous concerner, puis vous pouvez les ajouter à vos démarches pour suivre le dossier, les documents, les dates limites et les relances.",
+          "",
+          "👉 Posez une question précise, par exemple : “J’ai une facture EDF difficile”, “Je cherche une aide cantine”, “Je veux une aide vacances enfants”, ou cliquez sur Scanner mon profil.",
+        ].join("\n")
   }
 
-  if (mainIntent === "vacances") {
-    return isKreol
-      ? `Bonzour 👋 Mi konpran out demande : ou rod bann zéd pou vakans ou loisirs${children > 0 ? ` pou out ${children} marmay` : ""}. Fo vérifié VACAF/CAF, zéd loisirs, Pass Sport/Pass Culture, é CCAS${commune ? ` ${commune}` : ""}.`
-      : `Bonjour 👋 Je comprends votre demande : vous cherchez des aides pour les vacances ou les loisirs${children > 0 ? ` de vos ${children} enfants` : ""}. Il faut vérifier VACAF/CAF, les aides loisirs, Pass Sport/Pass Culture et le CCAS${commune ? ` de ${commune}` : ""}.`
-  }
+  const intro = isKreol
+    ? [
+        "Bonzour 👋 Mi konpran out demande.",
+        signals.length > 0 ? `📌 Mi tien compte de : ${signals.join(", ")}.` : "📌 Mi mank encore quelques infos dann out profil, mé mi peux déjà orient aou.",
+      ]
+    : [
+        "Bonjour 👋 Je comprends votre demande.",
+        signals.length > 0 ? `📌 Je tiens compte de : ${signals.join(", ")}.` : "📌 Il manque encore quelques informations dans votre profil, mais je peux déjà vous orienter.",
+      ]
 
-  if (mainIntent === "cantine") return isKreol ? "Bonzour 👋 Mi konpran : ou rod in zéd pou cantine ou repas marmay. Fo regard mairie, CCAS, zéd alimentaire, é dispositifs famille/scolaire." : "Bonjour 👋 Je comprends : vous cherchez une aide pour la cantine ou les repas des enfants. Les pistes à vérifier sont la mairie, le CCAS, les aides alimentaires et les dispositifs famille/scolaire."
-  if (mainIntent === "logement") return isKreol ? "Bonzour 👋 Mi konpran : out demande konsern logement ou loyer. Fo vérifié APL/CAF, FSL, CCAS, é parfois Action Logement." : "Bonjour 👋 Je comprends : votre demande concerne le logement ou le loyer. Les pistes principales sont l’APL/CAF, le FSL, le CCAS et parfois Action Logement."
-  if (mainIntent === "facture") return isKreol ? "Bonzour 👋 Mi konpran : ou rod in zéd pou in facture. Fo vérifié chèque énergie, zéd eau, CCAS, CAF ou service social." : "Bonjour 👋 Je comprends : vous cherchez une aide pour une facture. Il faut vérifier le chèque énergie, les aides eau, le CCAS, la CAF ou un service social."
+  const topSection =
+    topAides.length > 0
+      ? [
+          "",
+          isKreol ? "🎯 Pistes les plus pertinentes à vérifier :" : "🎯 Pistes les plus pertinentes à vérifier :",
+          ...topAides.map((aide, index) => {
+            const level = getLevel(aide.score, isKreol)
+            const amount = formatAideAmount(aide, isKreol)
+            const reasons = (aide.reasons || []).slice(0, 2).join(" ")
+            return isKreol
+              ? `${index + 1}. ${level.emoji} ${getAideName(aide, true)} — ${level.label}, ${amount}. ${reasons}`
+              : `${index + 1}. ${level.emoji} ${getAideName(aide, false)} — ${level.label}, ${amount}. ${reasons}`
+          }),
+        ]
+      : [
+          "",
+          isKreol ? "🎯 Mi trouve pas encore une aide très ciblée, mé voici les pistes à vérifier." : "🎯 Je ne vois pas encore d’aide très ciblée, mais voici les pistes à vérifier.",
+        ]
 
-  const topNames = recommendedAides.slice(0, 3).map(aide => getAideName(aide, isKreol)).filter(Boolean)
-  if (topNames.length > 0) {
-    return isKreol
-      ? `Bonzour 👋 Mi konpran out kestion. Bann pistes pli intéressantes pou vérifier lé : ${topNames.join(", ")}.`
-      : `Bonjour 👋 Je comprends votre question. Les pistes les plus intéressantes à vérifier sont : ${topNames.join(", ")}.`
-  }
+  const adviceSection = [
+    "",
+    isKreol ? "💡 Conseils concrets :" : "💡 Conseils concrets :",
+    ...advice.map(item => `• ${item}`),
+  ]
 
-  return isKreol
-    ? "Bonzour 👋 Mi konpran out kestion. Mi afish bann pistes à vérifier anba."
-    : "Bonjour 👋 Je comprends votre question. Je vous affiche les pistes à vérifier ci-dessous."
+  const actionsSection = [
+    "",
+    isKreol ? "✅ Prochaines actions recommandées :" : "✅ Prochaines actions recommandées :",
+    ...nextActions.slice(0, 4).map(item => `• ${item}`),
+  ]
+
+  const closing = [
+    "",
+    isKreol
+      ? "⚠️ Mi lé là pou orient aou, mé décision finale dépend toujours organisme officiel. Si urgence financière, contacte vite CCAS, CAF, assistante sociale ou mairie."
+      : "⚠️ Je vous oriente, mais la décision finale dépend toujours de l’organisme officiel. En cas d’urgence financière, contactez rapidement le CCAS, la CAF, une assistante sociale ou la mairie.",
+  ]
+
+  return [...intro, ...topSection, ...adviceSection, ...actionsSection, ...closing].join("\n")
 }
 
 export default function AssistantAides({ isPremium, isMobile, t, user }) {
@@ -1220,7 +1963,15 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
         />
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-          {[isKreol ? "Zéd pou vakans marmay" : "Aides vacances enfants", isKreol ? "Zéd cantine" : "Aide cantine", isKreol ? "Zéd facture EDF" : "Aide facture EDF", isKreol ? "Zéd logement" : "Aide logement"].map(example => (
+          {[
+            isKreol ? "Zéd pou vakans marmay" : "Aides vacances enfants",
+            isKreol ? "Zéd cantine" : "Aide cantine",
+            isKreol ? "Zéd facture EDF" : "Aide facture EDF",
+            isKreol ? "Zéd logement" : "Aide logement",
+            isKreol ? "Microcrédit social" : "Microcrédit social",
+            isKreol ? "Aide transport ou permis" : "Aide transport ou permis",
+            isKreol ? "Que dois-je faire maintenant ?" : "Que dois-je faire maintenant ?",
+          ].map(example => (
             <button key={example} type="button" onClick={() => setQuestion(example)} style={{ background: "rgba(35,211,214,.08)", border: "1px solid rgba(35,211,214,.25)", borderRadius: 999, padding: "7px 11px", color: COLORS.cyan, fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 800 }}>
               {example}
             </button>
@@ -1235,7 +1986,7 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
 
           <button type="button" onClick={handleScanProfile} disabled={loadingProfile} style={{ background: loadingProfile ? COLORS.muted : COLORS.cyan, color: "#0A1628", border: "none", borderRadius: 12, padding: "11px 16px", fontWeight: 900, cursor: loadingProfile ? "not-allowed" : "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 8 }}>
             <SearchCheck size={16} />
-            Scanner mon profil
+            {isKreol ? "Scanner mon profil" : "Scanner mon profil"}
           </button>
         </div>
 
@@ -1258,7 +2009,7 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
               </p>
             )}
 
-            <p style={{ margin: "0 0 12px" }}>
+            <p style={{ margin: "0 0 12px", whiteSpace: "pre-line", lineHeight: 1.65 }}>
               {buildSmartAnswer(responseData, isKreol, recommendedAides)}
             </p>
 
@@ -1526,6 +2277,21 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
                   const currentStatusKey = tracked?.status || "a_verifier"
                   const currentStatus = getStatusByKey(currentStatusKey)
                   const isSaving = savingDemarcheKey === aideKey
+                  const actionSteps = getImmediateActionSteps(aide, responseData?.profile || profile || {}, isKreol)
+                  const actionContacts = getActionContacts(aide, responseData?.profile || profile || {}, isKreol)
+                  const aideDocs = getDocumentsForAide(getAideName(aide, false), aideDocuments).slice(0, 5)
+                  const dossierPreview = [
+                    getAideName(aide, isKreol),
+                    "",
+                    isKreol ? "Actions conseillées :" : "Actions conseillées :",
+                    ...actionSteps.map(step => `- ${step}`),
+                    "",
+                    isKreol ? "Documents à préparer :" : "Documents à préparer :",
+                    ...aideDocs.map(doc => `- ${getDocumentDisplayName(doc, isKreol)}`),
+                    "",
+                    isKreol ? "Organismes à contacter :" : "Organismes à contacter :",
+                    ...actionContacts.map(contact => `- ${contact}`),
+                  ].join("\n")
 
                   return (
                     <article key={aideKey} style={{ background: "linear-gradient(135deg, rgba(255,255,255,.065), rgba(255,255,255,.025))", border: `1px solid ${level.color}55`, borderRadius: 18, padding: 16 }}>
@@ -1564,6 +2330,52 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
                         </div>
                       </div>
 
+                      <div style={{ marginTop: 12, background: "rgba(249,115,22,.07)", border: "1px solid rgba(249,115,22,.22)", borderRadius: 14, padding: 12 }}>
+                        <strong style={{ color: COLORS.accent }}>
+                          🚀 {isKreol ? "Action immédiate" : "Action immédiate"}
+                        </strong>
+                        <ol style={{ margin: "8px 0 0", paddingLeft: 18, color: COLORS.text, lineHeight: 1.6 }}>
+                          {actionSteps.map((step, index) => <li key={index}>{step}</li>)}
+                        </ol>
+                      </div>
+
+                      <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
+                        <div style={{ background: "rgba(167,139,250,.07)", border: "1px solid rgba(167,139,250,.20)", borderRadius: 14, padding: 12 }}>
+                          <strong style={{ color: COLORS.purple }}>🏢 {isKreol ? "Koté contacté ?" : "Organismes à contacter"}</strong>
+                          <ul style={{ margin: "8px 0 0", paddingLeft: 18, color: COLORS.text, lineHeight: 1.55 }}>
+                            {actionContacts.slice(0, 4).map((contact, index) => <li key={index}>{contact}</li>)}
+                          </ul>
+                        </div>
+
+                        <div style={{ background: "rgba(252,211,77,.07)", border: "1px solid rgba(252,211,77,.22)", borderRadius: 14, padding: 12 }}>
+                          <strong style={{ color: COLORS.yellow }}>📄 {isKreol ? "Dokiman pou préparé" : "Documents à préparer"}</strong>
+                          <ul style={{ margin: "8px 0 0", paddingLeft: 18, color: COLORS.text, lineHeight: 1.55 }}>
+                            {aideDocs.map((doc, index) => (
+                              <li key={index}>
+                                {getDocumentDisplayName(doc, isKreol)}{doc.obligatoire ? " *" : ""}
+                              </li>
+                            ))}
+                          </ul>
+                          <div style={{ marginTop: 8, color: COLORS.muted, fontSize: 12 }}>
+                            * {isKreol ? "souvent obligatoire" : "souvent obligatoire"}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div style={{ marginTop: 14, display: "flex", flexWrap: "wrap", gap: 10 }}>
+                        {officialLink && (
+                          <button type="button" onClick={() => openExternalLink(officialLink)} style={{ background: level.color, color: "#0A1628", border: "none", borderRadius: 12, padding: "10px 14px", fontWeight: 900, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 8 }}>
+                            <ExternalLink size={15} />
+                            {isKreol ? "🚀 Alé voir maintenant" : "🚀 Voir / commencer maintenant"}
+                          </button>
+                        )}
+
+                        <button type="button" onClick={() => window.alert(dossierPreview)} style={{ background: "rgba(255,255,255,.06)", color: COLORS.text, border: "1px solid rgba(255,255,255,.14)", borderRadius: 12, padding: "10px 14px", fontWeight: 900, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 8 }}>
+                          <FileText size={15} />
+                          {isKreol ? "📄 Prépare mon dossier" : "📄 Préparer mon dossier"}
+                        </button>
+                      </div>
+
                       <div style={{ marginTop: 14, background: tracked ? "rgba(255,255,255,.045)" : "rgba(35,211,214,.06)", border: tracked ? "1px solid rgba(255,255,255,.08)" : "1px solid rgba(35,211,214,.20)", borderRadius: 14, padding: 12 }}>
                         {!tracked ? (
                           <button type="button" onClick={() => addToDemarches(aide)} disabled={isSaving} style={{ background: isSaving ? COLORS.muted : COLORS.cyan, color: "#0A1628", border: "none", borderRadius: 12, padding: "10px 13px", fontWeight: 900, cursor: isSaving ? "not-allowed" : "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 8 }}>
@@ -1587,13 +2399,6 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
                           </>
                         )}
                       </div>
-
-                      {officialLink && (
-                        <button type="button" onClick={() => openExternalLink(officialLink)} style={{ marginTop: 14, background: level.color, color: "#0A1628", border: "none", borderRadius: 12, padding: "10px 14px", fontWeight: 900, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 8 }}>
-                          <ExternalLink size={15} />
-                          {isKreol ? "Ouvrir lyen ofisyèl" : "Ouvrir le lien officiel"}
-                        </button>
-                      )}
                     </article>
                   )
                 })}
