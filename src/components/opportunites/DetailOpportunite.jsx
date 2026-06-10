@@ -19,6 +19,23 @@ function normalize(value) {
   return String(value || "").toLowerCase()
 }
 
+function normalizeAideName(value) {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
+function getOpportunityDemarcheKey(item) {
+  return `opportunity:${item?.id || normalizeAideName(item?.title || item?.title_kr || "opportunite")}`
+}
+
+function getOpportunityDemarcheName(item) {
+  return item?.title || item?.title_kr || "Opportunité"
+}
+
 function getText(t, isKreol, section, key, fallback) {
   if (!isKreol) return fallback
   return t?.(section, key) || fallback
@@ -191,17 +208,80 @@ export default function DetailOpportunite({
         return
       }
 
-      const { error } = await supabase.from("aide_demarches").insert({
-        user_id: user.id,
-        opportunity_id: item.id,
-        title: item.title,
-        title_kr: item.title_kr,
-        status: "a_faire",
+      /*
+        IMPORTANT :
+        Les démarches affichées dans AssistantAides.jsx attendent surtout :
+        - aide_id
+        - aide_nom
+        - status avec les valeurs : a_verifier, dossier, envoye, attente, accepte, refuse
+
+        Avant, les opportunités ajoutaient :
+        - title
+        - status: "a_faire"
+
+        Résultat : la démarche apparaissait, mais elle n'était pas reconnue par le bloc
+        "Acceptée -> montant obtenu". On crée maintenant une démarche compatible.
+      */
+      const aideId = getOpportunityDemarcheKey(item)
+      const aideNom = getOpportunityDemarcheName(item)
+      const now = new Date().toISOString()
+
+      const { data: existingRows, error: existingError } = await supabase
+        .from("aide_demarches")
+        .select("*")
+        .eq("user_id", user.id)
+
+      if (existingError) {
+        console.error("Erreur vérification démarche existante:", existingError)
+      }
+
+      const existing = (existingRows || []).find(row => {
+        const sameOpportunity = item.id && String(row.opportunity_id || "") === String(item.id)
+        const sameAideId = String(row.aide_id || "") === String(aideId)
+        const sameName =
+          normalizeAideName(row.aide_nom || row.title || "") === normalizeAideName(aideNom)
+
+        return sameOpportunity || sameAideId || sameName
       })
 
-      if (error) {
-        console.error("Erreur ajout démarche:", error)
-        alert(`Erreur lors de l'ajout : ${error.message || "erreur inconnue"}`)
+      let result
+
+      if (existing?.id) {
+        result = await supabase
+          .from("aide_demarches")
+          .update({
+            opportunity_id: item.id,
+            aide_id: existing.aide_id || aideId,
+            aide_nom: existing.aide_nom || aideNom,
+            title: existing.title || item.title,
+            title_kr: existing.title_kr || item.title_kr,
+            status: existing.status && existing.status !== "a_faire" ? existing.status : "a_verifier",
+            updated_at: now,
+          })
+          .eq("id", existing.id)
+          .eq("user_id", user.id)
+          .select()
+          .single()
+      } else {
+        result = await supabase
+          .from("aide_demarches")
+          .insert({
+            user_id: user.id,
+            opportunity_id: item.id,
+            aide_id: aideId,
+            aide_nom: aideNom,
+            title: item.title,
+            title_kr: item.title_kr,
+            status: "a_verifier",
+            updated_at: now,
+          })
+          .select()
+          .single()
+      }
+
+      if (result.error) {
+        console.error("Erreur ajout démarche:", result.error)
+        alert(`Erreur lors de l'ajout : ${result.error.message || "erreur inconnue"}`)
         return
       }
 

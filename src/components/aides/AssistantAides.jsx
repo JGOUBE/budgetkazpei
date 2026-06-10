@@ -2,9 +2,11 @@ import { useEffect, useMemo, useState } from "react"
 import {
   Lock, Send, Sparkles, Star, SearchCheck, ExternalLink,
   MessageCircle, ClipboardCheck, TrendingUp, Bell, PlusCircle, Trash2,
-  FileText, CheckCircle2, DollarSign, CalendarDays,
+  FileText, CheckCircle2, DollarSign, CalendarDays, Clock, AlertTriangle,
 } from "lucide-react"
 import { supabase } from "../../services/supabase"
+
+// AssistantAides V3.9.7 - Version stable + gains cumulés affichés + remplacement recommandations après gain
 
 const COLORS = {
   card: "#0F1E38",
@@ -28,6 +30,25 @@ const STATUS_OPTIONS = [
   { key: "accepte", fr: "Acceptée", kreol: "Aksepté", emoji: "✅", color: "#22C55E" },
   { key: "refuse", fr: "Refusée", kreol: "Refizé", emoji: "❌", color: "#FB7185" },
 ]
+
+function normalizeStatusKey(value) {
+  const raw = normalizeText(value || "a_verifier").trim()
+
+  if (["a verifier", "a_verifier", "verifier", "pou verifie", "pou verifie"].includes(raw)) return "a_verifier"
+  if (["dossier", "dossier a preparer", "dosye pou prepare", "documents prets", "document pret", "documents prets", "dossier pret", "dossier complete", "dossier complet"].includes(raw)) return "dossier"
+  if (["envoye", "demande envoyee", "domann la parti", "dossier envoye"].includes(raw)) return "envoye"
+  if (["attente", "en attente", "an atant"].includes(raw)) return "attente"
+  if (["accepte", "acceptee", "accepté", "acceptée", "aksepte", "dossier accepte", "dossier acceptee", "dossier validé", "dossier valide"].includes(raw)) return "accepte"
+  if (["refuse", "refusee", "refusé", "refusée", "refize"].includes(raw)) return "refuse"
+
+  if (raw.includes("accept") || raw.includes("aksept")) return "accepte"
+  if (raw.includes("refus") || raw.includes("refiz")) return "refuse"
+  if (raw.includes("envoy") || raw.includes("parti")) return "envoye"
+  if (raw.includes("attent") || raw.includes("atant")) return "attente"
+  if (raw.includes("dossier") || raw.includes("dosye") || raw.includes("dokiman") || raw.includes("document")) return "dossier"
+
+  return raw || "a_verifier"
+}
 
 function safeT(t, section, key, fallback) {
   if (typeof t !== "function") return fallback
@@ -454,6 +475,147 @@ function getOfficialLink(aide) {
   return aide.lien_officiel || aide.url || ""
 }
 
+function escapeHtml(value = "") {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;")
+}
+
+function buildDossierPrintableHtml(dossier = {}, profile = {}, isKreol = false) {
+  const aideName = getAideName(dossier.aide || {}, isKreol)
+  const today = new Intl.DateTimeFormat("fr-FR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(new Date())
+
+  const documents = (dossier.aideDocs || [])
+    .map(doc => `<li><span class="box"></span>${escapeHtml(getDocumentDisplayName(doc, isKreol))}${doc.obligatoire ? " <strong>*</strong>" : ""}</li>`)
+    .join("")
+
+  const actions = (dossier.actionSteps || [])
+    .map(step => `<li>${escapeHtml(step)}</li>`)
+    .join("")
+
+  const contacts = (dossier.actionContacts || [])
+    .map(contact => `<li>${escapeHtml(contact)}</li>`)
+    .join("")
+
+  const profileLines = buildProfileSummary(profile || {}, isKreol)
+    .split("\n")
+    .filter(Boolean)
+    .map(line => `<li>${escapeHtml(line)}</li>`)
+    .join("")
+
+  const title = isKreol ? "Dosyé BudgetKazPei" : "Dossier BudgetKazPei"
+  const subtitle = isKreol ? "Préparasyon out démars" : "Préparation de votre démarche"
+  const docsTitle = isKreol ? "Bann dokiman pou préparé" : "Documents à préparer"
+  const actionsTitle = isKreol ? "Kosa fo fé astèr" : "Actions immédiates"
+  const contactsTitle = isKreol ? "Koté i fo kontakte ?" : "Organismes à contacter"
+  const profileTitle = isKreol ? "Profil analizé" : "Profil analysé"
+  const noteTitle = isKreol ? "Suiv out démars" : "Note de suivi"
+  const noteText = isKreol
+    ? "Garde in tras de sak lappel, rendez-vous, dokiman anvoyé é réponse reçue dann Mes démars. Sa évite oubli é aide aou relans o bon moman."
+    : "Gardez une trace de chaque appel, rendez-vous, document envoyé et réponse reçue dans Mes démarches. Cela évite les oublis et vous aide à relancer au bon moment."
+
+  return `<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <title>${escapeHtml(title)} - ${escapeHtml(aideName)}</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: Arial, sans-serif; margin: 0; padding: 28px; color: #0f172a; background: #f8fafc; }
+    .page { max-width: 820px; margin: 0 auto; background: white; border: 1px solid #e2e8f0; border-radius: 18px; padding: 28px; }
+    .brand { font-weight: 900; font-size: 24px; color: #0f766e; margin-bottom: 4px; }
+    .subtitle { color: #475569; margin-bottom: 24px; }
+    .badge { display: inline-block; padding: 6px 10px; border-radius: 999px; background: #dcfce7; color: #166534; font-weight: 800; font-size: 13px; }
+    h1 { margin: 14px 0 8px; font-size: 28px; }
+    h2 { margin: 22px 0 10px; font-size: 18px; color: #0f766e; }
+    ul, ol { margin: 8px 0 0; padding-left: 22px; line-height: 1.6; }
+    li { margin: 4px 0; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .boxcard { border: 1px solid #e2e8f0; border-radius: 14px; padding: 14px; background: #f8fafc; }
+    .box { display: inline-block; width: 13px; height: 13px; border: 1.5px solid #64748b; margin-right: 8px; vertical-align: -1px; }
+    .muted { color: #64748b; font-size: 12px; margin-top: 8px; }
+    .footer { margin-top: 24px; border-top: 1px solid #e2e8f0; padding-top: 14px; font-size: 12px; color: #64748b; }
+    @media print { body { background: white; padding: 0; } .page { border: none; border-radius: 0; } .no-print { display: none; } }
+    @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="brand">BudgetKazPei</div>
+    <div class="subtitle">${escapeHtml(subtitle)} · ${escapeHtml(today)}</div>
+    <span class="badge">${escapeHtml(dossier.level?.label || "")} ${escapeHtml(dossier.amount || "")}</span>
+    <h1>${escapeHtml(aideName)}</h1>
+
+    <div class="grid">
+      <div class="boxcard">
+        <h2>🚀 ${escapeHtml(actionsTitle)}</h2>
+        <ol>${actions}</ol>
+      </div>
+      <div class="boxcard">
+        <h2>📄 ${escapeHtml(docsTitle)}</h2>
+        <ul>${documents}</ul>
+        <div class="muted">* ${isKreol ? "souvan obligatoire" : "souvent obligatoire"}</div>
+      </div>
+    </div>
+
+    <div class="boxcard" style="margin-top:14px">
+      <h2>🏢 ${escapeHtml(contactsTitle)}</h2>
+      <ul>${contacts}</ul>
+    </div>
+
+    <div class="boxcard" style="margin-top:14px">
+      <h2>👤 ${escapeHtml(profileTitle)}</h2>
+      <ul>${profileLines}</ul>
+    </div>
+
+    <div class="boxcard" style="margin-top:14px">
+      <h2>📝 ${escapeHtml(noteTitle)}</h2>
+      <p>${escapeHtml(noteText)}</p>
+    </div>
+
+    <div class="footer">
+      ${isKreol ? "Généré automatiquement par BudgetKazPei. Sa lé in document préparasyon. Fo vérifié bann kondisyon su site officiel ou auprès organisme concerné." : "Généré automatiquement par BudgetKazPei. Ce document est une aide à la préparation. Vérifiez toujours les conditions exactes sur le site officiel ou auprès de l’organisme concerné."}
+    </div>
+  </div>
+  <script>
+    window.addEventListener('load', () => {
+      setTimeout(() => window.print(), 400)
+    })
+  </script>
+</body>
+</html>`
+}
+
+function downloadDossierPDF(dossier = {}, profile = {}, isKreol = false) {
+  const html = buildDossierPrintableHtml(dossier, profile, isKreol)
+  const win = window.open("", "_blank", "noopener,noreferrer,width=900,height=900")
+
+  if (!win) {
+    const blob = new Blob([html], { type: "text/html;charset=utf-8" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    const aideName = normalizeText(getAideName(dossier.aide || {}, false)).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "dossier"
+    link.href = url
+    link.download = `budgetkazpei-${aideName}.html`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(url)
+    return
+  }
+
+  win.document.open()
+  win.document.write(html)
+  win.document.close()
+}
+
 
 function getActionContacts(aide = {}, profile = {}, isKreol = false) {
   const text = getAideSearchText(aide)
@@ -514,10 +676,10 @@ function getImmediateActionSteps(aide = {}, profile = {}, isKreol = false) {
   if (text.includes("microcredit") || text.includes("microcrédit")) {
     return isKreol
       ? [
-          commune ? `Contacte le CCAS ou la mairie de ${commune}.` : "Contacte out CCAS ou mairie.",
-          "Demande une orientation vers un microcrédit social.",
-          "Prépare un petit résumé : montant demandé, projet, revenus, charges.",
-          "Ajoute cette aide dans tes démarches pour suivre les relances.",
+          commune ? `Kontakte le CCAS ou la mairie de ${commune}.` : "Kontakte out CCAS ou mairie.",
+          "Demande in orientation vers microcrédit social.",
+          "Prépare in ti résumé : montant demandé, projet, revenus, charges.",
+          "Azout sa zéd-la dann out démars pou suivre relances.",
         ]
       : [
           commune ? `Contactez le CCAS ou la mairie de ${commune}.` : "Contactez votre CCAS ou votre mairie.",
@@ -530,10 +692,10 @@ function getImmediateActionSteps(aide = {}, profile = {}, isKreol = false) {
   if (text.includes("france travail") || text.includes("permis") || text.includes("mobilite") || text.includes("mobilité")) {
     return isKreol
       ? [
-          "Contacte ton conseiller France Travail avant d'engager la dépense.",
-          "Prépare un devis ou justificatif : auto-école, transport, réparation, formation.",
-          "Explique pourquoi cette dépense aide ton retour à l'emploi.",
-          "Ajoute la démarche pour suivre date, documents et relances.",
+          "Kontakte out conseiller France Travail avan ou engage la dépense.",
+          "Prépare in devis ou justificatif : auto-école, transport, réparation, formation.",
+          "Explique poukoi sa dépense-la i aide out retour à l'emploi.",
+          "Azout la démars pou suivre date, dokiman ek relances.",
         ]
       : [
           "Contactez votre conseiller France Travail avant d'engager la dépense.",
@@ -546,8 +708,8 @@ function getImmediateActionSteps(aide = {}, profile = {}, isKreol = false) {
   if (text.includes("banque de france") || text.includes("surendettement") || text.includes("dette") || text.includes("impaye") || text.includes("impayé")) {
     return isKreol
       ? [
-          "Liste toutes tes dettes, retards, crédits et charges fixes.",
-          "Contacte un Point Conseil Budget ou une assistante sociale.",
+          "Liste tout out dettes, retards, crédits ek charges fixes.",
+          "Kontakte un Point Conseil Budget ou une assistante sociale.",
           "Si la situation est lourde, demande conseil à la Banque de France.",
           "Évite de reprendre un crédit sans accompagnement.",
         ]
@@ -562,10 +724,10 @@ function getImmediateActionSteps(aide = {}, profile = {}, isKreol = false) {
   if (text.includes("logement") || text.includes("loyer") || text.includes("fsl") || text.includes("apl") || text.includes("caution")) {
     return isKreol
       ? [
-          "Vérifie CAF/APL puis FSL si retard ou difficulté logement.",
-          "Prépare bail, quittance, revenus, RIB et justificatif domicile.",
-          "Contacte bailleur, CAF, CCAS ou assistante sociale rapidement.",
-          "Ajoute la démarche pour suivre les documents manquants.",
+          "Vérifie CAF/APL puis FSL si ou na retard ou difficulté logement.",
+          "Prépare bail, quittance, revenus, RIB ek justificatif domicile.",
+          "Kontakte bailleur, CAF, CCAS ou assistante sociale rapidement.",
+          "Azout la démars pou suivre bann dokiman manquants.",
         ]
       : [
           "Vérifiez CAF/APL puis FSL en cas de retard ou difficulté logement.",
@@ -578,10 +740,10 @@ function getImmediateActionSteps(aide = {}, profile = {}, isKreol = false) {
   if (text.includes("energie") || text.includes("énergie") || text.includes("edf") || text.includes("eau") || text.includes("facture")) {
     return isKreol
       ? [
-          "Contacte le fournisseur avant coupure ou majoration.",
-          "Demande un échéancier si tu ne peux pas payer d'un coup.",
-          "Prépare facture, revenus, charges et justificatif domicile.",
-          "Contacte le CCAS si la facture met le foyer en difficulté.",
+          "Kontakte le fournisseur avan coupure ou majoration.",
+          "Demande in échéancier si ou pé pa paye d'un coup.",
+          "Prépare facture, revenus, charges ek justificatif domicile.",
+          "Kontakte CCAS si facture-la i met la kaz en difficulté.",
         ]
       : [
           "Contactez le fournisseur avant coupure ou majoration.",
@@ -593,10 +755,10 @@ function getImmediateActionSteps(aide = {}, profile = {}, isKreol = false) {
 
   return isKreol
     ? [
-        "Lis les conditions de l'aide sur le site officiel.",
-        "Prépare les documents indiqués ci-dessous.",
-        "Contacte l'organisme ou le CCAS si tu as un doute.",
-        "Ajoute la démarche pour suivre l'avancement.",
+        "Lis bann kondisyon la zéd su site officiel.",
+        "Prépare bann dokiman indiqués anba.",
+        "Kontakte organisme ou CCAS si ou na un doute.",
+        "Azout la démars pou suivre lavancement.",
       ]
     : [
         "Consultez les conditions de l'aide sur le site officiel.",
@@ -610,8 +772,42 @@ function getAideKey(aide = {}) {
   return String(aide.id || aide.aide_id || aide.nom || "aide")
 }
 
+function getDemarcheIdentityKey(item = {}) {
+  const aideId = item.aide_id || item.id || ""
+  if (aideId) return `id:${aideId}`
+
+  const aideName = normalizeAideName(item.aide_nom || item.nom || item.aide_name || "")
+  if (aideName) return `nom:${aideName}`
+
+  return `tmp:${item.id || Math.random().toString(36).slice(2)}`
+}
+
+function isSameDemarche(a = {}, b = {}) {
+  const aId = String(a.aide_id || a.id || "")
+  const bId = String(b.aide_id || b.id || "")
+  if (aId && bId && aId === bId) return true
+
+  const aName = normalizeAideName(a.aide_nom || a.nom || a.aide_name || "")
+  const bName = normalizeAideName(b.aide_nom || b.nom || b.aide_name || "")
+  return !!aName && !!bName && aName === bName
+}
+
+function getTrackedDemarcheForAide(trackedDemarches = {}, aide = {}) {
+  const aideKey = getAideKey(aide)
+  const direct = trackedDemarches[aideKey] || trackedDemarches[`id:${aideKey}`]
+  if (direct) return direct
+
+  const aideName = normalizeAideName(getAideName(aide, false))
+  return Object.values(trackedDemarches || {}).find(item => {
+    const itemId = String(item?.aide_id || "")
+    const itemName = normalizeAideName(item?.aide_nom || "")
+    return (itemId && itemId === aideKey) || (aideName && itemName && aideName === itemName)
+  })
+}
+
 function getStatusByKey(key) {
-  return STATUS_OPTIONS.find(status => status.key === key) || STATUS_OPTIONS[0]
+  const normalizedKey = normalizeStatusKey(key)
+  return STATUS_OPTIONS.find(status => status.key === normalizedKey) || STATUS_OPTIONS[0]
 }
 
 function normalizeAideName(value) {
@@ -638,65 +834,65 @@ function getFallbackDocuments(aideName = "") {
   const name = normalizeText(aideName)
 
   const common = [
-    { document_nom: "Pièce d’identité", document_nom_kreol: "Piès lidantité", obligatoire: true },
+    { document_nom: "Pièce d’identité", document_nom_kreol: "Piès d'identité", obligatoire: true },
     { document_nom: "RIB", document_nom_kreol: "RIB", obligatoire: true },
-    { document_nom: "Justificatif de domicile", document_nom_kreol: "Papye ladres", obligatoire: true },
-    { document_nom: "Avis d’imposition", document_nom_kreol: "Avi lenpo", obligatoire: false },
+    { document_nom: "Justificatif de domicile", document_nom_kreol: "Papyé ladres", obligatoire: true },
+    { document_nom: "Avis d’imposition", document_nom_kreol: "Avis lenpo", obligatoire: false },
   ]
 
   if (name.includes("apl") || name.includes("logement") || name.includes("loyer")) {
     return [
-      { document_nom: "Pièce d’identité", document_nom_kreol: "Piès lidantité", obligatoire: true },
+      { document_nom: "Pièce d’identité", document_nom_kreol: "Piès d'identité", obligatoire: true },
       { document_nom: "RIB", document_nom_kreol: "RIB", obligatoire: true },
       { document_nom: "Bail ou contrat de location", document_nom_kreol: "Bail ou kontra lokasyon", obligatoire: true },
       { document_nom: "Dernière quittance de loyer", document_nom_kreol: "Dernié quittance loyé", obligatoire: false },
-      { document_nom: "Avis d’imposition", document_nom_kreol: "Avi lenpo", obligatoire: true },
-      { document_nom: "Justificatifs de revenus", document_nom_kreol: "Papye revenu", obligatoire: true },
+      { document_nom: "Avis d’imposition", document_nom_kreol: "Avis lenpo", obligatoire: true },
+      { document_nom: "Justificatifs de revenus", document_nom_kreol: "Papyé revenu", obligatoire: true },
     ]
   }
 
   if (name.includes("rentree") || name.includes("rentrée") || name.includes("scolaire") || name.includes("ars")) {
     return [
-      { document_nom: "Numéro allocataire CAF", document_nom_kreol: "Niméro allocatèr CAF", obligatoire: true },
-      { document_nom: "Livret de famille", document_nom_kreol: "Livré famiy", obligatoire: false },
+      { document_nom: "Numéro allocataire CAF", document_nom_kreol: "Numéro allocatèr CAF", obligatoire: true },
+      { document_nom: "Livret de famille", document_nom_kreol: "Livrè famiy", obligatoire: false },
       { document_nom: "Certificat de scolarité si demandé", document_nom_kreol: "Sertifika lékol si i demande", obligatoire: false },
-      { document_nom: "Avis d’imposition", document_nom_kreol: "Avi lenpo", obligatoire: false },
+      { document_nom: "Avis d’imposition", document_nom_kreol: "Avis lenpo", obligatoire: false },
     ]
   }
 
   if (name.includes("cmg") || name.includes("garde") || name.includes("enfant") || name.includes("creche") || name.includes("crèche")) {
     return [
-      { document_nom: "Pièce d’identité", document_nom_kreol: "Piès lidantité", obligatoire: true },
+      { document_nom: "Pièce d’identité", document_nom_kreol: "Piès d'identité", obligatoire: true },
       { document_nom: "RIB", document_nom_kreol: "RIB", obligatoire: true },
       { document_nom: "Contrat avec assistante maternelle, crèche ou garde à domicile", document_nom_kreol: "Kontra ek nounou, krèsh ou gard lakaz", obligatoire: true },
-      { document_nom: "Numéro allocataire CAF", document_nom_kreol: "Niméro allocatèr CAF", obligatoire: true },
-      { document_nom: "Justificatifs de revenus", document_nom_kreol: "Papye revenu", obligatoire: true },
+      { document_nom: "Numéro allocataire CAF", document_nom_kreol: "Numéro allocatèr CAF", obligatoire: true },
+      { document_nom: "Justificatifs de revenus", document_nom_kreol: "Papyé revenu", obligatoire: true },
     ]
   }
 
   if (name.includes("energie") || name.includes("énergie") || name.includes("edf") || name.includes("electricite") || name.includes("électricité") || name.includes("eau")) {
     return [
       { document_nom: "Facture concernée", document_nom_kreol: "Faktur concerné", obligatoire: true },
-      { document_nom: "Pièce d’identité", document_nom_kreol: "Piès lidantité", obligatoire: true },
-      { document_nom: "Justificatif de domicile", document_nom_kreol: "Papye ladres", obligatoire: true },
-      { document_nom: "Justificatifs de revenus", document_nom_kreol: "Papye revenu", obligatoire: true },
-      { document_nom: "Avis d’imposition", document_nom_kreol: "Avi lenpo", obligatoire: false },
+      { document_nom: "Pièce d’identité", document_nom_kreol: "Piès d'identité", obligatoire: true },
+      { document_nom: "Justificatif de domicile", document_nom_kreol: "Papyé ladres", obligatoire: true },
+      { document_nom: "Justificatifs de revenus", document_nom_kreol: "Papyé revenu", obligatoire: true },
+      { document_nom: "Avis d’imposition", document_nom_kreol: "Avis lenpo", obligatoire: false },
     ]
   }
 
   if (name.includes("ccas") || name.includes("alimentaire") || name.includes("social")) {
     return [
-      { document_nom: "Pièce d’identité", document_nom_kreol: "Piès lidantité", obligatoire: true },
-      { document_nom: "Justificatif de domicile", document_nom_kreol: "Papye ladres", obligatoire: true },
-      { document_nom: "Justificatifs de revenus", document_nom_kreol: "Papye revenu", obligatoire: true },
+      { document_nom: "Pièce d’identité", document_nom_kreol: "Piès d'identité", obligatoire: true },
+      { document_nom: "Justificatif de domicile", document_nom_kreol: "Papyé ladres", obligatoire: true },
+      { document_nom: "Justificatifs de revenus", document_nom_kreol: "Papyé revenu", obligatoire: true },
       { document_nom: "Justificatifs de charges", document_nom_kreol: "Papye charges", obligatoire: true },
-      { document_nom: "Livret de famille si enfants", document_nom_kreol: "Livré famiy si ou na marmay", obligatoire: false },
+      { document_nom: "Livret de famille si enfants", document_nom_kreol: "Livrè famiy si ou na marmay", obligatoire: false },
     ]
   }
 
   if (name.includes("sport")) {
     return [
-      { document_nom: "Pièce d’identité", document_nom_kreol: "Piès lidantité", obligatoire: true },
+      { document_nom: "Pièce d’identité", document_nom_kreol: "Piès d'identité", obligatoire: true },
       { document_nom: "Justificatif d’éligibilité", document_nom_kreol: "Papye pou prouv out drwa", obligatoire: true },
       { document_nom: "Attestation CAF si demandée", document_nom_kreol: "Papye CAF si i demande", obligatoire: false },
     ]
@@ -704,10 +900,10 @@ function getFallbackDocuments(aideName = "") {
 
   if (name.includes("sante") || name.includes("santé") || name.includes("css") || name.includes("mutuelle")) {
     return [
-      { document_nom: "Pièce d’identité", document_nom_kreol: "Piès lidantité", obligatoire: true },
+      { document_nom: "Pièce d’identité", document_nom_kreol: "Piès d'identité", obligatoire: true },
       { document_nom: "Carte vitale ou attestation de droits", document_nom_kreol: "Kart vital ou papye droit", obligatoire: true },
-      { document_nom: "Justificatifs de revenus", document_nom_kreol: "Papye revenu", obligatoire: true },
-      { document_nom: "Avis d’imposition", document_nom_kreol: "Avi lenpo", obligatoire: false },
+      { document_nom: "Justificatifs de revenus", document_nom_kreol: "Papyé revenu", obligatoire: true },
+      { document_nom: "Avis d’imposition", document_nom_kreol: "Avis lenpo", obligatoire: false },
     ]
   }
 
@@ -751,6 +947,63 @@ function addDays(date, days) {
   const next = new Date(date)
   next.setDate(next.getDate() + days)
   return next
+}
+
+function daysUntil(value) {
+  if (!value) return null
+  const target = new Date(value)
+  if (Number.isNaN(target.getTime())) return null
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  target.setHours(0, 0, 0, 0)
+
+  return Math.ceil((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+}
+
+function getEstimatedResponseDate(item = {}) {
+  if (item.reponse_estimee_at) return item.reponse_estimee_at
+  if (item.demande_envoyee_at) return addDays(new Date(item.demande_envoyee_at), 21).toISOString()
+  if (item.updated_at && normalizeStatusKey(item.status) === "envoye") return addDays(new Date(item.updated_at), 21).toISOString()
+  return null
+}
+
+function getRelanceStatus(item = {}) {
+  const responseDate = getEstimatedResponseDate(item)
+  const days = daysUntil(responseDate)
+
+  if (normalizeStatusKey(item.status) !== "envoye" && normalizeStatusKey(item.status) !== "attente") {
+    return { active: false, urgent: false, soon: false, days, responseDate }
+  }
+
+  if (days === null) return { active: false, urgent: false, soon: false, days, responseDate }
+
+  return {
+    active: days <= 3,
+    urgent: days <= 0,
+    soon: days > 0 && days <= 3,
+    days,
+    responseDate,
+  }
+}
+
+function getTrackedDate(item = {}) {
+  return item.created_at || item.updated_at || new Date().toISOString()
+}
+
+function getPotentialAmountTotal(recommendedAides = []) {
+  return recommendedAides.reduce((sum, aide) => {
+    const amount = getAideAmountNumber(aide)
+    return sum + (Number.isFinite(amount) ? amount : 0)
+  }, 0)
+}
+
+function getStatusCounts(trackedItems = []) {
+  return trackedItems.reduce((acc, item) => {
+    const key = normalizeStatusKey(item.status || "a_verifier")
+    acc[key] = (acc[key] || 0) + 1
+    return acc
+  }, {})
 }
 
 function getLevel(score, isKreol = false) {
@@ -990,7 +1243,7 @@ function getRecommendedAides(aides = [], profile = {}, isKreol = false, question
         return b.score - a.score
       })
 
-    if (focusedAides.length > 0) return focusedAides.slice(0, 7)
+    if (focusedAides.length > 0) return focusedAides.slice(0, 30)
 
     // Pour les demandes comme crédit, dette ou permis, mieux vaut ne rien afficher
     // plutôt que de remonter APL/ARS/CMG qui ne répondent pas à la question.
@@ -1001,7 +1254,7 @@ function getRecommendedAides(aides = [], profile = {}, isKreol = false, question
 
   return scored
     .filter(aide => aide.score >= 35)
-    .slice(0, 7)
+    .slice(0, 30)
 }
 
 function getExcludedAides(aides = [], profile = {}, isKreol = false) {
@@ -1021,11 +1274,20 @@ function getPotentialLevel(recommendedAides = []) {
 
 function buildDashboardStats(recommendedAides = [], trackedDemarches = {}) {
   const trackedItems = Object.values(trackedDemarches)
+  const statusCounts = getStatusCounts(trackedItems)
+  const relances = trackedItems.filter(item => getRelanceStatus(item).active).length
+
   return {
     total: recommendedAides.length,
     tracked: trackedItems.length,
-    inProgress: trackedItems.filter(item => ["dossier", "envoye", "attente"].includes(item.status)).length,
-    accepted: trackedItems.filter(item => item.status === "accepte").length,
+    toPrepare: statusCounts.dossier || 0,
+    sent: statusCounts.envoye || 0,
+    waiting: statusCounts.attente || 0,
+    inProgress: trackedItems.filter(item => ["dossier", "envoye", "attente"].includes(normalizeStatusKey(item.status))).length,
+    accepted: statusCounts.accepte || 0,
+    refused: statusCounts.refuse || 0,
+    relances,
+    potentialAmount: getPotentialAmountTotal(recommendedAides),
     potentialLevel: getPotentialLevel(recommendedAides),
   }
 }
@@ -1058,7 +1320,31 @@ function getSmartAlerts(recommendedAides = [], trackedDemarches = {}, isKreol = 
     })
   }
 
-  return alerts.slice(0, 2)
+  const relanceItems = Object.values(trackedDemarches || {}).filter(item => getRelanceStatus(item).active)
+
+  if (relanceItems.length > 0) {
+    const first = relanceItems[0]
+    alerts.push({
+      title: isKreol ? "Relans pou fé" : "Relance à faire",
+      text: isKreol
+        ? `${first.aide_nom || "In démars"} : vérifie si organisme la répondu, sinon prépare in relans.`
+        : `${first.aide_nom || "Une démarche"} : vérifiez si l’organisme a répondu, sinon préparez une relance.`,
+      color: COLORS.accent,
+    })
+  }
+
+  const sentItems = Object.values(trackedDemarches || {}).filter(item => normalizeStatusKey(item.status) === "envoye")
+  if (sentItems.length > 0 && alerts.length < 3) {
+    alerts.push({
+      title: isKreol ? "Suivi dossiers envoyés" : "Suivi des dossiers envoyés",
+      text: isKreol
+        ? "Garde in tras de chaque appel, email ou réponse. Sa évite oubli é sa aide pou relans o bon moman."
+        : "Gardez une trace de chaque appel, email ou réponse. Cela évite les oublis et facilite les relances.",
+      color: COLORS.purple,
+    })
+  }
+
+  return alerts.slice(0, 3)
 }
 
 function getProfileSignals(profile = {}, isKreol = false) {
@@ -1417,6 +1703,7 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
   const [savingDocumentKey, setSavingDocumentKey] = useState(null)
   const [gainInputs, setGainInputs] = useState({})
   const [refusInputs, setRefusInputs] = useState({})
+  const [selectedDossier, setSelectedDossier] = useState(null)
 
   const txt = (key, fallback) => safeT(t, "aides", key, fallback)
   const isKreol = isKreolLanguage(t)
@@ -1427,10 +1714,13 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
   }, [responseData, isKreol])
 
   const visibleRecommendedAides = useMemo(() => {
-    return recommendedAides.filter(aide => {
-      const aideKey = getAideKey(aide)
-      return !trackedDemarches[aideKey]
-    })
+    // V3.9.5 : on calcule une réserve plus large de recommandations (30),
+    // puis on affiche les 7 premières non déjà suivies.
+    // Comme ça, quand une démarche est acceptée et qu’un gain est sauvegardé,
+    // une autre aide pertinente peut automatiquement prendre la place disponible.
+    return recommendedAides
+      .filter(aide => !getTrackedDemarcheForAide(trackedDemarches, aide))
+      .slice(0, 7)
   }, [recommendedAides, trackedDemarches])
 
   const excludedAides = useMemo(() => {
@@ -1449,12 +1739,35 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
     }, 0)
   }, [trackedDemarches])
 
+  const gainsCumulesList = useMemo(() => {
+    return Object.values(trackedDemarches || {})
+      .filter(item => normalizeStatusKey(item.status) === "accepte" && Number(item.montant_obtenu || 0) > 0)
+      .sort((a, b) => new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0))
+      .slice(0, 5)
+  }, [trackedDemarches])
+
   const smartAlerts = useMemo(() => {
     return getSmartAlerts(recommendedAides, trackedDemarches, isKreol)
   }, [recommendedAides, trackedDemarches, isKreol])
 
   const trackedList = useMemo(() => {
-    return Object.values(trackedDemarches).sort((a, b) => {
+    const unique = {}
+
+    Object.values(trackedDemarches || {}).forEach(item => {
+      const key = getDemarcheIdentityKey(item)
+      const existing = unique[key]
+
+      if (!existing) {
+        unique[key] = item
+        return
+      }
+
+      const existingDate = new Date(existing.updated_at || existing.created_at || 0).getTime()
+      const itemDate = new Date(item.updated_at || item.created_at || 0).getTime()
+      if (itemDate >= existingDate) unique[key] = item
+    })
+
+    return Object.values(unique).sort((a, b) => {
       return new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0)
     })
   }, [trackedDemarches])
@@ -1473,8 +1786,22 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
     }
 
     const next = {}
+
     ;(data || []).forEach(item => {
-      next[item.aide_id] = item
+      const key = getDemarcheIdentityKey(item)
+      const existing = next[key]
+
+      if (!existing) {
+        next[key] = item
+        return
+      }
+
+      const existingDate = new Date(existing.updated_at || existing.created_at || 0).getTime()
+      const itemDate = new Date(item.updated_at || item.created_at || 0).getTime()
+
+      // Si Supabase contient d'anciennes lignes en doublon,
+      // on affiche uniquement la plus récente pour éviter les cartes répétées.
+      if (itemDate >= existingDate) next[key] = item
     })
 
     setTrackedDemarches(next)
@@ -1531,45 +1858,93 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
     }
 
     const aideKey = getAideKey(aide)
+    const aideName = getAideName(aide, false)
+    const existingLocal = getTrackedDemarcheForAide(trackedDemarches, aide)
+
+    if (existingLocal?.id) {
+      setTrackedDemarches(prev => ({
+        ...prev,
+        [getDemarcheIdentityKey(existingLocal)]: existingLocal,
+      }))
+      alert(isKreol ? "Sa zéd-la lé déjà dann out démars." : "Cette aide est déjà dans vos démarches.")
+      return
+    }
+
     setSavingDemarcheKey(aideKey)
 
     const payload = {
       user_id: user.id,
       aide_id: aideKey,
-      aide_nom: getAideName(aide, false),
+      aide_nom: aideName,
       status: "a_verifier",
       updated_at: new Date().toISOString(),
     }
 
-    const { data, error } = await supabase
+    const { data: existingRows, error: existingError } = await supabase
       .from("aide_demarches")
-      .upsert(payload, { onConflict: "user_id,aide_id" })
-      .select()
-      .single()
+      .select("*")
+      .eq("user_id", user.id)
+
+    if (existingError) {
+      console.error("Erreur vérification doublon démarche:", existingError)
+    }
+
+    const existingRemote = (existingRows || []).find(item =>
+      isSameDemarche(item, { aide_id: aideKey, aide_nom: aideName })
+    )
+
+    let result
+
+    if (existingRemote?.id) {
+      // Ancienne ligne déjà présente : on la réutilise au lieu d'en créer une nouvelle.
+      result = await supabase
+        .from("aide_demarches")
+        .update({
+          aide_id: existingRemote.aide_id || aideKey,
+          aide_nom: existingRemote.aide_nom || aideName,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", existingRemote.id)
+        .eq("user_id", user.id)
+        .select()
+        .single()
+    } else {
+      result = await supabase
+        .from("aide_demarches")
+        .upsert(payload, { onConflict: "user_id,aide_id" })
+        .select()
+        .single()
+    }
 
     setSavingDemarcheKey(null)
 
-    if (error) {
-      console.error("Erreur ajout démarche:", error)
+    if (result.error) {
+      console.error("Erreur ajout démarche:", result.error)
       alert(isKreol ? "Erreur pendant l'ajout démarche." : "Erreur pendant l’ajout à vos démarches.")
       return
     }
 
-    setTrackedDemarches(prev => ({ ...prev, [aideKey]: data }))
+    setTrackedDemarches(prev => ({
+      ...prev,
+      [getDemarcheIdentityKey(result.data)]: result.data,
+    }))
+
+    await fetchTrackedDemarches()
   }
 
   async function updateAideStatus(aide, statusKey) {
     if (!user?.id) return
 
     const aideKey = getAideKey(aide)
-    const current = trackedDemarches[aideKey] || aide
+    const current = getTrackedDemarcheForAide(trackedDemarches, aide) || aide
+    const currentIdentityKey = getDemarcheIdentityKey(current)
 
     setSavingDemarcheKey(aideKey)
 
     setTrackedDemarches(prev => ({
       ...prev,
-      [aideKey]: {
-        ...(prev[aideKey] || {}),
+      [currentIdentityKey]: {
+        ...(prev[currentIdentityKey] || {}),
         user_id: user.id,
         aide_id: aideKey,
         aide_nom: current.aide_nom || getAideName(aide, false),
@@ -1614,7 +1989,7 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
       return
     }
 
-    setTrackedDemarches(prev => ({ ...prev, [aideKey]: result.data }))
+    setTrackedDemarches(prev => ({ ...prev, [getDemarcheIdentityKey(result.data)]: result.data }))
   }
 
   async function deleteDemarche(item) {
@@ -1630,6 +2005,7 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
 
     try {
       const aideKey = item.aide_id || getAideKey(item)
+      const identityKey = getDemarcheIdentityKey(item)
 
       if (item.id) {
         const { error: documentsError } = await supabase
@@ -1664,8 +2040,10 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
         Object.keys(next).forEach(key => {
           if (
             key === aideKey ||
+            key === identityKey ||
             next[key]?.id === item.id ||
-            next[key]?.aide_id === aideKey
+            next[key]?.aide_id === aideKey ||
+            isSameDemarche(next[key], item)
           ) {
             delete next[key]
           }
@@ -1701,6 +2079,52 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
       percent: Math.round((checked / documents.length) * 100),
       documents,
     }
+  }
+
+
+  function getDemarcheActionAlert(item, progress = null) {
+    if (!item) return null
+
+    const relance = getRelanceStatus(item)
+    if (relance.active) {
+      return {
+        color: relance.urgent ? COLORS.red : COLORS.accent,
+        icon: "🔔",
+        title: isKreol ? "Relans conseillé" : "Relance conseillée",
+        text: relance.urgent
+          ? (isKreol ? "Date réponse estimée dépassée. Vérifie out espace, email, téléphone, puis relance l'organisme." : "La date de réponse estimée est dépassée. Vérifiez votre espace, email ou téléphone, puis relancez l’organisme.")
+          : (isKreol ? `Réponse estimée dann ${relance.days} jour(s). Prépare relans si ou na pa nouvelle.` : `Réponse estimée dans ${relance.days} jour(s). Préparez une relance si vous n’avez pas de nouvelle.`),
+      }
+    }
+
+    if (normalizeStatusKey(item.status) === "dossier" && progress?.total > 0 && progress.checked === progress.total) {
+      return {
+        color: COLORS.green,
+        icon: "✅",
+        title: isKreol ? "Dosyé prêt" : "Dossier prêt",
+        text: isKreol ? "Tout bann dokiman lé coché. Ou pé mark kom anvoyé kan ou la déposé dosyé." : "Tous les documents sont cochés. Vous pouvez le marquer comme envoyé quand le dossier est déposé.",
+      }
+    }
+
+    if (normalizeStatusKey(item.status) === "dossier" && progress?.total > 0 && progress.checked < progress.total) {
+      return {
+        color: COLORS.yellow,
+        icon: "📄",
+        title: isKreol ? "Dokiman manquant" : "Documents manquants",
+        text: isKreol ? `${progress.total - progress.checked} dokiman reste pou préparé.` : `${progress.total - progress.checked} document(s) restent à préparer.`,
+      }
+    }
+
+    if (item.status === "a_verifier") {
+      return {
+        color: COLORS.cyan,
+        icon: "🔍",
+        title: isKreol ? "Première vérification" : "Première vérification",
+        text: isKreol ? "Vérifie bann kondisyon, puis passe la démars en dosyé pou préparé si lé pertinent." : "Vérifiez les conditions, puis passez la démarche en dossier à préparer si c’est pertinent.",
+      }
+    }
+
+    return null
   }
 
   async function toggleDocumentCheck(item, document, checked) {
@@ -1831,6 +2255,15 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
       ...prev,
       [data.aide_id]: data,
     }))
+
+    setGainInputs(prev => ({
+      ...prev,
+      [item.id]: String(value),
+    }))
+
+    // Recharge proprement depuis Supabase pour que les compteurs,
+    // les gains et les recommandations soient recalculés tout de suite.
+    await fetchTrackedDemarches()
   }
 
   async function saveRefusReason(item) {
@@ -1935,6 +2368,7 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
   }
 
   return (
+    <>
     <section style={{ background: `linear-gradient(135deg, rgba(35,211,214,.16), ${COLORS.card})`, border: `1px solid rgba(35,211,214,.32)`, borderRadius: 22, padding: isMobile ? 18 : 24 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <Star size={26} color={COLORS.cyan} />
@@ -2044,19 +2478,23 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
           <div style={{ background: "linear-gradient(135deg, rgba(34,197,94,.14), rgba(35,211,214,.08), rgba(255,255,255,.03))", border: "1px solid rgba(34,197,94,.25)", borderRadius: 18, padding: 16 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, color: COLORS.green, fontWeight: 900, marginBottom: 12 }}>
               <TrendingUp size={18} />
-              {isKreol ? "Tablo débor bann zéd" : "Tableau de bord des aides"}
+              {isKreol ? "Tablo bann zéd" : "Tableau de bord des aides"}
             </div>
 
             <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 10 }}>
               {[
-                { label: isKreol ? "Zéd trouvées" : "Aides trouvées", value: dashboardStats.total, color: COLORS.cyan },
-                { label: "Démarches", value: dashboardStats.tracked, color: COLORS.green },
-                { label: "En cours", value: dashboardStats.inProgress, color: COLORS.yellow },
-                { label: isKreol ? "Akseptées" : "Acceptées", value: dashboardStats.accepted, color: COLORS.purple },
+                { label: isKreol ? "Potansyèl détecté" : "Potentiel détecté", value: `${dashboardStats.potentialAmount.toFixed(0)} €`, color: COLORS.cyan, highlight: true },
+                { label: isKreol ? "Larzan gagné" : "Gains obtenus", value: `${gainsTotal.toFixed(0)} €`, color: COLORS.green, highlight: true },
+                { label: isKreol ? "Zéd trouvé" : "Aides trouvées", value: dashboardStats.total, color: COLORS.cyan },
+                { label: isKreol ? "Démars" : "Démarches", value: dashboardStats.tracked, color: COLORS.green },
+                { label: isKreol ? "Dosyé" : "Dossiers", value: dashboardStats.toPrepare, color: COLORS.yellow },
+                { label: isKreol ? "Anvoyé" : "Envoyés", value: dashboardStats.sent, color: COLORS.purple },
+                { label: isKreol ? "Relans" : "Relances", value: dashboardStats.relances, color: dashboardStats.relances > 0 ? COLORS.accent : COLORS.muted },
+                { label: isKreol ? "Akseptées" : "Acceptées", value: dashboardStats.accepted, color: COLORS.green },
               ].map(item => (
-                <div key={item.label} style={{ background: "rgba(255,255,255,.055)", border: "1px solid rgba(255,255,255,.09)", borderRadius: 14, padding: 12 }}>
-                  <div style={{ color: item.color, fontWeight: 900, fontSize: 22 }}>{item.value}</div>
-                  <div style={{ color: COLORS.muted, fontSize: 12, fontWeight: 800 }}>{item.label}</div>
+                <div key={item.label} style={{ background: item.highlight ? `${item.color}12` : "rgba(255,255,255,.055)", border: item.highlight ? `1px solid ${item.color}55` : "1px solid rgba(255,255,255,.09)", borderRadius: 14, padding: 12 }}>
+                  <div style={{ color: item.color, fontWeight: 900, fontSize: item.highlight ? 24 : 22 }}>{item.value}</div>
+                  <div style={{ color: item.highlight ? COLORS.text : COLORS.muted, fontSize: 12, fontWeight: 900 }}>{item.label}</div>
                 </div>
               ))}
             </div>
@@ -2064,23 +2502,46 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
             <div style={{ marginTop: 12, background: "rgba(255,255,255,.045)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 14, padding: 12, color: COLORS.text, lineHeight: 1.55 }}>
               <Bell size={16} style={{ verticalAlign: "middle", marginRight: 6 }} />
               {dashboardStats.potentialLevel === "high"
-                ? "Potentiel d’aides : élevé. Plusieurs dispositifs méritent d’être vérifiés rapidement."
+                ? (isKreol ? "Na plizèr zéd intérésan pou vérifié rapidman." : "Potentiel d’aides : élevé. Plusieurs dispositifs méritent d’être vérifiés rapidement.")
                 : dashboardStats.potentialLevel === "medium"
-                  ? "Potentiel d’aides : moyen. Commencez par les aides les plus probables."
-                  : "Potentiel d’aides : à vérifier. Plus votre profil est complet, plus l’analyse sera précise."}
+                  ? (isKreol ? "Na bann zéd probab. Commence par bann pli importantes." : "Potentiel d’aides : moyen. Commencez par les aides les plus probables.")
+                  : (isKreol ? "Zéd à vérifié. Plus out profil lé complet, plus analiz-la lé précise." : "Potentiel d’aides : à vérifier. Plus votre profil est complet, plus l’analyse sera précise.")}
             </div>
 
             <div style={{ marginTop: 12, background: "rgba(34,197,94,.08)", border: "1px solid rgba(34,197,94,.22)", borderRadius: 14, padding: 12, color: COLORS.text, lineHeight: 1.55 }}>
               <DollarSign size={16} style={{ verticalAlign: "middle", marginRight: 6 }} />
-              {isKreol ? "Gains obtenus grâce à BudgetKazPei" : "Gains obtenus grâce à BudgetKazPei"} :{" "}
+              {isKreol ? "Larzan gagné grâce à BudgetKazPei" : "Gains obtenus grâce à BudgetKazPei"} :{" "}
               <strong style={{ color: COLORS.green }}>{gainsTotal.toFixed(0)} €</strong>
+              {dashboardStats.potentialAmount > 0 && (
+                <span style={{ color: COLORS.muted }}>
+                  {" "}· {isKreol ? "Potansyèl détecté" : "Potentiel détecté"} :{" "}
+                  <strong style={{ color: COLORS.cyan }}>{dashboardStats.potentialAmount.toFixed(0)} €</strong>
+                </span>
+              )}
             </div>
+
+            {gainsCumulesList.length > 0 && (
+              <div style={{ marginTop: 12, background: "rgba(34,197,94,.10)", border: "1px solid rgba(34,197,94,.28)", borderRadius: 14, padding: 12, color: COLORS.text }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, color: COLORS.green, fontWeight: 900, marginBottom: 8 }}>
+                  <CheckCircle2 size={16} />
+                  {isKreol ? "Gains cumulés" : "Gains cumulés"} : {gainsTotal.toFixed(0)} €
+                </div>
+                <div style={{ display: "grid", gap: 6 }}>
+                  {gainsCumulesList.map(item => (
+                    <div key={item.id || item.aide_id} style={{ display: "flex", justifyContent: "space-between", gap: 10, borderTop: "1px solid rgba(255,255,255,.08)", paddingTop: 6, color: COLORS.muted, fontSize: 13 }}>
+                      <span style={{ color: COLORS.text }}>{item.aide_nom || (isKreol ? "Zéd" : "Aide")}</span>
+                      <strong style={{ color: COLORS.green }}>{Number(item.montant_obtenu || 0).toFixed(0)} €</strong>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div style={{ background: "rgba(255,255,255,.045)", border: `1px solid ${COLORS.border}`, borderRadius: 18, padding: 16 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 8, color: COLORS.yellow, fontWeight: 900, marginBottom: 12 }}>
               <ClipboardCheck size={18} />
-              {isKreol ? "Mes démarches" : "Mes démarches"}
+              {isKreol ? "Mes démars" : "Mes démarches"}
             </div>
 
             {trackedList.length === 0 ? (
@@ -2093,6 +2554,8 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
               <div style={{ display: "grid", gap: 10 }}>
                 {trackedList.map(item => {
                   const status = getStatusByKey(item.status)
+                  const progress = normalizeStatusKey(item.status) === "dossier" ? getProgressForDemarche(item) : null
+                  const actionAlert = getDemarcheActionAlert(item, progress)
 
                   return (
                     <div key={item.id || item.aide_id} style={{ background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.09)", borderRadius: 14, padding: 12 }}>
@@ -2101,6 +2564,15 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
                           <div style={{ color: COLORS.text, fontWeight: 900 }}>{item.aide_nom}</div>
                           <div style={{ color: status.color, fontWeight: 900, marginTop: 4 }}>
                             {status.emoji} {isKreol ? status.kreol : status.fr}
+                          </div>
+                          <div style={{ color: COLORS.muted, fontSize: 12, marginTop: 6, lineHeight: 1.5 }}>
+                            <CalendarDays size={13} style={{ verticalAlign: "-2px", marginRight: 4 }} />
+                            {isKreol ? "Azouté le" : "Ajoutée le"} : {formatShortDate(getTrackedDate(item), isKreol)}
+                            {item.updated_at && (
+                              <>
+                                {" "}· {isKreol ? "Miz à jour" : "Mise à jour"} : {formatShortDate(item.updated_at, isKreol)}
+                              </>
+                            )}
                           </div>
                         </div>
 
@@ -2112,13 +2584,23 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
 
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
                         {STATUS_OPTIONS.map(option => (
-                          <button key={option.key} type="button" onClick={() => updateAideStatus(item, option.key)} style={{ background: item.status === option.key ? `${option.color}33` : "rgba(255,255,255,.04)", border: item.status === option.key ? `1px solid ${option.color}` : "1px solid rgba(255,255,255,.10)", borderRadius: 999, padding: "7px 10px", color: item.status === option.key ? option.color : COLORS.muted, fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 900 }}>
+                          <button key={option.key} type="button" onClick={() => updateAideStatus(item, option.key)} style={{ background: normalizeStatusKey(item.status) === option.key ? `${option.color}33` : "rgba(255,255,255,.04)", border: normalizeStatusKey(item.status) === option.key ? `1px solid ${option.color}` : "1px solid rgba(255,255,255,.10)", borderRadius: 999, padding: "7px 10px", color: normalizeStatusKey(item.status) === option.key ? option.color : COLORS.muted, fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 900 }}>
                             {option.emoji} {isKreol ? option.kreol : option.fr}
                           </button>
                         ))}
                       </div>
 
-                      {item.status === "dossier" && (() => {
+                      {actionAlert && (
+                        <div style={{ marginTop: 12, background: `${actionAlert.color}12`, border: `1px solid ${actionAlert.color}44`, borderRadius: 14, padding: 12, color: COLORS.text, lineHeight: 1.5 }}>
+                          <div style={{ color: actionAlert.color, fontWeight: 900, marginBottom: 4, display: "flex", alignItems: "center", gap: 8 }}>
+                            <AlertTriangle size={16} />
+                            {actionAlert.icon} {actionAlert.title}
+                          </div>
+                          {actionAlert.text}
+                        </div>
+                      )}
+
+                      {normalizeStatusKey(item.status) === "dossier" && (() => {
                         const progress = getProgressForDemarche(item)
                         const dossierReady = progress.total > 0 && progress.checked === progress.total
 
@@ -2126,14 +2608,25 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
                           <div style={{ marginTop: 12, background: "rgba(252,211,77,.07)", border: "1px solid rgba(252,211,77,.22)", borderRadius: 14, padding: 12 }}>
                             <div style={{ display: "flex", alignItems: "center", gap: 8, color: COLORS.yellow, fontWeight: 900, marginBottom: 8 }}>
                               <FileText size={16} />
-                              {isKreol ? "Dokiman pou préparé" : "Documents à préparer"}
+                              {isKreol ? "Bann dokiman pou préparé" : "Documents à préparer"}
                             </div>
 
                             <div style={{ color: COLORS.muted, fontSize: 13, marginBottom: 10 }}>
-                              {isKreol ? "Progression dosyé" : "Progression du dossier"} :{" "}
+                              {isKreol ? "Avansman dosyé" : "Progression du dossier"} :{" "}
                               <strong style={{ color: dossierReady ? COLORS.green : COLORS.yellow }}>
                                 {progress.checked} / {progress.total} ({progress.percent}%)
                               </strong>
+                            </div>
+
+                            <div style={{ height: 10, borderRadius: 999, background: "rgba(255,255,255,.08)", overflow: "hidden", marginBottom: 12 }}>
+                              <div
+                                style={{
+                                  width: `${progress.percent}%`,
+                                  height: "100%",
+                                  background: dossierReady ? COLORS.green : COLORS.yellow,
+                                  transition: "width .3s ease",
+                                }}
+                              />
                             </div>
 
                             <div style={{ display: "grid", gap: 8 }}>
@@ -2180,39 +2673,45 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
                             </div>
 
                             {dossierReady && (
+                              <div style={{ marginTop: 12, background: "rgba(34,197,94,.10)", border: "1px solid rgba(34,197,94,.28)", borderRadius: 12, padding: 12, color: COLORS.green, fontWeight: 900 }}>
+                                ✅ {isKreol ? "Dosyé lé prêt pou anvoyé. Kan organisme la validé, passe en Aksepté pou saisir le gain." : "Dossier prêt à être envoyé. Quand l’organisme valide, passez en Acceptée pour saisir le gain."}
+                              </div>
+                            )}
+
+                            {dossierReady && (
                               <button type="button" onClick={() => markDemarcheAsSent(item)} style={{ marginTop: 12, background: COLORS.purple, color: "#0A1628", border: "none", borderRadius: 12, padding: "10px 13px", fontWeight: 900, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 8 }}>
                                 <Send size={15} />
-                                {isKreol ? "Dosyé prêt : mark kom envoyé" : "Dossier prêt : marquer comme envoyé"}
+                                {isKreol ? "📤 Mark kom anvoyé" : "📤 Marquer comme envoyé"}
                               </button>
                             )}
                           </div>
                         )
                       })()}
 
-                      {item.status === "envoye" && (
+                      {normalizeStatusKey(item.status) === "envoye" && (
                         <div style={{ marginTop: 12, background: "rgba(167,139,250,.08)", border: "1px solid rgba(167,139,250,.25)", borderRadius: 14, padding: 12, color: COLORS.text }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 8, color: COLORS.purple, fontWeight: 900, marginBottom: 8 }}>
                             <CalendarDays size={16} />
-                            {isKreol ? "Demande envoyée" : "Demande envoyée"}
+                            {isKreol ? "Domann la parti" : "Demande envoyée"}
                           </div>
                           <div style={{ color: COLORS.muted, lineHeight: 1.6 }}>
-                            {isKreol ? "Envoyé le" : "Envoyée le"} : <strong style={{ color: COLORS.text }}>{formatShortDate(item.demande_envoyee_at || item.updated_at, isKreol)}</strong><br />
-                            {isKreol ? "Réponse estimée" : "Réponse estimée"} : <strong style={{ color: COLORS.text }}>{formatShortDate(item.reponse_estimee_at || addDays(new Date(item.updated_at || new Date()), 21), isKreol)}</strong>
+                            {isKreol ? "Anvoyé le" : "Envoyée le"} : <strong style={{ color: COLORS.text }}>{formatShortDate(item.demande_envoyee_at || item.updated_at, isKreol)}</strong><br />
+                            {isKreol ? "Répons estimée" : "Réponse estimée"} : <strong style={{ color: COLORS.text }}>{formatShortDate(item.reponse_estimee_at || addDays(new Date(item.updated_at || new Date()), 21), isKreol)}</strong>
                           </div>
                         </div>
                       )}
 
-                      {item.status === "attente" && (
+                      {normalizeStatusKey(item.status) === "attente" && (
                         <div style={{ marginTop: 12, background: "rgba(249,115,22,.08)", border: "1px solid rgba(249,115,22,.25)", borderRadius: 14, padding: 12, color: COLORS.text, lineHeight: 1.55 }}>
                           ⏳ {isKreol ? "Pense à vérifié out espace CAF, mairie, CCAS ou email. Si zot demande in pièce complémentaire, prépar ali vite." : "Pensez à vérifier votre espace CAF, mairie, CCAS ou vos emails. Si une pièce complémentaire est demandée, préparez-la rapidement."}
                         </div>
                       )}
 
-                      {item.status === "accepte" && (
+                      {normalizeStatusKey(item.status) === "accepte" && (
                         <div style={{ marginTop: 12, background: "rgba(34,197,94,.08)", border: "1px solid rgba(34,197,94,.25)", borderRadius: 14, padding: 12 }}>
                           <div style={{ display: "flex", alignItems: "center", gap: 8, color: COLORS.green, fontWeight: 900, marginBottom: 8 }}>
                             <CheckCircle2 size={16} />
-                            {isKreol ? "Zéd aksepté" : "Aide acceptée"}
+                            {isKreol ? "Zéd aksepté - indique le montant gagné" : "Aide acceptée - indiquez le montant obtenu"}
                           </div>
 
                           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -2225,16 +2724,21 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
                               style={{ background: COLORS.cardLight, border: `1px solid ${COLORS.border}`, borderRadius: 10, padding: "9px 10px", color: COLORS.text, fontFamily: "inherit", width: 160 }}
                             />
                             <button type="button" onClick={() => saveGain(item)} style={{ background: COLORS.green, color: "#0A1628", border: "none", borderRadius: 10, padding: "9px 12px", cursor: "pointer", fontFamily: "inherit", fontWeight: 900 }}>
-                              {isKreol ? "Sauvegardé gain" : "Sauvegarder le gain"}
+                              {isKreol ? "Sauvegard gain" : "Sauvegarder le gain"}
                             </button>
                           </div>
+                          {Number(item.montant_obtenu || 0) > 0 && (
+                            <div style={{ marginTop: 8, color: COLORS.green, fontWeight: 900, fontSize: 13 }}>
+                              ✅ {isKreol ? "Gain comptabilisé" : "Gain comptabilisé"} : {Number(item.montant_obtenu || 0).toFixed(0)} €
+                            </div>
+                          )}
                         </div>
                       )}
 
-                      {item.status === "refuse" && (
+                      {normalizeStatusKey(item.status) === "refuse" && (
                         <div style={{ marginTop: 12, background: "rgba(251,113,133,.08)", border: "1px solid rgba(251,113,133,.25)", borderRadius: 14, padding: 12 }}>
                           <div style={{ color: COLORS.red, fontWeight: 900, marginBottom: 8 }}>
-                            {isKreol ? "Motif refus" : "Motif du refus"}
+                            {isKreol ? "Rézon refus" : "Motif du refus"}
                           </div>
                           <textarea
                             value={refusInputs[item.id] ?? item.refus_motif ?? ""}
@@ -2273,8 +2777,8 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
                   const level = getLevel(aide.score, isKreol)
                   const officialLink = getOfficialLink(aide)
                   const aideKey = getAideKey(aide)
-                  const tracked = trackedDemarches[aideKey]
-                  const currentStatusKey = tracked?.status || "a_verifier"
+                  const tracked = getTrackedDemarcheForAide(trackedDemarches, aide)
+                  const currentStatusKey = normalizeStatusKey(tracked?.status || "a_verifier")
                   const currentStatus = getStatusByKey(currentStatusKey)
                   const isSaving = savingDemarcheKey === aideKey
                   const actionSteps = getImmediateActionSteps(aide, responseData?.profile || profile || {}, isKreol)
@@ -2323,7 +2827,7 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
                         </div>
 
                         <div style={{ background: "rgba(35,211,214,.07)", border: "1px solid rgba(35,211,214,.18)", borderRadius: 14, padding: 12 }}>
-                          <strong style={{ color: COLORS.cyan }}>{isKreol ? "Démars" : "Démarches"}</strong>
+                          <strong style={{ color: COLORS.cyan }}>{isKreol ? "Bann démars" : "Démarches"}</strong>
                           <p style={{ margin: "8px 0 0", color: COLORS.text, lineHeight: 1.55 }}>
                             {getAideDemarches(aide, isKreol) || "Vérifiez les conditions sur le site officiel."}
                           </p>
@@ -2341,14 +2845,14 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
 
                       <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
                         <div style={{ background: "rgba(167,139,250,.07)", border: "1px solid rgba(167,139,250,.20)", borderRadius: 14, padding: 12 }}>
-                          <strong style={{ color: COLORS.purple }}>🏢 {isKreol ? "Koté contacté ?" : "Organismes à contacter"}</strong>
+                          <strong style={{ color: COLORS.purple }}>🏢 {isKreol ? "Koté i fo kontakte ?" : "Organismes à contacter"}</strong>
                           <ul style={{ margin: "8px 0 0", paddingLeft: 18, color: COLORS.text, lineHeight: 1.55 }}>
                             {actionContacts.slice(0, 4).map((contact, index) => <li key={index}>{contact}</li>)}
                           </ul>
                         </div>
 
                         <div style={{ background: "rgba(252,211,77,.07)", border: "1px solid rgba(252,211,77,.22)", borderRadius: 14, padding: 12 }}>
-                          <strong style={{ color: COLORS.yellow }}>📄 {isKreol ? "Dokiman pou préparé" : "Documents à préparer"}</strong>
+                          <strong style={{ color: COLORS.yellow }}>📄 {isKreol ? "Bann dokiman pou préparé" : "Documents à préparer"}</strong>
                           <ul style={{ margin: "8px 0 0", paddingLeft: 18, color: COLORS.text, lineHeight: 1.55 }}>
                             {aideDocs.map((doc, index) => (
                               <li key={index}>
@@ -2370,9 +2874,23 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
                           </button>
                         )}
 
-                        <button type="button" onClick={() => window.alert(dossierPreview)} style={{ background: "rgba(255,255,255,.06)", color: COLORS.text, border: "1px solid rgba(255,255,255,.14)", borderRadius: 12, padding: "10px 14px", fontWeight: 900, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 8 }}>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setSelectedDossier({
+                              aide,
+                              level,
+                              amount: formatAideAmount(aide, isKreol),
+                              officialLink,
+                              actionSteps,
+                              actionContacts,
+                              aideDocs,
+                            })
+                          }
+                          style={{ background: "rgba(255,255,255,.06)", color: COLORS.text, border: "1px solid rgba(255,255,255,.14)", borderRadius: 12, padding: "10px 14px", fontWeight: 900, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 8 }}
+                        >
                           <FileText size={15} />
-                          {isKreol ? "📄 Prépare mon dossier" : "📄 Préparer mon dossier"}
+                          {isKreol ? "📄 Prépar mon dosyé" : "📄 Préparer mon dossier"}
                         </button>
                       </div>
 
@@ -2380,13 +2898,13 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
                         {!tracked ? (
                           <button type="button" onClick={() => addToDemarches(aide)} disabled={isSaving} style={{ background: isSaving ? COLORS.muted : COLORS.cyan, color: "#0A1628", border: "none", borderRadius: 12, padding: "10px 13px", fontWeight: 900, cursor: isSaving ? "not-allowed" : "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 8 }}>
                             <PlusCircle size={16} />
-                            {isSaving ? "Ajout en cours..." : isKreol ? "Azouté dann mes démarches" : "Ajouter à mes démarches"}
+                            {isSaving ? "Ajout en cours..." : isKreol ? "Azout dann mes démars" : "Ajouter à mes démarches"}
                           </button>
                         ) : (
                           <>
                             <div style={{ display: "flex", alignItems: "center", gap: 8, color: currentStatus.color, fontWeight: 900, marginBottom: 10 }}>
                               <ClipboardCheck size={16} />
-                              {isKreol ? "Suivi démarche" : "Suivi de la démarche"} : {currentStatus.emoji} {isKreol ? currentStatus.kreol : currentStatus.fr}
+                              {isKreol ? "Suivi démars" : "Suivi de la démarche"} : {currentStatus.emoji} {isKreol ? currentStatus.kreol : currentStatus.fr}
                             </div>
 
                             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -2429,5 +2947,208 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
         </div>
       )}
     </section>
+
+    {selectedDossier && (
+      <div
+        role="dialog"
+        aria-modal="true"
+        onClick={() => setSelectedDossier(null)}
+        style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 9999,
+          background: "rgba(2,8,23,.72)",
+          backdropFilter: "blur(6px)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: isMobile ? 14 : 24,
+        }}
+      >
+        <div
+          onClick={e => e.stopPropagation()}
+          style={{
+            width: "min(760px, 100%)",
+            maxHeight: "88vh",
+            overflow: "auto",
+            background: `linear-gradient(135deg, ${COLORS.cardLight}, ${COLORS.card})`,
+            border: `1px solid ${COLORS.border}`,
+            borderRadius: 24,
+            boxShadow: "0 24px 80px rgba(0,0,0,.45)",
+            padding: isMobile ? 18 : 24,
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", marginBottom: 16 }}>
+            <div>
+              <div style={{ color: COLORS.cyan, fontWeight: 900, fontSize: 13, marginBottom: 6 }}>
+                {isKreol ? "📄 Dosyé préparasyon" : "📄 Préparation du dossier"}
+              </div>
+              <h3 style={{ margin: 0, color: COLORS.text, fontSize: isMobile ? 20 : 24 }}>
+                {getAideName(selectedDossier.aide, isKreol)}
+              </h3>
+              <div style={{ marginTop: 8, color: COLORS.muted, fontSize: 13 }}>
+                {selectedDossier.level?.emoji} {selectedDossier.level?.label} · {selectedDossier.amount}
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setSelectedDossier(null)}
+              style={{
+                background: "rgba(255,255,255,.06)",
+                border: "1px solid rgba(255,255,255,.12)",
+                color: COLORS.text,
+                borderRadius: 12,
+                padding: "8px 11px",
+                cursor: "pointer",
+                fontWeight: 900,
+                fontFamily: "inherit",
+              }}
+            >
+              ✕
+            </button>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
+            <div style={{ background: "rgba(249,115,22,.08)", border: "1px solid rgba(249,115,22,.24)", borderRadius: 16, padding: 14 }}>
+              <strong style={{ color: COLORS.accent }}>
+                🚀 {isKreol ? "Kosa fo fé astèr" : "Action immédiate"}
+              </strong>
+              <ol style={{ margin: "10px 0 0", paddingLeft: 20, color: COLORS.text, lineHeight: 1.65 }}>
+                {(selectedDossier.actionSteps || []).map((step, index) => (
+                  <li key={index}>{step}</li>
+                ))}
+              </ol>
+            </div>
+
+            <div style={{ background: "rgba(252,211,77,.08)", border: "1px solid rgba(252,211,77,.24)", borderRadius: 16, padding: 14 }}>
+              <strong style={{ color: COLORS.yellow }}>
+                📄 {isKreol ? "Bann dokiman pou préparé" : "Documents à préparer"}
+              </strong>
+              <ul style={{ margin: "10px 0 0", paddingLeft: 20, color: COLORS.text, lineHeight: 1.65 }}>
+                {(selectedDossier.aideDocs || []).map((doc, index) => (
+                  <li key={index}>
+                    {getDocumentDisplayName(doc, isKreol)}{doc.obligatoire ? " *" : ""}
+                  </li>
+                ))}
+              </ul>
+              <div style={{ marginTop: 8, color: COLORS.muted, fontSize: 12 }}>
+                * {isKreol ? "souvan obligatoire" : "souvent obligatoire"}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ marginTop: 12, background: "rgba(167,139,250,.08)", border: "1px solid rgba(167,139,250,.24)", borderRadius: 16, padding: 14 }}>
+            <strong style={{ color: COLORS.purple }}>
+              🏢 {isKreol ? "Koté i fo kontakte ?" : "Organismes à contacter"}
+            </strong>
+            <ul style={{ margin: "10px 0 0", paddingLeft: 20, color: COLORS.text, lineHeight: 1.65 }}>
+              {(selectedDossier.actionContacts || []).map((contact, index) => (
+                <li key={index}>{contact}</li>
+              ))}
+            </ul>
+          </div>
+
+          <div style={{ marginTop: 12, background: "rgba(35,211,214,.07)", border: "1px solid rgba(35,211,214,.22)", borderRadius: 16, padding: 14 }}>
+            <strong style={{ color: COLORS.cyan }}>
+              {isKreol ? "📝 Suiv out démars" : "📝 Note pour votre démarche"}
+            </strong>
+            <p style={{ margin: "8px 0 0", color: COLORS.text, lineHeight: 1.6 }}>
+              {isKreol
+                ? "Garde in tras de sak lappel, rendez-vous, dokiman anvoyé é réponse reçue dann Mes démarches. Sa évite oubli é aide aou relans o bon moman."
+                : "Gardez une trace de chaque appel, rendez-vous, document envoyé et réponse reçue dans Mes démarches. Cela évite les oublis et vous aide à relancer au bon moment."}
+            </p>
+          </div>
+
+          <div style={{ marginTop: 16, display: "flex", flexWrap: "wrap", gap: 10 }}>
+            {selectedDossier.officialLink && (
+              <button
+                type="button"
+                onClick={() => openExternalLink(selectedDossier.officialLink)}
+                style={{
+                  background: COLORS.green,
+                  color: "#0A1628",
+                  border: "none",
+                  borderRadius: 12,
+                  padding: "10px 14px",
+                  cursor: "pointer",
+                  fontWeight: 900,
+                  fontFamily: "inherit",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                <ExternalLink size={15} />
+                {isKreol ? "🚀 Alé voir maintenant" : "🚀 Voir / commencer maintenant"}
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => downloadDossierPDF(selectedDossier, profile, isKreol)}
+              style={{
+                background: COLORS.yellow,
+                color: "#0A1628",
+                border: "none",
+                borderRadius: 12,
+                padding: "10px 14px",
+                cursor: "pointer",
+                fontWeight: 900,
+                fontFamily: "inherit",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              <FileText size={15} />
+              {isKreol ? "📄 Télécharg mon dosyé PDF" : "📄 Télécharger mon dossier PDF"}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                addToDemarches(selectedDossier.aide)
+                setSelectedDossier(null)
+              }}
+              style={{
+                background: COLORS.cyan,
+                color: "#0A1628",
+                border: "none",
+                borderRadius: 12,
+                padding: "10px 14px",
+                cursor: "pointer",
+                fontWeight: 900,
+                fontFamily: "inherit",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              <PlusCircle size={15} />
+              {isKreol ? "Azout dann mes démars" : "Ajouter à mes démarches"}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSelectedDossier(null)}
+              style={{
+                background: "rgba(255,255,255,.06)",
+                color: COLORS.text,
+                border: "1px solid rgba(255,255,255,.14)",
+                borderRadius: 12,
+                padding: "10px 14px",
+                cursor: "pointer",
+                fontWeight: 900,
+                fontFamily: "inherit",
+              }}
+            >
+              {isKreol ? "Fermer" : "Fermer"}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   )
 }

@@ -13,12 +13,16 @@ import {
   Coins,
   ClipboardCheck,
   Trash2,
+  DollarSign,
+  CheckCircle2,
 } from "lucide-react"
 
 import { supabase } from "../../services/supabase"
 import { AIDES } from "../../data/categories"
 import { AUTRES_AIDES } from "../../data/aides"
 import AssistantAides from "./AssistantAides"
+
+// AidesPage V29 - Produit final aides & droits : gains robustes + suivi propre + alertes utilisateur
 
 const COLORS = {
   text: "#F1F5F9",
@@ -174,6 +178,17 @@ function getDemarcheProgress(demarche) {
   return 10
 }
 
+function getGainAmount(demarche) {
+  const value = Number(demarche?.montant_obtenu ?? 0)
+  return Number.isFinite(value) && value > 0 ? value : 0
+}
+
+function formatEuro(value) {
+  const amount = Number(value || 0)
+  if (!Number.isFinite(amount)) return "0 €"
+  return `${amount.toFixed(0)} €`
+}
+
 
 function getDemarchePriority(demarche) {
   const status = demarche.status || "a_faire"
@@ -257,6 +272,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
   const [loadingDemarches, setLoadingDemarches] = useState(true)
   const [savingId, setSavingId] = useState(null)
   const [noteDrafts, setNoteDrafts] = useState({})
+  const [gainInputs, setGainInputs] = useState({})
 
   const totalDemarches = demarches.length
 
@@ -266,6 +282,14 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
   const nbAccepte = demarches.filter(d => d.status === "accepte").length
   const nbDocumentsEnvoyes = demarches.filter(d => d.status === "documents_envoyes").length
   const nbDocumentsPrets = demarches.filter(d => d.documents_ready).length
+  const gainsTotal = demarches.reduce((sum, demarche) => sum + getGainAmount(demarche), 0)
+  const demarchesAvecGain = demarches.filter(d => getGainAmount(d) > 0)
+  const demarchesAccepteesSansGain = demarches.filter(d => d.status === "accepte" && getGainAmount(d) <= 0)
+  const nbGainsRenseignes = demarchesAvecGain.length
+  const gainsMoyen = nbGainsRenseignes > 0 ? Math.round(gainsTotal / nbGainsRenseignes) : 0
+  const derniersGains = [...demarchesAvecGain]
+    .sort((a, b) => new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0))
+    .slice(0, 3)
 
   const nbDeadlinesProches = demarches.filter(d => {
     const days = getDaysLeft(d.deadline)
@@ -368,6 +392,51 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
         item.id === id ? { ...item, ...updates, updated_at: updatedAt } : item
       )
     )
+  }
+
+  async function saveGain(demarche) {
+    if (!demarche?.id) return
+
+    const rawValue = gainInputs[demarche.id] ?? demarche.montant_obtenu ?? ""
+    const value = Number(rawValue)
+
+    if (!Number.isFinite(value) || value < 0) {
+      alert(isKreol ? "Montan invalide." : "Montant invalide.")
+      return
+    }
+
+    setSavingId(demarche.id)
+
+    const updatedAt = new Date().toISOString()
+    const { error } = await supabase
+      .from("aide_demarches")
+      .update({
+        montant_obtenu: value,
+        status: "accepte",
+        updated_at: updatedAt,
+      })
+      .eq("id", demarche.id)
+
+    setSavingId(null)
+
+    if (error) {
+      console.error("Erreur sauvegarde gain:", error)
+      alert(isKreol ? "Erreur sauvegarde gain." : "Erreur lors de la sauvegarde du gain.")
+      return
+    }
+
+    setDemarches(prev =>
+      prev.map(item =>
+        item.id === demarche.id
+          ? { ...item, montant_obtenu: value, status: "accepte", updated_at: updatedAt }
+          : item
+      )
+    )
+
+    setGainInputs(prev => ({
+      ...prev,
+      [demarche.id]: String(value),
+    }))
   }
 
   async function addFollowUpNote(demarche) {
@@ -599,10 +668,95 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
               <span>⏰ {nbDeadlinesProches} {isKreol ? "date proche" : "date limite proche"}</span>
             </div>
 
+            <div
+              style={{
+                marginTop: 12,
+                background: "linear-gradient(135deg, rgba(34,197,94,.13), rgba(35,211,214,.07))",
+                border: "1px solid rgba(34,197,94,.24)",
+                borderRadius: 14,
+                padding: 14,
+                color: COLORS.text,
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  gap: 10,
+                  flexWrap: "wrap",
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 900 }}>
+                  <DollarSign size={18} color={COLORS.green} />
+                  {isKreol ? "Gains cumulés" : "Gains cumulés"}
+                </div>
+
+                <strong style={{ color: COLORS.green, fontSize: 22 }}>
+                  {formatEuro(gainsTotal)}
+                </strong>
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  gap: 10,
+                  flexWrap: "wrap",
+                  marginTop: 10,
+                  color: COLORS.muted,
+                  fontSize: 12,
+                  lineHeight: 1.55,
+                }}
+              >
+                <span>✅ {nbGainsRenseignes} {isKreol ? "gain(s) renseignés" : "gain(s) renseigné(s)"}</span>
+                <span>🟢 {nbAccepte} {isKreol ? "dossier(s) accepté(s)" : "dossier(s) accepté(s)"}</span>
+                {gainsMoyen > 0 && <span>📊 {isKreol ? "Moyenne" : "Moyenne"} : {formatEuro(gainsMoyen)}</span>}
+                {demarchesAccepteesSansGain.length > 0 && (
+                  <span style={{ color: COLORS.yellow, fontWeight: 900 }}>
+                    ⚠️ {demarchesAccepteesSansGain.length} {isKreol ? "gain(s) à renseigner" : "gain(s) à renseigner"}
+                  </span>
+                )}
+              </div>
+
+              {derniersGains.length > 0 && (
+                <div
+                  style={{
+                    marginTop: 10,
+                    display: "grid",
+                    gap: 6,
+                    color: COLORS.text,
+                    fontSize: 12,
+                  }}
+                >
+                  <div style={{ color: COLORS.green, fontWeight: 900 }}>
+                    {isKreol ? "Derniers gains enregistrés" : "Derniers gains enregistrés"}
+                  </div>
+                  {derniersGains.map(gain => (
+                    <div
+                      key={`gain-${gain.id}`}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        gap: 10,
+                        background: "rgba(255,255,255,.045)",
+                        border: "1px solid rgba(255,255,255,.08)",
+                        borderRadius: 10,
+                        padding: "7px 9px",
+                      }}
+                    >
+                      <span>{isKreol ? gain.title_kr || gain.title || gain.aide_nom : gain.title || gain.aide_nom}</span>
+                      <strong style={{ color: COLORS.green }}>{formatEuro(getGainAmount(gain))}</strong>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
             {(nbDeadlinesProches > 0 ||
               nbDeadlinesDepassees > 0 ||
               nbAttenteLongue > 0 ||
-              nbDocumentsApreparer > 0) && (
+              nbDocumentsApreparer > 0 ||
+              demarchesAccepteesSansGain.length > 0) && (
               <div
                 style={{
                   marginTop: 14,
@@ -646,6 +800,18 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                     }
                   />
                 )}
+
+
+                {demarchesAccepteesSansGain.length > 0 && (
+                  <AlertBox
+                    color={COLORS.yellow}
+                    text={
+                      isKreol
+                        ? `💰 ${demarchesAccepteesSansGain.length} dossier accepté avec gain à renseigner`
+                        : `💰 ${demarchesAccepteesSansGain.length} dossier accepté avec gain à renseigner`
+                    }
+                  />
+                )}
               </div>
             )}
           </div>
@@ -676,8 +842,8 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
             {sortedDemarches.map(demarche => {
               const status = getStatus(demarche.status, isKreol)
               const title = isKreol
-                ? demarche.title_kr || demarche.title
-                : demarche.title
+                ? demarche.title_kr || demarche.title || demarche.aide_nom || "Démarche"
+                : demarche.title || demarche.aide_nom || "Démarche"
               const daysLeft = getDaysLeft(demarche.deadline)
 
               return (
@@ -816,6 +982,101 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                         }}
                       >
                         ✅ {isKreol ? "Dokiman préparé" : "Documents prêts"}
+                      </div>
+                    )}
+
+                    {demarche.status === "accepte" && (
+                      <div
+                        style={{
+                          marginTop: 12,
+                          padding: 12,
+                          background: "rgba(34,197,94,.08)",
+                          border: "1px solid rgba(34,197,94,.25)",
+                          borderRadius: 12,
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 8,
+                            color: COLORS.green,
+                            fontWeight: 900,
+                            fontSize: 13,
+                            marginBottom: 10,
+                          }}
+                        >
+                          <CheckCircle2 size={16} />
+                          {isKreol ? "Zéd aksepté - indique le montant gagné" : "Aide acceptée - indiquez le montant obtenu"}
+                        </div>
+
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
+                          <input
+                            type="number"
+                            min="0"
+                            value={gainInputs[demarche.id] ?? demarche.montant_obtenu ?? ""}
+                            onChange={e =>
+                              setGainInputs(prev => ({
+                                ...prev,
+                                [demarche.id]: e.target.value,
+                              }))
+                            }
+                            placeholder={isKreol ? "Montan obtenu" : "Montant obtenu"}
+                            style={{
+                              background: COLORS.card,
+                              border: `1px solid ${COLORS.border}`,
+                              borderRadius: 10,
+                              padding: "9px 10px",
+                              color: COLORS.text,
+                              fontSize: 12,
+                              fontFamily: "inherit",
+                              width: 170,
+                            }}
+                          />
+
+                          <button
+                            type="button"
+                            onClick={() => saveGain(demarche)}
+                            disabled={savingId === demarche.id}
+                            style={{
+                              background: savingId === demarche.id ? "rgba(142,164,197,.35)" : COLORS.green,
+                              color: COLORS.card,
+                              border: "none",
+                              borderRadius: 10,
+                              padding: "9px 12px",
+                              cursor: savingId === demarche.id ? "not-allowed" : "pointer",
+                              fontSize: 12,
+                              fontWeight: 900,
+                              fontFamily: "inherit",
+                            }}
+                          >
+                            {isKreol ? "Sauvegard gain" : "Sauvegarder le gain"}
+                          </button>
+                        </div>
+
+                        {getGainAmount(demarche) > 0 ? (
+                          <div
+                            style={{
+                              marginTop: 8,
+                              color: COLORS.green,
+                              fontWeight: 800,
+                              fontSize: 12,
+                            }}
+                          >
+                            ✅ {isKreol ? "Gain enregistré" : "Gain enregistré"} : {formatEuro(demarche.montant_obtenu)}
+                          </div>
+                        ) : (
+                          <div
+                            style={{
+                              marginTop: 8,
+                              color: COLORS.yellow,
+                              fontWeight: 800,
+                              fontSize: 12,
+                            }}
+                          >
+                            ⚠️ {isKreol ? "Renseigne le montant pour l’ajouter aux gains cumulés." : "Renseignez le montant pour l’ajouter aux gains cumulés."}
+                          </div>
+                        )}
                       </div>
                     )}
 

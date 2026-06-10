@@ -1,9 +1,12 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts"
 import { formatAmount, formatMontant } from "../../utils/format"
 import TropicalCard, { TROPICAL_VARIANTS } from "./TropicalCard"
 import BudgetSettingsModal from "../budgets/BudgetSettingModal"
 import { CATEGORIES } from "../../data/categories"
+import { supabase } from "../../services/supabase"
+
+// Dashboard V31 - Score BudgetKazPei + actions recommandées + économies détectées + traductions créoles améliorées
 
 const COLORS = {
   card: "#0F1E38",
@@ -14,6 +17,8 @@ const COLORS = {
   green: "#22C55E",
   red: "#EF4444",
   blue: "#38BDF8",
+  cyan: "#23D3D6",
+  yellow: "#FCD34D",
   muted: "#8EA4C5",
   text: "#F8FAFC",
   whiteSoft: "rgba(248,250,252,.82)",
@@ -482,7 +487,7 @@ function ProgressBar({ value, max, color }) {
 
 
 function MoneyDetectedCard({ t, isMobile, opportunitiesCount = 0, commune = "", onOpenOpportunities }) {
-  const isKreol = t("nav", "dashboard") === "Tablo débor"
+  const isKreol = String(t("nav", "dashboard") || "").toLowerCase().includes("tablo")
 
   return (
     <TropicalCard
@@ -509,7 +514,7 @@ function MoneyDetectedCard({ t, isMobile, opportunitiesCount = 0, commune = "", 
             }}
           >
             {isKreol
-            ? "🎯 Bon plan détecté pou ou"
+            ? "🎯 Bon Plan Détekté Pou Ou"
             : "🎯 Opportunités détectées pour vous"}
           </div>
 
@@ -521,7 +526,7 @@ function MoneyDetectedCard({ t, isMobile, opportunitiesCount = 0, commune = "", 
               lineHeight: 1.15,
             }}
           >
-            {opportunitiesCount} {isKreol ? "bon plan pertinent(s)" : "opportunité(s) pertinente(s)"}
+            {opportunitiesCount} {isKreol ? "bon plan intérésan" : "opportunité(s) pertinente(s)"}
           </div>
 
           <div
@@ -535,7 +540,7 @@ function MoneyDetectedCard({ t, isMobile, opportunitiesCount = 0, commune = "", 
             📍 {commune || (isKreol ? "La Rényon" : "La Réunion")}
             <br />
             {isKreol
-          ? "Bann éd, bon plan ek démarches susceptibles concerne aou."
+          ? "Bann èd, bon plan ek démarches i pé concerne aou."
           : "Aides, bons plans et démarches susceptibles de vous concerner."}
           </div>
         </div>
@@ -558,11 +563,520 @@ function MoneyDetectedCard({ t, isMobile, opportunitiesCount = 0, commune = "", 
             boxShadow: "0 0 18px rgba(245,158,11,.10)",
           }}
         >
-          {isKreol ? "War bann bon plan" : "Voir mes opportunités"}
+          {isKreol ? "Gad Bann Bon Plan" : "Voir mes opportunités"}
         </button>
       </div>
     </TropicalCard>
   )
+}
+
+function RecoveredMoneyCard({
+  t,
+  isMobile,
+  gainsAides = 0,
+  nbAidesObtenues = 0,
+  objectifGains = 1000,
+  onOpenAides,
+  gainsDetails = [],
+}) {
+  const isKreol = String(t("nav", "dashboard") || "").toLowerCase().includes("tablo")
+  const gains = Number(gainsAides || 0)
+  const objectif = Number(objectifGains || 1000)
+  const progress = objectif > 0 ? Math.min(Math.round((gains / objectif) * 100), 100) : 0
+  const hasGains = gains > 0
+
+  return (
+    <TropicalCard
+      variant="green"
+      texture="💸"
+      style={{ padding: isMobile ? 16 : 22 }}
+    >
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: isMobile ? "flex-start" : "center",
+          gap: 16,
+          flexDirection: isMobile ? "column" : "row",
+        }}
+      >
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div
+            style={{
+              color: "#BEF264",
+              fontWeight: 900,
+              fontSize: 13,
+              marginBottom: 6,
+            }}
+          >
+            {isKreol
+              ? "💰 Larzan Récupéré Avèk BudgetKazPei"
+              : "💰 Argent récupéré grâce à BudgetKazPei"}
+          </div>
+
+          <div
+            style={{
+              color: COLORS.text,
+              fontSize: isMobile ? 30 : 38,
+              fontWeight: 900,
+              lineHeight: 1,
+              fontFamily: "'DM Serif Display', Georgia, serif",
+            }}
+          >
+            {gains.toFixed(0)} €
+          </div>
+
+          <div
+            style={{
+              marginTop: 8,
+              color: COLORS.muted,
+              fontSize: 13,
+              lineHeight: 1.45,
+            }}
+          >
+            ✅ {nbAidesObtenues} {isKreol ? "èd obténu" : "aide(s) obtenue(s)"}
+            <br />
+            {hasGains
+              ? isKreol
+                ? "Out démarches i commence rapport aou pou vré."
+                : "Vos démarches commencent à rapporter concrètement."
+              : isKreol
+                ? "Mèt in démarche an Aksepté, épi rant lo montan gagné."
+                : "Passez une démarche en accepté puis renseignez le gain."}
+          </div>
+
+          {gainsDetails.length > 0 && (
+            <div style={{ marginTop: 12, display: "grid", gap: 6 }}>
+              <div style={{ color: COLORS.green, fontSize: 12, fontWeight: 900 }}>
+                {isKreol ? "Dèrnyé gains anrezistré" : "Derniers gains enregistrés"}
+              </div>
+              {gainsDetails.slice(0, 3).map((gain, index) => (
+                <div
+                  key={`${gain.label}-${index}`}
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    gap: 10,
+                    background: "rgba(255,255,255,.055)",
+                    border: "1px solid rgba(255,255,255,.08)",
+                    borderRadius: 10,
+                    padding: "8px 10px",
+                    color: COLORS.text,
+                    fontSize: 12,
+                    fontWeight: 800,
+                  }}
+                >
+                  <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{gain.label}</span>
+                  <span style={{ color: COLORS.green, flexShrink: 0 }}>{Number(gain.amount || 0).toFixed(0)} €</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div
+          style={{
+            width: isMobile ? "100%" : 260,
+            background: "rgba(10,22,40,.40)",
+            border: "1px solid rgba(255,255,255,.10)",
+            borderRadius: 16,
+            padding: 14,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              gap: 10,
+              color: COLORS.whiteSoft,
+              fontSize: 12,
+              fontWeight: 900,
+              marginBottom: 8,
+            }}
+          >
+            <span>{isKreol ? "Lobzéktif lanné" : "Objectif annuel"}</span>
+            <span style={{ color: "#BEF264" }}>{progress}%</span>
+          </div>
+
+          <div
+            style={{
+              height: 9,
+              background: "rgba(255,255,255,.12)",
+              borderRadius: 999,
+              overflow: "hidden",
+              marginBottom: 9,
+            }}
+          >
+            <div
+              style={{
+                width: `${progress}%`,
+                height: "100%",
+                background: "linear-gradient(90deg, #22C55E, #BEF264)",
+                borderRadius: 999,
+                transition: "width .45s ease",
+              }}
+            />
+          </div>
+
+          <div style={{ color: COLORS.muted, fontSize: 12, lineHeight: 1.45 }}>
+            {gains.toFixed(0)} € / {objectif.toFixed(0)} €
+          </div>
+
+          {onOpenAides && (
+            <button
+              type="button"
+              onClick={onOpenAides}
+              style={{
+                width: "100%",
+                marginTop: 12,
+                background: "rgba(34,197,94,.14)",
+                border: "1px solid rgba(34,197,94,.28)",
+                borderRadius: 12,
+                color: "#BEF264",
+                padding: "9px 12px",
+                cursor: "pointer",
+                fontWeight: 900,
+                fontFamily: "inherit",
+              }}
+            >
+              {isKreol ? "Gad mes démarches" : "Voir mes démarches"}
+            </button>
+          )}
+        </div>
+      </div>
+    </TropicalCard>
+  )
+}
+
+
+function getIsKreol(t) {
+  return String(t?.("nav", "dashboard") || "").toLowerCase().includes("tablo")
+}
+
+function buildBudgetScore({ stats = {}, byCategory = [], gainsAides = 0, nbAidesObtenues = 0, opportunitiesCount = 0 }) {
+  const revenus = Number(stats.revenus || 0)
+  const depenses = Number(stats.depenses || 0)
+  const solde = Number(stats.solde || 0)
+  const chargesFixes = Number(stats.chargesFixes || 0)
+  let score = 72
+  const positive = []
+  const warnings = []
+
+  if (revenus > 0) {
+    const depRatio = depenses / revenus
+    const chargesRatio = chargesFixes / revenus
+
+    if (depRatio <= 0.75) {
+      score += 10
+      positive.push("budget_maitrise")
+    } else if (depRatio > 1) {
+      score -= 18
+      warnings.push("depenses_hautes")
+    } else {
+      score -= 7
+      warnings.push("depenses_a_surveille")
+    }
+
+    if (chargesRatio <= 0.45) {
+      score += 8
+      positive.push("charges_ok")
+    } else if (chargesRatio > 0.65) {
+      score -= 12
+      warnings.push("charges_hautes")
+    }
+  } else {
+    score -= 8
+    warnings.push("revenus_manquants")
+  }
+
+  if (solde >= 0) {
+    score += 7
+    positive.push("solde_ok")
+  } else {
+    score -= 15
+    warnings.push("solde_negatif")
+  }
+
+  const overBudget = byCategory.filter(cat => Number(cat.budget || 0) > 0 && Number(cat.depense || 0) > Number(cat.budget || 0))
+  if (overBudget.length > 0) {
+    score -= Math.min(18, overBudget.length * 6)
+    warnings.push("budgets_depasses")
+  } else if (byCategory.length > 0) {
+    score += 6
+    positive.push("categories_ok")
+  }
+
+  if (Number(gainsAides || 0) > 0 || Number(nbAidesObtenues || 0) > 0) {
+    score += 8
+    positive.push("aides_obtenues")
+  } else if (Number(opportunitiesCount || 0) > 0) {
+    score += 3
+    warnings.push("aides_a_verifier")
+  }
+
+  score = Math.max(0, Math.min(100, Math.round(score)))
+
+  const color = score >= 80 ? COLORS.green : score >= 60 ? COLORS.accentSoft : COLORS.red
+  const level = score >= 80 ? "excellent" : score >= 60 ? "correct" : "attention"
+  return { score, color, level, positive: positive.slice(0, 3), warnings: warnings.slice(0, 3), overBudget }
+}
+
+function getScoreLabel(level, isKreol) {
+  if (level === "excellent") return isKreol ? "Tré bon" : "Excellent"
+  if (level === "correct") return isKreol ? "Correct" : "Correct"
+  return isKreol ? "À surveyé" : "À surveiller"
+}
+
+function getSignalText(key, isKreol) {
+  const fr = {
+    budget_maitrise: "Budget global maîtrisé",
+    charges_ok: "Charges fixes raisonnables",
+    solde_ok: "Solde positif ce mois-ci",
+    categories_ok: "Budgets par catégorie suivis",
+    aides_obtenues: "Aides obtenues enregistrées",
+    depenses_hautes: "Dépenses trop élevées ce mois-ci",
+    depenses_a_surveille: "Dépenses à surveiller",
+    charges_hautes: "Charges fixes importantes",
+    revenus_manquants: "Revenus à compléter",
+    solde_negatif: "Solde négatif ce mois-ci",
+    budgets_depasses: "Une ou plusieurs catégories dépassées",
+    aides_a_verifier: "Opportunités à vérifier",
+  }
+
+  const kr = {
+    budget_maitrise: "Bidjé global lé maîtrisé",
+    charges_ok: "Sarz fix lé rézonab",
+    solde_ok: "Larzan i reste lé positif",
+    categories_ok: "Bidjé par katégori lé suivi",
+    aides_obtenues: "Èd obténu lé anrezistré",
+    depenses_hautes: "Dépans lé tro o pou mwa-la",
+    depenses_a_surveille: "Dépans à surveyé",
+    charges_hautes: "Sarz fix lé important",
+    revenus_manquants: "Larzan i rantre lé à compléter",
+    solde_negatif: "Larzan i reste lé négatif",
+    budgets_depasses: "Na katégori la dépassé",
+    aides_a_verifier: "Bon plan à vérifié",
+  }
+
+  return (isKreol ? kr : fr)[key] || key
+}
+
+function SmartWelcomeCard({ t, isMobile, stats = {}, gainsAides = 0, nbAidesObtenues = 0, opportunitiesCount = 0, objectifGains = 1000, commune = "" }) {
+  const isKreol = getIsKreol(t)
+  const gains = Number(gainsAides || stats.gainsAides || 0)
+  const restantObjectif = Math.max(Number(objectifGains || 1000) - gains, 0)
+  const solde = Number(stats.solde || 0)
+
+  return (
+    <TropicalCard variant="lagoon" texture="🌴" style={{ padding: isMobile ? 16 : 22 }}>
+      <div style={{ color: COLORS.text, fontWeight: 900, fontSize: isMobile ? 18 : 22, marginBottom: 8 }}>
+        {isKreol ? "Bonzour Jacques 👋" : "Bonjour Jacques 👋"}
+      </div>
+      <div style={{ color: COLORS.whiteSoft, fontSize: 14, lineHeight: 1.65 }}>
+        {gains > 0
+          ? isKreol
+            ? `Ou la déjà récupér ${gains.toFixed(0)} € grâce à BudgetKazPei.`
+            : `Vous avez déjà récupéré ${gains.toFixed(0)} € grâce à BudgetKazPei.`
+          : isKreol
+            ? "Commence par ajouté in démarche, puis rant lo gain kan èd-la lé aksepté."
+            : "Commencez par ajouter une démarche, puis renseignez le gain quand l’aide est acceptée."}
+        {" "}
+        {restantObjectif > 0
+          ? isKreol
+            ? `I reste ${restantObjectif.toFixed(0)} € pou atteindre lobzéktif lanné.`
+            : `Il reste ${restantObjectif.toFixed(0)} € pour atteindre l’objectif annuel.`
+          : isKreol
+            ? "Lobzéktif lanné lé atteint. Bravo !"
+            : "L’objectif annuel est atteint. Bravo !"}
+        <br />
+        {opportunitiesCount > 0
+          ? isKreol
+            ? `${opportunitiesCount} bon plan i mérite d'être vérifié${commune ? ` à ${commune}` : ""}.`
+            : `${opportunitiesCount} opportunité(s) méritent d’être vérifiées${commune ? ` à ${commune}` : ""}.`
+          : isKreol
+            ? "Aucun bon plan urgent détecté pou le moment."
+            : "Aucune opportunité urgente détectée pour le moment."}
+        {solde < 0 && (
+          <span style={{ color: COLORS.red, fontWeight: 900 }}>
+            {isKreol ? " Attention : out solde lé négatif." : " Attention : votre solde est négatif."}
+          </span>
+        )}
+      </div>
+    </TropicalCard>
+  )
+}
+
+function BudgetScoreCard({ t, isMobile, stats = {}, byCategory = [], gainsAides = 0, nbAidesObtenues = 0, opportunitiesCount = 0 }) {
+  const isKreol = getIsKreol(t)
+  const result = buildBudgetScore({ stats, byCategory, gainsAides, nbAidesObtenues, opportunitiesCount })
+
+  return (
+    <TropicalCard variant="purple" texture="🏆" style={{ padding: isMobile ? 16 : 22 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 14, flexDirection: isMobile ? "column" : "row" }}>
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ color: result.color, fontSize: 13, fontWeight: 900, marginBottom: 6 }}>
+            🏆 {isKreol ? "Score BudgetKazPei" : "Score BudgetKazPei"}
+          </div>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+            <span style={{ color: COLORS.text, fontSize: isMobile ? 34 : 42, fontWeight: 900, lineHeight: 1, fontFamily: "'DM Serif Display', Georgia, serif" }}>
+              {result.score}
+            </span>
+            <span style={{ color: COLORS.muted, fontWeight: 900 }}>/ 100</span>
+            <span style={{ color: result.color, fontWeight: 900, marginLeft: 6 }}>{getScoreLabel(result.level, isKreol)}</span>
+          </div>
+          <div style={{ height: 9, background: "rgba(255,255,255,.12)", borderRadius: 999, overflow: "hidden", marginTop: 12 }}>
+            <div style={{ width: `${result.score}%`, height: "100%", background: `linear-gradient(90deg, ${result.color}, ${COLORS.cyan})`, borderRadius: 999 }} />
+          </div>
+        </div>
+
+        <div style={{ width: isMobile ? "100%" : 360, display: "grid", gap: 7 }}>
+          {result.positive.map(key => (
+            <div key={key} style={{ color: COLORS.green, fontSize: 12, fontWeight: 800 }}>✅ {getSignalText(key, isKreol)}</div>
+          ))}
+          {result.warnings.map(key => (
+            <div key={key} style={{ color: COLORS.yellow, fontSize: 12, fontWeight: 800 }}>⚠️ {getSignalText(key, isKreol)}</div>
+          ))}
+        </div>
+      </div>
+    </TropicalCard>
+  )
+}
+
+function buildRecommendedActions({ stats = {}, byCategory = [], opportunitiesCount = 0, gainsAides = 0, nbAidesObtenues = 0, transactions = [], isPremium = false, isKreol = false }) {
+  const actions = []
+  const solde = Number(stats.solde || 0)
+
+  if (solde < 0) {
+    actions.push({ done: false, icon: "🚨", text: isKreol ? "Rédui in dépense ou ajoute in revenu pou repass solde positif." : "Réduire une dépense ou ajouter un revenu pour repasser en solde positif." })
+  }
+
+  const overBudget = byCategory.find(cat => Number(cat.budget || 0) > 0 && Number(cat.depense || 0) > Number(cat.budget || 0))
+  if (overBudget) {
+    actions.push({ done: false, icon: "⚠️", text: isKreol ? `Survey katégori ${overBudget.emoji || ""} ${overBudget.id}.` : `Surveiller la catégorie ${overBudget.emoji || ""} ${overBudget.id}.` })
+  }
+
+  if (opportunitiesCount > 0) {
+    actions.push({ done: false, icon: "🎯", text: isKreol ? `Vérifie ${opportunitiesCount} bon plan détecté.` : `Vérifier ${opportunitiesCount} opportunité(s) détectée(s).` })
+  }
+
+  if (Number(gainsAides || 0) <= 0 && Number(nbAidesObtenues || 0) <= 0) {
+    actions.push({ done: false, icon: "💰", text: isKreol ? "Passe in démarche en Aksepté épi rant lo montant gagné." : "Passer une démarche en Acceptée puis renseigner le gain." })
+  } else {
+    actions.push({ done: true, icon: "💰", text: isKreol ? "Gain aide anrezistré." : "Gain d’aide enregistré." })
+  }
+
+  if (!transactions || transactions.length === 0) {
+    actions.push({ done: false, icon: "➕", text: isKreol ? "Azout out premiers mouvman pou rendre tablo pli précis." : "Ajouter vos premiers mouvements pour rendre le tableau plus précis." })
+  }
+
+  if (!isPremium) {
+    actions.push({ done: false, icon: "👑", text: isKreol ? "Déblok alertes budget ek PDF avek Premium." : "Débloquer les alertes budget et PDF avec Premium." })
+  }
+
+  return actions.slice(0, 4)
+}
+
+function RecommendedActionsCard({ t, isMobile, stats = {}, byCategory = [], opportunitiesCount = 0, gainsAides = 0, nbAidesObtenues = 0, transactions = [], isPremium = false, onOpenOpportunities, onOpenAides, onGoPremium }) {
+  const isKreol = getIsKreol(t)
+  const actions = buildRecommendedActions({ stats, byCategory, opportunitiesCount, gainsAides, nbAidesObtenues, transactions, isPremium, isKreol })
+  const done = actions.filter(action => action.done).length
+
+  return (
+    <TropicalCard variant="ocean" texture="🎯" style={{ padding: isMobile ? 16 : 22 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 12 }}>
+        <div style={{ color: COLORS.text, fontWeight: 900, fontSize: 16 }}>
+          🎯 {isKreol ? "Bann actions pou fé" : "Actions recommandées"}
+        </div>
+        <div style={{ color: COLORS.cyan, fontSize: 12, fontWeight: 900 }}>
+          {done} / {actions.length}
+        </div>
+      </div>
+
+      <div style={{ display: "grid", gap: 8 }}>
+        {actions.map((action, index) => (
+          <div key={`${action.text}-${index}`} style={{ display: "flex", alignItems: "flex-start", gap: 10, background: "rgba(255,255,255,.045)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 12, padding: "10px 11px", color: COLORS.text, fontSize: 13, lineHeight: 1.45 }}>
+            <span>{action.done ? "✅" : "☐"}</span>
+            <span><strong style={{ marginRight: 4 }}>{action.icon}</strong>{action.text}</span>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
+        {onOpenAides && (
+          <button type="button" onClick={onOpenAides} style={{ background: "rgba(34,197,94,.12)", border: "1px solid rgba(34,197,94,.28)", color: "#BEF264", borderRadius: 999, padding: "8px 11px", fontWeight: 900, cursor: "pointer", fontFamily: "inherit" }}>
+            {isKreol ? "Èd & Démarches" : "Aides & démarches"}
+          </button>
+        )}
+        {onOpenOpportunities && (
+          <button type="button" onClick={onOpenOpportunities} style={{ background: "rgba(252,211,77,.12)", border: "1px solid rgba(252,211,77,.28)", color: "#FDE68A", borderRadius: 999, padding: "8px 11px", fontWeight: 900, cursor: "pointer", fontFamily: "inherit" }}>
+            {isKreol ? "Bon Plan" : "Opportunités"}
+          </button>
+        )}
+        {!isPremium && onGoPremium && (
+          <button type="button" onClick={onGoPremium} style={{ background: "rgba(167,139,250,.12)", border: "1px solid rgba(167,139,250,.28)", color: "#DDD6FE", borderRadius: 999, padding: "8px 11px", fontWeight: 900, cursor: "pointer", fontFamily: "inherit" }}>
+            Premium+
+          </button>
+        )}
+      </div>
+    </TropicalCard>
+  )
+}
+
+function SavingsDetectedCard({ t, isMobile, abonnements = [], onOpenOpportunities }) {
+  const isKreol = getIsKreol(t)
+  const totalCharges = abonnements.reduce((sum, item) => sum + moneyValue(item.montant), 0)
+  const estimatedSavings = totalCharges > 0 ? Math.max(8, Math.round(totalCharges * 0.08)) : 0
+
+  if (estimatedSavings <= 0) return null
+
+  return (
+    <TropicalCard variant="gold" texture="💡" style={{ padding: isMobile ? 16 : 22 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center", gap: 14, flexDirection: isMobile ? "column" : "row" }}>
+        <div>
+          <div style={{ color: COLORS.yellow, fontWeight: 900, fontSize: 13, marginBottom: 6 }}>
+            💡 {isKreol ? "Ékonomi possible" : "Économies possibles"}
+          </div>
+          <div style={{ color: COLORS.text, fontSize: isMobile ? 26 : 34, fontWeight: 900, lineHeight: 1, fontFamily: "'DM Serif Display', Georgia, serif" }}>
+            {estimatedSavings} € / {isKreol ? "mwa" : "mois"}
+          </div>
+          <div style={{ color: COLORS.muted, fontSize: 13, marginTop: 8, lineHeight: 1.45 }}>
+            {isKreol
+              ? "Estimation su abonnements ek sarz fix. Bann bon plan pé aide aou économizé plis."
+              : "Estimation sur vos abonnements et charges fixes. Les bons plans peuvent vous aider à économiser plus."}
+          </div>
+        </div>
+
+        <button type="button" onClick={onOpenOpportunities} style={{ width: isMobile ? "100%" : "auto", background: "linear-gradient(135deg, rgba(252,211,77,.25), rgba(249,115,22,.22))", border: "1px solid rgba(252,211,77,.35)", borderRadius: 14, color: "#FDE68A", padding: "11px 15px", cursor: "pointer", fontWeight: 900, fontFamily: "inherit" }}>
+          {isKreol ? "Gad Bann Bon Plan" : "Voir les bons plans"}
+        </button>
+      </div>
+    </TropicalCard>
+  )
+}
+
+
+function normalizeDashboardStatus(value) {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+}
+
+function getDashboardGainAmount(item = {}) {
+  return moneyValue(
+    item.montant_obtenu ??
+    item.gain_amount ??
+    item.gain ??
+    item.amount_obtenu ??
+    item.montant ??
+    0
+  )
+}
+
+function isAcceptedDashboardDemarche(item = {}) {
+  const status = normalizeDashboardStatus(item.status)
+  return status.includes("accept") || status.includes("aksept") || status === "accepte"
 }
 
 export default function Dashboard({
@@ -580,11 +1094,85 @@ export default function Dashboard({
   opportunitiesCount = 0,
   commune = "",
   onOpenOpportunities,
+  gainsAides = 0,
+  nbAidesObtenues = 0,
+  objectifGains = 1000,
+  onOpenAides,
 }) {
   const { revenus, depenses, solde } = stats
   const [openedDetails, setOpenedDetails] = useState(null)
   const [showBudgetModal, setShowBudgetModal] = useState(false)
   const ofIncome = revenus > 0 ? ((depenses / revenus) * 100).toFixed(0) : 0
+  const [dashboardAideGains, setDashboardAideGains] = useState({
+    gainsAides: 0,
+    nbAidesObtenues: 0,
+    gainsDetails: [],
+    loaded: false,
+  })
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function fetchAideGainsForDashboard() {
+      try {
+        const { data: authData, error: authError } = await supabase.auth.getUser()
+        if (authError || !authData?.user?.id) return
+
+        const { data, error } = await supabase
+          .from("aide_demarches")
+          .select("*")
+          .eq("user_id", authData.user.id)
+
+        if (error) {
+          console.error("Erreur chargement gains dashboard:", error)
+          return
+        }
+
+        const acceptedWithGain = (data || [])
+          .filter(item => isAcceptedDashboardDemarche(item))
+          .map(item => ({
+            ...item,
+            dashboardGainAmount: getDashboardGainAmount(item),
+          }))
+          .filter(item => item.dashboardGainAmount > 0)
+
+        const total = acceptedWithGain.reduce((sum, item) => sum + item.dashboardGainAmount, 0)
+        const details = acceptedWithGain
+          .sort((a, b) => new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0))
+          .map(item => ({
+            label: item.aide_nom || item.nom || "Aide obtenue",
+            amount: item.dashboardGainAmount,
+          }))
+
+        if (!cancelled) {
+          setDashboardAideGains({
+            gainsAides: total,
+            nbAidesObtenues: acceptedWithGain.length,
+            gainsDetails: details,
+            loaded: true,
+          })
+        }
+      } catch (error) {
+        console.error("Erreur inattendue gains dashboard:", error)
+      }
+    }
+
+    fetchAideGainsForDashboard()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const effectiveGainsAides = dashboardAideGains.loaded
+    ? dashboardAideGains.gainsAides
+    : Number(gainsAides || stats.gainsAides || 0)
+
+  const effectiveNbAidesObtenues = dashboardAideGains.loaded
+    ? dashboardAideGains.nbAidesObtenues
+    : Number(nbAidesObtenues || stats.nbAidesObtenues || 0)
+
+  const effectiveGainsDetails = dashboardAideGains.gainsDetails || []
 
   function toggleDetails(section) {
     setOpenedDetails(prev => (prev === section ? null : section))
@@ -638,6 +1226,27 @@ export default function Dashboard({
       {openedDetails === "revenus" && <RevenusDetails stats={stats} transactions={transactions} abonnements={abonnements} onClose={() => setOpenedDetails(null)} t={t} />}
       {openedDetails === "depenses" && <DepensesDetails stats={stats} onClose={() => setOpenedDetails(null)} t={t} />}
 
+      <SmartWelcomeCard
+        t={t}
+        isMobile={isMobile}
+        stats={stats}
+        gainsAides={effectiveGainsAides}
+        nbAidesObtenues={effectiveNbAidesObtenues}
+        opportunitiesCount={opportunitiesCount}
+        objectifGains={objectifGains}
+        commune={commune}
+      />
+
+      <BudgetScoreCard
+        t={t}
+        isMobile={isMobile}
+        stats={stats}
+        byCategory={byCategory}
+        gainsAides={effectiveGainsAides}
+        nbAidesObtenues={effectiveNbAidesObtenues}
+        opportunitiesCount={opportunitiesCount}
+      />
+
       <MoneyDetectedCard
         t={t}
         isMobile={isMobile}
@@ -645,6 +1254,46 @@ export default function Dashboard({
         commune={commune}
         onOpenOpportunities={onOpenOpportunities || onGoPremium}
       />
+
+      <RecoveredMoneyCard
+        t={t}
+        isMobile={isMobile}
+        gainsAides={effectiveGainsAides}
+        nbAidesObtenues={effectiveNbAidesObtenues}
+        objectifGains={objectifGains}
+        onOpenAides={onOpenAides}
+        gainsDetails={effectiveGainsDetails}
+      />
+
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+          gap: 14,
+        }}
+      >
+        <RecommendedActionsCard
+          t={t}
+          isMobile={isMobile}
+          stats={stats}
+          byCategory={byCategory}
+          opportunitiesCount={opportunitiesCount}
+          gainsAides={effectiveGainsAides}
+          nbAidesObtenues={effectiveNbAidesObtenues}
+          transactions={transactions}
+          isPremium={isPremium}
+          onOpenOpportunities={onOpenOpportunities || onGoPremium}
+          onOpenAides={onOpenAides}
+          onGoPremium={onGoPremium}
+        />
+
+        <SavingsDetectedCard
+          t={t}
+          isMobile={isMobile}
+          abonnements={abonnements}
+          onOpenOpportunities={onOpenOpportunities || onGoPremium}
+        />
+      </div>
 
       <div
         style={{
@@ -682,7 +1331,7 @@ export default function Dashboard({
               </div>
             </>
           ) : (
-            <div style={{ textAlign: "center", padding: "20px 0", color: COLORS.whiteSoft, fontSize: 13 }}>Aucune dépense ce mois</div>
+            <div style={{ textAlign: "center", padding: "20px 0", color: COLORS.whiteSoft, fontSize: 13 }}>{getIsKreol(t) ? "Nana pa dépans pou mwa-la" : "Aucune dépense ce mois"}</div>
           )}
         </TropicalCard>
 
@@ -693,7 +1342,7 @@ export default function Dashboard({
           {transactions.length === 0 ? (
             <div style={{ textAlign: "center", padding: "20px 0", color: COLORS.whiteSoft, fontSize: 13 }}>
               <div style={{ fontSize: 28, marginBottom: 8 }}>📭</div>
-              Aucune transaction
+              {getIsKreol(t) ? "Nana pa mouvman" : "Aucune transaction"}
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -732,7 +1381,7 @@ export default function Dashboard({
       {isPremium && byCategory.some(cat => cat.budget > 0 && cat.depense >= cat.budget) && (
         <TropicalCard variant="coral" texture="⚠️" style={{ padding: isMobile ? 16 : 20 }}>
           <h3 style={{ margin: "0 0 12px", fontSize: 16, color: COLORS.text, fontWeight: 900 }}>
-            Alertes budget
+            {getIsKreol(t) ? "Alèrt bidjé" : "Alertes budget"}
           </h3>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -817,7 +1466,7 @@ export default function Dashboard({
               lineHeight: 1.5,
             }}
           >
-            Fonction Premium : personnalisez vos budgets par catégorie et recevez des alertes de dépassement.
+            {getIsKreol(t) ? "Fonksyon Premium : personnaliz out bidjé par katégori é gagn alèrt si ou dépassé." : "Fonction Premium : personnalisez vos budgets par catégorie et recevez des alertes de dépassement."}
           </div>
         )}
 
