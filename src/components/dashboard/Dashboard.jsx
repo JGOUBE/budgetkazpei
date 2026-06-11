@@ -6,7 +6,7 @@ import BudgetSettingsModal from "../budgets/BudgetSettingModal"
 import { CATEGORIES } from "../../data/categories"
 import { supabase } from "../../services/supabase"
 
-// Dashboard V31 - Score BudgetKazPei + actions recommandées + économies détectées + traductions créoles améliorées
+// Dashboard V33 - Finition Play Store : gains Supabase + score + actions + économies + créole amélioré
 
 const COLORS = {
   card: "#0F1E38",
@@ -526,7 +526,7 @@ function MoneyDetectedCard({ t, isMobile, opportunitiesCount = 0, commune = "", 
               lineHeight: 1.15,
             }}
           >
-            {opportunitiesCount} {isKreol ? "bon plan intérésan" : "opportunité(s) pertinente(s)"}
+            {opportunitiesCount} {isKreol ? "bon plan pou gad" : "aides ou bons plans à vérifier"}
           </div>
 
           <div
@@ -878,7 +878,7 @@ function SmartWelcomeCard({ t, isMobile, stats = {}, gainsAides = 0, nbAidesObte
             ? `Ou la déjà récupér ${gains.toFixed(0)} € grâce à BudgetKazPei.`
             : `Vous avez déjà récupéré ${gains.toFixed(0)} € grâce à BudgetKazPei.`
           : isKreol
-            ? "Commence par ajouté in démarche, puis rant lo gain kan èd-la lé aksepté."
+            ? "Commence par azouté in démarche, épi rant lo gain kan èd-la lé aksepté."
             : "Commencez par ajouter une démarche, puis renseignez le gain quand l’aide est acceptée."}
         {" "}
         {restantObjectif > 0
@@ -894,7 +894,7 @@ function SmartWelcomeCard({ t, isMobile, stats = {}, gainsAides = 0, nbAidesObte
             ? `${opportunitiesCount} bon plan i mérite d'être vérifié${commune ? ` à ${commune}` : ""}.`
             : `${opportunitiesCount} opportunité(s) méritent d’être vérifiées${commune ? ` à ${commune}` : ""}.`
           : isKreol
-            ? "Aucun bon plan urgent détecté pou le moment."
+            ? "Nana pa bon plan urgent détecté pou le moment."
             : "Aucune opportunité urgente détectée pour le moment."}
         {solde < 0 && (
           <span style={{ color: COLORS.red, fontWeight: 900 }}>
@@ -960,7 +960,7 @@ function buildRecommendedActions({ stats = {}, byCategory = [], opportunitiesCou
   }
 
   if (Number(gainsAides || 0) <= 0 && Number(nbAidesObtenues || 0) <= 0) {
-    actions.push({ done: false, icon: "💰", text: isKreol ? "Passe in démarche en Aksepté épi rant lo montant gagné." : "Passer une démarche en Acceptée puis renseigner le gain." })
+    actions.push({ done: false, icon: "💰", text: isKreol ? "Passe in démarche an Aksepté épi rant lo montan gagné." : "Passer une démarche en Acceptée puis renseigner le gain." })
   } else {
     actions.push({ done: true, icon: "💰", text: isKreol ? "Gain aide anrezistré." : "Gain d’aide enregistré." })
   }
@@ -1034,14 +1034,14 @@ function SavingsDetectedCard({ t, isMobile, abonnements = [], onOpenOpportunitie
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center", gap: 14, flexDirection: isMobile ? "column" : "row" }}>
         <div>
           <div style={{ color: COLORS.yellow, fontWeight: 900, fontSize: 13, marginBottom: 6 }}>
-            💡 {isKreol ? "Ékonomi possible" : "Économies possibles"}
+            💡 {isKreol ? "Ékonomi posib" : "Économies possibles"}
           </div>
           <div style={{ color: COLORS.text, fontSize: isMobile ? 26 : 34, fontWeight: 900, lineHeight: 1, fontFamily: "'DM Serif Display', Georgia, serif" }}>
             {estimatedSavings} € / {isKreol ? "mwa" : "mois"}
           </div>
           <div style={{ color: COLORS.muted, fontSize: 13, marginTop: 8, lineHeight: 1.45 }}>
             {isKreol
-              ? "Estimation su abonnements ek sarz fix. Bann bon plan pé aide aou économizé plis."
+              ? "Estimation su abonman ek sarz fix. Bann bon plan pé aide aou ékonomizé plis."
               : "Estimation sur vos abonnements et charges fixes. Les bons plans peuvent vous aider à économiser plus."}
           </div>
         </div>
