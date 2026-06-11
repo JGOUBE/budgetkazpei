@@ -1152,8 +1152,8 @@ function ContactSupportCard({ t, isMobile }) {
 
           <div style={{ color: COLORS.muted, fontSize: 13, marginTop: 7, lineHeight: 1.5 }}>
             {isKreol
-              ? "In bug, in kestion ou in idée ? Rant out message, li sera enregistré dann BudgetKazPei."
-              : "Un bug, une question ou une idée ? Écrivez votre message, il sera enregistré dans BudgetKazPei."}
+              ? "In bug, in kestion ou in idée ? Rant out message, li sera envoyé à BudgetKazPei é gardé dann lespas support."
+              : "Un bug, une question ou une idée ? Écrivez votre message, il sera envoyé à BudgetKazPei et conservé dans votre espace support."}
           </div>
 
           <div
@@ -1239,7 +1239,7 @@ function ContactSupportCard({ t, isMobile }) {
 
           {success && (
             <div style={{ background: "rgba(34,197,94,.12)", border: "1px solid rgba(34,197,94,.28)", borderRadius: 12, padding: "10px 12px", color: "#BEF264", fontSize: 12, fontWeight: 800 }}>
-              ✅ {isKreol ? "Message envoyé. Nou la bien reçu out message." : "Message envoyé. Vous recevrez aussi une copie dans la boîte BudgetKazPei."}
+              ✅ {isKreol ? "Out message la bien été envoyé. Nou répond aou dès que possible." : "Votre message a bien été envoyé. Nous vous répondrons dès que possible."}
             </div>
           )}
 

@@ -514,7 +514,7 @@ export default function ProfilePage({ user, t }) {
 
           {supportSuccess && (
             <div style={{ background: `${COLORS.green}15`, border: `1px solid ${COLORS.green}33`, borderRadius: 8, padding: "10px 14px", fontSize: 13, color: COLORS.green }}>
-              ✅ Message envoyé. Vous recevrez aussi une copie dans la boîte BudgetKazPei.
+              ✅ Votre message a bien été envoyé. Nous vous répondrons dès que possible.
             </div>
           )}
 
