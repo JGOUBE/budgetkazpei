@@ -26,7 +26,7 @@ const CONTENT = {
     heroBadge: "🇷🇪 Pensé pour La Réunion",
     heroTitle: "💰 Plus d'argent. Moins de stress.",
     heroText:
-      "Aides, économies et bons plans : ne laissez plus les opportunités vous échapper.",
+      "Aides, démarches et économies locales : BudgetKazPei vous aide à voir clair et à avancer sans stress.",
     heroButton: "⭐ Voir les avantages Premium",
     problemTitle: "💡 Aides, économies, réductions, dispositifs locaux...",
     problemText:
@@ -57,17 +57,17 @@ const CONTENT = {
     premiumPlusTitle: "Premium+",
     freeSubtitle: "Découvrir BudgetKazPei et suivre l'essentiel.",
     premiumSubtitle:
-      "Pour ceux qui veulent identifier davantage d'opportunités et rester informés.",
+      "Pour débloquer l’assistant aides, les démarches guidées, les alertes budget et les exports PDF.",
     premiumPlusSubtitle:
-      "Votre copilote BudgetKazPei. Analyse, accompagnement et futures fonctionnalités IA.",
+      "Gagnez du temps, identifiez davantage d’aides et simplifiez vos démarches grâce à votre assistant IA personnel.",
     freeButton: "🔍 Voir mes aides possibles",
     premiumButton: "⭐ Débloquer Premium",
     premiumPlusButton: "👑 Passer à Premium+",
     perMonth: "/mois",
     popularBadge: "POPULAIRE",
     recommendedPlusBadge: "RECOMMANDÉ ++",
-    premiumSoon: "Le paiement Premium sera branché à Stripe à l'étape suivante.",
-    premiumPlusSoon: "Le paiement Premium+ sera branché à Stripe à l'étape suivante.",
+    premiumSoon: "Stripe sera branché à l’étape suivante. Pour l’instant, l’offre Premium est présentée en pré-lancement.",
+    premiumPlusSoon: "Stripe sera branché à l’étape suivante. Pour l’instant, l’offre Premium+ est présentée en pré-lancement.",
     trustTitle: "💬 BudgetKazPei évolue avec ses utilisateurs",
     trustText:
       "Chaque retour compte. Vos remarques permettront d'améliorer l'application et d'ajouter les fonctionnalités les plus utiles aux Réunionnais.",
@@ -79,7 +79,7 @@ const CONTENT = {
       ],
       [
         "Puis-je changer d'offre ?",
-        "Oui. Vous pourrez passer de Premium à Premium+ si vous souhaitez accéder au futur Conseiller IA BudgetKazPei et aux fonctionnalités avancées.",
+        "Oui. Vous pourrez passer de Premium à Premium+ si vous souhaitez accéder à l’Assistant IA Personnel BudgetKazPei et aux fonctionnalités avancées.",
       ],
       [
         "Mes données sont-elles conservées ?",
@@ -94,8 +94,8 @@ const CONTENT = {
         "Non. BudgetKazPei s'adresse à tous les Réunionnais qui veulent mieux gérer leur budget, suivre leurs dépenses et rester informés des aides, économies et bons plans existants.",
       ],
       [
-        "Le Conseiller IA est-il déjà disponible ?",
-        "Le Conseiller IA BudgetKazPei est en cours de développement. Il sera progressivement enrichi pour accompagner les utilisateurs dans leur budget et leurs démarches.",
+        "L’Assistant IA Personnel BudgetKazPei est-il disponible ?",
+        "L’assistant IA fait partie de Premium+. Les fonctions avancées sont indiquées comme bientôt disponibles tant qu’elles ne sont pas branchées dans l’application.",
       ],
       [
         "Les fonctionnalités vont-elles évoluer ?",
@@ -127,13 +127,15 @@ const CONTENT = {
     ],
     premiumPlusFeatures: [
       "Tout Premium inclus",
-      "Conseiller IA BudgetKazPei",
+      "Assistant IA Personnel BudgetKazPei",
       "Conversation libre en français ou créole",
-      "Analyse budgétaire avancée",
-      "Génération de courriers administratifs",
-      "Préparation de dossiers complets",
+      "Analyse budgétaire avancée — bientôt disponible",
+      "Génération de courriers administratifs — bientôt disponible",
+      "Préparation de dossiers complets — bientôt disponible",
       "Conseils personnalisés selon le profil",
-      "Veille automatique des droits et nouvelles aides",
+      "Comparateur de promotions réunionnaises — bientôt disponible",
+      "Analyse intelligente des courses — bientôt disponible",
+      "Veille automatique des droits et nouvelles aides — bientôt disponible",
     ],
   },
   kr: {
@@ -142,7 +144,7 @@ const CONTENT = {
     heroBadge: "🇷🇪 Fait pou La Rényon",
     heroTitle: "💰 Pli de larzan. Mwins stress.",
     heroText:
-      "Zéd, lékonomi é bon plan : laisse pa bann opportunités échappe aou.",
+      "Zéd, démarches é lékonomi lokal : BudgetKazPei i aide aou voir pli kler é avance san stress.",
     heroButton: "⭐ Voir bann avantages Premium",
     problemTitle: "💡 Zéd, lékonomi, réductions, dispositifs lokal...",
     problemText:
@@ -173,17 +175,17 @@ const CONTENT = {
     premiumPlusTitle: "Premium+",
     freeSubtitle: "Découv BudgetKazPei é suivre lessentiel.",
     premiumSubtitle:
-      "Pou bann moun ke i veu trouv plis opportunités é reste informés.",
+      "Pou débloque lasistan zéd, démarches guidées, alèrt bidjé é export PDF.",
     premiumPlusSubtitle:
-      "Out copilote BudgetKazPei. Analiz, accompagnement é futures fonctionnalités IA.",
+      "Gagn tan, trouv plis zéd é simplifie out démarches grâce à out asistan IA personnel.",
     freeButton: "🔍 Voir mon bann zéd possibles",
     premiumButton: "⭐ Débloque Premium",
     premiumPlusButton: "👑 Pass Premium+",
     perMonth: "/mwa",
     popularBadge: "POPILÈR",
     recommendedPlusBadge: "REKOMANDÉ ++",
-    premiumSoon: "Paiement Premium va être branché ek Stripe dann prochaine étape.",
-    premiumPlusSoon: "Paiement Premium+ va être branché ek Stripe dann prochaine étape.",
+    premiumSoon: "Stripe va être branché dann prochaine étape. Pou l’instant, l’offre Premium lé présenté en pré-lancement.",
+    premiumPlusSoon: "Stripe va être branché dann prochaine étape. Pou l’instant, l’offre Premium+ lé présenté en pré-lancement.",
     trustTitle: "💬 BudgetKazPei i évolue ek bann utilisateurs",
     trustText:
       "Sak retour lé important. Out remarques i va aide améliore l'application é ajoute bann fonctionnalités pli utiles pou bann Rényoné.",
@@ -195,7 +197,7 @@ const CONTENT = {
       ],
       [
         "Mi pé changer doffre ?",
-        "Wi. Ou pourra pass Premium à Premium+ si ou veu accès au futur Konseye IA BudgetKazPei é fonctionnalités avancées.",
+        "Wi. Ou pourra pass Premium à Premium+ si ou veu accès à l’Asistan IA Personnel BudgetKazPei é fonctionnalités avancées.",
       ],
       [
         "Mon bann données lé gardées ?",
@@ -210,8 +212,8 @@ const CONTENT = {
         "Non. BudgetKazPei lé pou tout bann Rényoné ke i veu mieux gérer zot bidjé, suivre zot dépans é reste informés bann zéd, lékonomi é bons plans existants.",
       ],
       [
-        "Konseye IA lé déjà disponible ?",
-        "Konseye IA BudgetKazPei lé en développement. Li sera enrichi progressivement pou aide su bidjé é démarches.",
+        "Lasistan IA Personnel BudgetKazPei lé disponible ?",
+        "Lasistan IA i fait partie Premium+. Bann fonksyon avancées lé indiquées bientôt disponible tant que zot lé pa branchées dann l’application.",
       ],
       [
         "Fonctionnalités i va évolué ?",
@@ -243,13 +245,15 @@ const CONTENT = {
     ],
     premiumPlusFeatures: [
       "Tout Premium inclus",
-      "Konseye IA BudgetKazPei",
+      "Asistan IA Personnel BudgetKazPei",
       "Diskision libre an fransé ou kréol",
-      "Analiz bidjé pli avansé",
-      "Kréation courrier administratif",
-      "Préparasyon dosyé konplé",
+      "Analiz bidjé pli avansé — bientôt disponible",
+      "Kréation courrier administratif — bientôt disponible",
+      "Préparasyon dosyé konplé — bientôt disponible",
       "Konsey personnalisés selon out profil",
-      "Veille otomatik bann drwa é nouvo zéd",
+      "Comparateur promos rényoné — bientôt disponible",
+      "Analiz entèlizan des courses — bientôt disponible",
+      "Veille otomatik bann drwa é nouvo zéd — bientôt disponible",
     ],
   },
 }

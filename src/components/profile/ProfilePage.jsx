@@ -1,5 +1,6 @@
 import { useState, useRef } from "react"
 import { useProfile } from "../../hooks/useProfile"
+import { supabase } from "../../services/supabase"
 
 const COLORS = {
   bg: "#0A1628",
@@ -15,6 +16,8 @@ const COLORS = {
   cyan: "#23D3D6",
   purple: "#A78BFA",
 }
+
+const CONTACT_EMAIL = "contact.budgetkazpei@gmail.com"
 
 const COMMUNES = [
   "Bras-Panon", "Entre-Deux", "Étang-Salé", "Cilaos", "La Plaine-des-Palmistes",
@@ -44,6 +47,9 @@ export default function ProfilePage({ user, t }) {
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState("")
   const [avatarPreview, setAvatarPreview] = useState(null)
+  const [supportSending, setSupportSending] = useState(false)
+  const [supportSuccess, setSupportSuccess] = useState(false)
+  const [supportError, setSupportError] = useState("")
   const fileRef = useRef()
 
   if (profile && !form) {
@@ -126,6 +132,73 @@ export default function ProfilePage({ user, t }) {
 
   function openPremiumOptions() {
     window.open("https://budgetkazpei.vercel.app/premium", "_blank", "noopener,noreferrer")
+  }
+
+  async function handleSupportSubmit(e) {
+    e.preventDefault()
+    setSupportError("")
+    setSupportSuccess(false)
+
+    const data = new FormData(e.currentTarget)
+    const nom = String(data.get("nom") || "").trim()
+    const email = String(data.get("email_utilisateur") || "").trim()
+    const typeDemande = String(data.get("type_demande") || "question")
+    const message = String(data.get("message") || "").trim()
+
+    if (!email || !message) {
+      setSupportError("Renseignez votre email et votre message.")
+      return
+    }
+
+    setSupportSending(true)
+
+    try {
+      const subjectByType = {
+        question: "Question / besoin d’aide",
+        bug: "Signalement de bug",
+        suggestion: "Suggestion d’amélioration",
+        premium: "Question Premium / Premium+",
+      }
+
+      const supportPayload = {
+        user_id: user?.id || null,
+        user_email: email || user?.email || null,
+        user_name: nom || form.nom || "Utilisateur BudgetKazPei",
+        type: typeDemande,
+        subject: subjectByType[typeDemande] || "Message utilisateur",
+        message,
+        source: "profil",
+        status: "new",
+      }
+
+      const { error: insertError } = await supabase
+        .from("support_messages")
+        .insert(supportPayload)
+
+      if (insertError) throw insertError
+
+      const { error: emailError } = await supabase.functions.invoke("clever-service", {
+        body: {
+          user_email: supportPayload.user_email,
+          user_name: supportPayload.user_name,
+          type: supportPayload.type,
+          subject: supportPayload.subject,
+          message: supportPayload.message,
+          source: supportPayload.source,
+        },
+      })
+
+      if (emailError) throw emailError
+
+      setSupportSuccess(true)
+      e.currentTarget.reset()
+      setTimeout(() => setSupportSuccess(false), 4500)
+    } catch (err) {
+      console.error("Erreur envoi message support:", err)
+      setSupportError("Le message n’a pas pu être envoyé. Réessayez dans un instant.")
+    } finally {
+      setSupportSending(false)
+    }
   }
 
   return (
@@ -355,6 +428,117 @@ export default function ProfilePage({ user, t }) {
           >
             {saving ? t("profil", "saving") : t("profil", "save")}
           </button>
+        </form>
+      </div>
+
+      <div
+        style={{
+          background: `linear-gradient(135deg, ${COLORS.cyan}12, ${COLORS.card})`,
+          border: `1px solid ${COLORS.cyan}33`,
+          borderRadius: 20,
+          padding: 24,
+          display: "flex",
+          flexDirection: "column",
+          gap: 16,
+        }}
+      >
+        <div>
+          <div style={{ fontSize: 17, fontWeight: 800, color: COLORS.cyan, marginBottom: 6 }}>
+            📧 Nous contacter
+          </div>
+          <div style={{ fontSize: 13, color: COLORS.muted, lineHeight: 1.6 }}>
+            Une question, un bug ou une idée pour améliorer BudgetKazPei ? Remplissez le message ci-dessous, il sera envoyé directement à l’équipe BudgetKazPei.
+          </div>
+          <div
+            style={{
+              marginTop: 10,
+              background: "rgba(10,22,40,.45)",
+              border: `1px solid ${COLORS.border}`,
+              borderRadius: 12,
+              padding: "10px 12px",
+              color: COLORS.text,
+              fontSize: 13,
+              fontWeight: 700,
+            }}
+          >
+            Destinataire : <span style={{ color: COLORS.cyan }}>{CONTACT_EMAIL}</span>
+          </div>
+        </div>
+
+        <form onSubmit={handleSupportSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <Field label="Votre nom">
+            <input
+              type="text"
+              name="nom"
+              defaultValue={form.nom || ""}
+              placeholder="Votre nom"
+              style={inputStyle}
+            />
+          </Field>
+
+          <Field label="Votre email">
+            <input
+              type="email"
+              name="email_utilisateur"
+              defaultValue={user?.email || ""}
+              placeholder="votre@email.com"
+              required
+              style={inputStyle}
+            />
+          </Field>
+
+          <Field label="Type de demande">
+            <select name="type_demande" defaultValue="question" style={inputStyle}>
+              <option value="question">Question / besoin d’aide</option>
+              <option value="bug">Signaler un bug</option>
+              <option value="suggestion">Suggérer une amélioration</option>
+              <option value="premium">Question Premium / Premium+</option>
+            </select>
+          </Field>
+
+          <Field label="Votre message">
+            <textarea
+              name="message"
+              required
+              placeholder="Écrivez votre message ici..."
+              rows={5}
+              style={{ ...inputStyle, resize: "vertical", minHeight: 120 }}
+            />
+          </Field>
+
+          {supportError && (
+            <div style={{ background: `${COLORS.red}15`, border: `1px solid ${COLORS.red}33`, borderRadius: 8, padding: "10px 14px", fontSize: 13, color: COLORS.red }}>
+              ⚠️ {supportError}
+            </div>
+          )}
+
+          {supportSuccess && (
+            <div style={{ background: `${COLORS.green}15`, border: `1px solid ${COLORS.green}33`, borderRadius: 8, padding: "10px 14px", fontSize: 13, color: COLORS.green }}>
+              ✅ Message envoyé. Vous recevrez aussi une copie dans la boîte BudgetKazPei.
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={supportSending}
+            style={{
+              background: supportSending ? COLORS.muted : COLORS.cyan,
+              border: "none",
+              borderRadius: 12,
+              padding: "13px 16px",
+              color: "#0A1628",
+              fontSize: 15,
+              fontWeight: 900,
+              cursor: supportSending ? "not-allowed" : "pointer",
+              fontFamily: "inherit",
+            }}
+          >
+            {supportSending ? "Envoi..." : "📩 Envoyer le message"}
+          </button>
+
+          <p style={{ margin: 0, color: COLORS.muted, fontSize: 11.5, lineHeight: 1.45 }}>
+            Le message sera enregistré dans Supabase et envoyé par email à BudgetKazPei. Support : {CONTACT_EMAIL}.
+          </p>
         </form>
       </div>
 

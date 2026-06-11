@@ -36,21 +36,22 @@ const PREMIUM_FEATURES_FR = [
   "Suivi des démarches administratives",
   "Documents à préparer avec checklist",
   "Alertes budget intelligentes",
-  "Bons plans intelligents",
+  "Bons plans locaux",
   "Historique avancé",
   "Export PDF mensuel",
 ]
 
 const PREMIUM_PLUS_FEATURES_FR = [
   "Tout Premium inclus",
-  "Conseiller IA BudgetKazPei",
+  "Assistant IA Personnel BudgetKazPei",
   "Conversation libre en français ou créole",
-  "Analyse budgétaire avancée",
-  "Génération de courriers administratifs",
-  "Préparation de dossiers complets",
+  "Analyse budgétaire avancée — bientôt disponible",
+  "Génération de courriers administratifs — bientôt disponible",
+  "Préparation de dossiers complets — bientôt disponible",
   "Conseils personnalisés selon le profil",
-  "Veille automatique des droits et nouvelles aides",
-  "Futures automatisations Premium+",
+  "Comparateur de promotions réunionnaises — bientôt disponible",
+  "Analyse intelligente des courses — bientôt disponible",
+  "Veille automatique des droits et nouvelles aides — bientôt disponible",
 ]
 
 const FREE_FEATURES_KR = [
@@ -72,21 +73,22 @@ const PREMIUM_FEATURES_KR = [
   "Suivi bann démarches administratives",
   "Dokiman pou préparé ek checklist",
   "Alèrt bidjé entèlizan",
-  "Bon plan entèlizan",
+  "Bon plan lokal",
   "Istorik avansé",
   "Export PDF chak mwa",
 ]
 
 const PREMIUM_PLUS_FEATURES_KR = [
   "Tout Premium inclus",
-  "Konseye IA BudgetKazPei",
+  "Asistan IA Personnel BudgetKazPei",
   "Diskision libre an fransé ou kréol",
-  "Analiz bidjé pli avansé",
-  "Kréation courrier administratif",
-  "Préparasyon dosyé konplé",
+  "Analiz bidjé pli avansé — bientôt disponible",
+  "Kréation courrier administratif — bientôt disponible",
+  "Préparasyon dosyé konplé — bientôt disponible",
   "Konsey personnalisés selon out profil",
-  "Veille otomatik bann drwa é nouvo zéd",
-  "Futures otomatisations Premium+",
+  "Comparateur promos rényoné — bientôt disponible",
+  "Analiz entèlizan des courses — bientôt disponible",
+  "Veille otomatik bann drwa é nouvo zéd — bientôt disponible",
 ]
 
 const DESCRIPTIONS_FR = {
@@ -95,10 +97,12 @@ const DESCRIPTIONS_FR = {
   "Analyse personnalisée des aides": "L’app utilise le profil : commune, revenus, enfants, logement, CAF, situation professionnelle et autres critères.",
   "Suivi des démarches administratives": "Chaque aide peut passer par les étapes : à vérifier, dossier à préparer, demande envoyée, en attente, acceptée ou refusée.",
   "Documents à préparer avec checklist": "L’utilisateur sait quels justificatifs préparer et peut cocher les documents déjà prêts.",
-  "Bons plans intelligents": "Une rubrique pensée pour afficher des bons plans utiles selon le profil et les besoins.",
-  "Conseiller IA BudgetKazPei": "Un conseiller plus avancé, capable d’échanger librement et d’aider sur le budget, les aides et les démarches.",
-  "Génération de courriers administratifs": "Premium+ pourra aider à rédiger des courriers pour la CAF, le CCAS, la Région, le Département ou d’autres organismes.",
-  "Veille automatique des droits et nouvelles aides": "Premium+ préparera les futures alertes personnalisées quand une nouvelle aide peut concerner l’utilisateur.",
+  "Bons plans locaux": "Une rubrique pensée pour afficher des bons plans utiles selon le profil et les besoins.",
+  "Assistant IA Personnel BudgetKazPei": "Un assistant IA personnel pour gagner du temps, identifier davantage d’aides et simplifier les démarches.",
+  "Comparateur de promotions réunionnaises — bientôt disponible": "Le futur comparateur Premium+ aidera à repérer les promotions intéressantes à La Réunion.",
+  "Analyse intelligente des courses — bientôt disponible": "Cette future fonction Premium+ aidera à analyser les courses selon les besoins et les économies possibles.",
+  "Génération de courriers administratifs — bientôt disponible": "Premium+ pourra aider à rédiger des courriers pour la CAF, le CCAS, la Région, le Département ou d’autres organismes.",
+  "Veille automatique des droits et nouvelles aides — bientôt disponible": "Premium+ préparera les futures alertes personnalisées quand une nouvelle aide peut concerner l’utilisateur.",
 }
 
 const DESCRIPTIONS_KR = {
@@ -107,10 +111,12 @@ const DESCRIPTIONS_KR = {
   "Analiz personnalisée bann zéd": "L’app i utiliz profil : komin, revenu, marmay, kaz, CAF, sitiasyon travay é lezot kritèr.",
   "Suivi bann démarches administratives": "Sak zéd i pé pas par bann etap : pou vérifié, dosyé pou préparé, domann envoyée, an atant, aksepté ou refizé.",
   "Dokiman pou préparé ek checklist": "Lutilizatèr i koné ki papye pou préparé é i pé coché sak dokiman déza prêt.",
-  "Bon plan entèlizan": "In rubrique pou afficher bann bon plan itil selon profil é besoin.",
-  "Konseye IA BudgetKazPei": "In konseye pli avansé, kapab diskité libreman é aide su bidjé, zéd é démarches.",
-  "Kréation courrier administratif": "Premium+ va aide rédiz courrier pou CAF, CCAS, Région, Département ou lezot organismes.",
-  "Veille otomatik bann drwa é nouvo zéd": "Premium+ va prépar bann alertes personnalisées kan in nouvo zéd i pé konsern lutilizatèr.",
+  "Bon plan lokal": "In rubrique pou afficher bann bon plan itil selon profil é besoin.",
+  "Asistan IA Personnel BudgetKazPei": "In asistan IA personnel pou gagn tan, trouv plis zéd é simplifie bann démarches.",
+  "Comparateur promos rényoné — bientôt disponible": "Futur comparateur Premium+ la va aide trouv bann promos intéressantes La Rényon.",
+  "Analiz entèlizan des courses — bientôt disponible": "Futur fonksyon Premium+ la va aide analiz courses selon besoins é lékonomi possibles.",
+  "Kréation courrier administratif — bientôt disponible": "Premium+ va aide rédiz courrier pou CAF, CCAS, Région, Département ou lezot organismes.",
+  "Veille otomatik bann drwa é nouvo zéd — bientôt disponible": "Premium+ va prépar bann alertes personnalisées kan in nouvo zéd i pé konsern lutilizatèr.",
 }
 
 function Watermark({ size = 210, right = -45, bottom = -55 }) {
@@ -208,7 +214,7 @@ function FeatureItem({ feature, description, color = COLORS.green }) {
   )
 }
 
-function PlanCard({ icon, title, subtitle, features, color, badge, descriptions }) {
+function PlanCard({ icon, title, price, subtitle, features, color, badge, descriptions }) {
   return (
     <div
       style={{
@@ -251,6 +257,25 @@ function PlanCard({ icon, title, subtitle, features, color, badge, descriptions 
           <p style={{ margin: "8px 0 0", color: COLORS.muted, fontSize: 12.5, lineHeight: 1.45 }}>
             {subtitle}
           </p>
+
+          {price && (
+            <div
+              style={{
+                marginTop: 12,
+                color,
+                fontSize: 24,
+                fontWeight: 900,
+                fontFamily: "'DM Serif Display', serif",
+              }}
+            >
+              {price}
+              {price !== "0 €" && (
+                <span style={{ color: COLORS.muted, fontSize: 12, marginLeft: 5, fontFamily: "'DM Sans', sans-serif" }}>
+                  /mois
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         {badge && (
@@ -302,8 +327,8 @@ export default function PremiumPage({ user, isPremium, isPremiumPlus = false, t 
     : "Débloquez plus de puissance pour votre budget"
 
   const subline = isKreol
-    ? "BudgetKazPei propose in version gratuite, in offre Premium pou zéd, démarches é bon plan, é in offre Premium+ pou in vrai konseye IA."
-    : "BudgetKazPei propose une version gratuite, une offre Premium pour les aides, démarches et bons plans, et une offre Premium+ pour un vrai conseiller IA."
+    ? "BudgetKazPei propose in version gratuite, in offre Premium pou zéd, démarches, bon plan é export PDF, puis in offre Premium+ pou gagn tan ek in asistan IA personnel."
+    : "BudgetKazPei propose une version gratuite, une offre Premium pour les aides, démarches, bons plans et exports PDF, puis une offre Premium+ pour gagner du temps avec un assistant IA personnel."
 
   const freeFeatures = isKreol ? FREE_FEATURES_KR : FREE_FEATURES_FR
   const premiumFeatures = isKreol ? PREMIUM_FEATURES_KR : PREMIUM_FEATURES_FR
@@ -408,6 +433,7 @@ export default function PremiumPage({ user, isPremium, isPremiumPlus = false, t 
         <PlanCard
           icon="🆓"
           title={isKreol ? "Gratuit" : "Gratuit"}
+          price="0 €"
           subtitle={isKreol ? "Pou démarré ek out bidjé." : "Pour démarrer avec la gestion de votre budget."}
           features={freeFeatures}
           color={COLORS.green}
@@ -417,6 +443,7 @@ export default function PremiumPage({ user, isPremium, isPremiumPlus = false, t 
         <PlanCard
           icon="⭐"
           title="Premium"
+          price="2,99 €"
           subtitle={
             isKreol
               ? "Pou bann zéd, démarches, dokiman é bon plan an fransé ou kréol."
@@ -431,10 +458,11 @@ export default function PremiumPage({ user, isPremium, isPremiumPlus = false, t 
         <PlanCard
           icon="👑"
           title="Premium+"
+          price="4,99 €"
           subtitle={
             isKreol
-              ? "Pou in vrai konseye IA BudgetKazPei, pli avansé é pli personnalisée."
-              : "Pour un vrai conseiller IA BudgetKazPei, plus avancé et plus personnalisé."
+              ? "Gagn tan, trouv plis zéd é simplifie out démarches grâce à out asistan IA personnel."
+              : "Gagnez du temps, identifiez davantage d’aides et simplifiez vos démarches grâce à votre assistant IA personnel."
           }
           features={premiumPlusFeatures}
           color={COLORS.purple}

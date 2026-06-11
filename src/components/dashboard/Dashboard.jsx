@@ -6,6 +6,8 @@ import BudgetSettingsModal from "../budgets/BudgetSettingModal"
 import { CATEGORIES } from "../../data/categories"
 import { supabase } from "../../services/supabase"
 
+const SUPPORT_EMAIL = "contact.budgetkazpei@gmail.com"
+
 // Dashboard V33 - Finition Play Store : gains Supabase + score + actions + économies + créole amélioré
 
 const COLORS = {
@@ -1055,6 +1057,221 @@ function SavingsDetectedCard({ t, isMobile, abonnements = [], onOpenOpportunitie
 }
 
 
+
+function ContactSupportCard({ t, isMobile }) {
+  const isKreol = getIsKreol(t)
+  const [email, setEmail] = useState("")
+  const [typeDemande, setTypeDemande] = useState("question")
+  const [message, setMessage] = useState("")
+  const [sending, setSending] = useState(false)
+  const [success, setSuccess] = useState(false)
+  const [error, setError] = useState("")
+
+  async function handleSupportSubmit(e) {
+    e.preventDefault()
+    setError("")
+    setSuccess(false)
+
+    const cleanEmail = email.trim()
+    const cleanMessage = message.trim()
+
+    if (!cleanEmail || !cleanMessage) {
+      setError(isKreol ? "Rant out email ek out message." : "Renseignez votre email et votre message.")
+      return
+    }
+
+    setSending(true)
+
+    try {
+      const { data: authData } = await supabase.auth.getUser()
+      const authUser = authData?.user
+
+      const subjectByType = {
+        question: "Question / besoin d’aide",
+        bug: "Signalement de bug",
+        suggestion: "Suggestion d’amélioration",
+        premium: "Question Premium / Premium+",
+      }
+
+      const supportPayload = {
+        user_id: authUser?.id || null,
+        user_email: cleanEmail || authUser?.email || null,
+        user_name: authUser?.user_metadata?.name || authUser?.user_metadata?.full_name || "Utilisateur BudgetKazPei",
+        type: typeDemande,
+        subject: subjectByType[typeDemande] || "Message utilisateur",
+        message: cleanMessage,
+        source: "dashboard",
+        status: "new",
+      }
+
+      const { error: insertError } = await supabase
+        .from("support_messages")
+        .insert(supportPayload)
+
+      if (insertError) throw insertError
+
+      const { error: emailError } = await supabase.functions.invoke("clever-service", {
+        body: {
+          user_email: supportPayload.user_email,
+          user_name: supportPayload.user_name,
+          type: supportPayload.type,
+          subject: supportPayload.subject,
+          message: supportPayload.message,
+          source: supportPayload.source,
+        },
+      })
+
+      if (emailError) throw emailError
+
+      setSuccess(true)
+      setMessage("")
+      setTimeout(() => setSuccess(false), 4500)
+    } catch (err) {
+      console.error("Erreur envoi message support:", err)
+      setError(
+        isKreol
+          ? "Message-la la pa pu être envoyé. Réessay in kou."
+          : "Le message n’a pas pu être envoyé. Réessayez dans un instant."
+      )
+    } finally {
+      setSending(false)
+    }
+  }
+
+  return (
+    <TropicalCard variant="ocean" texture="📧" style={{ padding: isMobile ? 16 : 22 }}>
+      <div style={{ display: "grid", gap: 16 }}>
+        <div>
+          <div style={{ color: COLORS.cyan, fontWeight: 900, fontSize: 13, marginBottom: 6 }}>
+            {isKreol ? "📧 Bezoin aide ?" : "📧 Besoin d’aide ?"}
+          </div>
+
+          <div style={{ color: COLORS.text, fontSize: isMobile ? 20 : 24, fontWeight: 900, lineHeight: 1.15 }}>
+            {isKreol ? "Contacte BudgetKazPei" : "Contacter BudgetKazPei"}
+          </div>
+
+          <div style={{ color: COLORS.muted, fontSize: 13, marginTop: 7, lineHeight: 1.5 }}>
+            {isKreol
+              ? "In bug, in kestion ou in idée ? Rant out message, li sera enregistré dann BudgetKazPei."
+              : "Un bug, une question ou une idée ? Écrivez votre message, il sera enregistré dans BudgetKazPei."}
+          </div>
+
+          <div
+            style={{
+              marginTop: 10,
+              background: "rgba(10,22,40,.45)",
+              border: "1px solid rgba(255,255,255,.10)",
+              borderRadius: 12,
+              padding: "10px 12px",
+              color: COLORS.text,
+              fontSize: 13,
+              fontWeight: 800,
+            }}
+          >
+            {isKreol ? "Support" : "Support"} : <span style={{ color: COLORS.cyan }}>{SUPPORT_EMAIL}</span>
+          </div>
+        </div>
+
+        <form onSubmit={handleSupportSubmit} style={{ display: "grid", gap: 10 }}>
+          <input
+            type="email"
+            value={email}
+            onChange={e => setEmail(e.target.value)}
+            required
+            placeholder={isKreol ? "Out email" : "Votre email"}
+            style={{
+              background: "rgba(10,22,40,.55)",
+              border: "1px solid rgba(255,255,255,.12)",
+              borderRadius: 12,
+              padding: "12px 13px",
+              color: COLORS.text,
+              outline: "none",
+              fontFamily: "inherit",
+              fontSize: 13,
+            }}
+          />
+
+          <select
+            value={typeDemande}
+            onChange={e => setTypeDemande(e.target.value)}
+            style={{
+              background: "rgba(10,22,40,.55)",
+              border: "1px solid rgba(255,255,255,.12)",
+              borderRadius: 12,
+              padding: "12px 13px",
+              color: COLORS.text,
+              outline: "none",
+              fontFamily: "inherit",
+              fontSize: 13,
+            }}
+          >
+            <option value="question">{isKreol ? "Kestion / besoin aide" : "Question / besoin d’aide"}</option>
+            <option value="bug">{isKreol ? "Signale in bug" : "Signaler un bug"}</option>
+            <option value="suggestion">{isKreol ? "Propoz in amélioration" : "Suggérer une amélioration"}</option>
+            <option value="premium">Premium / Premium+</option>
+          </select>
+
+          <textarea
+            value={message}
+            onChange={e => setMessage(e.target.value)}
+            required
+            rows={4}
+            placeholder={isKreol ? "Ékrir out message isi..." : "Écrivez votre message ici..."}
+            style={{
+              background: "rgba(10,22,40,.55)",
+              border: "1px solid rgba(255,255,255,.12)",
+              borderRadius: 12,
+              padding: "12px 13px",
+              color: COLORS.text,
+              outline: "none",
+              fontFamily: "inherit",
+              fontSize: 13,
+              resize: "vertical",
+              minHeight: 105,
+            }}
+          />
+
+          {error && (
+            <div style={{ background: "rgba(239,68,68,.12)", border: "1px solid rgba(239,68,68,.28)", borderRadius: 12, padding: "10px 12px", color: "#FCA5A5", fontSize: 12, fontWeight: 800 }}>
+              ⚠️ {error}
+            </div>
+          )}
+
+          {success && (
+            <div style={{ background: "rgba(34,197,94,.12)", border: "1px solid rgba(34,197,94,.28)", borderRadius: 12, padding: "10px 12px", color: "#BEF264", fontSize: 12, fontWeight: 800 }}>
+              ✅ {isKreol ? "Message envoyé. Nou la bien reçu out message." : "Message envoyé. Vous recevrez aussi une copie dans la boîte BudgetKazPei."}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={sending}
+            style={{
+              width: "100%",
+              background: sending ? "rgba(142,164,197,.25)" : "rgba(35,211,214,.18)",
+              border: "1px solid rgba(35,211,214,.35)",
+              borderRadius: 14,
+              color: sending ? COLORS.muted : COLORS.cyan,
+              padding: "12px 14px",
+              cursor: sending ? "not-allowed" : "pointer",
+              fontWeight: 900,
+              fontFamily: "inherit",
+            }}
+          >
+            {sending ? (isKreol ? "Envoi..." : "Envoi...") : `📩 ${isKreol ? "Envoy message" : "Envoyer le message"}`}
+          </button>
+
+          <div style={{ color: COLORS.muted, fontSize: 11.5, lineHeight: 1.45 }}>
+            {isKreol
+              ? "Message-la lé stocké dann Supabase é envoyé par email à BudgetKazPei."
+              : "Le message est stocké dans Supabase et envoyé par email à BudgetKazPei."}
+          </div>
+        </form>
+      </div>
+    </TropicalCard>
+  )
+}
+
 function normalizeDashboardStatus(value) {
   return String(value || "")
     .toLowerCase()
@@ -1246,6 +1463,8 @@ export default function Dashboard({
         nbAidesObtenues={effectiveNbAidesObtenues}
         opportunitiesCount={opportunitiesCount}
       />
+
+      <ContactSupportCard t={t} isMobile={isMobile} />
 
       <MoneyDetectedCard
         t={t}
