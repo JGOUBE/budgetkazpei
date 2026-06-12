@@ -43,6 +43,7 @@ export default function Sidebar({
   t,
 }) {
   const isKreol = t("nav", "dashboard") === "Tablo débor"
+  const premiumActive = activeNav === "premium"
 
   const prenom =
     user?.user_metadata?.name ||
@@ -54,9 +55,11 @@ export default function Sidebar({
     ? "Gérer Premium+"
     : isPremium
       ? "Passer Premium+"
-      : t("nav", "premium")
+      : isKreol
+        ? "Vir Premium"
+        : "Découvrir Premium"
 
-  const premiumButtonIcon = isPremiumPlus ? "👑" : isPremium ? "👑" : null
+  const premiumButtonIcon = isPremiumPlus || isPremium ? "👑" : null
   const premiumColor = isPremiumPlus || isPremium ? COLORS.purple : COLORS.yellow
 
   function getNavLabel(item) {
@@ -220,14 +223,17 @@ export default function Sidebar({
             marginTop: 10,
             padding: "11px 13px",
             borderRadius: 13,
-            border: `1px solid ${premiumColor}55`,
-            background: `linear-gradient(135deg, ${premiumColor}22, rgba(245,158,11,.10))`,
+            border: `1px solid ${premiumColor}66`,
+            background: premiumActive
+              ? `linear-gradient(135deg, ${premiumColor}30, rgba(249,115,22,.16))`
+              : `linear-gradient(135deg, ${premiumColor}22, rgba(245,158,11,.10))`,
             color: premiumColor,
             cursor: "pointer",
             fontSize: 14,
             fontWeight: 900,
             fontFamily: "inherit",
             textAlign: "left",
+            boxShadow: premiumActive ? `0 0 18px ${premiumColor}20` : "none",
           }}
         >
           {premiumButtonIcon ? (

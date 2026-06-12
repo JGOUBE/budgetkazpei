@@ -214,7 +214,7 @@ function FeatureItem({ feature, description, color = COLORS.green }) {
   )
 }
 
-function PlanCard({ icon, title, price, subtitle, features, color, badge, descriptions }) {
+function PlanCard({ icon, title, subtitle, features, color, badge, descriptions }) {
   return (
     <div
       style={{
@@ -257,25 +257,6 @@ function PlanCard({ icon, title, price, subtitle, features, color, badge, descri
           <p style={{ margin: "8px 0 0", color: COLORS.muted, fontSize: 12.5, lineHeight: 1.45 }}>
             {subtitle}
           </p>
-
-          {price && (
-            <div
-              style={{
-                marginTop: 12,
-                color,
-                fontSize: 24,
-                fontWeight: 900,
-                fontFamily: "'DM Serif Display', serif",
-              }}
-            >
-              {price}
-              {price !== "0 €" && (
-                <span style={{ color: COLORS.muted, fontSize: 12, marginLeft: 5, fontFamily: "'DM Sans', sans-serif" }}>
-                  /mois
-                </span>
-              )}
-            </div>
-          )}
         </div>
 
         {badge && (
@@ -433,7 +414,6 @@ export default function PremiumPage({ user, isPremium, isPremiumPlus = false, t 
         <PlanCard
           icon="🆓"
           title={isKreol ? "Gratuit" : "Gratuit"}
-          price="0 €"
           subtitle={isKreol ? "Pou démarré ek out bidjé." : "Pour démarrer avec la gestion de votre budget."}
           features={freeFeatures}
           color={COLORS.green}
@@ -443,7 +423,6 @@ export default function PremiumPage({ user, isPremium, isPremiumPlus = false, t 
         <PlanCard
           icon="⭐"
           title="Premium"
-          price="2,99 €"
           subtitle={
             isKreol
               ? "Pou bann zéd, démarches, dokiman é bon plan an fransé ou kréol."
@@ -458,7 +437,6 @@ export default function PremiumPage({ user, isPremium, isPremiumPlus = false, t 
         <PlanCard
           icon="👑"
           title="Premium+"
-          price="4,99 €"
           subtitle={
             isKreol
               ? "Gagn tan, trouv plis zéd é simplifie out démarches grâce à out asistan IA personnel."
