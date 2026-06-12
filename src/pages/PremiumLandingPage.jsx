@@ -17,7 +17,16 @@ const COLORS = {
 
 const WATERMARK = "/icons-creole/palmier.png"
 const PREMIUM_PRICE = "2,99 €"
+const PREMIUM_ANNUAL_PRICE = "29,99 €"
 const PREMIUM_PLUS_PRICE = "4,99 €"
+const PREMIUM_PLUS_ANNUAL_PRICE = "49,99 €"
+
+const STRIPE_LINKS = {
+  premiumMonthly: "https://buy.stripe.com/test_fZu3cu7659qm3w03dN2oE03",
+  premiumAnnual: "https://buy.stripe.com/test_00waEW9ed4627Mg3dN2oE01",
+  premiumPlusMonthly: "https://buy.stripe.com/test_aFadR8fCB4621nS8y72oE02",
+  premiumPlusAnnual: "https://buy.stripe.com/test_fZu7sK6211XU5E83dN2oE04",
+}
 
 const CONTENT = {
   fr: {
@@ -64,6 +73,14 @@ const CONTENT = {
     premiumButton: "⭐ Débloquer Premium",
     premiumPlusButton: "👑 Passer à Premium+",
     perMonth: "/mois",
+    perYear: "/an",
+    monthlyLabel: "Mensuel",
+    annualLabel: "Annuel",
+    annualBadge: "🎁 2 mois offerts",
+    premiumMonthlyButton: "Choisir Premium mensuel",
+    premiumAnnualButton: "Choisir Premium annuel",
+    premiumPlusMonthlyButton: "Choisir Premium+ mensuel",
+    premiumPlusAnnualButton: "Choisir Premium+ annuel",
     popularBadge: "POPULAIRE",
     recommendedPlusBadge: "RECOMMANDÉ ++",
     premiumSoon: "Stripe sera branché à l’étape suivante. Pour l’instant, l’offre Premium est présentée en pré-lancement.",
@@ -182,6 +199,14 @@ const CONTENT = {
     premiumButton: "⭐ Débloque Premium",
     premiumPlusButton: "👑 Pass Premium+",
     perMonth: "/mwa",
+    perYear: "/an",
+    monthlyLabel: "Mensuel",
+    annualLabel: "Annuel",
+    annualBadge: "🎁 2 mwa offert",
+    premiumMonthlyButton: "Choisir Premium mensuel",
+    premiumAnnualButton: "Choisir Premium annuel",
+    premiumPlusMonthlyButton: "Choisir Premium+ mensuel",
+    premiumPlusAnnualButton: "Choisir Premium+ annuel",
     popularBadge: "POPILÈR",
     recommendedPlusBadge: "REKOMANDÉ ++",
     premiumSoon: "Stripe va être branché dann prochaine étape. Pou l’instant, l’offre Premium lé présenté en pré-lancement.",
@@ -451,19 +476,97 @@ function AnalysisPreview({ c }) {
   )
 }
 
+function OfferChoice({ label, price, period, badge, color, buttonText, onClick }) {
+  return (
+    <div
+      style={{
+        background: "rgba(10,22,40,.52)",
+        border: `1px solid ${color}35`,
+        borderRadius: 16,
+        padding: 14,
+        display: "flex",
+        flexDirection: "column",
+        gap: 10,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+        <span style={{ color: COLORS.text, fontSize: 13, fontWeight: 900 }}>{label}</span>
+        {badge && (
+          <span
+            style={{
+              background: `${color}22`,
+              border: `1px solid ${color}44`,
+              color,
+              borderRadius: 999,
+              padding: "4px 8px",
+              fontSize: 10.5,
+              fontWeight: 900,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {badge}
+          </span>
+        )}
+      </div>
+
+      <div>
+        <span
+          style={{
+            color,
+            fontSize: 30,
+            fontWeight: 900,
+            fontFamily: "'DM Serif Display', serif",
+          }}
+        >
+          {price}
+        </span>
+        <span style={{ color: COLORS.muted, marginLeft: 6, fontSize: 13 }}>{period}</span>
+      </div>
+
+      <button
+        type="button"
+        onClick={onClick}
+        style={{
+          width: "100%",
+          background: `linear-gradient(135deg, ${color}, ${COLORS.accent})`,
+          color: COLORS.bg,
+          border: "none",
+          borderRadius: 13,
+          padding: "12px 13px",
+          fontSize: 13.5,
+          fontWeight: 900,
+          cursor: "pointer",
+          fontFamily: "inherit",
+        }}
+      >
+        {buttonText}
+      </button>
+    </div>
+  )
+}
+
 function PlanCard({
   icon,
   title,
   price,
+  annualPrice,
   subtitle,
   features,
   color,
   badge,
   buttonText,
+  annualButtonText,
   onClick,
+  onAnnualClick,
   perMonth,
+  perYear,
+  monthlyLabel,
+  annualLabel,
+  annualBadge,
   featured = false,
 }) {
+  const hasAnnualOffer = Boolean(annualPrice && onAnnualClick)
+
   return (
     <article
       style={{
@@ -515,19 +618,40 @@ function PlanCard({
           {subtitle}
         </p>
 
-        <div style={{ margin: "16px 0 18px" }}>
-          <span
-            style={{
-              color,
-              fontSize: 36,
-              fontWeight: 900,
-              fontFamily: "'DM Serif Display', serif",
-            }}
-          >
-            {price}
-          </span>
-          {price !== "0 €" && <span style={{ color: COLORS.muted, marginLeft: 6 }}>{perMonth}</span>}
-        </div>
+        {hasAnnualOffer ? (
+          <div style={{ display: "grid", gap: 12, margin: "16px 0 18px" }}>
+            <OfferChoice
+              label={monthlyLabel}
+              price={price}
+              period={perMonth}
+              color={color}
+              buttonText={buttonText}
+              onClick={onClick}
+            />
+            <OfferChoice
+              label={annualLabel}
+              price={annualPrice}
+              period={perYear}
+              badge={annualBadge}
+              color={color}
+              buttonText={annualButtonText}
+              onClick={onAnnualClick}
+            />
+          </div>
+        ) : (
+          <div style={{ margin: "16px 0 18px" }}>
+            <span
+              style={{
+                color,
+                fontSize: 36,
+                fontWeight: 900,
+                fontFamily: "'DM Serif Display', serif",
+              }}
+            >
+              {price}
+            </span>
+          </div>
+        )}
 
         <div style={{ display: "grid", gap: 0 }}>
           {features.map((feature, index) => (
@@ -537,25 +661,27 @@ function PlanCard({
           ))}
         </div>
 
-        <button
-          type="button"
-          onClick={onClick}
-          style={{
-            width: "100%",
-            marginTop: 20,
-            background: `linear-gradient(135deg, ${color}, ${COLORS.accent})`,
-            color: COLORS.bg,
-            border: "none",
-            borderRadius: 15,
-            padding: "14px 16px",
-            fontSize: 15,
-            fontWeight: 900,
-            cursor: "pointer",
-            fontFamily: "inherit",
-          }}
-        >
-          {buttonText}
-        </button>
+        {!hasAnnualOffer && (
+          <button
+            type="button"
+            onClick={onClick}
+            style={{
+              width: "100%",
+              marginTop: 20,
+              background: `linear-gradient(135deg, ${color}, ${COLORS.accent})`,
+              color: COLORS.bg,
+              border: "none",
+              borderRadius: 15,
+              padding: "14px 16px",
+              fontSize: 15,
+              fontWeight: 900,
+              cursor: "pointer",
+              fontFamily: "inherit",
+            }}
+          >
+            {buttonText}
+          </button>
+        )}
       </div>
     </article>
   )
@@ -566,8 +692,8 @@ export default function PremiumLandingPage() {
   const [lang, setLang] = useState("fr")
   const c = CONTENT[lang]
 
-  function handleStripeSoon(plan) {
-    setMessage(plan === "premium_plus" ? c.premiumPlusSoon : c.premiumSoon)
+  function openStripeLink(url) {
+    window.open(url, "_blank", "noopener,noreferrer")
   }
 
   function goHome() {
@@ -796,27 +922,41 @@ export default function PremiumLandingPage() {
             icon="⭐"
             title={c.premiumTitle}
             price={PREMIUM_PRICE}
+            annualPrice={PREMIUM_ANNUAL_PRICE}
             subtitle={c.premiumSubtitle}
             features={c.premiumFeatures}
             color={COLORS.yellow}
             badge={c.popularBadge}
-            buttonText={c.premiumButton}
+            buttonText={c.premiumMonthlyButton}
+            annualButtonText={c.premiumAnnualButton}
             perMonth={c.perMonth}
-            onClick={() => handleStripeSoon("premium")}
+            perYear={c.perYear}
+            monthlyLabel={c.monthlyLabel}
+            annualLabel={c.annualLabel}
+            annualBadge={c.annualBadge}
+            onClick={() => openStripeLink(STRIPE_LINKS.premiumMonthly)}
+            onAnnualClick={() => openStripeLink(STRIPE_LINKS.premiumAnnual)}
           />
 
           <PlanCard
             icon="👑"
             title={c.premiumPlusTitle}
             price={PREMIUM_PLUS_PRICE}
+            annualPrice={PREMIUM_PLUS_ANNUAL_PRICE}
             subtitle={c.premiumPlusSubtitle}
             features={c.premiumPlusFeatures}
             color={COLORS.purple}
             badge={c.recommendedPlusBadge}
-            buttonText={c.premiumPlusButton}
+            buttonText={c.premiumPlusMonthlyButton}
+            annualButtonText={c.premiumPlusAnnualButton}
             perMonth={c.perMonth}
+            perYear={c.perYear}
+            monthlyLabel={c.monthlyLabel}
+            annualLabel={c.annualLabel}
+            annualBadge={c.annualBadge}
             featured
-            onClick={() => handleStripeSoon("premium_plus")}
+            onClick={() => openStripeLink(STRIPE_LINKS.premiumPlusMonthly)}
+            onAnnualClick={() => openStripeLink(STRIPE_LINKS.premiumPlusAnnual)}
           />
         </section>
 
