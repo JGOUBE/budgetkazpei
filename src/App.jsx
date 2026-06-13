@@ -103,19 +103,25 @@ console.log("EMAIL =", user?.email)
 
 const { profile } = useProfile(user?.id)
 
+// Normalisation abonnement : on utilise "plan" comme source principale.
+// Valeurs attendues : "free", "premium", "premium_plus".
+// Les anciens champs restent seulement en secours pour les vieux profils.
 const isAdmin = profile?.is_admin === true
+const plan = profile?.plan || "free"
 
 const isPremium =
   isAdmin ||
+  plan === "premium" ||
+  plan === "premium_plus" ||
   profile?.premium === true ||
-  profile?.premium_plus === true ||
-  profile?.plan === "premium" ||
-  profile?.plan === "premium_plus"
+  profile?.is_premium === true ||
+  profile?.premium_plus === true
 
+// Important : un admin ne doit PAS être affiché automatiquement en Premium+.
+// Premium+ doit dépendre uniquement du plan premium_plus ou de l'ancien champ premium_plus.
 const isPremiumPlus =
-  isAdmin ||
-  profile?.premium_plus === true ||
-  profile?.plan === "premium_plus"
+  plan === "premium_plus" ||
+  profile?.premium_plus === true
 
 
   const { customBudgets, saveBudgets } = useCustomBudgets(
