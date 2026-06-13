@@ -751,6 +751,30 @@ function RecoveredMoneyCard({
 }
 
 
+
+function normalizeSubscriptionPlan({ plan, isPremium, isPremiumPlus } = {}) {
+  const cleanPlan = String(plan || "").toLowerCase().trim()
+
+  if (cleanPlan === "premium_plus") return "premium_plus"
+  if (cleanPlan === "premium") return "premium"
+  if (cleanPlan === "free") return "free"
+
+  if (isPremiumPlus === true) return "premium_plus"
+  if (isPremium === true) return "premium"
+
+  return "free"
+}
+
+function getPremiumFlags({ plan, isPremium, isPremiumPlus } = {}) {
+  const normalizedPlan = normalizeSubscriptionPlan({ plan, isPremium, isPremiumPlus })
+
+  return {
+    plan: normalizedPlan,
+    hasPremiumAccess: normalizedPlan === "premium" || normalizedPlan === "premium_plus",
+    hasPremiumPlusAccess: normalizedPlan === "premium_plus",
+  }
+}
+
 function getIsKreol(t) {
   return String(t?.("nav", "dashboard") || "").toLowerCase().includes("tablo")
 }
@@ -1305,6 +1329,8 @@ export default function Dashboard({
   t,
   isMobile,
   isPremium = false,
+  isPremiumPlus = false,
+  plan = "free",
   customBudgets = [],
   onSaveBudgets,
   onGoPremium,
@@ -1326,6 +1352,9 @@ export default function Dashboard({
     gainsDetails: [],
     loaded: false,
   })
+
+  const premiumStatus = getPremiumFlags({ plan, isPremium, isPremiumPlus })
+  const hasPremiumAccess = premiumStatus.hasPremiumAccess
 
   useEffect(() => {
     let cancelled = false
@@ -1500,7 +1529,7 @@ export default function Dashboard({
           gainsAides={effectiveGainsAides}
           nbAidesObtenues={effectiveNbAidesObtenues}
           transactions={transactions}
-          isPremium={isPremium}
+          isPremium={hasPremiumAccess}
           onOpenOpportunities={onOpenOpportunities || onGoPremium}
           onOpenAides={onOpenAides}
           onGoPremium={onGoPremium}
@@ -1597,7 +1626,7 @@ export default function Dashboard({
         </TropicalCard>
       </div>
 
-      {isPremium && byCategory.some(cat => cat.budget > 0 && cat.depense >= cat.budget) && (
+      {hasPremiumAccess && byCategory.some(cat => cat.budget > 0 && cat.depense >= cat.budget) && (
         <TropicalCard variant="coral" texture="⚠️" style={{ padding: isMobile ? 16 : 20 }}>
           <h3 style={{ margin: "0 0 12px", fontSize: 16, color: COLORS.text, fontWeight: 900 }}>
             {getIsKreol(t) ? "Alèrt bidjé" : "Alertes budget"}
@@ -1645,33 +1674,33 @@ export default function Dashboard({
           <button
             type="button"
             onClick={() => {
-              if (isPremium) {
+              if (hasPremiumAccess) {
                 setShowBudgetModal(true)
               } else if (onGoPremium) {
                 onGoPremium()
               }
             }}
             style={{
-              background: isPremium
+              background: hasPremiumAccess
                 ? "rgba(255,255,255,.09)"
                 : "linear-gradient(135deg, rgba(252,211,77,.22), rgba(245,158,11,.14))",
-              border: isPremium
+              border: hasPremiumAccess
                 ? "1px solid rgba(255,255,255,.14)"
                 : "1px solid rgba(252,211,77,.35)",
               borderRadius: 999,
-              color: isPremium ? COLORS.whiteSoft : "#FDE68A",
+              color: hasPremiumAccess ? COLORS.whiteSoft : "#FDE68A",
               cursor: "pointer",
               padding: "7px 12px",
               fontSize: 12,
               fontWeight: 900,
               fontFamily: "inherit",
-              boxShadow: isPremium ? "none" : "0 0 18px rgba(245,158,11,.10)",
+              boxShadow: hasPremiumAccess ? "none" : "0 0 18px rgba(245,158,11,.10)",
             }}
           >
-            {isPremium ? "⚙️ Modifier mes budgets" : "🔒 Budgets personnalisés"}
+            {hasPremiumAccess ? "⚙️ Modifier mes budgets" : "🔒 Budgets personnalisés"}
           </button>
         </div>
-        {!isPremium && (
+        {!hasPremiumAccess && (
           <div
             style={{
               marginBottom: 16,

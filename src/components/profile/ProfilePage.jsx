@@ -116,7 +116,7 @@ export default function ProfilePage({ user, t }) {
   const avatarUrl = avatarPreview || profile?.avatar_url
   const initiale = (form.nom || user?.email || "?")[0].toUpperCase()
 
-  const plan = profile?.plan || "free"
+  const plan = normalizeSubscriptionPlan(profile)
   const isPremiumPlus = plan === "premium_plus"
   const isPremiumClassic = plan === "premium"
   const hasPremiumAccess = isPremiumClassic || isPremiumPlus
@@ -160,35 +160,20 @@ export default function ProfilePage({ user, t }) {
         premium: "Question Premium / Premium+",
       }
 
-      const supportPayload = {
-        user_id: user?.id || null,
-        user_email: email || user?.email || null,
-        user_name: nom || form.nom || "Utilisateur BudgetKazPei",
-        type: typeDemande,
-        subject: subjectByType[typeDemande] || "Message utilisateur",
-        message,
-        source: "profil",
-        status: "new",
-      }
-
       const { error: insertError } = await supabase
         .from("support_messages")
-        .insert(supportPayload)
+        .insert({
+          user_id: user?.id || null,
+          user_email: email || user?.email || null,
+          user_name: nom || form.nom || null,
+          type: typeDemande,
+          subject: subjectByType[typeDemande] || "Message utilisateur",
+          message,
+          source: "profil",
+          status: "new",
+        })
 
       if (insertError) throw insertError
-
-      const { error: emailError } = await supabase.functions.invoke("clever-service", {
-        body: {
-          user_email: supportPayload.user_email,
-          user_name: supportPayload.user_name,
-          type: supportPayload.type,
-          subject: supportPayload.subject,
-          message: supportPayload.message,
-          source: supportPayload.source,
-        },
-      })
-
-      if (emailError) throw emailError
 
       setSupportSuccess(true)
       e.currentTarget.reset()
@@ -514,7 +499,7 @@ export default function ProfilePage({ user, t }) {
 
           {supportSuccess && (
             <div style={{ background: `${COLORS.green}15`, border: `1px solid ${COLORS.green}33`, borderRadius: 8, padding: "10px 14px", fontSize: 13, color: COLORS.green }}>
-              ✅ Votre message a bien été envoyé. Nous vous répondrons dès que possible.
+              ✅ Message envoyé. Nous reviendrons vers vous.
             </div>
           )}
 
@@ -537,7 +522,7 @@ export default function ProfilePage({ user, t }) {
           </button>
 
           <p style={{ margin: 0, color: COLORS.muted, fontSize: 11.5, lineHeight: 1.45 }}>
-            Le message sera enregistré dans Supabase et envoyé par email à BudgetKazPei. Support : {CONTACT_EMAIL}.
+            Le message sera enregistré dans Supabase, dans la table support_messages. Support : {CONTACT_EMAIL}.
           </p>
         </form>
       </div>
@@ -615,6 +600,20 @@ export default function ProfilePage({ user, t }) {
       )}
     </div>
   )
+}
+
+
+function normalizeSubscriptionPlan(profile = {}) {
+  const cleanPlan = String(profile?.plan || "").toLowerCase().trim()
+
+  if (cleanPlan === "premium_plus") return "premium_plus"
+  if (cleanPlan === "premium") return "premium"
+  if (cleanPlan === "free") return "free"
+
+  if (profile?.premium_plus === true) return "premium_plus"
+  if (profile?.premium === true || profile?.is_premium === true) return "premium"
+
+  return "free"
 }
 
 function Field({ label, children }) {
