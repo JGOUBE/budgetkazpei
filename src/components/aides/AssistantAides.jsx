@@ -6,7 +6,7 @@ import {
 } from "lucide-react"
 import { supabase } from "../../services/supabase"
 
-// AssistantAides V3.9.8 - Quotas IA en échanges + jauge utilisateur claire
+// AssistantAides V3.10.0 - Échanges optimisés + nouvelle consultation + 3 dernières réponses
 
 const COLORS = {
   card: "#0F1E38",
@@ -59,6 +59,26 @@ function getAiPlanLabel(plan = "free") {
   if (plan === "premium_plus") return "Premium+"
   if (plan === "premium") return "Premium"
   return "Gratuit"
+}
+
+function countMeaningfulWords(value = "") {
+  return normalizeText(value)
+    .replace(/[^a-z0-9\s]/g, " ")
+    .split(/\s+/)
+    .filter(Boolean)
+    .length
+}
+
+function shouldConsumeAiExchange(message = "", isQuickPreset = false) {
+  const normalized = normalizeText(message).trim()
+
+  if (!normalized) return false
+  if (isQuickPreset) return false
+
+  // Règle simple BudgetKazPei : 1 ou 2 mots ne décomptent pas d'échange.
+  if (countMeaningfulWords(normalized) <= 2) return false
+
+  return true
 }
 
 const STATUS_OPTIONS = [
@@ -1732,7 +1752,9 @@ function buildSmartAnswer(responseData, isKreol = false, recommendedAides = []) 
 
 export default function AssistantAides({ isPremium, isMobile, t, user }) {
   const [question, setQuestion] = useState("")
+  const [quickQuestionSelected, setQuickQuestionSelected] = useState(false)
   const [responseData, setResponseData] = useState(null)
+  const [responseHistory, setResponseHistory] = useState([])
   const [profile, setProfile] = useState(null)
   const [loadingProfile, setLoadingProfile] = useState(false)
   const [trackedDemarches, setTrackedDemarches] = useState({})
@@ -1753,6 +1775,8 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
   const aiUsed = Number(aiUsage?.messages_used || 0)
   const aiRemaining = Math.max(0, aiLimit - aiUsed)
   const aiQuotaReached = aiRemaining <= 0
+  const currentQuestionConsumesExchange = shouldConsumeAiExchange(question, quickQuestionSelected)
+  const analyzeDisabled = loadingProfile || (aiQuotaReached && currentQuestionConsumesExchange)
 
   const recommendedAides = useMemo(() => {
     if (!responseData?.profile || !responseData?.aides) return []
@@ -2463,7 +2487,7 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
 
     const { data, error } = await supabase
       .from("profiles")
-      .select("commune,situation_familiale,nombre_enfants,logement,revenus_foyer,situation_professionnelle,age,etudiant,retraite,handicap,allocataire_caf,permis_conduire,vehicule_personnel,premium,premium_plus,subscription_plan")
+      .select("commune,situation_familiale,nombre_enfants,logement,revenus_foyer,situation_professionnelle,age,etudiant,retraite,handicap,allocataire_caf,permis_conduire,vehicule_personnel,premium,premium_plus")
       .eq("id", user.id)
       .maybeSingle()
 
@@ -2487,6 +2511,27 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
     return data || []
   }
 
+  function rememberResponse(nextResponse) {
+    setResponseData(nextResponse)
+
+    if (nextResponse?.profile) {
+      setResponseHistory(prev => [...prev, nextResponse].slice(-3))
+    }
+  }
+
+  function resetConsultation() {
+    setQuestion("")
+    setQuickQuestionSelected(false)
+    setResponseData(null)
+    setResponseHistory([])
+  }
+
+  function getHistoryRecommendedAides(item) {
+    if (!item?.profile || !item?.aides) return []
+    if (item === responseData) return recommendedAides
+    return getRecommendedAides(item.aides, item.profile, isKreol, item.question || "")
+  }
+
   async function handleScanProfile() {
     const currentProfile = profile || (await fetchProfile())
     if (!currentProfile) {
@@ -2494,11 +2539,9 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
       return
     }
 
-    const allowed = await consumeAiMessage(currentProfile)
-    if (!allowed) return
-
+    // Scanner le profil ne consomme jamais d'échange : c'est un outil de l'application.
     const aides = await fetchAides()
-    setResponseData({ type: "scan", question: "", profile: currentProfile, aides })
+    rememberResponse({ type: "scan", question: "", profile: currentProfile, aides })
   }
 
   async function handleAnalyze() {
@@ -2508,11 +2551,20 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
       return
     }
 
-    const allowed = await consumeAiMessage(currentProfile)
-    if (!allowed) return
+    const consumesExchange = shouldConsumeAiExchange(question, quickQuestionSelected)
+
+    if (consumesExchange) {
+      const allowed = await consumeAiMessage(currentProfile)
+      if (!allowed) return
+    }
 
     const aides = await fetchAides()
-    setResponseData({ type: "question", question, profile: currentProfile, aides })
+    const sentQuestion = question.trim()
+    rememberResponse({ type: "question", question: sentQuestion, profile: currentProfile, aides })
+
+    // Une fois envoyé, le champ se vide : l'utilisateur garde un écran propre.
+    setQuestion("")
+    setQuickQuestionSelected(false)
   }
 
   function openExternalLink(url) {
@@ -2551,8 +2603,8 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
               {loadingAiUsage
                 ? "..."
                 : isKreol
-                  ? `${aiRemaining} échanges restan sa mwa-la`
-                  : `${aiRemaining} échanges restants ce mois-ci`}
+                  ? `${aiRemaining} lézanz disponib sa mwin-la`
+                  : `${aiRemaining} échanges disponibles ce mois-ci`}
             </span>
           </div>
           <div style={{ height: 8, background: "rgba(255,255,255,.08)", borderRadius: 999, overflow: "hidden" }}>
@@ -2567,7 +2619,10 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
 
         <textarea
           value={question}
-          onChange={e => setQuestion(e.target.value)}
+          onChange={e => {
+            setQuestion(e.target.value)
+            setQuickQuestionSelected(false)
+          }}
           placeholder={isKreol ? "Ex : Bonzour, mi na 2 marmay, est-ce que mi pé gagn zéd pou vakans ?" : "Ex : Bonjour, j’ai 2 enfants, est-ce que je peux avoir des aides pour les vacances ?"}
           style={{ width: "100%", minHeight: 105, background: COLORS.cardLight, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: 14, color: COLORS.text, fontFamily: "inherit", resize: "vertical", outline: "none" }}
         />
@@ -2582,21 +2637,29 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
             isKreol ? "Aide transport ou permis" : "Aide transport ou permis",
             isKreol ? "Que dois-je faire maintenant ?" : "Que dois-je faire maintenant ?",
           ].map(example => (
-            <button key={example} type="button" onClick={() => setQuestion(example)} style={{ background: "rgba(35,211,214,.08)", border: "1px solid rgba(35,211,214,.25)", borderRadius: 999, padding: "7px 11px", color: COLORS.cyan, fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 800 }}>
+            <button key={example} type="button" onClick={() => {
+              setQuestion(example)
+              setQuickQuestionSelected(true)
+            }} style={{ background: "rgba(35,211,214,.08)", border: "1px solid rgba(35,211,214,.25)", borderRadius: 999, padding: "7px 11px", color: COLORS.cyan, fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 800 }}>
               {example}
             </button>
           ))}
         </div>
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-          <button type="button" onClick={handleAnalyze} disabled={loadingProfile || aiQuotaReached} style={{ background: (loadingProfile || aiQuotaReached) ? COLORS.muted : COLORS.accent, color: "#fff", border: "none", borderRadius: 12, padding: "11px 16px", fontWeight: 900, cursor: (loadingProfile || aiQuotaReached) ? "not-allowed" : "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 8 }}>
+          <button type="button" onClick={handleAnalyze} disabled={analyzeDisabled} style={{ background: analyzeDisabled ? COLORS.muted : COLORS.accent, color: "#fff", border: "none", borderRadius: 12, padding: "11px 16px", fontWeight: 900, cursor: analyzeDisabled ? "not-allowed" : "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 8 }}>
             <Send size={16} />
             {loadingProfile ? "Analyse en cours..." : isKreol ? "Diskité ek mon konseye" : "Discuter avec mon conseiller"}
           </button>
 
-          <button type="button" onClick={handleScanProfile} disabled={loadingProfile || aiQuotaReached} style={{ background: (loadingProfile || aiQuotaReached) ? COLORS.muted : COLORS.cyan, color: "#0A1628", border: "none", borderRadius: 12, padding: "11px 16px", fontWeight: 900, cursor: (loadingProfile || aiQuotaReached) ? "not-allowed" : "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 8 }}>
+          <button type="button" onClick={handleScanProfile} disabled={loadingProfile} style={{ background: loadingProfile ? COLORS.muted : COLORS.cyan, color: "#0A1628", border: "none", borderRadius: 12, padding: "11px 16px", fontWeight: 900, cursor: loadingProfile ? "not-allowed" : "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 8 }}>
             <SearchCheck size={16} />
             {isKreol ? "Scanner mon profil" : "Scanner mon profil"}
+          </button>
+
+          <button type="button" onClick={resetConsultation} style={{ background: "rgba(255,255,255,.06)", color: COLORS.text, border: "1px solid rgba(255,255,255,.14)", borderRadius: 12, padding: "11px 16px", fontWeight: 900, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 8 }}>
+            <Trash2 size={16} />
+            {isKreol ? "Nouvelle konsultasyon" : "Nouvelle consultation"}
           </button>
         </div>
 
@@ -2606,31 +2669,41 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
           </div>
         )}
 
-        {responseData?.profile && (
-          <div style={{ background: "rgba(35,211,214,.08)", border: "1px solid rgba(35,211,214,.22)", borderRadius: 16, padding: 16, color: COLORS.text, lineHeight: 1.6 }}>
-            <div style={{ color: COLORS.cyan, fontWeight: 900, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
-              <Sparkles size={16} />
-              {isKreol ? "Répons mon konseye" : "Réponse de votre conseiller"}
-            </div>
-
-            {responseData.type === "question" && (
-              <p style={{ margin: "0 0 12px", color: COLORS.muted }}>
-                {isKreol ? "Out kestion :" : "Votre question :"} <strong style={{ color: COLORS.text }}>{responseData.question || "Aucune question précisée"}</strong>
-              </p>
+        {responseHistory.length > 0 && (
+          <div style={{ display: "grid", gap: 10 }}>
+            {responseHistory.length > 1 && (
+              <div style={{ color: COLORS.muted, fontSize: 12, fontWeight: 800 }}>
+                {isKreol ? "Dernières réponses affichées : 3 maximum." : "Dernières réponses affichées : 3 maximum."}
+              </div>
             )}
 
-            <p style={{ margin: "0 0 12px", whiteSpace: "pre-line", lineHeight: 1.65 }}>
-              {buildSmartAnswer(responseData, isKreol, recommendedAides)}
-            </p>
+            {responseHistory.map((item, index) => {
+              const historyRecommendedAides = getHistoryRecommendedAides(item)
 
-            <details style={{ marginTop: 12, background: "rgba(255,255,255,.04)", border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: 12 }}>
-              <summary style={{ cursor: "pointer", color: COLORS.green, fontWeight: 900 }}>
-                {isKreol ? "Voir profil analizé" : "Voir le profil analysé"}
-              </summary>
-              <div style={{ marginTop: 10, whiteSpace: "pre-line", color: COLORS.text }}>
-                {buildProfileSummary(responseData.profile, isKreol)}
-              </div>
-            </details>
+              return (
+                <div key={`${item.type}-${index}-${item.question || "scan"}`} style={{ background: "rgba(35,211,214,.08)", border: "1px solid rgba(35,211,214,.22)", borderRadius: 16, padding: 16, color: COLORS.text, lineHeight: 1.6 }}>
+                  <div style={{ color: COLORS.cyan, fontWeight: 900, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+                    <Sparkles size={16} />
+                    {item.type === "scan"
+                      ? (isKreol ? "Analyse de out profil" : "Analyse de votre profil")
+                      : (isKreol ? "Répons mon konseye" : "Réponse de votre conseiller")}
+                  </div>
+
+                  <p style={{ margin: "0 0 12px", whiteSpace: "pre-line", lineHeight: 1.65 }}>
+                    {buildSmartAnswer(item, isKreol, historyRecommendedAides)}
+                  </p>
+
+                  <details style={{ marginTop: 12, background: "rgba(255,255,255,.04)", border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: 12 }}>
+                    <summary style={{ cursor: "pointer", color: COLORS.green, fontWeight: 900 }}>
+                      {isKreol ? "Voir profil analizé" : "Voir le profil analysé"}
+                    </summary>
+                    <div style={{ marginTop: 10, whiteSpace: "pre-line", color: COLORS.text }}>
+                      {buildProfileSummary(item.profile, isKreol)}
+                    </div>
+                  </details>
+                </div>
+              )
+            })}
           </div>
         )}
       </div>
