@@ -6,7 +6,7 @@ import {
 } from "lucide-react"
 import { supabase } from "../../services/supabase"
 
-// AssistantAides V3.9.7 - Version stable + gains cumulés affichés + remplacement recommandations après gain
+// AssistantAides V3.9.8 - Quotas IA en échanges + jauge utilisateur claire
 
 const COLORS = {
   card: "#0F1E38",
@@ -20,6 +20,45 @@ const COLORS = {
   muted: "#8EA4C5",
   red: "#FB7185",
   purple: "#A78BFA",
+}
+
+
+const AI_USAGE_LIMITS = {
+  free: 5,
+  premium: 50,
+  premium_plus: 250,
+}
+
+function getCurrentMonthKey() {
+  return new Date().toISOString().slice(0, 7)
+}
+
+function getCurrentMonthNumber() {
+  return new Date().getMonth() + 1
+}
+
+function getCurrentYearNumber() {
+  return new Date().getFullYear()
+}
+
+function getAiPlan(profile = {}, isPremium = false) {
+  const rawPlan = normalizeText(profile?.subscription_plan || profile?.plan || "")
+
+  if (isTrue(profile?.premium_plus) || rawPlan.includes("premium_plus") || rawPlan.includes("premium plus")) return "premium_plus"
+  if (isTrue(profile?.premium) || rawPlan.includes("premium")) return "premium"
+  if (isPremium) return "premium"
+
+  return "free"
+}
+
+function getAiLimit(profile = {}, isPremium = false) {
+  return AI_USAGE_LIMITS[getAiPlan(profile, isPremium)] || AI_USAGE_LIMITS.free
+}
+
+function getAiPlanLabel(plan = "free") {
+  if (plan === "premium_plus") return "Premium+"
+  if (plan === "premium") return "Premium"
+  return "Gratuit"
 }
 
 const STATUS_OPTIONS = [
@@ -1704,9 +1743,16 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
   const [gainInputs, setGainInputs] = useState({})
   const [refusInputs, setRefusInputs] = useState({})
   const [selectedDossier, setSelectedDossier] = useState(null)
+  const [aiUsage, setAiUsage] = useState(null)
+  const [loadingAiUsage, setLoadingAiUsage] = useState(false)
 
   const txt = (key, fallback) => safeT(t, "aides", key, fallback)
   const isKreol = isKreolLanguage(t)
+  const aiPlan = getAiPlan(profile, isPremium)
+  const aiLimit = getAiLimit(profile, isPremium)
+  const aiUsed = Number(aiUsage?.messages_used || 0)
+  const aiRemaining = Math.max(0, aiLimit - aiUsed)
+  const aiQuotaReached = aiRemaining <= 0
 
   const recommendedAides = useMemo(() => {
     if (!responseData?.profile || !responseData?.aides) return []
@@ -1842,9 +1888,124 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
     setDocumentChecks(next)
   }
 
+  async function fetchAiUsage() {
+    if (!user?.id) return null
+
+    setLoadingAiUsage(true)
+
+    const currentMonth = getCurrentMonthNumber()
+    const currentYear = getCurrentYearNumber()
+
+    const { data, error } = await supabase
+      .from("ai_usage")
+      .select("*")
+      .eq("user_id", user.id)
+      .maybeSingle()
+
+    if (error) {
+      console.error("Erreur chargement des échanges IA:", error)
+      setLoadingAiUsage(false)
+      return null
+    }
+
+    if (!data) {
+      const freshUsage = {
+        user_id: user.id,
+        reset_month: currentMonth,
+        reset_year: currentYear,
+        messages_used: 0,
+      }
+
+      setAiUsage(freshUsage)
+      setLoadingAiUsage(false)
+      return freshUsage
+    }
+
+    const savedMonth = Number(data.reset_month || 0)
+    const savedYear = Number(data.reset_year || 0)
+
+    if (savedMonth !== currentMonth || savedYear !== currentYear) {
+      const { data: resetData, error: resetError } = await supabase
+        .from("ai_usage")
+        .update({
+          reset_month: currentMonth,
+          reset_year: currentYear,
+          messages_used: 0,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("user_id", user.id)
+        .select()
+        .maybeSingle()
+
+      if (resetError) {
+        console.error("Erreur réinitialisation des échanges IA:", resetError)
+        setLoadingAiUsage(false)
+        return data
+      }
+
+      setAiUsage(resetData)
+      setLoadingAiUsage(false)
+      return resetData
+    }
+
+    setAiUsage(data)
+    setLoadingAiUsage(false)
+    return data
+  }
+
+  async function consumeAiMessage(currentProfile) {
+    if (!user?.id) {
+      alert(isKreol ? "Ou dois être connecté." : "Vous devez être connecté.")
+      return false
+    }
+
+    const usage = aiUsage || (await fetchAiUsage()) || {
+      user_id: user.id,
+      reset_month: getCurrentMonthNumber(),
+      reset_year: getCurrentYearNumber(),
+      messages_used: 0,
+    }
+
+    const limit = getAiLimit(currentProfile, isPremium)
+    const used = Number(usage.messages_used || 0)
+
+    if (used >= limit) {
+      alert(
+        isKreol
+          ? "Ou la itilize tout out échanges pou sa mwa-la. Premium+ i donn ziska 250 échanges par mwa."
+          : "Vous avez utilisé tous vos échanges du mois. Premium+ vous donne jusqu’à 250 échanges par mois."
+      )
+      return false
+    }
+
+    const nextUsage = {
+      user_id: user.id,
+      reset_month: getCurrentMonthNumber(),
+      reset_year: getCurrentYearNumber(),
+      messages_used: used + 1,
+      updated_at: new Date().toISOString(),
+    }
+
+    const { data, error } = await supabase
+      .from("ai_usage")
+      .upsert(nextUsage, { onConflict: "user_id" })
+      .select()
+      .maybeSingle()
+
+    if (error) {
+      console.error("Erreur mise à jour des échanges IA:", error)
+      alert(isKreol ? "Erreur échanges IA." : "Erreur lors de la mise à jour des échanges IA.")
+      return false
+    }
+
+    setAiUsage(data || nextUsage)
+    return true
+  }
+
   useEffect(() => {
     fetchTrackedDemarches()
     fetchDocumentChecks()
+    fetchAiUsage()
   }, [user?.id])
 
   useEffect(() => {
@@ -2302,7 +2463,7 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
 
     const { data, error } = await supabase
       .from("profiles")
-      .select("commune,situation_familiale,nombre_enfants,logement,revenus_foyer,situation_professionnelle,age,etudiant,retraite,handicap,allocataire_caf,permis_conduire,vehicule_personnel")
+      .select("commune,situation_familiale,nombre_enfants,logement,revenus_foyer,situation_professionnelle,age,etudiant,retraite,handicap,allocataire_caf,permis_conduire,vehicule_personnel,premium,premium_plus,subscription_plan")
       .eq("id", user.id)
       .maybeSingle()
 
@@ -2333,6 +2494,9 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
       return
     }
 
+    const allowed = await consumeAiMessage(currentProfile)
+    if (!allowed) return
+
     const aides = await fetchAides()
     setResponseData({ type: "scan", question: "", profile: currentProfile, aides })
   }
@@ -2344,6 +2508,9 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
       return
     }
 
+    const allowed = await consumeAiMessage(currentProfile)
+    if (!allowed) return
+
     const aides = await fetchAides()
     setResponseData({ type: "question", question, profile: currentProfile, aides })
   }
@@ -2353,19 +2520,7 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
     window.open(url, "_blank", "noopener,noreferrer")
   }
 
-  if (!isPremium) {
-    return (
-      <section style={{ background: `linear-gradient(135deg, rgba(252,211,77,.18), ${COLORS.card})`, border: `1px solid rgba(252,211,77,.35)`, borderRadius: 22, padding: isMobile ? 18 : 24 }}>
-        <Lock size={26} color={COLORS.yellow} />
-        <h3 style={{ color: COLORS.text, margin: "12px 0 8px" }}>
-          {txt("assistantPremiumTitle", "⭐ Assistant Personnel Premium")}
-        </h3>
-        <p style={{ color: COLORS.muted, lineHeight: 1.6, margin: 0 }}>
-          {txt("assistantPremiumDescription", "BudgetKazPei analyse votre situation parmi les aides disponibles à La Réunion.")}
-        </p>
-      </section>
-    )
-  }
+  // V4.0 : l'assistant est accessible aussi en gratuit, avec quota limité.
 
   return (
     <>
@@ -2387,6 +2542,27 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
         <div style={{ display: "flex", alignItems: "center", gap: 8, color: COLORS.cyan, fontWeight: 900 }}>
           <MessageCircle size={17} />
           {isKreol ? "Diskité ek mon konseye" : "Discuter avec mon conseiller"}
+        </div>
+
+        <div style={{ background: aiQuotaReached ? "rgba(251,113,133,.10)" : "rgba(34,197,94,.08)", border: aiQuotaReached ? "1px solid rgba(251,113,133,.35)" : "1px solid rgba(34,197,94,.25)", borderRadius: 14, padding: 12, color: COLORS.text, display: "grid", gap: 8 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", fontWeight: 900 }}>
+            <span>{isKreol ? "Konseye" : "Conseiller"} {getAiPlanLabel(aiPlan)}</span>
+            <span style={{ color: aiQuotaReached ? COLORS.red : COLORS.green }}>
+              {loadingAiUsage
+                ? "..."
+                : isKreol
+                  ? `${aiRemaining} échanges restan sa mwa-la`
+                  : `${aiRemaining} échanges restants ce mois-ci`}
+            </span>
+          </div>
+          <div style={{ height: 8, background: "rgba(255,255,255,.08)", borderRadius: 999, overflow: "hidden" }}>
+            <div style={{ width: `${Math.min(100, Math.max(0, (aiRemaining / aiLimit) * 100))}%`, height: "100%", background: aiQuotaReached ? COLORS.red : COLORS.green }} />
+          </div>
+          {aiQuotaReached && (
+            <div style={{ color: COLORS.red, fontSize: 13, fontWeight: 800 }}>
+              {isKreol ? "Ou la utilisé tout out échanges pou sa mwa-la. Premium+ i donn ziska 250 échanges par mwa." : "Vous avez utilisé tous vos échanges du mois. Premium+ vous donne jusqu’à 250 échanges par mois."}
+            </div>
+          )}
         </div>
 
         <textarea
@@ -2413,12 +2589,12 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
         </div>
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-          <button type="button" onClick={handleAnalyze} disabled={loadingProfile} style={{ background: loadingProfile ? COLORS.muted : COLORS.accent, color: "#fff", border: "none", borderRadius: 12, padding: "11px 16px", fontWeight: 900, cursor: loadingProfile ? "not-allowed" : "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 8 }}>
+          <button type="button" onClick={handleAnalyze} disabled={loadingProfile || aiQuotaReached} style={{ background: (loadingProfile || aiQuotaReached) ? COLORS.muted : COLORS.accent, color: "#fff", border: "none", borderRadius: 12, padding: "11px 16px", fontWeight: 900, cursor: (loadingProfile || aiQuotaReached) ? "not-allowed" : "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 8 }}>
             <Send size={16} />
             {loadingProfile ? "Analyse en cours..." : isKreol ? "Diskité ek mon konseye" : "Discuter avec mon conseiller"}
           </button>
 
-          <button type="button" onClick={handleScanProfile} disabled={loadingProfile} style={{ background: loadingProfile ? COLORS.muted : COLORS.cyan, color: "#0A1628", border: "none", borderRadius: 12, padding: "11px 16px", fontWeight: 900, cursor: loadingProfile ? "not-allowed" : "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 8 }}>
+          <button type="button" onClick={handleScanProfile} disabled={loadingProfile || aiQuotaReached} style={{ background: (loadingProfile || aiQuotaReached) ? COLORS.muted : COLORS.cyan, color: "#0A1628", border: "none", borderRadius: 12, padding: "11px 16px", fontWeight: 900, cursor: (loadingProfile || aiQuotaReached) ? "not-allowed" : "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 8 }}>
             <SearchCheck size={16} />
             {isKreol ? "Scanner mon profil" : "Scanner mon profil"}
           </button>
