@@ -23,6 +23,9 @@ import AidesPage from "./components/aides/AidesPage"
 import HistoriquePage from "./components/historique/HistoriquePage"
 import OpportunitesPage from "./components/opportunites/OpportunitesPage"
 import PremiumLandingPage from "./pages/PremiumLandingPage"
+import PublicHomePage from "./pages/PublicHomePage"
+import PrivacyPage from "./pages/PrivacyPage"
+import TermsPage from "./pages/TermsPage"
 
 const COLORS = {
   bg: "#0A1628",
@@ -52,38 +55,35 @@ export default function App() {
   const currentPath =
     typeof window !== "undefined"
       ? window.location.pathname
-      : ""
+      : "/"
 
   const forceApp =
     typeof window !== "undefined" &&
     window.location.search.includes("app=true")
-
-  const isPremiumLanding =
-    currentPath === "/premium" ||
-    currentPath.startsWith("/premium/")
 
   useEffect(() => {
     if (
       typeof window !== "undefined" &&
       window.location.search.includes("app=true")
     ) {
-      window.history.replaceState({}, "", "/")
+      window.history.replaceState({}, "", "/app")
     }
   }, [])
 
-  if (isPremiumLanding && !forceApp) {
-    return <PremiumLandingPage />
-  }
+  if (currentPath === "/privacy") return <PrivacyPage />
+  if (currentPath === "/terms") return <TermsPage />
+  if (currentPath === "/premium" || currentPath.startsWith("/premium/")) return <PremiumLandingPage />
 
-  return <BudgetKazPeiApp />
+  if (currentPath === "/login") return <BudgetKazPeiApp initialAuthPage="login" />
+  if (currentPath === "/register") return <BudgetKazPeiApp initialAuthPage="register" />
+  if (currentPath === "/app" || forceApp) return <BudgetKazPeiApp initialAuthPage="login" />
+
+  return <PublicHomePage />
 }
 
-function BudgetKazPeiApp() {
+function BudgetKazPeiApp({ initialAuthPage = "login" }) {
   const { user, loading, signIn, signUp, signOut, signInWithGoogle } = useAuth()
-  console.log("USER CONNECTÉ =", user?.id)
-console.log("EMAIL =", user?.email)
-
-  const [authPage, setAuthPage] = useState("login")
+  const [authPage, setAuthPage] = useState(initialAuthPage)
   const [activeNav, setActiveNav] = useState("dashboard")
   const [showModal, setShowModal] = useState(false)
   const [showSidebar, setShowSidebar] = useState(false)

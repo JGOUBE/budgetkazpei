@@ -66,9 +66,9 @@ const CONTENT = {
     premiumPlusTitle: "Premium+",
     freeSubtitle: "Découvrir BudgetKazPei et suivre l'essentiel.",
     premiumSubtitle:
-      "Pour débloquer l’assistant aides, les démarches guidées, les alertes budget et les exports PDF.",
+      "Pour débloquer le conseiller aides, les démarches guidées, les alertes budget et jusqu’à 50 échanges par mois.",
     premiumPlusSubtitle:
-      "Gagnez du temps, identifiez davantage d’aides et simplifiez vos démarches grâce à votre assistant IA personnel.",
+      "Pour aller plus loin avec votre conseiller personnel, jusqu’à 250 échanges par mois et les futures fonctions avancées.",
     freeButton: "🔍 Voir mes aides possibles",
     premiumButton: "⭐ Débloquer Premium",
     premiumPlusButton: "👑 Passer à Premium+",
@@ -112,7 +112,7 @@ const CONTENT = {
       ],
       [
         "L’Assistant IA Personnel BudgetKazPei est-il disponible ?",
-        "L’assistant IA fait partie de Premium+. Les fonctions avancées sont indiquées comme bientôt disponibles tant qu’elles ne sont pas branchées dans l’application.",
+        "Le conseiller est disponible selon l’offre choisie : jusqu’à 50 échanges par mois en Premium et jusqu’à 250 échanges par mois en Premium+. Certaines fonctions avancées restent indiquées comme bientôt disponibles tant qu’elles ne sont pas branchées dans l’application.",
       ],
       [
         "Les fonctionnalités vont-elles évoluer ?",
@@ -130,7 +130,8 @@ const CONTENT = {
     ],
     premiumFeatures: [
       "Tout le gratuit inclus",
-      "Assistant Aides Réunion 🇷🇪",
+      "Conseiller Aides Réunion 🇷🇪",
+      "Jusqu’à 50 échanges par mois",
       "Réponses en français ou créole",
       "Analyse personnalisée des aides",
       "Suivi des démarches",
@@ -144,7 +145,8 @@ const CONTENT = {
     ],
     premiumPlusFeatures: [
       "Tout Premium inclus",
-      "Assistant IA Personnel BudgetKazPei",
+      "Conseiller IA Personnel BudgetKazPei",
+      "Jusqu’à 250 échanges par mois",
       "Conversation libre en français ou créole",
       "Analyse budgétaire avancée — bientôt disponible",
       "Génération de courriers administratifs — bientôt disponible",
@@ -192,9 +194,9 @@ const CONTENT = {
     premiumPlusTitle: "Premium+",
     freeSubtitle: "Découv BudgetKazPei é suivre lessentiel.",
     premiumSubtitle:
-      "Pou débloque lasistan zéd, démarches guidées, alèrt bidjé é export PDF.",
+      "Pou débloque conseiller zéd, démarches guidées, alèrt bidjé é ziska 50 lézanz par mwa.",
     premiumPlusSubtitle:
-      "Gagn tan, trouv plis zéd é simplifie out démarches grâce à out asistan IA personnel.",
+      "Pou allé pli loin ek out conseiller personnel, ziska 250 lézanz par mwa é bann futures fonctions avancées.",
     freeButton: "🔍 Voir mon bann zéd possibles",
     premiumButton: "⭐ Débloque Premium",
     premiumPlusButton: "👑 Pass Premium+",
@@ -238,7 +240,7 @@ const CONTENT = {
       ],
       [
         "Lasistan IA Personnel BudgetKazPei lé disponible ?",
-        "Lasistan IA i fait partie Premium+. Bann fonksyon avancées lé indiquées bientôt disponible tant que zot lé pa branchées dann l’application.",
+        "Le conseiller lé disponible selon l’offre choisie : ziska 50 lézanz par mwa en Premium é ziska 250 lézanz par mwa en Premium+. Bann fonctions avancées lé indiquées bientôt disponible tant que zot lé pa branchées dann l’application.",
       ],
       [
         "Fonctionnalités i va évolué ?",
@@ -256,7 +258,8 @@ const CONTENT = {
     ],
     premiumFeatures: [
       "Tout sa lé gratis inclus",
-      "Asistan Zéd Rényon 🇷🇪",
+      "Conseiller Zéd Rényon 🇷🇪",
+      "Ziska 50 lézanz par mwa",
       "Répons an fransé ou kréol",
       "Analiz personnalisée bann zéd",
       "Suivi bann démarches",
@@ -270,7 +273,8 @@ const CONTENT = {
     ],
     premiumPlusFeatures: [
       "Tout Premium inclus",
-      "Asistan IA Personnel BudgetKazPei",
+      "Conseiller IA Personnel BudgetKazPei",
+      "Ziska 250 lézanz par mwa",
       "Diskision libre an fransé ou kréol",
       "Analiz bidjé pli avansé — bientôt disponible",
       "Kréation courrier administratif — bientôt disponible",
@@ -697,7 +701,7 @@ export default function PremiumLandingPage() {
   }
 
   function goHome() {
-  window.location.href = "/?app=true"
+  window.location.href = "/app"
 }
 
   function scrollToPlans() {
@@ -999,6 +1003,27 @@ export default function PremiumLandingPage() {
             ))}
           </div>
         </section>
+
+        <footer
+          style={{
+            marginTop: 24,
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 12,
+            flexWrap: "wrap",
+            color: COLORS.muted,
+            fontSize: 13,
+            fontWeight: 700,
+          }}
+        >
+          <span>© {new Date().getFullYear()} BudgetKazPei</span>
+          <span style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+            <a href="/" style={{ color: COLORS.cyan }}>Accueil</a>
+            <a href="/privacy" style={{ color: COLORS.cyan }}>Confidentialité</a>
+            <a href="/terms" style={{ color: COLORS.cyan }}>Conditions</a>
+            <a href="mailto:contact.budgetkazpei@gmail.com" style={{ color: COLORS.cyan }}>Contact</a>
+          </span>
+        </footer>
       </div>
     </main>
   )
