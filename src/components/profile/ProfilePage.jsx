@@ -76,6 +76,68 @@ export default function ProfilePage({ user, t }) {
     setForm(f => ({ ...f, [key]: value }))
   }
 
+  function toMoneyNumber(value) {
+    return Number(String(value ?? "").replace(",", ".")) || 0
+  }
+
+  function formatDateYMD(date) {
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, "0")
+    const day = String(date.getDate()).padStart(2, "0")
+    return `${year}-${month}-${day}`
+  }
+
+  async function syncProfileIncomeToMonthlyRevenue(revenusFoyer) {
+    if (!user?.id) return
+
+    const amount = toMoneyNumber(revenusFoyer)
+    const now = new Date()
+    const firstDay = formatDateYMD(new Date(now.getFullYear(), now.getMonth(), 1))
+    const lastDay = formatDateYMD(new Date(now.getFullYear(), now.getMonth() + 1, 0))
+    const today = formatDateYMD(now)
+
+    const { data: existingIncome, error: selectError } = await supabase
+      .from("transactions")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("source", "profile_income")
+      .gte("date", firstDay)
+      .lte("date", lastDay)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (selectError) throw selectError
+
+    const payload = {
+      user_id: user.id,
+      label: "Revenus du foyer",
+      category: "revenus",
+      amount,
+      date: today,
+      icon: "💰",
+      source: "profile_income",
+    }
+
+    if (existingIncome?.id) {
+      const { error: updateIncomeError } = await supabase
+        .from("transactions")
+        .update(payload)
+        .eq("id", existingIncome.id)
+
+      if (updateIncomeError) throw updateIncomeError
+      return
+    }
+
+    if (amount > 0) {
+      const { error: insertIncomeError } = await supabase
+        .from("transactions")
+        .insert(payload)
+
+      if (insertIncomeError) throw insertIncomeError
+    }
+  }
+
   async function handleSubmit(e) {
     e.preventDefault()
     setError("")
@@ -83,10 +145,12 @@ export default function ProfilePage({ user, t }) {
 
     try {
       await updateProfile(form)
+      await syncProfileIncomeToMonthlyRevenue(form.revenus_foyer)
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
-    } catch {
-      setError("Erreur lors de la sauvegarde")
+    } catch (err) {
+      console.error("Erreur sauvegarde profil:", err)
+      setError("Erreur lors de la sauvegarde. Vérifiez aussi que la colonne source existe dans transactions.")
     }
   }
 
@@ -357,7 +421,32 @@ export default function ProfilePage({ user, t }) {
               </Field>
 
               <Field label="Revenus mensuels du foyer">
-                <input type="number" min="0" value={form.revenus_foyer} onChange={e => updateField("revenus_foyer", e.target.value)} placeholder="Ex : 2200" style={inputStyle} />
+                <input
+                  type="number"
+                  min="0"
+                  value={form.revenus_foyer}
+                  onChange={e => updateField("revenus_foyer", e.target.value)}
+                  placeholder="Ex : 2200"
+                  style={inputStyle}
+                />
+                <div
+                  style={{
+                    marginTop: 8,
+                    background: "rgba(35,211,214,.08)",
+                    border: "1px solid rgba(35,211,214,.22)",
+                    borderRadius: 12,
+                    padding: "10px 12px",
+                    color: COLORS.muted,
+                    fontSize: 12,
+                    lineHeight: 1.55,
+                  }}
+                >
+                  <strong style={{ color: COLORS.cyan }}>À renseigner :</strong>{" "}
+                  indiquez le revenu mensuel total du foyer. Si vous êtes deux, additionnez les revenus des deux personnes.
+                  Ajoutez aussi les aides régulières : CAF, RSA, chômage, pension, allocations ou autres revenus récurrents.
+                  Ce montant sera automatiquement ajouté aux revenus du mois pour aider BudgetKazPei à analyser votre budget
+                  et à mieux détecter les aides possibles.
+                </div>
               </Field>
 
               <Field label="Situation professionnelle">

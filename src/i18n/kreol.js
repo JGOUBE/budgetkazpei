@@ -166,6 +166,15 @@ const kreol = {
     noTransactions: "Nanyien pou linstant",
     noTransactionsSub: "Klik su ➕ pou azouté in mouvman",
     deleteConfirm: "Suprimé",
+    addTitle: "Nouvo tranzaksyon",
+    typeDepense: "Dépans",
+    typeRevenu: "Larzan rantre an plis",
+    exceptionalIncomeInfo:
+    "Servi sa sèlman pou in larzan i rant an plis : ranboursman, prim, vant, kado ou éd ponktyèl. Salèr principal kaz-la i ranpli dan profil.",
+    incomeLabelPlaceholder:
+    "Libèlé (ex : Prim, ranboursman...)",
+    incomeAmountPlaceholder:
+    "Montan rantré (ex : 80)",
   },
 
   aides: {

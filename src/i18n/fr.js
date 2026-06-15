@@ -91,6 +91,15 @@ const fr = {
     noTransactions: "Aucune transaction pour le moment",
     noTransactionsSub: "Clique sur ➕ pour en ajouter une",
     deleteConfirm: "Supprimer",
+    addTitle: "Nouvelle transaction",
+    typeDepense: "Dépense",
+    typeRevenu: "Entrée ponctuelle",
+    exceptionalIncomeInfo:
+    "À utiliser seulement pour une rentrée d'argent exceptionnelle : remboursement, prime, vente, cadeau ou aide ponctuelle. Le revenu principal du foyer se renseigne dans votre profil.",
+     incomeLabelPlaceholder:
+    "Libellé (ex : Prime, remboursement...)",
+     incomeAmountPlaceholder:
+    "Montant reçu (ex : 80)",
   },
   aides: {
     title: "Vos aides actuelles & disponibles",

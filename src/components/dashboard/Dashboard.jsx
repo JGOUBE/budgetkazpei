@@ -8,7 +8,7 @@ import { supabase } from "../../services/supabase"
 
 const SUPPORT_EMAIL = "contact.budgetkazpei@gmail.com"
 
-// Dashboard V33 - Finition Play Store : gains Supabase + score + actions + économies + créole amélioré
+// Dashboard V34 - V7.2 concrète : analyse réelle sans estimation + teaser Premium+ achat intelligent
 
 const COLORS = {
   card: "#0F1E38",
@@ -33,6 +33,12 @@ function tr(t, section, key, fallback) {
 
 function moneyValue(value) {
   return Number(String(value ?? 0).replace(",", ".")) || 0
+}
+function normalizeText(value = "") {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
 }
 
 
@@ -1050,36 +1056,227 @@ function RecommendedActionsCard({ t, isMobile, stats = {}, byCategory = [], oppo
 
 function SavingsDetectedCard({ t, isMobile, abonnements = [], onOpenOpportunities }) {
   const isKreol = getIsKreol(t)
-  const totalCharges = abonnements.reduce((sum, item) => sum + moneyValue(item.montant), 0)
-  const estimatedSavings = totalCharges > 0 ? Math.max(8, Math.round(totalCharges * 0.08)) : 0
-
-  if (estimatedSavings <= 0) return null
 
   return (
-    <TropicalCard variant="gold" texture="💡" style={{ padding: isMobile ? 16 : 22 }}>
+    <TropicalCard variant="gold" texture="🚀" style={{ padding: isMobile ? 16 : 22 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center", gap: 14, flexDirection: isMobile ? "column" : "row" }}>
-        <div>
+        <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ color: COLORS.yellow, fontWeight: 900, fontSize: 13, marginBottom: 6 }}>
-            💡 {isKreol ? "Ékonomi posib" : "Économies possibles"}
+            🚀 {isKreol ? "Tré bientôt pou Premium+" : "Très prochainement pour Premium+"}
           </div>
-          <div style={{ color: COLORS.text, fontSize: isMobile ? 26 : 34, fontWeight: 900, lineHeight: 1, fontFamily: "'DM Serif Display', Georgia, serif" }}>
-            {estimatedSavings} € / {isKreol ? "mwa" : "mois"}
+
+          <div style={{ color: COLORS.text, fontSize: isMobile ? 22 : 28, fontWeight: 900, lineHeight: 1.15, fontFamily: "'DM Serif Display', Georgia, serif" }}>
+            {isKreol ? "Achat Intelligent Rényon" : "Achat Intelligent Réunion"}
           </div>
-          <div style={{ color: COLORS.muted, fontSize: 13, marginTop: 8, lineHeight: 1.45 }}>
+
+          <div style={{ color: COLORS.muted, fontSize: 13, marginTop: 9, lineHeight: 1.55 }}>
             {isKreol
-              ? "Estimation su abonman ek sarz fix. Bann bon plan pé aide aou ékonomizé plis."
-              : "Estimation sur vos abonnements et charges fixes. Les bons plans peuvent vous aider à économiser plus."}
+              ? "BudgetKazPei prépar in fonction pou aide aou compare bann bons plans, organiser out courses ek mieux contrôler out budget alimentaire. Aucun montant lé affiché tant que les données réelles ne sont pas disponibles."
+              : "BudgetKazPei prépare une fonction pour vous aider à comparer les bons plans, organiser vos courses et mieux contrôler votre budget alimentaire. Aucun montant n’est affiché tant que les données réelles ne sont pas disponibles."}
+          </div>
+
+          <div style={{ display: "grid", gap: 7, marginTop: 12 }}>
+            <div style={{ color: COLORS.whiteSoft, fontSize: 12, fontWeight: 800 }}>✅ {isKreol ? "Analyse des habitudes d'achat" : "Analyse des habitudes d’achat"}</div>
+            <div style={{ color: COLORS.whiteSoft, fontSize: 12, fontWeight: 800 }}>✅ {isKreol ? "Bons plans locaux à vérifier" : "Bons plans locaux à vérifier"}</div>
+            <div style={{ color: COLORS.whiteSoft, fontSize: 12, fontWeight: 800 }}>✅ {isKreol ? "Courses mieux préparées" : "Courses mieux préparées"}</div>
           </div>
         </div>
 
-        <button type="button" onClick={onOpenOpportunities} style={{ width: isMobile ? "100%" : "auto", background: "linear-gradient(135deg, rgba(252,211,77,.25), rgba(249,115,22,.22))", border: "1px solid rgba(252,211,77,.35)", borderRadius: 14, color: "#FDE68A", padding: "11px 15px", cursor: "pointer", fontWeight: 900, fontFamily: "inherit" }}>
-          {isKreol ? "Gad Bann Bon Plan" : "Voir les bons plans"}
-        </button>
+        <div style={{ width: isMobile ? "100%" : 230, background: "rgba(10,22,40,.42)", border: "1px solid rgba(255,255,255,.10)", borderRadius: 16, padding: 14 }}>
+          <div style={{ color: COLORS.yellow, fontSize: 12, fontWeight: 900, marginBottom: 8 }}>
+            Premium+
+          </div>
+          <div style={{ color: COLORS.text, fontSize: 13, lineHeight: 1.5 }}>
+            {isKreol
+              ? "Fonction en préparation. Nou affichera seulement bann calculs basés su données réelles."
+              : "Fonction en préparation. Les calculs affichés seront uniquement basés sur des données réelles."}
+          </div>
+        </div>
       </div>
     </TropicalCard>
   )
 }
 
+
+
+
+function getCategoryLabelForSavings(cat = {}, t, isKreol = false) {
+  const id = cat.id || cat.category || cat.name || "categorie"
+  const translated = typeof t === "function" ? t("categories", id) : ""
+  if (translated && translated !== id) return translated
+  return String(id || (isKreol ? "Katégori" : "Catégorie"))
+}
+
+function buildSavingsAnalysisV72({ stats = {}, byCategory = [], transactions = [], t, isKreol = false }) {
+  const solde = Number(stats.solde || 0)
+  const hasTransactions = (transactions || []).length > 0 || Number(stats.depenses || 0) > 0
+  const categoriesWithBudget = (byCategory || []).filter(cat => Number(cat.budget || 0) > 0)
+
+  const overBudget = categoriesWithBudget
+    .map(cat => {
+      const depense = Number(cat.depense || 0)
+      const budget = Number(cat.budget || 0)
+      const depassement = Math.max(depense - budget, 0)
+
+      return {
+        ...cat,
+        depense,
+        budget,
+        depassement,
+        label: getCategoryLabelForSavings(cat, t, isKreol),
+      }
+    })
+    .filter(cat => cat.depassement > 0)
+    .sort((a, b) => b.depassement - a.depassement)
+
+  const totalDepassement = overBudget.reduce((sum, cat) => sum + cat.depassement, 0)
+  const hasEnoughData = hasTransactions && categoriesWithBudget.length > 0
+
+  let alert = {
+    level: "ok",
+    color: COLORS.green,
+    emoji: "🟢",
+    title: isKreol ? "Budget maîtrisé" : "Budget maîtrisé",
+    text: isKreol
+      ? "Aucun dépassement réel détecté pou le moment."
+      : "Aucun dépassement réel détecté pour le moment.",
+  }
+
+  if (!hasEnoughData) {
+    alert = {
+      level: "info",
+      color: COLORS.cyan,
+      emoji: "🔵",
+      title: isKreol ? "Données insuffisantes" : "Données insuffisantes",
+      text: isKreol
+        ? "BudgetKazPei na pas encore assez d'informations pou calculer in dépassement réel."
+        : "BudgetKazPei ne dispose pas encore d'assez d'informations pour calculer un dépassement réel.",
+    }
+  } else if (solde < 0 || overBudget.length >= 3) {
+    alert = {
+      level: "danger",
+      color: COLORS.red,
+      emoji: "🔴",
+      title: isKreol ? "Action recommandée" : "Action recommandée",
+      text: isKreol
+        ? solde < 0
+          ? "Out solde lé négatif. I fo agir su bann dépenses les plus hautes."
+          : "Plusieurs catégories la dépassé out budget ce mois-ci."
+        : solde < 0
+          ? "Votre solde est négatif. Il faut agir sur les dépenses les plus élevées."
+          : "Plusieurs catégories ont dépassé votre budget ce mois-ci.",
+    }
+  } else if (overBudget.length > 0) {
+    alert = {
+      level: "warning",
+      color: COLORS.yellow,
+      emoji: "🟠",
+      title: isKreol ? "À surveiller" : "À surveiller",
+      text: isKreol
+        ? `${overBudget.length} katégori la dépassé out budget ce mois-ci.`
+        : `${overBudget.length} catégorie(s) ont dépassé votre budget ce mois-ci.`,
+    }
+  }
+
+  return {
+    hasEnoughData,
+    alert,
+    overBudget,
+    totalDepassement,
+    categoriesWithBudgetCount: categoriesWithBudget.length,
+    hasTransactions,
+  }
+}
+
+function SavingsV7Card({ t, isMobile, stats = {}, byCategory = [], abonnements = [], transactions = [], onOpenOpportunities }) {
+  const isKreol = getIsKreol(t)
+  const analysis = buildSavingsAnalysisV72({ stats, byCategory, transactions, t, isKreol })
+  const displayedCategories = analysis.overBudget.slice(0, 4)
+
+  return (
+    <TropicalCard variant="gold" texture="💡" style={{ padding: isMobile ? 16 : 22 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 14, alignItems: isMobile ? "flex-start" : "center", flexDirection: isMobile ? "column" : "row", marginBottom: 14 }}>
+        <div>
+          <div style={{ color: COLORS.yellow, fontWeight: 900, fontSize: 13, marginBottom: 6 }}>
+            💡 {isKreol ? "V7.2 · Analyse réelle" : "V7.2 · Analyse réelle"}
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <div style={{ color: analysis.alert.color, fontSize: isMobile ? 22 : 28, fontWeight: 900, lineHeight: 1.1, fontFamily: "'DM Serif Display', Georgia, serif" }}>
+              {analysis.alert.emoji} {analysis.alert.title}
+            </div>
+          </div>
+
+          <div style={{ color: COLORS.muted, fontSize: 13, marginTop: 8, lineHeight: 1.45 }}>
+            {analysis.alert.text}
+          </div>
+        </div>
+      </div>
+
+      {!analysis.hasEnoughData ? (
+        <div style={{ background: "rgba(10,22,40,.42)", border: "1px solid rgba(255,255,255,.10)", borderRadius: 14, padding: "13px 14px", color: COLORS.whiteSoft, fontSize: 13, lineHeight: 1.55 }}>
+          {isKreol
+            ? "Ajoute quelques dépenses, revenus et budgets par catégorie. Ensuite BudgetKazPei affichera uniquement bann dépassements réellement constatés."
+            : "Ajoutez quelques dépenses, revenus et budgets par catégorie. Ensuite BudgetKazPei affichera uniquement les dépassements réellement constatés."}
+        </div>
+      ) : analysis.totalDepassement > 0 ? (
+        <>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 10, marginBottom: 12 }}>
+            <div style={{ background: "rgba(10,22,40,.42)", border: "1px solid rgba(255,255,255,.10)", borderRadius: 14, padding: "13px 14px" }}>
+              <div style={{ color: COLORS.muted, fontSize: 12, fontWeight: 800, marginBottom: 6 }}>
+                {isKreol ? "Dépassement réel ce mois-ci" : "Dépassement réel ce mois-ci"}
+              </div>
+              <div style={{ color: COLORS.red, fontSize: 28, fontWeight: 900, lineHeight: 1, fontFamily: "'DM Serif Display', Georgia, serif" }}>
+                {formatMontant(analysis.totalDepassement)}
+              </div>
+            </div>
+
+            <div style={{ background: "rgba(10,22,40,.42)", border: "1px solid rgba(255,255,255,.10)", borderRadius: 14, padding: "13px 14px" }}>
+              <div style={{ color: COLORS.muted, fontSize: 12, fontWeight: 800, marginBottom: 6 }}>
+                {isKreol ? "Catégories concernées" : "Catégories concernées"}
+              </div>
+              <div style={{ color: COLORS.yellow, fontSize: 28, fontWeight: 900, lineHeight: 1, fontFamily: "'DM Serif Display', Georgia, serif" }}>
+                {analysis.overBudget.length}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gap: 9 }}>
+            {displayedCategories.map((cat, index) => (
+              <div key={`${cat.id || cat.label}-${index}`} style={{ background: "rgba(10,22,40,.42)", border: "1px solid rgba(255,255,255,.10)", borderRadius: 14, padding: "12px 13px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "center", marginBottom: 7 }}>
+                  <strong style={{ color: COLORS.text, fontSize: 13 }}>
+                    {cat.emoji || "⚠️"} {cat.label}
+                  </strong>
+                  <span style={{ color: COLORS.red, fontWeight: 900, fontSize: 12 }}>
+                    + {formatMontant(cat.depassement)}
+                  </span>
+                </div>
+                <div style={{ color: COLORS.muted, fontSize: 12, lineHeight: 1.45 }}>
+                  {isKreol
+                    ? `Dépensé : ${formatMontant(cat.depense)} · Budget prévu : ${formatMontant(cat.budget)}`
+                    : `Dépensé : ${formatMontant(cat.depense)} · Budget prévu : ${formatMontant(cat.budget)}`}
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      ) : (
+        <div style={{ background: "rgba(34,197,94,.10)", border: "1px solid rgba(34,197,94,.22)", borderRadius: 14, padding: "13px 14px", color: COLORS.whiteSoft, fontSize: 13, lineHeight: 1.55 }}>
+          {isKreol
+            ? "Aucun dépassement réel détecté dans bann catégories suivies. Aucun montant d'économie n'est affiché sans donnée concrète."
+            : "Aucun dépassement réel détecté dans les catégories suivies. Aucun montant d'économie n'est affiché sans donnée concrète."}
+        </div>
+      )}
+
+      <div style={{ marginTop: 12, color: COLORS.muted, fontSize: 11.5, lineHeight: 1.45 }}>
+        {isKreol
+          ? "Calcul basé uniquement su bann dépenses ek bidjé enregistrés pou mwa-la. Aucune projection, estimation future ou montant inventé."
+          : "Calcul basé uniquement sur vos dépenses et budgets enregistrés ce mois-ci. Aucune projection, estimation future ou montant inventé."}
+      </div>
+    </TropicalCard>
+  )
+}
 
 
 function ContactSupportCard({ t, isMobile }) {
@@ -1491,6 +1688,16 @@ export default function Dashboard({
         gainsAides={effectiveGainsAides}
         nbAidesObtenues={effectiveNbAidesObtenues}
         opportunitiesCount={opportunitiesCount}
+      />
+
+      <SavingsV7Card
+        t={t}
+        isMobile={isMobile}
+        stats={stats}
+        byCategory={byCategory}
+        abonnements={abonnements}
+        transactions={transactions}
+        onOpenOpportunities={onOpenOpportunities || onGoPremium}
       />
 
       <ContactSupportCard t={t} isMobile={isMobile} />

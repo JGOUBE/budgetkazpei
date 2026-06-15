@@ -6,7 +6,7 @@ import {
 } from "lucide-react"
 import { supabase } from "../../services/supabase"
 
-// AssistantAides V3.10.0 - Échanges optimisés + nouvelle consultation + 3 dernières réponses
+// AssistantAides V107.1 - Branchement IA sécurisé via Edge Function assistant-aisupabase + quotas serveur
 
 const COLORS = {
   card: "#0F1E38",
@@ -128,6 +128,17 @@ function normalizeText(value) {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
+}
+
+function looksLikeKreolText(value = "") {
+  const text = ` ${normalizeText(value)} `
+  const markers = [
+    " mi ", " moin", " mouin", " marmay", " larzan", " zed", " zede",
+    " zot", " aou", " out ", " ou la ", " ou le", " ou lé", " na ",
+    " gagn", " gagne", " kossa", " kosa", " pou ", " ek ", " dann",
+    " kaz", " renyon", " reyon", " pei", " domann", " travaye"
+  ]
+  return markers.some(marker => text.includes(marker))
 }
 
 function formatValue(value, fallback = "Non renseigné") {
@@ -1667,6 +1678,7 @@ function buildNextActions(recommendedAides = [], profile = {}, isKreol = false) 
 }
 
 function buildSmartAnswer(responseData, isKreol = false, recommendedAides = []) {
+  if (responseData?.aiAnswer) return responseData.aiAnswer
   if (!responseData?.profile) return ""
 
   const profile = responseData.profile
@@ -1767,6 +1779,7 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
   const [selectedDossier, setSelectedDossier] = useState(null)
   const [aiUsage, setAiUsage] = useState(null)
   const [loadingAiUsage, setLoadingAiUsage] = useState(false)
+  const [loadingAssistant, setLoadingAssistant] = useState(false)
 
   const txt = (key, fallback) => safeT(t, "aides", key, fallback)
   const isKreol = isKreolLanguage(t)
@@ -1776,7 +1789,10 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
   const aiRemaining = Math.max(0, aiLimit - aiUsed)
   const aiQuotaReached = aiRemaining <= 0
   const currentQuestionConsumesExchange = shouldConsumeAiExchange(question, quickQuestionSelected)
-  const analyzeDisabled = loadingProfile || (aiQuotaReached && currentQuestionConsumesExchange)
+  const analyzeDisabled =
+    loadingProfile ||
+    loadingAssistant ||
+    (aiQuotaReached && currentQuestionConsumesExchange)
 
   const recommendedAides = useMemo(() => {
     if (!responseData?.profile || !responseData?.aides) return []
@@ -2532,6 +2548,105 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
     return getRecommendedAides(item.aides, item.profile, isKreol, item.question || "")
   }
 
+  function prepareAideContext(aides = [], contextProfile = profile || {}, contextIsKreol = isKreol) {
+    return aides.slice(0, 8).map(aide => {
+      const score = Number(aide.score || 0)
+      const level = getLevel(score, contextIsKreol)
+      const aideNameFr = getAideName(aide, false)
+      const aideNameKreol = getAideName(aide, true)
+      const docs = getDocumentsForAide(aideNameFr, aideDocuments).slice(0, 6)
+
+      return {
+        id: aide.id || aide.aide_id || null,
+        nom: aideNameFr,
+        nom_kreol: aideNameKreol,
+        organisme: aide.organisme || "",
+        commune: aide.commune || "",
+        categorie: aide.categorie || aide.category || "",
+        score,
+        niveau: level.label,
+        montant: formatAideAmount(aide, contextIsKreol),
+        montant_min: aide.montant_min || null,
+        montant_max: aide.montant_max || null,
+        description: getAideDescription(aide, contextIsKreol),
+        demarches: getAideDemarches(aide, contextIsKreol),
+        lien_officiel: getOfficialLink(aide),
+        raisons: (aide.reasons || []).slice(0, 4),
+        points_a_verifier: (aide.missing || []).slice(0, 4),
+        exclue: aide.excluded === true,
+        raisons_exclusion: (aide.excludedReasons || []).slice(0, 4),
+        flags: {
+          besoin_enfant: isTrue(aide.besoin_enfant),
+          besoin_locataire: isTrue(aide.besoin_locataire),
+          besoin_parent_isole: normalizeText(`${aide.nom || ""} ${aide.nom_kreol || ""} ${aide.description || ""}`).includes("parent isole") || normalizeText(`${aide.nom || ""} ${aide.nom_kreol || ""} ${aide.description || ""}`).includes("parent tousel"),
+          besoin_allocataire_caf: isTrue(aide.besoin_allocataire_caf),
+          besoin_demandeur_emploi: isTrue(aide.besoin_demandeur_emploi),
+        },
+        documents: docs.map(document => ({
+          nom: contextIsKreol ? (document.document_nom_kreol || document.document_nom) : document.document_nom,
+          obligatoire: document.obligatoire === true,
+        })),
+        actions: getImmediateActionSteps(aide, contextProfile || {}, contextIsKreol).slice(0, 4),
+        contacts: getActionContacts(aide, contextProfile || {}, contextIsKreol).slice(0, 4),
+      }
+    })
+  }
+
+  async function callAssistantAi({ question: sentQuestion, currentProfile, aides }) {
+    const assistantIsKreol = isKreol || looksLikeKreolText(sentQuestion)
+
+    const topRecommendedAides = getRecommendedAides(
+      aides,
+      currentProfile,
+      assistantIsKreol,
+      sentQuestion
+    )
+
+    const preparedAides = prepareAideContext(topRecommendedAides, currentProfile, assistantIsKreol)
+
+    const localContext = {
+      commune: currentProfile?.commune || "",
+      situation_familiale: currentProfile?.situation_familiale || "",
+      logement: currentProfile?.logement || "",
+      situation_professionnelle: currentProfile?.situation_professionnelle || "",
+      nombre_enfants: currentProfile?.nombre_enfants ?? null,
+      revenus_foyer: currentProfile?.revenus_foyer ?? null,
+      allocataire_caf: currentProfile?.allocataire_caf ?? null,
+      organismes_locaux_a_verifier: [
+        currentProfile?.commune ? `CCAS / Mairie de ${currentProfile.commune}` : "CCAS / Mairie de la commune",
+        "CAF Réunion",
+        "Département de La Réunion",
+        "Région Réunion",
+        "France Travail Réunion",
+      ],
+    }
+
+    const { data, error } = await supabase.functions.invoke("assistant-aisupabase", {
+      body: {
+        question: sentQuestion,
+        language: assistantIsKreol ? "kreol" : "fr",
+        isKreol: assistantIsKreol,
+        isQuickPreset: false,
+        profile: currentProfile,
+        profile_summary: buildProfileSummary(currentProfile, assistantIsKreol),
+        localContext,
+        recommendedAides: preparedAides,
+        recommended_aides: preparedAides,
+      },
+    })
+
+    if (error) {
+      console.error("Erreur Edge Function assistant-aisupabase:", error)
+      return {
+        success: false,
+        code: "edge_error",
+        message: error.message || "Erreur assistant IA.",
+      }
+    }
+
+    return data || { success: false, code: "empty_response" }
+  }
+
   async function handleScanProfile() {
     const currentProfile = profile || (await fetchProfile())
     if (!currentProfile) {
@@ -2551,16 +2666,57 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
       return
     }
 
-    const consumesExchange = shouldConsumeAiExchange(question, quickQuestionSelected)
+    const sentQuestion = question.trim()
+    const consumesExchange = shouldConsumeAiExchange(sentQuestion, quickQuestionSelected)
+    const aides = await fetchAides()
+
+    let aiAnswer = ""
 
     if (consumesExchange) {
-      const allowed = await consumeAiMessage(currentProfile)
-      if (!allowed) return
+      setLoadingAssistant(true)
+
+      const result = await callAssistantAi({
+        question: sentQuestion,
+        currentProfile,
+        aides,
+      })
+
+      setLoadingAssistant(false)
+
+      if (!result?.success) {
+        if (result?.code === "quota_exceeded") {
+          setAiUsage(result.usage || aiUsage)
+          alert(
+            isKreol
+              ? "Ou la utilisé tout out échanges pou sa mwa-la. Premium+ i donn ziska 250 échanges par mwa."
+              : "Vous avez utilisé tous vos échanges du mois. Premium+ vous donne jusqu’à 250 échanges par mois."
+          )
+          return
+        }
+
+        console.error("Erreur assistant IA:", result)
+
+        alert(
+          isKreol
+            ? "L'assistant IA lé indisponib pou linstan. Mi affiche quand même l'analyse BudgetKazPei."
+            : "L'assistant IA est indisponible pour le moment. J'affiche quand même l'analyse BudgetKazPei."
+        )
+      } else {
+        aiAnswer = result.answer || ""
+        if (result.usage) {
+          setAiUsage(result.usage)
+        }
+      }
     }
 
-    const aides = await fetchAides()
-    const sentQuestion = question.trim()
-    rememberResponse({ type: "question", question: sentQuestion, profile: currentProfile, aides })
+    rememberResponse({
+      type: "question",
+      question: sentQuestion,
+      profile: currentProfile,
+      aides,
+      aiAnswer,
+      aiMode: consumesExchange ? "edge-ai" : "local",
+    })
 
     // Une fois envoyé, le champ se vide : l'utilisateur garde un écran propre.
     setQuestion("")
@@ -2649,7 +2805,7 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
           <button type="button" onClick={handleAnalyze} disabled={analyzeDisabled} style={{ background: analyzeDisabled ? COLORS.muted : COLORS.accent, color: "#fff", border: "none", borderRadius: 12, padding: "11px 16px", fontWeight: 900, cursor: analyzeDisabled ? "not-allowed" : "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 8 }}>
             <Send size={16} />
-            {loadingProfile ? "Analyse en cours..." : isKreol ? "Diskité ek mon konseye" : "Discuter avec mon conseiller"}
+            {loadingProfile || loadingAssistant ? "Analyse en cours..." : isKreol ? "Diskité ek mon konseye" : "Discuter avec mon conseiller"}
           </button>
 
           <button type="button" onClick={handleScanProfile} disabled={loadingProfile} style={{ background: loadingProfile ? COLORS.muted : COLORS.cyan, color: "#0A1628", border: "none", borderRadius: 12, padding: "11px 16px", fontWeight: 900, cursor: loadingProfile ? "not-allowed" : "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 8 }}>
