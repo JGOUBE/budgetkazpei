@@ -768,12 +768,21 @@ function RecoveredMoneyCard({
 
 
 
-function normalizeSubscriptionPlan({ plan, isPremium, isPremiumPlus } = {}) {
-  const cleanPlan = String(plan || "").toLowerCase().trim()
+function normalizeSubscriptionPlan({ plan, status, isPremium, isPremiumPlus } = {}) {
+  const cleanStatus = String(status || "").toLowerCase().trim()
+  const hasInactiveStatus = ["canceled", "cancelled", "inactive", "past_due", "unpaid", "expired"].includes(cleanStatus)
 
-  if (cleanPlan === "premium_plus") return "premium_plus"
-  if (cleanPlan === "premium") return "premium"
-  if (cleanPlan === "free") return "free"
+  if (hasInactiveStatus) return "free"
+
+  const cleanPlan = String(plan || "")
+    .toLowerCase()
+    .trim()
+    .replace(/-/g, "_")
+    .replace(/\s+/g, "_")
+
+  if (cleanPlan.includes("premium_plus") || cleanPlan.includes("premium+")) return "premium_plus"
+  if (cleanPlan.includes("premium")) return "premium"
+  if (cleanPlan === "free" || cleanPlan === "gratuit") return "free"
 
   if (isPremiumPlus === true) return "premium_plus"
   if (isPremium === true) return "premium"
@@ -781,8 +790,8 @@ function normalizeSubscriptionPlan({ plan, isPremium, isPremiumPlus } = {}) {
   return "free"
 }
 
-function getPremiumFlags({ plan, isPremium, isPremiumPlus } = {}) {
-  const normalizedPlan = normalizeSubscriptionPlan({ plan, isPremium, isPremiumPlus })
+function getPremiumFlags({ plan, status, isPremium, isPremiumPlus } = {}) {
+  const normalizedPlan = normalizeSubscriptionPlan({ plan, status, isPremium, isPremiumPlus })
 
   return {
     plan: normalizedPlan,
@@ -1551,9 +1560,91 @@ export default function Dashboard({
     gainsDetails: [],
     loaded: false,
   })
+  const [subscriptionFromDb, setSubscriptionFromDb] = useState({
+    plan: "",
+    status: "",
+    loaded: false,
+  })
 
-  const premiumStatus = getPremiumFlags({ plan, isPremium, isPremiumPlus })
+  const effectivePlan = subscriptionFromDb.plan || plan
+  const effectiveStatus = subscriptionFromDb.status || ""
+  const premiumStatus = getPremiumFlags({
+    plan: effectivePlan,
+    status: effectiveStatus,
+    isPremium,
+    isPremiumPlus,
+  })
   const hasPremiumAccess = premiumStatus.hasPremiumAccess
+  const hasPremiumPlusAccess = premiumStatus.hasPremiumPlusAccess
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function fetchSubscriptionForDashboard() {
+      try {
+        const { data: authData, error: authError } = await supabase.auth.getUser()
+        const authUser = authData?.user
+
+        if (authError || !authUser?.id) {
+          if (!cancelled) {
+            setSubscriptionFromDb({ plan: "", status: "", loaded: true })
+          }
+          return
+        }
+
+        let query = supabase
+          .from("user_subscriptions")
+          .select("plan,status,updated_at,created_at")
+          .eq("user_id", authUser.id)
+          .order("updated_at", { ascending: false, nullsFirst: false })
+          .order("created_at", { ascending: false, nullsFirst: false })
+          .limit(1)
+
+        let { data, error } = await query.maybeSingle()
+
+        if ((!data || error) && authUser.email) {
+          const fallback = await supabase
+            .from("user_subscriptions")
+            .select("plan,status,updated_at,created_at")
+            .eq("email", authUser.email)
+            .order("updated_at", { ascending: false, nullsFirst: false })
+            .order("created_at", { ascending: false, nullsFirst: false })
+            .limit(1)
+            .maybeSingle()
+
+          data = fallback.data
+          error = fallback.error
+        }
+
+        if (error) {
+          console.error("Erreur chargement abonnement dashboard:", error)
+          if (!cancelled) {
+            setSubscriptionFromDb({ plan: "", status: "", loaded: true })
+          }
+          return
+        }
+
+        if (!cancelled) {
+          setSubscriptionFromDb({
+            plan: data?.plan || "",
+            status: data?.status || "",
+            loaded: true,
+          })
+        }
+      } catch (err) {
+        console.error("Erreur abonnement dashboard:", err)
+        if (!cancelled) {
+          setSubscriptionFromDb({ plan: "", status: "", loaded: true })
+        }
+      }
+    }
+
+    fetchSubscriptionForDashboard()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
