@@ -103,6 +103,8 @@ const STATUS_OPTIONS = [
 ]
 
 function getAideLink(aide) {
+  if (aide?.officialUrl) return aide.officialUrl
+
   const normalizedLabel = `${aide.id || ""} ${aide.label || ""}`.toLowerCase()
 
   if (normalizedLabel.includes("rsa")) return AIDE_LINKS.rsa
@@ -111,6 +113,70 @@ function getAideLink(aide) {
   if (normalizedLabel.includes("énergie") || normalizedLabel.includes("energie")) return AIDE_LINKS.aideEnergie
 
   return "https://www.caf.fr/allocataires/aides-et-demarches/mes-demarches"
+}
+
+function getAideTitle(aide, isKreol) {
+  if (isKreol) return aide?.label_kr || aide?.title_kr || aide?.label || aide?.title || "Éd"
+  return aide?.label || aide?.title || "Aide"
+}
+
+function getAideDescription(aide, isKreol) {
+  if (isKreol) {
+    return (
+      aide?.description_kr ||
+      aide?.description ||
+      "Éd à vérifié selon out profil ek out sitiasyon."
+    )
+  }
+
+  return (
+    aide?.description ||
+    "Aide à vérifier selon votre profil et votre situation."
+  )
+}
+
+function getAideCategoryLabel(aide, isKreol) {
+  const category = String(aide?.category || "").toLowerCase()
+
+  const fr = {
+    emploi: "💼 Emploi & revenus",
+    logement: "🏠 Logement",
+    famille: "👨‍👩‍👧‍👦 Famille",
+    scolarite: "🎓 Scolarité",
+    etudiant: "🎓 Étudiants",
+    energie: "⚡ Énergie",
+    mobilite: "🚗 Mobilité",
+    ccas: "🏛️ Commune / CCAS",
+    sante: "💊 Santé",
+  }
+
+  const kr = {
+    emploi: "💼 Travay & revenus",
+    logement: "🏠 Kaz",
+    famille: "👨‍👩‍👧‍👦 Fami",
+    scolarite: "🎓 Lékol",
+    etudiant: "🎓 Étudiant",
+    energie: "⚡ Énerzi",
+    mobilite: "🚗 Déplasman",
+    ccas: "🏛️ Komin / CCAS",
+    sante: "💊 Santé",
+  }
+
+  return isKreol ? kr[category] || "💡 Éd à vérifié" : fr[category] || "💡 Aide à vérifier"
+}
+
+function getConfidenceLabel(aide, isKreol) {
+  const confidence = String(aide?.confidence || "").toLowerCase()
+
+  if (confidence === "tres_pertinent") {
+    return isKreol ? "Très pertinent" : "Très pertinent"
+  }
+
+  if (confidence === "probable") {
+    return isKreol ? "Probable" : "Probable"
+  }
+
+  return isKreol ? "À vérifier" : "À vérifier"
 }
 
 function openExternalLink(url) {
@@ -1253,6 +1319,10 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
         {AIDES.map((aide, index) => {
           const theme = CARD_VARIANTS[index % CARD_VARIANTS.length]
           const Icon = theme.Icon
+          const title = getAideTitle(aide, isKreol)
+          const description = getAideDescription(aide, isKreol)
+          const categoryLabel = getAideCategoryLabel(aide, isKreol)
+          const confidenceLabel = getConfidenceLabel(aide, isKreol)
 
           return (
             <article
@@ -1311,7 +1381,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                       fontWeight: 800,
                     }}
                   >
-                    {aide.label}
+                    {title}
                   </h4>
 
                   <span
@@ -1326,7 +1396,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                       whiteSpace: "nowrap",
                     }}
                   >
-                    {t("aides", aide.statutKey)}
+                    {confidenceLabel}
                   </span>
                 </div>
 
@@ -1350,8 +1420,41 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                     fontWeight: 600,
                   }}
                 >
-                  {t("aides", theme.labelKey)}
+                  {categoryLabel}
                 </p>
+
+                <p
+                  style={{
+                    margin: "10px 0 0",
+                    fontSize: 13,
+                    color: "rgba(248,250,252,.72)",
+                    fontWeight: 500,
+                    lineHeight: 1.5,
+                    maxWidth: 620,
+                  }}
+                >
+                  {description}
+                </p>
+
+                {aide.organisme && (
+                  <div
+                    style={{
+                      marginTop: 10,
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      background: "rgba(35,211,214,.10)",
+                      border: "1px solid rgba(35,211,214,.24)",
+                      color: COLORS.cyan,
+                      borderRadius: 999,
+                      padding: "5px 9px",
+                      fontSize: 11,
+                      fontWeight: 900,
+                    }}
+                  >
+                    🏛️ {aide.organisme}
+                  </div>
+                )}
 
                 {aide.statutKey !== "statutActif" && (
                   <button
@@ -1371,7 +1474,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                       boxShadow: "0 10px 20px rgba(0,0,0,.20)",
                     }}
                   >
-                    {t("aides", "cta")} →
+                    {isKreol ? "Vérifié l’éd" : "Vérifier l’aide"} →
                   </button>
                 )}
               </div>

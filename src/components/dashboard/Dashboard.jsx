@@ -8,7 +8,7 @@ import { supabase } from "../../services/supabase"
 
 const SUPPORT_EMAIL = "contact.budgetkazpei@gmail.com"
 
-// Dashboard V34 - V7.2 concrète : analyse réelle sans estimation + teaser Premium+ achat intelligent
+// Dashboard V34 - Cohérence revenus : profil + entrées ponctuelles + résumé réel sans estimation
 
 const COLORS = {
   card: "#0F1E38",
@@ -324,7 +324,7 @@ function RevenusDetails({ stats, transactions = [], abonnements = [], onClose, t
 
       <DetailItem
         icon="📌"
-        label={tr(t, "dashboard", "fixedCharges", "Charges fixes prévues")}
+        label={tr(t, "dashboard", "fixedChargesRegistered", "Charges fixes enregistrées")}
         value={formatMontant(chargesFixes)}
         color={COLORS.accentSoft}
         onClick={() => setOpenedLine(openedLine === "charges" ? null : "charges")}
@@ -385,7 +385,7 @@ function RevenusDetails({ stats, transactions = [], abonnements = [], onClose, t
         />
       )}
 
-      <DetailItem icon="🎯" label={tr(t, "dashboard", "estimatedAvailable", "Reste disponible estimé")} value={formatMontant(resteAVivre)} color={resteAVivre >= 0 ? COLORS.green : COLORS.red} />
+      <DetailItem icon="🎯" label={tr(t, "dashboard", "availableBalance", "Reste disponible")} value={formatMontant(resteAVivre)} color={resteAVivre >= 0 ? COLORS.green : COLORS.red} />
 
       <div
         style={{
@@ -399,14 +399,24 @@ function RevenusDetails({ stats, transactions = [], abonnements = [], onClose, t
           lineHeight: 1.5,
         }}
       >
-        {tr(t, "dashboard", "afterExpensesText", "Après dépenses et charges, il vous reste environ")}{" "}
-        <strong style={{ color: "#BEF264" }}>{tauxDisponible} %</strong>{" "}
-        {tr(t, "dashboard", "incomeAvailableText", "de vos revenus disponibles.")}
-        {totalDepenses > 0 && (
+        <strong style={{ color: "#BEF264" }}>
+          {tr(t, "dashboard", "realMonthSummaryTitle", "Résumé réel du mois :")}
+        </strong>{" "}
+        {tr(t, "dashboard", "monthlyIncomeLabel", "revenus du mois")} {" "}
+        <strong style={{ color: "#BEF264" }}>{formatMontant(revenus)}</strong> · {" "}
+        {tr(t, "dashboard", "registeredFixedChargesLabel", "charges fixes enregistrées")} {" "}
+        <strong style={{ color: COLORS.accentSoft }}>{formatMontant(chargesFixes)}</strong> · {" "}
+        {tr(t, "dashboard", "variableExpensesLabel", "dépenses variables")} {" "}
+        <strong style={{ color: COLORS.blue }}>{formatMontant(depensesVariables)}</strong> · {" "}
+        {tr(t, "dashboard", "availableBalanceLabel", "reste disponible")} {" "}
+        <strong style={{ color: resteAVivre >= 0 ? COLORS.green : COLORS.red }}>
+          {formatMontant(resteAVivre)}
+        </strong>.
+        {revenus > 0 && (
           <span>
             {" "}
-            {tr(t, "dashboard", "totalCommitted", "Total déjà engagé :")}{" "}
-            <strong style={{ color: COLORS.accentSoft }}>{formatMontant(totalDepenses)}</strong>.
+            {tr(t, "dashboard", "availableShareLabel", "Part disponible")} : {" "}
+            <strong style={{ color: "#BEF264" }}>{tauxDisponible} %</strong>.
           </span>
         )}
       </div>
@@ -1056,42 +1066,31 @@ function RecommendedActionsCard({ t, isMobile, stats = {}, byCategory = [], oppo
 
 function SavingsDetectedCard({ t, isMobile, abonnements = [], onOpenOpportunities }) {
   const isKreol = getIsKreol(t)
+  const totalCharges = abonnements.reduce((sum, item) => sum + moneyValue(item.montant), 0)
+  const estimatedSavings = totalCharges > 0 ? Math.max(8, Math.round(totalCharges * 0.08)) : 0
+
+  if (estimatedSavings <= 0) return null
 
   return (
-    <TropicalCard variant="gold" texture="🚀" style={{ padding: isMobile ? 16 : 22 }}>
+    <TropicalCard variant="gold" texture="💡" style={{ padding: isMobile ? 16 : 22 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center", gap: 14, flexDirection: isMobile ? "column" : "row" }}>
-        <div style={{ minWidth: 0, flex: 1 }}>
+        <div>
           <div style={{ color: COLORS.yellow, fontWeight: 900, fontSize: 13, marginBottom: 6 }}>
-            🚀 {isKreol ? "Tré bientôt pou Premium+" : "Très prochainement pour Premium+"}
+            💡 {isKreol ? "Ékonomi posib" : "Économies possibles"}
           </div>
-
-          <div style={{ color: COLORS.text, fontSize: isMobile ? 22 : 28, fontWeight: 900, lineHeight: 1.15, fontFamily: "'DM Serif Display', Georgia, serif" }}>
-            {isKreol ? "Achat Intelligent Rényon" : "Achat Intelligent Réunion"}
+          <div style={{ color: COLORS.text, fontSize: isMobile ? 26 : 34, fontWeight: 900, lineHeight: 1, fontFamily: "'DM Serif Display', Georgia, serif" }}>
+            {estimatedSavings} € / {isKreol ? "mwa" : "mois"}
           </div>
-
-          <div style={{ color: COLORS.muted, fontSize: 13, marginTop: 9, lineHeight: 1.55 }}>
+          <div style={{ color: COLORS.muted, fontSize: 13, marginTop: 8, lineHeight: 1.45 }}>
             {isKreol
-              ? "BudgetKazPei prépar in fonction pou aide aou compare bann bons plans, organiser out courses ek mieux contrôler out budget alimentaire. Aucun montant lé affiché tant que les données réelles ne sont pas disponibles."
-              : "BudgetKazPei prépare une fonction pour vous aider à comparer les bons plans, organiser vos courses et mieux contrôler votre budget alimentaire. Aucun montant n’est affiché tant que les données réelles ne sont pas disponibles."}
-          </div>
-
-          <div style={{ display: "grid", gap: 7, marginTop: 12 }}>
-            <div style={{ color: COLORS.whiteSoft, fontSize: 12, fontWeight: 800 }}>✅ {isKreol ? "Analyse des habitudes d'achat" : "Analyse des habitudes d’achat"}</div>
-            <div style={{ color: COLORS.whiteSoft, fontSize: 12, fontWeight: 800 }}>✅ {isKreol ? "Bons plans locaux à vérifier" : "Bons plans locaux à vérifier"}</div>
-            <div style={{ color: COLORS.whiteSoft, fontSize: 12, fontWeight: 800 }}>✅ {isKreol ? "Courses mieux préparées" : "Courses mieux préparées"}</div>
+              ? "Estimation su abonman ek sarz fix. Bann bon plan pé aide aou ékonomizé plis."
+              : "Estimation sur vos abonnements et charges fixes. Les bons plans peuvent vous aider à économiser plus."}
           </div>
         </div>
 
-        <div style={{ width: isMobile ? "100%" : 230, background: "rgba(10,22,40,.42)", border: "1px solid rgba(255,255,255,.10)", borderRadius: 16, padding: 14 }}>
-          <div style={{ color: COLORS.yellow, fontSize: 12, fontWeight: 900, marginBottom: 8 }}>
-            Premium+
-          </div>
-          <div style={{ color: COLORS.text, fontSize: 13, lineHeight: 1.5 }}>
-            {isKreol
-              ? "Fonction en préparation. Nou affichera seulement bann calculs basés su données réelles."
-              : "Fonction en préparation. Les calculs affichés seront uniquement basés sur des données réelles."}
-          </div>
-        </div>
+        <button type="button" onClick={onOpenOpportunities} style={{ width: isMobile ? "100%" : "auto", background: "linear-gradient(135deg, rgba(252,211,77,.25), rgba(249,115,22,.22))", border: "1px solid rgba(252,211,77,.35)", borderRadius: 14, color: "#FDE68A", padding: "11px 15px", cursor: "pointer", fontWeight: 900, fontFamily: "inherit" }}>
+          {isKreol ? "Gad Bann Bon Plan" : "Voir les bons plans"}
+        </button>
       </div>
     </TropicalCard>
   )
@@ -1130,6 +1129,8 @@ function buildSavingsAnalysisV72({ stats = {}, byCategory = [], transactions = [
     .sort((a, b) => b.depassement - a.depassement)
 
   const totalDepassement = overBudget.reduce((sum, cat) => sum + cat.depassement, 0)
+  const projectionAnnuelle = totalDepassement * 12
+
   const hasEnoughData = hasTransactions && categoriesWithBudget.length > 0
 
   let alert = {
@@ -1183,6 +1184,7 @@ function buildSavingsAnalysisV72({ stats = {}, byCategory = [], transactions = [
     alert,
     overBudget,
     totalDepassement,
+    projectionAnnuelle,
     categoriesWithBudgetCount: categoriesWithBudget.length,
     hasTransactions,
   }
@@ -1233,10 +1235,10 @@ function SavingsV7Card({ t, isMobile, stats = {}, byCategory = [], abonnements =
 
             <div style={{ background: "rgba(10,22,40,.42)", border: "1px solid rgba(255,255,255,.10)", borderRadius: 14, padding: "13px 14px" }}>
               <div style={{ color: COLORS.muted, fontSize: 12, fontWeight: 800, marginBottom: 6 }}>
-                {isKreol ? "Catégories concernées" : "Catégories concernées"}
+                {isKreol ? "Si tendance-la i continue" : "Si cette tendance continue"}
               </div>
               <div style={{ color: COLORS.yellow, fontSize: 28, fontWeight: 900, lineHeight: 1, fontFamily: "'DM Serif Display', Georgia, serif" }}>
-                {analysis.overBudget.length}
+                {formatMontant(analysis.projectionAnnuelle)} / {isKreol ? "an" : "an"}
               </div>
             </div>
           </div>
@@ -1271,8 +1273,8 @@ function SavingsV7Card({ t, isMobile, stats = {}, byCategory = [], abonnements =
 
       <div style={{ marginTop: 12, color: COLORS.muted, fontSize: 11.5, lineHeight: 1.45 }}>
         {isKreol
-          ? "Calcul basé uniquement su bann dépenses ek bidjé enregistrés pou mwa-la. Aucune projection, estimation future ou montant inventé."
-          : "Calcul basé uniquement sur vos dépenses et budgets enregistrés ce mois-ci. Aucune projection, estimation future ou montant inventé."}
+          ? "Calcul basé uniquement su bann dépenses et budgets enregistrés. Aucun montant estimé ou inventé."
+          : "Calcul basé uniquement sur vos dépenses et budgets enregistrés. Aucun montant estimé ou inventé."}
       </div>
     </TropicalCard>
   )
@@ -1648,7 +1650,7 @@ export default function Dashboard({
           variant="green"
           texture="🍃"
           color="#BEF264"
-          sub={t("dashboard", "salaryAndAids")}
+          sub={getIsKreol(t) ? "Profil + larzan an plis" : "Profil + entrées ponctuelles"}
           actionLabel={t("dashboard", "details")}
           onAction={() => toggleDetails("revenus")}
         />
