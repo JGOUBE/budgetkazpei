@@ -22,8 +22,6 @@ import { AIDES } from "../../data/categories"
 import { AUTRES_AIDES } from "../../data/aides"
 import AssistantAides from "./AssistantAides"
 
-// AidesPage V29 - Produit final aides & droits : gains robustes + suivi propre + alertes utilisateur
-
 const COLORS = {
   text: "#F1F5F9",
   muted: "#8EA4C5",
@@ -43,28 +41,24 @@ const CARD_VARIANTS = [
     border: "rgba(34,197,94,.40)",
     glow: "rgba(34,197,94,.16)",
     Icon: Wallet,
-    labelKey: "monthlyPayment",
   },
   {
     bg: "linear-gradient(135deg, rgba(14,165,233,.30), rgba(15,30,56,.96))",
     border: "rgba(14,165,233,.40)",
     glow: "rgba(14,165,233,.16)",
     Icon: Home,
-    labelKey: "housingAid",
   },
   {
     bg: "linear-gradient(135deg, rgba(250,204,21,.28), rgba(15,30,56,.96))",
     border: "rgba(250,204,21,.40)",
     glow: "rgba(250,204,21,.14)",
     Icon: Sun,
-    labelKey: "energySupport",
   },
   {
     bg: "linear-gradient(135deg, rgba(249,115,22,.30), rgba(15,30,56,.96))",
     border: "rgba(249,115,22,.40)",
     glow: "rgba(249,115,22,.16)",
     Icon: Zap,
-    labelKey: "aidToRequest",
   },
 ]
 
@@ -77,17 +71,17 @@ const OTHER_AIDES_ICONS = {
 
 const AIDE_LINKS = {
   rsa: "https://www.caf.fr/allocataires/aides-et-demarches/mes-demarches",
-  apl: "https://wwwd.caf.fr/wps/portal/caffr/aidesetdemarches/mesdemarches/faireunedemandedeprestation?codeThematique=Logement",
+  apl: "https://www.caf.fr/allocataires/aides-et-demarches/mes-demarches",
+  chequeEnergie: "https://chequeenergie.gouv.fr/",
   aideEnergie:
     "https://www.regionreunion.com/aides-services/article/energie-dispositifs-region-reunion-finances-par-l-union-europeenne",
-  chequeEnergie: "https://chequeenergie.gouv.fr/",
 }
 
 const OTHER_AIDES_LINKS = {
   gardeEnfants:
     "https://www.caf.fr/allocataires/aides-et-demarches/droits-et-prestations/vie-personnelle/le-complement-de-libre-choix-du-mode-de-garde-cmg",
   bonsAlimentaires:
-    "https://www.saintleu.re/les-dispositifs-daides-a-la-mairie-de-saint-leu",
+    "https://www.service-public.fr/particuliers/vosdroits/N19804",
   mobilite: "https://www.departement974.fr/aide/aide-r-mobilite",
   microcredit:
     "https://www.banque-france.fr/fr/a-votre-service/particuliers/annuaire-microcredit",
@@ -102,6 +96,14 @@ const STATUS_OPTIONS = [
   { value: "refuse", fr: "Refusé", kr: "Refusé", color: COLORS.red },
 ]
 
+function normalizeText(value = "") {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+}
+
 function getAideLink(aide) {
   if (aide?.officialUrl) return aide.officialUrl
 
@@ -112,7 +114,7 @@ function getAideLink(aide) {
   if (normalizedLabel.includes("chèque") || normalizedLabel.includes("cheque")) return AIDE_LINKS.chequeEnergie
   if (normalizedLabel.includes("énergie") || normalizedLabel.includes("energie")) return AIDE_LINKS.aideEnergie
 
-  return "https://www.caf.fr/allocataires/aides-et-demarches/mes-demarches"
+  return "https://www.service-public.fr/particuliers/vosdroits/N19804"
 }
 
 function getAideTitle(aide, isKreol) {
@@ -122,17 +124,10 @@ function getAideTitle(aide, isKreol) {
 
 function getAideDescription(aide, isKreol) {
   if (isKreol) {
-    return (
-      aide?.description_kr ||
-      aide?.description ||
-      "Éd à vérifié selon out profil ek out sitiasyon."
-    )
+    return aide?.description_kr || aide?.description || "Éd à vérifié selon out profil ek out sitiasyon."
   }
 
-  return (
-    aide?.description ||
-    "Aide à vérifier selon votre profil et votre situation."
-  )
+  return aide?.description || "Aide à vérifier selon votre profil et votre situation."
 }
 
 function getAideCategoryLabel(aide, isKreol) {
@@ -168,14 +163,8 @@ function getAideCategoryLabel(aide, isKreol) {
 function getConfidenceLabel(aide, isKreol) {
   const confidence = String(aide?.confidence || "").toLowerCase()
 
-  if (confidence === "tres_pertinent") {
-    return isKreol ? "Très pertinent" : "Très pertinent"
-  }
-
-  if (confidence === "probable") {
-    return isKreol ? "Probable" : "Probable"
-  }
-
+  if (confidence === "tres_pertinent") return isKreol ? "Très pertinent" : "Très pertinent"
+  if (confidence === "probable") return isKreol ? "Probable" : "Probable"
   return isKreol ? "À vérifier" : "À vérifier"
 }
 
@@ -255,7 +244,6 @@ function formatEuro(value) {
   return `${amount.toFixed(0)} €`
 }
 
-
 function getDemarchePriority(demarche) {
   const status = demarche.status || "a_faire"
   const daysLeft = getDaysLeft(demarche.deadline)
@@ -279,69 +267,163 @@ function getDemarchePriorityLabel(demarche, isKreol) {
   const daysLeft = getDaysLeft(demarche.deadline)
 
   if (status === "accepte") {
-    return {
-      color: COLORS.green,
-      text: isKreol ? "✅ Dossier accepté" : "✅ Dossier accepté",
-    }
+    return { color: COLORS.green, text: isKreol ? "✅ Dossier accepté" : "✅ Dossier accepté" }
   }
 
   if (status === "refuse") {
-    return {
-      color: COLORS.red,
-      text: isKreol ? "❌ Dossier refusé" : "❌ Dossier refusé",
-    }
+    return { color: COLORS.red, text: isKreol ? "❌ Dossier refusé" : "❌ Dossier refusé" }
   }
 
   if (daysLeft !== null && daysLeft < 0) {
-    return {
-      color: COLORS.red,
-      text: isKreol ? "🚨 Date limite dépassée" : "🚨 Date limite dépassée",
-    }
+    return { color: COLORS.red, text: isKreol ? "🚨 Date limite dépassée" : "🚨 Date limite dépassée" }
   }
 
   if (daysLeft !== null && daysLeft <= 3) {
-    return {
-      color: COLORS.yellow,
-      text: isKreol ? "🔥 Urgent" : "🔥 Urgent",
-    }
+    return { color: COLORS.yellow, text: isKreol ? "🔥 Urgent" : "🔥 Urgent" }
   }
 
   if (daysLeft !== null && daysLeft <= 7) {
-    return {
-      color: COLORS.yellow,
-      text: isKreol ? "⏰ Date proche" : "⏰ Date proche",
-    }
+    return { color: COLORS.yellow, text: isKreol ? "⏰ Date proche" : "⏰ Date proche" }
   }
 
   if (!demarche.documents_ready && !["documents_envoyes", "en_attente", "accepte", "refuse"].includes(status)) {
-    return {
-      color: COLORS.cyan,
-      text: isKreol ? "📄 Dokiman à préparé" : "📄 Documents à préparer",
-    }
+    return { color: COLORS.cyan, text: isKreol ? "📄 Dokiman à préparé" : "📄 Documents à préparer" }
   }
 
   if (status === "en_attente") {
-    return {
-      color: COLORS.accent,
-      text: isKreol ? "⏳ En attente" : "⏳ En attente",
-    }
+    return { color: COLORS.accent, text: isKreol ? "⏳ En attente" : "⏳ En attente" }
   }
 
   return null
+}
+
+function createLocalCcasAides(profile = {}) {
+  const commune = profile?.commune || ""
+
+  if (!commune) return []
+
+  return [
+    {
+      id: `ccas_${normalizeText(commune).replace(/\s+/g, "_")}`,
+      label: `CCAS ${commune} - aide d’urgence`,
+      label_kr: `CCAS ${commune} - éd urgence`,
+      montant: "À vérifier en mairie",
+      statutKey: "statutEligible",
+      color: "#FB7185",
+      category: "ccas",
+      target_profiles: ["commune", "faibles_revenus", "famille", "logement"],
+      officialUrl: "https://www.service-public.fr/particuliers/vosdroits/N19804",
+      description: `Aide à vérifier directement auprès du CCAS ou de la mairie de ${commune}, selon votre situation familiale et financière.`,
+      description_kr: `Éd pou vérifié dirèkt kot CCAS ou mairie ${commune}, selon out sitiasyon famiyal ek finansyèr.`,
+      organisme: `CCAS / Mairie de ${commune}`,
+      confidence: "tres_pertinent",
+      isLocalCcas: true,
+    },
+  ]
+}
+
+function shouldShowAide(aide, profile = {}) {
+  const id = String(aide?.id || "")
+  const category = String(aide?.category || "")
+  const enfants = Number(profile?.nombre_enfants || 0)
+  const logement = normalizeText(profile?.logement || profile?.situation_logement)
+  const situationPro = normalizeText(profile?.situation_professionnelle)
+  const situationFamiliale = normalizeText(profile?.situation_familiale)
+
+  const hasCommune = Boolean(profile?.commune)
+  const isStudent = Boolean(profile?.etudiant)
+  const isRetired = Boolean(profile?.retraite)
+  const hasDisability = Boolean(profile?.handicap)
+  const hasCaf = Boolean(profile?.allocataire_caf)
+  const hasVehicle = Boolean(profile?.vehicule_personnel || profile?.permis_conduire)
+
+  const scolaireIds = [
+    "ars",
+    "bourse_college",
+    "bourse_lycee",
+    "bourse_merite",
+    "fonds_social_collegien",
+    "fonds_social_lyceen",
+    "fonds_social_cantine",
+    "prime_internat",
+    "aide_cantine_commune",
+  ]
+
+  const etudiantIds = [
+    "ares_etudiant",
+    "api_etudiant",
+    "arrpe_etudiant",
+    "aspm_etudiant",
+    "atcm_etudiant",
+  ]
+
+  const logementIds = ["apl"]
+  const handicapIds = ["aah", "pch"]
+  const retraiteIds = ["aspa", "apa", "aide_menagere"]
+
+  if (scolaireIds.includes(id)) return enfants > 0
+  if (etudiantIds.includes(id) || category === "etudiant") return isStudent
+  if (logementIds.includes(id)) return logement === "locataire"
+  if (handicapIds.includes(id)) return hasDisability
+  if (retraiteIds.includes(id)) return isRetired
+
+  if (category === "ccas") return hasCommune
+  if (category === "famille") return enfants > 0 || situationFamiliale === "parent_isole" || hasCaf
+  if (category === "mobilite") return hasVehicle || situationPro === "demandeur_emploi"
+  if (category === "logement") return logement === "locataire" || logement === "proprietaire"
+  if (category === "energie") return true
+  if (category === "emploi") return true
+
+  return true
+}
+
+function sortAidesByRelevance(aides = [], profile = {}) {
+  const enfants = Number(profile?.nombre_enfants || 0)
+  const logement = normalizeText(profile?.logement || profile?.situation_logement)
+  const isStudent = Boolean(profile?.etudiant)
+  const hasCommune = Boolean(profile?.commune)
+
+  return [...aides].sort((a, b) => {
+    const score = aide => {
+      let value = 0
+
+      if (aide.isLocalCcas) value += 100
+      if (aide.confidence === "tres_pertinent") value += 40
+      if (aide.confidence === "probable") value += 25
+      if (aide.category === "scolarite" && enfants > 0) value += 45
+      if (aide.category === "etudiant" && isStudent) value += 45
+      if (aide.category === "logement" && logement === "locataire") value += 40
+      if (aide.category === "ccas" && hasCommune) value += 35
+      if (aide.category === "emploi") value += 20
+      if (aide.category === "energie") value += 15
+
+      return value
+    }
+
+    return score(b) - score(a)
+  })
 }
 
 export default function AidesPage({ isMobile, t, isPremium, user }) {
   const languageKey = getLanguageKey(t)
   const isKreol = isKreolLang(t)
 
+  const [profile, setProfile] = useState(null)
   const [demarches, setDemarches] = useState([])
   const [loadingDemarches, setLoadingDemarches] = useState(true)
   const [savingId, setSavingId] = useState(null)
   const [noteDrafts, setNoteDrafts] = useState({})
   const [gainInputs, setGainInputs] = useState({})
 
-  const totalDemarches = demarches.length
+  const profileReady = Boolean(profile)
+  const localCcasAides = createLocalCcasAides(profile || {})
+  const allAides = [...localCcasAides, ...AIDES]
+  const filteredAides = sortAidesByRelevance(
+    allAides.filter(aide => shouldShowAide(aide, profile || {})),
+    profile || {}
+  )
 
+  const totalDemarches = demarches.length
   const nbAFaire = demarches.filter(d => d.status === "a_faire").length
   const nbCommence = demarches.filter(d => d.status === "commence").length
   const nbAttente = demarches.filter(d => d.status === "en_attente").length
@@ -386,7 +468,6 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
 
   const sortedDemarches = [...demarches].sort((a, b) => {
     const priorityDiff = getDemarchePriority(a) - getDemarchePriority(b)
-
     if (priorityDiff !== 0) return priorityDiff
 
     const aDays = getDaysLeft(a.deadline)
@@ -400,8 +481,30 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
   })
 
   useEffect(() => {
+    fetchProfile()
     fetchDemarches()
   }, [user?.id])
+
+  async function fetchProfile() {
+    if (!user?.id) {
+      setProfile(null)
+      return
+    }
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", user.id)
+      .maybeSingle()
+
+    if (error) {
+      console.error("Erreur chargement profil aides:", error)
+      setProfile(null)
+      return
+    }
+
+    setProfile(data || null)
+  }
 
   async function fetchDemarches() {
     if (!user?.id) {
@@ -445,11 +548,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
 
     if (error) {
       console.error("Erreur mise à jour démarche:", error)
-      alert(
-        isKreol
-          ? "Erreur pendant la mise à jour."
-          : "Erreur pendant la mise à jour."
-      )
+      alert(isKreol ? "Erreur pendant la mise à jour." : "Erreur pendant la mise à jour.")
       return
     }
 
@@ -510,11 +609,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
     const note = rawNote.trim()
 
     if (!note) {
-      alert(
-        isKreol
-          ? "Écris une note avant d'ajouter."
-          : "Écrivez une note avant d'ajouter."
-      )
+      alert(isKreol ? "Écris une note avant d'ajouter." : "Écrivez une note avant d'ajouter.")
       return
     }
 
@@ -539,9 +634,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
   }
 
   async function deleteDemarche(id) {
-    const confirmText = isKreol
-      ? "Supprim cette démarche ?"
-      : "Supprimer cette démarche ?"
+    const confirmText = isKreol ? "Supprim cette démarche ?" : "Supprimer cette démarche ?"
 
     if (!window.confirm(confirmText)) return
 
@@ -629,8 +722,8 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
             }}
           >
             {isKreol
-              ? "Suiv bann aides ajouté depuis les opportunités, prépare out dokiman et pose out question à l’assistant."
-              : "Suivez les aides ajoutées depuis vos opportunités, préparez vos documents et posez vos questions à l’assistant."}
+              ? "BudgetKazPei affiche bann aides selon out profil, out komin, out marmay ek out sitiasyon."
+              : "BudgetKazPei affiche les aides selon votre profil, votre commune, vos enfants et votre situation."}
           </p>
         </div>
       </section>
@@ -690,10 +783,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                 fontSize: 14,
               }}
             >
-              <span>
-                📋 {totalDemarches}{" "}
-                {isKreol ? "démarche(s)" : "démarche(s)"}
-              </span>
+              <span>📋 {totalDemarches} {isKreol ? "démarche(s)" : "démarche(s)"}</span>
               <span>{progression}%</span>
             </div>
 
@@ -832,10 +922,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                 }}
               >
                 {nbDeadlinesDepassees > 0 && (
-                  <AlertBox
-                    color={COLORS.red}
-                    text={`⚠️ ${nbDeadlinesDepassees} date limite dépassée`}
-                  />
+                  <AlertBox color={COLORS.red} text={`⚠️ ${nbDeadlinesDepassees} date limite dépassée`} />
                 )}
 
                 {nbDeadlinesProches > 0 && (
@@ -850,10 +937,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                 )}
 
                 {nbAttenteLongue > 0 && (
-                  <AlertBox
-                    color={COLORS.accent}
-                    text={`🔔 ${nbAttenteLongue} dossier en attente depuis 14 jours`}
-                  />
+                  <AlertBox color={COLORS.accent} text={`🔔 ${nbAttenteLongue} dossier en attente depuis 14 jours`} />
                 )}
 
                 {nbDocumentsApreparer > 0 && (
@@ -866,7 +950,6 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                     }
                   />
                 )}
-
 
                 {demarchesAccepteesSansGain.length > 0 && (
                   <AlertBox
@@ -884,9 +967,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
         )}
 
         {loadingDemarches ? (
-          <div style={{ color: COLORS.muted, fontSize: 13 }}>
-            Chargement...
-          </div>
+          <div style={{ color: COLORS.muted, fontSize: 13 }}>Chargement...</div>
         ) : demarches.length === 0 ? (
           <div
             style={{
@@ -927,14 +1008,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                   }}
                 >
                   <div>
-                    <div
-                      style={{
-                        color: COLORS.text,
-                        fontWeight: 900,
-                        fontSize: 15,
-                        marginBottom: 6,
-                      }}
-                    >
+                    <div style={{ color: COLORS.text, fontWeight: 900, fontSize: 15, marginBottom: 6 }}>
                       {title}
                     </div>
 
@@ -978,14 +1052,12 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                     </div>
 
                     <div style={{ color: COLORS.muted, fontSize: 12, lineHeight: 1.6 }}>
-                      📅 {isKreol ? "Ajouté le" : "Ajouté le"}{" "}
-                      {formatDate(demarche.created_at)}
+                      📅 {isKreol ? "Ajouté le" : "Ajouté le"} {formatDate(demarche.created_at)}
                     </div>
 
                     {demarche.updated_at && (
                       <div style={{ color: COLORS.muted, fontSize: 12 }}>
-                        🔄 {isKreol ? "Miz à jour" : "Mis à jour"}{" "}
-                        {formatDate(demarche.updated_at)}
+                        🔄 {isKreol ? "Miz à jour" : "Mis à jour"} {formatDate(demarche.updated_at)}
                       </div>
                     )}
 
@@ -1004,9 +1076,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                         }}
                       >
                         ⏰ Date limite : {formatDate(demarche.deadline)}
-                        {daysLeft !== null && daysLeft >= 0
-                          ? ` • ${daysLeft} jour(s) restant(s)`
-                          : ""}
+                        {daysLeft !== null && daysLeft >= 0 ? ` • ${daysLeft} jour(s) restant(s)` : ""}
                         {daysLeft !== null && daysLeft < 0 ? " • dépassée" : ""}
                       </div>
                     )}
@@ -1025,13 +1095,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                           whiteSpace: "pre-line",
                         }}
                       >
-                        <div
-                          style={{
-                            color: COLORS.cyan,
-                            fontWeight: 900,
-                            marginBottom: 6,
-                          }}
-                        >
+                        <div style={{ color: COLORS.cyan, fontWeight: 900, marginBottom: 6 }}>
                           📝 {isKreol ? "Journal suivi" : "Journal de suivi"}
                         </div>
                         {demarche.notes}
@@ -1039,14 +1103,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                     )}
 
                     {demarche.documents_ready && (
-                      <div
-                        style={{
-                          marginTop: 6,
-                          color: COLORS.green,
-                          fontSize: 12,
-                          fontWeight: 800,
-                        }}
-                      >
+                      <div style={{ marginTop: 6, color: COLORS.green, fontSize: 12, fontWeight: 800 }}>
                         ✅ {isKreol ? "Dokiman préparé" : "Documents prêts"}
                       </div>
                     )}
@@ -1121,25 +1178,11 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                         </div>
 
                         {getGainAmount(demarche) > 0 ? (
-                          <div
-                            style={{
-                              marginTop: 8,
-                              color: COLORS.green,
-                              fontWeight: 800,
-                              fontSize: 12,
-                            }}
-                          >
+                          <div style={{ marginTop: 8, color: COLORS.green, fontWeight: 800, fontSize: 12 }}>
                             ✅ {isKreol ? "Gain enregistré" : "Gain enregistré"} : {formatEuro(demarche.montant_obtenu)}
                           </div>
                         ) : (
-                          <div
-                            style={{
-                              marginTop: 8,
-                              color: COLORS.yellow,
-                              fontWeight: 800,
-                              fontSize: 12,
-                            }}
-                          >
+                          <div style={{ marginTop: 8, color: COLORS.yellow, fontWeight: 800, fontSize: 12 }}>
                             ⚠️ {isKreol ? "Renseigne le montant pour l’ajouter aux gains cumulés." : "Renseignez le montant pour l’ajouter aux gains cumulés."}
                           </div>
                         )}
@@ -1195,8 +1238,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                             borderRadius: 10,
                             color: COLORS.card,
                             padding: "8px 12px",
-                            cursor:
-                              savingId === demarche.id ? "not-allowed" : "pointer",
+                            cursor: savingId === demarche.id ? "not-allowed" : "pointer",
                             fontSize: 12,
                             fontWeight: 900,
                             fontFamily: "inherit",
@@ -1249,9 +1291,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                         />
 
                         {savingId === demarche.id && (
-                          <div style={{ color: COLORS.cyan, fontSize: 11 }}>
-                            Sauvegarde...
-                          </div>
+                          <div style={{ color: COLORS.cyan, fontSize: 11 }}>Sauvegarde...</div>
                         )}
                       </div>
                     </div>
@@ -1311,12 +1351,35 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
 
       <section
         style={{
+          background:
+            "linear-gradient(135deg, rgba(252,211,77,.14), rgba(249,115,22,.08), rgba(15,30,56,.96))",
+          border: "1px solid rgba(252,211,77,.30)",
+          borderRadius: 22,
+          padding: isMobile ? 18 : 22,
+        }}
+      >
+        <div style={{ color: COLORS.yellow, fontWeight: 900, fontSize: 16, marginBottom: 6 }}>
+          {isKreol ? "🎯 Bann aides selon out profil" : "🎯 Aides recommandées selon votre profil"}
+        </div>
+        <div style={{ color: COLORS.muted, fontSize: 13, lineHeight: 1.5 }}>
+          {profileReady
+            ? isKreol
+              ? `Komin : ${profile?.commune || "pa renseignée"} · Marmay : ${profile?.nombre_enfants || 0}`
+              : `Commune : ${profile?.commune || "non renseignée"} · Enfants : ${profile?.nombre_enfants || 0}`
+            : isKreol
+              ? "Complète out profil pou gagn bann recommandations pli précises."
+              : "Complétez votre profil pour obtenir des recommandations plus précises."}
+        </div>
+      </section>
+
+      <section
+        style={{
           display: "grid",
           gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)",
           gap: 16,
         }}
       >
-        {AIDES.map((aide, index) => {
+        {filteredAides.map((aide, index) => {
           const theme = CARD_VARIANTS[index % CARD_VARIANTS.length]
           const Icon = theme.Icon
           const title = getAideTitle(aide, isKreol)
@@ -1331,7 +1394,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                 position: "relative",
                 overflow: "hidden",
                 background: theme.bg,
-                border: `1px solid ${theme.border}`,
+                border: `1px solid ${aide.isLocalCcas ? COLORS.yellow : theme.border}`,
                 borderRadius: 22,
                 padding: 22,
                 boxShadow: `0 14px 32px rgba(0,0,0,.18), 0 0 28px ${theme.glow}`,
@@ -1456,27 +1519,25 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                   </div>
                 )}
 
-                {aide.statutKey !== "statutActif" && (
-                  <button
-                    type="button"
-                    onClick={() => openExternalLink(getAideLink(aide))}
-                    style={{
-                      marginTop: 16,
-                      background: aide.color,
-                      border: "none",
-                      borderRadius: 12,
-                      padding: "9px 16px",
-                      color: "#fff",
-                      fontSize: 13,
-                      cursor: "pointer",
-                      fontFamily: "inherit",
-                      fontWeight: 800,
-                      boxShadow: "0 10px 20px rgba(0,0,0,.20)",
-                    }}
-                  >
-                    {isKreol ? "Vérifié l’éd" : "Vérifier l’aide"} →
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => openExternalLink(getAideLink(aide))}
+                  style={{
+                    marginTop: 16,
+                    background: aide.color,
+                    border: "none",
+                    borderRadius: 12,
+                    padding: "9px 16px",
+                    color: "#fff",
+                    fontSize: 13,
+                    cursor: "pointer",
+                    fontFamily: "inherit",
+                    fontWeight: 800,
+                    boxShadow: "0 10px 20px rgba(0,0,0,.20)",
+                  }}
+                >
+                  {isKreol ? "Vérifié l’éd" : "Vérifier l’aide"} →
+                </button>
               </div>
             </article>
           )
