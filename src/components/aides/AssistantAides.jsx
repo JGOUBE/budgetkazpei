@@ -5,8 +5,9 @@ import {
   FileText, CheckCircle2, DollarSign, CalendarDays, Clock, AlertTriangle,
 } from "lucide-react"
 import { supabase } from "../../services/supabase"
+import { REUNION_ORIENTATION } from "../../data/reunionOrientation"
 
-// AssistantAides V107.1 - Branchement IA sécurisé via Edge Function assistant-aisupabase + quotas serveur
+// AssistantAides V108 - Branchement IA + base locale Réunion BudgetKazPei
 
 const COLORS = {
   card: "#0F1E38",
@@ -2632,6 +2633,12 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
         localContext,
         recommendedAides: preparedAides,
         recommended_aides: preparedAides,
+
+        // Base locale BudgetKazPei : organismes, dispositifs et orientations Réunion.
+        // Elle permet à l'IA de connaître ALON, Envergure, R+, ALD, CSS, MDPH,
+        // aides couches, aides alimentaires, CCAS, France Travail, AFPAR, etc.
+        reunionOrientation: REUNION_ORIENTATION,
+        reunion_orientation: REUNION_ORIENTATION,
       },
     })
 
