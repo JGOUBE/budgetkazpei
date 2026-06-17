@@ -87,6 +87,86 @@ const OTHER_AIDES_LINKS = {
     "https://www.banque-france.fr/fr/a-votre-service/particuliers/annuaire-microcredit",
 }
 
+const CATEGORY_COLORS = {
+  emploi: "#38BDF8",
+  logement: "#22C55E",
+  famille: "#F97316",
+  scolarite: "#A78BFA",
+  etudiant: "#A78BFA",
+  energie: "#FCD34D",
+  mobilite: "#23D3D6",
+  transport: "#23D3D6",
+  ccas: "#FB7185",
+  sante: "#22C55E",
+  handicap: "#A78BFA",
+  retraite: "#FCD34D",
+  social: "#FB7185",
+  entreprise: "#F97316",
+}
+
+function cleanValue(value) {
+  if (value === null || value === undefined) return ""
+  return String(value).trim()
+}
+
+function getLocalizedValue(primary, fallback = "") {
+  const value = cleanValue(primary)
+  return value || cleanValue(fallback)
+}
+
+function getCategoryColor(category) {
+  const key = normalizeText(category)
+  return CATEGORY_COLORS[key] || COLORS.accent
+}
+
+function getAideAmountLabel(aide) {
+  if (aide?.montant) return aide.montant
+
+  const min = Number(aide?.montant_min)
+  const max = Number(aide?.montant_max)
+
+  const hasMin = Number.isFinite(min) && min > 0
+  const hasMax = Number.isFinite(max) && max > 0
+
+  if (hasMin && hasMax && min !== max) return `${min.toFixed(0)} à ${max.toFixed(0)} €`
+  if (hasMax) return `Jusqu’à ${max.toFixed(0)} €`
+  if (hasMin) return `À partir de ${min.toFixed(0)} €`
+
+  return "À vérifier"
+}
+
+function getConfidenceFromScore(score) {
+  const value = Number(score || 0)
+  if (value >= 90) return "tres_pertinent"
+  if (value >= 75) return "probable"
+  return "a_verifier"
+}
+
+function normalizeAideFromDb(row = {}) {
+  const category = normalizeText(row.categorie || row.category || "aide")
+  const color = getCategoryColor(category)
+
+  return {
+    ...row,
+    id: `db_${row.id}`,
+    dbId: row.id,
+    label: row.nom,
+    label_kr: row.nom_kreol,
+    title: row.nom,
+    title_kr: row.nom_kreol,
+    description: row.description_fr || row.description,
+    description_kr: row.description_kreol,
+    demarches: row.demarches_fr,
+    demarches_kr: row.demarches_kreol,
+    category,
+    color,
+    montant: getAideAmountLabel(row),
+    officialUrl: row.lien || row.lien_officiel,
+    confidence: getConfidenceFromScore(row.score_priorite),
+    isDbAide: true,
+  }
+}
+
 const STATUS_OPTIONS = [
   { value: "a_faire", fr: "À faire", kr: "Pou fé", color: COLORS.yellow },
   { value: "commence", fr: "Dossier commencé", kr: "Dossier commencé", color: COLORS.cyan },
@@ -106,8 +186,10 @@ function normalizeText(value = "") {
 
 function getAideLink(aide) {
   if (aide?.officialUrl) return aide.officialUrl
+  if (aide?.lien) return aide.lien
+  if (aide?.lien_officiel) return aide.lien_officiel
 
-  const normalizedLabel = `${aide.id || ""} ${aide.label || ""}`.toLowerCase()
+  const normalizedLabel = `${aide?.id || ""} ${aide?.label || ""} ${aide?.title || ""} ${aide?.nom || ""}`.toLowerCase()
 
   if (normalizedLabel.includes("rsa")) return AIDE_LINKS.rsa
   if (normalizedLabel.includes("apl")) return AIDE_LINKS.apl
@@ -118,16 +200,56 @@ function getAideLink(aide) {
 }
 
 function getAideTitle(aide, isKreol) {
-  if (isKreol) return aide?.label_kr || aide?.title_kr || aide?.label || aide?.title || "Éd"
-  return aide?.label || aide?.title || "Aide"
+  if (isKreol) {
+    return (
+      getLocalizedValue(aide?.nom_kreol) ||
+      getLocalizedValue(aide?.label_kr) ||
+      getLocalizedValue(aide?.title_kr) ||
+      getLocalizedValue(aide?.label) ||
+      getLocalizedValue(aide?.title) ||
+      getLocalizedValue(aide?.nom) ||
+      "Éd"
+    )
+  }
+
+  return (
+    getLocalizedValue(aide?.label) ||
+    getLocalizedValue(aide?.title) ||
+    getLocalizedValue(aide?.nom) ||
+    "Aide"
+  )
 }
 
 function getAideDescription(aide, isKreol) {
   if (isKreol) {
-    return aide?.description_kr || aide?.description || "Éd à vérifié selon out profil ek out sitiasyon."
+    return (
+      getLocalizedValue(aide?.description_kreol) ||
+      getLocalizedValue(aide?.description_kr) ||
+      getLocalizedValue(aide?.description_fr) ||
+      getLocalizedValue(aide?.description) ||
+      "Éd à vérifié selon out profil ek out sitiasyon."
+    )
   }
 
-  return aide?.description || "Aide à vérifier selon votre profil et votre situation."
+  return (
+    getLocalizedValue(aide?.description_fr) ||
+    getLocalizedValue(aide?.description) ||
+    "Aide à vérifier selon votre profil et votre situation."
+  )
+}
+
+function getAideDemarches(aide, isKreol) {
+  if (isKreol) {
+    return (
+      getLocalizedValue(aide?.demarches_kreol) ||
+      getLocalizedValue(aide?.demarches_kr) ||
+      getLocalizedValue(aide?.demarches_fr) ||
+      getLocalizedValue(aide?.demarches) ||
+      ""
+    )
+  }
+
+  return getLocalizedValue(aide?.demarches_fr) || getLocalizedValue(aide?.demarches) || ""
 }
 
 function getAideCategoryLabel(aide, isKreol) {
@@ -336,6 +458,21 @@ function shouldShowAide(aide, profile = {}) {
   const hasDisability = Boolean(profile?.handicap)
   const hasCaf = Boolean(profile?.allocataire_caf)
   const hasVehicle = Boolean(profile?.vehicule_personnel || profile?.permis_conduire)
+  const isJobSeeker =
+    Boolean(profile?.demandeur_emploi) ||
+    situationPro === "demandeur_emploi" ||
+    situationPro.includes("demandeur")
+
+  if (aide?.isDbAide) {
+    if (aide.besoin_enfant && enfants <= 0) return false
+    if (aide.besoin_handicap && !hasDisability) return false
+    if (aide.besoin_etudiant && !isStudent) return false
+    if (aide.besoin_retraite && !isRetired) return false
+    if (aide.besoin_demandeur_emploi && !isJobSeeker) return false
+    if (aide.besoin_allocataire_caf && !hasCaf) return false
+    if (aide.besoin_locataire && logement !== "locataire") return false
+    if (aide.besoin_proprietaire && logement !== "proprietaire") return false
+  }
 
   const scolaireIds = [
     "ars",
@@ -387,6 +524,8 @@ function sortAidesByRelevance(aides = [], profile = {}) {
     const score = aide => {
       let value = 0
 
+      value += Number(aide?.score_priorite || 0)
+
       if (aide.isLocalCcas) value += 100
       if (aide.confidence === "tres_pertinent") value += 40
       if (aide.confidence === "probable") value += 25
@@ -409,6 +548,8 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
   const isKreol = isKreolLang(t)
 
   const [profile, setProfile] = useState(null)
+  const [dbAides, setDbAides] = useState([])
+  const [loadingAides, setLoadingAides] = useState(true)
   const [demarches, setDemarches] = useState([])
   const [loadingDemarches, setLoadingDemarches] = useState(true)
   const [savingId, setSavingId] = useState(null)
@@ -417,7 +558,9 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
 
   const profileReady = Boolean(profile)
   const localCcasAides = createLocalCcasAides(profile || {})
-  const allAides = [...localCcasAides, ...AIDES]
+  const normalizedDbAides = dbAides.map(normalizeAideFromDb)
+  const baseAides = normalizedDbAides.length > 0 ? normalizedDbAides : AIDES
+  const allAides = [...localCcasAides, ...baseAides]
   const filteredAides = sortAidesByRelevance(
     allAides.filter(aide => shouldShowAide(aide, profile || {})),
     profile || {}
@@ -483,7 +626,56 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
   useEffect(() => {
     fetchProfile()
     fetchDemarches()
+    fetchAidesReunion()
   }, [user?.id])
+
+  async function fetchAidesReunion() {
+    setLoadingAides(true)
+
+    const { data, error } = await supabase
+      .from("aides_reunion")
+      .select(`
+        id,
+        nom,
+        nom_kreol,
+        description,
+        description_fr,
+        description_kreol,
+        demarches_fr,
+        demarches_kreol,
+        montant_min,
+        montant_max,
+        categorie,
+        condition_logement,
+        condition_profession,
+        condition_famille,
+        revenus_min,
+        revenus_max,
+        commune,
+        lien,
+        age_min,
+        age_max,
+        besoin_enfant,
+        besoin_handicap,
+        besoin_etudiant,
+        besoin_retraite,
+        besoin_demandeur_emploi,
+        besoin_locataire,
+        besoin_proprietaire,
+        besoin_allocataire_caf,
+        score_priorite
+      `)
+      .order("score_priorite", { ascending: false })
+
+    if (error) {
+      console.error("Erreur chargement aides réunion:", error)
+      setDbAides([])
+    } else {
+      setDbAides(data || [])
+    }
+
+    setLoadingAides(false)
+  }
 
   async function fetchProfile() {
     if (!user?.id) {
@@ -1384,6 +1576,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
           const Icon = theme.Icon
           const title = getAideTitle(aide, isKreol)
           const description = getAideDescription(aide, isKreol)
+          const demarchesLabel = getAideDemarches(aide, isKreol)
           const categoryLabel = getAideCategoryLabel(aide, isKreol)
           const confidenceLabel = getConfidenceLabel(aide, isKreol)
 
@@ -1472,7 +1665,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                     lineHeight: 1,
                   }}
                 >
-                  {aide.montant}
+                  {getAideAmountLabel(aide)}
                 </div>
 
                 <p
@@ -1498,6 +1691,26 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                 >
                   {description}
                 </p>
+
+                {demarchesLabel && (
+                  <div
+                    style={{
+                      marginTop: 10,
+                      background: "rgba(255,255,255,.045)",
+                      border: "1px solid rgba(255,255,255,.08)",
+                      borderRadius: 12,
+                      padding: 10,
+                      color: "rgba(248,250,252,.78)",
+                      fontSize: 12,
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    <strong style={{ color: COLORS.cyan }}>
+                      {isKreol ? "Démarche :" : "Démarche :"}
+                    </strong>{" "}
+                    {demarchesLabel}
+                  </div>
+                )}
 
                 {aide.organisme && (
                   <div

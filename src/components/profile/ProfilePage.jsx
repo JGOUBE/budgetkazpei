@@ -28,6 +28,44 @@ const COMMUNES = [
   "Trois-Bassins",
 ]
 
+
+function isKreolLang(t) {
+  return typeof t === "function" && t("nav", "dashboard") === "Tablo débor"
+}
+
+function tr(isKreol, fr, kr) {
+  return isKreol ? kr : fr
+}
+
+const FAMILY_OPTIONS = [
+  { value: "", fr: "Non renseigné", kr: "Pa renseigné" },
+  { value: "celibataire", fr: "Célibataire", kr: "Célibataire" },
+  { value: "couple", fr: "En couple", kr: "An couple" },
+  { value: "marie", fr: "Marié(e)", kr: "Marié(e)" },
+  { value: "parent_isole", fr: "Parent isolé", kr: "Parent seul" },
+]
+
+const HOUSING_OPTIONS = [
+  { value: "", fr: "Non renseigné", kr: "Pa renseigné" },
+  { value: "locataire", fr: "Locataire", kr: "Locataire" },
+  { value: "proprietaire", fr: "Propriétaire", kr: "Propriétaire" },
+  { value: "heberge", fr: "Hébergé gratuitement", kr: "Hébergé gratuitement" },
+]
+
+const JOB_OPTIONS = [
+  { value: "", fr: "Non renseigné", kr: "Pa renseigné" },
+  { value: "salarie", fr: "Salarié", kr: "Salarié" },
+  { value: "independant", fr: "Indépendant", kr: "Indépendant" },
+  { value: "demandeur_emploi", fr: "Demandeur d’emploi", kr: "Rod travay" },
+]
+
+const REQUEST_TYPES = [
+  { value: "question", fr: "Question / besoin d’aide", kr: "Question / besoin d’éd" },
+  { value: "bug", fr: "Signaler un bug", kr: "Signal in bug" },
+  { value: "suggestion", fr: "Suggérer une amélioration", kr: "Propoz in amélioration" },
+  { value: "premium", fr: "Question Premium / Premium+", kr: "Question Premium / Premium+" },
+]
+
 const inputStyle = {
   background: "#152444",
   border: "1px solid #1E3A5F",
@@ -42,6 +80,7 @@ const inputStyle = {
 }
 
 export default function ProfilePage({ user, t }) {
+  const isKreol = isKreolLang(t)
   const { profile, loading, saving, updateProfile, uploadAvatar } = useProfile(user?.id)
   const [form, setForm] = useState(null)
   const [success, setSuccess] = useState(false)
@@ -150,7 +189,7 @@ export default function ProfilePage({ user, t }) {
       setTimeout(() => setSuccess(false), 3000)
     } catch (err) {
       console.error("Erreur sauvegarde profil:", err)
-      setError("Erreur lors de la sauvegarde. Vérifiez aussi que la colonne source existe dans transactions.")
+      setError(tr(isKreol, "Erreur lors de la sauvegarde. Vérifiez aussi que la colonne source existe dans transactions.", "Erreur pendant sauvegarde. Vérifie aussi si la colonne source existe dann transactions."))
     }
   }
 
@@ -165,7 +204,7 @@ export default function ProfilePage({ user, t }) {
     try {
       await uploadAvatar(file)
     } catch {
-      setError("Erreur upload photo")
+      setError(tr(isKreol, "Erreur upload photo", "Erreur upload photo"))
     }
   }
 
@@ -189,7 +228,7 @@ export default function ProfilePage({ user, t }) {
     ? "Compte Premium+"
     : isPremiumClassic
       ? "Compte Premium"
-      : "Compte Gratuit"
+      : tr(isKreol, "Compte Gratuit", "Compte gratuit")
 
   const accountIcon = isPremiumPlus ? "👑" : isPremiumClassic ? "⭐" : "🆓"
   const accountColor = isPremiumPlus ? COLORS.purple : hasPremiumAccess ? COLORS.yellow : COLORS.muted
@@ -210,7 +249,7 @@ export default function ProfilePage({ user, t }) {
     const message = String(data.get("message") || "").trim()
 
     if (!email || !message) {
-      setSupportError("Renseignez votre email et votre message.")
+      setSupportError(tr(isKreol, "Renseignez votre email et votre message.", "Renseigne out email ek out message."))
       return
     }
 
@@ -218,10 +257,10 @@ export default function ProfilePage({ user, t }) {
 
     try {
       const subjectByType = {
-        question: "Question / besoin d’aide",
-        bug: "Signalement de bug",
-        suggestion: "Suggestion d’amélioration",
-        premium: "Question Premium / Premium+",
+        question: tr(isKreol, "Question / besoin d’aide", "Question / besoin d’éd"),
+        bug: tr(isKreol, "Signalement de bug", "Signalement bug"),
+        suggestion: tr(isKreol, "Suggestion d’amélioration", "Suggestion amélioration"),
+        premium: tr(isKreol, "Question Premium / Premium+", "Question Premium / Premium+"),
       }
 
       const { error: insertError } = await supabase
@@ -244,7 +283,7 @@ export default function ProfilePage({ user, t }) {
       setTimeout(() => setSupportSuccess(false), 4500)
     } catch (err) {
       console.error("Erreur envoi message support:", err)
-      setSupportError("Le message n’a pas pu être envoyé. Réessayez dans un instant.")
+      setSupportError(tr(isKreol, "Le message n’a pas pu être envoyé. Réessayez dans un instant.", "Lo message la pa pu être envoyé. Réessay dann in ti moment."))
     } finally {
       setSupportSending(false)
     }
@@ -393,40 +432,37 @@ export default function ProfilePage({ user, t }) {
             </p>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              <Field label="Âge">
-                <input type="number" min="0" value={form.age} onChange={e => updateField("age", e.target.value)} placeholder="Ex : 34" style={inputStyle} />
+              <Field label={tr(isKreol, "Âge", "Laz")}>
+                <input type="number" min="0" value={form.age} onChange={e => updateField("age", e.target.value)} placeholder={tr(isKreol, "Ex : 34", "Ex : 34")} style={inputStyle} />
               </Field>
 
-              <Field label="Situation familiale">
+              <Field label={tr(isKreol, "Situation familiale", "Sitiasyon famiyal")}>
                 <select value={form.situation_familiale} onChange={e => updateField("situation_familiale", e.target.value)} style={inputStyle}>
-                  <option value="">Non renseigné</option>
-                  <option value="celibataire">Célibataire</option>
-                  <option value="couple">En couple</option>
-                  <option value="marie">Marié(e)</option>
-                  <option value="parent_isole">Parent isolé</option>
+                  {FAMILY_OPTIONS.map(option => (
+                    <option key={option.value} value={option.value}>{isKreol ? option.kr : option.fr}</option>
+                  ))}
                 </select>
               </Field>
 
-              <Field label="Nombre d’enfants">
-                <input type="number" min="0" value={form.nombre_enfants} onChange={e => updateField("nombre_enfants", e.target.value)} placeholder="Ex : 2" style={inputStyle} />
+              <Field label={tr(isKreol, "Nombre d’enfants", "Kantité marmay")}>
+                <input type="number" min="0" value={form.nombre_enfants} onChange={e => updateField("nombre_enfants", e.target.value)} placeholder={tr(isKreol, "Ex : 2", "Ex : 2")} style={inputStyle} />
               </Field>
 
-              <Field label="Situation logement">
+              <Field label={tr(isKreol, "Situation logement", "Sitiasyon logement")}>
                 <select value={form.logement} onChange={e => updateField("logement", e.target.value)} style={inputStyle}>
-                  <option value="">Non renseigné</option>
-                  <option value="locataire">Locataire</option>
-                  <option value="proprietaire">Propriétaire</option>
-                  <option value="heberge">Hébergé gratuitement</option>
+                  {HOUSING_OPTIONS.map(option => (
+                    <option key={option.value} value={option.value}>{isKreol ? option.kr : option.fr}</option>
+                  ))}
                 </select>
               </Field>
 
-              <Field label="Revenus mensuels du foyer">
+              <Field label={tr(isKreol, "Revenus mensuels du foyer", "Revenus chak mwa pou lo foyer")}>
                 <input
                   type="number"
                   min="0"
                   value={form.revenus_foyer}
                   onChange={e => updateField("revenus_foyer", e.target.value)}
-                  placeholder="Ex : 2200"
+                  placeholder={tr(isKreol, "Ex : 2200", "Ex : 2200")}
                   style={inputStyle}
                 />
                 <div
@@ -441,34 +477,34 @@ export default function ProfilePage({ user, t }) {
                     lineHeight: 1.55,
                   }}
                 >
-                  <strong style={{ color: COLORS.cyan }}>À renseigner :</strong>{" "}
-                  indiquez le revenu mensuel total du foyer. Si vous êtes deux, additionnez les revenus des deux personnes.
-                  Ajoutez aussi les aides régulières : CAF, RSA, chômage, pension, allocations ou autres revenus récurrents.
-                  Ce montant sera automatiquement ajouté aux revenus du mois pour aider BudgetKazPei à analyser votre budget
-                  et à mieux détecter les aides possibles.
+                  <strong style={{ color: COLORS.cyan }}>{tr(isKreol, "À renseigner :", "Pou renseigné :")}</strong>{" "}
+                  {tr(
+                    isKreol,
+                    "indiquez le revenu mensuel total du foyer. Si vous êtes deux, additionnez les revenus des deux personnes. Ajoutez aussi les aides régulières : CAF, RSA, chômage, pension, allocations ou autres revenus récurrents. Ce montant sera automatiquement ajouté aux revenus du mois pour aider BudgetKazPei à analyser votre budget et à mieux détecter les aides possibles.",
+                    "renseigne revenu total lo foyer pou chak mwa. Si zot lé deux, additionne revenus bann deux personnes. Ajoute aussi bann aides régulières : CAF, RSA, chômage, pension, allocations ou autres revenus ki revien souvent. Ce montant sera ajouté automatiquement dann revenus du mois pou aide BudgetKazPei analyse out budget ek détecte mieux bann aides possibles."
+                  )}
                 </div>
               </Field>
 
-              <Field label="Situation professionnelle">
+              <Field label={tr(isKreol, "Situation professionnelle", "Sitiasyon travay")}>
   <select
     value={form.situation_professionnelle}
     onChange={e => updateField("situation_professionnelle", e.target.value)}
     style={inputStyle}
   >
-    <option value="">Non renseigné</option>
-    <option value="salarie">Salarié</option>
-    <option value="independant">Indépendant</option>
-    <option value="demandeur_emploi">Demandeur d’emploi</option>
+    {JOB_OPTIONS.map(option => (
+      <option key={option.value} value={option.value}>{isKreol ? option.kr : option.fr}</option>
+    ))}
   </select>
 </Field>
 
               <div style={{ display: "grid", gap: 10, marginTop: 4 }}>
-                <Checkbox label="Étudiant" checked={form.etudiant} onChange={value => updateField("etudiant", value)} />
-                <Checkbox label="Retraité" checked={form.retraite} onChange={value => updateField("retraite", value)} />
-                <Checkbox label="Situation de handicap" checked={form.handicap} onChange={value => updateField("handicap", value)} />
-                <Checkbox label="Allocataire CAF" checked={form.allocataire_caf} onChange={value => updateField("allocataire_caf", value)} />
-                <Checkbox label="Permis de conduire" checked={form.permis_conduire} onChange={value => updateField("permis_conduire", value)} />
-                <Checkbox label="Véhicule personnel" checked={form.vehicule_personnel} onChange={value => updateField("vehicule_personnel", value)} />
+                <Checkbox label={tr(isKreol, "Étudiant", "Étudiant")} checked={form.etudiant} onChange={value => updateField("etudiant", value)} />
+                <Checkbox label={tr(isKreol, "Retraité", "Retraité")} checked={form.retraite} onChange={value => updateField("retraite", value)} />
+                <Checkbox label={tr(isKreol, "Situation de handicap", "Sitiasyon handicap")} checked={form.handicap} onChange={value => updateField("handicap", value)} />
+                <Checkbox label={tr(isKreol, "Allocataire CAF", "Allocataire CAF")} checked={form.allocataire_caf} onChange={value => updateField("allocataire_caf", value)} />
+                <Checkbox label={tr(isKreol, "Permis de conduire", "Permis conduire")} checked={form.permis_conduire} onChange={value => updateField("permis_conduire", value)} />
+                <Checkbox label={tr(isKreol, "Véhicule personnel", "Véhicule personnel")} checked={form.vehicule_personnel} onChange={value => updateField("vehicule_personnel", value)} />
               </div>
             </div>
           </div>
@@ -518,10 +554,10 @@ export default function ProfilePage({ user, t }) {
       >
         <div>
           <div style={{ fontSize: 17, fontWeight: 800, color: COLORS.cyan, marginBottom: 6 }}>
-            📧 Nous contacter
+            📧 {tr(isKreol, "Nous contacter", "Contacte a nou")}
           </div>
           <div style={{ fontSize: 13, color: COLORS.muted, lineHeight: 1.6 }}>
-            Une question, un bug ou une idée pour améliorer BudgetKazPei ? Remplissez le message ci-dessous, il sera envoyé directement à l’équipe BudgetKazPei.
+            {tr(isKreol, "Une question, un bug ou une idée pour améliorer BudgetKazPei ? Remplissez le message ci-dessous, il sera envoyé directement à l’équipe BudgetKazPei.", "Ou néna in question, in bug ou in idée pou améliore BudgetKazPei ? Rempli lo message anba, li sera envoyé directement à l’équipe BudgetKazPei.")}
           </div>
           <div
             style={{
@@ -535,22 +571,22 @@ export default function ProfilePage({ user, t }) {
               fontWeight: 700,
             }}
           >
-            Destinataire : <span style={{ color: COLORS.cyan }}>{CONTACT_EMAIL}</span>
+            {tr(isKreol, "Destinataire :", "Destinataire :")} <span style={{ color: COLORS.cyan }}>{CONTACT_EMAIL}</span>
           </div>
         </div>
 
         <form onSubmit={handleSupportSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <Field label="Votre nom">
+          <Field label={tr(isKreol, "Votre nom", "Out nom")}>
             <input
               type="text"
               name="nom"
               defaultValue={form.nom || ""}
-              placeholder="Votre nom"
+              placeholder={tr(isKreol, "Votre nom", "Out nom")}
               style={inputStyle}
             />
           </Field>
 
-          <Field label="Votre email">
+          <Field label={tr(isKreol, "Votre email", "Out email")}>
             <input
               type="email"
               name="email_utilisateur"
@@ -561,20 +597,19 @@ export default function ProfilePage({ user, t }) {
             />
           </Field>
 
-          <Field label="Type de demande">
+          <Field label={tr(isKreol, "Type de demande", "Kalité demande")}>
             <select name="type_demande" defaultValue="question" style={inputStyle}>
-              <option value="question">Question / besoin d’aide</option>
-              <option value="bug">Signaler un bug</option>
-              <option value="suggestion">Suggérer une amélioration</option>
-              <option value="premium">Question Premium / Premium+</option>
+              {REQUEST_TYPES.map(option => (
+                <option key={option.value} value={option.value}>{isKreol ? option.kr : option.fr}</option>
+              ))}
             </select>
           </Field>
 
-          <Field label="Votre message">
+          <Field label={tr(isKreol, "Votre message", "Out message")}>
             <textarea
               name="message"
               required
-              placeholder="Écrivez votre message ici..."
+              placeholder={tr(isKreol, "Écrivez votre message ici...", "Écris out message ici...")}
               rows={5}
               style={{ ...inputStyle, resize: "vertical", minHeight: 120 }}
             />
@@ -588,7 +623,7 @@ export default function ProfilePage({ user, t }) {
 
           {supportSuccess && (
             <div style={{ background: `${COLORS.green}15`, border: `1px solid ${COLORS.green}33`, borderRadius: 8, padding: "10px 14px", fontSize: 13, color: COLORS.green }}>
-              ✅ Message envoyé. Nous reviendrons vers vous.
+              ✅ {tr(isKreol, "Message envoyé. Nous reviendrons vers vous.", "Message envoyé. Nou va revenir vers ou.")}
             </div>
           )}
 
@@ -607,11 +642,11 @@ export default function ProfilePage({ user, t }) {
               fontFamily: "inherit",
             }}
           >
-            {supportSending ? "Envoi..." : "📩 Envoyer le message"}
+            {supportSending ? tr(isKreol, "Envoi...", "Envoi...") : tr(isKreol, "📩 Envoyer le message", "📩 Envoy message")}
           </button>
 
           <p style={{ margin: 0, color: COLORS.muted, fontSize: 11.5, lineHeight: 1.45 }}>
-            Le message sera enregistré dans Supabase, dans la table support_messages. Support : {CONTACT_EMAIL}.
+            {tr(isKreol, "Le message sera enregistré dans Supabase, dans la table support_messages. Support :", "Lo message sera enregistré dann Supabase, dann table support_messages. Support :")} {CONTACT_EMAIL}.
           </p>
         </form>
       </div>
@@ -630,10 +665,10 @@ export default function ProfilePage({ user, t }) {
         >
           <div>
             <div style={{ fontSize: 17, fontWeight: 800, color: COLORS.yellow, marginBottom: 6 }}>
-              ⭐ Découvrir Premium
+              ⭐ {tr(isKreol, "Découvrir Premium", "Découvre Premium")}
             </div>
             <div style={{ fontSize: 13, color: COLORS.muted, lineHeight: 1.6 }}>
-              Comparez les options Premium et Premium+ sur le site BudgetKazPei.
+              {tr(isKreol, "Comparez les options Premium et Premium+ sur le site BudgetKazPei.", "Compare bann options Premium ek Premium+ su site BudgetKazPei.")}
             </div>
           </div>
 
@@ -648,7 +683,7 @@ export default function ProfilePage({ user, t }) {
             >
               <div style={{ color: COLORS.yellow, fontWeight: 800, marginBottom: 6 }}>⭐ Premium</div>
               <div style={{ color: COLORS.muted, fontSize: 13, lineHeight: 1.55 }}>
-                Assistant aides, suivi des démarches, documents à préparer, bons plans intelligents et créole réunionnais.
+                {tr(isKreol, "Assistant aides, suivi des démarches, documents à préparer, bons plans intelligents et créole réunionnais.", "Assistant aides, suivi démarches, dokiman pou préparé, bons plans intelligents ek kréol réunionnais.")}
               </div>
             </div>
 
@@ -662,7 +697,7 @@ export default function ProfilePage({ user, t }) {
             >
               <div style={{ color: COLORS.purple, fontWeight: 800, marginBottom: 6 }}>👑 Premium+</div>
               <div style={{ color: COLORS.muted, fontSize: 13, lineHeight: 1.55 }}>
-                Conseiller IA avancé, aide administrative personnalisée, courriers et accompagnement plus complet.
+                {tr(isKreol, "Conseiller IA avancé, aide administrative personnalisée, courriers et accompagnement plus complet.", "Conseiller IA avancé, aide administrative personnalisée, courriers ek accompagnement pli complet.")}
               </div>
             </div>
           </div>
@@ -683,7 +718,7 @@ export default function ProfilePage({ user, t }) {
               alignSelf: "flex-start",
             }}
           >
-            Voir les options Premium →
+            {tr(isKreol, "Voir les options Premium →", "Voir bann options Premium →")}
           </button>
         </div>
       )}
