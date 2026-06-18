@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import {
   Landmark,
   Sparkles,
@@ -13,8 +13,6 @@ import {
   Coins,
   ClipboardCheck,
   Trash2,
-  DollarSign,
-  CheckCircle2,
 } from "lucide-react"
 
 import { supabase } from "../../services/supabase"
@@ -104,6 +102,51 @@ const CATEGORY_COLORS = {
   entreprise: "#F97316",
 }
 
+const SUIVI_STATUSES = [
+  {
+    value: "a_preparer",
+    fr: "À préparer",
+    kr: "Pou préparé",
+    icon: "🟡",
+    color: COLORS.yellow,
+    progress: 20,
+  },
+  {
+    value: "envoyee",
+    fr: "Demande envoyée",
+    kr: "Demande envoyé",
+    icon: "🔵",
+    color: COLORS.cyan,
+    progress: 45,
+  },
+  {
+    value: "en_attente",
+    fr: "En attente",
+    kr: "En attente",
+    icon: "🟠",
+    color: COLORS.accent,
+    progress: 65,
+  },
+  {
+    value: "obtenue",
+    fr: "Obtenue",
+    kr: "Obtenu",
+    icon: "🟢",
+    color: COLORS.green,
+    progress: 100,
+  },
+  {
+    value: "refusee",
+    fr: "Refusée",
+    kr: "Refusé",
+    icon: "🔴",
+    color: COLORS.red,
+    progress: 0,
+  },
+]
+
+const ACTIVE_HIDE_STATUSES = ["envoyee", "en_attente", "obtenue"]
+
 function cleanValue(value) {
   if (value === null || value === undefined) return ""
   return String(value).trim()
@@ -112,6 +155,14 @@ function cleanValue(value) {
 function getLocalizedValue(primary, fallback = "") {
   const value = cleanValue(primary)
   return value || cleanValue(fallback)
+}
+
+function normalizeText(value = "") {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
 }
 
 function getCategoryColor(category) {
@@ -165,23 +216,6 @@ function normalizeAideFromDb(row = {}) {
     confidence: getConfidenceFromScore(row.score_priorite),
     isDbAide: true,
   }
-}
-
-const STATUS_OPTIONS = [
-  { value: "a_faire", fr: "À faire", kr: "Pou fé", color: COLORS.yellow },
-  { value: "commence", fr: "Dossier commencé", kr: "Dossier commencé", color: COLORS.cyan },
-  { value: "documents_envoyes", fr: "Documents envoyés", kr: "Dokiman envoyés", color: COLORS.green },
-  { value: "en_attente", fr: "En attente", kr: "En attente", color: COLORS.accent },
-  { value: "accepte", fr: "Accepté", kr: "Accepté", color: COLORS.green },
-  { value: "refuse", fr: "Refusé", kr: "Refusé", color: COLORS.red },
-]
-
-function normalizeText(value = "") {
-  return String(value || "")
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim()
 }
 
 function getAideLink(aide) {
@@ -263,8 +297,11 @@ function getAideCategoryLabel(aide, isKreol) {
     etudiant: "🎓 Étudiants",
     energie: "⚡ Énergie",
     mobilite: "🚗 Mobilité",
+    transport: "🚌 Transport",
     ccas: "🏛️ Commune / CCAS",
     sante: "💊 Santé",
+    handicap: "♿ Handicap",
+    social: "🤝 Social",
   }
 
   const kr = {
@@ -275,8 +312,11 @@ function getAideCategoryLabel(aide, isKreol) {
     etudiant: "🎓 Étudiant",
     energie: "⚡ Énerzi",
     mobilite: "🚗 Déplasman",
+    transport: "🚌 Transport",
     ccas: "🏛️ Komin / CCAS",
     sante: "💊 Santé",
+    handicap: "♿ Handicap",
+    social: "🤝 Social",
   }
 
   return isKreol ? kr[category] || "💡 Éd à vérifié" : fr[category] || "💡 Aide à vérifier"
@@ -303,10 +343,8 @@ function isKreolLang(t) {
   return t?.("nav", "dashboard") === "Tablo débor"
 }
 
-function getStatus(status, isKreol) {
-  const found = STATUS_OPTIONS.find(item => item.value === status)
-  if (!found) return STATUS_OPTIONS[0]
-
+function getStatus(statut, isKreol) {
+  const found = SUIVI_STATUSES.find(item => item.value === statut) || SUIVI_STATUSES[0]
   return {
     ...found,
     label: isKreol ? found.kr : found.fr,
@@ -316,107 +354,6 @@ function getStatus(status, isKreol) {
 function formatDate(value) {
   if (!value) return ""
   return new Date(value).toLocaleDateString("fr-FR")
-}
-
-function getDaysLeft(deadline) {
-  if (!deadline) return null
-
-  const today = new Date()
-  const limit = new Date(deadline)
-
-  today.setHours(0, 0, 0, 0)
-  limit.setHours(0, 0, 0, 0)
-
-  return Math.ceil((limit - today) / (1000 * 60 * 60 * 24))
-}
-
-function getDaysSince(value) {
-  if (!value) return 0
-
-  const today = new Date()
-  const date = new Date(value)
-
-  today.setHours(0, 0, 0, 0)
-  date.setHours(0, 0, 0, 0)
-
-  return Math.floor((today - date) / (1000 * 60 * 60 * 24))
-}
-
-function getDemarcheProgress(demarche) {
-  const status = demarche.status || "a_faire"
-
-  if (status === "accepte") return 100
-  if (status === "refuse") return 0
-  if (status === "documents_envoyes") return 75
-  if (status === "en_attente") return 75
-  if (status === "commence") return demarche.documents_ready ? 55 : 35
-  if (demarche.documents_ready) return 45
-
-  return 10
-}
-
-function getGainAmount(demarche) {
-  const value = Number(demarche?.montant_obtenu ?? 0)
-  return Number.isFinite(value) && value > 0 ? value : 0
-}
-
-function formatEuro(value) {
-  const amount = Number(value || 0)
-  if (!Number.isFinite(amount)) return "0 €"
-  return `${amount.toFixed(0)} €`
-}
-
-function getDemarchePriority(demarche) {
-  const status = demarche.status || "a_faire"
-  const daysLeft = getDaysLeft(demarche.deadline)
-
-  if (status === "accepte") return 90
-  if (status === "refuse") return 95
-  if (daysLeft !== null && daysLeft < 0 && status !== "accepte") return 1
-  if (daysLeft !== null && daysLeft <= 3 && status !== "accepte") return 2
-  if (daysLeft !== null && daysLeft <= 7 && status !== "accepte") return 3
-  if (!demarche.documents_ready && !["documents_envoyes", "en_attente", "accepte", "refuse"].includes(status)) return 4
-  if (status === "a_faire") return 5
-  if (status === "commence") return 6
-  if (status === "en_attente") return 7
-  if (status === "documents_envoyes") return 8
-
-  return 50
-}
-
-function getDemarchePriorityLabel(demarche, isKreol) {
-  const status = demarche.status || "a_faire"
-  const daysLeft = getDaysLeft(demarche.deadline)
-
-  if (status === "accepte") {
-    return { color: COLORS.green, text: isKreol ? "✅ Dossier accepté" : "✅ Dossier accepté" }
-  }
-
-  if (status === "refuse") {
-    return { color: COLORS.red, text: isKreol ? "❌ Dossier refusé" : "❌ Dossier refusé" }
-  }
-
-  if (daysLeft !== null && daysLeft < 0) {
-    return { color: COLORS.red, text: isKreol ? "🚨 Date limite dépassée" : "🚨 Date limite dépassée" }
-  }
-
-  if (daysLeft !== null && daysLeft <= 3) {
-    return { color: COLORS.yellow, text: isKreol ? "🔥 Urgent" : "🔥 Urgent" }
-  }
-
-  if (daysLeft !== null && daysLeft <= 7) {
-    return { color: COLORS.yellow, text: isKreol ? "⏰ Date proche" : "⏰ Date proche" }
-  }
-
-  if (!demarche.documents_ready && !["documents_envoyes", "en_attente", "accepte", "refuse"].includes(status)) {
-    return { color: COLORS.cyan, text: isKreol ? "📄 Dokiman à préparé" : "📄 Documents à préparer" }
-  }
-
-  if (status === "en_attente") {
-    return { color: COLORS.accent, text: isKreol ? "⏳ En attente" : "⏳ En attente" }
-  }
-
-  return null
 }
 
 function createLocalCcasAides(profile = {}) {
@@ -430,7 +367,6 @@ function createLocalCcasAides(profile = {}) {
       label: `CCAS ${commune} - aide d’urgence`,
       label_kr: `CCAS ${commune} - éd urgence`,
       montant: "À vérifier en mairie",
-      statutKey: "statutEligible",
       color: "#FB7185",
       category: "ccas",
       target_profiles: ["commune", "faibles_revenus", "famille", "logement"],
@@ -543,6 +479,22 @@ function sortAidesByRelevance(aides = [], profile = {}) {
   })
 }
 
+function normalizeDemarche(row = {}) {
+  const aide = row.aides_reunion || {}
+
+  return {
+    ...row,
+    status: row.statut || "a_preparer",
+    title: aide.nom || row.aide_nom || "Aide",
+    title_kr: aide.nom_kreol || aide.nom || row.aide_nom || "Éd",
+    description_fr: aide.description_fr || aide.description || "",
+    description_kr: aide.description_kreol || "",
+    category: aide.categorie || "aide",
+    color: getCategoryColor(aide.categorie || "aide"),
+    aide,
+  }
+}
+
 export default function AidesPage({ isMobile, t, isPremium, user }) {
   const languageKey = getLanguageKey(t)
   const isKreol = isKreolLang(t)
@@ -553,80 +505,55 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
   const [demarches, setDemarches] = useState([])
   const [loadingDemarches, setLoadingDemarches] = useState(true)
   const [savingId, setSavingId] = useState(null)
-  const [noteDrafts, setNoteDrafts] = useState({})
-  const [gainInputs, setGainInputs] = useState({})
+  const [errorMessage, setErrorMessage] = useState("")
+
+  const demarchesByAideId = useMemo(() => {
+    const map = new Map()
+    demarches.forEach(demarche => {
+      if (demarche?.aide_id) map.set(Number(demarche.aide_id), demarche)
+    })
+    return map
+  }, [demarches])
 
   const profileReady = Boolean(profile)
   const localCcasAides = createLocalCcasAides(profile || {})
   const normalizedDbAides = dbAides.map(normalizeAideFromDb)
   const baseAides = normalizedDbAides.length > 0 ? normalizedDbAides : AIDES
   const allAides = [...localCcasAides, ...baseAides]
+
   const filteredAides = sortAidesByRelevance(
-    allAides.filter(aide => shouldShowAide(aide, profile || {})),
+    allAides.filter(aide => {
+      if (!shouldShowAide(aide, profile || {})) return false
+
+      const demarche = aide?.dbId ? demarchesByAideId.get(Number(aide.dbId)) : null
+
+      if (demarche && ACTIVE_HIDE_STATUSES.includes(demarche.status)) return false
+
+      return true
+    }),
     profile || {}
   )
 
   const totalDemarches = demarches.length
-  const nbAFaire = demarches.filter(d => d.status === "a_faire").length
-  const nbCommence = demarches.filter(d => d.status === "commence").length
+  const nbAPreparer = demarches.filter(d => d.status === "a_preparer").length
+  const nbEnvoyees = demarches.filter(d => d.status === "envoyee").length
   const nbAttente = demarches.filter(d => d.status === "en_attente").length
-  const nbAccepte = demarches.filter(d => d.status === "accepte").length
-  const nbDocumentsEnvoyes = demarches.filter(d => d.status === "documents_envoyes").length
-  const nbDocumentsPrets = demarches.filter(d => d.documents_ready).length
-  const gainsTotal = demarches.reduce((sum, demarche) => sum + getGainAmount(demarche), 0)
-  const demarchesAvecGain = demarches.filter(d => getGainAmount(d) > 0)
-  const demarchesAccepteesSansGain = demarches.filter(d => d.status === "accepte" && getGainAmount(d) <= 0)
-  const nbGainsRenseignes = demarchesAvecGain.length
-  const gainsMoyen = nbGainsRenseignes > 0 ? Math.round(gainsTotal / nbGainsRenseignes) : 0
-  const derniersGains = [...demarchesAvecGain]
-    .sort((a, b) => new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0))
-    .slice(0, 3)
-
-  const nbDeadlinesProches = demarches.filter(d => {
-    const days = getDaysLeft(d.deadline)
-    return days !== null && days >= 0 && days <= 7
-  }).length
-
-  const nbDeadlinesDepassees = demarches.filter(d => {
-    const days = getDaysLeft(d.deadline)
-    return days !== null && days < 0 && d.status !== "accepte"
-  }).length
-
-  const nbAttenteLongue = demarches.filter(d => {
-    const referenceDate = d.updated_at || d.created_at
-    return d.status === "en_attente" && getDaysSince(referenceDate) >= 14
-  }).length
-
-  const nbDocumentsApreparer = demarches.filter(d => {
-    return !d.documents_ready && !["documents_envoyes", "en_attente", "accepte"].includes(d.status)
-  }).length
+  const nbObtenues = demarches.filter(d => d.status === "obtenue").length
+  const nbRefusees = demarches.filter(d => d.status === "refusee").length
 
   const progression =
     totalDemarches === 0
       ? 0
       : Math.round(
-          demarches.reduce((sum, demarche) => sum + getDemarcheProgress(demarche), 0) /
-            totalDemarches
+          demarches.reduce((sum, demarche) => {
+            return sum + getStatus(demarche.status, isKreol).progress
+          }, 0) / totalDemarches
         )
-
-  const sortedDemarches = [...demarches].sort((a, b) => {
-    const priorityDiff = getDemarchePriority(a) - getDemarchePriority(b)
-    if (priorityDiff !== 0) return priorityDiff
-
-    const aDays = getDaysLeft(a.deadline)
-    const bDays = getDaysLeft(b.deadline)
-
-    if (aDays !== null && bDays !== null) return aDays - bDays
-    if (aDays !== null) return -1
-    if (bDays !== null) return 1
-
-    return new Date(b.updated_at || b.created_at) - new Date(a.updated_at || a.created_at)
-  })
 
   useEffect(() => {
     fetchProfile()
-    fetchDemarches()
     fetchAidesReunion()
+    fetchDemarches()
   }, [user?.id])
 
   async function fetchAidesReunion() {
@@ -708,121 +635,139 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
     setLoadingDemarches(true)
 
     const { data, error } = await supabase
-      .from("aide_demarches")
-      .select("*")
+      .from("user_aide_demarche")
+      .select(`
+        id,
+        user_id,
+        aide_id,
+        statut,
+        created_at,
+        updated_at,
+        aides_reunion (
+          id,
+          nom,
+          nom_kreol,
+          categorie,
+          description,
+          description_fr,
+          description_kreol
+        )
+      `)
       .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
+      .order("updated_at", { ascending: false })
 
     if (error) {
       console.error("Erreur chargement démarches:", error)
       setDemarches([])
     } else {
-      setDemarches(data || [])
+      setDemarches((data || []).map(normalizeDemarche))
     }
 
     setLoadingDemarches(false)
   }
 
-  async function updateDemarche(id, updates) {
-    const updatedAt = new Date().toISOString()
+  async function addAideToDemarches(aide) {
+    if (!user?.id) {
+      alert(isKreol ? "Connecte aou pou ajout l’éd dann démarches." : "Connectez-vous pour ajouter cette aide à vos démarches.")
+      return
+    }
 
-    setSavingId(id)
+    if (!aide?.dbId) {
+      alert(isKreol ? "Cette éd doit être vérifiée directement." : "Cette aide doit être vérifiée directement.")
+      return
+    }
 
-    const { error } = await supabase
-      .from("aide_demarches")
-      .update({
-        ...updates,
-        updated_at: updatedAt,
+    setSavingId(aide.id)
+    setErrorMessage("")
+
+    const { data, error } = await supabase
+      .from("user_aide_demarche")
+      .insert({
+        user_id: user.id,
+        aide_id: aide.dbId,
+        statut: "a_preparer",
       })
-      .eq("id", id)
+      .select(`
+        id,
+        user_id,
+        aide_id,
+        statut,
+        created_at,
+        updated_at,
+        aides_reunion (
+          id,
+          nom,
+          nom_kreol,
+          categorie,
+          description,
+          description_fr,
+          description_kreol
+        )
+      `)
+      .single()
+
+    setSavingId(null)
+
+   if (error) {
+  console.error("ERREUR AJOUT DEMARCHE =", error)
+  alert(JSON.stringify(error, null, 2))
+
+  if (error.code === "23505") {
+    await fetchDemarches()
+    return
+  }
+
+  setErrorMessage(
+    isKreol
+      ? "Impossible d’ajout cette éd dann démarches."
+      : "Impossible d’ajouter cette aide à vos démarches."
+  )
+  return
+}
+
+    setDemarches(prev => [normalizeDemarche(data), ...prev])
+  }
+
+  async function updateDemarcheStatus(demarcheId, statut) {
+    if (!demarcheId) return
+
+    setSavingId(demarcheId)
+    setErrorMessage("")
+
+    const { data, error } = await supabase
+      .from("user_aide_demarche")
+      .update({ statut })
+      .eq("id", demarcheId)
+      .select(`
+        id,
+        user_id,
+        aide_id,
+        statut,
+        created_at,
+        updated_at,
+        aides_reunion (
+          id,
+          nom,
+          nom_kreol,
+          categorie,
+          description,
+          description_fr,
+          description_kreol
+        )
+      `)
+      .single()
 
     setSavingId(null)
 
     if (error) {
-      console.error("Erreur mise à jour démarche:", error)
-      alert(isKreol ? "Erreur pendant la mise à jour." : "Erreur pendant la mise à jour.")
+      console.error("Erreur mise à jour statut:", error)
+      setErrorMessage(isKreol ? "Erreur pendant la mise à jour." : "Erreur pendant la mise à jour.")
       return
     }
 
     setDemarches(prev =>
-      prev.map(item =>
-        item.id === id ? { ...item, ...updates, updated_at: updatedAt } : item
-      )
+      prev.map(item => (item.id === demarcheId ? normalizeDemarche(data) : item))
     )
-  }
-
-  async function saveGain(demarche) {
-    if (!demarche?.id) return
-
-    const rawValue = gainInputs[demarche.id] ?? demarche.montant_obtenu ?? ""
-    const value = Number(rawValue)
-
-    if (!Number.isFinite(value) || value < 0) {
-      alert(isKreol ? "Montan invalide." : "Montant invalide.")
-      return
-    }
-
-    setSavingId(demarche.id)
-
-    const updatedAt = new Date().toISOString()
-    const { error } = await supabase
-      .from("aide_demarches")
-      .update({
-        montant_obtenu: value,
-        status: "accepte",
-        updated_at: updatedAt,
-      })
-      .eq("id", demarche.id)
-
-    setSavingId(null)
-
-    if (error) {
-      console.error("Erreur sauvegarde gain:", error)
-      alert(isKreol ? "Erreur sauvegarde gain." : "Erreur lors de la sauvegarde du gain.")
-      return
-    }
-
-    setDemarches(prev =>
-      prev.map(item =>
-        item.id === demarche.id
-          ? { ...item, montant_obtenu: value, status: "accepte", updated_at: updatedAt }
-          : item
-      )
-    )
-
-    setGainInputs(prev => ({
-      ...prev,
-      [demarche.id]: String(value),
-    }))
-  }
-
-  async function addFollowUpNote(demarche) {
-    const rawNote = noteDrafts[demarche.id] || ""
-    const note = rawNote.trim()
-
-    if (!note) {
-      alert(isKreol ? "Écris une note avant d'ajouter." : "Écrivez une note avant d'ajouter.")
-      return
-    }
-
-    const now = new Date()
-    const dateLabel = now.toLocaleDateString("fr-FR")
-    const timeLabel = now.toLocaleTimeString("fr-FR", {
-      hour: "2-digit",
-      minute: "2-digit",
-    })
-
-    const newLine = `${dateLabel} à ${timeLabel} - ${note}`
-    const previousNotes = demarche.notes ? `${demarche.notes}\n${newLine}` : newLine
-
-    await updateDemarche(demarche.id, {
-      notes: previousNotes,
-    })
-
-    setNoteDrafts(prev => ({
-      ...prev,
-      [demarche.id]: "",
-    }))
   }
 
   async function deleteDemarche(id) {
@@ -830,13 +775,18 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
 
     if (!window.confirm(confirmText)) return
 
+    setSavingId(id)
+
     const { error } = await supabase
-      .from("aide_demarches")
+      .from("user_aide_demarche")
       .delete()
       .eq("id", id)
 
+    setSavingId(null)
+
     if (error) {
       console.error("Erreur suppression démarche:", error)
+      setErrorMessage(isKreol ? "Erreur pendant suppression." : "Erreur pendant la suppression.")
       return
     }
 
@@ -914,8 +864,8 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
             }}
           >
             {isKreol
-              ? "BudgetKazPei affiche bann aides selon out profil, out komin, out marmay ek out sitiasyon."
-              : "BudgetKazPei affiche les aides selon votre profil, votre commune, vos enfants et votre situation."}
+              ? "BudgetKazPei affiche bann aides selon out profil, out komin, out marmay ek out sitiasyon. Ou peut ajout zot dann out démarches pou suivre zot."
+              : "BudgetKazPei affiche les aides selon votre profil, votre commune, vos enfants et votre situation. Vous pouvez les ajouter à vos démarches pour les suivre."}
           </p>
         </div>
       </section>
@@ -927,6 +877,10 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
         t={t}
         user={user}
       />
+
+      {errorMessage && (
+        <AlertBox color={COLORS.red} text={`⚠️ ${errorMessage}`} />
+      )}
 
       <section
         style={{
@@ -1007,159 +961,19 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                 lineHeight: 1.6,
               }}
             >
-              <span>🟡 {nbAFaire} {isKreol ? "pou fé" : "à faire"}</span>
-              <span>🔵 {nbCommence} {isKreol ? "commencé" : "commencée(s)"}</span>
-              <span>✅ {nbDocumentsPrets} {isKreol ? "dokiman prêts" : "documents prêts"}</span>
-              <span>🟣 {nbDocumentsEnvoyes} {isKreol ? "dokiman envoyés" : "documents envoyés"}</span>
+              <span>🟡 {nbAPreparer} {isKreol ? "pou préparé" : "à préparer"}</span>
+              <span>🔵 {nbEnvoyees} {isKreol ? "envoyé" : "envoyée(s)"}</span>
               <span>🟠 {nbAttente} {isKreol ? "en attente" : "en attente"}</span>
-              <span>🟢 {nbAccepte} {isKreol ? "accepté" : "acceptée(s)"}</span>
-              <span>⏰ {nbDeadlinesProches} {isKreol ? "date proche" : "date limite proche"}</span>
+              <span>🟢 {nbObtenues} {isKreol ? "obtenu" : "obtenue(s)"}</span>
+              <span>🔴 {nbRefusees} {isKreol ? "refusé" : "refusée(s)"}</span>
             </div>
-
-            <div
-              style={{
-                marginTop: 12,
-                background: "linear-gradient(135deg, rgba(34,197,94,.13), rgba(35,211,214,.07))",
-                border: "1px solid rgba(34,197,94,.24)",
-                borderRadius: 14,
-                padding: 14,
-                color: COLORS.text,
-              }}
-            >
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: 10,
-                  flexWrap: "wrap",
-                }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 8, fontWeight: 900 }}>
-                  <DollarSign size={18} color={COLORS.green} />
-                  {isKreol ? "Gains cumulés" : "Gains cumulés"}
-                </div>
-
-                <strong style={{ color: COLORS.green, fontSize: 22 }}>
-                  {formatEuro(gainsTotal)}
-                </strong>
-              </div>
-
-              <div
-                style={{
-                  display: "flex",
-                  gap: 10,
-                  flexWrap: "wrap",
-                  marginTop: 10,
-                  color: COLORS.muted,
-                  fontSize: 12,
-                  lineHeight: 1.55,
-                }}
-              >
-                <span>✅ {nbGainsRenseignes} {isKreol ? "gain(s) renseignés" : "gain(s) renseigné(s)"}</span>
-                <span>🟢 {nbAccepte} {isKreol ? "dossier(s) accepté(s)" : "dossier(s) accepté(s)"}</span>
-                {gainsMoyen > 0 && <span>📊 {isKreol ? "Moyenne" : "Moyenne"} : {formatEuro(gainsMoyen)}</span>}
-                {demarchesAccepteesSansGain.length > 0 && (
-                  <span style={{ color: COLORS.yellow, fontWeight: 900 }}>
-                    ⚠️ {demarchesAccepteesSansGain.length} {isKreol ? "gain(s) à renseigner" : "gain(s) à renseigner"}
-                  </span>
-                )}
-              </div>
-
-              {derniersGains.length > 0 && (
-                <div
-                  style={{
-                    marginTop: 10,
-                    display: "grid",
-                    gap: 6,
-                    color: COLORS.text,
-                    fontSize: 12,
-                  }}
-                >
-                  <div style={{ color: COLORS.green, fontWeight: 900 }}>
-                    {isKreol ? "Derniers gains enregistrés" : "Derniers gains enregistrés"}
-                  </div>
-                  {derniersGains.map(gain => (
-                    <div
-                      key={`gain-${gain.id}`}
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        gap: 10,
-                        background: "rgba(255,255,255,.045)",
-                        border: "1px solid rgba(255,255,255,.08)",
-                        borderRadius: 10,
-                        padding: "7px 9px",
-                      }}
-                    >
-                      <span>{isKreol ? gain.title_kr || gain.title || gain.aide_nom : gain.title || gain.aide_nom}</span>
-                      <strong style={{ color: COLORS.green }}>{formatEuro(getGainAmount(gain))}</strong>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {(nbDeadlinesProches > 0 ||
-              nbDeadlinesDepassees > 0 ||
-              nbAttenteLongue > 0 ||
-              nbDocumentsApreparer > 0 ||
-              demarchesAccepteesSansGain.length > 0) && (
-              <div
-                style={{
-                  marginTop: 14,
-                  display: "grid",
-                  gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)",
-                  gap: 10,
-                }}
-              >
-                {nbDeadlinesDepassees > 0 && (
-                  <AlertBox color={COLORS.red} text={`⚠️ ${nbDeadlinesDepassees} date limite dépassée`} />
-                )}
-
-                {nbDeadlinesProches > 0 && (
-                  <AlertBox
-                    color={COLORS.yellow}
-                    text={
-                      isKreol
-                        ? `⏰ ${nbDeadlinesProches} date limite i approche`
-                        : `⏰ ${nbDeadlinesProches} date limite approche`
-                    }
-                  />
-                )}
-
-                {nbAttenteLongue > 0 && (
-                  <AlertBox color={COLORS.accent} text={`🔔 ${nbAttenteLongue} dossier en attente depuis 14 jours`} />
-                )}
-
-                {nbDocumentsApreparer > 0 && (
-                  <AlertBox
-                    color={COLORS.cyan}
-                    text={
-                      isKreol
-                        ? `📄 ${nbDocumentsApreparer} dossier avec dokiman à préparé`
-                        : `📄 ${nbDocumentsApreparer} dossier avec documents à préparer`
-                    }
-                  />
-                )}
-
-                {demarchesAccepteesSansGain.length > 0 && (
-                  <AlertBox
-                    color={COLORS.yellow}
-                    text={
-                      isKreol
-                        ? `💰 ${demarchesAccepteesSansGain.length} dossier accepté avec gain à renseigner`
-                        : `💰 ${demarchesAccepteesSansGain.length} dossier accepté avec gain à renseigner`
-                    }
-                  />
-                )}
-              </div>
-            )}
           </div>
         )}
 
         {loadingDemarches ? (
-          <div style={{ color: COLORS.muted, fontSize: 13 }}>Chargement...</div>
+          <div style={{ color: COLORS.muted, fontSize: 13 }}>
+            {isKreol ? "Chargement..." : "Chargement..."}
+          </div>
         ) : demarches.length === 0 ? (
           <div
             style={{
@@ -1173,17 +987,16 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
             }}
           >
             {isKreol
-              ? "Aucune démarche pou le moman. Alé dann Bon plan détecté, ouvre une aide, puis clique su “Azout dann mes démarches”."
-              : "Aucune démarche pour le moment. Allez dans Opportunités détectées, ouvrez une aide, puis cliquez sur “Ajouter à mes démarches”."}
+              ? "Aucune démarche pou le moman. Clique su “Ajout dann mon bann démarches” su une éd recommandée."
+              : "Aucune démarche pour le moment. Cliquez sur “Ajouter à mes démarches” sur une aide recommandée."}
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {sortedDemarches.map(demarche => {
+            {demarches.map(demarche => {
               const status = getStatus(demarche.status, isKreol)
               const title = isKreol
-                ? demarche.title_kr || demarche.title || demarche.aide_nom || "Démarche"
-                : demarche.title || demarche.aide_nom || "Démarche"
-              const daysLeft = getDaysLeft(demarche.deadline)
+                ? demarche.title_kr || demarche.title || "Démarche"
+                : demarche.title || "Démarche"
 
               return (
                 <div
@@ -1204,27 +1017,6 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                       {title}
                     </div>
 
-                    {getDemarchePriorityLabel(demarche, isKreol) && (
-                      <div
-                        style={{
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: 6,
-                          background: `${getDemarchePriorityLabel(demarche, isKreol).color}18`,
-                          border: `1px solid ${getDemarchePriorityLabel(demarche, isKreol).color}44`,
-                          color: getDemarchePriorityLabel(demarche, isKreol).color,
-                          borderRadius: 999,
-                          padding: "4px 9px",
-                          fontSize: 11,
-                          fontWeight: 900,
-                          marginBottom: 8,
-                          marginRight: 8,
-                        }}
-                      >
-                        {getDemarchePriorityLabel(demarche, isKreol).text}
-                      </div>
-                    )}
-
                     <div
                       style={{
                         display: "inline-flex",
@@ -1240,7 +1032,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                         marginBottom: 8,
                       }}
                     >
-                      ● {status.label}
+                      {status.icon} {status.label}
                     </div>
 
                     <div style={{ color: COLORS.muted, fontSize: 12, lineHeight: 1.6 }}>
@@ -1253,249 +1045,17 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                       </div>
                     )}
 
-                    {demarche.deadline && (
-                      <div
-                        style={{
-                          marginTop: 6,
-                          color:
-                            daysLeft !== null && daysLeft < 0
-                              ? COLORS.red
-                              : daysLeft !== null && daysLeft <= 7
-                                ? COLORS.yellow
-                                : COLORS.muted,
-                          fontSize: 12,
-                          fontWeight: daysLeft !== null && daysLeft <= 7 ? 800 : 600,
-                        }}
-                      >
-                        ⏰ Date limite : {formatDate(demarche.deadline)}
-                        {daysLeft !== null && daysLeft >= 0 ? ` • ${daysLeft} jour(s) restant(s)` : ""}
-                        {daysLeft !== null && daysLeft < 0 ? " • dépassée" : ""}
-                      </div>
-                    )}
-
-                    {demarche.notes && (
-                      <div
-                        style={{
-                          marginTop: 8,
-                          color: COLORS.text,
-                          fontSize: 12,
-                          background: "rgba(255,255,255,.045)",
-                          border: "1px solid rgba(255,255,255,.08)",
-                          borderRadius: 10,
-                          padding: 10,
-                          lineHeight: 1.55,
-                          whiteSpace: "pre-line",
-                        }}
-                      >
-                        <div style={{ color: COLORS.cyan, fontWeight: 900, marginBottom: 6 }}>
-                          📝 {isKreol ? "Journal suivi" : "Journal de suivi"}
-                        </div>
-                        {demarche.notes}
-                      </div>
-                    )}
-
-                    {demarche.documents_ready && (
-                      <div style={{ marginTop: 6, color: COLORS.green, fontSize: 12, fontWeight: 800 }}>
-                        ✅ {isKreol ? "Dokiman préparé" : "Documents prêts"}
-                      </div>
-                    )}
-
-                    {demarche.status === "accepte" && (
-                      <div
-                        style={{
-                          marginTop: 12,
-                          padding: 12,
-                          background: "rgba(34,197,94,.08)",
-                          border: "1px solid rgba(34,197,94,.25)",
-                          borderRadius: 12,
-                        }}
-                      >
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 8,
-                            color: COLORS.green,
-                            fontWeight: 900,
-                            fontSize: 13,
-                            marginBottom: 10,
-                          }}
-                        >
-                          <CheckCircle2 size={16} />
-                          {isKreol ? "Zéd aksepté - indique le montant gagné" : "Aide acceptée - indiquez le montant obtenu"}
-                        </div>
-
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
-                          <input
-                            type="number"
-                            min="0"
-                            value={gainInputs[demarche.id] ?? demarche.montant_obtenu ?? ""}
-                            onChange={e =>
-                              setGainInputs(prev => ({
-                                ...prev,
-                                [demarche.id]: e.target.value,
-                              }))
-                            }
-                            placeholder={isKreol ? "Montan obtenu" : "Montant obtenu"}
-                            style={{
-                              background: COLORS.card,
-                              border: `1px solid ${COLORS.border}`,
-                              borderRadius: 10,
-                              padding: "9px 10px",
-                              color: COLORS.text,
-                              fontSize: 12,
-                              fontFamily: "inherit",
-                              width: 170,
-                            }}
-                          />
-
-                          <button
-                            type="button"
-                            onClick={() => saveGain(demarche)}
-                            disabled={savingId === demarche.id}
-                            style={{
-                              background: savingId === demarche.id ? "rgba(142,164,197,.35)" : COLORS.green,
-                              color: COLORS.card,
-                              border: "none",
-                              borderRadius: 10,
-                              padding: "9px 12px",
-                              cursor: savingId === demarche.id ? "not-allowed" : "pointer",
-                              fontSize: 12,
-                              fontWeight: 900,
-                              fontFamily: "inherit",
-                            }}
-                          >
-                            {isKreol ? "Sauvegard gain" : "Sauvegarder le gain"}
-                          </button>
-                        </div>
-
-                        {getGainAmount(demarche) > 0 ? (
-                          <div style={{ marginTop: 8, color: COLORS.green, fontWeight: 800, fontSize: 12 }}>
-                            ✅ {isKreol ? "Gain enregistré" : "Gain enregistré"} : {formatEuro(demarche.montant_obtenu)}
-                          </div>
-                        ) : (
-                          <div style={{ marginTop: 8, color: COLORS.yellow, fontWeight: 800, fontSize: 12 }}>
-                            ⚠️ {isKreol ? "Renseigne le montant pour l’ajouter aux gains cumulés." : "Renseignez le montant pour l’ajouter aux gains cumulés."}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: isMobile ? "1fr" : "1fr 180px",
-                        gap: 10,
-                        marginTop: 12,
-                      }}
-                    >
-                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                        <textarea
-                          value={noteDrafts[demarche.id] || ""}
-                          onChange={e =>
-                            setNoteDrafts(prev => ({
-                              ...prev,
-                              [demarche.id]: e.target.value,
-                            }))
-                          }
-                          placeholder={
-                            isKreol
-                              ? "📝 Ajoute une note : appel CAF, RDV, pièce manquante..."
-                              : "📝 Ajouter une note : appel CAF, RDV, pièce manquante..."
-                          }
-                          style={{
-                            minHeight: 70,
-                            background: COLORS.card,
-                            border: `1px solid ${COLORS.border}`,
-                            borderRadius: 12,
-                            padding: 10,
-                            color: COLORS.text,
-                            fontSize: 12,
-                            fontFamily: "inherit",
-                            resize: "vertical",
-                          }}
-                        />
-
-                        <button
-                          type="button"
-                          onClick={() => addFollowUpNote(demarche)}
-                          disabled={savingId === demarche.id}
-                          style={{
-                            alignSelf: "flex-start",
-                            background:
-                              savingId === demarche.id
-                                ? "rgba(142,164,197,.25)"
-                                : `linear-gradient(135deg, ${COLORS.cyan}, ${COLORS.accent})`,
-                            border: "none",
-                            borderRadius: 10,
-                            color: COLORS.card,
-                            padding: "8px 12px",
-                            cursor: savingId === demarche.id ? "not-allowed" : "pointer",
-                            fontSize: 12,
-                            fontWeight: 900,
-                            fontFamily: "inherit",
-                          }}
-                        >
-                          {isKreol ? "➕ Ajout note" : "➕ Ajouter au journal"}
-                        </button>
-                      </div>
-
-                      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                        <label
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 8,
-                            color: COLORS.text,
-                            fontSize: 12,
-                            fontWeight: 800,
-                          }}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={Boolean(demarche.documents_ready)}
-                            onChange={e =>
-                              updateDemarche(demarche.id, {
-                                documents_ready: e.target.checked,
-                              })
-                            }
-                          />
-                          {isKreol ? "Dokiman prêts" : "Documents prêts"}
-                        </label>
-
-                        <input
-                          type="date"
-                          value={demarche.deadline || ""}
-                          onChange={e =>
-                            updateDemarche(demarche.id, {
-                              deadline: e.target.value || null,
-                            })
-                          }
-                          style={{
-                            background: COLORS.card,
-                            border: `1px solid ${COLORS.border}`,
-                            borderRadius: 10,
-                            padding: "9px 10px",
-                            color: COLORS.text,
-                            fontSize: 12,
-                            fontFamily: "inherit",
-                          }}
-                        />
-
-                        {savingId === demarche.id && (
-                          <div style={{ color: COLORS.cyan, fontSize: 11 }}>Sauvegarde...</div>
-                        )}
-                      </div>
+                    <div style={{ color: COLORS.muted, fontSize: 12, lineHeight: 1.55, marginTop: 8 }}>
+                      {isKreol
+                        ? "Structure prête pou ajouté plus tard : notes, dokiman, date limite, gain obtenu."
+                        : "Structure prête pour ajouter plus tard : notes, documents, date limite, gain obtenu."}
                     </div>
                   </div>
 
                   <select
-                    value={demarche.status || "a_faire"}
-                    onChange={e =>
-                      updateDemarche(demarche.id, {
-                        status: e.target.value,
-                      })
-                    }
+                    value={demarche.status || "a_preparer"}
+                    onChange={e => updateDemarcheStatus(demarche.id, e.target.value)}
+                    disabled={savingId === demarche.id}
                     style={{
                       background: COLORS.card,
                       border: `1px solid ${COLORS.border}`,
@@ -1506,9 +1066,9 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                       fontFamily: "inherit",
                     }}
                   >
-                    {STATUS_OPTIONS.map(option => (
+                    {SUIVI_STATUSES.map(option => (
                       <option key={option.value} value={option.value}>
-                        {isKreol ? option.kr : option.fr}
+                        {option.icon} {isKreol ? option.kr : option.fr}
                       </option>
                     ))}
                   </select>
@@ -1516,19 +1076,21 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                   <button
                     type="button"
                     onClick={() => deleteDemarche(demarche.id)}
+                    disabled={savingId === demarche.id}
                     style={{
                       background: "rgba(251,113,133,.10)",
                       border: "1px solid rgba(251,113,133,.28)",
                       borderRadius: 10,
                       color: COLORS.red,
                       padding: "9px 11px",
-                      cursor: "pointer",
+                      cursor: savingId === demarche.id ? "not-allowed" : "pointer",
                       fontWeight: 900,
                       fontFamily: "inherit",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
                       gap: 6,
+                      opacity: savingId === demarche.id ? 0.6 : 1,
                     }}
                   >
                     <Trash2 size={14} />
@@ -1564,198 +1126,283 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
         </div>
       </section>
 
-      <section
-        style={{
-          display: "grid",
-          gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)",
-          gap: 16,
-        }}
-      >
-        {filteredAides.map((aide, index) => {
-          const theme = CARD_VARIANTS[index % CARD_VARIANTS.length]
-          const Icon = theme.Icon
-          const title = getAideTitle(aide, isKreol)
-          const description = getAideDescription(aide, isKreol)
-          const demarchesLabel = getAideDemarches(aide, isKreol)
-          const categoryLabel = getAideCategoryLabel(aide, isKreol)
-          const confidenceLabel = getConfidenceLabel(aide, isKreol)
+      {loadingAides ? (
+        <AlertBox
+          color={COLORS.cyan}
+          text={isKreol ? "Chargement bann aides..." : "Chargement des aides..."}
+        />
+      ) : (
+        <section
+          style={{
+            display: "grid",
+            gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)",
+            gap: 16,
+          }}
+        >
+          {filteredAides.map((aide, index) => {
+            const theme = CARD_VARIANTS[index % CARD_VARIANTS.length]
+            const Icon = theme.Icon
+            const title = getAideTitle(aide, isKreol)
+            const description = getAideDescription(aide, isKreol)
+            const demarchesLabel = getAideDemarches(aide, isKreol)
+            const categoryLabel = getAideCategoryLabel(aide, isKreol)
+            const confidenceLabel = getConfidenceLabel(aide, isKreol)
+            const suivi = aide?.dbId ? demarchesByAideId.get(Number(aide.dbId)) : null
+            const status = suivi ? getStatus(suivi.status, isKreol) : null
 
-          return (
-            <article
-              key={aide.id}
-              style={{
-                position: "relative",
-                overflow: "hidden",
-                background: theme.bg,
-                border: `1px solid ${aide.isLocalCcas ? COLORS.yellow : theme.border}`,
-                borderRadius: 22,
-                padding: 22,
-                boxShadow: `0 14px 32px rgba(0,0,0,.18), 0 0 28px ${theme.glow}`,
-              }}
-            >
-              <div
+            return (
+              <article
+                key={aide.id}
                 style={{
-                  position: "absolute",
-                  right: -18,
-                  top: -16,
-                  width: 96,
-                  height: 96,
-                  borderRadius: 999,
-                  background: "rgba(255,255,255,.06)",
-                  pointerEvents: "none",
-                }}
-              />
-
-              <div
-                style={{
-                  position: "absolute",
-                  right: 18,
-                  top: 18,
-                  opacity: 0.11,
-                  pointerEvents: "none",
+                  position: "relative",
+                  overflow: "hidden",
+                  background: theme.bg,
+                  border: `1px solid ${aide.isLocalCcas ? COLORS.yellow : theme.border}`,
+                  borderRadius: 22,
+                  padding: 22,
+                  boxShadow: `0 14px 32px rgba(0,0,0,.18), 0 0 28px ${theme.glow}`,
                 }}
               >
-                <Icon size={72} />
-              </div>
-
-              <div style={{ position: "relative", zIndex: 1 }}>
                 <div
                   style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
-                    gap: 12,
-                    marginBottom: 14,
+                    position: "absolute",
+                    right: -18,
+                    top: -16,
+                    width: 96,
+                    height: 96,
+                    borderRadius: 999,
+                    background: "rgba(255,255,255,.06)",
+                    pointerEvents: "none",
+                  }}
+                />
+
+                <div
+                  style={{
+                    position: "absolute",
+                    right: 18,
+                    top: 18,
+                    opacity: 0.11,
+                    pointerEvents: "none",
                   }}
                 >
-                  <h4
+                  <Icon size={72} />
+                </div>
+
+                <div style={{ position: "relative", zIndex: 1 }}>
+                  <div
                     style={{
-                      margin: 0,
-                      fontSize: 18,
-                      color: COLORS.text,
-                      fontFamily: "'Baloo 2', sans-serif",
-                      fontWeight: 800,
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "flex-start",
+                      gap: 12,
+                      marginBottom: 14,
                     }}
                   >
-                    {title}
-                  </h4>
+                    <h4
+                      style={{
+                        margin: 0,
+                        fontSize: 18,
+                        color: COLORS.text,
+                        fontFamily: "'Baloo 2', sans-serif",
+                        fontWeight: 800,
+                      }}
+                    >
+                      {title}
+                    </h4>
 
-                  <span
+                    <span
+                      style={{
+                        fontSize: 10,
+                        padding: "5px 10px",
+                        borderRadius: 999,
+                        background: `${aide.color}22`,
+                        color: aide.color,
+                        fontWeight: 900,
+                        textTransform: "uppercase",
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      {confidenceLabel}
+                    </span>
+                  </div>
+
+                  <div
                     style={{
-                      fontSize: 10,
-                      padding: "5px 10px",
-                      borderRadius: 999,
-                      background: `${aide.color}22`,
+                      fontSize: 30,
+                      fontWeight: 900,
                       color: aide.color,
-                      fontWeight: 900,
-                      textTransform: "uppercase",
-                      whiteSpace: "nowrap",
+                      fontFamily: "'Baloo 2', 'DM Serif Display', cursive",
+                      lineHeight: 1,
                     }}
                   >
-                    {confidenceLabel}
-                  </span>
-                </div>
+                    {getAideAmountLabel(aide)}
+                  </div>
 
-                <div
-                  style={{
-                    fontSize: 30,
-                    fontWeight: 900,
-                    color: aide.color,
-                    fontFamily: "'Baloo 2', 'DM Serif Display', cursive",
-                    lineHeight: 1,
-                  }}
-                >
-                  {getAideAmountLabel(aide)}
-                </div>
-
-                <p
-                  style={{
-                    margin: "8px 0 0",
-                    fontSize: 13,
-                    color: "rgba(248,250,252,.68)",
-                    fontWeight: 600,
-                  }}
-                >
-                  {categoryLabel}
-                </p>
-
-                <p
-                  style={{
-                    margin: "10px 0 0",
-                    fontSize: 13,
-                    color: "rgba(248,250,252,.72)",
-                    fontWeight: 500,
-                    lineHeight: 1.5,
-                    maxWidth: 620,
-                  }}
-                >
-                  {description}
-                </p>
-
-                {demarchesLabel && (
-                  <div
+                  <p
                     style={{
-                      marginTop: 10,
-                      background: "rgba(255,255,255,.045)",
-                      border: "1px solid rgba(255,255,255,.08)",
-                      borderRadius: 12,
-                      padding: 10,
-                      color: "rgba(248,250,252,.78)",
-                      fontSize: 12,
+                      margin: "8px 0 0",
+                      fontSize: 13,
+                      color: "rgba(248,250,252,.68)",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {categoryLabel}
+                  </p>
+
+                  <p
+                    style={{
+                      margin: "10px 0 0",
+                      fontSize: 13,
+                      color: "rgba(248,250,252,.72)",
+                      fontWeight: 500,
                       lineHeight: 1.5,
+                      maxWidth: 620,
                     }}
                   >
-                    <strong style={{ color: COLORS.cyan }}>
-                      {isKreol ? "Démarche :" : "Démarche :"}
-                    </strong>{" "}
-                    {demarchesLabel}
-                  </div>
-                )}
+                    {description}
+                  </p>
 
-                {aide.organisme && (
+                  {demarchesLabel && (
+                    <div
+                      style={{
+                        marginTop: 10,
+                        background: "rgba(255,255,255,.045)",
+                        border: "1px solid rgba(255,255,255,.08)",
+                        borderRadius: 12,
+                        padding: 10,
+                        color: "rgba(248,250,252,.78)",
+                        fontSize: 12,
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      <strong style={{ color: COLORS.cyan }}>
+                        {isKreol ? "Démarche :" : "Démarche :"}
+                      </strong>{" "}
+                      {demarchesLabel}
+                    </div>
+                  )}
+
+                  {aide.organisme && (
+                    <div
+                      style={{
+                        marginTop: 10,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
+                        background: "rgba(35,211,214,.10)",
+                        border: "1px solid rgba(35,211,214,.24)",
+                        color: COLORS.cyan,
+                        borderRadius: 999,
+                        padding: "5px 9px",
+                        fontSize: 11,
+                        fontWeight: 900,
+                      }}
+                    >
+                      🏛️ {aide.organisme}
+                    </div>
+                  )}
+
+                  {status && (
+                    <div
+                      style={{
+                        marginTop: 12,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 7,
+                        background: `${status.color}18`,
+                        border: `1px solid ${status.color}44`,
+                        color: status.color,
+                        borderRadius: 999,
+                        padding: "6px 10px",
+                        fontSize: 12,
+                        fontWeight: 900,
+                      }}
+                    >
+                      {status.icon} {isKreol ? "Dann démarches :" : "Dans mes démarches :"} {status.label}
+                    </div>
+                  )}
+
                   <div
                     style={{
-                      marginTop: 10,
-                      display: "inline-flex",
+                      marginTop: 16,
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: 10,
                       alignItems: "center",
-                      gap: 6,
-                      background: "rgba(35,211,214,.10)",
-                      border: "1px solid rgba(35,211,214,.24)",
-                      color: COLORS.cyan,
-                      borderRadius: 999,
-                      padding: "5px 9px",
-                      fontSize: 11,
-                      fontWeight: 900,
                     }}
                   >
-                    🏛️ {aide.organisme}
-                  </div>
-                )}
+                    {!status && aide?.dbId && (
+                      <button
+                        type="button"
+                        onClick={() => addAideToDemarches(aide)}
+                        disabled={savingId === aide.id}
+                        style={{
+                          background: savingId === aide.id ? "rgba(142,164,197,.45)" : COLORS.cyan,
+                          border: "none",
+                          borderRadius: 12,
+                          padding: "9px 16px",
+                          color: COLORS.card,
+                          fontSize: 13,
+                          cursor: savingId === aide.id ? "not-allowed" : "pointer",
+                          fontFamily: "inherit",
+                          fontWeight: 900,
+                          boxShadow: "0 10px 20px rgba(0,0,0,.20)",
+                        }}
+                      >
+                        {savingId === aide.id
+                          ? isKreol ? "Ajout..." : "Ajout..."
+                          : isKreol ? "Ajout dann mon bann démarches" : "Ajouter à mes démarches"}
+                      </button>
+                    )}
 
-                <button
-                  type="button"
-                  onClick={() => openExternalLink(getAideLink(aide))}
-                  style={{
-                    marginTop: 16,
-                    background: aide.color,
-                    border: "none",
-                    borderRadius: 12,
-                    padding: "9px 16px",
-                    color: "#fff",
-                    fontSize: 13,
-                    cursor: "pointer",
-                    fontFamily: "inherit",
-                    fontWeight: 800,
-                    boxShadow: "0 10px 20px rgba(0,0,0,.20)",
-                  }}
-                >
-                  {isKreol ? "Vérifié l’éd" : "Vérifier l’aide"} →
-                </button>
-              </div>
-            </article>
-          )
-        })}
-      </section>
+                    {status && !ACTIVE_HIDE_STATUSES.includes(status.value) && (
+                      <select
+                        value={status.value}
+                        onChange={e => updateDemarcheStatus(suivi.id, e.target.value)}
+                        disabled={savingId === suivi.id}
+                        style={{
+                          background: COLORS.card,
+                          border: `1px solid ${COLORS.border}`,
+                          borderRadius: 12,
+                          padding: "9px 11px",
+                          color: COLORS.text,
+                          fontSize: 12,
+                          fontFamily: "inherit",
+                        }}
+                      >
+                        {SUIVI_STATUSES.map(option => (
+                          <option key={option.value} value={option.value}>
+                            {option.icon} {isKreol ? option.kr : option.fr}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => openExternalLink(getAideLink(aide))}
+                      style={{
+                        background: aide.color,
+                        border: "none",
+                        borderRadius: 12,
+                        padding: "9px 16px",
+                        color: "#fff",
+                        fontSize: 13,
+                        cursor: "pointer",
+                        fontFamily: "inherit",
+                        fontWeight: 800,
+                        boxShadow: "0 10px 20px rgba(0,0,0,.20)",
+                      }}
+                    >
+                      {isKreol ? "Plus d’infos" : "Plus d’informations"} →
+                    </button>
+                  </div>
+                </div>
+              </article>
+            )
+          })}
+        </section>
+      )}
 
       <section
         style={{
