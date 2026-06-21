@@ -17,48 +17,6 @@ const COLORS = {
 const WATERMARK = "/icons-creole/palmier.png"
 const PREMIUM_URL = "https://budgetkazpei.vercel.app/premium"
 
-const STRIPE_PRICE_IDS = {
-  premiumMonthly: "price_1TkkITBQ1hdaYjbCbm0rfH3C",
-  premiumAnnual: "price_1TkkITBQ1hdaYjbCvaiI0y4e",
-  premiumPlusMonthly: "price_1TkkISBQ1hdaYjbCk7QaDdnu",
-  premiumPlusAnnual: "price_1TkkIUBQ1hdaYjbCJQwgfJOo",
-}
-
-const OFFER_PRICES = [
-  {
-    key: "premiumMonthly",
-    icon: "⭐",
-    fr: "Premium mensuel",
-    kr: "Premium mensuel",
-    price: "2,99 € / mois",
-    color: COLORS.yellow,
-  },
-  {
-    key: "premiumAnnual",
-    icon: "⭐",
-    fr: "Premium annuel",
-    kr: "Premium annuel",
-    price: "29,99 € / an",
-    color: COLORS.yellow,
-  },
-  {
-    key: "premiumPlusMonthly",
-    icon: "👑",
-    fr: "Premium+ mensuel",
-    kr: "Premium+ mensuel",
-    price: "4,99 € / mois",
-    color: COLORS.purple,
-  },
-  {
-    key: "premiumPlusAnnual",
-    icon: "👑",
-    fr: "Premium+ annuel",
-    kr: "Premium+ annuel",
-    price: "49,99 € / an",
-    color: COLORS.purple,
-  },
-]
-
 const FREE_FEATURES_FR = [
   "Tableau de bord budget",
   "Ajout des dépenses et revenus",
@@ -489,69 +447,6 @@ export default function PremiumPage({ user, isPremium, isPremiumPlus = false, t 
           badge={premiumPlusBadge}
           descriptions={descriptions}
         />
-      </div>
-
-      <div
-        style={{
-          background: "rgba(255,255,255,.045)",
-          border: `1px solid ${COLORS.border}`,
-          borderRadius: 20,
-          padding: 18,
-          display: "grid",
-          gap: 14,
-        }}
-      >
-        <div
-          style={{
-            color: COLORS.text,
-            fontSize: 17,
-            fontWeight: 900,
-            textAlign: "center",
-          }}
-        >
-          {isKreol ? "Bann tarifs disponibles" : "Tarifs disponibles"}
-        </div>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
-            gap: 10,
-          }}
-        >
-          {OFFER_PRICES.map((offer) => (
-            <button
-              key={offer.key}
-              type="button"
-              onClick={openPremiumOptions}
-              data-stripe-price-id={STRIPE_PRICE_IDS[offer.key]}
-              style={{
-                textAlign: "left",
-                background: `linear-gradient(135deg, ${offer.color}18, rgba(15,30,56,.88))`,
-                border: `1px solid ${offer.color}44`,
-                borderRadius: 15,
-                padding: 14,
-                color: COLORS.text,
-                cursor: "pointer",
-                fontFamily: "inherit",
-              }}
-            >
-              <div style={{ fontSize: 22, marginBottom: 7 }}>{offer.icon}</div>
-              <div style={{ color: offer.color, fontWeight: 900, fontSize: 13 }}>
-                {isKreol ? offer.kr : offer.fr}
-              </div>
-              <div style={{ marginTop: 5, color: COLORS.text, fontWeight: 900, fontSize: 17 }}>
-                {offer.price}
-              </div>
-            </button>
-          ))}
-        </div>
-
-        <p style={{ margin: 0, color: COLORS.muted, fontSize: 11.5, lineHeight: 1.45, textAlign: "center" }}>
-          {isKreol
-            ? "Clique su in tarif pou ouvrir la page officielle BudgetKazPei Premium."
-            : "Cliquez sur un tarif pour ouvrir la page officielle BudgetKazPei Premium."}
-        </p>
       </div>
 
       <button
