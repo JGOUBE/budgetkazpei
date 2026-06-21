@@ -61,7 +61,6 @@ lineHeight: "1.6",
     <strong> contact.budgetkazpei@gmail.com</strong>
   </p>
 </div>
-```
 
 );
 }
