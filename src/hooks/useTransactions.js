@@ -1,16 +1,15 @@
-import { useMemo, useState, useEffect } from "react"
+import { useMemo, useState, useEffect, useCallback } from "react"
 import { supabase } from "../services/supabase"
 
 function getCurrentMonthRange() {
   const now = new Date()
-
   const start = new Date(now.getFullYear(), now.getMonth(), 1)
   const end = new Date(now.getFullYear(), now.getMonth() + 1, 1)
 
-  const startDate = start.toISOString().split("T")[0]
-  const endDate = end.toISOString().split("T")[0]
-
-  return { startDate, endDate }
+  return {
+    startDate: start.toISOString().split("T")[0],
+    endDate: end.toISOString().split("T")[0],
+  }
 }
 
 function isCurrentMonth(dateValue) {
@@ -34,17 +33,13 @@ export function useTransactions(userId) {
     [allTransactions]
   )
 
-  useEffect(() => {
+  const fetchTransactions = useCallback(async () => {
     if (!userId) {
       setAllTransactions([])
       setLoading(false)
       return
     }
 
-    fetchTransactions()
-  }, [userId])
-
-  async function fetchTransactions() {
     setLoading(true)
 
     const { data, error } = await supabase
@@ -61,7 +56,25 @@ export function useTransactions(userId) {
     }
 
     setLoading(false)
-  }
+  }, [userId])
+
+  useEffect(() => {
+    fetchTransactions()
+  }, [fetchTransactions])
+
+  useEffect(() => {
+    if (!userId) return
+
+    function handleTransactionsUpdated() {
+      fetchTransactions()
+    }
+
+    window.addEventListener("budgetkazpei:transactions-updated", handleTransactionsUpdated)
+
+    return () => {
+      window.removeEventListener("budgetkazpei:transactions-updated", handleTransactionsUpdated)
+    }
+  }, [userId, fetchTransactions])
 
   async function addTransaction(transaction) {
     const newTransaction = {
@@ -122,9 +135,7 @@ export function useTransactions(userId) {
   function getTransactionsByMonth(year, month) {
     return allTransactions.filter(transaction => {
       if (!transaction.date) return false
-
       const date = new Date(transaction.date)
-
       return date.getFullYear() === year && date.getMonth() === month
     })
   }
@@ -156,6 +167,7 @@ export function useTransactions(userId) {
     transactions,
     allTransactions,
     loading,
+    fetchTransactions,
     addTransaction,
     updateTransaction,
     deleteTransaction,

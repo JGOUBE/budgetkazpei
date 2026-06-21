@@ -28,7 +28,6 @@ const COMMUNES = [
   "Trois-Bassins",
 ]
 
-
 function isKreolLang(t) {
   return typeof t === "function" && t("nav", "dashboard") === "Tablo débor"
 }
@@ -135,18 +134,34 @@ export default function ProfilePage({ user, t }) {
     const lastDay = formatDateYMD(new Date(now.getFullYear(), now.getMonth() + 1, 0))
     const today = formatDateYMD(now)
 
-    const { data: existingIncome, error: selectError } = await supabase
+    const { data: existingIncomes, error: selectError } = await supabase
       .from("transactions")
-      .select("id")
+      .select("id, created_at")
       .eq("user_id", user.id)
-      .eq("source", "profile_income")
       .gte("date", firstDay)
       .lte("date", lastDay)
+      .or('source.eq.profile_income,label.eq.Revenus du foyer')
       .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle()
 
     if (selectError) throw selectError
+
+    const incomes = existingIncomes || []
+
+    if (amount <= 0) {
+      if (incomes.length > 0) {
+        const idsToDelete = incomes.map(income => income.id)
+
+        const { error: deleteError } = await supabase
+          .from("transactions")
+          .delete()
+          .eq("user_id", user.id)
+          .in("id", idsToDelete)
+
+        if (deleteError) throw deleteError
+      }
+
+      return
+    }
 
     const payload = {
       user_id: user.id,
@@ -158,23 +173,37 @@ export default function ProfilePage({ user, t }) {
       source: "profile_income",
     }
 
-    if (existingIncome?.id) {
+    if (incomes.length > 0) {
+      const mainIncome = incomes[0]
+
       const { error: updateIncomeError } = await supabase
         .from("transactions")
         .update(payload)
-        .eq("id", existingIncome.id)
+        .eq("id", mainIncome.id)
+        .eq("user_id", user.id)
 
       if (updateIncomeError) throw updateIncomeError
+
+      const duplicatedIds = incomes.slice(1).map(income => income.id)
+
+      if (duplicatedIds.length > 0) {
+        const { error: deleteDuplicatedError } = await supabase
+          .from("transactions")
+          .delete()
+          .eq("user_id", user.id)
+          .in("id", duplicatedIds)
+
+        if (deleteDuplicatedError) throw deleteDuplicatedError
+      }
+
       return
     }
 
-    if (amount > 0) {
-      const { error: insertIncomeError } = await supabase
-        .from("transactions")
-        .insert(payload)
+    const { error: insertIncomeError } = await supabase
+      .from("transactions")
+      .insert(payload)
 
-      if (insertIncomeError) throw insertIncomeError
-    }
+    if (insertIncomeError) throw insertIncomeError
   }
 
   async function handleSubmit(e) {
@@ -185,6 +214,11 @@ export default function ProfilePage({ user, t }) {
     try {
       await updateProfile(form)
       await syncProfileIncomeToMonthlyRevenue(form.revenus_foyer)
+
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("budgetkazpei:transactions-updated"))
+      }
+
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
     } catch (err) {
@@ -487,16 +521,16 @@ export default function ProfilePage({ user, t }) {
               </Field>
 
               <Field label={tr(isKreol, "Situation professionnelle", "Situation travay")}>
-  <select
-    value={form.situation_professionnelle}
-    onChange={e => updateField("situation_professionnelle", e.target.value)}
-    style={inputStyle}
-  >
-    {JOB_OPTIONS.map(option => (
-      <option key={option.value} value={option.value}>{isKreol ? option.kr : option.fr}</option>
-    ))}
-  </select>
-</Field>
+                <select
+                  value={form.situation_professionnelle}
+                  onChange={e => updateField("situation_professionnelle", e.target.value)}
+                  style={inputStyle}
+                >
+                  {JOB_OPTIONS.map(option => (
+                    <option key={option.value} value={option.value}>{isKreol ? option.kr : option.fr}</option>
+                  ))}
+                </select>
+              </Field>
 
               <div style={{ display: "grid", gap: 10, marginTop: 4 }}>
                 <Checkbox label={tr(isKreol, "Étudiant", "Étudiant")} checked={form.etudiant} onChange={value => updateField("etudiant", value)} />
@@ -725,7 +759,6 @@ export default function ProfilePage({ user, t }) {
     </div>
   )
 }
-
 
 function normalizeSubscriptionPlan(profile = {}) {
   const cleanPlan = String(profile?.plan || "").toLowerCase().trim()
