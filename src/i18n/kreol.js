@@ -84,6 +84,15 @@ const kreol = {
     premiumBudgetText:
       "Fonksyon Premium : personnaliz out bidjé par katégori é gagn alèrt si ou dépassé.",
     budgetAlerts: "Alèrt bidjé",
+    fixedChargesRegistered: "Sarz fix anrezistré",
+    availableBalance: "Larzan i reste",
+
+    realMonthSummaryTitle: "Résumé réél pou mwa-la :",
+    monthlyIncomeLabel: "larzan rantre",
+    registeredFixedChargesLabel: "sarz fix anrezistré",
+    variableExpensesLabel: "dépans variable",
+    availableBalanceLabel: "larzan i reste",
+    availableShareLabel: "Part disponible",
   },
 
   opportunites: {

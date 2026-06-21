@@ -709,9 +709,8 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
     setSavingId(null)
 
    if (error) {
-  console.error("ERREUR AJOUT DEMARCHE =", error)
-  alert(JSON.stringify(error, null, 2))
-
+  console.error("Erreur ajout démarche:", error)
+  
   if (error.code === "23505") {
     await fetchDemarches()
     return

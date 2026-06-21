@@ -436,7 +436,7 @@ export default function ProfilePage({ user, t }) {
                 <input type="number" min="0" value={form.age} onChange={e => updateField("age", e.target.value)} placeholder={tr(isKreol, "Ex : 34", "Ex : 34")} style={inputStyle} />
               </Field>
 
-              <Field label={tr(isKreol, "Situation familiale", "Sitiasyon famiyal")}>
+              <Field label={tr(isKreol, "Situation familiale", "Situation famiyal")}>
                 <select value={form.situation_familiale} onChange={e => updateField("situation_familiale", e.target.value)} style={inputStyle}>
                   {FAMILY_OPTIONS.map(option => (
                     <option key={option.value} value={option.value}>{isKreol ? option.kr : option.fr}</option>
@@ -448,7 +448,7 @@ export default function ProfilePage({ user, t }) {
                 <input type="number" min="0" value={form.nombre_enfants} onChange={e => updateField("nombre_enfants", e.target.value)} placeholder={tr(isKreol, "Ex : 2", "Ex : 2")} style={inputStyle} />
               </Field>
 
-              <Field label={tr(isKreol, "Situation logement", "Sitiasyon logement")}>
+              <Field label={tr(isKreol, "Situation logement", "Situation lozman")}>
                 <select value={form.logement} onChange={e => updateField("logement", e.target.value)} style={inputStyle}>
                   {HOUSING_OPTIONS.map(option => (
                     <option key={option.value} value={option.value}>{isKreol ? option.kr : option.fr}</option>
@@ -456,7 +456,7 @@ export default function ProfilePage({ user, t }) {
                 </select>
               </Field>
 
-              <Field label={tr(isKreol, "Revenus mensuels du foyer", "Revenus chak mwa pou lo foyer")}>
+              <Field label={tr(isKreol, "Revenus mensuels du foyer", "Larzan i rantre chak mwa pou lo foyer")}>
                 <input
                   type="number"
                   min="0"
@@ -477,16 +477,16 @@ export default function ProfilePage({ user, t }) {
                     lineHeight: 1.55,
                   }}
                 >
-                  <strong style={{ color: COLORS.cyan }}>{tr(isKreol, "À renseigner :", "Pou renseigné :")}</strong>{" "}
+                  <strong style={{ color: COLORS.cyan }}>{tr(isKreol, "À renseigner :", "Pou renseigner :")}</strong>{" "}
                   {tr(
                     isKreol,
                     "indiquez le revenu mensuel total du foyer. Si vous êtes deux, additionnez les revenus des deux personnes. Ajoutez aussi les aides régulières : CAF, RSA, chômage, pension, allocations ou autres revenus récurrents. Ce montant sera automatiquement ajouté aux revenus du mois pour aider BudgetKazPei à analyser votre budget et à mieux détecter les aides possibles.",
-                    "renseigne revenu total lo foyer pou chak mwa. Si zot lé deux, additionne revenus bann deux personnes. Ajoute aussi bann aides régulières : CAF, RSA, chômage, pension, allocations ou autres revenus ki revien souvent. Ce montant sera ajouté automatiquement dann revenus du mois pou aide BudgetKazPei analyse out budget ek détecte mieux bann aides possibles."
+                    "Renseigne tout larzan i rantre dann foyer chaque mois. Si zot lé deux, additionne revenus bann deux personnes. Ajoute aussi bann aides régulières : CAF, RSA, chômage, pension, allocations ou autres revenus ki revient souvent. Ce montant sera ajouté automatiquement dann revenus du mois pou aide BudgetKazPei analyse out bidjé ek détecte mieux bann éd possibles."
                   )}
                 </div>
               </Field>
 
-              <Field label={tr(isKreol, "Situation professionnelle", "Sitiasyon travay")}>
+              <Field label={tr(isKreol, "Situation professionnelle", "Situation travay")}>
   <select
     value={form.situation_professionnelle}
     onChange={e => updateField("situation_professionnelle", e.target.value)}
@@ -501,7 +501,7 @@ export default function ProfilePage({ user, t }) {
               <div style={{ display: "grid", gap: 10, marginTop: 4 }}>
                 <Checkbox label={tr(isKreol, "Étudiant", "Étudiant")} checked={form.etudiant} onChange={value => updateField("etudiant", value)} />
                 <Checkbox label={tr(isKreol, "Retraité", "Retraité")} checked={form.retraite} onChange={value => updateField("retraite", value)} />
-                <Checkbox label={tr(isKreol, "Situation de handicap", "Sitiasyon handicap")} checked={form.handicap} onChange={value => updateField("handicap", value)} />
+                <Checkbox label={tr(isKreol, "Situation de handicap", "Situation handicap")} checked={form.handicap} onChange={value => updateField("handicap", value)} />
                 <Checkbox label={tr(isKreol, "Allocataire CAF", "Allocataire CAF")} checked={form.allocataire_caf} onChange={value => updateField("allocataire_caf", value)} />
                 <Checkbox label={tr(isKreol, "Permis de conduire", "Permis conduire")} checked={form.permis_conduire} onChange={value => updateField("permis_conduire", value)} />
                 <Checkbox label={tr(isKreol, "Véhicule personnel", "Véhicule personnel")} checked={form.vehicule_personnel} onChange={value => updateField("vehicule_personnel", value)} />
@@ -557,7 +557,7 @@ export default function ProfilePage({ user, t }) {
             📧 {tr(isKreol, "Nous contacter", "Contacte a nou")}
           </div>
           <div style={{ fontSize: 13, color: COLORS.muted, lineHeight: 1.6 }}>
-            {tr(isKreol, "Une question, un bug ou une idée pour améliorer BudgetKazPei ? Remplissez le message ci-dessous, il sera envoyé directement à l’équipe BudgetKazPei.", "Ou néna in question, in bug ou in idée pou améliore BudgetKazPei ? Rempli lo message anba, li sera envoyé directement à l’équipe BudgetKazPei.")}
+            {tr(isKreol, "Une question, un bug ou une idée pour améliorer BudgetKazPei ? Remplissez le message ci-dessous, il sera envoyé directement à l’équipe BudgetKazPei.", "Ou néna in question, in bug ou in idée pou améliore BudgetKazPei ? Écris out message anba, li sera envoyé directement à l’équipe BudgetKazPei.")}
           </div>
           <div
             style={{
@@ -683,7 +683,7 @@ export default function ProfilePage({ user, t }) {
             >
               <div style={{ color: COLORS.yellow, fontWeight: 800, marginBottom: 6 }}>⭐ Premium</div>
               <div style={{ color: COLORS.muted, fontSize: 13, lineHeight: 1.55 }}>
-                {tr(isKreol, "Assistant aides, suivi des démarches, documents à préparer, bons plans intelligents et créole réunionnais.", "Assistant aides, suivi démarches, dokiman pou préparé, bons plans intelligents ek kréol réunionnais.")}
+                {tr(isKreol, "Assistant aides, suivi des démarches, documents à préparer, bons plans intelligents et créole réunionnais.", "Assistant éd, suivi démarches, dokiman pou préparé, bons plans intelligents ek kréol réunionnais.")}
               </div>
             </div>
 
