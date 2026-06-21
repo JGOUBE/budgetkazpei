@@ -21,11 +21,88 @@ const PREMIUM_ANNUAL_PRICE = "29,99 €"
 const PREMIUM_PLUS_PRICE = "4,99 €"
 const PREMIUM_PLUS_ANNUAL_PRICE = "49,99 €"
 
-const STRIPE_LINKS = {
-  premiumMonthly: "https://buy.stripe.com/test_fZu3cu7659qm3w03dN2oE03",
-  premiumAnnual: "https://buy.stripe.com/test_00waEW9ed4627Mg3dN2oE01",
-  premiumPlusMonthly: "https://buy.stripe.com/test_aFadR8fCB4621nS8y72oE02",
-  premiumPlusAnnual: "https://buy.stripe.com/test_fZu7sK6211XU5E83dN2oE04",
+const STRIPE_PUBLIC_KEY = import.meta.env.VITE_STRIPE_PUBLIC_KEY || ""
+
+const STRIPE_PRICE_IDS = {
+  premiumMonthly:
+    import.meta.env.VITE_STRIPE_PRICE_ID ||
+    "price_1TkkITBQ1hdaYjbCbm0rfH3C",
+  premiumAnnual:
+    import.meta.env.VITE_STRIPE_PREMIUM_YEARLY_PRICE_ID ||
+    "price_1TkkITBQ1hdaYjbCvaiI0y4e",
+  premiumPlusMonthly:
+    import.meta.env.VITE_STRIPE_PREMIUM_PLUS_PRICE_ID ||
+    "price_1TkkISBQ1hdaYjbCk7QaDdnu",
+  premiumPlusAnnual:
+    import.meta.env.VITE_STRIPE_PREMIUM_PLUS_YEARLY_PRICE_ID ||
+    "price_1TkkIUBQ1hdaYjbCJQwgfJOo",
+}
+
+let stripeJsPromise = null
+
+function loadStripeJs() {
+  if (typeof window === "undefined") {
+    return Promise.reject(new Error("Stripe doit être lancé dans le navigateur."))
+  }
+
+  if (window.Stripe) {
+    return Promise.resolve(window.Stripe)
+  }
+
+  if (!stripeJsPromise) {
+    stripeJsPromise = new Promise((resolve, reject) => {
+      const existingScript = document.querySelector('script[src="https://js.stripe.com/v3/"]')
+
+      if (existingScript) {
+        existingScript.addEventListener("load", () => resolve(window.Stripe))
+        existingScript.addEventListener("error", () =>
+          reject(new Error("Impossible de charger Stripe."))
+        )
+        return
+      }
+
+      const script = document.createElement("script")
+      script.src = "https://js.stripe.com/v3/"
+      script.async = true
+      script.onload = () => resolve(window.Stripe)
+      script.onerror = () => reject(new Error("Impossible de charger Stripe."))
+      document.body.appendChild(script)
+    })
+  }
+
+  return stripeJsPromise
+}
+
+async function redirectToStripeCheckout(priceId, setMessage) {
+  if (!STRIPE_PUBLIC_KEY) {
+    setMessage("Configuration Stripe incomplète : clé publique manquante.")
+    return
+  }
+
+  if (!priceId) {
+    setMessage("Configuration Stripe incomplète : tarif introuvable.")
+    return
+  }
+
+  try {
+    setMessage("Ouverture du paiement sécurisé Stripe...")
+
+    const Stripe = await loadStripeJs()
+    const stripe = Stripe(STRIPE_PUBLIC_KEY)
+
+    const { error } = await stripe.redirectToCheckout({
+      mode: "subscription",
+      lineItems: [{ price: priceId, quantity: 1 }],
+      successUrl: `${window.location.origin}/premium?checkout=success`,
+      cancelUrl: `${window.location.origin}/premium?checkout=cancel`,
+    })
+
+    if (error) {
+      setMessage(error.message || "Impossible d'ouvrir le paiement Stripe.")
+    }
+  } catch (error) {
+    setMessage(error?.message || "Impossible d'ouvrir le paiement Stripe.")
+  }
 }
 
 const CONTENT = {
@@ -696,13 +773,13 @@ export default function PremiumLandingPage() {
   const [lang, setLang] = useState("fr")
   const c = CONTENT[lang]
 
-  function openStripeLink(url) {
-    window.open(url, "_blank", "noopener,noreferrer")
+  function openStripeLink(priceId) {
+    redirectToStripeCheckout(priceId, setMessage)
   }
 
   function goHome() {
-  window.location.href = "/app"
-}
+    window.location.href = "/app"
+  }
 
   function scrollToPlans() {
     document.getElementById("offres")?.scrollIntoView({
@@ -938,8 +1015,8 @@ export default function PremiumLandingPage() {
             monthlyLabel={c.monthlyLabel}
             annualLabel={c.annualLabel}
             annualBadge={c.annualBadge}
-            onClick={() => openStripeLink(STRIPE_LINKS.premiumMonthly)}
-            onAnnualClick={() => openStripeLink(STRIPE_LINKS.premiumAnnual)}
+            onClick={() => openStripeLink(STRIPE_PRICE_IDS.premiumMonthly)}
+            onAnnualClick={() => openStripeLink(STRIPE_PRICE_IDS.premiumAnnual)}
           />
 
           <PlanCard
@@ -959,8 +1036,8 @@ export default function PremiumLandingPage() {
             annualLabel={c.annualLabel}
             annualBadge={c.annualBadge}
             featured
-            onClick={() => openStripeLink(STRIPE_LINKS.premiumPlusMonthly)}
-            onAnnualClick={() => openStripeLink(STRIPE_LINKS.premiumPlusAnnual)}
+            onClick={() => openStripeLink(STRIPE_PRICE_IDS.premiumPlusMonthly)}
+            onAnnualClick={() => openStripeLink(STRIPE_PRICE_IDS.premiumPlusAnnual)}
           />
         </section>
 
