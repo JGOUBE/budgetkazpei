@@ -26,6 +26,7 @@ import PremiumLandingPage from "./pages/PremiumLandingPage"
 import PublicHomePage from "./pages/PublicHomePage"
 import PrivacyPage from "./pages/PrivacyPage"
 import TermsPage from "./pages/TermsPage"
+import SuppressionComptePage from "./pages/SuppressionComptePage"
 
 const COLORS = {
   bg: "#0A1628",
@@ -72,6 +73,8 @@ export default function App() {
 
   if (currentPath === "/privacy") return <PrivacyPage />
   if (currentPath === "/terms") return <TermsPage />
+  if (currentPath === "/suppression-compte")
+  return <SuppressionComptePage />
   if (currentPath === "/premium" || currentPath.startsWith("/premium/")) return <PremiumLandingPage />
 
   if (currentPath === "/login") return <BudgetKazPeiApp initialAuthPage="login" />
