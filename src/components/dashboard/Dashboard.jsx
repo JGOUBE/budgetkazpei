@@ -921,7 +921,7 @@ function SmartWelcomeCard({ t, isMobile, stats = {}, gainsAides = 0, nbAidesObte
   return (
     <TropicalCard variant="lagoon" texture="🌴" style={{ padding: isMobile ? 16 : 22 }}>
       <div style={{ color: COLORS.text, fontWeight: 900, fontSize: isMobile ? 18 : 22, marginBottom: 8 }}>
-        {isKreol ? "Bonzour Jacques 👋" : "Bonjour Jacques 👋"}
+        {isKreol ? "Bonzour 👋" : "Bonjour 👋"}
       </div>
       <div style={{ color: COLORS.whiteSoft, fontSize: 14, lineHeight: 1.65 }}>
         {gains > 0
@@ -1554,6 +1554,20 @@ export default function Dashboard({
   const [openedDetails, setOpenedDetails] = useState(null)
   const [showBudgetModal, setShowBudgetModal] = useState(false)
   const ofIncome = revenus > 0 ? ((depenses / revenus) * 100).toFixed(0) : 0
+  const realTransactions = (transactions || []).filter(tx => {
+    const label = normalizeText(tx?.label || tx?.nom || "")
+    const source = normalizeText(tx?.source || "")
+    return (
+      source !== "profile_income" &&
+      label !== "revenus du foyer"
+    )
+  })
+
+  const isNewUser =
+    Number(revenus || 0) === 0 &&
+    Number(depenses || 0) === 0 &&
+    realTransactions.length === 0 &&
+    (abonnements?.length || 0) === 0
   const [dashboardAideGains, setDashboardAideGains] = useState({
     gainsAides: 0,
     nbAidesObtenues: 0,
@@ -1712,6 +1726,130 @@ export default function Dashboard({
 
   function toggleDetails(section) {
     setOpenedDetails(prev => (prev === section ? null : section))
+  }
+
+  if (isNewUser) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: isMobile ? 14 : 22 }}>
+        <TropicalCard
+          variant="lagoon"
+          texture="🌴"
+          style={{ padding: isMobile ? 18 : 28 }}
+        >
+          <div
+            style={{
+              color: COLORS.text,
+              fontSize: isMobile ? 24 : 32,
+              fontWeight: 900,
+              marginBottom: 10,
+              fontFamily: "'DM Serif Display', Georgia, serif",
+              lineHeight: 1.12,
+            }}
+          >
+            👋 Bienvenue sur BudgetKazPei
+          </div>
+
+          <div
+            style={{
+              color: COLORS.whiteSoft,
+              fontSize: isMobile ? 14 : 15,
+              lineHeight: 1.75,
+              marginBottom: 18,
+            }}
+          >
+            Commencez simplement en quelques étapes :
+            <br />
+            <strong style={{ color: COLORS.cyan }}>1.</strong> Complétez votre profil
+            <br />
+            <strong style={{ color: COLORS.cyan }}>2.</strong> Ajoutez vos charges fixes
+            <br />
+            <strong style={{ color: COLORS.cyan }}>3.</strong> Ajoutez vos dépenses
+            <br />
+            <strong style={{ color: COLORS.cyan }}>4.</strong> Découvrez les aides auxquelles vous pouvez prétendre
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 10,
+            }}
+          >
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  window.dispatchEvent(new CustomEvent("budgetkazpei:navigate", { detail: "profil" }))
+                }
+              }}
+              style={{
+                background: COLORS.cyan,
+                border: "none",
+                borderRadius: 12,
+                padding: "11px 15px",
+                color: "#0A1628",
+                fontWeight: 900,
+                cursor: "pointer",
+                fontFamily: "inherit",
+              }}
+            >
+              👤 Compléter mon profil
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  window.dispatchEvent(new CustomEvent("budgetkazpei:navigate", { detail: "abonnements" }))
+                }
+              }}
+              style={{
+                background: COLORS.accent,
+                border: "none",
+                borderRadius: 12,
+                padding: "11px 15px",
+                color: "#fff",
+                fontWeight: 900,
+                cursor: "pointer",
+                fontFamily: "inherit",
+              }}
+            >
+              📋 Ajouter une charge fixe
+            </button>
+
+            <button
+              type="button"
+              onClick={onOpenAides || (() => {
+                if (typeof window !== "undefined") {
+                  window.dispatchEvent(new CustomEvent("budgetkazpei:navigate", { detail: "aides" }))
+                }
+              })}
+              style={{
+                background: COLORS.green,
+                border: "none",
+                borderRadius: 12,
+                padding: "11px 15px",
+                color: "#fff",
+                fontWeight: 900,
+                cursor: "pointer",
+                fontFamily: "inherit",
+              }}
+            >
+              🏛️ Rechercher mes aides
+            </button>
+          </div>
+        </TropicalCard>
+
+        <TropicalCard variant="ocean" texture="💡" style={{ padding: isMobile ? 16 : 22 }}>
+          <div style={{ color: COLORS.cyan, fontSize: 15, fontWeight: 900, marginBottom: 8 }}>
+            💡 Conseil de démarrage
+          </div>
+          <div style={{ color: COLORS.whiteSoft, fontSize: 13.5, lineHeight: 1.65 }}>
+            Plus vous renseignez votre situation, plus BudgetKazPei peut vous aider à repérer les aides, démarches et bons plans utiles à La Réunion.
+          </div>
+        </TropicalCard>
+      </div>
+    )
   }
 
   return (
@@ -2048,7 +2186,7 @@ export default function Dashboard({
           onClose={() => setShowBudgetModal(false)}
           t={t}
         />
-      )}
+      )}A
     </div>
   )
 }
