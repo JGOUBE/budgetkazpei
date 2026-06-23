@@ -22,6 +22,8 @@ import AbonnementsPage from "./components/abonnements/AbonnementsPage"
 import AidesPage from "./components/aides/AidesPage"
 import HistoriquePage from "./components/historique/HistoriquePage"
 import OpportunitesPage from "./components/opportunites/OpportunitesPage"
+import DemarchesPage from "./components/demarches/DemarchesPage"
+import ContactPage from "./components/contact/ContactPage"
 import PremiumLandingPage from "./pages/PremiumLandingPage"
 import PublicHomePage from "./pages/PublicHomePage"
 import PrivacyPage from "./pages/PrivacyPage"
@@ -92,6 +94,7 @@ function BudgetKazPeiApp({ initialAuthPage = "login" }) {
   const [showSidebar, setShowSidebar] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [editingTransaction, setEditingTransaction] = useState(null)
+  const [demarches] = useState([])
 
   const isMobile = useIsMobile()
 
@@ -419,6 +422,9 @@ const isPremiumPlus =
               {activeNav === "dashboard" && t("nav", "dashboard")}
               {activeNav === "depenses" && t("nav", "depenses")}
               {activeNav === "aides" && t("nav", "aides")}
+              {activeNav === "demarches" && (lang === "fr" ? "Mes démarches" : "Mon démars")}
+              {activeNav === "conseiller" && (lang === "fr" ? "Conseiller" : "Konseyé")}
+              {activeNav === "contact" && (lang === "fr" ? "Contactez-nous" : "Contacte a nou")}
               {activeNav === "abonnements" && t("nav", "abonnements")}
               {activeNav === "opportunites" && "Opportunités"}
               {activeNav === "historique" && t("nav", "monthlyHistory")}
@@ -625,6 +631,61 @@ const isPremiumPlus =
   user={user}
 />
 )}
+
+{activeNav === "demarches" && (
+  <DemarchesPage
+    demarches={demarches}
+    language={lang}
+    isMobile={isMobile}
+    isPremium={isPremium}
+    isPremiumPlus={isPremiumPlus}
+    onGoAides={() => setActiveNav("aides")}
+    onGoPremium={() => setActiveNav("premium")}
+  />
+)}
+
+{activeNav === "conseiller" && (
+  <div
+    style={{
+      background: `linear-gradient(135deg, ${COLORS.card} 0%, ${COLORS.cardLight} 100%)`,
+      border: `1px solid ${COLORS.border}`,
+      borderRadius: 20,
+      padding: isMobile ? 18 : 26,
+    }}
+  >
+    <h2
+      style={{
+        margin: "0 0 8px",
+        fontFamily: "'DM Serif Display', serif",
+        fontSize: isMobile ? 26 : 34,
+        color: COLORS.text,
+      }}
+    >
+      🤖 {lang === "fr" ? "Conseiller BudgetKazPei" : "Konseyé BudgetKazPei"}
+    </h2>
+
+    <p
+      style={{
+        margin: 0,
+        color: COLORS.muted,
+        fontSize: 14,
+        lineHeight: 1.6,
+      }}
+    >
+      {lang === "fr"
+        ? "Cette page regroupera vos discussions en cours, les questions restantes et les outils Premium+ comme les courriers administratifs."
+        : "Ici ou va retrouv out bann discussion, out kestion restantes ek bann zouti Premium+ pou courrier administratif."}
+    </p>
+  </div>
+)}
+
+{activeNav === "contact" && (
+  <ContactPage
+    user={user}
+    t={t}
+  />
+)}
+
 {activeNav === "opportunites" && (
   <OpportunitesPage
   isMobile={isMobile}
@@ -685,7 +746,7 @@ const isPremiumPlus =
             { id: "dashboard", emoji: "🏠", label: "Budget" },
             { id: "depenses", emoji: "📊", label: t("nav", "depenses") },
             { id: "aides", emoji: "🏛️", label: "Aides" },
-            { id: "abonnements", emoji: "📋", label: t("nav", "abonnements") },
+            { id: "demarches", emoji: "📋", label: lang === "fr" ? "Démarches" : "Démars" },
             { id: "profil", emoji: "👤", label: t("nav", "profil") },
           ].map(item => (
             <button

@@ -10,6 +10,9 @@ import {
   Lightbulb,
   Lock,
   CalendarClock,
+  Bot,
+  Mail,
+  FileCheck2,
 } from "lucide-react"
 
 const COLORS = {
@@ -27,7 +30,8 @@ const NAV_ITEMS = [
   { id: "dashboard", icon: Home, section: "nav", key: "dashboard" },
   { id: "depenses", icon: BarChart3, section: "nav", key: "depenses" },
   { id: "aides", icon: Landmark, section: "nav", key: "aides" },
-  { id: "opportunites", icon: Lightbulb, section: "nav", key: "opportunites", premiumOnly: true },
+  { id: "demarches", icon: FileCheck2, section: "nav", key: "demarches" },
+  { id: "conseiller", icon: Bot, section: "nav", key: "conseiller" },
   { id: "abonnements", icon: ClipboardList, section: "nav", key: "abonnements" },
   { id: "historique", icon: CalendarClock, section: "nav", key: "monthlyHistory", premiumOnly: true },
   { id: "profil", icon: User, section: "nav", key: "profil" },
@@ -44,6 +48,7 @@ export default function Sidebar({
 }) {
   const isKreol = t("nav", "dashboard") === "Tablo débor"
   const premiumActive = activeNav === "premium"
+  const contactActive = activeNav === "contact"
 
   const prenom =
     user?.user_metadata?.name ||
@@ -63,8 +68,12 @@ export default function Sidebar({
   const premiumColor = isPremiumPlus || isPremium ? COLORS.purple : COLORS.yellow
 
   function getNavLabel(item) {
-    if (item.id === "opportunites") {
-      return isKreol ? "🎯 Bon plan détecté" : "🎯 Opportunités détectées"
+    if (item.id === "demarches") {
+      return isKreol ? "📋 Mon démars" : "📋 Mes démarches"
+    }
+
+    if (item.id === "conseiller") {
+      return isKreol ? "🤖 Konseyé" : "🤖 Conseiller"
     }
 
     return t(item.section, item.key)
@@ -141,7 +150,7 @@ export default function Sidebar({
             }}
           >
             <Sparkles size={13} />
-            Bienvenue,
+            {isKreol ? "Bienvenu," : "Bienvenue,"}
           </div>
 
           <div
@@ -282,7 +291,7 @@ export default function Sidebar({
 
         <button
           type="button"
-          onClick={onSignOut}
+          onClick={() => onNavChange("contact")}
           style={{
             width: "100%",
             display: "flex",
@@ -290,6 +299,35 @@ export default function Sidebar({
             justifyContent: "center",
             gap: 8,
             marginTop: 12,
+            padding: "11px 13px",
+            borderRadius: 14,
+            border: contactActive
+              ? `1px solid ${COLORS.cyan}66`
+              : "1px solid rgba(35,211,214,.35)",
+            background: contactActive
+              ? "linear-gradient(135deg, rgba(35,211,214,.22), rgba(15,30,56,.95))"
+              : "linear-gradient(135deg, rgba(35,211,214,.12), rgba(15,30,56,.95))",
+            color: COLORS.cyan,
+            cursor: "pointer",
+            fontSize: 14,
+            fontWeight: 900,
+            fontFamily: "inherit",
+          }}
+        >
+          <Mail size={17} />
+          {isKreol ? "Contacte a nou" : "Contactez-nous"}
+        </button>
+
+        <button
+          type="button"
+          onClick={onSignOut}
+          style={{
+            width: "100%",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+            marginTop: 10,
             marginBottom: 90,
             padding: "11px 13px",
             borderRadius: 14,

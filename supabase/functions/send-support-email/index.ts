@@ -4,7 +4,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 }
 
-function jsonResponse(body: Record<string, unknown>, status = 200) {
+function jsonResponse(body: any, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
@@ -14,20 +14,24 @@ function jsonResponse(body: Record<string, unknown>, status = 200) {
   })
 }
 
+function escapeHtml(value: string) {
+  return String(value || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;")
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders })
   }
 
-  if (req.method !== "POST") {
-    return jsonResponse({ ok: false, error: "Method not allowed" }, 405)
-  }
-
   try {
     const resendApiKey = Deno.env.get("RESEND_API_KEY")
-    const supportToEmail = Deno.env.get("SUPPORT_TO_EMAIL") || "contact.budgetkazpei@gmail.com"
-    const supportFromEmail =
-      Deno.env.get("SUPPORT_FROM_EMAIL") || "BudgetKazPei <onboarding@resend.dev>"
+    const supportToEmail =
+      Deno.env.get("SUPPORT_TO_EMAIL") || "contact.budgetkazpei@gmail.com"
 
     if (!resendApiKey) {
       return jsonResponse({ ok: false, error: "RESEND_API_KEY manquant" }, 500)
@@ -35,10 +39,10 @@ Deno.serve(async (req) => {
 
     const body = await req.json()
 
-    const userName = String(body.user_name || "Utilisateur BudgetKazPei")
-    const userEmail = String(body.user_email || "")
+    const userName = String(body.user_name || body.name || "Utilisateur BudgetKazPei")
+    const userEmail = String(body.user_email || body.email || "")
     const type = String(body.type || "question")
-    const subject = String(body.subject || "Message utilisateur")
+    const subject = String(body.subject || "Question / besoin d’aide")
     const message = String(body.message || "")
     const source = String(body.source || "contact")
     const messageId = body.message_id ? String(body.message_id) : ""
@@ -49,29 +53,27 @@ Deno.serve(async (req) => {
 
     const emailSubject = `[BudgetKazPei] ${subject}`
 
-    const text = [
-      "Nouveau message BudgetKazPei",
-      "",
-      `Nom : ${userName}`,
-      `Email : ${userEmail}`,
-      `Type : ${type}`,
-      `Source : ${source}`,
-      messageId ? `ID message Supabase : ${messageId}` : "",
-      "",
-      "Message :",
-      message,
-    ]
-      .filter(Boolean)
-      .join("\n")
+    const text = `
+Nouveau message BudgetKazPei
+
+Nom : ${userName}
+Email utilisateur : ${userEmail}
+Type : ${type}
+Source : ${source}
+${messageId ? `ID Supabase : ${messageId}` : ""}
+
+Message :
+${message}
+`.trim()
 
     const html = `
       <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #0f172a;">
         <h2>📧 Nouveau message BudgetKazPei</h2>
         <p><strong>Nom :</strong> ${escapeHtml(userName)}</p>
-        <p><strong>Email :</strong> ${escapeHtml(userEmail)}</p>
+        <p><strong>Email utilisateur :</strong> ${escapeHtml(userEmail)}</p>
         <p><strong>Type :</strong> ${escapeHtml(type)}</p>
         <p><strong>Source :</strong> ${escapeHtml(source)}</p>
-        ${messageId ? `<p><strong>ID message Supabase :</strong> ${escapeHtml(messageId)}</p>` : ""}
+        ${messageId ? `<p><strong>ID Supabase :</strong> ${escapeHtml(messageId)}</p>` : ""}
         <hr />
         <p><strong>Message :</strong></p>
         <div style="white-space: pre-wrap; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px;">
@@ -80,14 +82,14 @@ Deno.serve(async (req) => {
       </div>
     `
 
-    const resendResponse = await fetch("https://api.resend.com/emails", {
+    const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${resendApiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: supportFromEmail,
+        from: "BudgetKazPei <onboarding@resend.dev>",
         to: [supportToEmail],
         reply_to: userEmail,
         subject: emailSubject,
@@ -96,15 +98,17 @@ Deno.serve(async (req) => {
       }),
     })
 
-    const resendData = await resendResponse.json().catch(() => ({}))
+    const data = await response.json().catch(() => ({}))
 
-    if (!resendResponse.ok) {
-      console.error("Erreur Resend:", resendData)
+    console.log("RESEND STATUS:", response.status)
+    console.log("RESEND RESPONSE:", JSON.stringify(data))
+
+    if (!response.ok) {
       return jsonResponse(
         {
           ok: false,
-          error: resendData?.message || "Erreur Resend",
-          details: resendData,
+          error: data?.message || "Erreur Resend",
+          details: data,
         },
         500
       )
@@ -112,7 +116,7 @@ Deno.serve(async (req) => {
 
     return jsonResponse({
       ok: true,
-      email_id: resendData?.id || null,
+      email_id: data?.id || null,
     })
   } catch (error) {
     console.error("Erreur send-support-email:", error)
@@ -126,12 +130,3 @@ Deno.serve(async (req) => {
     )
   }
 })
-
-function escapeHtml(value: string) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;")
-}
