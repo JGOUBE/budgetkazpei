@@ -170,6 +170,18 @@ function BudgetKazPeiApp({ initialAuthPage = "login" }) {
     resetAbonnements,
   } = useUserAbonnements(user?.id)
 
+  async function handleAddAbonnement(payload = {}) {
+    const cleanPayload = {
+      nom: payload.nom || "Nouvelle charge fixe",
+      categorie: payload.categorie || "divers",
+      montant: payload.montant || "0",
+      color: payload.color || "#94A3B8",
+      emoji: payload.emoji || "📦",
+    }
+
+    return addAbonnement(cleanPayload)
+  }
+
   const {
     historiques,
     loading: historiqueLoading,
@@ -659,7 +671,7 @@ function BudgetKazPeiApp({ initialAuthPage = "login" }) {
             abonnements={abonnements}
             loading={abonnementsLoading}
             onUpdate={updateAbonnement}
-            onAdd={addAbonnement}
+            onAdd={handleAddAbonnement}
             onDelete={deleteAbonnement}
             onReset={resetAbonnements}
             isMobile={isMobile}

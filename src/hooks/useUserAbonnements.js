@@ -100,22 +100,22 @@ export function useUserAbonnements(userId) {
       return
     }
 
-    // Nouvel utilisateur : aucun abonnement par défaut.
-    // Les charges fixes restent à 0 tant que l'utilisateur n'en ajoute pas.
     setAbonnements(data || [])
     setLoading(false)
   }
 
-  async function addAbonnement() {
+  async function addAbonnement(payload = {}) {
+    const categorie = normalizeCategorie(payload.categorie || "divers")
+
     const { data, error } = await supabase
       .from("abonnements")
       .insert({
         user_id: userId,
-        nom: "Nouvelle charge fixe",
-        categorie: "divers",
-        montant: 0,
-        emoji: "📦",
-        color: "#94A3B8",
+        nom: payload.nom || "Nouvelle charge fixe",
+        categorie,
+        montant: parseMontant(payload.montant),
+        emoji: payload.emoji || "📦",
+        color: payload.color || "#94A3B8",
       })
       .select("*")
       .single()
@@ -214,7 +214,6 @@ export function useUserAbonnements(userId) {
       return { error }
     }
 
-    // Réinitialiser = vider les charges fixes, pas recréer des abonnements par défaut.
     setAbonnements([])
     return { error: null }
   }

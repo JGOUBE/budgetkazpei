@@ -137,6 +137,31 @@ function formatDate(value) {
   }
 }
 
+function getReminderStorageKey(userId) {
+  return `budgetkazpei_demarches_reminders_${userId || "anonymous"}`
+}
+
+function loadStoredReminders(userId) {
+  if (typeof window === "undefined" || !userId) return {}
+
+  try {
+    const raw = window.localStorage.getItem(getReminderStorageKey(userId))
+    return raw ? JSON.parse(raw) || {} : {}
+  } catch {
+    return {}
+  }
+}
+
+function saveStoredReminders(userId, reminders) {
+  if (typeof window === "undefined" || !userId) return
+
+  try {
+    window.localStorage.setItem(getReminderStorageKey(userId), JSON.stringify(reminders || {}))
+  } catch {
+    // Rien à faire : le rappel reste au moins en mémoire pendant la session.
+  }
+}
+
 function normalizeDemarche(row = {}) {
   const aide = row.aides_reunion || {}
 
@@ -175,6 +200,7 @@ export default function DemarchesPage({
   const [savingId, setSavingId] = useState(null)
   const [errorMessage, setErrorMessage] = useState("")
   const [selectedTool, setSelectedTool] = useState(null)
+  const [reminders, setReminders] = useState({})
 
   const totalDemarches = demarches.length
   const nbAPreparer = demarches.filter(d => d.status === "a_preparer").length
@@ -195,6 +221,10 @@ export default function DemarchesPage({
   useEffect(() => {
     fetchDemarches()
     setSelectedTool(null)
+  }, [user?.id])
+
+  useEffect(() => {
+    setReminders(loadStoredReminders(user?.id))
   }, [user?.id])
 
   async function fetchDemarches() {
@@ -314,6 +344,32 @@ export default function DemarchesPage({
     }
 
     setDemarches(prev => prev.filter(item => item.id !== id))
+  }
+
+  function saveReminder(demarcheId, reminder) {
+    if (!demarcheId) return
+
+    const next = {
+      ...reminders,
+      [demarcheId]: {
+        note: reminder.note || "",
+        date: reminder.date || "",
+        updatedAt: new Date().toISOString(),
+      },
+    }
+
+    setReminders(next)
+    saveStoredReminders(user?.id, next)
+  }
+
+  function deleteReminder(demarcheId) {
+    if (!demarcheId) return
+
+    const next = { ...reminders }
+    delete next[demarcheId]
+
+    setReminders(next)
+    saveStoredReminders(user?.id, next)
   }
 
   return (
@@ -544,6 +600,28 @@ export default function DemarchesPage({
                     </div>
                   )}
 
+                  {reminders[demarche.id] && (
+                    <div
+                      style={{
+                        marginTop: 8,
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
+                        background: "rgba(252,211,77,.10)",
+                        border: "1px solid rgba(252,211,77,.24)",
+                        borderRadius: 999,
+                        padding: "5px 9px",
+                        color: COLORS.yellow,
+                        fontSize: 11,
+                        fontWeight: 900,
+                      }}
+                    >
+                      ⏰ {reminders[demarche.id]?.date
+                        ? `${isKreol ? "Rappel" : "Rappel"} : ${formatDate(reminders[demarche.id].date)}`
+                        : isKreol ? "Rappel enregistré" : "Rappel enregistré"}
+                    </div>
+                  )}
+
                   {(demarche.demarches_fr || demarche.demarches_kr) && (
                     <div
                       style={{
@@ -692,12 +770,25 @@ export default function DemarchesPage({
         />
       )}
 
+      {selectedTool?.tool === "admin_reminder" && (
+        <AdminReminderPanel
+          demarche={selectedTool.demarche}
+          reminder={reminders[selectedTool.demarche?.id] || null}
+          isKreol={isKreol}
+          isMobile={isMobile}
+          onSave={saveReminder}
+          onDelete={deleteReminder}
+          onClose={() => setSelectedTool(null)}
+        />
+      )}
+
       {selectedTool?.tool &&
         selectedTool.tool !== "prepare_dossier" &&
         selectedTool.tool !== "generate_email" &&
         selectedTool.tool !== "generate_letter" &&
         selectedTool.tool !== "understand_refusal" &&
-        selectedTool.tool !== "prepare_appeal" && (
+        selectedTool.tool !== "prepare_appeal" &&
+        selectedTool.tool !== "admin_reminder" && (
           <ComingSoonPanel
             demarche={selectedTool.demarche}
             isKreol={isKreol}
@@ -784,6 +875,12 @@ function DemarchePremiumTools({
       enabled: true,
     },
     {
+      id: "admin_reminder",
+      icon: <Clock size={14} />,
+      label: isKreol ? "Mettre rappel" : "Ajouter un rappel",
+      enabled: true,
+    },
+    {
       id: "understand_refusal",
       icon: <HelpCircle size={14} />,
       label: isKreol ? "Comprann refus" : "Comprendre un refus",
@@ -802,7 +899,8 @@ function DemarchePremiumTools({
         tool.id === "generate_email" ||
         tool.id === "generate_letter" ||
         tool.id === "understand_refusal" ||
-        tool.id === "prepare_appeal") &&
+        tool.id === "prepare_appeal" ||
+        tool.id === "admin_reminder") &&
       onOpenTool
     ) {
       onOpenTool(tool.id, demarche)
@@ -1881,6 +1979,288 @@ function UnderstandRefusalPanel({ demarche, isKreol, isMobile, onClose }) {
 }
 
 
+function AdminReminderPanel({ demarche, reminder, isKreol, isMobile, onSave, onDelete, onClose }) {
+  const [date, setDate] = useState(reminder?.date || "")
+  const [note, setNote] = useState(reminder?.note || "")
+  const [saved, setSaved] = useState(false)
+
+  const title = isKreol
+    ? demarche.title_kr || demarche.title || "Démarche"
+    : demarche.title || "Démarche"
+
+  function handleSave() {
+    if (!date && !note.trim()) {
+      window.alert(
+        isKreol
+          ? "Ajoute une date ou une note pou le rappel."
+          : "Ajoutez une date ou une note pour le rappel."
+      )
+      return
+    }
+
+    onSave(demarche.id, {
+      date,
+      note: note.trim(),
+    })
+
+    setSaved(true)
+    setTimeout(() => setSaved(false), 1600)
+  }
+
+  function handleDelete() {
+    if (!reminder) {
+      setDate("")
+      setNote("")
+      return
+    }
+
+    const confirmText = isKreol
+      ? "Supprim ce rappel ?"
+      : "Supprimer ce rappel ?"
+
+    if (!window.confirm(confirmText)) return
+
+    onDelete(demarche.id)
+    setDate("")
+    setNote("")
+    onClose()
+  }
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 80,
+        background: "rgba(3,7,18,.72)",
+        backdropFilter: "blur(6px)",
+        display: "flex",
+        alignItems: isMobile ? "stretch" : "center",
+        justifyContent: "center",
+        padding: isMobile ? 0 : 22,
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 760,
+          maxHeight: isMobile ? "100dvh" : "88dvh",
+          overflowY: "auto",
+          background: "linear-gradient(135deg, #0F1E38, #132747)",
+          border: `1px solid ${COLORS.border}`,
+          borderRadius: isMobile ? 0 : 24,
+          padding: isMobile ? 18 : 24,
+          boxShadow: "0 24px 80px rgba(0,0,0,.45)",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 12,
+            alignItems: "flex-start",
+            marginBottom: 18,
+          }}
+        >
+          <div>
+            <div
+              style={{
+                color: COLORS.purple,
+                fontWeight: 900,
+                fontSize: 13,
+                marginBottom: 6,
+              }}
+            >
+              ✨ Premium+ · {isKreol ? "Rappel administratif" : "Rappel administratif"}
+            </div>
+
+            <h2
+              style={{
+                color: COLORS.text,
+                margin: 0,
+                fontSize: isMobile ? 24 : 32,
+                fontFamily: "'DM Serif Display', Georgia, serif",
+                fontWeight: 900,
+              }}
+            >
+              ⏰ {title}
+            </h2>
+
+            <p
+              style={{
+                color: COLORS.muted,
+                margin: "8px 0 0",
+                fontSize: 14,
+                lineHeight: 1.6,
+              }}
+            >
+              {isKreol
+                ? "Ajoute in date ou une note pou penser à relancer, vérifier ou déposer un document."
+                : "Ajoutez une date ou une note pour penser à relancer, vérifier ou déposer un document."}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              background: "rgba(255,255,255,.06)",
+              border: "1px solid rgba(255,255,255,.12)",
+              color: COLORS.text,
+              width: 38,
+              height: 38,
+              borderRadius: 12,
+              cursor: "pointer",
+              display: "grid",
+              placeItems: "center",
+              flexShrink: 0,
+            }}
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <PanelCard title={isKreol ? "📅 Date du rappel" : "📅 Date du rappel"}>
+          <input
+            type="date"
+            value={date}
+            onChange={e => setDate(e.target.value)}
+            style={{
+              width: "100%",
+              background: "rgba(3,7,18,.42)",
+              border: "1px solid rgba(255,255,255,.12)",
+              borderRadius: 14,
+              color: COLORS.text,
+              padding: 13,
+              fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif",
+              fontSize: 14,
+              outline: "none",
+            }}
+          />
+        </PanelCard>
+
+        <PanelCard title={isKreol ? "📝 Note du rappel" : "📝 Note du rappel"} style={{ marginTop: 14 }}>
+          <textarea
+            value={note}
+            onChange={e => setNote(e.target.value)}
+            placeholder={
+              isKreol
+                ? "Ex : Relancer la CAF, déposer justificatif, vérifier réponse..."
+                : "Ex : Relancer la CAF, déposer un justificatif, vérifier la réponse..."
+            }
+            style={{
+              width: "100%",
+              minHeight: 130,
+              resize: "vertical",
+              boxSizing: "border-box",
+              background: "rgba(3,7,18,.42)",
+              border: "1px solid rgba(255,255,255,.12)",
+              borderRadius: 14,
+              color: COLORS.text,
+              padding: 13,
+              fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif",
+              fontSize: 14,
+              lineHeight: 1.6,
+              outline: "none",
+            }}
+          />
+        </PanelCard>
+
+        <div
+          style={{
+            marginTop: 14,
+            background: "rgba(252,211,77,.10)",
+            border: "1px solid rgba(252,211,77,.25)",
+            borderRadius: 16,
+            padding: 14,
+            color: COLORS.yellow,
+            fontSize: 13,
+            lineHeight: 1.55,
+            fontWeight: 800,
+          }}
+        >
+          ⚠️ {isKreol
+            ? "Ce rappel reste dans l'application. Vérifie toujours les délais officiels auprès de l'organisme."
+            : "Ce rappel reste dans l'application. Vérifiez toujours les délais officiels auprès de l'organisme."}
+        </div>
+
+        {saved && (
+          <div style={{ marginTop: 14 }}>
+            <AlertBox
+              color={COLORS.green}
+              text={isKreol ? "✅ Rappel enregistré." : "✅ Rappel enregistré."}
+            />
+          </div>
+        )}
+
+        <div
+          style={{
+            marginTop: 16,
+            display: "flex",
+            gap: 10,
+            flexWrap: "wrap",
+            justifyContent: "flex-end",
+          }}
+        >
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              background: "rgba(255,255,255,.06)",
+              border: "1px solid rgba(255,255,255,.12)",
+              color: COLORS.text,
+              borderRadius: 13,
+              padding: "11px 14px",
+              cursor: "pointer",
+              fontWeight: 900,
+              fontFamily: "inherit",
+            }}
+          >
+            {isKreol ? "Fermé" : "Fermer"}
+          </button>
+
+          {(reminder || date || note) && (
+            <button
+              type="button"
+              onClick={handleDelete}
+              style={{
+                background: "rgba(251,113,133,.10)",
+                border: "1px solid rgba(251,113,133,.28)",
+                color: COLORS.red,
+                borderRadius: 13,
+                padding: "11px 14px",
+                cursor: "pointer",
+                fontWeight: 900,
+                fontFamily: "inherit",
+              }}
+            >
+              🗑️ {isKreol ? "Supprim rappel" : "Supprimer le rappel"}
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={handleSave}
+            style={{
+              background: COLORS.purple,
+              border: "none",
+              color: "#fff",
+              borderRadius: 13,
+              padding: "11px 14px",
+              cursor: "pointer",
+              fontWeight: 900,
+              fontFamily: "inherit",
+            }}
+          >
+            💾 {isKreol ? "Enregistrer rappel" : "Enregistrer le rappel"}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
 function ComingSoonPanel({ demarche, isKreol, isMobile, tool, onClose }) {
   const title = isKreol
     ? demarche.title_kr || demarche.title || "Démarche"
@@ -1889,6 +2269,7 @@ function ComingSoonPanel({ demarche, isKreol, isMobile, tool, onClose }) {
   const toolLabels = {
     generate_letter: isKreol ? "Générer un courrier" : "Générer un courrier",
     prepare_appeal: isKreol ? "Préparer un recours" : "Préparer un recours",
+    admin_reminder: isKreol ? "Ajouter un rappel" : "Ajouter un rappel",
     understand_refusal: isKreol ? "Comprendre un refus" : "Comprendre un refus",
   }
 
