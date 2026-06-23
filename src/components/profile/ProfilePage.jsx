@@ -1,4 +1,4 @@
-import { useState, useRef } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useProfile } from "../../hooks/useProfile"
 import { supabase } from "../../services/supabase"
 
@@ -89,6 +89,51 @@ export default function ProfilePage({ user, t }) {
   const [supportSuccess, setSupportSuccess] = useState(false)
   const [supportError, setSupportError] = useState("")
   const fileRef = useRef()
+  const [subscriptionPlan, setSubscriptionPlan] = useState("free")
+
+  useEffect(() => {
+    loadSubscriptionPlan()
+  }, [user?.id, user?.email])
+
+  async function loadSubscriptionPlan() {
+    if (!user?.id && !user?.email) {
+      setSubscriptionPlan("free")
+      return
+    }
+
+    try {
+      let query = supabase
+        .from("user_subscriptions")
+        .select("plan, status, billing_period, updated_at")
+        .eq("status", "active")
+        .order("updated_at", { ascending: false })
+        .limit(1)
+
+      if (user?.id) {
+        query = query.eq("user_id", user.id)
+      } else if (user?.email) {
+        query = query.eq("email", user.email)
+      }
+
+      const { data, error } = await query.maybeSingle()
+
+      if (error) {
+        console.error("Erreur chargement abonnement:", error)
+        setSubscriptionPlan(normalizeSubscriptionPlan(profile))
+        return
+      }
+
+      if (data?.plan === "premium_plus" || data?.plan === "premium") {
+        setSubscriptionPlan(data.plan)
+        return
+      }
+
+      setSubscriptionPlan(normalizeSubscriptionPlan(profile))
+    } catch (err) {
+      console.error("Erreur abonnement:", err)
+      setSubscriptionPlan(normalizeSubscriptionPlan(profile))
+    }
+  }
 
   if (profile && !form) {
     setForm({
@@ -253,7 +298,7 @@ export default function ProfilePage({ user, t }) {
   const avatarUrl = avatarPreview || profile?.avatar_url
   const initiale = (form.nom || user?.email || "?")[0].toUpperCase()
 
-  const plan = normalizeSubscriptionPlan(profile)
+  const plan = subscriptionPlan || normalizeSubscriptionPlan(profile)
   const isPremiumPlus = plan === "premium_plus"
   const isPremiumClassic = plan === "premium"
   const hasPremiumAccess = isPremiumClassic || isPremiumPlus

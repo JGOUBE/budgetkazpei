@@ -13,6 +13,7 @@ import {
   HelpCircle,
   Lock,
   PlusCircle,
+  X,
 } from "lucide-react"
 
 import { supabase } from "../../services/supabase"
@@ -173,6 +174,7 @@ export default function DemarchesPage({
   const [loading, setLoading] = useState(true)
   const [savingId, setSavingId] = useState(null)
   const [errorMessage, setErrorMessage] = useState("")
+  const [selectedTool, setSelectedTool] = useState(null)
 
   const totalDemarches = demarches.length
   const nbAPreparer = demarches.filter(d => d.status === "a_preparer").length
@@ -192,6 +194,7 @@ export default function DemarchesPage({
 
   useEffect(() => {
     fetchDemarches()
+    setSelectedTool(null)
   }, [user?.id])
 
   async function fetchDemarches() {
@@ -584,9 +587,13 @@ export default function DemarchesPage({
                   </div>
 
                   <DemarchePremiumTools
+                    demarche={demarche}
                     isKreol={isKreol}
                     isPremiumPlus={isPremiumPlus}
                     onGoPremium={onGoPremium}
+                    onOpenTool={(tool, currentDemarche) =>
+                      setSelectedTool({ tool, demarche: currentDemarche })
+                    }
                   />
                 </div>
 
@@ -639,6 +646,66 @@ export default function DemarchesPage({
           })}
         </div>
       )}
+
+      {selectedTool?.tool === "prepare_dossier" && (
+        <PreparationDossierPanel
+          demarche={selectedTool.demarche}
+          isKreol={isKreol}
+          isMobile={isMobile}
+          onClose={() => setSelectedTool(null)}
+        />
+      )}
+
+      {selectedTool?.tool === "generate_email" && (
+        <GeneratedEmailPanel
+          demarche={selectedTool.demarche}
+          isKreol={isKreol}
+          isMobile={isMobile}
+          onClose={() => setSelectedTool(null)}
+        />
+      )}
+
+      {selectedTool?.tool === "generate_letter" && (
+        <GeneratedLetterPanel
+          demarche={selectedTool.demarche}
+          isKreol={isKreol}
+          isMobile={isMobile}
+          onClose={() => setSelectedTool(null)}
+        />
+      )}
+
+      {selectedTool?.tool === "understand_refusal" && (
+        <UnderstandRefusalPanel
+          demarche={selectedTool.demarche}
+          isKreol={isKreol}
+          isMobile={isMobile}
+          onClose={() => setSelectedTool(null)}
+        />
+      )}
+
+      {selectedTool?.tool === "prepare_appeal" && (
+        <PrepareAppealPanel
+          demarche={selectedTool.demarche}
+          isKreol={isKreol}
+          isMobile={isMobile}
+          onClose={() => setSelectedTool(null)}
+        />
+      )}
+
+      {selectedTool?.tool &&
+        selectedTool.tool !== "prepare_dossier" &&
+        selectedTool.tool !== "generate_email" &&
+        selectedTool.tool !== "generate_letter" &&
+        selectedTool.tool !== "understand_refusal" &&
+        selectedTool.tool !== "prepare_appeal" && (
+          <ComingSoonPanel
+            demarche={selectedTool.demarche}
+            isKreol={isKreol}
+            isMobile={isMobile}
+            tool={selectedTool.tool}
+            onClose={() => setSelectedTool(null)}
+          />
+        )}
     </div>
   )
 }
@@ -684,29 +751,68 @@ function InfoPanel({ title, text }) {
   )
 }
 
-function DemarchePremiumTools({ isKreol, isPremiumPlus, onGoPremium }) {
+function DemarchePremiumTools({
+  demarche,
+  isKreol,
+  isPremiumPlus,
+  onGoPremium,
+  onOpenTool,
+}) {
   const tools = [
     {
+      id: "prepare_dossier",
       icon: <FolderCheck size={14} />,
       label: isKreol ? "Prépar mon dossier" : "Préparer mon dossier",
+      enabled: true,
     },
     {
+      id: "generate_letter",
       icon: <FileText size={14} />,
       label: isKreol ? "Génér courrier" : "Générer un courrier",
+      enabled: true,
     },
     {
+      id: "generate_email",
       icon: <Mail size={14} />,
       label: isKreol ? "Génér email" : "Générer un email",
+      enabled: true,
     },
     {
+      id: "prepare_appeal",
       icon: <Scale size={14} />,
       label: isKreol ? "Prépar recours" : "Préparer un recours",
+      enabled: true,
     },
     {
+      id: "understand_refusal",
       icon: <HelpCircle size={14} />,
       label: isKreol ? "Comprann refus" : "Comprendre un refus",
+      enabled: true,
     },
   ]
+
+  function handleToolClick(tool) {
+    if (!isPremiumPlus) {
+      if (onGoPremium) onGoPremium()
+      return
+    }
+
+    if (
+      (tool.id === "prepare_dossier" ||
+        tool.id === "generate_email" ||
+        tool.id === "generate_letter" ||
+        tool.id === "understand_refusal" ||
+        tool.id === "prepare_appeal") &&
+      onOpenTool
+    ) {
+      onOpenTool(tool.id, demarche)
+      return
+    }
+
+    if (onOpenTool) {
+      onOpenTool(tool.id, demarche)
+    }
+  }
 
   return (
     <div
@@ -731,11 +837,20 @@ function DemarchePremiumTools({ isKreol, isPremiumPlus, onGoPremium }) {
       <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
         {tools.map(tool => (
           <button
-            key={tool.label}
+            key={tool.id}
             type="button"
-            onClick={() => {
-              if (!isPremiumPlus && onGoPremium) onGoPremium()
-            }}
+            onClick={() => handleToolClick(tool)}
+            title={
+              isPremiumPlus
+                ? tool.enabled
+                  ? ""
+                  : isKreol
+                    ? "Fonction bientôt disponible"
+                    : "Fonction bientôt disponible"
+                : isKreol
+                  ? "Réservé Premium+"
+                  : "Réservé Premium+"
+            }
             style={{
               display: "flex",
               alignItems: "center",
@@ -745,21 +860,1683 @@ function DemarchePremiumTools({ isKreol, isPremiumPlus, onGoPremium }) {
               color: isPremiumPlus ? "#DDD6FE" : COLORS.yellow,
               borderRadius: 999,
               padding: "7px 9px",
-              cursor: isPremiumPlus ? "default" : "pointer",
+              cursor: isPremiumPlus ? "pointer" : "pointer",
               fontFamily: "inherit",
               fontSize: 11,
               fontWeight: 900,
+              opacity: isPremiumPlus && !tool.enabled ? 0.75 : 1,
             }}
           >
             {!isPremiumPlus && <Lock size={12} />}
             {tool.icon}
             {tool.label}
+            {isPremiumPlus && !tool.enabled && " · bientôt"}
           </button>
         ))}
       </div>
     </div>
   )
 }
+
+function PreparationDossierPanel({ demarche, isKreol, isMobile, onClose }) {
+  const title = isKreol
+    ? demarche.title_kr || demarche.title || "Démarche"
+    : demarche.title || "Démarche"
+
+  const documents = getSuggestedDocuments(demarche, isKreol)
+  const steps = getSuggestedSteps(demarche, isKreol)
+  const warning = getPreparationWarning(demarche, isKreol)
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 80,
+        background: "rgba(3,7,18,.72)",
+        backdropFilter: "blur(6px)",
+        display: "flex",
+        alignItems: isMobile ? "stretch" : "center",
+        justifyContent: "center",
+        padding: isMobile ? 0 : 22,
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 900,
+          maxHeight: isMobile ? "100dvh" : "88dvh",
+          overflowY: "auto",
+          background: "linear-gradient(135deg, #0F1E38, #132747)",
+          border: `1px solid ${COLORS.border}`,
+          borderRadius: isMobile ? 0 : 24,
+          padding: isMobile ? 18 : 24,
+          boxShadow: "0 24px 80px rgba(0,0,0,.45)",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 12,
+            alignItems: "flex-start",
+            marginBottom: 18,
+          }}
+        >
+          <div>
+            <div
+              style={{
+                color: COLORS.purple,
+                fontWeight: 900,
+                fontSize: 13,
+                marginBottom: 6,
+              }}
+            >
+              ✨ Premium+ · {isKreol ? "Prépar dossier" : "Préparer mon dossier"}
+            </div>
+
+            <h2
+              style={{
+                color: COLORS.text,
+                margin: 0,
+                fontSize: isMobile ? 24 : 32,
+                fontFamily: "'DM Serif Display', Georgia, serif",
+                fontWeight: 900,
+              }}
+            >
+              📋 {title}
+            </h2>
+
+            <p
+              style={{
+                color: COLORS.muted,
+                margin: "8px 0 0",
+                fontSize: 14,
+                lineHeight: 1.6,
+              }}
+            >
+              {isKreol
+                ? "BudgetKazPei prépare une checklist simple pou ou rassembl bann pièces avant l’envoi."
+                : "BudgetKazPei prépare une checklist simple pour rassembler les pièces avant l’envoi."}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              background: "rgba(255,255,255,.06)",
+              border: "1px solid rgba(255,255,255,.12)",
+              color: COLORS.text,
+              width: 38,
+              height: 38,
+              borderRadius: 12,
+              cursor: "pointer",
+              display: "grid",
+              placeItems: "center",
+              flexShrink: 0,
+            }}
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: isMobile ? "1fr" : "1.1fr .9fr",
+            gap: 14,
+          }}
+        >
+          <PanelCard title={isKreol ? "📄 Documents à préparer" : "📄 Documents à préparer"}>
+            <div style={{ display: "grid", gap: 9 }}>
+              {documents.map((doc, index) => (
+                <CheckRow key={index} text={doc} />
+              ))}
+            </div>
+          </PanelCard>
+
+          <PanelCard title={isKreol ? "💰 Infos à vérifier" : "💰 Infos à vérifier"}>
+            <InfoLine
+              label={isKreol ? "Montant estimé" : "Montant estimé"}
+              value={demarche.amountLabel || "À vérifier"}
+              color={COLORS.yellow}
+            />
+            <InfoLine
+              label={isKreol ? "Statut actuel" : "Statut actuel"}
+              value={getStatus(demarche.status, isKreol).label}
+              color={getStatus(demarche.status, isKreol).color}
+            />
+            <InfoLine
+              label={isKreol ? "Date ajout" : "Date d’ajout"}
+              value={formatDate(demarche.created_at)}
+              color={COLORS.cyan}
+            />
+          </PanelCard>
+        </div>
+
+        <PanelCard
+          title={isKreol ? "🧭 Étapes conseillées" : "🧭 Étapes conseillées"}
+          style={{ marginTop: 14 }}
+        >
+          <ol
+            style={{
+              margin: 0,
+              paddingLeft: 20,
+              color: COLORS.muted,
+              fontSize: 13,
+              lineHeight: 1.8,
+            }}
+          >
+            {steps.map((step, index) => (
+              <li key={index}>{step}</li>
+            ))}
+          </ol>
+        </PanelCard>
+
+        <div
+          style={{
+            marginTop: 14,
+            background: "rgba(252,211,77,.10)",
+            border: "1px solid rgba(252,211,77,.25)",
+            borderRadius: 16,
+            padding: 14,
+            color: COLORS.yellow,
+            fontSize: 13,
+            lineHeight: 1.55,
+            fontWeight: 800,
+          }}
+        >
+          ⚠️ {warning}
+        </div>
+
+        <div
+          style={{
+            marginTop: 16,
+            display: "flex",
+            gap: 10,
+            flexWrap: "wrap",
+            justifyContent: "flex-end",
+          }}
+        >
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              background: "rgba(255,255,255,.06)",
+              border: "1px solid rgba(255,255,255,.12)",
+              color: COLORS.text,
+              borderRadius: 13,
+              padding: "11px 14px",
+              cursor: "pointer",
+              fontWeight: 900,
+              fontFamily: "inherit",
+            }}
+          >
+            {isKreol ? "Fermer" : "Fermer"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => window.print()}
+            style={{
+              background: COLORS.purple,
+              border: "none",
+              color: "#fff",
+              borderRadius: 13,
+              padding: "11px 14px",
+              cursor: "pointer",
+              fontWeight: 900,
+              fontFamily: "inherit",
+            }}
+          >
+            {isKreol ? "Imprimer checklist" : "Imprimer la checklist"}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function GeneratedEmailPanel({ demarche, isKreol, isMobile, onClose }) {
+  const [copied, setCopied] = useState(false)
+
+  const title = isKreol
+    ? demarche.title_kr || demarche.title || "cette aide"
+    : demarche.title || "cette aide"
+
+  const subject = getGeneratedEmailSubject(demarche, isKreol)
+  const body = getGeneratedEmailBody(demarche, isKreol)
+
+  async function copyEmail() {
+    const content = `Objet : ${subject}\n\n${body}`
+
+    try {
+      await navigator.clipboard.writeText(content)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1800)
+    } catch {
+      const textarea = document.createElement("textarea")
+      textarea.value = content
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand("copy")
+      document.body.removeChild(textarea)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1800)
+    }
+  }
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 80,
+        background: "rgba(3,7,18,.72)",
+        backdropFilter: "blur(6px)",
+        display: "flex",
+        alignItems: isMobile ? "stretch" : "center",
+        justifyContent: "center",
+        padding: isMobile ? 0 : 22,
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 900,
+          maxHeight: isMobile ? "100dvh" : "88dvh",
+          overflowY: "auto",
+          background: "linear-gradient(135deg, #0F1E38, #132747)",
+          border: `1px solid ${COLORS.border}`,
+          borderRadius: isMobile ? 0 : 24,
+          padding: isMobile ? 18 : 24,
+          boxShadow: "0 24px 80px rgba(0,0,0,.45)",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 12,
+            alignItems: "flex-start",
+            marginBottom: 18,
+          }}
+        >
+          <div>
+            <div
+              style={{
+                color: COLORS.purple,
+                fontWeight: 900,
+                fontSize: 13,
+                marginBottom: 6,
+              }}
+            >
+              ✨ Premium+ · {isKreol ? "Génér email" : "Générer un email"}
+            </div>
+
+            <h2
+              style={{
+                color: COLORS.text,
+                margin: 0,
+                fontSize: isMobile ? 24 : 32,
+                fontFamily: "'DM Serif Display', Georgia, serif",
+                fontWeight: 900,
+              }}
+            >
+              ✉️ {title}
+            </h2>
+
+            <p
+              style={{
+                color: COLORS.muted,
+                margin: "8px 0 0",
+                fontSize: 14,
+                lineHeight: 1.6,
+              }}
+            >
+              {isKreol
+                ? "Modèle neutre, sans nom ni prénom, à vérifier avant envoi."
+                : "Modèle neutre, sans nom ni prénom, à vérifier avant envoi."}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              background: "rgba(255,255,255,.06)",
+              border: "1px solid rgba(255,255,255,.12)",
+              color: COLORS.text,
+              width: 38,
+              height: 38,
+              borderRadius: 12,
+              cursor: "pointer",
+              display: "grid",
+              placeItems: "center",
+              flexShrink: 0,
+            }}
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <PanelCard title={isKreol ? "📌 Objet" : "📌 Objet"}>
+          <div
+            style={{
+              color: COLORS.yellow,
+              fontSize: 14,
+              fontWeight: 900,
+              lineHeight: 1.5,
+            }}
+          >
+            {subject}
+          </div>
+        </PanelCard>
+
+        <PanelCard title={isKreol ? "✉️ Email prêt à copier" : "✉️ Email prêt à copier"} style={{ marginTop: 14 }}>
+          <pre
+            style={{
+              margin: 0,
+              whiteSpace: "pre-wrap",
+              color: COLORS.text,
+              fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif",
+              fontSize: 14,
+              lineHeight: 1.7,
+            }}
+          >
+            {body}
+          </pre>
+        </PanelCard>
+
+        <div
+          style={{
+            marginTop: 14,
+            background: "rgba(252,211,77,.10)",
+            border: "1px solid rgba(252,211,77,.25)",
+            borderRadius: 16,
+            padding: 14,
+            color: COLORS.yellow,
+            fontSize: 13,
+            lineHeight: 1.55,
+            fontWeight: 800,
+          }}
+        >
+          ⚠️ {isKreol
+            ? "BudgetKazPei ne rajoute aucune donnée personnelle automatiquement. Complétez uniquement ce que vous souhaitez partager et vérifiez toujours auprès de l’organisme."
+            : "BudgetKazPei n’ajoute aucune donnée personnelle automatiquement. Complétez uniquement ce que vous souhaitez partager et vérifiez toujours auprès de l’organisme."}
+        </div>
+
+        <div
+          style={{
+            marginTop: 16,
+            display: "flex",
+            gap: 10,
+            flexWrap: "wrap",
+            justifyContent: "flex-end",
+          }}
+        >
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              background: "rgba(255,255,255,.06)",
+              border: "1px solid rgba(255,255,255,.12)",
+              color: COLORS.text,
+              borderRadius: 13,
+              padding: "11px 14px",
+              cursor: "pointer",
+              fontWeight: 900,
+              fontFamily: "inherit",
+            }}
+          >
+            Fermer
+          </button>
+
+          <button
+            type="button"
+            onClick={copyEmail}
+            style={{
+              background: COLORS.purple,
+              border: "none",
+              color: "#fff",
+              borderRadius: 13,
+              padding: "11px 14px",
+              cursor: "pointer",
+              fontWeight: 900,
+              fontFamily: "inherit",
+            }}
+          >
+            {copied ? "✅ Copié" : "📋 Copier l’email"}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
+function GeneratedLetterPanel({ demarche, isKreol, isMobile, onClose }) {
+  const [copied, setCopied] = useState(false)
+
+  const title = isKreol
+    ? demarche.title_kr || demarche.title || "cette aide"
+    : demarche.title || "cette aide"
+
+  const subject = getGeneratedLetterSubject(demarche, isKreol)
+  const body = getGeneratedLetterBody(demarche, isKreol)
+
+  async function copyLetter() {
+    const content = `Objet : ${subject}\n\n${body}`
+
+    try {
+      await navigator.clipboard.writeText(content)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1800)
+    } catch {
+      const textarea = document.createElement("textarea")
+      textarea.value = content
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand("copy")
+      document.body.removeChild(textarea)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1800)
+    }
+  }
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 80,
+        background: "rgba(3,7,18,.72)",
+        backdropFilter: "blur(6px)",
+        display: "flex",
+        alignItems: isMobile ? "stretch" : "center",
+        justifyContent: "center",
+        padding: isMobile ? 0 : 22,
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 900,
+          maxHeight: isMobile ? "100dvh" : "88dvh",
+          overflowY: "auto",
+          background: "linear-gradient(135deg, #0F1E38, #132747)",
+          border: `1px solid ${COLORS.border}`,
+          borderRadius: isMobile ? 0 : 24,
+          padding: isMobile ? 18 : 24,
+          boxShadow: "0 24px 80px rgba(0,0,0,.45)",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 12,
+            alignItems: "flex-start",
+            marginBottom: 18,
+          }}
+        >
+          <div>
+            <div
+              style={{
+                color: COLORS.purple,
+                fontWeight: 900,
+                fontSize: 13,
+                marginBottom: 6,
+              }}
+            >
+              ✨ Premium+ · {isKreol ? "Génér courrier" : "Générer un courrier"}
+            </div>
+
+            <h2
+              style={{
+                color: COLORS.text,
+                margin: 0,
+                fontSize: isMobile ? 24 : 32,
+                fontFamily: "'DM Serif Display', Georgia, serif",
+                fontWeight: 900,
+              }}
+            >
+              📄 {title}
+            </h2>
+
+            <p
+              style={{
+                color: COLORS.muted,
+                margin: "8px 0 0",
+                fontSize: 14,
+                lineHeight: 1.6,
+              }}
+            >
+              {isKreol
+                ? "Modèle administratif neutre, sans nom ni prénom, à vérifier avant envoi."
+                : "Modèle administratif neutre, sans nom ni prénom, à vérifier avant envoi."}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              background: "rgba(255,255,255,.06)",
+              border: "1px solid rgba(255,255,255,.12)",
+              color: COLORS.text,
+              width: 38,
+              height: 38,
+              borderRadius: 12,
+              cursor: "pointer",
+              display: "grid",
+              placeItems: "center",
+              flexShrink: 0,
+            }}
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <PanelCard title={isKreol ? "📌 Objet" : "📌 Objet"}>
+          <div
+            style={{
+              color: COLORS.yellow,
+              fontSize: 14,
+              fontWeight: 900,
+              lineHeight: 1.5,
+            }}
+          >
+            {subject}
+          </div>
+        </PanelCard>
+
+        <PanelCard title={isKreol ? "📄 Courrier prêt à copier" : "📄 Courrier prêt à copier"} style={{ marginTop: 14 }}>
+          <pre
+            style={{
+              margin: 0,
+              whiteSpace: "pre-wrap",
+              color: COLORS.text,
+              fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif",
+              fontSize: 14,
+              lineHeight: 1.7,
+            }}
+          >
+            {body}
+          </pre>
+        </PanelCard>
+
+        <div
+          style={{
+            marginTop: 14,
+            background: "rgba(252,211,77,.10)",
+            border: "1px solid rgba(252,211,77,.25)",
+            borderRadius: 16,
+            padding: 14,
+            color: COLORS.yellow,
+            fontSize: 13,
+            lineHeight: 1.55,
+            fontWeight: 800,
+          }}
+        >
+          ⚠️ {isKreol
+            ? "BudgetKazPei ne rajoute aucune donnée personnelle automatiquement. Complétez uniquement ce que vous souhaitez partager et vérifiez toujours auprès de l’organisme."
+            : "BudgetKazPei n’ajoute aucune donnée personnelle automatiquement. Complétez uniquement ce que vous souhaitez partager et vérifiez toujours auprès de l’organisme."}
+        </div>
+
+        <div
+          style={{
+            marginTop: 16,
+            display: "flex",
+            gap: 10,
+            flexWrap: "wrap",
+            justifyContent: "flex-end",
+          }}
+        >
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              background: "rgba(255,255,255,.06)",
+              border: "1px solid rgba(255,255,255,.12)",
+              color: COLORS.text,
+              borderRadius: 13,
+              padding: "11px 14px",
+              cursor: "pointer",
+              fontWeight: 900,
+              fontFamily: "inherit",
+            }}
+          >
+            Fermer
+          </button>
+
+          <button
+            type="button"
+            onClick={() => window.print()}
+            style={{
+              background: "rgba(255,255,255,.06)",
+              border: "1px solid rgba(255,255,255,.12)",
+              color: COLORS.text,
+              borderRadius: 13,
+              padding: "11px 14px",
+              cursor: "pointer",
+              fontWeight: 900,
+              fontFamily: "inherit",
+            }}
+          >
+            🖨️ Imprimer
+          </button>
+
+          <button
+            type="button"
+            onClick={copyLetter}
+            style={{
+              background: COLORS.purple,
+              border: "none",
+              color: "#fff",
+              borderRadius: 13,
+              padding: "11px 14px",
+              cursor: "pointer",
+              fontWeight: 900,
+              fontFamily: "inherit",
+            }}
+          >
+            {copied ? "✅ Copié" : "📋 Copier le courrier"}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
+function UnderstandRefusalPanel({ demarche, isKreol, isMobile, onClose }) {
+  const [refusalText, setRefusalText] = useState("")
+  const [analysis, setAnalysis] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState("")
+  const [copied, setCopied] = useState(false)
+
+  const title = isKreol
+    ? demarche.title_kr || demarche.title || "cette aide"
+    : demarche.title || "cette aide"
+
+  async function analyzeRefusal() {
+    const cleanText = refusalText.trim()
+
+    if (cleanText.length < 40) {
+      setError(
+        isKreol
+          ? "Colle un courrier assez complet pou l'analyse."
+          : "Collez un courrier assez complet pour lancer l’analyse."
+      )
+      return
+    }
+
+    setLoading(true)
+    setError("")
+    setAnalysis("")
+
+    try {
+      const { data, error: invokeError } = await supabase.functions.invoke("assistant-aisupabase", {
+        body: {
+          action: "analyze_refusal",
+          question: cleanText,
+          refusalText: cleanText,
+          isKreol,
+          isQuickPreset: false,
+          profile: {
+            premium_plus: true,
+            subscription_plan: "premium_plus",
+          },
+          demarche: {
+            title: demarche.title || "",
+            title_kr: demarche.title_kr || "",
+            category: demarche.category || "",
+            demarches_fr: demarche.demarches_fr || "",
+            demarches_kr: demarche.demarches_kr || "",
+          },
+        },
+      })
+
+      if (invokeError) throw invokeError
+
+      if (!data?.success) {
+        throw new Error(data?.error || "Analyse impossible pour le moment.")
+      }
+
+      setAnalysis(data.answer || "")
+    } catch (err) {
+      console.error("Erreur analyse refus:", err)
+      setError(
+        isKreol
+          ? "Analyse impossible pou linstan. Réessaye talèr."
+          : "Analyse impossible pour le moment. Réessayez dans quelques instants."
+      )
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function copyAnalysis() {
+    try {
+      await navigator.clipboard.writeText(analysis)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1800)
+    } catch {
+      const textarea = document.createElement("textarea")
+      textarea.value = analysis
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand("copy")
+      document.body.removeChild(textarea)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1800)
+    }
+  }
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 80,
+        background: "rgba(3,7,18,.72)",
+        backdropFilter: "blur(6px)",
+        display: "flex",
+        alignItems: isMobile ? "stretch" : "center",
+        justifyContent: "center",
+        padding: isMobile ? 0 : 22,
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 980,
+          maxHeight: isMobile ? "100dvh" : "88dvh",
+          overflowY: "auto",
+          background: "linear-gradient(135deg, #0F1E38, #132747)",
+          border: `1px solid ${COLORS.border}`,
+          borderRadius: isMobile ? 0 : 24,
+          padding: isMobile ? 18 : 24,
+          boxShadow: "0 24px 80px rgba(0,0,0,.45)",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 12,
+            alignItems: "flex-start",
+            marginBottom: 18,
+          }}
+        >
+          <div>
+            <div
+              style={{
+                color: COLORS.purple,
+                fontWeight: 900,
+                fontSize: 13,
+                marginBottom: 6,
+              }}
+            >
+              ✨ Premium+ · {isKreol ? "Comprann refus" : "Comprendre un refus"}
+            </div>
+
+            <h2
+              style={{
+                color: COLORS.text,
+                margin: 0,
+                fontSize: isMobile ? 24 : 32,
+                fontFamily: "'DM Serif Display', Georgia, serif",
+                fontWeight: 900,
+              }}
+            >
+              ❌ {isKreol ? "Analiz in refus" : title}
+            </h2>
+
+            <p
+              style={{
+                color: COLORS.muted,
+                margin: "8px 0 0",
+                fontSize: 14,
+                lineHeight: 1.6,
+              }}
+            >
+              {isKreol
+                ? "Kol isi lo kouryé reçu. BudgetKazPei i analiz sèlman sak lé écrit, san inventé."
+                : "Collez le courrier reçu. BudgetKazPei analyse uniquement ce qui est écrit, sans inventer."}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              background: "rgba(255,255,255,.06)",
+              border: "1px solid rgba(255,255,255,.12)",
+              color: COLORS.text,
+              width: 38,
+              height: 38,
+              borderRadius: 12,
+              cursor: "pointer",
+              display: "grid",
+              placeItems: "center",
+              flexShrink: 0,
+            }}
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <PanelCard title={isKreol ? "📄 Kouryé reçu" : "📄 Courrier reçu"}>
+          <textarea
+            value={refusalText}
+            onChange={e => setRefusalText(e.target.value)}
+            placeholder={
+              isKreol
+                ? "Kol isi lo kouryé refus ou lo mesaj reçu..."
+                : "Collez ici le courrier de refus ou le message reçu..."
+            }
+            style={{
+              width: "100%",
+              minHeight: 190,
+              resize: "vertical",
+              boxSizing: "border-box",
+              background: "rgba(3,7,18,.42)",
+              border: "1px solid rgba(255,255,255,.12)",
+              borderRadius: 14,
+              color: COLORS.text,
+              padding: 13,
+              fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif",
+              fontSize: 14,
+              lineHeight: 1.6,
+              outline: "none",
+            }}
+          />
+
+          <div
+            style={{
+              marginTop: 10,
+              color: COLORS.muted,
+              fontSize: 12,
+              lineHeight: 1.5,
+            }}
+          >
+            🔐 {isKreol
+              ? "Bann données personnelles lé pa utilisé pou invent in réponse. L\'analyse i reste limitée sèlman au texte collé."
+              : "Les données personnelles ne sont pas utilisées pour inventer une réponse. L’analyse reste limitée au texte collé."}
+          </div>
+        </PanelCard>
+
+        {error && (
+          <div style={{ marginTop: 14 }}>
+            <AlertBox color={COLORS.red} text={`⚠️ ${error}`} />
+          </div>
+        )}
+
+        {analysis && (
+          <PanelCard title={isKreol ? "🧾 Analyse du refus" : "🧾 Analyse du refus"} style={{ marginTop: 14 }}>
+            <pre
+              style={{
+                margin: 0,
+                whiteSpace: "pre-wrap",
+                color: COLORS.text,
+                fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif",
+                fontSize: 14,
+                lineHeight: 1.7,
+              }}
+            >
+              {analysis}
+            </pre>
+          </PanelCard>
+        )}
+
+        <div
+          style={{
+            marginTop: 14,
+            background: "rgba(252,211,77,.10)",
+            border: "1px solid rgba(252,211,77,.25)",
+            borderRadius: 16,
+            padding: 14,
+            color: COLORS.yellow,
+            fontSize: 13,
+            lineHeight: 1.55,
+            fontWeight: 800,
+          }}
+        >
+          ⚠️ {isKreol
+            ? "BudgetKazPei lé pa in conseil juridique. L\'analyse aide a konprann lo kouryé mé fo toujou vérifié avèk l\'organisme."
+            : "BudgetKazPei ne donne pas d’avis juridique. L’analyse aide à comprendre le courrier, mais il faut toujours vérifier auprès de l’organisme."}
+        </div>
+
+        <div
+          style={{
+            marginTop: 16,
+            display: "flex",
+            gap: 10,
+            flexWrap: "wrap",
+            justifyContent: "flex-end",
+          }}
+        >
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              background: "rgba(255,255,255,.06)",
+              border: "1px solid rgba(255,255,255,.12)",
+              color: COLORS.text,
+              borderRadius: 13,
+              padding: "11px 14px",
+              cursor: "pointer",
+              fontWeight: 900,
+              fontFamily: "inherit",
+            }}
+          >
+            Fermer
+          </button>
+
+          {analysis && (
+            <button
+              type="button"
+              onClick={copyAnalysis}
+              style={{
+                background: "rgba(255,255,255,.06)",
+                border: "1px solid rgba(255,255,255,.12)",
+                color: COLORS.text,
+                borderRadius: 13,
+                padding: "11px 14px",
+                cursor: "pointer",
+                fontWeight: 900,
+                fontFamily: "inherit",
+              }}
+            >
+              {copied ? "✅ Kopié" : isKreol ? "📋 Kopi l\'analyse" : "📋 Copier l’analyse"}
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={analyzeRefusal}
+            disabled={loading}
+            style={{
+              background: COLORS.purple,
+              border: "none",
+              color: "#fff",
+              borderRadius: 13,
+              padding: "11px 14px",
+              cursor: loading ? "not-allowed" : "pointer",
+              fontWeight: 900,
+              fontFamily: "inherit",
+              opacity: loading ? 0.65 : 1,
+            }}
+          >
+            {loading ? (isKreol ? "⏳ Analyse en cours..." : "⏳ Analyse...") : (isKreol ? "🧠 Analiz lo refus" : "🧠 Analyser le refus")}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
+function ComingSoonPanel({ demarche, isKreol, isMobile, tool, onClose }) {
+  const title = isKreol
+    ? demarche.title_kr || demarche.title || "Démarche"
+    : demarche.title || "Démarche"
+
+  const toolLabels = {
+    generate_letter: isKreol ? "Générer un courrier" : "Générer un courrier",
+    prepare_appeal: isKreol ? "Préparer un recours" : "Préparer un recours",
+    understand_refusal: isKreol ? "Comprendre un refus" : "Comprendre un refus",
+  }
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 80,
+        background: "rgba(3,7,18,.72)",
+        backdropFilter: "blur(6px)",
+        display: "flex",
+        alignItems: isMobile ? "stretch" : "center",
+        justifyContent: "center",
+        padding: isMobile ? 0 : 22,
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 680,
+          background: "linear-gradient(135deg, #0F1E38, #132747)",
+          border: `1px solid ${COLORS.border}`,
+          borderRadius: isMobile ? 0 : 24,
+          padding: isMobile ? 18 : 24,
+          boxShadow: "0 24px 80px rgba(0,0,0,.45)",
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+          <div>
+            <div style={{ color: COLORS.purple, fontWeight: 900, fontSize: 13, marginBottom: 6 }}>
+              ✨ Premium+ · {toolLabels[tool] || "Fonction"}
+            </div>
+            <h2
+              style={{
+                color: COLORS.text,
+                margin: 0,
+                fontSize: isMobile ? 23 : 30,
+                fontFamily: "'DM Serif Display', Georgia, serif",
+                fontWeight: 900,
+              }}
+            >
+              {title}
+            </h2>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              background: "rgba(255,255,255,.06)",
+              border: "1px solid rgba(255,255,255,.12)",
+              color: COLORS.text,
+              width: 38,
+              height: 38,
+              borderRadius: 12,
+              cursor: "pointer",
+              display: "grid",
+              placeItems: "center",
+              flexShrink: 0,
+            }}
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <div
+          style={{
+            marginTop: 18,
+            background: "rgba(252,211,77,.10)",
+            border: "1px solid rgba(252,211,77,.25)",
+            borderRadius: 16,
+            padding: 16,
+            color: COLORS.yellow,
+            fontSize: 14,
+            lineHeight: 1.6,
+            fontWeight: 800,
+          }}
+        >
+          🚧 Cette fonction sera ajoutée après le modèle d’email. Elle restera prudente : aucune donnée personnelle automatique, aucune information inventée.
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
+function PanelCard({ title, children, style = {} }) {
+  return (
+    <div
+      style={{
+        background: "rgba(10,22,40,.44)",
+        border: "1px solid rgba(255,255,255,.08)",
+        borderRadius: 16,
+        padding: 15,
+        ...style,
+      }}
+    >
+      <div style={{ color: COLORS.text, fontWeight: 900, fontSize: 15, marginBottom: 12 }}>
+        {title}
+      </div>
+      {children}
+    </div>
+  )
+}
+
+function CheckRow({ text }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "flex-start",
+        gap: 9,
+        color: COLORS.muted,
+        fontSize: 13,
+        lineHeight: 1.45,
+      }}
+    >
+      <span style={{ color: COLORS.green, fontWeight: 900 }}>☐</span>
+      <span>{text}</span>
+    </div>
+  )
+}
+
+function InfoLine({ label, value, color }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        gap: 10,
+        borderBottom: "1px solid rgba(255,255,255,.08)",
+        padding: "9px 0",
+        fontSize: 13,
+      }}
+    >
+      <span style={{ color: COLORS.muted }}>{label}</span>
+      <strong style={{ color }}>{value}</strong>
+    </div>
+  )
+}
+
+function getSuggestedDocuments(demarche, isKreol) {
+  const rawTitle = `${demarche.title || ""} ${demarche.title_kr || ""} ${demarche.category || ""}`.toLowerCase()
+
+  const base = isKreol
+    ? [
+        "Pièce identité",
+        "Justificatif domicile récent",
+        "RIB",
+        "Dernier avis d’imposition ou justificatif revenus",
+      ]
+    : [
+        "Pièce d’identité",
+        "Justificatif de domicile récent",
+        "RIB",
+        "Dernier avis d’imposition ou justificatif de revenus",
+      ]
+
+  if (rawTitle.includes("apl") || rawTitle.includes("logement") || rawTitle.includes("loyer")) {
+    return [
+      ...base,
+      isKreol ? "Bail ou contrat location" : "Bail ou contrat de location",
+      isKreol ? "Quittance de loyer ou attestation hébergement" : "Quittance de loyer ou attestation d’hébergement",
+      isKreol ? "Numéro allocataire CAF si disponible" : "Numéro allocataire CAF si disponible",
+    ]
+  }
+
+  if (rawTitle.includes("energie") || rawTitle.includes("énergie") || rawTitle.includes("edf")) {
+    return [
+      ...base,
+      isKreol ? "Facture EDF / eau / énergie" : "Facture EDF / eau / énergie",
+      isKreol ? "Devis travaux si demandé" : "Devis de travaux si demandé",
+    ]
+  }
+
+  if (rawTitle.includes("dette") || rawTitle.includes("impaye") || rawTitle.includes("impayé")) {
+    return [
+      ...base,
+      isKreol ? "Justificatif dette ou impayé" : "Justificatif de dette ou d’impayé",
+      isKreol ? "Courriers reçus de l’organisme" : "Courriers reçus de l’organisme",
+      isKreol ? "Budget mensuel rapide du foyer" : "Budget mensuel rapide du foyer",
+    ]
+  }
+
+  return [
+    ...base,
+    isKreol ? "Tout courrier reçu concernant cette aide" : "Tout courrier reçu concernant cette aide",
+  ]
+}
+
+function getSuggestedSteps(demarche, isKreol) {
+  const officialSteps =
+    isKreol
+      ? demarche.demarches_kr || demarche.demarches_fr
+      : demarche.demarches_fr
+
+  if (officialSteps) {
+    return [
+      officialSteps,
+      isKreol ? "Rassembl bann documents avant dépôt." : "Rassembler les documents avant le dépôt.",
+      isKreol ? "Garde une copie de tout dossier envoyé." : "Garder une copie de tout dossier envoyé.",
+      isKreol ? "Mettre le statut à jour dans BudgetKazPei." : "Mettre le statut à jour dans BudgetKazPei.",
+    ]
+  }
+
+  return isKreol
+    ? [
+        "Vérifie conditions de l’aide.",
+        "Rassembl les documents.",
+        "Dépose la demande sur le site officiel ou auprès de l’organisme.",
+        "Garde une copie du dossier.",
+        "Mets le statut à jour dans BudgetKazPei.",
+      ]
+    : [
+        "Vérifier les conditions de l’aide.",
+        "Rassembler les documents.",
+        "Déposer la demande sur le site officiel ou auprès de l’organisme.",
+        "Garder une copie du dossier.",
+        "Mettre le statut à jour dans BudgetKazPei.",
+      ]
+}
+
+function getPreparationWarning(demarche, isKreol) {
+  const title = demarche.title || "cette démarche"
+
+  return isKreol
+    ? `Cette checklist aide à préparer ${title}, mais les conditions officielles doivent toujours être vérifiées auprès de l’organisme.`
+    : `Cette checklist vous aide à préparer ${title}, mais les conditions officielles doivent toujours être vérifiées auprès de l’organisme.`
+}
+
+
+function getGeneratedEmailSubject(demarche, isKreol) {
+  const title = isKreol
+    ? demarche.title_kr || demarche.title || "cette aide"
+    : demarche.title || "cette aide"
+
+  return isKreol
+    ? `Demande d’informations concernant ${title}`
+    : `Demande d’informations concernant ${title}`
+}
+
+function getGeneratedEmailBody(demarche, isKreol) {
+  const title = isKreol
+    ? demarche.title_kr || demarche.title || "cette aide"
+    : demarche.title || "cette aide"
+
+  const steps = isKreol
+    ? demarche.demarches_kr || demarche.demarches_fr || ""
+    : demarche.demarches_fr || ""
+
+  const extra = steps
+    ? `\nJ’ai noté que la démarche semble indiquer : ${steps}\n`
+    : ""
+
+  if (isKreol) {
+    return [
+      "Bonjour,",
+      "",
+      `Je souhaite obtenir des informations concernant ${title}.`,
+      "",
+      "Pouvez-vous m’indiquer les conditions à vérifier, les documents à préparer et la procédure à suivre ?",
+      extra.trim(),
+      "Je vous remercie par avance pour votre retour.",
+      "",
+      "Cordialement,",
+      "",
+      "[À compléter si vous le souhaitez]",
+    ]
+      .filter(Boolean)
+      .join("\n")
+  }
+
+  return [
+    "Bonjour,",
+    "",
+    `Je souhaite obtenir des informations concernant ${title}.`,
+    "",
+    "Pouvez-vous m’indiquer les conditions à vérifier, les documents à préparer et la procédure à suivre ?",
+    extra.trim(),
+    "Je vous remercie par avance pour votre retour.",
+    "",
+    "Cordialement,",
+    "",
+    "[À compléter si vous le souhaitez]",
+  ]
+    .filter(Boolean)
+    .join("\n")
+}
+
+
+
+function getGeneratedLetterSubject(demarche, isKreol) {
+  const title = isKreol
+    ? demarche.title_kr || demarche.title || "cette aide"
+    : demarche.title || "cette aide"
+
+  return `Demande d’information concernant ${title}`
+}
+
+function getGeneratedLetterBody(demarche, isKreol) {
+  const title = isKreol
+    ? demarche.title_kr || demarche.title || "cette aide"
+    : demarche.title || "cette aide"
+
+  const steps = isKreol
+    ? demarche.demarches_kr || demarche.demarches_fr || ""
+    : demarche.demarches_fr || ""
+
+  const extra = steps
+    ? `\nJ’ai noté que la démarche semble indiquer : ${steps}\n`
+    : ""
+
+  return [
+    "[Vos coordonnées]",
+    "[Adresse]",
+    "[Code postal – Ville]",
+    "",
+    "[Organisme destinataire]",
+    "[Adresse de l’organisme]",
+    "[Code postal – Ville]",
+    "",
+    "À [Ville], le [Date]",
+    "",
+    `Objet : Demande d’information concernant ${title}`,
+    "",
+    "Madame, Monsieur,",
+    "",
+    `Je souhaite obtenir des informations concernant ${title}.`,
+    "",
+    "Pouvez-vous m’indiquer les conditions d’éligibilité, les pièces justificatives nécessaires ainsi que les modalités de dépôt du dossier ?",
+    extra.trim(),
+    "Je vous remercie par avance pour votre retour.",
+    "",
+    "Cordialement,",
+    "",
+    "[Signature à compléter]",
+  ]
+    .filter(Boolean)
+    .join("\n")
+}
+
+
+
+function PrepareAppealPanel({ demarche, isKreol, isMobile, onClose }) {
+  const [copied, setCopied] = useState(false)
+
+  const title = isKreol
+    ? demarche.title_kr || demarche.title || "cette aide"
+    : demarche.title || "cette aide"
+
+  const subject = isKreol
+    ? `Demande réexamen concernant ${title}`
+    : `Demande de réexamen concernant ${title}`
+
+  const appeal = getGeneratedAppealBody(demarche, isKreol)
+
+  async function copyAppeal() {
+    try {
+      await navigator.clipboard.writeText(`Objet : ${subject}\n\n${appeal}`)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1800)
+    } catch {
+      const textarea = document.createElement("textarea")
+      textarea.value = `Objet : ${subject}\n\n${appeal}`
+      document.body.appendChild(textarea)
+      textarea.select()
+      document.execCommand("copy")
+      document.body.removeChild(textarea)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1800)
+    }
+  }
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 80,
+        background: "rgba(3,7,18,.72)",
+        backdropFilter: "blur(6px)",
+        display: "flex",
+        alignItems: isMobile ? "stretch" : "center",
+        justifyContent: "center",
+        padding: isMobile ? 0 : 22,
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 900,
+          maxHeight: isMobile ? "100dvh" : "88dvh",
+          overflowY: "auto",
+          background: "linear-gradient(135deg, #0F1E38, #132747)",
+          border: `1px solid ${COLORS.border}`,
+          borderRadius: isMobile ? 0 : 24,
+          padding: isMobile ? 18 : 24,
+          boxShadow: "0 24px 80px rgba(0,0,0,.45)",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 12,
+            alignItems: "flex-start",
+            marginBottom: 18,
+          }}
+        >
+          <div>
+            <div
+              style={{
+                color: COLORS.purple,
+                fontWeight: 900,
+                fontSize: 13,
+                marginBottom: 6,
+              }}
+            >
+              ✨ Premium+ · {isKreol ? "Prépar recours" : "Préparer un recours"}
+            </div>
+
+            <h2
+              style={{
+                color: COLORS.text,
+                margin: 0,
+                fontSize: isMobile ? 24 : 32,
+                fontFamily: "'DM Serif Display', Georgia, serif",
+                fontWeight: 900,
+              }}
+            >
+              ⚖️ {title}
+            </h2>
+
+            <p
+              style={{
+                color: COLORS.muted,
+                margin: "8px 0 0",
+                fontSize: 14,
+                lineHeight: 1.6,
+              }}
+            >
+              {isKreol
+                ? "Modèle neutre pou demander in réexamen, san nom, san prénom, san promesse."
+                : "Modèle neutre pour demander un réexamen, sans nom, sans prénom et sans promesse."}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              background: "rgba(255,255,255,.06)",
+              border: "1px solid rgba(255,255,255,.12)",
+              color: COLORS.text,
+              width: 38,
+              height: 38,
+              borderRadius: 12,
+              cursor: "pointer",
+              display: "grid",
+              placeItems: "center",
+              flexShrink: 0,
+            }}
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <PanelCard title={isKreol ? "📌 Objet" : "📌 Objet"}>
+          <div
+            style={{
+              color: COLORS.yellow,
+              fontSize: 14,
+              fontWeight: 900,
+              lineHeight: 1.5,
+            }}
+          >
+            {subject}
+          </div>
+        </PanelCard>
+
+        <PanelCard title={isKreol ? "⚖️ Recours prêt à copier" : "⚖️ Recours prêt à copier"} style={{ marginTop: 14 }}>
+          <pre
+            style={{
+              margin: 0,
+              whiteSpace: "pre-wrap",
+              color: COLORS.text,
+              fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif",
+              fontSize: 14,
+              lineHeight: 1.7,
+            }}
+          >
+            {appeal}
+          </pre>
+        </PanelCard>
+
+        <div
+          style={{
+            marginTop: 14,
+            background: "rgba(252,211,77,.10)",
+            border: "1px solid rgba(252,211,77,.25)",
+            borderRadius: 16,
+            padding: 14,
+            color: COLORS.yellow,
+            fontSize: 13,
+            lineHeight: 1.55,
+            fontWeight: 800,
+          }}
+        >
+          ⚠️ {isKreol
+            ? "BudgetKazPei lé pa in conseil juridique. Le modèle aide seulement à demander un réexamen. Vérifiez toujours auprès de l’organisme."
+            : "BudgetKazPei ne donne pas d’avis juridique. Ce modèle aide seulement à demander un réexamen. Vérifiez toujours auprès de l’organisme."}
+        </div>
+
+        <div
+          style={{
+            marginTop: 16,
+            display: "flex",
+            gap: 10,
+            flexWrap: "wrap",
+            justifyContent: "flex-end",
+          }}
+        >
+          <button
+            type="button"
+            onClick={onClose}
+            style={{
+              background: "rgba(255,255,255,.06)",
+              border: "1px solid rgba(255,255,255,.12)",
+              color: COLORS.text,
+              borderRadius: 13,
+              padding: "11px 14px",
+              cursor: "pointer",
+              fontWeight: 900,
+              fontFamily: "inherit",
+            }}
+          >
+            {isKreol ? "Fermé" : "Fermer"}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => window.print()}
+            style={{
+              background: "rgba(255,255,255,.06)",
+              border: "1px solid rgba(255,255,255,.12)",
+              color: COLORS.text,
+              borderRadius: 13,
+              padding: "11px 14px",
+              cursor: "pointer",
+              fontWeight: 900,
+              fontFamily: "inherit",
+            }}
+          >
+            🖨️ {isKreol ? "Imprimé" : "Imprimer"}
+          </button>
+
+          <button
+            type="button"
+            onClick={copyAppeal}
+            style={{
+              background: COLORS.purple,
+              border: "none",
+              color: "#fff",
+              borderRadius: 13,
+              padding: "11px 14px",
+              cursor: "pointer",
+              fontWeight: 900,
+              fontFamily: "inherit",
+            }}
+          >
+            {copied ? "✅ Copié" : isKreol ? "📋 Kopi recours" : "📋 Copier le recours"}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
+function getGeneratedAppealBody(demarche, isKreol) {
+  const title = isKreol
+    ? demarche.title_kr || demarche.title || "cette aide"
+    : demarche.title || "cette aide"
+
+  if (isKreol) {
+    return [
+      "[Vos coordonnées]",
+      "[Adresse]",
+      "[Code postal – Ville]",
+      "",
+      "[Organisme destinataire]",
+      "[Adresse de l’organisme]",
+      "[Code postal – Ville]",
+      "",
+      "À [Ville], le [Date]",
+      "",
+      `Objet : Demande réexamen concernant ${title}`,
+      "",
+      "Madame, Monsieur,",
+      "",
+      `Mi souhaite demander un réexamen concernant ${title}.`,
+      "",
+      "Suite au courrier reçu, mi souhaiterais obtenir des précisions complémentaires concernant ma situation et les éléments ayant conduit à cette décision.",
+      "",
+      "Mi reste disponible pou fournir tout document complémentaire qui pourrait être utile à l’étude du dossier.",
+      "",
+      "Mi remercie à zot par avance pou zot retour.",
+      "",
+      "Cordialement,",
+      "",
+      "[Signature à compléter]",
+    ]
+      .filter(Boolean)
+      .join("\n")
+  }
+
+  return [
+    "[Vos coordonnées]",
+    "[Adresse]",
+    "[Code postal – Ville]",
+    "",
+    "[Organisme destinataire]",
+    "[Adresse de l’organisme]",
+    "[Code postal – Ville]",
+    "",
+    "À [Ville], le [Date]",
+    "",
+    `Objet : Demande de réexamen concernant ${title}`,
+    "",
+    "Madame, Monsieur,",
+    "",
+    `Je souhaite solliciter un réexamen concernant ${title}.`,
+    "",
+    "Suite au courrier reçu, je souhaiterais obtenir des précisions complémentaires concernant ma situation et les éléments ayant conduit à cette décision.",
+    "",
+    "Je reste à votre disposition pour fournir tout document complémentaire qui pourrait être utile à l’étude du dossier.",
+    "",
+    "Je vous remercie par avance pour votre retour.",
+    "",
+    "Cordialement,",
+    "",
+    "[Signature à compléter]",
+  ]
+    .filter(Boolean)
+    .join("\n")
+}
+
 
 function AlertBox({ color, text }) {
   return (

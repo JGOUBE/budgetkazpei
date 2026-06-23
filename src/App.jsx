@@ -8,6 +8,7 @@ import { useUserAbonnements } from "./hooks/useUserAbonnements"
 import { useCustomBudgets } from "./hooks/useCustomBudgets"
 import { useMonthlyHistory } from "./hooks/useMonthlyHistory"
 
+import { supabase } from "./services/supabase"
 
 import LoginPage from "./components/auth/LoginPage"
 import RegisterPage from "./components/auth/RegisterPage"
@@ -78,9 +79,10 @@ export default function App() {
 
   if (currentPath === "/privacy") return <PrivacyPage />
   if (currentPath === "/terms") return <TermsPage />
-  if (currentPath === "/suppression-compte")
-  return <SuppressionComptePage />
-  if (currentPath === "/premium" || currentPath.startsWith("/premium/")) return <PremiumLandingPage />
+  if (currentPath === "/suppression-compte") return <SuppressionComptePage />
+  if (currentPath === "/premium" || currentPath.startsWith("/premium/")) {
+    return <PremiumLandingPage />
+  }
 
   if (currentPath === "/login") return <BudgetKazPeiApp initialAuthPage="login" />
   if (currentPath === "/register") return <BudgetKazPeiApp initialAuthPage="register" />
@@ -97,10 +99,9 @@ function BudgetKazPeiApp({ initialAuthPage = "login" }) {
   const [showSidebar, setShowSidebar] = useState(false)
   const [mounted, setMounted] = useState(false)
   const [editingTransaction, setEditingTransaction] = useState(null)
-  const [demarches] = useState([])
+  const [subscriptionPlan, setSubscriptionPlan] = useState("free")
 
   const isMobile = useIsMobile()
-
   const { lang, toggleLang, t } = useLanguage()
 
   const {
@@ -110,28 +111,50 @@ function BudgetKazPeiApp({ initialAuthPage = "login" }) {
     deleteTransaction,
   } = useTransactions(user?.id)
 
-const { profile } = useProfile(user?.id)
+  const { profile } = useProfile(user?.id)
 
-// Normalisation abonnement : on utilise "plan" comme source principale.
-// Valeurs attendues : "free", "premium", "premium_plus".
-// Les anciens champs restent seulement en secours pour les vieux profils.
-const isAdmin = profile?.is_admin === true
-const plan = profile?.plan || "free"
+  useEffect(() => {
+    async function loadSubscriptionPlan() {
+      if (!user?.id) {
+        setSubscriptionPlan("free")
+        return
+      }
 
-const isPremium =
-  isAdmin ||
-  plan === "premium" ||
-  plan === "premium_plus" ||
-  profile?.premium === true ||
-  profile?.is_premium === true ||
-  profile?.premium_plus === true
+      const { data, error } = await supabase
+        .from("user_subscriptions")
+        .select("plan, status, updated_at")
+        .eq("user_id", user.id)
+        .eq("status", "active")
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle()
 
-// Important : un admin ne doit PAS être affiché automatiquement en Premium+.
-// Premium+ doit dépendre uniquement du plan premium_plus ou de l'ancien champ premium_plus.
-const isPremiumPlus =
-  plan === "premium_plus" ||
-  profile?.premium_plus === true
+      if (error) {
+        console.error("Erreur chargement abonnement:", error)
+        setSubscriptionPlan(profile?.plan || "free")
+        return
+      }
 
+      setSubscriptionPlan(data?.plan || profile?.plan || "free")
+    }
+
+    loadSubscriptionPlan()
+  }, [user?.id, profile?.plan])
+
+  const isAdmin = profile?.is_admin === true
+  const plan = subscriptionPlan || profile?.plan || "free"
+
+  const isPremium =
+    isAdmin ||
+    plan === "premium" ||
+    plan === "premium_plus" ||
+    profile?.premium === true ||
+    profile?.is_premium === true ||
+    profile?.premium_plus === true
+
+  const isPremiumPlus =
+    plan === "premium_plus" ||
+    profile?.premium_plus === true
 
   const { customBudgets, saveBudgets } = useCustomBudgets(
     user?.id,
@@ -148,10 +171,10 @@ const isPremiumPlus =
   } = useUserAbonnements(user?.id)
 
   const {
-  historiques,
-  loading: historiqueLoading,
-  savePreviousMonthHistory,
-} = useMonthlyHistory(user?.id, isPremium)
+    historiques,
+    loading: historiqueLoading,
+    savePreviousMonthHistory,
+  } = useMonthlyHistory(user?.id, isPremium)
 
   const {
     revenus,
@@ -174,6 +197,7 @@ const isPremiumPlus =
       setShowSidebar(false)
       setShowModal(false)
       setEditingTransaction(null)
+      setSubscriptionPlan("free")
     }
   }, [user])
 
@@ -184,13 +208,14 @@ const isPremiumPlus =
   }, [isMobile])
 
   useEffect(() => {
-  if (!user?.id || !isPremium) return
-  if (typeof savePreviousMonthHistory !== "function") return
+    if (!user?.id || !isPremium) return
+    if (typeof savePreviousMonthHistory !== "function") return
 
-  savePreviousMonthHistory().catch(error => {
-    console.error("Erreur archivage automatique mensuel:", error)
-  })
-}, [user?.id, isPremium, savePreviousMonthHistory])
+    savePreviousMonthHistory().catch(error => {
+      console.error("Erreur archivage automatique mensuel:", error)
+    })
+  }, [user?.id, isPremium, savePreviousMonthHistory])
+
   function handleNavChange(nav) {
     const normalizedNav =
       nav === "revenusDetails" || nav === "revenus-detail" || nav === "revenus-details"
@@ -466,33 +491,32 @@ const isPremiumPlus =
 
         {activeNav === "dashboard" && (
           <Dashboard
-              stats={{
-                revenus,
-                depenses,
-                solde,
-                chargesFixes,
-                depensesVariables,
-                resteAVivre,
-                tauxChargesFixes,
-              }}
-              byCategory={byCategory}
-              pieData={pieData}
-              transactions={transactions}
-              abonnements={abonnements}
-              t={t}
-              isMobile={isMobile}
-              isPremium={isPremium}
-              customBudgets={customBudgets}
-              onSaveBudgets={saveBudgets}
-              onGoPremium={() => setActiveNav("premium")}
-
-              opportunitiesCount={5}
-              commune={profile?.commune || ""}
-              onOpenOpportunities={() => setActiveNav("opportunites")}
-              onOpenRevenus={() => setActiveNav("revenus")}
-              onOpenDepenses={() => setActiveNav("depenses")}
-              onOpenSolde={() => setActiveNav("solde")}
-            />
+            stats={{
+              revenus,
+              depenses,
+              solde,
+              chargesFixes,
+              depensesVariables,
+              resteAVivre,
+              tauxChargesFixes,
+            }}
+            byCategory={byCategory}
+            pieData={pieData}
+            transactions={transactions}
+            abonnements={abonnements}
+            t={t}
+            isMobile={isMobile}
+            isPremium={isPremium}
+            customBudgets={customBudgets}
+            onSaveBudgets={saveBudgets}
+            onGoPremium={() => setActiveNav("premium")}
+            opportunitiesCount={5}
+            commune={profile?.commune || ""}
+            onOpenOpportunities={() => setActiveNav("opportunites")}
+            onOpenRevenus={() => setActiveNav("revenus")}
+            onOpenDepenses={() => setActiveNav("depenses")}
+            onOpenSolde={() => setActiveNav("solde")}
+          />
         )}
 
         {activeNav === "revenus" && (
@@ -557,100 +581,101 @@ const isPremiumPlus =
         )}
 
         {activeNav === "aides" && (
-  <AidesPage
-  isMobile={isMobile}
-  t={t}
-  isPremium={isPremium}
-  isPremiumPlus={isPremiumPlus}
-  user={user}
-/>
-)}
+          <AidesPage
+            isMobile={isMobile}
+            t={t}
+            isPremium={isPremium}
+            isPremiumPlus={isPremiumPlus}
+            user={user}
+          />
+        )}
 
-{activeNav === "demarches" && (
-  <DemarchesPage
-    user={user}
-    language={lang}
-    isMobile={isMobile}
-    isPremium={isPremium}
-    isPremiumPlus={isPremiumPlus}
-    onGoAides={() => setActiveNav("aides")}
-    onGoPremium={() => setActiveNav("premium")}
-  />
-)}
+        {activeNav === "demarches" && (
+          <DemarchesPage
+            user={user}
+            language={lang}
+            isMobile={isMobile}
+            isPremium={isPremium}
+            isPremiumPlus={isPremiumPlus}
+            onGoAides={() => setActiveNav("aides")}
+            onGoPremium={() => setActiveNav("premium")}
+          />
+        )}
 
-{activeNav === "conseiller" && (
-  <div
-    style={{
-      background: `linear-gradient(135deg, ${COLORS.card} 0%, ${COLORS.cardLight} 100%)`,
-      border: `1px solid ${COLORS.border}`,
-      borderRadius: 20,
-      padding: isMobile ? 18 : 26,
-    }}
-  >
-    <h2
-      style={{
-        margin: "0 0 8px",
-        fontFamily: "'DM Serif Display', serif",
-        fontSize: isMobile ? 26 : 34,
-        color: COLORS.text,
-      }}
-    >
-      🤖 {lang === "fr" ? "Conseiller BudgetKazPei" : "Konseyé BudgetKazPei"}
-    </h2>
+        {activeNav === "conseiller" && (
+          <div
+            style={{
+              background: `linear-gradient(135deg, ${COLORS.card} 0%, ${COLORS.cardLight} 100%)`,
+              border: `1px solid ${COLORS.border}`,
+              borderRadius: 20,
+              padding: isMobile ? 18 : 26,
+            }}
+          >
+            <h2
+              style={{
+                margin: "0 0 8px",
+                fontFamily: "'DM Serif Display', serif",
+                fontSize: isMobile ? 26 : 34,
+                color: COLORS.text,
+              }}
+            >
+              🤖 {lang === "fr" ? "Conseiller BudgetKazPei" : "Konseyé BudgetKazPei"}
+            </h2>
 
-    <p
-      style={{
-        margin: 0,
-        color: COLORS.muted,
-        fontSize: 14,
-        lineHeight: 1.6,
-      }}
-    >
-      {lang === "fr"
-        ? "Cette page regroupera vos discussions en cours, les questions restantes et les outils Premium+ comme les courriers administratifs."
-        : "Ici ou va retrouv out bann discussion, out kestion restantes ek bann zouti Premium+ pou courrier administratif."}
-    </p>
-  </div>
-)}
+            <p
+              style={{
+                margin: 0,
+                color: COLORS.muted,
+                fontSize: 14,
+                lineHeight: 1.6,
+              }}
+            >
+              {lang === "fr"
+                ? "Cette page regroupera vos discussions en cours, les questions restantes et les outils Premium+ comme les courriers administratifs."
+                : "Ici ou va retrouv out bann discussion, out kestion restantes ek bann zouti Premium+ pou courrier administratif."}
+            </p>
+          </div>
+        )}
 
-{activeNav === "contact" && (
-  <ContactPage
-    user={user}
-    t={t}
-  />
-)}
+        {activeNav === "contact" && (
+          <ContactPage
+            user={user}
+            t={t}
+          />
+        )}
 
-{activeNav === "opportunites" && (
-  <OpportunitesPage
-  isMobile={isMobile}
-  isPremium={isPremium}
-  t={t}
-  user={user}
-  onNavigate={handleNavChange}
-/>
-)}
-{activeNav === "abonnements" && (
-  <AbonnementsPage
-    abonnements={abonnements}
-    loading={abonnementsLoading}
-    onUpdate={updateAbonnement}
-    onAdd={addAbonnement}
-    onDelete={deleteAbonnement}
-    onReset={resetAbonnements}
-    isMobile={isMobile}
-    t={t}
-  />
-)}
+        {activeNav === "opportunites" && (
+          <OpportunitesPage
+            isMobile={isMobile}
+            isPremium={isPremium}
+            t={t}
+            user={user}
+            onNavigate={handleNavChange}
+          />
+        )}
 
-{activeNav === "historique" && (
-  <HistoriquePage
-    historiques={historiques}
-    loading={historiqueLoading}
-    isPremium={isPremium}
-    onGoPremium={() => setActiveNav("premium")}
-    t={t}
-  />
-)}
+        {activeNav === "abonnements" && (
+          <AbonnementsPage
+            abonnements={abonnements}
+            loading={abonnementsLoading}
+            onUpdate={updateAbonnement}
+            onAdd={addAbonnement}
+            onDelete={deleteAbonnement}
+            onReset={resetAbonnements}
+            isMobile={isMobile}
+            t={t}
+          />
+        )}
+
+        {activeNav === "historique" && (
+          <HistoriquePage
+            historiques={historiques}
+            loading={historiqueLoading}
+            isPremium={isPremium}
+            onGoPremium={() => setActiveNav("premium")}
+            t={t}
+          />
+        )}
 
         {activeNav === "profil" && (
           <ProfilePage user={user} isPremium={isPremium} isPremiumPlus={isPremiumPlus} t={t} />

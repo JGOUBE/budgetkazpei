@@ -62,10 +62,65 @@ function shouldConsumeAiExchange(message = "", isQuickPreset = false) {
   return countMeaningfulWords(message) > 2
 }
 
-function buildSystemPrompt(isKreol: boolean) {
+function buildSystemPrompt(isKreol: boolean, action = "") {
+  if (action === "analyze_refusal") {
+    return isKreol
+      ? `Ou lé assistant administratif BudgetKazPei pou La Rényon. Ou aide l'utilisateur comprendre un courrier de refus ou une réponse administrative. Règles strictes : utilise uniquement le texte fourni, n'invente jamais un motif, n'invente jamais une pièce manquante, ne promets jamais qu'un recours va marcher, ne donne pas d'avis juridique. Si une information n'est pas écrite, dis clairement qu'elle n'est pas indiquée.`
+      : `Tu es l'assistant administratif BudgetKazPei pour La Réunion. Tu aides l'utilisateur à comprendre un courrier de refus ou une réponse administrative. Règles strictes : utilise uniquement le texte fourni, n'invente jamais un motif, n'invente jamais une pièce manquante, ne promets jamais qu'un recours aboutira, ne donne pas d'avis juridique. Si une information n'est pas écrite, dis clairement qu'elle n'est pas indiquée.`
+  }
+
   return isKreol
     ? `Ou lé konseye BudgetKazPei pou La Rényon. Répond an kréol réunionnais simple, mélangé fransé si besoin. Ou dois orient l'utilisateur vers bann aides possibles, expliquer clairement, rester prudent, et rappeler que décision finale dépend organisme officiel.`
     : `Tu es le conseiller BudgetKazPei pour La Réunion. Réponds en français simple, concret et rassurant. Oriente l'utilisateur vers les aides possibles, explique les démarches, reste prudent, et rappelle que la décision finale dépend de l'organisme officiel.`
+}
+
+function buildRefusalPrompt(body: any) {
+  const refusalText = String(body.refusalText || body.question || "").trim()
+  const demarche = body.demarche || {}
+
+  return `
+Analyse uniquement le courrier fourni ci-dessous.
+
+Aide ou démarche concernée dans BudgetKazPei :
+${JSON.stringify(demarche, null, 2)}
+
+Courrier ou message collé par l'utilisateur :
+"""
+${refusalText}
+"""
+
+Règles obligatoires :
+- Ne jamais inventer d'information.
+- Ne jamais affirmer un motif qui n'est pas écrit dans le courrier.
+- Ne jamais promettre qu'un recours ou une nouvelle demande aboutira.
+- Ne pas donner d'avis juridique.
+- Ne pas reprendre les noms, prénoms, adresses, numéros de dossier ou données très personnelles si le texte en contient.
+- Si une information manque, écrire : "Non indiqué dans le courrier".
+- Rester simple, clair, utile et prudent.
+
+Retourne exactement ce format :
+
+📄 Résumé du courrier
+[Résumé simple en 3 à 5 lignes maximum]
+
+❌ Motifs explicitement mentionnés
+[Liste uniquement les motifs écrits. Si aucun motif clair : Non indiqué dans le courrier]
+
+📎 Documents ou informations demandés
+[Liste uniquement les documents/informations écrits. Si rien : Non indiqué dans le courrier]
+
+🧭 Démarches évoquées dans le courrier
+[Délais, recours, contact, nouvelle demande, rendez-vous, etc. uniquement si écrit]
+
+❓ Questions à poser à l'organisme
+[Questions utiles et prudentes, basées sur ce qui manque ou ce qui est écrit]
+
+⚠️ Points à vérifier
+[Points à vérifier auprès de l'organisme, sans inventer]
+
+Phrase finale obligatoire :
+"Cette analyse aide à comprendre le courrier, mais seule la réponse de l'organisme fait foi."
+`
 }
 
 function buildUserPrompt(body: any) {
@@ -134,10 +189,23 @@ Deno.serve(async (req) => {
     const userId = userData.user.id
     const body = await req.json()
 
-    const question = String(body.question || "")
+    const action = String(body.action || "")
+    const question = String(body.question || body.refusalText || "")
     const isQuickPreset = body.isQuickPreset === true
     const isKreol = body.isKreol === true
     const consumesExchange = shouldConsumeAiExchange(question, isQuickPreset)
+
+    if (action === "analyze_refusal" && question.trim().length < 40) {
+      return Response.json(
+        {
+          success: false,
+          error: isKreol
+            ? "Le courrier fourni est trop court pour être analysé."
+            : "Le courrier fourni est trop court pour être analysé.",
+        },
+        { status: 400, headers: corsHeaders }
+      )
+    }
 
     const profile = body.profile || {}
     const plan = getAiPlan(profile)
@@ -210,6 +278,8 @@ Deno.serve(async (req) => {
       )
     }
 
+    const userPrompt = action === "analyze_refusal" ? buildRefusalPrompt(body) : buildUserPrompt(body)
+
     const openAiResponse = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -218,11 +288,11 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify({
         model,
-        temperature: 0.4,
-        max_tokens: 900,
+        temperature: action === "analyze_refusal" ? 0.15 : 0.4,
+        max_tokens: action === "analyze_refusal" ? 1200 : 900,
         messages: [
-          { role: "system", content: buildSystemPrompt(isKreol) },
-          { role: "user", content: buildUserPrompt(body) },
+          { role: "system", content: buildSystemPrompt(isKreol, action) },
+          { role: "user", content: userPrompt },
         ],
       }),
     })
