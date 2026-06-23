@@ -13,6 +13,12 @@ import {
   Coins,
   ClipboardCheck,
   Trash2,
+  FileText,
+  Mail,
+  FolderCheck,
+  Scale,
+  HelpCircle,
+  Lock,
 } from "lucide-react"
 
 import { supabase } from "../../services/supabase"
@@ -31,6 +37,7 @@ const COLORS = {
   cyan: "#23D3D6",
   green: "#22C55E",
   red: "#FB7185",
+  purple: "#A78BFA",
 }
 
 const CARD_VARIANTS = [
@@ -489,6 +496,13 @@ function normalizeDemarche(row = {}) {
     title_kr: aide.nom_kreol || aide.nom || row.aide_nom || "Éd",
     description_fr: aide.description_fr || aide.description || "",
     description_kr: aide.description_kreol || "",
+    demarches_fr: aide.demarches_fr || row.demarches_fr || "",
+    demarches_kr: aide.demarches_kreol || row.demarches_kreol || "",
+    amountLabel: getAideAmountLabel(aide),
+    amountObtained: row.montant_obtenu || row.amount_obtained || "",
+    documents: Array.isArray(row.documents) ? row.documents : [],
+    notes: row.notes || "",
+    dateLimit: row.date_limite || row.deadline || "",
     category: aide.categorie || "aide",
     color: getCategoryColor(aide.categorie || "aide"),
     aide,
@@ -650,7 +664,11 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
           categorie,
           description,
           description_fr,
-          description_kreol
+          description_kreol,
+          demarches_fr,
+          demarches_kreol,
+          montant_min,
+          montant_max
         )
       `)
       .eq("user_id", user.id)
@@ -701,7 +719,11 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
           categorie,
           description,
           description_fr,
-          description_kreol
+          description_kreol,
+          demarches_fr,
+          demarches_kreol,
+          montant_min,
+          montant_max
         )
       `)
       .single()
@@ -751,7 +773,11 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
           categorie,
           description,
           description_fr,
-          description_kreol
+          description_kreol,
+          demarches_fr,
+          demarches_kreol,
+          montant_min,
+          montant_max
         )
       `)
       .single()
@@ -1012,7 +1038,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                   }}
                 >
                   <div>
-                    <div style={{ color: COLORS.text, fontWeight: 900, fontSize: 15, marginBottom: 6 }}>
+                    <div style={{ color: COLORS.text, fontWeight: 900, fontSize: 16, marginBottom: 6 }}>
                       {title}
                     </div>
 
@@ -1028,27 +1054,94 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                         padding: "4px 9px",
                         fontSize: 11,
                         fontWeight: 900,
-                        marginBottom: 8,
+                        marginBottom: 10,
                       }}
                     >
                       {status.icon} {status.label}
                     </div>
 
-                    <div style={{ color: COLORS.muted, fontSize: 12, lineHeight: 1.6 }}>
-                      📅 {isKreol ? "Ajouté le" : "Ajouté le"} {formatDate(demarche.created_at)}
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: isMobile ? "1fr" : "repeat(3, minmax(0, 1fr))",
+                        gap: 8,
+                        marginTop: 6,
+                      }}
+                    >
+                      <MiniInfoBox
+                        label={isKreol ? "Montan estimé" : "Montant estimé"}
+                        value={demarche.amountLabel || "À vérifier"}
+                        color={COLORS.yellow}
+                        icon="💰"
+                      />
+                      <MiniInfoBox
+                        label={isKreol ? "Gain obtenu" : "Montant obtenu"}
+                        value={demarche.amountObtained ? `${demarche.amountObtained} €` : "—"}
+                        color={COLORS.green}
+                        icon="✅"
+                      />
+                      <MiniInfoBox
+                        label={isKreol ? "Date ajout" : "Date d’ajout"}
+                        value={formatDate(demarche.created_at) || "—"}
+                        color={COLORS.cyan}
+                        icon="📅"
+                      />
                     </div>
 
                     {demarche.updated_at && (
-                      <div style={{ color: COLORS.muted, fontSize: 12 }}>
+                      <div style={{ color: COLORS.muted, fontSize: 12, marginTop: 8 }}>
                         🔄 {isKreol ? "Miz à jour" : "Mis à jour"} {formatDate(demarche.updated_at)}
                       </div>
                     )}
 
-                    <div style={{ color: COLORS.muted, fontSize: 12, lineHeight: 1.55, marginTop: 8 }}>
-                      {isKreol
-                        ? "Structure prête pou ajouté plus tard : notes, dokiman, date limite, gain obtenu."
-                        : "Structure prête pour ajouter plus tard : notes, documents, date limite, gain obtenu."}
+                    {(demarche.demarches_fr || demarche.demarches_kr) && (
+                      <div
+                        style={{
+                          marginTop: 10,
+                          background: "rgba(35,211,214,.08)",
+                          border: "1px solid rgba(35,211,214,.18)",
+                          borderRadius: 12,
+                          padding: 10,
+                          color: COLORS.muted,
+                          fontSize: 12,
+                          lineHeight: 1.5,
+                        }}
+                      >
+                        <strong style={{ color: COLORS.cyan }}>
+                          {isKreol ? "Étapes :" : "Étapes :"}
+                        </strong>{" "}
+                        {isKreol ? demarche.demarches_kr || demarche.demarches_fr : demarche.demarches_fr}
+                      </div>
+                    )}
+
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+                        gap: 8,
+                        marginTop: 10,
+                      }}
+                    >
+                      <InfoPanel
+                        title={isKreol ? "📄 Documents" : "📄 Documents"}
+                        text={
+                          demarche.documents?.length
+                            ? demarche.documents.join(" • ")
+                            : isKreol
+                              ? "À compléter plus tard"
+                              : "À compléter plus tard"
+                        }
+                      />
+                      <InfoPanel
+                        title={isKreol ? "📝 Notes" : "📝 Notes"}
+                        text={demarche.notes || (isKreol ? "Aucune note pour le moment" : "Aucune note pour le moment")}
+                      />
                     </div>
+
+                    <DemarchePremiumTools
+                      isKreol={isKreol}
+                      isPremiumPlus={false}
+                    />
                   </div>
 
                   <select
@@ -1515,6 +1608,121 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
           })}
         </div>
       </section>
+    </div>
+  )
+}
+
+function MiniInfoBox({ label, value, color, icon }) {
+  return (
+    <div
+      style={{
+        background: "rgba(10,22,40,.40)",
+        border: "1px solid rgba(255,255,255,.08)",
+        borderRadius: 12,
+        padding: "9px 10px",
+      }}
+    >
+      <div style={{ color: COLORS.muted, fontSize: 10.5, fontWeight: 900, marginBottom: 4 }}>
+        {icon} {label}
+      </div>
+      <div style={{ color, fontSize: 13, fontWeight: 900 }}>
+        {value}
+      </div>
+    </div>
+  )
+}
+
+function InfoPanel({ title, text }) {
+  return (
+    <div
+      style={{
+        background: "rgba(10,22,40,.34)",
+        border: "1px solid rgba(255,255,255,.07)",
+        borderRadius: 12,
+        padding: "9px 10px",
+        minHeight: 58,
+      }}
+    >
+      <div style={{ color: COLORS.text, fontSize: 12, fontWeight: 900, marginBottom: 5 }}>
+        {title}
+      </div>
+      <div style={{ color: COLORS.muted, fontSize: 12, lineHeight: 1.45 }}>
+        {text}
+      </div>
+    </div>
+  )
+}
+
+function DemarchePremiumTools({ isKreol, isPremiumPlus }) {
+  const tools = [
+    {
+      icon: <FolderCheck size={14} />,
+      label: isKreol ? "Prépar mon dossier" : "Préparer mon dossier",
+    },
+    {
+      icon: <FileText size={14} />,
+      label: isKreol ? "Génér courrier" : "Générer un courrier",
+    },
+    {
+      icon: <Mail size={14} />,
+      label: isKreol ? "Génér email" : "Générer un email",
+    },
+    {
+      icon: <Scale size={14} />,
+      label: isKreol ? "Prépar recours" : "Préparer un recours",
+    },
+    {
+      icon: <HelpCircle size={14} />,
+      label: isKreol ? "Comprann refus" : "Comprendre un refus",
+    },
+  ]
+
+  return (
+    <div
+      style={{
+        marginTop: 12,
+        paddingTop: 12,
+        borderTop: "1px solid rgba(255,255,255,.08)",
+      }}
+    >
+      <div
+        style={{
+          color: isPremiumPlus ? COLORS.purple : COLORS.yellow,
+          fontSize: 12,
+          fontWeight: 900,
+          marginBottom: 8,
+        }}
+      >
+        {isPremiumPlus ? "✨ Premium+" : "🔒 Premium+"}{" "}
+        {isKreol ? "Zouti pou démarche" : "Outils pour cette démarche"}
+      </div>
+
+      <div style={{ display: "flex", gap: 7, flexWrap: "wrap" }}>
+        {tools.map(tool => (
+          <button
+            key={tool.label}
+            type="button"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 5,
+              background: isPremiumPlus ? "rgba(167,139,250,.12)" : "rgba(252,211,77,.08)",
+              border: isPremiumPlus ? "1px solid rgba(167,139,250,.25)" : "1px solid rgba(252,211,77,.22)",
+              color: isPremiumPlus ? "#DDD6FE" : COLORS.yellow,
+              borderRadius: 999,
+              padding: "7px 9px",
+              cursor: "default",
+              fontFamily: "inherit",
+              fontSize: 11,
+              fontWeight: 900,
+            }}
+          >
+            {!isPremiumPlus && <Lock size={12} />}
+            {tool.icon}
+            {tool.label}
+          </button>
+        ))}
+      </div>
     </div>
   )
 }

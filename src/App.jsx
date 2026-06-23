@@ -16,6 +16,9 @@ import Header from "./components/header/Header"
 import AddTransactionModal from "./components/modals/AddTransactionModal"
 import EditTransactionModal from "./components/modals/EditTransactionModal"
 import Dashboard from "./components/dashboard/Dashboard"
+import RevenusPage from "./components/dashboard/RevenusPage"
+import DepensesPage from "./components/dashboard/DepensesPage"
+import SoldePage from "./components/dashboard/SoldePage"
 import ProfilePage from "./components/profile/ProfilePage"
 import PremiumPage from "./components/premium/PremiumPage"
 import AbonnementsPage from "./components/abonnements/AbonnementsPage"
@@ -189,7 +192,16 @@ const isPremiumPlus =
   })
 }, [user?.id, isPremium, savePreviousMonthHistory])
   function handleNavChange(nav) {
-    setActiveNav(nav)
+    const normalizedNav =
+      nav === "revenusDetails" || nav === "revenus-detail" || nav === "revenus-details"
+        ? "revenus"
+        : nav === "depensesDetails" || nav === "depenses-detail" || nav === "depenses-details"
+          ? "depenses"
+          : nav === "soldeDetails" || nav === "solde-detail" || nav === "solde-details"
+            ? "solde"
+            : nav
+
+    setActiveNav(normalizedNav)
     setShowSidebar(false)
   }
 
@@ -199,8 +211,7 @@ const isPremiumPlus =
 
       if (!target) return
 
-      setActiveNav(target)
-      setShowSidebar(false)
+      handleNavChange(target)
 
       if (typeof window !== "undefined") {
         window.scrollTo({ top: 0, behavior: "smooth" })
@@ -420,7 +431,9 @@ const isPremiumPlus =
               }}
             >
               {activeNav === "dashboard" && t("nav", "dashboard")}
+              {activeNav === "revenus" && (lang === "fr" ? "Revenus du mois" : "Larzan i rantre")}
               {activeNav === "depenses" && t("nav", "depenses")}
+              {activeNav === "solde" && (lang === "fr" ? "Solde disponible" : "Larzan disponible")}
               {activeNav === "aides" && t("nav", "aides")}
               {activeNav === "demarches" && (lang === "fr" ? "Mes démarches" : "Mon démars")}
               {activeNav === "conseiller" && (lang === "fr" ? "Conseiller" : "Konseyé")}
@@ -476,150 +489,71 @@ const isPremiumPlus =
               opportunitiesCount={5}
               commune={profile?.commune || ""}
               onOpenOpportunities={() => setActiveNav("opportunites")}
+              onOpenRevenus={() => setActiveNav("revenus")}
+              onOpenDepenses={() => setActiveNav("depenses")}
+              onOpenSolde={() => setActiveNav("solde")}
             />
         )}
 
+        {activeNav === "revenus" && (
+          <RevenusPage
+            stats={{
+              revenus,
+              depenses,
+              solde,
+              chargesFixes,
+              depensesVariables,
+              resteAVivre,
+              tauxChargesFixes,
+            }}
+            transactions={transactions}
+            isMobile={isMobile}
+            isPremiumPlus={isPremiumPlus}
+            onGoPremium={() => setActiveNav("premium")}
+            t={t}
+          />
+        )}
+
         {activeNav === "depenses" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <div
-              style={{
-                background: `linear-gradient(135deg, ${COLORS.card} 0%, ${COLORS.cardLight} 100%)`,
-                border: `1px solid ${COLORS.border}`,
-                borderRadius: 16,
-                padding: isMobile ? 14 : 20,
-              }}
-            >
-              <h3
-                style={{
-                  margin: "0 0 16px",
-                  fontSize: 14,
-                  color: COLORS.muted,
-                  fontWeight: 500,
-                }}
-              >
-                {t("dashboard", "recentTransactions")}
-              </h3>
+          <DepensesPage
+            stats={{
+              revenus,
+              depenses,
+              solde,
+              chargesFixes,
+              depensesVariables,
+              resteAVivre,
+              tauxChargesFixes,
+            }}
+            transactions={transactions}
+            byCategory={byCategory}
+            pieData={pieData}
+            isMobile={isMobile}
+            isPremium={isPremium}
+            isPremiumPlus={isPremiumPlus}
+            customBudgets={customBudgets}
+            onSaveBudgets={saveBudgets}
+            onGoPremium={() => setActiveNav("premium")}
+            t={t}
+          />
+        )}
 
-              {transactions.length === 0 ? (
-                <div
-                  style={{
-                    textAlign: "center",
-                    padding: "30px 0",
-                    color: COLORS.muted,
-                  }}
-                >
-                  <div style={{ fontSize: 36, marginBottom: 10 }}>📭</div>
-                  <p style={{ fontSize: 14 }}>
-                    {t("transactions", "noTransactions")}
-                  </p>
-                  <p style={{ fontSize: 12 }}>
-                    {t("transactions", "noTransactionsSub")}
-                  </p>
-                </div>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {transactions.map(tx => (
-                    <div
-                      key={tx.id}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        padding: "12px 14px",
-                        borderRadius: 12,
-                        background: COLORS.bg,
-                        border: `1px solid ${COLORS.border}`,
-                      }}
-                    >
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <div
-                          style={{
-                            width: 36,
-                            height: 36,
-                            borderRadius: 10,
-                            background: COLORS.cardLight,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            fontSize: 16,
-                            flexShrink: 0,
-                          }}
-                        >
-                          {tx.icon}
-                        </div>
-
-                        <div>
-                          <div style={{ fontSize: 13, fontWeight: 500 }}>
-                            {tx.label}
-                          </div>
-                          <div style={{ fontSize: 11, color: COLORS.muted }}>
-                            {tx.date} · {t("categories", tx.category)}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span
-                          style={{
-                            fontSize: 14,
-                            fontWeight: 700,
-                            color: tx.amount >= 0 ? COLORS.green : COLORS.red,
-                          }}
-                        >
-                          {tx.amount >= 0 ? "+" : ""}
-                          {parseFloat(tx.amount).toFixed(2).replace(".", ",")} €
-                        </span>
-
-                        <button
-                          type="button"
-                          onClick={() => setEditingTransaction(tx)}
-                          style={{
-                            background: "transparent",
-                            border: `1px solid ${COLORS.border}`,
-                            borderRadius: 8,
-                            width: 30,
-                            height: 30,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            cursor: "pointer",
-                            fontSize: 13,
-                            flexShrink: 0,
-                          }}
-                        >
-                          ✏️
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (window.confirm(`Supprimer "${tx.label}" ?`)) {
-                              deleteTransaction(tx.id)
-                            }
-                          }}
-                          style={{
-                            background: "transparent",
-                            border: `1px solid ${COLORS.border}`,
-                            borderRadius: 8,
-                            width: 30,
-                            height: 30,
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            cursor: "pointer",
-                            fontSize: 13,
-                            flexShrink: 0,
-                          }}
-                        >
-                          🗑️
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
+        {activeNav === "solde" && (
+          <SoldePage
+            stats={{
+              revenus,
+              depenses,
+              solde,
+              chargesFixes,
+              depensesVariables,
+              resteAVivre,
+              tauxChargesFixes,
+            }}
+            isMobile={isMobile}
+            isPremiumPlus={isPremiumPlus}
+            onGoPremium={() => setActiveNav("premium")}
+            t={t}
+          />
         )}
 
         {activeNav === "aides" && (
@@ -634,7 +568,7 @@ const isPremiumPlus =
 
 {activeNav === "demarches" && (
   <DemarchesPage
-    demarches={demarches}
+    user={user}
     language={lang}
     isMobile={isMobile}
     isPremium={isPremium}

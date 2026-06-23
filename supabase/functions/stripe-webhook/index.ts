@@ -1,137 +1,141 @@
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-}
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import Stripe from "https://esm.sh/stripe@14.21.0?target=deno"
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 
-function jsonResponse(body: Record<string, unknown>, status = 200) {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: {
-      ...corsHeaders,
-      "Content-Type": "application/json",
-    },
-  })
-}
-
-Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders })
-  }
-
-  if (req.method !== "POST") {
-    return jsonResponse({ ok: false, error: "Method not allowed" }, 405)
-  }
-
-  try {
-    const resendApiKey = Deno.env.get("RESEND_API_KEY")
-    const supportToEmail = Deno.env.get("SUPPORT_TO_EMAIL") || "contact.budgetkazpei@gmail.com"
-    const supportFromEmail =
-      Deno.env.get("SUPPORT_FROM_EMAIL") || "BudgetKazPei <onboarding@resend.dev>"
-
-    if (!resendApiKey) {
-      return jsonResponse({ ok: false, error: "RESEND_API_KEY manquant" }, 500)
-    }
-
-    const body = await req.json()
-
-    const userName = String(body.user_name || "Utilisateur BudgetKazPei")
-    const userEmail = String(body.user_email || "")
-    const type = String(body.type || "question")
-    const subject = String(body.subject || "Message utilisateur")
-    const message = String(body.message || "")
-    const source = String(body.source || "contact")
-    const messageId = body.message_id ? String(body.message_id) : ""
-
-    if (!userEmail || !message) {
-      return jsonResponse({ ok: false, error: "Email ou message manquant" }, 400)
-    }
-
-    const emailSubject = `[BudgetKazPei] ${subject}`
-
-    const text = [
-      "Nouveau message BudgetKazPei",
-      "",
-      `Nom : ${userName}`,
-      `Email : ${userEmail}`,
-      `Type : ${type}`,
-      `Source : ${source}`,
-      messageId ? `ID message Supabase : ${messageId}` : "",
-      "",
-      "Message :",
-      message,
-    ]
-      .filter(Boolean)
-      .join("\n")
-
-    const html = `
-      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #0f172a;">
-        <h2>📧 Nouveau message BudgetKazPei</h2>
-        <p><strong>Nom :</strong> ${escapeHtml(userName)}</p>
-        <p><strong>Email :</strong> ${escapeHtml(userEmail)}</p>
-        <p><strong>Type :</strong> ${escapeHtml(type)}</p>
-        <p><strong>Source :</strong> ${escapeHtml(source)}</p>
-        ${messageId ? `<p><strong>ID message Supabase :</strong> ${escapeHtml(messageId)}</p>` : ""}
-        <hr />
-        <p><strong>Message :</strong></p>
-        <div style="white-space: pre-wrap; background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:12px;">
-          ${escapeHtml(message)}
-        </div>
-      </div>
-    `
-
-    const resendResponse = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${resendApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: supportFromEmail,
-        to: [supportToEmail],
-        reply_to: userEmail,
-        subject: emailSubject,
-        text,
-        html,
-      }),
-    })
-
-    const resendData = await resendResponse.json().catch(() => ({}))
-
-    if (!resendResponse.ok) {
-      console.error("Erreur Resend:", resendData)
-      return jsonResponse(
-        {
-          ok: false,
-          error: resendData?.message || "Erreur Resend",
-          details: resendData,
-        },
-        500
-      )
-    }
-
-    return jsonResponse({
-      ok: true,
-      email_id: resendData?.id || null,
-    })
-  } catch (error) {
-    console.error("Erreur send-support-email:", error)
-
-    return jsonResponse(
-      {
-        ok: false,
-        error: error?.message || "Erreur inconnue",
-      },
-      500
-    )
-  }
+const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY")!, {
+  apiVersion: "2024-06-20",
 })
 
-function escapeHtml(value: string) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;")
+const supabase = createClient(
+  Deno.env.get("SUPABASE_URL")!,
+  Deno.env.get("SERVICE_ROLE_KEY")!
+)
+
+const PRICE_MAP: Record<
+  string,
+  { plan: "premium" | "premium_plus"; period: "monthly" | "yearly" }
+> = {
+  "price_1TkkITBQ1hdaYjbCbm0rfH3C": {
+    plan: "premium",
+    period: "monthly",
+  },
+  "price_1TkkITBQ1hdaYjbCvaiI0y4e": {
+    plan: "premium",
+    period: "yearly",
+  },
+  "price_1TkkISBQ1hdaYjbCk7QaDdnu": {
+    plan: "premium_plus",
+    period: "monthly",
+  },
+  "price_1TkkIUBQ1hdaYjbCJQwgfJOo": {
+    plan: "premium_plus",
+    period: "yearly",
+  },
 }
+
+serve(async (req) => {
+  try {
+    const event = await req.json()
+
+    let email: string | null = null
+    let customerId: string | null = null
+    let subscriptionId: string | null = null
+    let priceId: string | null = null
+    let status: string | null = null
+
+    if (event.type === "checkout.session.completed") {
+      const session = event.data.object
+
+      email = session.customer_details?.email || session.customer_email || null
+      customerId = typeof session.customer === "string" ? session.customer : null
+      subscriptionId =
+        typeof session.subscription === "string" ? session.subscription : null
+
+      if (subscriptionId) {
+        const sub = await stripe.subscriptions.retrieve(subscriptionId)
+        priceId = sub.items.data[0]?.price.id ?? null
+        status = sub.status
+      }
+    }
+
+    if (
+      event.type === "customer.subscription.created" ||
+      event.type === "customer.subscription.updated"
+    ) {
+      const sub = event.data.object
+
+      subscriptionId = sub.id
+      customerId = typeof sub.customer === "string" ? sub.customer : null
+      priceId = sub.items?.data?.[0]?.price?.id ?? null
+      status = sub.status
+
+      if (customerId) {
+        const customer = await stripe.customers.retrieve(customerId)
+
+        if (!customer.deleted) {
+          email = customer.email
+        }
+      }
+    }
+
+    if (event.type === "customer.subscription.deleted") {
+      const sub = event.data.object
+      customerId = typeof sub.customer === "string" ? sub.customer : null
+
+      if (customerId) {
+        const customer = await stripe.customers.retrieve(customerId)
+
+        if (!customer.deleted && customer.email) {
+          await supabase
+            .from("profiles")
+            .update({
+              premium: false,
+              premium_plus: false,
+              subscription_type: "free",
+              stripe_subscription_status: "canceled",
+              premium_cancel_at: new Date().toISOString(),
+            })
+            .eq("email", customer.email)
+        }
+      }
+
+      return new Response("subscription canceled", { status: 200 })
+    }
+
+    if (!email || !priceId || !PRICE_MAP[priceId]) {
+      console.log("Ignored event", { type: event.type, email, priceId })
+      return new Response("ignored", { status: 200 })
+    }
+
+    const { plan, period } = PRICE_MAP[priceId]
+    const active = status === "active" || status === "trialing"
+
+    await supabase
+      .from("profiles")
+      .update({
+        premium: active,
+        premium_plus: active && plan === "premium_plus",
+        subscription_type: active ? period : "free",
+        stripe_customer_id: customerId,
+        stripe_subscription_id: subscriptionId,
+        stripe_subscription_status: status,
+        premium_started_at: active ? new Date().toISOString() : null,
+      })
+      .eq("email", email)
+
+    await supabase.from("user_subscriptions").insert({
+      email,
+      plan: active ? plan : "free",
+      billing_period: period,
+      stripe_customer_id: customerId,
+      stripe_subscription_id: subscriptionId,
+      status,
+      updated_at: new Date().toISOString(),
+    })
+
+    return new Response("OK", { status: 200 })
+  } catch (error) {
+    console.error("STRIPE WEBHOOK ERROR:", error)
+    return new Response("ERROR", { status: 500 })
+  }
+})
