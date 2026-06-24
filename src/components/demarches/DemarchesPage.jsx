@@ -137,28 +137,69 @@ function formatDate(value) {
   }
 }
 
-function getReminderStorageKey(userId) {
-  return `budgetkazpei_demarches_reminders_${userId || "anonymous"}`
+function parseMontantObtenu(value) {
+  if (value === "" || value === null || value === undefined) return null
+
+  const normalized = String(value)
+    .replace(",", ".")
+    .replace(/[^\d.]/g, "")
+
+  const parts = normalized.split(".")
+  const clean =
+    parts.length > 1
+      ? `${parts[0]}.${parts.slice(1).join("")}`
+      : normalized
+
+  const number = Number(clean)
+
+  return Number.isFinite(number) ? number : null
 }
 
-function loadStoredReminders(userId) {
-  if (typeof window === "undefined" || !userId) return {}
-
-  try {
-    const raw = window.localStorage.getItem(getReminderStorageKey(userId))
-    return raw ? JSON.parse(raw) || {} : {}
-  } catch {
-    return {}
+function getReminderInfo(reminder, isKreol) {
+  if (!reminder?.date) {
+    return {
+      text: isKreol ? "Rappel enregistré" : "Rappel enregistré",
+      color: COLORS.yellow,
+      bg: "rgba(252,211,77,.10)",
+      border: "1px solid rgba(252,211,77,.24)",
+    }
   }
-}
 
-function saveStoredReminders(userId, reminders) {
-  if (typeof window === "undefined" || !userId) return
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
 
-  try {
-    window.localStorage.setItem(getReminderStorageKey(userId), JSON.stringify(reminders || {}))
-  } catch {
-    // Rien à faire : le rappel reste au moins en mémoire pendant la session.
+  const target = new Date(`${reminder.date}T00:00:00`)
+  target.setHours(0, 0, 0, 0)
+
+  const diffDays = Math.round((target.getTime() - today.getTime()) / 86400000)
+
+  if (diffDays < 0) {
+    return {
+      text: isKreol
+        ? `Relance en retard depuis ${Math.abs(diffDays)} jour(s)`
+        : `Relance en retard depuis ${Math.abs(diffDays)} jour(s)`,
+      color: COLORS.red,
+      bg: "rgba(251,113,133,.10)",
+      border: "1px solid rgba(251,113,133,.28)",
+    }
+  }
+
+  if (diffDays === 0) {
+    return {
+      text: isKreol ? "Relance prévue aujourd’hui" : "Relance prévue aujourd’hui",
+      color: COLORS.orange,
+      bg: "rgba(251,146,60,.10)",
+      border: "1px solid rgba(251,146,60,.28)",
+    }
+  }
+
+  return {
+    text: isKreol
+      ? `Relance prévue dans ${diffDays} jour(s)`
+      : `Relance prévue dans ${diffDays} jour(s)`,
+    color: COLORS.green,
+    bg: "rgba(34,197,94,.10)",
+    border: "1px solid rgba(34,197,94,.26)",
   }
 }
 
@@ -175,7 +216,8 @@ function normalizeDemarche(row = {}) {
     demarches_fr: aide.demarches_fr || row.demarches_fr || "",
     demarches_kr: aide.demarches_kreol || row.demarches_kreol || "",
     amountLabel: getAideAmountLabel(aide),
-    amountObtained: row.montant_obtenu || row.amount_obtained || "",
+    amountObtained: row.montant_obtenu ?? row.amount_obtained ?? "",
+    dateObtention: row.date_obtention || row.obtained_at || "",
     documents: Array.isArray(row.documents) ? row.documents : [],
     notes: row.notes || "",
     dateLimit: row.date_limite || row.deadline || "",
@@ -201,6 +243,7 @@ export default function DemarchesPage({
   const [errorMessage, setErrorMessage] = useState("")
   const [selectedTool, setSelectedTool] = useState(null)
   const [reminders, setReminders] = useState({})
+  const [gainModalDemarche, setGainModalDemarche] = useState(null)
 
   const totalDemarches = demarches.length
   const nbAPreparer = demarches.filter(d => d.status === "a_preparer").length
@@ -224,7 +267,7 @@ export default function DemarchesPage({
   }, [user?.id])
 
   useEffect(() => {
-    setReminders(loadStoredReminders(user?.id))
+    fetchReminders()
   }, [user?.id])
 
   async function fetchDemarches() {
@@ -244,6 +287,8 @@ export default function DemarchesPage({
         user_id,
         aide_id,
         statut,
+        montant_obtenu,
+        date_obtention,
         created_at,
         updated_at,
         aides_reunion (
@@ -290,6 +335,8 @@ export default function DemarchesPage({
         user_id,
         aide_id,
         statut,
+        montant_obtenu,
+        date_obtention,
         created_at,
         updated_at,
         aides_reunion (
@@ -316,9 +363,76 @@ export default function DemarchesPage({
       return
     }
 
+    const normalizedDemarche = normalizeDemarche(data)
+
     setDemarches(prev =>
-      prev.map(item => (item.id === demarcheId ? normalizeDemarche(data) : item))
+      prev.map(item => (item.id === demarcheId ? normalizedDemarche : item))
     )
+
+    if (statut === "obtenue") {
+      setGainModalDemarche(normalizedDemarche)
+    }
+  }
+
+  async function updateDemarcheGain(demarcheId, payload = {}) {
+    if (!demarcheId || !user?.id) return { error: new Error("Utilisateur non connecté.") }
+
+    const montantObtenu = parseMontantObtenu(payload.montant_obtenu)
+    const dateObtention = payload.date_obtention || null
+
+    setSavingId(demarcheId)
+    setErrorMessage("")
+
+    const { data, error } = await supabase
+      .from("user_aide_demarche")
+      .update({
+        montant_obtenu: montantObtenu,
+        date_obtention: dateObtention,
+        statut: "obtenue",
+      })
+      .eq("id", demarcheId)
+      .eq("user_id", user.id)
+      .select(`
+        id,
+        user_id,
+        aide_id,
+        statut,
+        montant_obtenu,
+        date_obtention,
+        created_at,
+        updated_at,
+        aides_reunion (
+          id,
+          nom,
+          nom_kreol,
+          categorie,
+          description,
+          description_fr,
+          description_kreol,
+          demarches_fr,
+          demarches_kreol,
+          montant_min,
+          montant_max
+        )
+      `)
+      .single()
+
+    setSavingId(null)
+
+    if (error) {
+      console.error("Erreur sauvegarde gain obtenu:", error)
+      setErrorMessage(isKreol ? "Erreur pendant sauvegarde gain." : "Erreur pendant la sauvegarde du gain obtenu.")
+      return { error }
+    }
+
+    const normalizedDemarche = normalizeDemarche(data)
+
+    setDemarches(prev =>
+      prev.map(item => (item.id === demarcheId ? normalizedDemarche : item))
+    )
+
+    setGainModalDemarche(null)
+    return { data, error: null }
   }
 
   async function deleteDemarche(id) {
@@ -346,30 +460,132 @@ export default function DemarchesPage({
     setDemarches(prev => prev.filter(item => item.id !== id))
   }
 
-  function saveReminder(demarcheId, reminder) {
-    if (!demarcheId) return
-
-    const next = {
-      ...reminders,
-      [demarcheId]: {
-        note: reminder.note || "",
-        date: reminder.date || "",
-        updatedAt: new Date().toISOString(),
-      },
+  async function fetchReminders() {
+    if (!user?.id) {
+      setReminders({})
+      return
     }
 
-    setReminders(next)
-    saveStoredReminders(user?.id, next)
+    const { data, error } = await supabase
+      .from("user_reminders")
+      .select("id, user_id, demarche_id, reminder_date, note, updated_at")
+      .eq("user_id", user.id)
+
+    if (error) {
+      console.error("Erreur chargement rappels:", error)
+      setErrorMessage(isKreol ? "Erreur chargement rappels." : "Erreur chargement des rappels.")
+      setReminders({})
+      return
+    }
+
+    const mapped = {}
+
+    ;(data || []).forEach(item => {
+      if (!item.demarche_id) return
+
+      mapped[item.demarche_id] = {
+        id: item.id,
+        date: item.reminder_date || "",
+        note: item.note || "",
+        updatedAt: item.updated_at || "",
+      }
+    })
+
+    setReminders(mapped)
   }
 
-  function deleteReminder(demarcheId) {
-    if (!demarcheId) return
+  async function saveReminder(demarcheId, reminder) {
+    if (!demarcheId || !user?.id) return { error: new Error("Utilisateur non connecté.") }
 
-    const next = { ...reminders }
-    delete next[demarcheId]
+    setSavingId(demarcheId)
+    setErrorMessage("")
 
-    setReminders(next)
-    saveStoredReminders(user?.id, next)
+    const cleanReminder = {
+      user_id: user.id,
+      demarche_id: demarcheId,
+      reminder_date: reminder.date || null,
+      note: reminder.note || "",
+    }
+
+    const existingId = reminders[demarcheId]?.id
+
+    let result
+
+    if (existingId) {
+      result = await supabase
+        .from("user_reminders")
+        .update({
+          reminder_date: cleanReminder.reminder_date,
+          note: cleanReminder.note,
+        })
+        .eq("id", existingId)
+        .eq("user_id", user.id)
+        .select("id, user_id, demarche_id, reminder_date, note, updated_at")
+        .single()
+    } else {
+      result = await supabase
+        .from("user_reminders")
+        .insert(cleanReminder)
+        .select("id, user_id, demarche_id, reminder_date, note, updated_at")
+        .single()
+    }
+
+    setSavingId(null)
+
+    const { data, error } = result
+
+    if (error) {
+      console.error("Erreur sauvegarde rappel:", error)
+      setErrorMessage(isKreol ? "Erreur pendant sauvegarde rappel." : "Erreur pendant la sauvegarde du rappel.")
+      return { error }
+    }
+
+    setReminders(prev => ({
+      ...prev,
+      [demarcheId]: {
+        id: data.id,
+        date: data.reminder_date || "",
+        note: data.note || "",
+        updatedAt: data.updated_at || "",
+      },
+    }))
+
+    return { data, error: null }
+  }
+
+  async function deleteReminder(demarcheId) {
+    if (!demarcheId || !user?.id) return { error: new Error("Utilisateur non connecté.") }
+
+    const reminderId = reminders[demarcheId]?.id
+
+    setSavingId(demarcheId)
+    setErrorMessage("")
+
+    if (reminderId) {
+      const { error } = await supabase
+        .from("user_reminders")
+        .delete()
+        .eq("id", reminderId)
+        .eq("user_id", user.id)
+
+      setSavingId(null)
+
+      if (error) {
+        console.error("Erreur suppression rappel:", error)
+        setErrorMessage(isKreol ? "Erreur pendant suppression rappel." : "Erreur pendant la suppression du rappel.")
+        return { error }
+      }
+    } else {
+      setSavingId(null)
+    }
+
+    setReminders(prev => {
+      const next = { ...prev }
+      delete next[demarcheId]
+      return next
+    })
+
+    return { error: null }
   }
 
   return (
@@ -582,7 +798,11 @@ export default function DemarchesPage({
                     />
                     <MiniInfoBox
                       label={isKreol ? "Gain obtenu" : "Montant obtenu"}
-                      value={demarche.amountObtained ? `${demarche.amountObtained} €` : "—"}
+                      value={
+                        demarche.amountObtained
+                          ? `${demarche.amountObtained} €${demarche.dateObtention ? ` · ${formatDate(demarche.dateObtention)}` : ""}`
+                          : "—"
+                      }
                       color={COLORS.green}
                       icon="✅"
                     />
@@ -600,27 +820,34 @@ export default function DemarchesPage({
                     </div>
                   )}
 
-                  {reminders[demarche.id] && (
-                    <div
-                      style={{
-                        marginTop: 8,
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 6,
-                        background: "rgba(252,211,77,.10)",
-                        border: "1px solid rgba(252,211,77,.24)",
-                        borderRadius: 999,
-                        padding: "5px 9px",
-                        color: COLORS.yellow,
-                        fontSize: 11,
-                        fontWeight: 900,
-                      }}
-                    >
-                      ⏰ {reminders[demarche.id]?.date
-                        ? `${isKreol ? "Rappel" : "Rappel"} : ${formatDate(reminders[demarche.id].date)}`
-                        : isKreol ? "Rappel enregistré" : "Rappel enregistré"}
-                    </div>
-                  )}
+                  {reminders[demarche.id] && (() => {
+                    const reminderInfo = getReminderInfo(reminders[demarche.id], isKreol)
+
+                    return (
+                      <div
+                        style={{
+                          marginTop: 8,
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 6,
+                          background: reminderInfo.bg,
+                          border: reminderInfo.border,
+                          borderRadius: 999,
+                          padding: "5px 9px",
+                          color: reminderInfo.color,
+                          fontSize: 11,
+                          fontWeight: 900,
+                        }}
+                      >
+                        ⏰ {reminderInfo.text}
+                        {reminders[demarche.id]?.date && (
+                          <span style={{ opacity: 0.9 }}>
+                            · {formatDate(reminders[demarche.id].date)}
+                          </span>
+                        )}
+                      </div>
+                    )
+                  })()}
 
                   {(demarche.demarches_fr || demarche.demarches_kr) && (
                     <div
@@ -779,6 +1006,16 @@ export default function DemarchesPage({
           onSave={saveReminder}
           onDelete={deleteReminder}
           onClose={() => setSelectedTool(null)}
+        />
+      )}
+
+      {gainModalDemarche && (
+        <GainObtainedPanel
+          demarche={gainModalDemarche}
+          isKreol={isKreol}
+          isMobile={isMobile}
+          onSave={updateDemarcheGain}
+          onClose={() => setGainModalDemarche(null)}
         />
       )}
 
@@ -1979,16 +2216,284 @@ function UnderstandRefusalPanel({ demarche, isKreol, isMobile, onClose }) {
 }
 
 
-function AdminReminderPanel({ demarche, reminder, isKreol, isMobile, onSave, onDelete, onClose }) {
-  const [date, setDate] = useState(reminder?.date || "")
-  const [note, setNote] = useState(reminder?.note || "")
-  const [saved, setSaved] = useState(false)
+
+function GainObtainedPanel({ demarche, isKreol, isMobile, onSave, onClose }) {
+  const [montant, setMontant] = useState(
+    demarche?.amountObtained !== undefined && demarche?.amountObtained !== null
+      ? String(demarche.amountObtained)
+      : ""
+  )
+  const [dateObtention, setDateObtention] = useState(
+    demarche?.dateObtention || new Date().toISOString().slice(0, 10)
+  )
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState("")
 
   const title = isKreol
     ? demarche.title_kr || demarche.title || "Démarche"
     : demarche.title || "Démarche"
 
-  function handleSave() {
+  async function handleSave() {
+    const parsedAmount = parseMontantObtenu(montant)
+
+    if (parsedAmount === null || parsedAmount < 0) {
+      setError(
+        isKreol
+          ? "Indique un montant valide pou le gain obtenu."
+          : "Indiquez un montant valide pour le gain obtenu."
+      )
+      return
+    }
+
+    setSaving(true)
+    setError("")
+
+    const result = await onSave(demarche.id, {
+      montant_obtenu: montant,
+      date_obtention: dateObtention,
+    })
+
+    setSaving(false)
+
+    if (result?.error) {
+      setError(
+        isKreol
+          ? "Impossible d’enregistrer le gain pou linstan."
+          : "Impossible d’enregistrer le gain pour le moment."
+      )
+    }
+  }
+
+  return (
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 90,
+        background: "rgba(3,7,18,.72)",
+        backdropFilter: "blur(6px)",
+        display: "flex",
+        alignItems: isMobile ? "stretch" : "center",
+        justifyContent: "center",
+        padding: isMobile ? 0 : 22,
+      }}
+    >
+      <div
+        style={{
+          width: "100%",
+          maxWidth: 720,
+          maxHeight: isMobile ? "100dvh" : "88dvh",
+          overflowY: "auto",
+          background: "linear-gradient(135deg, #0F1E38, #132747)",
+          border: `1px solid ${COLORS.border}`,
+          borderRadius: isMobile ? 0 : 24,
+          padding: isMobile ? 18 : 24,
+          boxShadow: "0 24px 80px rgba(0,0,0,.45)",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            gap: 12,
+            alignItems: "flex-start",
+            marginBottom: 18,
+          }}
+        >
+          <div>
+            <div
+              style={{
+                color: COLORS.green,
+                fontWeight: 900,
+                fontSize: 13,
+                marginBottom: 6,
+              }}
+            >
+              ✅ {isKreol ? "Aide obtenue" : "Aide obtenue"}
+            </div>
+
+            <h2
+              style={{
+                color: COLORS.text,
+                margin: 0,
+                fontSize: isMobile ? 24 : 32,
+                fontFamily: "'DM Serif Display', Georgia, serif",
+                fontWeight: 900,
+              }}
+            >
+              💰 {title}
+            </h2>
+
+            <p
+              style={{
+                color: COLORS.muted,
+                margin: "8px 0 0",
+                fontSize: 14,
+                lineHeight: 1.6,
+              }}
+            >
+              {isKreol
+                ? "Indique le montant réellement obtenu pou suivre largent récupéré."
+                : "Indiquez le montant réellement obtenu pour suivre l’argent récupéré."}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={saving}
+            style={{
+              background: "rgba(255,255,255,.06)",
+              border: "1px solid rgba(255,255,255,.12)",
+              color: COLORS.text,
+              width: 38,
+              height: 38,
+              borderRadius: 12,
+              cursor: saving ? "not-allowed" : "pointer",
+              display: "grid",
+              placeItems: "center",
+              flexShrink: 0,
+              opacity: saving ? 0.6 : 1,
+            }}
+          >
+            <X size={18} />
+          </button>
+        </div>
+
+        <PanelCard title={isKreol ? "💰 Montant obtenu" : "💰 Montant obtenu"}>
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            value={montant}
+            onChange={e => setMontant(e.target.value)}
+            placeholder={isKreol ? "Ex : 800" : "Ex : 800"}
+            style={{
+              width: "100%",
+              boxSizing: "border-box",
+              background: "rgba(3,7,18,.42)",
+              border: "1px solid rgba(255,255,255,.12)",
+              borderRadius: 14,
+              color: COLORS.text,
+              padding: 13,
+              fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif",
+              fontSize: 14,
+              outline: "none",
+            }}
+          />
+        </PanelCard>
+
+        <PanelCard title={isKreol ? "📅 Date d’obtention" : "📅 Date d’obtention"} style={{ marginTop: 14 }}>
+          <input
+            type="date"
+            value={dateObtention}
+            onChange={e => setDateObtention(e.target.value)}
+            style={{
+              width: "100%",
+              boxSizing: "border-box",
+              background: "rgba(3,7,18,.42)",
+              border: "1px solid rgba(255,255,255,.12)",
+              borderRadius: 14,
+              color: COLORS.text,
+              padding: 13,
+              fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif",
+              fontSize: 14,
+              outline: "none",
+            }}
+          />
+        </PanelCard>
+
+        <div
+          style={{
+            marginTop: 14,
+            background: "rgba(34,197,94,.10)",
+            border: "1px solid rgba(34,197,94,.25)",
+            borderRadius: 16,
+            padding: 14,
+            color: COLORS.green,
+            fontSize: 13,
+            lineHeight: 1.55,
+            fontWeight: 800,
+          }}
+        >
+          ✅ {isKreol
+            ? "Ce montant servira pou calculer largent récupéré grâce à BudgetKazPei."
+            : "Ce montant servira à calculer l’argent récupéré grâce à BudgetKazPei."}
+        </div>
+
+        {error && (
+          <div style={{ marginTop: 14 }}>
+            <AlertBox color={COLORS.red} text={`⚠️ ${error}`} />
+          </div>
+        )}
+
+        <div
+          style={{
+            marginTop: 16,
+            display: "flex",
+            gap: 10,
+            flexWrap: "wrap",
+            justifyContent: "flex-end",
+          }}
+        >
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={saving}
+            style={{
+              background: "rgba(255,255,255,.06)",
+              border: "1px solid rgba(255,255,255,.12)",
+              color: COLORS.text,
+              borderRadius: 13,
+              padding: "11px 14px",
+              cursor: saving ? "not-allowed" : "pointer",
+              fontWeight: 900,
+              fontFamily: "inherit",
+              opacity: saving ? 0.6 : 1,
+            }}
+          >
+            {isKreol ? "Annuler" : "Annuler"}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving}
+            style={{
+              background: COLORS.green,
+              border: "none",
+              color: "#052E16",
+              borderRadius: 13,
+              padding: "11px 14px",
+              cursor: saving ? "not-allowed" : "pointer",
+              fontWeight: 900,
+              fontFamily: "inherit",
+              opacity: saving ? 0.75 : 1,
+            }}
+          >
+            {saving
+              ? isKreol ? "⏳ Enregistrement..." : "⏳ Enregistrement..."
+              : isKreol ? "💾 Enregistrer gain" : "💾 Enregistrer le gain"}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+
+function AdminReminderPanel({ demarche, reminder, isKreol, isMobile, onSave, onDelete, onClose }) {
+  const [date, setDate] = useState(reminder?.date || "")
+  const [note, setNote] = useState(reminder?.note || "")
+  const [saved, setSaved] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState("")
+
+  const title = isKreol
+    ? demarche.title_kr || demarche.title || "Démarche"
+    : demarche.title || "Démarche"
+
+  async function handleSave() {
     if (!date && !note.trim()) {
       window.alert(
         isKreol
@@ -1998,16 +2503,30 @@ function AdminReminderPanel({ demarche, reminder, isKreol, isMobile, onSave, onD
       return
     }
 
-    onSave(demarche.id, {
+    setSaving(true)
+    setError("")
+
+    const result = await onSave(demarche.id, {
       date,
       note: note.trim(),
     })
+
+    setSaving(false)
+
+    if (result?.error) {
+      setError(
+        isKreol
+          ? "Impossible d’enregistrer le rappel pou linstan."
+          : "Impossible d’enregistrer le rappel pour le moment."
+      )
+      return
+    }
 
     setSaved(true)
     setTimeout(() => setSaved(false), 1600)
   }
 
-  function handleDelete() {
+  async function handleDelete() {
     if (!reminder) {
       setDate("")
       setNote("")
@@ -2020,7 +2539,22 @@ function AdminReminderPanel({ demarche, reminder, isKreol, isMobile, onSave, onD
 
     if (!window.confirm(confirmText)) return
 
-    onDelete(demarche.id)
+    setSaving(true)
+    setError("")
+
+    const result = await onDelete(demarche.id)
+
+    setSaving(false)
+
+    if (result?.error) {
+      setError(
+        isKreol
+          ? "Impossible de supprimer le rappel pou linstan."
+          : "Impossible de supprimer le rappel pour le moment."
+      )
+      return
+    }
+
     setDate("")
     setNote("")
     onClose()
@@ -2180,8 +2714,8 @@ function AdminReminderPanel({ demarche, reminder, isKreol, isMobile, onSave, onD
           }}
         >
           ⚠️ {isKreol
-            ? "Ce rappel reste dans l'application. Vérifie toujours les délais officiels auprès de l'organisme."
-            : "Ce rappel reste dans l'application. Vérifiez toujours les délais officiels auprès de l'organisme."}
+            ? "Ce rappel est enregistré dans BudgetKazPei. Vérifie toujours les délais officiels auprès de l'organisme."
+            : "Ce rappel est enregistré dans BudgetKazPei. Vérifiez toujours les délais officiels auprès de l'organisme."}
         </div>
 
         {saved && (
@@ -2190,6 +2724,12 @@ function AdminReminderPanel({ demarche, reminder, isKreol, isMobile, onSave, onD
               color={COLORS.green}
               text={isKreol ? "✅ Rappel enregistré." : "✅ Rappel enregistré."}
             />
+          </div>
+        )}
+
+        {error && (
+          <div style={{ marginTop: 14 }}>
+            <AlertBox color={COLORS.red} text={`⚠️ ${error}`} />
           </div>
         )}
 
@@ -2223,6 +2763,7 @@ function AdminReminderPanel({ demarche, reminder, isKreol, isMobile, onSave, onD
             <button
               type="button"
               onClick={handleDelete}
+              disabled={saving}
               style={{
                 background: "rgba(251,113,133,.10)",
                 border: "1px solid rgba(251,113,133,.28)",
@@ -2241,18 +2782,22 @@ function AdminReminderPanel({ demarche, reminder, isKreol, isMobile, onSave, onD
           <button
             type="button"
             onClick={handleSave}
+            disabled={saving}
             style={{
               background: COLORS.purple,
               border: "none",
               color: "#fff",
               borderRadius: 13,
               padding: "11px 14px",
-              cursor: "pointer",
+              cursor: saving ? "not-allowed" : "pointer",
               fontWeight: 900,
               fontFamily: "inherit",
+              opacity: saving ? 0.65 : 1,
             }}
           >
-            💾 {isKreol ? "Enregistrer rappel" : "Enregistrer le rappel"}
+            {saving
+              ? isKreol ? "⏳ Enregistrement..." : "⏳ Enregistrement..."
+              : `💾 ${isKreol ? "Enregistrer rappel" : "Enregistrer le rappel"}`}
           </button>
         </div>
       </div>

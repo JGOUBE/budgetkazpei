@@ -573,8 +573,10 @@ function RecoveredMoneyCard({
   const isKreol = getIsKreol(t)
   const gains = Number(gainsAides || 0)
   const objectif = Number(objectifGains || 1000)
-  const progress = objectif > 0 ? Math.min(Math.round((gains / objectif) * 100), 100) : 0
+  const rawProgress = objectif > 0 ? Math.round((gains / objectif) * 100) : 0
+  const progress = Math.min(rawProgress, 100)
   const hasGains = gains > 0
+  const objectifAtteint = objectif > 0 && gains >= objectif
 
   return (
     <button
@@ -682,7 +684,7 @@ function RecoveredMoneyCard({
               }}
             >
               <span>{isKreol ? "Lobzektif lanné" : "Objectif annuel"}</span>
-              <span style={{ color: "#BEF264" }}>{progress}%</span>
+              <span style={{ color: "#BEF264" }}>{rawProgress}%</span>
             </div>
 
             <div style={{ height: 9, background: "rgba(255,255,255,.12)", borderRadius: 999, overflow: "hidden", marginBottom: 9 }}>
@@ -699,6 +701,11 @@ function RecoveredMoneyCard({
 
             <div style={{ color: COLORS.muted, fontSize: 12, lineHeight: 1.45 }}>
               {gains.toFixed(0)} € / {objectif.toFixed(0)} €
+              {objectifAtteint && (
+                <div style={{ color: "#BEF264", fontWeight: 900, marginTop: 4 }}>
+                  🎉 {isKreol ? "Lobzektif dépassé" : "Objectif dépassé"}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -1100,8 +1107,182 @@ function getDashboardGainAmount(item = {}) {
 }
 
 function isAcceptedDashboardDemarche(item = {}) {
-  const status = normalizeDashboardStatus(item.status)
-  return status.includes("accept") || status.includes("aksept") || status === "accepte"
+  const status = normalizeDashboardStatus(item.status || item.statut)
+  return (
+    status.includes("accept") ||
+    status.includes("aksept") ||
+    status === "accepte" ||
+    status === "obtenue" ||
+    status === "obtenu"
+  )
+}
+
+function formatReminderDate(value) {
+  if (!value) return "—"
+
+  try {
+    const [year, month, day] = String(value).split("-")
+    if (year && month && day) {
+      return `${day}/${month}/${year}`
+    }
+
+    return new Date(value).toLocaleDateString("fr-FR")
+  } catch {
+    return String(value)
+  }
+}
+
+function getReminderState(reminderDate, isKreol) {
+  if (!reminderDate) {
+    return {
+      color: COLORS.yellow,
+      icon: "🟡",
+      label: isKreol ? "Rappel sans date" : "Rappel sans date",
+      sortValue: 999999999,
+    }
+  }
+
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+
+  const target = new Date(`${reminderDate}T00:00:00`)
+  const diffDays = Math.round((target.getTime() - today.getTime()) / 86400000)
+
+  if (diffDays < 0) {
+    return {
+      color: COLORS.red,
+      icon: "🔴",
+      label: isKreol
+        ? `An retard depuis ${Math.abs(diffDays)} jour(s)`
+        : `En retard depuis ${Math.abs(diffDays)} jour(s)`,
+      sortValue: diffDays,
+    }
+  }
+
+  if (diffDays === 0) {
+    return {
+      color: COLORS.orange,
+      icon: "🟠",
+      label: isKreol ? "À fé aujourd'hui" : "À faire aujourd’hui",
+      sortValue: 0,
+    }
+  }
+
+  return {
+    color: COLORS.green,
+    icon: "🟢",
+    label: isKreol ? `Dann ${diffDays} jour(s)` : `Dans ${diffDays} jour(s)`,
+    sortValue: diffDays,
+  }
+}
+
+function DashboardRemindersCard({ t, isMobile, reminders = [], onOpenDemarches }) {
+  const isKreol = getIsKreol(t)
+
+  if (!reminders || reminders.length === 0) return null
+
+  const prepared = reminders
+    .map(reminder => ({
+      ...reminder,
+      state: getReminderState(reminder.reminder_date, isKreol),
+    }))
+    .sort((a, b) => a.state.sortValue - b.state.sortValue)
+    .slice(0, 3)
+
+  return (
+    <button
+      type="button"
+      onClick={onOpenDemarches}
+      style={{
+        display: "block",
+        width: "100%",
+        border: "none",
+        background: "transparent",
+        padding: 0,
+        cursor: "pointer",
+        fontFamily: "inherit",
+        textAlign: "left",
+      }}
+    >
+      <TropicalCard variant="ocean" texture="⏰" style={{ padding: isMobile ? 16 : 22 }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: 12,
+            marginBottom: 12,
+          }}
+        >
+          <div>
+            <div style={{ color: COLORS.yellow, fontWeight: 900, fontSize: 13, marginBottom: 4 }}>
+              ⏰ {isKreol ? "Rappels administratifs" : "Rappels administratifs"}
+            </div>
+            <div style={{ color: COLORS.muted, fontSize: 12 }}>
+              {isKreol ? "Bann démarches à suivre" : "Vos prochaines relances à suivre"}
+            </div>
+          </div>
+
+          <span style={{ color: COLORS.yellow, fontSize: 24, fontWeight: 900 }}>›</span>
+        </div>
+
+        <div style={{ display: "grid", gap: 8 }}>
+          {prepared.map(reminder => (
+            <div
+              key={reminder.id}
+              style={{
+                background: "rgba(255,255,255,.055)",
+                border: "1px solid rgba(255,255,255,.09)",
+                borderRadius: 13,
+                padding: "10px 11px",
+              }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  gap: 10,
+                  alignItems: "flex-start",
+                }}
+              >
+                <div style={{ minWidth: 0 }}>
+                  <div
+                    style={{
+                      color: COLORS.text,
+                      fontSize: 13,
+                      fontWeight: 900,
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                      whiteSpace: "nowrap",
+                    }}
+                  >
+                    {reminder.aideLabel || (isKreol ? "Démarche" : "Démarche")}
+                  </div>
+
+                  <div style={{ color: COLORS.muted, fontSize: 12, marginTop: 4, lineHeight: 1.4 }}>
+                    📅 {formatReminderDate(reminder.reminder_date)}
+                    {reminder.note ? ` · ${reminder.note}` : ""}
+                  </div>
+                </div>
+
+                <span
+                  style={{
+                    color: reminder.state.color,
+                    fontSize: 11,
+                    fontWeight: 900,
+                    whiteSpace: "nowrap",
+                    flexShrink: 0,
+                  }}
+                >
+                  {reminder.state.icon} {reminder.state.label}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </TropicalCard>
+    </button>
+  )
 }
 
 export default function Dashboard({
@@ -1149,6 +1330,11 @@ export default function Dashboard({
     gainsAides: 0,
     nbAidesObtenues: 0,
     gainsDetails: [],
+    loaded: false,
+  })
+
+  const [dashboardReminders, setDashboardReminders] = useState({
+    items: [],
     loaded: false,
   })
 
@@ -1233,8 +1419,22 @@ export default function Dashboard({
         if (!user?.id) return
 
         const { data, error } = await supabase
-          .from("aide_demarches")
-          .select("id, aide_nom, title, nom, status, montant_obtenu, gain_amount, gain, amount_obtenu, montant, updated_at, created_at")
+          .from("user_aide_demarche")
+          .select(`
+            id,
+            user_id,
+            aide_id,
+            statut,
+            montant_obtenu,
+            date_obtention,
+            updated_at,
+            created_at,
+            aides_reunion (
+              id,
+              nom,
+              nom_kreol
+            )
+          `)
           .eq("user_id", user.id)
           .order("updated_at", { ascending: false })
 
@@ -1244,8 +1444,9 @@ export default function Dashboard({
         const accepted = (data || []).filter(item => isAcceptedDashboardDemarche(item))
         const gainsDetails = accepted
           .map(item => ({
-            label: item.aide_nom || item.title || item.nom || "Aide",
+            label: item.aides_reunion?.nom || item.aide_nom || item.title || item.nom || "Aide",
             amount: getDashboardGainAmount(item),
+            date: item.date_obtention || item.updated_at || item.created_at || "",
           }))
           .filter(item => item.amount > 0)
 
@@ -1266,6 +1467,69 @@ export default function Dashboard({
     }
 
     fetchAideGains()
+
+    return () => {
+      ignore = true
+    }
+  }, [])
+
+  useEffect(() => {
+    let ignore = false
+
+    async function fetchDashboardReminders() {
+      try {
+        const { data: authData } = await supabase.auth.getUser()
+        const user = authData?.user
+        if (!user?.id) return
+
+        const { data, error } = await supabase
+          .from("user_reminders")
+          .select(`
+            id,
+            user_id,
+            demarche_id,
+            reminder_date,
+            note,
+            updated_at,
+            user_aide_demarche (
+              id,
+              aide_id,
+              statut,
+              aides_reunion (
+                id,
+                nom,
+                nom_kreol
+              )
+            )
+          `)
+          .eq("user_id", user.id)
+          .order("reminder_date", { ascending: true, nullsFirst: false })
+          .limit(8)
+
+        if (error) throw error
+        if (ignore) return
+
+        const items = (data || []).map(item => ({
+          ...item,
+          aideLabel:
+            item.user_aide_demarche?.aides_reunion?.nom ||
+            item.user_aide_demarche?.aides_reunion?.nom_kreol ||
+            "Démarche",
+        }))
+
+        setDashboardReminders({
+          items,
+          loaded: true,
+        })
+      } catch (error) {
+        console.error("Erreur chargement rappels dashboard:", error)
+        if (!ignore) {
+          setDashboardReminders(prev => ({ ...prev, loaded: true }))
+        }
+      }
+    }
+
+    fetchDashboardReminders()
 
     return () => {
       ignore = true
@@ -1347,6 +1611,13 @@ export default function Dashboard({
         gainsAides={effectiveGainsAides}
         nbAidesObtenues={effectiveNbAidesObtenues}
         opportunitiesCount={opportunitiesCount}
+      />
+
+      <DashboardRemindersCard
+        t={t}
+        isMobile={isMobile}
+        reminders={dashboardReminders.items}
+        onOpenDemarches={() => navigateTo("demarches", onOpenAides)}
       />
 
       <div
