@@ -28,6 +28,7 @@ import HistoriquePage from "./components/historique/HistoriquePage"
 import OpportunitesPage from "./components/opportunites/OpportunitesPage"
 import DemarchesPage from "./components/demarches/DemarchesPage"
 import ContactPage from "./components/contact/ContactPage"
+import ConseillerPage from "./components/conseiller/ConseillerPage"
 import PremiumLandingPage from "./pages/PremiumLandingPage"
 import PublicHomePage from "./pages/PublicHomePage"
 import PrivacyPage from "./pages/PrivacyPage"
@@ -615,38 +616,13 @@ function BudgetKazPeiApp({ initialAuthPage = "login" }) {
         )}
 
         {activeNav === "conseiller" && (
-          <div
-            style={{
-              background: `linear-gradient(135deg, ${COLORS.card} 0%, ${COLORS.cardLight} 100%)`,
-              border: `1px solid ${COLORS.border}`,
-              borderRadius: 20,
-              padding: isMobile ? 18 : 26,
-            }}
-          >
-            <h2
-              style={{
-                margin: "0 0 8px",
-                fontFamily: "'DM Serif Display', serif",
-                fontSize: isMobile ? 26 : 34,
-                color: COLORS.text,
-              }}
-            >
-              🤖 {lang === "fr" ? "Conseiller BudgetKazPei" : "Konseyé BudgetKazPei"}
-            </h2>
-
-            <p
-              style={{
-                margin: 0,
-                color: COLORS.muted,
-                fontSize: 14,
-                lineHeight: 1.6,
-              }}
-            >
-              {lang === "fr"
-                ? "Cette page regroupera vos discussions en cours, les questions restantes et les outils Premium+ comme les courriers administratifs."
-                : "Ici ou va retrouv out bann discussion, out kestion restantes ek bann zouti Premium+ pou courrier administratif."}
-            </p>
-          </div>
+          <ConseillerPage
+            isMobile={isMobile}
+            t={t}
+            user={user}
+            isPremium={isPremium}
+            isPremiumPlus={isPremiumPlus}
+          />
         )}
 
         {activeNav === "contact" && (

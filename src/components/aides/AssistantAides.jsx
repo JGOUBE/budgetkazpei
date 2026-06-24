@@ -1782,6 +1782,29 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
   const [loadingAiUsage, setLoadingAiUsage] = useState(false)
   const [loadingAssistant, setLoadingAssistant] = useState(false)
 
+  useEffect(() => {
+    function handleExternalAssistantPrompt(event) {
+      const prompt = String(event?.detail?.prompt || "").trim()
+      if (!prompt) return
+
+      setQuestion(prompt)
+      setQuickQuestionSelected(true)
+
+      setTimeout(() => {
+        const element = document.getElementById("budgetkazpei-assistant-zone")
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "start" })
+        }
+      }, 80)
+    }
+
+    window.addEventListener("budgetkazpei:assistant-prompt", handleExternalAssistantPrompt)
+
+    return () => {
+      window.removeEventListener("budgetkazpei:assistant-prompt", handleExternalAssistantPrompt)
+    }
+  }, [])
+
   const txt = (key, fallback) => safeT(t, "aides", key, fallback)
   const isKreol = isKreolLanguage(t)
   const aiPlan = getAiPlan(profile, isPremium)
@@ -2739,7 +2762,7 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
 
   return (
     <>
-    <section style={{ background: `linear-gradient(135deg, rgba(35,211,214,.16), ${COLORS.card})`, border: `1px solid rgba(35,211,214,.32)`, borderRadius: 22, padding: isMobile ? 18 : 24 }}>
+    <section id="budgetkazpei-assistant-zone" style={{ background: `linear-gradient(135deg, rgba(35,211,214,.16), ${COLORS.card})`, border: `1px solid rgba(35,211,214,.32)`, borderRadius: 22, padding: isMobile ? 18 : 24 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <Star size={26} color={COLORS.cyan} />
         <h3 style={{ color: COLORS.text, margin: 0 }}>

@@ -24,7 +24,6 @@ import {
 import { supabase } from "../../services/supabase"
 import { AIDES } from "../../data/categories"
 import { AUTRES_AIDES } from "../../data/aides"
-import AssistantAides from "./AssistantAides"
 
 const COLORS = {
   text: "#F1F5F9",
@@ -894,14 +893,6 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
           </p>
         </div>
       </section>
-
-      <AssistantAides
-        key={`assistant-aides-${languageKey}`}
-        isPremium={isPremium}
-        isMobile={isMobile}
-        t={t}
-        user={user}
-      />
 
       {errorMessage && (
         <AlertBox color={COLORS.red} text={`⚠️ ${errorMessage}`} />
