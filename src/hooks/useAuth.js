@@ -173,6 +173,36 @@ export function useAuth() {
     return data
   }
 
+  async function resetPassword(email) {
+    setAuthError(null)
+
+    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${getRedirectUrl()}/reset-password`,
+    })
+
+    if (error) {
+      setAuthError(error.message)
+      throw error
+    }
+
+    return data
+  }
+
+  async function updatePassword(newPassword) {
+    setAuthError(null)
+
+    const { data, error } = await supabase.auth.updateUser({
+      password: newPassword,
+    })
+
+    if (error) {
+      setAuthError(error.message)
+      throw error
+    }
+
+    return data
+  }
+
   async function signOut() {
     const { error } = await supabase.auth.signOut()
 
@@ -213,5 +243,7 @@ export function useAuth() {
     signUp,
     signOut,
     signInWithGoogle,
+    resetPassword,
+    updatePassword,
   }
 }

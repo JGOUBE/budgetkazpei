@@ -34,6 +34,7 @@ import PublicHomePage from "./pages/PublicHomePage"
 import PrivacyPage from "./pages/PrivacyPage"
 import TermsPage from "./pages/TermsPage"
 import SuppressionComptePage from "./pages/SuppressionComptePage"
+import ResetPasswordPage from "./pages/ResetPasswordPage"
 
 const COLORS = {
   bg: "#0A1628",
@@ -81,6 +82,7 @@ export default function App() {
   if (currentPath === "/privacy") return <PrivacyPage />
   if (currentPath === "/terms") return <TermsPage />
   if (currentPath === "/suppression-compte") return <SuppressionComptePage />
+  if (currentPath === "/reset-password") return <ResetPasswordPage />
   if (currentPath === "/premium" || currentPath.startsWith("/premium/")) {
     return <PremiumLandingPage />
   }
@@ -93,7 +95,16 @@ export default function App() {
 }
 
 function BudgetKazPeiApp({ initialAuthPage = "login" }) {
-  const { user, loading, signIn, signUp, signOut, signInWithGoogle } = useAuth()
+  const {
+    user,
+    loading,
+    signIn,
+    signUp,
+    signOut,
+    signInWithGoogle,
+    resetPassword,
+  } = useAuth()
+
   const [authPage, setAuthPage] = useState(initialAuthPage)
   const [activeNav, setActiveNav] = useState("dashboard")
   const [showModal, setShowModal] = useState(false)
@@ -297,6 +308,7 @@ function BudgetKazPeiApp({ initialAuthPage = "login" }) {
         onLogin={signIn}
         onGoRegister={() => setAuthPage("register")}
         onGoogleLogin={signInWithGoogle}
+        onResetPassword={resetPassword}
       />
     )
   }

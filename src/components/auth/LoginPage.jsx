@@ -12,16 +12,24 @@ const COLORS = {
   cyan: "#23D3D6",
 }
 
-export default function LoginPage({ onLogin, onGoRegister, onGoogleLogin }) {
+export default function LoginPage({
+  onLogin,
+  onGoRegister,
+  onGoogleLogin,
+  onResetPassword,
+}) {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
+  const [success, setSuccess] = useState("")
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
+  const [resetLoading, setResetLoading] = useState(false)
 
   async function handleSubmit(e) {
     e.preventDefault()
     setError("")
+    setSuccess("")
     setLoading(true)
 
     try {
@@ -35,6 +43,7 @@ export default function LoginPage({ onLogin, onGoRegister, onGoogleLogin }) {
 
   async function handleGoogleLogin() {
     setError("")
+    setSuccess("")
     setGoogleLoading(true)
 
     try {
@@ -42,6 +51,34 @@ export default function LoginPage({ onLogin, onGoRegister, onGoogleLogin }) {
     } catch (err) {
       setError(err.message || "Erreur Google login")
       setGoogleLoading(false)
+    }
+  }
+
+  async function handleResetPassword() {
+    setError("")
+    setSuccess("")
+
+    const cleanEmail = email.trim()
+
+    if (!cleanEmail) {
+      setError("Entre ton adresse email, puis clique sur mot de passe oublié.")
+      return
+    }
+
+    if (!onResetPassword) {
+      setError("La réinitialisation du mot de passe n'est pas encore disponible.")
+      return
+    }
+
+    setResetLoading(true)
+
+    try {
+      await onResetPassword(cleanEmail)
+      setSuccess("Email envoyé. Vérifie ta boîte mail pour réinitialiser ton mot de passe.")
+    } catch (err) {
+      setError(err.message || "Impossible d'envoyer l'email de réinitialisation.")
+    } finally {
+      setResetLoading(false)
     }
   }
 
@@ -161,7 +198,7 @@ export default function LoginPage({ onLogin, onGoRegister, onGoogleLogin }) {
               marginLeft: "45%",
               transform: "translateX(-50%)",
               marginTop: 30,
-                        marginBottom: -78,
+              marginBottom: -78,
               objectFit: "contain",
               filter:
                 "drop-shadow(4px 8px 0 rgba(5,8,12,.88)) drop-shadow(0 0 22px rgba(35,211,214,.28))",
@@ -385,6 +422,26 @@ export default function LoginPage({ onLogin, onGoRegister, onGoogleLogin }) {
                 />
               </div>
 
+              <button
+                type="button"
+                onClick={handleResetPassword}
+                disabled={resetLoading}
+                style={{
+                  background: "none",
+                  border: "none",
+                  color: COLORS.cyan,
+                  cursor: resetLoading ? "not-allowed" : "pointer",
+                  fontWeight: 900,
+                  fontSize: 13,
+                  marginTop: -10,
+                  padding: 0,
+                  fontFamily: "inherit",
+                  textDecoration: "underline",
+                }}
+              >
+                {resetLoading ? "Envoi en cours..." : "Mot de passe oublié ?"}
+              </button>
+
               {error && (
                 <div
                   style={{
@@ -401,6 +458,25 @@ export default function LoginPage({ onLogin, onGoRegister, onGoogleLogin }) {
                   }}
                 >
                   ⚠️ {error}
+                </div>
+              )}
+
+              {success && (
+                <div
+                  style={{
+                    width: "100%",
+                    maxWidth: 350,
+                    margin: "0 auto",
+                    background: "rgba(34,197,94,.14)",
+                    border: "2px solid #22C55E",
+                    borderRadius: 12,
+                    padding: "10px 14px",
+                    fontSize: 13,
+                    color: "#BBF7D0",
+                    fontWeight: 800,
+                  }}
+                >
+                  ✅ {success}
                 </div>
               )}
 

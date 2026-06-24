@@ -1763,8 +1763,205 @@ function buildSmartAnswer(responseData, isKreol = false, recommendedAides = []) 
   return [...intro, ...topSection, ...adviceSection, ...actionsSection, ...closing].join("\n")
 }
 
+
+const ASSISTANT_MODE_LABELS = {
+  trouver_aide: {
+    fr: "Trouver une aide",
+    kreol: "Trouve in zéd",
+  },
+  comprendre_courrier: {
+    fr: "Comprendre un courrier",
+    kreol: "Comprann in kourrié",
+  },
+  preparer_dossier: {
+    fr: "Préparer un dossier",
+    kreol: "Prépar in dossier",
+  },
+  generer_email: {
+    fr: "Générer un email",
+    kreol: "Prépar in email",
+  },
+  preparer_recours: {
+    fr: "Préparer un recours",
+    kreol: "Prépar in rekour",
+  },
+  preparer_rdv: {
+    fr: "Préparer un rendez-vous",
+    kreol: "Prépar in rendez-vous",
+  },
+  general: {
+    fr: "Conseiller",
+    kreol: "Konseyé",
+  },
+}
+
+function getAssistantModeLabel(mode = "general", isKreol = false) {
+  const entry = ASSISTANT_MODE_LABELS[mode] || ASSISTANT_MODE_LABELS.general
+  return isKreol ? entry.kreol : entry.fr
+}
+
+function buildModeInstruction(mode = "general", isKreol = false) {
+  const instructionsFr = {
+    trouver_aide: [
+      "MODE : TROUVER UNE AIDE",
+      "Réponds avec cette structure :",
+      "1. Résumé de la situation comprise.",
+      "2. Aides ou organismes les plus pertinents.",
+      "3. Pourquoi ces pistes peuvent correspondre.",
+      "4. Informations manquantes à vérifier.",
+      "5. Prochaine action concrète.",
+      "Reste prudent : ne promets jamais l'éligibilité.",
+    ].join("\n"),
+    comprendre_courrier: [
+      "MODE : COMPRENDRE UN COURRIER",
+      "L'utilisateur va coller ou décrire un courrier administratif.",
+      "Réponds avec cette structure :",
+      "1. Ce que le courrier semble dire.",
+      "2. Ce qui est demandé à l'utilisateur.",
+      "3. Délais ou dates importantes si elles sont présentes.",
+      "4. Risques si rien n'est fait, uniquement si le courrier les mentionne ou si c'est évident.",
+      "5. Questions à poser à l'organisme.",
+      "6. Prochaine action concrète.",
+      "N'invente aucun élément absent du courrier.",
+    ].join("\n"),
+    preparer_dossier: [
+      "MODE : PRÉPARER UN DOSSIER",
+      "Réponds avec cette structure :",
+      "1. Objectif du dossier.",
+      "2. Documents à préparer.",
+      "3. Organisme à contacter.",
+      "4. Étapes simples.",
+      "5. Points à vérifier avant l'envoi.",
+      "6. Prochaine action concrète.",
+      "Ne rajoute pas de documents trop spécifiques si tu n'es pas sûr.",
+    ].join("\n"),
+    generer_email: [
+      "MODE : GÉNÉRER UN EMAIL",
+      "Rédige un email administratif simple, poli et prêt à copier.",
+      "Contraintes obligatoires :",
+      "- Aucun nom ni prénom automatiquement.",
+      "- Aucune situation inventée.",
+      "- Utilise [À compléter] si une information manque.",
+      "- Ajoute un objet.",
+      "- Ton sobre, clair, respectueux.",
+    ].join("\n"),
+    preparer_recours: [
+      "MODE : PRÉPARER UN RECOURS",
+      "Réponds avec cette structure :",
+      "1. Points à vérifier dans la décision reçue.",
+      "2. Arguments possibles uniquement selon les informations données.",
+      "3. Documents utiles à joindre.",
+      "4. Modèle de courrier de recours avec [À compléter].",
+      "5. Prochaine action concrète.",
+      "Reste prudent : ne garantis jamais l'acceptation du recours.",
+    ].join("\n"),
+    preparer_rdv: [
+      "MODE : PRÉPARER UN RENDEZ-VOUS",
+      "Réponds avec cette structure :",
+      "1. Objectif du rendez-vous.",
+      "2. Questions à poser.",
+      "3. Documents à apporter.",
+      "4. Informations à préparer avant le rendez-vous.",
+      "5. Phrase simple pour expliquer la situation.",
+      "6. Prochaine action concrète.",
+    ].join("\n"),
+    general: [
+      "MODE : CONSEILLER GÉNÉRAL",
+      "Réponds de façon simple, concrète, rassurante et prudente.",
+      "Propose une prochaine action utile.",
+    ].join("\n"),
+  }
+
+  const instructionsKreol = {
+    trouver_aide: [
+      "MODE : TROUVE IN ZÉD",
+      "Répond avec sa structure-la :",
+      "1. Sak ou la compris dann situation-la.",
+      "2. Bann zéd ou organismes pli pertinents.",
+      "3. Poukosa sa i pé korespond.",
+      "4. Bann infos i manque pou vérifiye.",
+      "5. Prochaine action concrète.",
+      "Reste prudent : pa promette jamais l'éligibilité.",
+    ].join("\n"),
+    comprendre_courrier: [
+      "MODE : COMPRANN IN KOURRIÉ",
+      "L'utilisateur va colle ou décrire in kourrié administratif.",
+      "Répond avec sa structure-la :",
+      "1. Kosa kourrié-la i semble dire.",
+      "2. Kosa lé demandé à l'utilisateur.",
+      "3. Délais ou dates importantes si zot lé présents.",
+      "4. Risques si rien lé fait, seulement si kourrié-la i mentionne ou si lé évident.",
+      "5. Kestions pou poser à l'organisme.",
+      "6. Prochaine action concrète.",
+      "N'invente aucun élément absent du kourrié.",
+    ].join("\n"),
+    preparer_dossier: [
+      "MODE : PRÉPAR IN DOSSIER",
+      "Répond avec sa structure-la :",
+      "1. Objectif dossier-la.",
+      "2. Dokiman pou prépar.",
+      "3. Organisme pou contacter.",
+      "4. Étapes simples.",
+      "5. Points pou vérifiye avant l'envoi.",
+      "6. Prochaine action concrète.",
+      "Pa rajoute dokiman trop spécifiques si ou lé pas sûr.",
+    ].join("\n"),
+    generer_email: [
+      "MODE : PRÉPAR IN EMAIL",
+      "Rédige in email administratif simple, poli et prêt à copier.",
+      "Contraintes obligatoires :",
+      "- Aucun nom ni prénom automatiquement.",
+      "- Aucune situation inventée.",
+      "- Utilise [À compléter] si in information i manque.",
+      "- Ajoute in objet.",
+      "- Ton simple, clair, respectueux.",
+    ].join("\n"),
+    preparer_recours: [
+      "MODE : PRÉPAR IN REKOUR",
+      "Répond avec sa structure-la :",
+      "1. Points pou vérifiye dann décision reçue.",
+      "2. Arguments possibles seulement selon infos données.",
+      "3. Dokiman utiles pou joindre.",
+      "4. Modèle kourrié rekour avec [À compléter].",
+      "5. Prochaine action concrète.",
+      "Reste prudent : pa garantis jamais acceptation rekour-la.",
+    ].join("\n"),
+    preparer_rdv: [
+      "MODE : PRÉPAR IN RENDEZ-VOUS",
+      "Répond avec sa structure-la :",
+      "1. Objectif rendez-vous-la.",
+      "2. Kestions pou poser.",
+      "3. Dokiman pou amenné.",
+      "4. Infos pou prépar avant rendez-vous.",
+      "5. Phrase simple pou explique situation-la.",
+      "6. Prochaine action concrète.",
+    ].join("\n"),
+    general: [
+      "MODE : KONSEYÉ GÉNÉRAL",
+      "Répond de façon simple, concrète, rassurante et prudente.",
+      "Propose in prochaine action utile.",
+    ].join("\n"),
+  }
+
+  return (isKreol ? instructionsKreol : instructionsFr)[mode] || (isKreol ? instructionsKreol.general : instructionsFr.general)
+}
+
+function buildQuestionWithModeInstruction(question = "", mode = "general", isKreol = false) {
+  const instruction = buildModeInstruction(mode, isKreol)
+  const userQuestion = String(question || "").trim()
+
+  return [
+    instruction,
+    "",
+    "QUESTION / CONTENU UTILISATEUR :",
+    userQuestion || (isKreol ? "Analyse mon profil et propose la prochaine action utile." : "Analyse mon profil et propose la prochaine action utile."),
+  ].join("\n")
+}
+
+
 export default function AssistantAides({ isPremium, isMobile, t, user }) {
   const [question, setQuestion] = useState("")
+  const [assistantMode, setAssistantMode] = useState("general")
   const [quickQuestionSelected, setQuickQuestionSelected] = useState(false)
   const [responseData, setResponseData] = useState(null)
   const [responseHistory, setResponseHistory] = useState([])
@@ -1785,8 +1982,11 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
   useEffect(() => {
     function handleExternalAssistantPrompt(event) {
       const prompt = String(event?.detail?.prompt || "").trim()
+      const mode = String(event?.detail?.mode || "general").trim() || "general"
+
       if (!prompt) return
 
+      setAssistantMode(mode)
       setQuestion(prompt)
       setQuickQuestionSelected(true)
 
@@ -2561,6 +2761,7 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
 
   function resetConsultation() {
     setQuestion("")
+    setAssistantMode("general")
     setQuickQuestionSelected(false)
     setResponseData(null)
     setResponseHistory([])
@@ -2616,8 +2817,9 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
     })
   }
 
-  async function callAssistantAi({ question: sentQuestion, currentProfile, aides }) {
+  async function callAssistantAi({ question: sentQuestion, currentProfile, aides, mode = "general" }) {
     const assistantIsKreol = isKreol || looksLikeKreolText(sentQuestion)
+    const questionForAi = buildQuestionWithModeInstruction(sentQuestion, mode, assistantIsKreol)
 
     const topRecommendedAides = getRecommendedAides(
       aides,
@@ -2647,7 +2849,11 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
 
     const { data, error } = await supabase.functions.invoke("assistant-aisupabase", {
       body: {
-        question: sentQuestion,
+        question: questionForAi,
+        originalQuestion: sentQuestion,
+        assistantMode: mode,
+        assistantModeLabel: getAssistantModeLabel(mode, assistantIsKreol),
+        modeInstruction: buildModeInstruction(mode, assistantIsKreol),
         language: assistantIsKreol ? "kreol" : "fr",
         isKreol: assistantIsKreol,
         isQuickPreset: false,
@@ -2697,6 +2903,7 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
     }
 
     const sentQuestion = question.trim()
+    const currentAssistantMode = assistantMode || "general"
     const consumesExchange = shouldConsumeAiExchange(sentQuestion, quickQuestionSelected)
     const aides = await fetchAides()
 
@@ -2709,6 +2916,7 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
         question: sentQuestion,
         currentProfile,
         aides,
+        mode: currentAssistantMode,
       })
 
       setLoadingAssistant(false)
@@ -2745,6 +2953,7 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
       profile: currentProfile,
       aides,
       aiAnswer,
+      assistantMode: currentAssistantMode,
       aiMode: consumesExchange ? "edge-ai" : "local",
     })
 
@@ -2766,7 +2975,7 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <Star size={26} color={COLORS.cyan} />
         <h3 style={{ color: COLORS.text, margin: 0 }}>
-          {isKreol ? "Mon konseye zéd Premium" : "Mon conseiller aides Premium"}
+          {isKreol ? "Mon konseyé Premium" : "Mon conseiller Premium"}
         </h3>
       </div>
 
@@ -2779,7 +2988,7 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
       <div style={{ background: "rgba(255,255,255,.05)", border: `1px solid ${COLORS.border}`, borderRadius: 18, padding: 16, display: "grid", gap: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, color: COLORS.cyan, fontWeight: 900 }}>
           <MessageCircle size={17} />
-          {isKreol ? "Diskité ek mon konseye" : "Discuter avec mon conseiller"}
+          {isKreol ? "Koz ek mon konseyé" : "Discuter avec mon conseiller"}
         </div>
 
         <div style={{ background: aiQuotaReached ? "rgba(251,113,133,.10)" : "rgba(34,197,94,.08)", border: aiQuotaReached ? "1px solid rgba(251,113,133,.35)" : "1px solid rgba(34,197,94,.25)", borderRadius: 14, padding: 12, color: COLORS.text, display: "grid", gap: 8 }}>
@@ -2789,7 +2998,7 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
               {loadingAiUsage
                 ? "..."
                 : isKreol
-                  ? `${aiRemaining} lézanz disponib sa mwin-la`
+                  ? `${aiRemaining} kestions disponibles sa mwa-la`
                   : `${aiRemaining} échanges disponibles ce mois-ci`}
             </span>
           </div>
@@ -2807,6 +3016,7 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
           value={question}
           onChange={e => {
             setQuestion(e.target.value)
+            setAssistantMode("general")
             setQuickQuestionSelected(false)
           }}
           placeholder={isKreol ? "Ex : Bonzour, mi na 2 marmay, est-ce que mi pé gagn zéd pou vakans ?" : "Ex : Bonjour, j’ai 2 enfants, est-ce que je peux avoir des aides pour les vacances ?"}
@@ -2815,16 +3025,17 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
 
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           {[
-            isKreol ? "Zéd pou vakans marmay" : "Aides vacances enfants",
+            isKreol ? "Zéd vacances marmay" : "Aides vacances enfants",
             isKreol ? "Zéd cantine" : "Aide cantine",
             isKreol ? "Zéd facture EDF" : "Aide facture EDF",
             isKreol ? "Zéd logement" : "Aide logement",
             isKreol ? "Microcrédit social" : "Microcrédit social",
             isKreol ? "Aide transport ou permis" : "Aide transport ou permis",
-            isKreol ? "Que dois-je faire maintenant ?" : "Que dois-je faire maintenant ?",
+            isKreol ? "Kosa mi doi fé astèr ?" : "Kosa mi doi fé astèr ?",
           ].map(example => (
             <button key={example} type="button" onClick={() => {
               setQuestion(example)
+              setAssistantMode("trouver_aide")
               setQuickQuestionSelected(true)
             }} style={{ background: "rgba(35,211,214,.08)", border: "1px solid rgba(35,211,214,.25)", borderRadius: 999, padding: "7px 11px", color: COLORS.cyan, fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 800 }}>
               {example}
@@ -2835,7 +3046,7 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
         <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
           <button type="button" onClick={handleAnalyze} disabled={analyzeDisabled} style={{ background: analyzeDisabled ? COLORS.muted : COLORS.accent, color: "#fff", border: "none", borderRadius: 12, padding: "11px 16px", fontWeight: 900, cursor: analyzeDisabled ? "not-allowed" : "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 8 }}>
             <Send size={16} />
-            {loadingProfile || loadingAssistant ? "Analyse en cours..." : isKreol ? "Diskité ek mon konseye" : "Discuter avec mon conseiller"}
+            {loadingProfile || loadingAssistant ? "Analyse en cours..." : isKreol ? "Koz ek mon konseyé" : "Discuter avec mon conseiller"}
           </button>
 
           <button type="button" onClick={handleScanProfile} disabled={loadingProfile} style={{ background: loadingProfile ? COLORS.muted : COLORS.cyan, color: "#0A1628", border: "none", borderRadius: 12, padding: "11px 16px", fontWeight: 900, cursor: loadingProfile ? "not-allowed" : "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 8 }}>
@@ -2845,7 +3056,7 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
 
           <button type="button" onClick={resetConsultation} style={{ background: "rgba(255,255,255,.06)", color: COLORS.text, border: "1px solid rgba(255,255,255,.14)", borderRadius: 12, padding: "11px 16px", fontWeight: 900, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 8 }}>
             <Trash2 size={16} />
-            {isKreol ? "Nouvelle konsultasyon" : "Nouvelle consultation"}
+            {isKreol ? "Nouvo kestion" : "Nouvelle consultation"}
           </button>
         </div>
 
@@ -2872,7 +3083,7 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
                     <Sparkles size={16} />
                     {item.type === "scan"
                       ? (isKreol ? "Analyse de out profil" : "Analyse de votre profil")
-                      : (isKreol ? "Répons mon konseye" : "Réponse de votre conseiller")}
+                      : `${isKreol ? "Répons" : "Réponse"} · ${getAssistantModeLabel(item.assistantMode || "general", isKreol)}`}
                   </div>
 
                   <p style={{ margin: "0 0 12px", whiteSpace: "pre-line", lineHeight: 1.65 }}>

@@ -31,12 +31,12 @@ function getLanguageKey(t) {
   return t("nav", "dashboard") || "fr"
 }
 
-function sendAssistantPrompt(prompt) {
+function sendAssistantPrompt(prompt, mode = "general") {
   if (typeof window === "undefined") return
 
   window.dispatchEvent(
     new CustomEvent("budgetkazpei:assistant-prompt", {
-      detail: { prompt },
+      detail: { prompt, mode },
     })
   )
 }
@@ -53,6 +53,7 @@ export default function ConseillerPage({
 
   const modes = [
     {
+      mode: "trouver_aide",
       icon: SearchCheck,
       color: COLORS.cyan,
       title: isKreol ? "Trouve in zéd" : "Trouver une aide",
@@ -64,6 +65,7 @@ export default function ConseillerPage({
         : "Je veux trouver les aides possibles selon mon profil. Pose-moi les questions utiles si besoin.",
     },
     {
+      mode: "comprendre_courrier",
       icon: HelpCircle,
       color: COLORS.yellow,
       title: isKreol ? "Comprann in kourrié" : "Comprendre un courrier",
@@ -75,6 +77,7 @@ export default function ConseillerPage({
         : "Je vais coller un courrier administratif. Explique clairement ce qu'il signifie, ce qui est demandé, les délais, les risques et les actions à faire. N'invente rien.",
     },
     {
+      mode: "preparer_dossier",
       icon: FolderCheck,
       color: COLORS.green,
       title: isKreol ? "Prépar in dossier" : "Préparer un dossier",
@@ -86,6 +89,7 @@ export default function ConseillerPage({
         : "Aide-moi à préparer un dossier administratif. Donne-moi les documents à préparer, les étapes, l'organisme à contacter et la prochaine action concrète.",
     },
     {
+      mode: "generer_email",
       icon: Mail,
       color: COLORS.purple,
       title: isKreol ? "Prépar in email" : "Générer un email",
@@ -97,6 +101,7 @@ export default function ConseillerPage({
         : "Aide-moi à rédiger un email administratif simple et poli. Ne mets aucun nom ni prénom automatiquement. Ne rajoute aucune situation inventée.",
     },
     {
+      mode: "preparer_recours",
       icon: Scale,
       color: COLORS.red,
       title: isKreol ? "Prépar in rekour" : "Préparer un recours",
@@ -108,6 +113,7 @@ export default function ConseillerPage({
         : "Aide-moi à préparer un recours administratif. Je vais expliquer le refus reçu. Reste prudent, n'invente rien, et propose une structure claire.",
     },
     {
+      mode: "preparer_rdv",
       icon: CalendarDays,
       color: COLORS.accent,
       title: isKreol ? "Prépar in rendez-vous" : "Préparer un rendez-vous",
@@ -220,9 +226,9 @@ export default function ConseillerPage({
 
             return (
               <button
-                key={mode.title}
+                key={mode.mode}
                 type="button"
-                onClick={() => sendAssistantPrompt(mode.prompt)}
+                onClick={() => sendAssistantPrompt(mode.prompt, mode.mode)}
                 style={{
                   textAlign: "left",
                   background: `linear-gradient(135deg, ${mode.color}22, rgba(15,30,56,.96))`,
