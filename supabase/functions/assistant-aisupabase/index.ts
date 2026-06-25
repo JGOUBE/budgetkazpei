@@ -8,6 +8,9 @@ import {
 } from "./memory/memory.ts"
 import { analyzeIntent } from "./memory/intentAnalyzer.ts"
 import { buildAiMemoryPatch } from "./memory/memoryReasoner.ts"
+import { checkProfileConsistency } from "./engine/profileConsistency.ts"
+import { evaluateTruth } from "./truth/truthGuard.ts"
+import { buildTruthPrompt } from "./truth/truthPrompt.ts"
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -289,7 +292,56 @@ Phrase finale si utile :
 `.trim()
 }
 
-function buildUserPrompt(body: any, language: AssistantLanguage, mode: AssistantMode, memory: any = null) {
+
+function buildConsistencyPrompt(consistency: any = null) {
+  if (!consistency || typeof consistency !== "object") {
+    return "État : non fourni.\nAucune analyse de cohérence structurée n'a été transmise."
+  }
+
+  const state = String(consistency.state || "ok").toUpperCase()
+  const missing = Array.isArray(consistency.missing) ? consistency.missing : []
+  const contradictions = Array.isArray(consistency.contradictions) ? consistency.contradictions : []
+  const suggestions = Array.isArray(consistency.suggestions) ? consistency.suggestions : []
+
+  if (
+    state === "OK" &&
+    missing.length === 0 &&
+    contradictions.length === 0 &&
+    suggestions.length === 0
+  ) {
+    return [
+      "État : OK",
+      "Aucune contradiction simple n'a été détectée entre le profil et la demande.",
+      "Utilise le profil avec prudence sans faire de déduction non justifiée.",
+    ].join("\n")
+  }
+
+  return [
+    `État : ${state}`,
+    "",
+    "Informations manquantes détectées :",
+    missing.length > 0 ? missing.map((item: string) => `- ${item}`).join("\n") : "- Aucune",
+    "",
+    "Contradictions détectées :",
+    contradictions.length > 0
+      ? contradictions.map((item: string) => `- ${item}`).join("\n")
+      : "- Aucune",
+    "",
+    "Suggestions de prudence ou de mise à jour :",
+    suggestions.length > 0
+      ? suggestions.map((item: string) => `- ${item}`).join("\n")
+      : "- Aucune",
+  ].join("\n")
+}
+
+function buildUserPrompt(
+  body: any,
+  language: AssistantLanguage,
+  mode: AssistantMode,
+  memory: any = null,
+  consistency: any = null,
+  truthReport: any = null,
+) {
   const originalQuestion = String(body.originalQuestion || body.question || "").trim()
   const profile = body.profile || {}
   const profileSummary = body.profile_summary || ""
@@ -307,6 +359,8 @@ function buildUserPrompt(body: any, language: AssistantLanguage, mode: Assistant
         })
         .join("\n\n")
     : "Aucun échange récent fourni par l'interface."
+  const consistencyPrompt = buildConsistencyPrompt(consistency)
+  const truthPrompt = buildTruthPrompt(truthReport)
   const languageInstruction =
     language === "kreol"
       ? `LANGUE OBLIGATOIRE DE RÉPONSE : créole réunionnais simple. Réponds en créole réunionnais, pas en français standard. Tu peux garder les noms officiels des aides en français (CAF, APL, FSL, CCAS), mais les phrases doivent rester en style créole réunionnais naturel.`
@@ -325,10 +379,10 @@ ${originalQuestion || body.question || ""}
 Mode demandé par l'interface :
 ${mode}
 
-Résumé du profil affiché par BudgetKazPei :
+Résumé du profil affiché par BudgetKazPei (source principale) :
 ${profileSummary || "Non fourni"}
 
-Profil brut disponible :
+Profil brut disponible (pour compléter uniquement si nécessaire) :
 ${safeJson(profile)}
 
 Contexte local utile :
@@ -343,7 +397,27 @@ ${safeJson(reunionOrientation, {})}
 Conversation récente visible dans cette session :
 ${recentConversationPrompt}
 
+ANALYSE DE COHÉRENCE BUDGETKAZPEI :
+${consistencyPrompt}
+
+${truthPrompt}
+
+Consignes liées à l'analyse de cohérence :
+- Si l'état indique CONTRADICTION, ne tranche pas : signale calmement l'écart et demande confirmation ou mise à jour du profil.
+- Si l'état indique MISSING, pose seulement la question indispensable avant de conclure.
+- Si l'état indique PROFILE_UPDATE, explique que la situation semble avoir changé et propose de vérifier le profil.
+- Ne modifie jamais le profil automatiquement.
+- Ne déduis jamais un salaire individuel à partir du revenu du foyer : le revenu du foyer peut inclure salaire, aides, RSA, chômage, pensions ou autres revenus.
+
 Règle de continuité : si la demande actuelle est courte, incomplète ou ressemble à une précision, rattache-la au dernier échange pertinent au lieu de recommencer une réponse générale.
+
+PRIORITÉ DE RAISONNEMENT BUDGETKAZPEI :
+- Le profil transmis par BudgetKazPei est la source principale d'information utilisateur.
+- Avant de répondre, utilise d'abord le profil connu, puis la mémoire, puis les aides recommandées, puis la demande actuelle.
+- Ne redemande jamais une information déjà présente dans le profil ou dans la mémoire.
+- Si tu t'appuies sur le profil, montre-le naturellement avec une phrase courte comme "D'après votre profil BudgetKazPei" ou "Compte tenu de votre situation", sans recopier tout le profil.
+- Pose une question uniquement si une information indispensable manque réellement pour donner une réponse utile et prudente.
+- Si une information du message utilisateur contredit le profil, signale calmement qu'il faut vérifier ou mettre à jour le profil.
 
 Consignes de réponse :
 - Respecte strictement la langue obligatoire indiquée plus haut.
@@ -693,10 +767,27 @@ Deno.serve(async (req) => {
 
     const context = contextResult.context as AssistantContext
 
+    const consistency =
+      context.action === "analyze_refusal"
+        ? null
+        : checkProfileConsistency(context.profile, context.question)
+
+    const truthReport =
+      context.action === "analyze_refusal"
+        ? null
+        : evaluateTruth(context.profile, context.memory, consistency, context.question)
+
     const userPrompt =
       context.action === "analyze_refusal"
         ? buildRefusalPrompt(context.body, context.language)
-        : buildUserPrompt(context.body, context.language, context.mode, context.memory)
+        : buildUserPrompt(
+            context.body,
+            context.language,
+            context.mode,
+            context.memory,
+            consistency,
+            truthReport,
+          )
 
     const systemPrompt = buildSystemPrompt(context.language, context.action, context.mode)
 
