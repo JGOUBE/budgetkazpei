@@ -1,7 +1,7 @@
 import {
   findReunionIntents,
   textMatchesIntent,
-} from "../language/reunionLexicon.ts"
+} from "../../language/reunionLexicon.ts"
 
 export type ConsistencyState = "ok" | "missing" | "contradiction" | "profile_update"
 

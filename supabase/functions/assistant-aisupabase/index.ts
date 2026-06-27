@@ -6,11 +6,12 @@ import {
   mergeMemory,
   saveAssistantMemory,
 } from "./memory/memory.ts"
-import { analyzeIntent } from "./memory/intentAnalyzer.ts"
+import { analyzeIntent } from "./engine/intent/intentAnalyzer.ts"
 import { buildAiMemoryPatch } from "./memory/memoryReasoner.ts"
-import { checkProfileConsistency } from "./engine/profileConsistency.ts"
-import { evaluateTruth } from "./truth/truthGuard.ts"
-import { buildTruthPrompt } from "./truth/truthPrompt.ts"
+import { checkProfileConsistency } from "./engine/profile/profileConsistency.ts"
+import { evaluateTruth } from "./engine/truth/truthAnalyzer.ts"
+import { buildTruthPrompt } from "./engine/truth/truthPrompt.ts"
+import { reviewAssistantAnswer } from "./engine/review/reviewerEngine.ts"
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -820,11 +821,23 @@ Deno.serve(async (req) => {
       )
     }
 
-    const answer =
+    const rawAnswer =
       openAiResult.data?.choices?.[0]?.message?.content ||
       (context.isKreol
         ? "Mi na pas réussi générer une réponse pou le moment."
         : "Je n’ai pas réussi à générer une réponse pour le moment.")
+
+    const reviewResult =
+      context.action === "analyze_refusal"
+        ? {
+            ok: true,
+            qualityScore: 100,
+            issues: [],
+            revisedAnswer: rawAnswer,
+          }
+        : reviewAssistantAnswer(rawAnswer, context.language)
+
+    const answer = reviewResult.revisedAnswer
 
     let finalUsage = context.usage
     let nextUsed = context.used
@@ -888,6 +901,11 @@ Deno.serve(async (req) => {
         consumed: context.consumesExchange,
         language: context.language,
         mode: context.mode,
+        review: {
+          ok: reviewResult.ok,
+          qualityScore: reviewResult.qualityScore,
+          issues: reviewResult.issues,
+        },
       },
       200,
     )
