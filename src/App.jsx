@@ -538,6 +538,7 @@ function BudgetKazPeiApp({ initialAuthPage = "login" }) {
             onGoPremium={() => setActiveNav("premium")}
             opportunitiesCount={5}
             commune={profile?.commune || ""}
+            profile={profile}
             onOpenOpportunities={() => setActiveNav("opportunites")}
             onOpenRevenus={() => setActiveNav("revenus")}
             onOpenDepenses={() => setActiveNav("depenses")}

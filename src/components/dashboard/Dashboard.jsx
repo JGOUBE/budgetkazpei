@@ -1285,6 +1285,304 @@ function DashboardRemindersCard({ t, isMobile, reminders = [], onOpenDemarches }
   )
 }
 
+function computeProfileCompletion(profile = {}) {
+  const fields = [
+    "nom",
+    "commune",
+    "age",
+    "situation_familiale",
+    "nombre_enfants",
+    "revenus_foyer",
+    "logement",
+    "situation_professionnelle",
+    "allocataire_caf",
+    "permis_conduire",
+    "vehicule_personnel",
+  ]
+
+  const completed = fields.filter(field => {
+    const value = profile?.[field]
+    return value !== undefined && value !== null && value !== ""
+  }).length
+
+  return Math.round((completed / fields.length) * 100)
+}
+
+function getUserFirstName(profile = {}) {
+  const name = String(profile?.nom || "").trim()
+  if (!name) return ""
+  return name.split(/\s+/)[0]
+}
+
+function getNextCopilotAction({
+  profileCompletion,
+  commune,
+  realTransactions = [],
+  abonnements = [],
+  reminders = [],
+  isKreol,
+}) {
+  if (profileCompletion < 65) {
+    return {
+      text: isKreol
+        ? "Complète out profil pou améliore bann conseils."
+        : "Compléter votre profil pour améliorer les conseils.",
+      target: "profil",
+    }
+  }
+
+  if (!commune) {
+    return {
+      text: isKreol
+        ? "Ajoute out kominn pou gagne bann pistes lokal."
+        : "Ajouter votre commune pour obtenir des pistes locales.",
+      target: "profil",
+    }
+  }
+
+  if (!realTransactions || realTransactions.length === 0) {
+    return {
+      text: isKreol
+        ? "Ajoute out premières dépans."
+        : "Ajouter vos premières dépenses.",
+      target: "depenses",
+    }
+  }
+
+  if (!abonnements || abonnements.length === 0) {
+    return {
+      text: isKreol
+        ? "Ajoute out premières sarz fix."
+        : "Ajouter vos premières charges fixes.",
+      target: "abonnements",
+    }
+  }
+
+  if (reminders && reminders.length > 0) {
+    return {
+      text: isKreol
+        ? "Regarde out prochaine démarche à suivre."
+        : "Vérifier votre prochaine démarche en attente.",
+      target: "demarches",
+    }
+  }
+
+  return {
+    text: isKreol
+      ? "Pose in kestion au Konsèyé."
+      : "Poser une question au Conseiller.",
+    target: "conseiller",
+  }
+}
+
+function CopilotHero({ profile, isKreol, isMobile, profileCompletion, attentionCount }) {
+  const firstName = getUserFirstName(profile)
+  const greeting = firstName
+    ? isKreol ? `👋 Bonzour ${firstName}` : `👋 Bonjour ${firstName}`
+    : isKreol ? "👋 Bonzour" : "👋 Bonjour"
+
+  const subtitle = profileCompletion < 65
+    ? isKreol
+      ? "Complète out profil pou gagne bann conseils pli précis."
+      : "Complétez votre profil pour obtenir des conseils plus précis."
+    : attentionCount > 0
+      ? isKreol
+        ? `Out bidjé lé sous contrôle. ${attentionCount} piste${attentionCount > 1 ? "s" : ""} i mérite out attention.`
+        : `Budget sous contrôle. ${attentionCount} piste${attentionCount > 1 ? "s" : ""} mérite${attentionCount > 1 ? "nt" : ""} votre attention.`
+      : isKreol
+        ? "Out situation lé claire pou zordi."
+        : "Votre situation est claire pour aujourd’hui."
+
+  return (
+    <TropicalCard variant="lagoon" texture="🌴" style={{ padding: isMobile ? 18 : 26 }}>
+      <div style={{ color: COLORS.cyan, fontSize: 12, fontWeight: 900, marginBottom: 8, textTransform: "uppercase" }}>
+        {isKreol ? "Copilote BudgetKazPei" : "Copilote BudgetKazPei"}
+      </div>
+      <div style={{ color: COLORS.text, fontWeight: 950, fontSize: isMobile ? 26 : 34, lineHeight: 1.05, marginBottom: 8 }}>
+        {greeting}
+      </div>
+      <div style={{ color: COLORS.whiteSoft, fontSize: isMobile ? 15 : 17, fontWeight: 800, marginBottom: 6 }}>
+        {isKreol ? "Voilà out situation zordi." : "Voici votre situation aujourd’hui."}
+      </div>
+      <div style={{ color: COLORS.muted, fontSize: 13.5, lineHeight: 1.55 }}>
+        {subtitle}
+      </div>
+    </TropicalCard>
+  )
+}
+
+function CopilotInfoCard({ title, value, detail, buttonLabel, onClick, isMobile, accent = COLORS.cyan }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      style={{
+        width: "100%",
+        minHeight: isMobile ? 142 : 164,
+        textAlign: "left",
+        border: `1px solid ${COLORS.border}`,
+        borderRadius: 18,
+        background: `linear-gradient(135deg, ${COLORS.card}, ${COLORS.cardLight})`,
+        padding: 18,
+        color: COLORS.text,
+        cursor: onClick ? "pointer" : "default",
+        fontFamily: "inherit",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        gap: 12,
+      }}
+    >
+      <div>
+        <div style={{ color: accent, fontSize: 13, fontWeight: 950, marginBottom: 8 }}>{title}</div>
+        <div style={{ color: COLORS.text, fontSize: 20, fontWeight: 950, lineHeight: 1.15, marginBottom: 8 }}>{value}</div>
+        <div style={{ color: COLORS.muted, fontSize: 12.5, lineHeight: 1.45 }}>{detail}</div>
+      </div>
+      {buttonLabel && (
+        <span style={{ color: COLORS.accentSoft, fontSize: 12, fontWeight: 950 }}>
+          {buttonLabel} ›
+        </span>
+      )}
+    </button>
+  )
+}
+
+function CopilotCards({
+  isKreol,
+  isMobile,
+  stats,
+  commune,
+  profileCompletion,
+  opportunitiesCount,
+  reminders = [],
+  abonnements = [],
+  realTransactions = [],
+  onGoProfile,
+  onOpenOpportunities,
+  onOpenDemarches,
+  onOpenConseiller,
+}) {
+  const hasBudgetData = Number(stats.revenus || 0) > 0 || Number(stats.depenses || 0) > 0 || realTransactions.length > 0
+  const demarchesInProgress = reminders.length
+  const completedDemarches = 0
+
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(4, 1fr)", gap: 14 }}>
+      <CopilotInfoCard
+        title={isKreol ? "💶 Bidjé du mwa" : "💶 Budget du mois"}
+        value={hasBudgetData ? formatMontant(stats.solde || 0) : isKreol ? "À compléter" : "À compléter"}
+        detail={hasBudgetData
+          ? `${isKreol ? "Larzan i rantre" : "Revenus"} : ${formatMontant(stats.revenus || 0)} · ${isKreol ? "Dépans" : "Dépenses"} : ${formatMontant(stats.depenses || 0)}`
+          : isKreol
+            ? "Ajoute out premières dépans pou suivre out bidjé."
+            : "Ajoutez vos premières dépenses pour suivre votre budget."}
+        buttonLabel={isKreol ? "Voir détail" : "Voir le détail"}
+        onClick={() => navigateTo("solde")}
+        isMobile={isMobile}
+        accent={COLORS.green}
+      />
+
+      <CopilotInfoCard
+        title={isKreol ? "🎯 Opportunités" : "🎯 Opportunités"}
+        value={opportunitiesCount > 0
+          ? isKreol ? `${opportunitiesCount} pistes pou vérifié` : `${opportunitiesCount} pistes à vérifier`
+          : isKreol ? "Profil à compléter" : "Profil à compléter"}
+        detail={opportunitiesCount > 0
+          ? isKreol ? "Opportunité possible. Pou confirme ek l’organisme concerné." : "Opportunité possible. À confirmer avec l’organisme concerné."
+          : isKreol ? "Complète out profil pou détecte plis opportunités." : "Complétez votre profil pour détecter plus d’opportunités."}
+        buttonLabel={isKreol ? "Vérifié" : "Vérifier"}
+        onClick={onOpenOpportunities}
+        isMobile={isMobile}
+        accent={COLORS.yellow}
+      />
+
+      <CopilotInfoCard
+        title={commune ? isKreol ? "📍 Kominn" : "📍 Commune" : isKreol ? "📍 Kominn pa renseignée" : "📍 Commune non renseignée"}
+        value={commune || (isKreol ? "Pa renseignée" : "Non renseignée")}
+        detail={commune
+          ? isKreol ? "Bann conseils adapté pou out kominn." : "Conseils adaptés à votre commune."
+          : isKreol ? "Ajoute out kominn pou améliore bann conseils." : "Ajoutez votre commune pour améliorer vos conseils."}
+        buttonLabel={!commune ? isKreol ? "Renseigne" : "Renseigner" : isKreol ? "Modifier" : "Modifier"}
+        onClick={onGoProfile}
+        isMobile={isMobile}
+        accent={COLORS.cyan}
+      />
+
+      <CopilotInfoCard
+        title={isKreol ? "📄 Démarches" : "📄 Démarches"}
+        value={demarchesInProgress > 0
+          ? isKreol ? `${demarchesInProgress} en cours` : `${demarchesInProgress} en cours`
+          : isKreol ? "Okenn démarche" : "Aucune démarche"}
+        detail={demarchesInProgress > 0
+          ? `${completedDemarches} ${isKreol ? "terminées" : "terminées"}`
+          : isKreol ? "Okenn démarche suivie pou le moment." : "Aucune démarche suivie pour le moment."}
+        buttonLabel={isKreol ? "Ouvrir" : "Ouvrir"}
+        onClick={onOpenDemarches}
+        isMobile={isMobile}
+        accent={COLORS.purple}
+      />
+
+      <CopilotInfoCard
+        title={isKreol ? "👤 Profil" : "👤 Profil"}
+        value={`${profileCompletion} %`}
+        detail={isKreol ? "Profil complété : plus li lé complet, plus bann conseils lé précis." : "Profil complété : plus il est complet, plus les conseils sont précis."}
+        buttonLabel={profileCompletion < 100 ? isKreol ? "Complète" : "Compléter" : isKreol ? "Voir" : "Voir"}
+        onClick={onGoProfile}
+        isMobile={isMobile}
+        accent={COLORS.green}
+      />
+
+      <CopilotInfoCard
+        title={isKreol ? "🤖 Konsèyé BudgetKazPei" : "🤖 Conseiller BudgetKazPei"}
+        value={isKreol ? "Koz ek mon konsèyé" : "Poser une question"}
+        detail={isKreol
+          ? "Mi pé aide aou comprend in zéd, prépare in démarche ou vérifié out situation."
+          : "Je peux vous aider à comprendre une aide, préparer une démarche ou vérifier votre situation."}
+        buttonLabel={isKreol ? "Koz ek li" : "Poser une question"}
+        onClick={onOpenConseiller}
+        isMobile={isMobile}
+        accent={COLORS.accentSoft}
+      />
+    </div>
+  )
+}
+
+function NextCopilotAction({ action, isKreol, isMobile }) {
+  return (
+    <TropicalCard variant="ocean" texture="👉" style={{ padding: isMobile ? 18 : 22 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center", gap: 14, flexDirection: isMobile ? "column" : "row" }}>
+        <div>
+          <div style={{ color: COLORS.accentSoft, fontSize: 13, fontWeight: 950, marginBottom: 8 }}>
+            {isKreol ? "👉 Mon proshenn aksyon" : "👉 Ma prochaine action"}
+          </div>
+          <div style={{ color: COLORS.text, fontSize: isMobile ? 18 : 21, fontWeight: 950, lineHeight: 1.25 }}>
+            {action.text}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => navigateTo(action.target)}
+          style={{
+            width: isMobile ? "100%" : "auto",
+            background: COLORS.accent,
+            border: "none",
+            borderRadius: 12,
+            color: "#fff",
+            padding: "12px 16px",
+            fontSize: 14,
+            fontWeight: 950,
+            cursor: "pointer",
+            fontFamily: "inherit",
+            whiteSpace: "nowrap",
+          }}
+        >
+          {isKreol ? "Fé sa maintenant" : "Agir maintenant"}
+        </button>
+      </div>
+    </TropicalCard>
+  )
+}
+
 export default function Dashboard({
   stats,
   byCategory = [],
@@ -1301,6 +1599,7 @@ export default function Dashboard({
   onGoPremium,
   opportunitiesCount = 0,
   commune = "",
+  profile = {},
   onOpenOpportunities,
   gainsAides = 0,
   nbAidesObtenues = 0,
@@ -1358,6 +1657,23 @@ export default function Dashboard({
 
   const effectiveGainsAides = Number(gainsAides || 0) || dashboardAideGains.gainsAides
   const effectiveNbAidesObtenues = Number(nbAidesObtenues || 0) || dashboardAideGains.nbAidesObtenues
+  const profileCompletion = computeProfileCompletion(profile)
+  const attentionCount = [
+    profileCompletion < 65,
+    !commune,
+    realTransactions.length === 0,
+    (abonnements?.length || 0) === 0,
+    dashboardReminders.items.length > 0,
+    Number(opportunitiesCount || 0) > 0,
+  ].filter(Boolean).length
+  const nextCopilotAction = getNextCopilotAction({
+    profileCompletion,
+    commune,
+    realTransactions,
+    abonnements,
+    reminders: dashboardReminders.items,
+    isKreol,
+  })
 
   const revenusSub = Number(revenus || 0) === 0
     ? isKreol ? "Touchez pou compléter" : "Touchez pour compléter"
@@ -1538,6 +1854,36 @@ export default function Dashboard({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <CopilotHero
+        profile={profile}
+        isKreol={isKreol}
+        isMobile={isMobile}
+        profileCompletion={profileCompletion}
+        attentionCount={attentionCount}
+      />
+
+      <CopilotCards
+        isKreol={isKreol}
+        isMobile={isMobile}
+        stats={safeStats}
+        commune={commune}
+        profileCompletion={profileCompletion}
+        opportunitiesCount={opportunitiesCount}
+        reminders={dashboardReminders.items}
+        abonnements={abonnements}
+        realTransactions={realTransactions}
+        onGoProfile={() => navigateTo("profil")}
+        onOpenOpportunities={() => navigateTo("opportunites", onOpenOpportunities)}
+        onOpenDemarches={() => navigateTo("demarches", onOpenAides)}
+        onOpenConseiller={() => navigateTo("conseiller")}
+      />
+
+      <NextCopilotAction
+        action={nextCopilotAction}
+        isKreol={isKreol}
+        isMobile={isMobile}
+      />
+
       {isNewUser ? (
         <EmptyWelcomeCard
           t={t}
