@@ -67,6 +67,19 @@ export function useProfile(userId) {
     fetchProfile()
   }, [userId])
 
+  useEffect(() => {
+    if (!userId || typeof window === "undefined") return
+
+    function handleProfileUpdated(event) {
+      const nextProfile = event.detail || {}
+      if (nextProfile.id && nextProfile.id !== userId) return
+      setProfile(current => ({ ...(current || {}), ...nextProfile }))
+    }
+
+    window.addEventListener("budgetkazpei:profile-updated", handleProfileUpdated)
+    return () => window.removeEventListener("budgetkazpei:profile-updated", handleProfileUpdated)
+  }, [userId])
+
   async function updateProfile(updates) {
     setSaving(true)
 
@@ -86,6 +99,9 @@ export function useProfile(userId) {
     }
 
     setProfile(data)
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("budgetkazpei:profile-updated", { detail: data }))
+    }
     setSaving(false)
     return data
   }

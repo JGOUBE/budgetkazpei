@@ -460,6 +460,7 @@ function BudgetKazPeiApp({ initialAuthPage = "login" }) {
             lang={lang}
             onToggleLang={toggleLang}
             t={t}
+            commune={profile?.commune || ""}
           />
         )}
 

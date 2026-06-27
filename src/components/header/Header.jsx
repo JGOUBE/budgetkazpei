@@ -2,7 +2,7 @@ import LanguageSwitcher from "../LanguageSwitcher";
 
 const COLORS = { muted: "#64748B", accent: "#F97316", text: "#F1F5F9" };
 
-export default function Header({ activeNav, onAdd, lang, onToggleLang, t }) {
+export default function Header({ activeNav, onAdd, lang, onToggleLang, t, commune }) {
   const titles = {
     dashboard:   { section: "nav", key: "dashboard" },
     depenses:    { section: "nav", key: "depenses" },
@@ -17,7 +17,7 @@ export default function Header({ activeNav, onAdd, lang, onToggleLang, t }) {
   const moisFormate = mois.charAt(0).toUpperCase() + mois.slice(1)
 
   // ── Géolocalisation ─────────────────────────────────────────
-  const lieu = t("header", "location")
+  const lieu = commune ? `${commune}, La Réunion` : t("header", "location")
 
   /*
   useEffect(() => {
