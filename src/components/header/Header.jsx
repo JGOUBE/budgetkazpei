@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import LanguageSwitcher from "../LanguageSwitcher";
 
 const COLORS = { muted: "#64748B", accent: "#F97316", text: "#F1F5F9" };
@@ -18,8 +17,9 @@ export default function Header({ activeNav, onAdd, lang, onToggleLang, t }) {
   const moisFormate = mois.charAt(0).toUpperCase() + mois.slice(1)
 
   // ── Géolocalisation ─────────────────────────────────────────
-  const [lieu, setLieu] = useState(t("header", "location"))
+  const lieu = t("header", "location")
 
+  /*
   useEffect(() => {
     if (!navigator.geolocation) return
 
@@ -53,6 +53,7 @@ export default function Header({ activeNav, onAdd, lang, onToggleLang, t }) {
       }
     )
   }, [])
+  */
 
   return (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 }}>

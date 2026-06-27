@@ -88,6 +88,7 @@ export default function ProfilePage({ user, t }) {
   const [supportSending, setSupportSending] = useState(false)
   const [supportSuccess, setSupportSuccess] = useState(false)
   const [supportError, setSupportError] = useState("")
+  const [locationMessage, setLocationMessage] = useState("")
   const fileRef = useRef()
   const [subscriptionPlan, setSubscriptionPlan] = useState("free")
 
@@ -138,7 +139,7 @@ export default function ProfilePage({ user, t }) {
   if (profile && !form) {
     setForm({
       nom: profile.nom || user?.user_metadata?.name || "",
-      commune: profile.commune || "Saint-Denis",
+      commune: profile.commune || "",
       telephone: profile.telephone || "",
       situation_familiale: profile.situation_familiale || "",
       nombre_enfants: profile.nombre_enfants ?? "",
@@ -270,6 +271,114 @@ export default function ProfilePage({ user, t }) {
       console.error("Erreur sauvegarde profil:", err)
       setError(tr(isKreol, "Erreur lors de la sauvegarde. Vérifiez aussi que la colonne source existe dans transactions.", "Erreur pendant sauvegarde. Vérifie aussi si la colonne source existe dann transactions."))
     }
+  }
+
+  function normalizeCommuneName(value) {
+    return String(value || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/^commune de\s+/i, "")
+      .replace(/^ville de\s+/i, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toLowerCase()
+  }
+
+  function findMatchingCommune(...values) {
+    const normalizedCommunes = COMMUNES.map(commune => ({
+      commune,
+      normalized: normalizeCommuneName(commune),
+    }))
+
+    for (const value of values) {
+      const normalizedValue = normalizeCommuneName(value)
+      if (!normalizedValue) continue
+
+      const exact = normalizedCommunes.find(item => item.normalized === normalizedValue)
+      if (exact) return exact.commune
+
+      const partial = normalizedCommunes.find(item =>
+        normalizedValue.includes(item.normalized) || item.normalized.includes(normalizedValue),
+      )
+      if (partial) return partial.commune
+    }
+
+    return ""
+  }
+
+  async function detectCommuneFromPosition(position) {
+    const { latitude, longitude } = position.coords || {}
+    if (typeof latitude !== "number" || typeof longitude !== "number") return ""
+
+    try {
+      const params = new URLSearchParams({
+        lat: String(latitude),
+        lon: String(longitude),
+        format: "json",
+        "accept-language": "fr",
+      })
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?${params.toString()}`)
+      if (!res.ok) return ""
+      const data = await res.json()
+      const address = data?.address || {}
+
+      return findMatchingCommune(
+        address.city,
+        address.town,
+        address.village,
+        address.municipality,
+        address.suburb,
+        address.county,
+        data?.display_name,
+      )
+    } catch {
+      return ""
+    }
+  }
+
+  function handleUsePosition() {
+    setError("")
+    setLocationMessage("")
+
+    if (!navigator.geolocation) {
+      setLocationMessage(tr(isKreol, "Aucun souci.\n\nVous pouvez continuer en choisissant votre commune manuellement.", "Pa de souci.\n\nOu pe kontinyé choisir out kominn a la min."))
+      return
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const commune = await detectCommuneFromPosition(position)
+
+        if (!commune) {
+          setLocationMessage(tr(isKreol, "Position autorisee, mais la commune n'a pas pu etre determinee. Vous pouvez choisir votre commune manuellement.", "Position lé autorisée, mé kominn la pa pu être trouvée. Ou pe choisir out kominn a la min."))
+          return
+        }
+
+        const nextForm = { ...form, commune }
+        try {
+          try {
+            await updateProfile({
+              ...nextForm,
+              location_source: "gps",
+              location_updated_at: new Date().toISOString(),
+            })
+          } catch {
+            await updateProfile(nextForm)
+          }
+
+          setForm(nextForm)
+          setSuccess(true)
+          setLocationMessage(tr(isKreol, `Commune detectee : ${commune}. Seule votre commune est enregistree.`, `Kominn trouvée : ${commune}. Selman out kominn lé anrezistrée.`))
+          setTimeout(() => setSuccess(false), 3000)
+        } catch {
+          setLocationMessage(tr(isKreol, "Commune detectee, mais la sauvegarde n'a pas abouti. Vous pouvez choisir votre commune manuellement.", "Kominn trouvée, mé sauvegarde la pa marché. Ou pe choisir out kominn a la min."))
+        }
+      },
+      () => {
+        setLocationMessage(tr(isKreol, "Aucun souci.\n\nVous pouvez continuer en choisissant votre commune manuellement.", "Pa de souci.\n\nOu pe kontinyé choisir out kominn a la min."))
+      },
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 0 },
+    )
   }
 
   async function handleAvatarChange(e) {
@@ -483,11 +592,51 @@ export default function ProfilePage({ user, t }) {
 
           <Field label={t("profil", "commune")}>
             <select value={form.commune} onChange={e => updateField("commune", e.target.value)} style={inputStyle}>
+              <option value="">Choisir une commune</option>
               {COMMUNES.map(c => (
                 <option key={c} value={c}>{c}</option>
               ))}
             </select>
+            <button
+              type="button"
+              onClick={handleUsePosition}
+              disabled={saving}
+              style={{
+                marginTop: 10,
+                background: saving ? COLORS.muted : COLORS.accent,
+                border: "none",
+                borderRadius: 10,
+                padding: "11px 14px",
+                color: "#fff",
+                cursor: saving ? "not-allowed" : "pointer",
+                fontWeight: 800,
+                fontFamily: "inherit",
+              }}
+            >
+              {tr(isKreol, "Activer ma position", "Aktiv mon pozisyon")}
+            </button>
+            <p style={{ fontSize: 12, color: COLORS.muted, margin: "8px 0 0", lineHeight: 1.5 }}>
+              {tr(
+                isKreol,
+                "Votre position n'est jamais suivie. Seule votre commune est enregistree.",
+                "Nou pa suiv out pozisyon. Selman out kominn lé anrezistrée.",
+              )}
+            </p>
           </Field>
+
+          {locationMessage && (
+            <div style={{
+              background: `${COLORS.green}15`,
+              border: `1px solid ${COLORS.green}33`,
+              borderRadius: 8,
+              padding: "10px 14px",
+              fontSize: 13,
+              color: COLORS.green,
+              whiteSpace: "pre-line",
+            }}>
+              {locationMessage}
+            </div>
+          )}
 
           <Field label={t("profil", "telephone")}>
             <input type="tel" value={form.telephone} onChange={e => updateField("telephone", e.target.value)} placeholder="0692 XX XX XX" style={inputStyle} />
