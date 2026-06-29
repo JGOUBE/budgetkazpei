@@ -1,89 +1,154 @@
 import { useState } from "react"
 
 const COLORS = {
-  bg: "#0A1628",
-  card: "#0F1E38",
-  cardLight: "#152444",
-  border: "#1E3A5F",
+  bg: "#081426",
+  band: "#0C1B32",
+  card: "#10213D",
+  border: "#1F3D63",
   accent: "#F97316",
   yellow: "#FCD34D",
   green: "#22C55E",
   cyan: "#23D3D6",
-  muted: "#8EA4C5",
-  text: "#F1F5F9",
   purple: "#A78BFA",
+  muted: "#9BB0D0",
+  text: "#F8FAFC",
 }
+
+const HERO_BG = "/icons-creole/fond-principal.png"
+const LOGO = "/icons-creole/logo-budgetkazpei.png"
 
 const CONTENT = {
   fr: {
-    switchLang: "🇷🇪 Kréol",
+    switchLang: "RE Kreol",
     login: "Se connecter",
-    register: "Créer un compte",
-    offers: "Voir les offres",
-    badge: "🇷🇪 Application budget pensée pour La Réunion",
-    title: "Gérez votre budget, vos aides et vos démarches plus simplement.",
-    subtitle:
-      "BudgetKazPei aide les foyers réunionnais à suivre leurs dépenses, repérer des aides possibles, préparer leurs démarches et avancer avec plus de sérénité.",
-    ctaPrimary: "Commencer gratuitement",
-    ctaSecondary: "Découvrir Premium",
-    purposeTitle: "À quoi sert BudgetKazPei ?",
-    purposeText:
-      "L'application permet de mieux comprendre son budget, suivre ses charges, visualiser son reste à vivre et être orienté vers des aides ou dispositifs adaptés à sa situation.",
-    cards: [
-      ["💰 Budget clair", "Revenus, dépenses, charges fixes et reste à vivre réunis au même endroit."],
-      ["🏛️ Aides & droits", "Des pistes d'aides locales, régionales ou nationales selon votre profil."],
-      ["📝 Démarches", "Documents à préparer, étapes à suivre et suivi de vos demandes."],
-      ["🌴 Français / Kréol", "Une application en français, avec une traduction créole pour plus de proximité."],
+    heroTitle: "Reprenez le contrôle de votre budget.",
+    heroText:
+      "BudgetKazPei analyse vos courses, suit vos dépenses et vous aide à économiser grâce à des conseils intelligents adaptés à La Réunion.",
+    primaryCta: "Commencer gratuitement",
+    secondaryCta: "Découvrir Premium",
+    whyTitle: "Pourquoi BudgetKazPei ?",
+    whySteps: [
+      "Vous faites vos courses.",
+      "Vous les analysez en quelques secondes.",
+      "BudgetKazPei comprend vos habitudes.",
+      "Vous découvrez où part votre argent.",
+      "Vous recevez des conseils personnalisés.",
     ],
-    premiumTitle: "Un conseiller BudgetKazPei pour aller plus loin",
-    premiumText:
-      "Les offres Premium ajoutent un accompagnement plus complet, avec un conseiller IA, des échanges mensuels, des alertes et des fonctionnalités avancées.",
-    premiumBullets: [
-      "Premium : jusqu'à 50 échanges avec le conseiller chaque mois",
-      "Premium+ : jusqu'à 250 échanges avec le conseiller chaque mois",
-      "Les outils simples de l'application restent accessibles sans consommer d'échange",
+    benefitsTitle: "Ce que BudgetKazPei vous apporte",
+    benefits: [
+      ["Comprendre où part votre argent", "Vos dépenses, vos courses et vos habitudes deviennent lisibles."],
+      ["Suivre automatiquement vos courses", "Un ticket analysé peut alimenter vos dépenses, vos produits et vos magasins."],
+      ["Identifier vos habitudes d'achat", "BudgetKazPei repère les produits fréquents, les magasins utilisés et les évolutions."],
+      ["Préparer votre budget", "Vous voyez mieux ce qui reste, ce qui augmente et ce qui mérite attention."],
+      ["Recevoir des conseils intelligents", "Les conseils viennent de vos données, pas de phrases génériques."],
+      ["Découvrir des aides utiles", "L'application garde son rôle d'orientation vers les aides et dispositifs adaptés."],
     ],
-    trustTitle: "Une base propre pour avancer",
-    trustText:
-      "BudgetKazPei ne remplace pas les organismes officiels. L'application aide à s'organiser, à repérer des pistes et à préparer ses démarches. Les conditions exactes doivent toujours être vérifiées auprès des services concernés.",
+    scannerTitle: "Analysez simplement vos courses.",
+    scannerText:
+      "BudgetKazPei reconnaît automatiquement vos achats et enrichit votre budget sans saisie fastidieuse. Le scanner n'est qu'un raccourci : la vraie valeur vient de l'analyse qui suit.",
+    premiumTitle: "Choisissez votre niveau d'accompagnement",
+    plans: [
+      {
+        name: "Gratuit",
+        promise: "Découvrir BudgetKazPei.",
+        quota: "10 analyses de courses",
+        features: ["Budget simple", "Suivi des dépenses", "Aides en version simple"],
+      },
+      {
+        name: "Premium",
+        promise: "Gérer parfaitement son budget.",
+        quota: "30 analyses",
+        features: ["Statistiques avancées", "Historique complet", "Produits et magasins", "Dashboard enrichi"],
+        highlight: true,
+      },
+      {
+        name: "Premium+",
+        promise: "Votre copilote financier.",
+        quota: "100 analyses",
+        features: ["Assistant IA", "Prévisions", "Conseils personnalisés", "Résumé hebdomadaire", "Comparaisons intelligentes prochainement"],
+      },
+    ],
+    testimonialsTitle: "Ils reprennent la main sur leur budget",
+    testimonials: [
+      ["Je vois enfin mes courses autrement.", "Le Tampon"],
+      ["Les dépenses alimentaires sont plus claires.", "Saint-Leu"],
+      ["Je comprends mieux ce qui pèse dans mon mois.", "Saint-Denis"],
+    ],
+    faqTitle: "Questions fréquentes",
+    faq: [
+      ["Pourquoi limiter les analyses ?", "Les analyses automatiques utilisent des ressources techniques. Le choix manuel reste illimité."],
+      ["Pourquoi analyser mes courses ?", "Parce que les courses reviennent souvent et expliquent une vraie partie du budget familial."],
+      ["Mes données sont-elles sécurisées ?", "Vos données restent liées à votre compte. Les tickets servent à mettre à jour votre budget et vos statistiques."],
+      ["Comment fonctionne Premium+ ?", "Premium+ devient votre copilote financier intelligent : assistant IA, prévisions, conseils et résumés personnalisés."],
+    ],
     footerPrivacy: "Confidentialité",
     footerTerms: "Conditions",
-    footerContact: "Contact : contact.budgetkazpei@gmail.com",
   },
   kr: {
-    switchLang: "🇫🇷 Français",
-    login: "Konekté",
-    register: "Kréé kont",
-    offers: "Voir bann offres",
-    badge: "🇷🇪 Aplikasyon bidjé fèt pou La Rényon",
-    title: "Gèr out bidjé, out zéd é out démars pli fasilman.",
-    subtitle:
-      "BudgetKazPei i aide bann famiy rényoné suivre zot dépans, trouv bann zéd possibles, prépar zot démars é avance ek plis trankilité.",
-    ctaPrimary: "Koumans gratis",
-    ctaSecondary: "Découv Premium",
-    purposeTitle: "Kosa BudgetKazPei i fé ?",
-    purposeText:
-      "L'appli i permet mieux konprann out bidjé, suivre out charges, voir larzan i reste é oriente aou vers bann zéd ou dispositifs adaptés à out sitiasyon.",
-    cards: [
-      ["💰 Bidjé kler", "Larzan rantre, dépans, sarz fix é larzan i reste dann minm landrwa."],
-      ["🏛️ Zéd & drwa", "Bann pistes zéd lokal, régional ou nasional selon out profil."],
-      ["📝 Démars", "Dokiman pou préparé, étapes pou suivre é suivi out demandes."],
-      ["🌴 Fransé / Kréol", "In aplikasyon an fransé, ek tradiksyon kréol pou être pli proche."],
+    switchLang: "FR Français",
+    login: "Konekte",
+    heroTitle: "repran kontrol su out bidze.",
+    heroText:
+      "BudgetKazPei i analiz out courses, i swiv out depans ek i aide aou fer lekonomi avek bann konsey adapte pou La Rényon.",
+    primaryCta: "Koumans gratis",
+    secondaryCta: "Dekouv Premium",
+    whyTitle: "Poukisa BudgetKazPei ?",
+    whySteps: [
+      "Ou fé out courses.",
+      "Ou analiz azot an detrwa segonn.",
+      "BudgetKazPei i konpran out labitid.",
+      "Ou trouv kotsa out larzan i sava.",
+      "Ou gagn bann konsey pou ou.",
     ],
-    premiumTitle: "In conseiller BudgetKazPei pou allé pli loin",
-    premiumText:
-      "Bann offres Premium i ajoute in accompagnement pli complet, ek conseiller IA, lézanz chak mwa, alertes é fonctions avancées.",
-    premiumBullets: [
-      "Premium : ziska 50 lézanz ek conseiller chaque mwa",
-      "Premium+ : ziska 250 lézanz ek conseiller chaque mwa",
-      "Bann zouti simples dann l'appli i reste accessibles san consomme lézanz",
+    benefitsTitle: "Sa BudgetKazPei i apporte aou",
+    benefits: [
+      ["Konprann kotsa larzan i sava", "Out depans, out courses ek out labitid i devien pli kler."],
+      ["Swiv out courses otomatikman", "In tike analizé i met azour depans, produits ek magasins."],
+      ["Trouv out labitid d'achat", "BudgetKazPei i repere produits souvent acheté ek magasins ou fréquente."],
+      ["Prepar out bidze", "Ou voit mieux sak i reste ek sak i augmente."],
+      ["Gagn konsey entelizan", "Bann konsey i sorte dann out donnees, pa dann phrase generik."],
+      ["Dekouv bann ed itil", "L'appli i garde son role pou oriente aou vers bann aides adapte."],
     ],
-    trustTitle: "In base propre pou avance",
-    trustText:
-      "BudgetKazPei i remplace pa bann organismes officiels. L'appli i aide aou organiser, trouv bann pistes é prépar out démars. Bann conditions exactes lé toujours à vérifier auprès services concernés.",
-    footerPrivacy: "Confidentialité",
-    footerTerms: "Conditions",
-    footerContact: "Contact : contact.budgetkazpei@gmail.com",
+    scannerTitle: "Analiz out courses simplement.",
+    scannerText:
+      "BudgetKazPei i reconnait out achats ek i enrichit out bidze san tape tout amain. Scanner-la lé zis in raccourci : valeur-la i vien apres, dann analiz.",
+    premiumTitle: "Swazi out nivo lakonpagnman",
+    plans: [
+      {
+        name: "Gratis",
+        promise: "Dekouv BudgetKazPei.",
+        quota: "10 analiz courses",
+        features: ["Bidze simple", "Swivi depans", "Aides an version simple"],
+      },
+      {
+        name: "Premium",
+        promise: "Gere bien out bidze.",
+        quota: "30 analiz",
+        features: ["Statistik avance", "Istorik complet", "Produits ek magasins", "Dashboard enrichi"],
+        highlight: true,
+      },
+      {
+        name: "Premium+",
+        promise: "Out copilote financier.",
+        quota: "100 analiz",
+        features: ["Assistant IA", "Previsions", "Konsey personnalise", "Resume la semaine", "Comparaisons entelizantes bientot"],
+      },
+    ],
+    testimonialsTitle: "Zot i repran la main su zot bidze",
+    testimonials: [
+      ["Mi voit mon courses autrement.", "Le Tampon"],
+      ["Depans manze lé pli kler.", "Saint-Leu"],
+      ["Mi konpran mieux sak i pese dann mon mwa.", "Saint-Denis"],
+    ],
+    faqTitle: "Kestion souvent",
+    faq: [
+      ["Poukisa limite bann analiz ?", "Analiz otomatik i servi bann ressources teknik. Choix amain i reste illimite."],
+      ["Poukisa analiz mon courses ?", "Parce que courses i revien souvent ek i explik in bon bout bidze famiy."],
+      ["Mon donnees lé securise ?", "Out donnees i reste lie ek out compte. Bann tike i sert pou met azour bidze ek statistik."],
+      ["Koman Premium+ i marche ?", "Premium+ i devien out copilote financier : assistant IA, previsions, konsey ek resumes personnalise."],
+    ],
+    footerPrivacy: "Confidentialite",
+    footerTerms: "Kondisyon",
   },
 }
 
@@ -93,16 +158,17 @@ function Button({ href, children, variant = "primary" }) {
     <a
       href={href}
       style={{
+        minHeight: 48,
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
         textDecoration: "none",
-        background: primary ? `linear-gradient(135deg, ${COLORS.yellow}, ${COLORS.accent})` : "rgba(255,255,255,.06)",
-        border: primary ? "none" : `1px solid ${COLORS.border}`,
+        background: primary ? `linear-gradient(135deg, ${COLORS.yellow}, ${COLORS.accent})` : "rgba(8,20,38,.72)",
+        border: primary ? "none" : `1px solid ${COLORS.cyan}66`,
         color: primary ? COLORS.bg : COLORS.text,
         borderRadius: 14,
-        padding: "13px 18px",
-        fontWeight: 900,
+        padding: "0 18px",
+        fontWeight: 950,
         fontSize: 14,
       }}
     >
@@ -111,112 +177,198 @@ function Button({ href, children, variant = "primary" }) {
   )
 }
 
+function SectionTitle({ eyebrow, title }) {
+  return (
+    <div style={{ maxWidth: 780, margin: "0 auto 22px", textAlign: "center" }}>
+      {eyebrow && <div style={{ color: COLORS.cyan, fontWeight: 950, fontSize: 13, marginBottom: 8 }}>{eyebrow}</div>}
+      <h2 style={{ margin: 0, color: COLORS.text, fontFamily: "'DM Serif Display', serif", fontSize: "clamp(30px, 5vw, 46px)", fontWeight: 400 }}>
+        {title}
+      </h2>
+    </div>
+  )
+}
+
 export default function PublicHomePage() {
   const [lang, setLang] = useState("fr")
   const c = CONTENT[lang]
 
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        background: `radial-gradient(circle at 20% 0%, rgba(35,211,214,.18), transparent 34%), radial-gradient(circle at 80% 12%, rgba(249,115,22,.14), transparent 32%), ${COLORS.bg}`,
-        color: COLORS.text,
-        fontFamily: "'DM Sans', sans-serif",
-        padding: "30px 18px 42px",
-      }}
-    >
+    <main style={{ minHeight: "100vh", background: COLORS.bg, color: COLORS.text, fontFamily: "'DM Sans', sans-serif" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;700;900&display=swap');
         * { box-sizing: border-box; }
         body { margin: 0; background: ${COLORS.bg}; }
+        @media (max-width: 760px) {
+          .bkp-hero-actions { width: 100%; }
+          .bkp-hero-actions a { flex: 1 1 100%; }
+        }
       `}</style>
 
-      <div style={{ maxWidth: 1120, margin: "0 auto" }}>
-        <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, flexWrap: "wrap", marginBottom: 34 }}>
+      <header style={{ position: "absolute", zIndex: 5, inset: "0 0 auto 0", padding: "20px 18px" }}>
+        <div style={{ maxWidth: 1160, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
           <a href="/" aria-label="BudgetKazPei accueil">
-            <img src="/icons-creole/logo-budgetkazpei.png" alt="BudgetKazPei" style={{ width: 160, height: "auto" }} />
+            <img src={LOGO} alt="BudgetKazPei" style={{ width: 154, height: "auto", display: "block" }} />
           </a>
-          <nav style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <nav style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
             <button
               type="button"
               onClick={() => setLang(lang === "fr" ? "kr" : "fr")}
               style={{
-                background: "rgba(35,211,214,.08)",
-                border: `1px solid ${COLORS.cyan}55`,
+                minHeight: 42,
+                border: `1px solid ${COLORS.cyan}66`,
+                background: "rgba(8,20,38,.72)",
                 color: COLORS.cyan,
                 borderRadius: 12,
-                padding: "10px 13px",
-                fontWeight: 900,
-                cursor: "pointer",
+                padding: "0 12px",
+                fontWeight: 950,
                 fontFamily: "inherit",
+                cursor: "pointer",
               }}
             >
               {c.switchLang}
             </button>
             <Button href="/login" variant="secondary">{c.login}</Button>
-            <Button href="/register">{c.register}</Button>
           </nav>
-        </header>
+        </div>
+      </header>
 
-        <section style={{ textAlign: "center", background: `linear-gradient(135deg, rgba(35,211,214,.14), rgba(252,211,77,.12), ${COLORS.card})`, border: `1px solid ${COLORS.yellow}40`, borderRadius: 30, padding: "48px 22px", overflow: "hidden" }}>
-          <div style={{ display: "inline-flex", color: COLORS.cyan, border: `1px solid ${COLORS.cyan}44`, background: "rgba(35,211,214,.10)", borderRadius: 999, padding: "7px 13px", fontWeight: 900, marginBottom: 18 }}>
-            {c.badge}
-          </div>
-          <h1 style={{ margin: 0, color: COLORS.yellow, fontFamily: "'DM Serif Display', serif", fontSize: "clamp(38px, 7vw, 70px)", lineHeight: 1.04, fontWeight: 400 }}>
-            {c.title}
+      <section
+        style={{
+          minHeight: "min(760px, calc(100vh - 70px))",
+          display: "grid",
+          placeItems: "center",
+          textAlign: "center",
+          padding: "122px 18px 70px",
+          backgroundImage: `linear-gradient(180deg, rgba(8,20,38,.30), ${COLORS.bg} 96%), linear-gradient(90deg, rgba(8,20,38,.92), rgba(8,20,38,.58)), url(${HERO_BG})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        <div style={{ maxWidth: 900 }}>
+          <h1 style={{ margin: 0, color: COLORS.text, fontFamily: "'DM Serif Display', serif", fontSize: "clamp(44px, 8vw, 84px)", lineHeight: 1.02, fontWeight: 400 }}>
+            {c.heroTitle}
           </h1>
-          <p style={{ maxWidth: 820, margin: "18px auto 0", color: COLORS.text, lineHeight: 1.65, fontSize: 18, fontWeight: 800 }}>
-            {c.subtitle}
+          <p style={{ maxWidth: 820, margin: "20px auto 0", color: "#D8E4F6", lineHeight: 1.62, fontSize: "clamp(17px, 2.2vw, 22px)", fontWeight: 800 }}>
+            {c.heroText}
           </p>
-          <div style={{ marginTop: 24, display: "flex", justifyContent: "center", gap: 12, flexWrap: "wrap" }}>
-            <Button href="/register">{c.ctaPrimary}</Button>
-            <Button href="/premium" variant="secondary">{c.ctaSecondary}</Button>
+          <div className="bkp-hero-actions" style={{ marginTop: 28, display: "flex", justifyContent: "center", gap: 12, flexWrap: "wrap" }}>
+            <Button href="/register">{c.primaryCta}</Button>
+            <Button href="/premium" variant="secondary">{c.secondaryCta}</Button>
           </div>
-        </section>
+        </div>
+      </section>
 
-        <section style={{ marginTop: 20, background: `linear-gradient(135deg, ${COLORS.cyan}10, ${COLORS.card})`, border: `1px solid ${COLORS.cyan}30`, borderRadius: 24, padding: 24 }}>
-          <h2 style={{ margin: "0 0 10px", color: COLORS.cyan, fontFamily: "'DM Serif Display', serif", fontSize: 28 }}>{c.purposeTitle}</h2>
-          <p style={{ margin: 0, color: COLORS.muted, lineHeight: 1.7, fontSize: 16, fontWeight: 700 }}>{c.purposeText}</p>
-        </section>
+      <section style={{ padding: "46px 18px", background: COLORS.band }}>
+        <SectionTitle eyebrow="Budget, courses, aides" title={c.whyTitle} />
+        <div style={{ maxWidth: 960, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 10 }}>
+          {c.whySteps.map((step, index) => (
+            <div key={step} style={{ background: "rgba(255,255,255,.045)", border: `1px solid ${COLORS.border}`, borderRadius: 8, padding: 16, minHeight: 104 }}>
+              <div style={{ color: [COLORS.accent, COLORS.yellow, COLORS.cyan, COLORS.green, COLORS.purple][index], fontWeight: 950, marginBottom: 8 }}>
+                {String(index + 1).padStart(2, "0")}
+              </div>
+              <div style={{ color: COLORS.text, fontWeight: 900, lineHeight: 1.35 }}>{step}</div>
+            </div>
+          ))}
+        </div>
+      </section>
 
-        <section style={{ marginTop: 18, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(230px, 1fr))", gap: 14 }}>
-          {c.cards.map(([title, text]) => (
-            <article key={title} style={{ background: "rgba(255,255,255,.045)", border: `1px solid ${COLORS.border}`, borderRadius: 20, padding: 18 }}>
+      <section style={{ padding: "52px 18px", background: COLORS.bg }}>
+        <SectionTitle title={c.benefitsTitle} />
+        <div style={{ maxWidth: 1120, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14 }}>
+          {c.benefits.map(([title, text], index) => (
+            <article key={title} style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 8, padding: 18 }}>
+              <img
+                src={["/icons-creole/graphique.png", "/icons-creole/caddie.png", "/icons-creole/portefeuille-bleu.png", "/icons-creole/banque.png", "/icons-creole/etoile.png", "/icons-creole/aide.png"][index]}
+                alt=""
+                style={{ width: 38, height: 38, objectFit: "contain", marginBottom: 10 }}
+              />
               <h3 style={{ margin: "0 0 8px", color: COLORS.text, fontSize: 18 }}>{title}</h3>
-              <p style={{ margin: 0, color: COLORS.muted, lineHeight: 1.55, fontWeight: 700, fontSize: 14 }}>{text}</p>
+              <p style={{ margin: 0, color: COLORS.muted, lineHeight: 1.55, fontWeight: 700 }}>{text}</p>
             </article>
           ))}
-        </section>
+        </div>
+      </section>
 
-        <section style={{ marginTop: 18, background: `linear-gradient(135deg, ${COLORS.purple}12, ${COLORS.card})`, border: `1px solid ${COLORS.purple}35`, borderRadius: 24, padding: 24 }}>
-          <h2 style={{ margin: "0 0 10px", color: COLORS.purple, fontFamily: "'DM Serif Display', serif", fontSize: 28 }}>{c.premiumTitle}</h2>
-          <p style={{ margin: 0, color: COLORS.muted, lineHeight: 1.65, fontWeight: 700 }}>{c.premiumText}</p>
-          <div style={{ display: "grid", gap: 10, marginTop: 16 }}>
-            {c.premiumBullets.map(item => (
-              <div key={item} style={{ background: "rgba(255,255,255,.045)", border: "1px solid rgba(255,255,255,.09)", borderRadius: 14, padding: "11px 12px", color: COLORS.text, fontWeight: 900 }}>
-                ✓ {item}
+      <section style={{ padding: "50px 18px", background: COLORS.band }}>
+        <div style={{ maxWidth: 1040, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 20, alignItems: "center" }}>
+          <div>
+            <div style={{ color: COLORS.accent, fontWeight: 950, marginBottom: 8 }}>Courses intelligentes</div>
+            <h2 style={{ margin: 0, color: COLORS.text, fontFamily: "'DM Serif Display', serif", fontSize: "clamp(32px, 5vw, 50px)", fontWeight: 400 }}>
+              {c.scannerTitle}
+            </h2>
+            <p style={{ color: COLORS.muted, lineHeight: 1.68, fontWeight: 750, fontSize: 17 }}>{c.scannerText}</p>
+          </div>
+          <div style={{ background: "#0A1628", border: `1px solid ${COLORS.border}`, borderRadius: 8, padding: 18 }}>
+            {[
+              ["Ticket", "Lecture en quelques secondes"],
+              ["Produits", "Historique et habitudes"],
+              ["Magasins", "Panier moyen et évolution"],
+              ["Conseils", "Actions utiles pour économiser"],
+            ].map(([label, value], index) => (
+              <div key={label} style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: 12, padding: "12px 0", borderBottom: index === 3 ? "none" : "1px solid rgba(255,255,255,.08)" }}>
+                <span style={{ width: 12, height: 12, borderRadius: 99, marginTop: 5, background: [COLORS.accent, COLORS.cyan, COLORS.green, COLORS.yellow][index] }} />
+                <div>
+                  <strong>{label}</strong>
+                  <div style={{ color: COLORS.muted, fontWeight: 700, marginTop: 3 }}>{value}</div>
+                </div>
               </div>
             ))}
           </div>
-          <div style={{ marginTop: 18 }}>
-            <Button href="/premium">{c.offers}</Button>
-          </div>
-        </section>
+        </div>
+      </section>
 
-        <section style={{ marginTop: 18, background: "rgba(255,255,255,.04)", border: `1px solid ${COLORS.border}`, borderRadius: 24, padding: 22 }}>
-          <h2 style={{ margin: "0 0 8px", color: COLORS.green, fontSize: 22 }}>{c.trustTitle}</h2>
-          <p style={{ margin: 0, color: COLORS.muted, lineHeight: 1.65, fontWeight: 700 }}>{c.trustText}</p>
-        </section>
+      <section style={{ padding: "52px 18px", background: COLORS.bg }}>
+        <SectionTitle eyebrow="Premium" title={c.premiumTitle} />
+        <div style={{ maxWidth: 1120, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14 }}>
+          {c.plans.map(plan => (
+            <article key={plan.name} style={{ background: plan.highlight ? `linear-gradient(135deg, ${COLORS.yellow}18, ${COLORS.card})` : COLORS.card, border: `1px solid ${plan.highlight ? COLORS.yellow : COLORS.border}`, borderRadius: 8, padding: 20 }}>
+              <h3 style={{ margin: 0, color: plan.name === "Premium+" ? COLORS.purple : plan.highlight ? COLORS.yellow : COLORS.text, fontSize: 24 }}>{plan.name}</h3>
+              <p style={{ color: COLORS.text, fontWeight: 950, margin: "10px 0 6px" }}>{plan.promise}</p>
+              <p style={{ color: COLORS.cyan, fontWeight: 950, margin: "0 0 14px" }}>{plan.quota}</p>
+              <div style={{ display: "grid", gap: 8 }}>
+                {plan.features.map(feature => (
+                  <div key={feature} style={{ color: COLORS.muted, fontWeight: 750 }}>✓ {feature}</div>
+                ))}
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
 
-        <footer style={{ marginTop: 26, display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", color: COLORS.muted, fontSize: 13, fontWeight: 700 }}>
-          <div>© {new Date().getFullYear()} BudgetKazPei</div>
-          <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+      <section style={{ padding: "48px 18px", background: COLORS.band }}>
+        <SectionTitle title={c.testimonialsTitle} />
+        <div style={{ maxWidth: 1040, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 14 }}>
+          {c.testimonials.map(([quote, place]) => (
+            <article key={quote} style={{ background: "rgba(255,255,255,.045)", border: `1px solid ${COLORS.border}`, borderRadius: 8, padding: 18 }}>
+              <p style={{ margin: "0 0 12px", color: COLORS.text, fontWeight: 900, lineHeight: 1.5 }}>"{quote}"</p>
+              <div style={{ color: COLORS.cyan, fontWeight: 950 }}>{place}</div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section style={{ padding: "50px 18px", background: COLORS.bg }}>
+        <SectionTitle title={c.faqTitle} />
+        <div style={{ maxWidth: 900, margin: "0 auto", display: "grid", gap: 10 }}>
+          {c.faq.map(([question, answer]) => (
+            <details key={question} style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 8, padding: "15px 16px" }}>
+              <summary style={{ cursor: "pointer", color: COLORS.text, fontWeight: 950 }}>{question}</summary>
+              <p style={{ margin: "10px 0 0", color: COLORS.muted, lineHeight: 1.6, fontWeight: 700 }}>{answer}</p>
+            </details>
+          ))}
+        </div>
+      </section>
+
+      <footer style={{ padding: "24px 18px 34px", background: COLORS.band, color: COLORS.muted }}>
+        <div style={{ maxWidth: 1120, margin: "0 auto", display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", fontSize: 13, fontWeight: 750 }}>
+          <span>© {new Date().getFullYear()} BudgetKazPei</span>
+          <span style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
             <a href="/privacy" style={{ color: COLORS.cyan }}>{c.footerPrivacy}</a>
             <a href="/terms" style={{ color: COLORS.cyan }}>{c.footerTerms}</a>
-            <span>{c.footerContact}</span>
-          </div>
-        </footer>
-      </div>
+            <a href="mailto:contact.budgetkazpei@gmail.com" style={{ color: COLORS.cyan }}>contact.budgetkazpei@gmail.com</a>
+          </span>
+        </div>
+      </footer>
     </main>
   )
 }

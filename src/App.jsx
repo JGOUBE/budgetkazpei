@@ -9,6 +9,7 @@ import { useCustomBudgets } from "./hooks/useCustomBudgets"
 import { useMonthlyHistory } from "./hooks/useMonthlyHistory"
 
 import { supabase } from "./services/supabase"
+import { filterOpportunitiesByTerritory } from "./utils/opportunities"
 
 import LoginPage from "./components/auth/LoginPage"
 import RegisterPage from "./components/auth/RegisterPage"
@@ -29,6 +30,13 @@ import OpportunitesPage from "./components/opportunites/OpportunitesPage"
 import DemarchesPage from "./components/demarches/DemarchesPage"
 import ContactPage from "./components/contact/ContactPage"
 import ConseillerPage from "./components/conseiller/ConseillerPage"
+import ReceiptsPage from "./features/receipts/pages/ReceiptsPage"
+import ShoppingInsightsPage from "./features/shopping/pages/ShoppingInsightsPage"
+import StatisticsPage from "./pages/StatisticsPage"
+import SavingsPage from "./pages/SavingsPage"
+import ShoppingListPage from "./pages/ShoppingListPage"
+import FinanceAssistantPage from "./pages/FinanceAssistantPage"
+import RewardsPage from "./pages/RewardsPage"
 import PremiumLandingPage from "./pages/PremiumLandingPage"
 import PublicHomePage from "./pages/PublicHomePage"
 import PrivacyPage from "./pages/PrivacyPage"
@@ -112,6 +120,7 @@ function BudgetKazPeiApp({ initialAuthPage = "login" }) {
   const [mounted, setMounted] = useState(false)
   const [editingTransaction, setEditingTransaction] = useState(null)
   const [subscriptionPlan, setSubscriptionPlan] = useState("free")
+  const [dashboardOpportunitiesCount, setDashboardOpportunitiesCount] = useState(0)
 
   const isMobile = useIsMobile()
   const { lang, toggleLang, t } = useLanguage()
@@ -240,6 +249,40 @@ function BudgetKazPeiApp({ initialAuthPage = "login" }) {
     })
   }, [user?.id, isPremium, savePreviousMonthHistory])
 
+  useEffect(() => {
+    let ignore = false
+
+    async function loadDashboardOpportunitiesCount() {
+      if (!user?.id) {
+        setDashboardOpportunitiesCount(0)
+        return
+      }
+
+      const { data, error } = await supabase
+        .from("opportunities")
+        .select("id, territory")
+        .eq("is_active", true)
+
+      if (ignore) return
+
+      if (error) {
+        console.error("Erreur compteur opportunités dashboard:", error)
+        setDashboardOpportunitiesCount(0)
+        return
+      }
+
+      setDashboardOpportunitiesCount(
+        filterOpportunitiesByTerritory(data || [], profile?.commune || "").length
+      )
+    }
+
+    loadDashboardOpportunitiesCount()
+
+    return () => {
+      ignore = true
+    }
+  }, [user?.id, profile?.commune])
+
   function handleNavChange(nav) {
     const normalizedNav =
       nav === "revenusDetails" || nav === "revenus-detail" || nav === "revenus-details"
@@ -317,7 +360,7 @@ function BudgetKazPeiApp({ initialAuthPage = "login" }) {
     <div
       style={{
         minHeight: "100vh",
-        background: COLORS.bg,
+        background: "linear-gradient(180deg, #07192E 0%, #0A1628 46%, #07111F 100%)",
         color: COLORS.text,
         fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif",
         opacity: mounted ? 1 : 0,
@@ -447,7 +490,9 @@ function BudgetKazPeiApp({ initialAuthPage = "login" }) {
       <div
         style={{
           flex: 1,
-          padding: isMobile ? "76px 16px 80px" : "32px 28px",
+          padding: isMobile
+            ? "76px 16px calc(112px + env(safe-area-inset-bottom))"
+            : "32px 28px 48px",
           overflowY: "auto",
           maxHeight: isMobile ? "none" : "100vh",
           minWidth: 0,
@@ -517,6 +562,7 @@ function BudgetKazPeiApp({ initialAuthPage = "login" }) {
 
         {activeNav === "dashboard" && (
           <Dashboard
+            userId={user?.id}
             stats={{
               revenus,
               depenses,
@@ -536,13 +582,17 @@ function BudgetKazPeiApp({ initialAuthPage = "login" }) {
             customBudgets={customBudgets}
             onSaveBudgets={saveBudgets}
             onGoPremium={() => setActiveNav("premium")}
-            opportunitiesCount={5}
+            opportunitiesCount={dashboardOpportunitiesCount}
             commune={profile?.commune || ""}
             profile={profile}
             onOpenOpportunities={() => setActiveNav("opportunites")}
             onOpenRevenus={() => setActiveNav("revenus")}
             onOpenDepenses={() => setActiveNav("depenses")}
             onOpenSolde={() => setActiveNav("solde")}
+            onOpenReceipts={() => setActiveNav("receipts")}
+            onOpenShopping={() => setActiveNav("shopping")}
+            onOpenStats={() => setActiveNav("statistics")}
+            onAddExpense={() => setShowModal(true)}
           />
         )}
 
@@ -585,6 +635,7 @@ function BudgetKazPeiApp({ initialAuthPage = "login" }) {
             customBudgets={customBudgets}
             onSaveBudgets={saveBudgets}
             onGoPremium={() => setActiveNav("premium")}
+            onOpenReceipts={() => setActiveNav("receipts")}
             t={t}
           />
         )}
@@ -656,6 +707,92 @@ function BudgetKazPeiApp({ initialAuthPage = "login" }) {
           />
         )}
 
+        {activeNav === "receipts" && (
+          <ReceiptsPage
+            user={user}
+            t={t}
+            isMobile={isMobile}
+            isPremium={isPremium}
+            isPremiumPlus={isPremiumPlus}
+            onAddTransaction={addTransaction}
+          />
+        )}
+
+        {activeNav === "shopping" && (
+          <ShoppingInsightsPage
+            user={user}
+            t={t}
+            isMobile={isMobile}
+          />
+        )}
+
+        {activeNav === "statistics" && (
+          <StatisticsPage
+            user={user}
+            transactions={transactions}
+            stats={{
+              revenus,
+              depenses,
+              solde,
+              chargesFixes,
+              depensesVariables,
+              resteAVivre,
+              tauxChargesFixes,
+            }}
+            byCategory={byCategory}
+            isMobile={isMobile}
+          />
+        )}
+
+        {activeNav === "savings" && (
+          <SavingsPage
+            user={user}
+            transactions={transactions}
+            isMobile={isMobile}
+          />
+        )}
+
+        {activeNav === "shoppingList" && (
+          <ShoppingListPage
+            user={user}
+            isMobile={isMobile}
+          />
+        )}
+
+        {activeNav === "financeAssistant" && (
+          <FinanceAssistantPage
+            user={user}
+            transactions={transactions}
+            stats={{
+              revenus,
+              depenses,
+              solde,
+              chargesFixes,
+              depensesVariables,
+              resteAVivre,
+              tauxChargesFixes,
+            }}
+            isMobile={isMobile}
+          />
+        )}
+
+        {activeNav === "rewards" && (
+          <RewardsPage
+            user={user}
+            transactions={transactions}
+            stats={{
+              revenus,
+              depenses,
+              solde,
+              chargesFixes,
+              depensesVariables,
+              resteAVivre,
+              tauxChargesFixes,
+            }}
+            isMobile={isMobile}
+          />
+        )}
+
         {activeNav === "abonnements" && (
           <AbonnementsPage
             abonnements={abonnements}
@@ -696,11 +833,14 @@ function BudgetKazPeiApp({ initialAuthPage = "login" }) {
             left: 0,
             right: 0,
             zIndex: 50,
-            background: COLORS.card,
+            background: "rgba(15,30,56,.96)",
             borderTop: `1px solid ${COLORS.border}`,
             display: "flex",
             justifyContent: "space-around",
-            padding: "8px 0 12px",
+            padding: "8px 8px calc(12px + env(safe-area-inset-bottom))",
+            boxShadow: "0 -16px 36px rgba(0,0,0,.28)",
+            backdropFilter: "blur(18px)",
+            WebkitBackdropFilter: "blur(18px)",
           }}
         >
           {[
@@ -722,10 +862,13 @@ function BudgetKazPeiApp({ initialAuthPage = "login" }) {
                 alignItems: "center",
                 gap: 3,
                 cursor: "pointer",
-                padding: "4px 8px",
-                borderRadius: 10,
+                minHeight: 52,
+                minWidth: 58,
+                padding: "6px 8px",
+                borderRadius: 14,
                 color: activeNav === item.id ? COLORS.accent : COLORS.muted,
-                transition: "all 0.2s",
+                background: activeNav === item.id ? "rgba(249,115,22,.14)" : "transparent",
+                transition: "transform .18s ease, background .18s ease, color .18s ease",
               }}
             >
               <span style={{ fontSize: 20 }}>{item.emoji}</span>
@@ -741,6 +884,10 @@ function BudgetKazPeiApp({ initialAuthPage = "login" }) {
         <AddTransactionModal
           onAdd={addTransaction}
           onClose={() => setShowModal(false)}
+          onOpenReceipts={() => {
+            setShowModal(false)
+            setActiveNav("receipts")
+          }}
           t={t}
         />
       )}
@@ -759,6 +906,8 @@ function BudgetKazPeiApp({ initialAuthPage = "login" }) {
 
         * { box-sizing: border-box; }
         body { margin: 0; padding: 0; }
+        button, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+        button { min-height: 48px; }
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #1E3A5F; border-radius: 99px; }

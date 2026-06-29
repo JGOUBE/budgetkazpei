@@ -86,6 +86,10 @@ const fr = {
     revenus: "Revenus",
     assurances: "Assurances",
   },
+  receipts: {
+    title: "Mes courses",
+    scanCta: "Analyser une course",
+  },
   transactions: {
     addTitle: "Nouvelle transaction",
     labelPlaceholder: "Libellé (ex: Super U)",

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { supabase } from "../../services/supabase"
 import DetailOpportunite from "./DetailOpportunite"
+import { getOpportunityZone } from "../../utils/opportunities"
 
 const COLORS = {
   card: "#0F1E38",
@@ -213,7 +214,7 @@ export default function OpportunitesPage({ isPremium, t, user }) {
   const isKreol = t("nav", "dashboard") === "Tablo débor"
 
   const commune = profile?.commune || ""
-  const zone = COMMUNE_TO_ZONE[commune] || ""
+  const zone = getOpportunityZone(commune)
 
   const allowedTerritories = useMemo(() => {
     return ["toutes", "la réunion", normalizeText(commune), normalizeText(zone)].filter(Boolean)

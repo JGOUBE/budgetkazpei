@@ -13,6 +13,11 @@ import {
   Bot,
   Mail,
   FileCheck2,
+  ReceiptText,
+  ShoppingBasket,
+  PiggyBank,
+  ListChecks,
+  Trophy,
 } from "lucide-react"
 
 const COLORS = {
@@ -29,6 +34,13 @@ const COLORS = {
 const NAV_ITEMS = [
   { id: "dashboard", icon: Home, section: "nav", key: "dashboard" },
   { id: "depenses", icon: BarChart3, section: "nav", key: "depenses" },
+  { id: "receipts", icon: ReceiptText, section: "nav", key: "receipts" },
+  { id: "shopping", icon: ShoppingBasket, section: "nav", key: "shopping" },
+  { id: "statistics", icon: BarChart3, section: "nav", key: "statistics" },
+  { id: "savings", icon: PiggyBank, section: "nav", key: "savings" },
+  { id: "shoppingList", icon: ListChecks, section: "nav", key: "shoppingList" },
+  { id: "financeAssistant", icon: Bot, section: "nav", key: "financeAssistant" },
+  { id: "rewards", icon: Trophy, section: "nav", key: "rewards" },
   { id: "aides", icon: Landmark, section: "nav", key: "aides" },
   { id: "demarches", icon: FileCheck2, section: "nav", key: "demarches" },
   { id: "conseiller", icon: Bot, section: "nav", key: "conseiller" },
@@ -75,6 +87,23 @@ export default function Sidebar({
     if (item.id === "conseiller") {
       return isKreol ? "🤖 Konseyé" : "🤖 Conseiller"
     }
+
+    if (item.id === "receipts") {
+      return isKreol ? "🧾 Mon bann tiké" : "🧾 Mes tickets"
+    }
+
+    if (item.id === "shopping") {
+      return isKreol ? "🛒 Mes courses" : "🛒 Mes courses"
+    }
+
+    if (item.id === "statistics") {
+      return isKreol ? "📊 Mes stats" : "📊 Mes stats"
+    }
+
+    if (item.id === "savings") return "💰 Mes économies"
+    if (item.id === "shoppingList") return "📝 Liste courses"
+    if (item.id === "financeAssistant") return "🧠 Mon assistant"
+    if (item.id === "rewards") return "🏆 Défis"
 
     return t(item.section, item.key)
   }

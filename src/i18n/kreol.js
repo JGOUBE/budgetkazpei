@@ -161,6 +161,10 @@ const kreol = {
     divers: "Lot zafer",
     revenus: "Larzan rantre",
   },
+  receipts: {
+    title: "Mon bann courses",
+    scanCta: "Analiz in course",
+  },
 
   transactions: {
     addTitle: "Nouvo mouvman",

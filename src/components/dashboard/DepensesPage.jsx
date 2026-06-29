@@ -36,6 +36,7 @@ export default function DepensesPage({
   customBudgets = [],
   onSaveBudgets,
   onGoPremium,
+  onOpenReceipts,
   t,
 }) {
   const isKreol = getIsKreol(t)
@@ -81,6 +82,27 @@ export default function DepensesPage({
         <div style={{ color: COLORS.muted, fontSize: 12 }}>
           {ratio} % {isKreol ? "des revenus" : "des revenus"}
         </div>
+        {onOpenReceipts && (
+          <button
+            type="button"
+            onClick={onOpenReceipts}
+            style={{
+              minHeight: 52,
+              marginTop: 16,
+              border: "none",
+              borderRadius: 14,
+              background: COLORS.accent,
+              color: "#fff",
+              cursor: "pointer",
+              fontFamily: "inherit",
+              fontSize: 15,
+              fontWeight: 950,
+              padding: "0 16px",
+            }}
+          >
+            🧾 {isKreol ? "Analiz in course" : "Analyser une course"}
+          </button>
+        )}
       </div>
 
       <div
@@ -139,6 +161,8 @@ export default function DepensesPage({
 }
 
 function ChartCard({ data, isKreol }) {
+  const total = data.reduce((sum, item) => sum + Number(item.value || 0), 0)
+
   return (
     <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 20, padding: 20 }}>
       <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 900, marginBottom: 12 }}>
@@ -148,7 +172,8 @@ function ChartCard({ data, isKreol }) {
       {data.length === 0 ? (
         <div style={{ color: COLORS.muted, fontSize: 13 }}>{isKreol ? "Aucune dépense enregistrée." : "Aucune dépense enregistrée."}</div>
       ) : (
-        <div style={{ height: 260 }}>
+        <div>
+          <div style={{ height: 260 }}>
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie data={data} dataKey="value" nameKey="name" innerRadius={55} outerRadius={95} paddingAngle={3}>
@@ -159,6 +184,44 @@ function ChartCard({ data, isKreol }) {
               <Tooltip formatter={value => formatMontant(value)} />
             </PieChart>
           </ResponsiveContainer>
+          </div>
+          <div style={{ display: "grid", gap: 8, marginTop: 12 }}>
+            {data.map((item, index) => {
+              const value = Number(item.value || 0)
+              const percent = total > 0 ? Math.round((value / total) * 100) : 0
+
+              return (
+                <div
+                  key={item.name || index}
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "auto 1fr auto",
+                    alignItems: "center",
+                    gap: 8,
+                    color: COLORS.text,
+                    fontSize: 13,
+                  }}
+                >
+                  <span
+                    aria-hidden="true"
+                    style={{
+                      width: 10,
+                      height: 10,
+                      borderRadius: 999,
+                      background: CHART_COLORS[index % CHART_COLORS.length],
+                      boxShadow: "0 0 0 3px rgba(255,255,255,.05)",
+                    }}
+                  />
+                  <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {item.name}
+                  </span>
+                  <span style={{ color: COLORS.muted, fontWeight: 800 }}>
+                    {formatMontant(value)} - {percent}%
+                  </span>
+                </div>
+              )
+            })}
+          </div>
         </div>
       )}
     </div>

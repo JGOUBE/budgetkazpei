@@ -18,6 +18,7 @@ const WATERMARK = "/icons-creole/palmier.png"
 const PREMIUM_URL = "https://budgetkazpei.vercel.app/premium"
 
 const FREE_FEATURES_FR = [
+  "10 analyses de courses par mois",
   "Tableau de bord budget",
   "Ajout des dépenses et revenus",
   "Charges fixes",
@@ -28,6 +29,11 @@ const FREE_FEATURES_FR = [
 ]
 
 const PREMIUM_FEATURES_FR = [
+  "30 analyses de courses par mois",
+  "Statistiques avancées",
+  "Produits et magasins",
+  "Historique complet",
+  "Dashboard enrichi",
   "Tout le gratuit inclus",
   "Assistant Aides Réunion 🇷🇪",
   "Réponses en français ou créole réunionnais",
@@ -42,6 +48,10 @@ const PREMIUM_FEATURES_FR = [
 ]
 
 const PREMIUM_PLUS_FEATURES_FR = [
+  "Votre copilote financier intelligent",
+  "100 analyses de courses par mois",
+  "Prévisions budgétaires — bientôt disponible",
+  "Résumé hebdomadaire — bientôt disponible",
   "Tout Premium inclus",
   "Assistant IA Personnel BudgetKazPei",
   "Conversation libre en français ou créole",
@@ -55,6 +65,7 @@ const PREMIUM_PLUS_FEATURES_FR = [
 ]
 
 const FREE_FEATURES_KR = [
+  "10 analiz courses par mwa",
   "Tablo débor bidjé",
   "Azout dépans é larzan rantre",
   "Sarz fix",
@@ -65,6 +76,11 @@ const FREE_FEATURES_KR = [
 ]
 
 const PREMIUM_FEATURES_KR = [
+  "30 analiz courses par mwa",
+  "Statistik avansé",
+  "Produits ek magasins",
+  "Istorik complet",
+  "Dashboard enrichi",
   "Tout sa lé gratis déza inclus",
   "Asistan Zéd Rényon 🇷🇪",
   "Répons an fransé ou kréol rényoné",
@@ -79,6 +95,10 @@ const PREMIUM_FEATURES_KR = [
 ]
 
 const PREMIUM_PLUS_FEATURES_KR = [
+  "Out copilote financier entèlizan",
+  "100 analiz courses par mwa",
+  "Prévision bidjé — bientôt disponible",
+  "Résumé la semaine — bientôt disponible",
   "Tout Premium inclus",
   "Asistan IA Personnel BudgetKazPei",
   "Diskision libre an fransé ou kréol",
@@ -304,12 +324,12 @@ export default function PremiumPage({ user, isPremium, isPremiumPlus = false, t 
         : "Découvrez les options Premium"
 
   const headline = isKreol
-    ? "Débloque plis pouvwar pou out bidjé"
-    : "Débloquez plus de puissance pour votre budget"
+    ? "Out accompagnement BudgetKazPei lé actif"
+    : "Votre accompagnement BudgetKazPei est actif"
 
   const subline = isKreol
-    ? "BudgetKazPei propose in version gratuite, in offre Premium pou zéd, démarches, bon plan é export PDF, puis in offre Premium+ pou gagn tan ek in asistan IA personnel."
-    : "BudgetKazPei propose une version gratuite, une offre Premium pour les aides, démarches, bons plans et exports PDF, puis une offre Premium+ pour gagner du temps avec un assistant IA personnel."
+    ? "Premium i aide aou mieux suivre out courses ek out bidjé. Premium+ i devien out copilote financier intelligent pou comprendre, anticiper ek économiser."
+    : "Premium vous aide à mieux suivre vos courses et votre budget. Premium+ devient votre copilote financier intelligent pour comprendre, anticiper et économiser."
 
   const freeFeatures = isKreol ? FREE_FEATURES_KR : FREE_FEATURES_FR
   const premiumFeatures = isKreol ? PREMIUM_FEATURES_KR : PREMIUM_FEATURES_FR
@@ -425,8 +445,8 @@ export default function PremiumPage({ user, isPremium, isPremiumPlus = false, t 
           title="Premium"
           subtitle={
             isKreol
-              ? "Pou bann zéd, démarches, dokiman é bon plan an fransé ou kréol."
-              : "Pour les aides, démarches, documents et bons plans en français ou créole."
+              ? "Pou mieux suivre out courses, out statistik, out produits, out magasins ek out zéd."
+              : "Pour mieux suivre vos courses, statistiques, produits, magasins et aides."
           }
           features={premiumFeatures}
           color={COLORS.yellow}
@@ -439,8 +459,8 @@ export default function PremiumPage({ user, isPremium, isPremiumPlus = false, t 
           title="Premium+"
           subtitle={
             isKreol
-              ? "Gagn tan, trouv plis zéd é simplifie out démarches grâce à out asistan IA personnel."
-              : "Gagnez du temps, identifiez davantage d’aides et simplifiez vos démarches grâce à votre assistant IA personnel."
+              ? "Out copilote financier intelligent pou comprendre out depans, anticiper ek gagn bann konsey personnalise."
+              : "Votre copilote financier intelligent pour comprendre vos dépenses, anticiper et recevoir des conseils personnalisés."
           }
           features={premiumPlusFeatures}
           color={COLORS.purple}

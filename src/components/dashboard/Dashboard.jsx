@@ -5,6 +5,8 @@ import TropicalCard from "./TropicalCard"
 import BudgetSettingsModal from "../budgets/BudgetSettingModal"
 import { CATEGORIES } from "../../data/categories"
 import { supabase } from "../../services/supabase"
+import { buildStoreHabits } from "../../features/shopping/services/priceHistory"
+import { useDashboardInsights } from "../../hooks/useDashboardInsights"
 
 // Dashboard V2 - Mobile First
 // Règle UX : Carte = Action
@@ -1027,34 +1029,46 @@ function BudgetCategoriesCard({
 
 function PieSummaryCard({ t, isMobile, pieData = [], onOpenDepenses }) {
   const isKreol = getIsKreol(t)
+  const [activeIndex, setActiveIndex] = useState(0)
   const filtered = (pieData || []).filter(item => Number(item.value || 0) > 0)
+  const total = filtered.reduce((sum, item) => sum + Number(item.value || 0), 0)
 
   if (filtered.length === 0) return null
 
   return (
-    <button
-      type="button"
-      onClick={onOpenDepenses}
-      style={{
-        display: "block",
-        width: "100%",
-        border: "none",
-        background: "transparent",
-        padding: 0,
-        cursor: "pointer",
-        fontFamily: "inherit",
-        textAlign: "left",
-      }}
-    >
-      <TropicalCard variant="ocean" texture="🌊" style={{ padding: isMobile ? 16 : 22 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 10 }}>
+    <TropicalCard variant="ocean" texture="🌊" style={{ padding: isMobile ? 18 : 24, borderRadius: 22 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 14 }}>
+        <div>
           <div style={{ color: COLORS.text, fontWeight: 900, fontSize: 16 }}>
             {isKreol ? "Répartition dépans" : "Répartition des dépenses"}
           </div>
-          <span style={{ color: COLORS.cyan, fontSize: 20, fontWeight: 900 }}>›</span>
+          <div style={{ color: COLORS.muted, fontSize: 12, marginTop: 4 }}>
+            {isKreol ? "Tape in katégori pou voir détail." : "Touchez une catégorie pour la mettre en avant."}
+          </div>
         </div>
+        {onOpenDepenses && (
+          <button
+            type="button"
+            onClick={onOpenDepenses}
+            style={{
+              border: "1px solid rgba(255,255,255,.14)",
+              background: "rgba(255,255,255,.07)",
+              color: COLORS.cyan,
+              borderRadius: 999,
+              padding: "8px 12px",
+              fontSize: 12,
+              fontWeight: 900,
+              cursor: "pointer",
+              fontFamily: "inherit",
+            }}
+          >
+            {isKreol ? "Voir dépans" : "Voir dépenses"}
+          </button>
+        )}
+      </div>
 
-        <div style={{ height: isMobile ? 210 : 260 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "minmax(220px, .9fr) 1fr", gap: 16, alignItems: "center" }}>
+        <div style={{ height: isMobile ? 220 : 270 }}>
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
@@ -1065,9 +1079,16 @@ function PieSummaryCard({ t, isMobile, pieData = [], onOpenDepenses }) {
                 outerRadius={isMobile ? 82 : 108}
                 paddingAngle={3}
                 dataKey="value"
+                onClick={(_, index) => setActiveIndex(index)}
               >
                 {filtered.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={entry.color || COLORS.cyan} />
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={entry.color || COLORS.cyan}
+                    opacity={index === activeIndex ? 1 : 0.48}
+                    stroke={index === activeIndex ? "#fff" : "transparent"}
+                    strokeWidth={index === activeIndex ? 3 : 0}
+                  />
                 ))}
               </Pie>
               <Tooltip
@@ -1082,8 +1103,52 @@ function PieSummaryCard({ t, isMobile, pieData = [], onOpenDepenses }) {
             </PieChart>
           </ResponsiveContainer>
         </div>
-      </TropicalCard>
-    </button>
+
+        <div style={{ display: "grid", gap: 8 }}>
+          {filtered.map((item, index) => {
+            const amount = Number(item.value || 0)
+            const percent = total > 0 ? Math.round((amount / total) * 100) : 0
+            const active = index === activeIndex
+
+            return (
+              <button
+                key={`${item.name || item.label}-${index}`}
+                type="button"
+                onClick={() => setActiveIndex(index)}
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "auto 1fr auto",
+                  gap: 10,
+                  alignItems: "center",
+                  minHeight: 48,
+                  border: active ? `1px solid ${item.color || COLORS.cyan}` : "1px solid rgba(255,255,255,.09)",
+                  borderRadius: 14,
+                  background: active ? "rgba(255,255,255,.10)" : "rgba(255,255,255,.045)",
+                  color: COLORS.text,
+                  padding: "9px 11px",
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                  textAlign: "left",
+                }}
+              >
+                <span style={{ width: 12, height: 12, borderRadius: 999, background: item.color || COLORS.cyan, boxShadow: active ? `0 0 12px ${item.color || COLORS.cyan}` : "none" }} />
+                <span style={{ minWidth: 0 }}>
+                  <span style={{ display: "block", fontSize: 13, fontWeight: 900, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {item.emoji ? `${item.emoji} ` : ""}{item.name || item.label || (isKreol ? "Katègori" : "Catégorie")}
+                  </span>
+                  <span style={{ display: "block", color: COLORS.muted, fontSize: 11, marginTop: 2 }}>
+                    {percent} %
+                  </span>
+                </span>
+                <span style={{ color: COLORS.whiteSoft, fontSize: 12, fontWeight: 900 }}>
+                  {formatMontant(amount)}
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      </div>
+    </TropicalCard>
   )
 }
 
@@ -1377,9 +1442,28 @@ function getNextCopilotAction({
 
 function CopilotHero({ profile, isKreol, isMobile, profileCompletion, attentionCount }) {
   const firstName = getUserFirstName(profile)
+  const hour = new Date().getHours()
+  const isEvening = hour >= 18 || hour < 5
   const greeting = firstName
-    ? isKreol ? `👋 Bonzour ${firstName}` : `👋 Bonjour ${firstName}`
-    : isKreol ? "👋 Bonzour" : "👋 Bonjour"
+    ? isKreol
+      ? `${isEvening ? "Bonswar" : "Bonzour"} ${firstName} ${isEvening ? "🌙" : "👋"}`
+      : `${isEvening ? "Bonsoir" : "Bonjour"} ${firstName} ${isEvening ? "🌙" : "👋"}`
+    : isKreol
+      ? `${isEvening ? "Bonswar" : "Bonzour"} ${isEvening ? "🌙" : "👋"}`
+      : `${isEvening ? "Bonsoir" : "Bonjour"} ${isEvening ? "🌙" : "👋"}`
+
+  const rotatingLines = isKreol
+    ? [
+      "Out bidjé lé sous contrôle zordi.",
+      `${attentionCount} piste${attentionCount > 1 ? "s" : ""} i mérite out attention.`,
+      "Chaque ti décision i aide out budget avancé.",
+    ]
+    : [
+      "Votre budget est sous contrôle aujourd'hui.",
+      `${attentionCount} piste${attentionCount > 1 ? "s" : ""} mérite${attentionCount > 1 ? "nt" : ""} votre attention.`,
+      "Chaque euro compte pour avancer sereinement.",
+    ]
+  const rotatingLine = rotatingLines[new Date().getMinutes() % rotatingLines.length]
 
   const subtitle = profileCompletion < 65
     ? isKreol
@@ -1389,23 +1473,374 @@ function CopilotHero({ profile, isKreol, isMobile, profileCompletion, attentionC
       ? isKreol
         ? `Out bidjé lé sous contrôle. ${attentionCount} piste${attentionCount > 1 ? "s" : ""} i mérite out attention.`
         : `Budget sous contrôle. ${attentionCount} piste${attentionCount > 1 ? "s" : ""} mérite${attentionCount > 1 ? "nt" : ""} votre attention.`
-      : isKreol
-        ? "Out situation lé claire pou zordi."
-        : "Votre situation est claire pour aujourd’hui."
+      : rotatingLine
 
   return (
-    <TropicalCard variant="lagoon" texture="🌴" style={{ padding: isMobile ? 18 : 26 }}>
+    <TropicalCard
+      variant="lagoon"
+      texture="🌴"
+      style={{
+        padding: isMobile ? 20 : 30,
+        borderRadius: isMobile ? 24 : 28,
+        boxShadow: "0 24px 60px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.10)",
+      }}
+    >
       <div style={{ color: COLORS.cyan, fontSize: 12, fontWeight: 900, marginBottom: 8, textTransform: "uppercase" }}>
         {isKreol ? "Copilote BudgetKazPei" : "Copilote BudgetKazPei"}
       </div>
-      <div style={{ color: COLORS.text, fontWeight: 950, fontSize: isMobile ? 26 : 34, lineHeight: 1.05, marginBottom: 8 }}>
+      <div style={{ color: COLORS.text, fontWeight: 950, fontSize: isMobile ? 28 : 38, lineHeight: 1.02, marginBottom: 10 }}>
         {greeting}
       </div>
       <div style={{ color: COLORS.whiteSoft, fontSize: isMobile ? 15 : 17, fontWeight: 800, marginBottom: 6 }}>
         {isKreol ? "Voilà out situation zordi." : "Voici votre situation aujourd’hui."}
       </div>
-      <div style={{ color: COLORS.muted, fontSize: 13.5, lineHeight: 1.55 }}>
+      <div style={{ color: COLORS.muted, fontSize: 14, lineHeight: 1.6 }}>
         {subtitle}
+      </div>
+    </TropicalCard>
+  )
+}
+
+function PremiumBudgetCard({ stats = {}, realTransactions = [], isKreol, isMobile }) {
+  const revenus = Number(stats.revenus || 0)
+  const depenses = Number(stats.depenses || 0)
+  const solde = Number(stats.solde || 0)
+  const usedPercent = revenus > 0 ? Math.min(100, Math.round((depenses / revenus) * 100)) : 0
+  const hasBudgetData = revenus > 0 || depenses > 0 || realTransactions.length > 0
+
+  return (
+    <TropicalCard variant="green" texture="💶" style={{ padding: isMobile ? 18 : 22, borderRadius: 22 }}>
+      <div style={{ color: COLORS.text, fontWeight: 950, fontSize: 18, marginBottom: 14 }}>
+        {isKreol ? "💶 Bidjé du mwa" : "💶 Budget du mois"}
+      </div>
+
+      {!hasBudgetData ? (
+        <div style={{ color: COLORS.whiteSoft, fontSize: 14, lineHeight: 1.55 }}>
+          {isKreol
+            ? "Ajoute out premières dépans pou suivre out bidjé."
+            : "Ajoutez vos premières dépenses pour suivre votre budget."}
+        </div>
+      ) : (
+        <>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 10 }}>
+            <BudgetMetric label={isKreol ? "Revenus" : "Revenus"} value={formatMontant(revenus)} color={COLORS.green} />
+            <BudgetMetric label={isKreol ? "Dépans" : "Dépenses"} value={formatMontant(depenses)} color={COLORS.accentSoft} />
+            <BudgetMetric label={isKreol ? "Reste" : "Reste disponible"} value={formatMontant(solde)} color={solde >= 0 ? COLORS.cyan : COLORS.red} />
+          </div>
+
+          <div style={{ marginTop: 16 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 10, color: COLORS.whiteSoft, fontSize: 12, fontWeight: 900, marginBottom: 8 }}>
+              <span>{isKreol ? "Budget utilisé" : "Budget utilisé"}</span>
+              <span>{usedPercent} %</span>
+            </div>
+            <div style={{ height: 12, borderRadius: 99, background: "rgba(255,255,255,.12)", overflow: "hidden", border: "1px solid rgba(255,255,255,.08)" }}>
+              <div
+                style={{
+                  width: `${usedPercent}%`,
+                  height: "100%",
+                  borderRadius: 99,
+                  background: usedPercent > 90
+                    ? `linear-gradient(90deg, ${COLORS.red}, ${COLORS.accent})`
+                    : `linear-gradient(90deg, ${COLORS.green}, ${COLORS.cyan})`,
+                  transition: "width .45s ease",
+                }}
+              />
+            </div>
+          </div>
+        </>
+      )}
+    </TropicalCard>
+  )
+}
+
+function BudgetMetric({ label, value, color }) {
+  return (
+    <div style={{
+      background: "rgba(255,255,255,.07)",
+      border: "1px solid rgba(255,255,255,.10)",
+      borderRadius: 16,
+      padding: "12px 13px",
+      minHeight: 76,
+    }}>
+      <div style={{ color: COLORS.muted, fontSize: 12, fontWeight: 800, marginBottom: 6 }}>{label}</div>
+      <div style={{ color, fontSize: 18, fontWeight: 950, lineHeight: 1.1 }}>{value}</div>
+    </div>
+  )
+}
+
+function MotivationCard({ isKreol, isMobile }) {
+  const lines = isKreol
+    ? [
+      "Chaque euro i compte.",
+      "Ti pa ti pa, ou avance.",
+      "Chaque effort i rapproche aou de out objectif.",
+    ]
+    : [
+      "Chaque euro compte.",
+      "Petit à petit, vous avancez.",
+      "Chaque effort rapproche de vos objectifs.",
+    ]
+  const line = lines[new Date().getDate() % lines.length]
+
+  return (
+    <TropicalCard variant="gold" texture="🌿" style={{ padding: isMobile ? 18 : 22, borderRadius: 22 }}>
+      <div style={{ color: COLORS.yellow, fontSize: 13, fontWeight: 950, marginBottom: 8 }}>
+        {isKreol ? "✨ Motivation du jour" : "✨ Motivation du jour"}
+      </div>
+      <div style={{ color: COLORS.text, fontSize: isMobile ? 20 : 24, fontWeight: 950, lineHeight: 1.2 }}>
+        {line}
+      </div>
+    </TropicalCard>
+  )
+}
+
+function BalanceHeroCard({ insights, isKreol, isMobile }) {
+  const balance = Number(insights.monthlyBalance || 0)
+  const daily = Number(insights.dailyBalance || 0)
+
+  return (
+    <TropicalCard variant="lagoon" texture="💶" style={{ padding: isMobile ? 22 : 30, borderRadius: 28 }}>
+      <div style={{ color: COLORS.cyan, fontSize: 13, fontWeight: 950, marginBottom: 8 }}>
+        {isKreol ? "Solde estimé" : "Solde mensuel estimé"}
+      </div>
+      <div style={{ color: COLORS.whiteSoft, fontSize: 16, fontWeight: 850 }}>
+        {isKreol ? "I reste aou environ" : "Il te reste environ"}
+      </div>
+      <div style={{ color: balance >= 0 ? COLORS.green : COLORS.red, fontSize: isMobile ? 48 : 62, fontWeight: 950, lineHeight: 1, fontFamily: "'DM Serif Display', Georgia, serif", margin: "8px 0" }}>
+        {formatMontant(balance)}
+      </div>
+      <div style={{ color: COLORS.whiteSoft, fontSize: 16, fontWeight: 850 }}>
+        {isKreol ? "pou fini le mwa" : "pour finir le mois"}
+      </div>
+      <div style={{ color: COLORS.muted, fontSize: 13, marginTop: 10 }}>
+        {isKreol ? "Soit environ" : "Soit environ"} <strong style={{ color: COLORS.text }}>{formatMontant(daily)}</strong> / jour
+      </div>
+    </TropicalCard>
+  )
+}
+
+function ExpensesSnapshotCard({ stats, isKreol, isMobile }) {
+  const revenus = Number(stats.revenus || 0)
+  const depenses = Number(stats.depenses || 0)
+  const pct = revenus > 0 ? Math.min(100, Math.round((depenses / revenus) * 100)) : 0
+
+  return (
+    <TropicalCard variant="coral" texture="💸" style={{ padding: isMobile ? 18 : 22, borderRadius: 22 }}>
+      <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 950 }}>
+        {isKreol ? "Dépans du mwa" : "Dépenses du mois"}
+      </div>
+      <div style={{ color: COLORS.accentSoft, fontSize: 34, fontWeight: 950, marginTop: 8, fontFamily: "'DM Serif Display', Georgia, serif" }}>
+        {formatMontant(depenses)}
+      </div>
+      <div style={{ color: COLORS.muted, fontSize: 13, marginTop: 5 }}>
+        {pct} % {isKreol ? "des revenus" : "des revenus"}
+      </div>
+      <div style={{ height: 9, background: "rgba(255,255,255,.12)", borderRadius: 99, overflow: "hidden", marginTop: 12 }}>
+        <div style={{ width: `${pct}%`, height: "100%", background: `linear-gradient(90deg, ${COLORS.accent}, ${COLORS.yellow})`, borderRadius: 99, transition: "width .45s ease" }} />
+      </div>
+    </TropicalCard>
+  )
+}
+
+function BudgetAlertCard({ alert, isKreol }) {
+  const color = alert.level === "ok" ? COLORS.green : alert.level === "warning" ? COLORS.yellow : alert.level === "alert" ? COLORS.accent : COLORS.red
+
+  return (
+    <TropicalCard variant={alert.level === "ok" ? "green" : "gold"} texture="⚠️" style={{ padding: 18, borderRadius: 22 }}>
+      <div style={{ color, fontSize: 13, fontWeight: 950, marginBottom: 8 }}>
+        {isKreol ? "Alerte bidjé" : "Alerte budget"}
+      </div>
+      <div style={{ color: COLORS.text, fontSize: 18, lineHeight: 1.35, fontWeight: 950 }}>
+        {alert.text}
+      </div>
+    </TropicalCard>
+  )
+}
+
+function TopCategoriesV2Card({ categories = [], t, isKreol }) {
+  if (!categories.length) {
+    return (
+      <TropicalCard variant="ocean" texture="📊" style={{ padding: 18, borderRadius: 22 }}>
+        <div style={{ color: COLORS.text, fontWeight: 950 }}>{isKreol ? "Top katégori" : "Top catégories"}</div>
+        <div style={{ color: COLORS.muted, marginTop: 8 }}>Ajoute quelques dépenses pour voir où part ton argent.</div>
+      </TropicalCard>
+    )
+  }
+
+  const max = Math.max(...categories.map(cat => Number(cat.depense || 0)), 1)
+
+  return (
+    <TropicalCard variant="ocean" texture="📊" style={{ padding: 18, borderRadius: 22 }}>
+      <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 950, marginBottom: 12 }}>
+        {isKreol ? "Top katégori" : "Top catégories"}
+      </div>
+      <div style={{ display: "grid", gap: 12 }}>
+        {categories.map(cat => {
+          const amount = Number(cat.depense || 0)
+          const pct = Math.round((amount / max) * 100)
+          return (
+            <div key={cat.id}>
+              <div style={{ display: "flex", justifyContent: "space-between", color: COLORS.text, fontWeight: 900, fontSize: 13 }}>
+                <span>{cat.emoji || "•"} {t?.("categories", cat.id) || cat.label || cat.id}</span>
+                <span>{formatMontant(amount)}</span>
+              </div>
+              <div style={{ height: 8, borderRadius: 99, background: "rgba(255,255,255,.12)", overflow: "hidden", marginTop: 7 }}>
+                <div style={{ width: `${pct}%`, height: "100%", borderRadius: 99, background: cat.color || COLORS.cyan }} />
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </TropicalCard>
+  )
+}
+
+function RecentReceiptsCard({ receipts = [], isKreol, onOpenReceipts }) {
+  return (
+    <TropicalCard variant="lagoon" texture="🧾" style={{ padding: 18, borderRadius: 22 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 12 }}>
+        <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 950 }}>
+          {isKreol ? "Dernières courses" : "Dernières courses analysées"}
+        </div>
+        {onOpenReceipts && (
+          <button type="button" onClick={onOpenReceipts} style={{ minHeight: 40, borderRadius: 999, border: "1px solid rgba(255,255,255,.14)", background: "rgba(255,255,255,.07)", color: COLORS.cyan, fontWeight: 950, padding: "0 12px", cursor: "pointer" }}>
+            {isKreol ? "Voir" : "Voir mes courses"}
+          </button>
+        )}
+      </div>
+      {receipts.length === 0 ? (
+        <div style={{ color: COLORS.muted, lineHeight: 1.5 }}>
+          {isKreol ? "Analiz out première course pou voir out labitid." : "Analyse ta première course pour voir tes habitudes."}
+        </div>
+      ) : (
+        <div style={{ display: "grid", gap: 9 }}>
+          {receipts.slice(0, 3).map(row => (
+            <div key={row.id} style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 10, color: COLORS.text, borderBottom: "1px solid rgba(255,255,255,.08)", paddingBottom: 8 }}>
+              <span>
+                <strong>{row.store_name || "Ticket"}</strong>
+                <span style={{ display: "block", color: COLORS.muted, fontSize: 12, marginTop: 3 }}>{row.purchase_date || ""}</span>
+              </span>
+              <strong style={{ color: COLORS.green }}>{formatMontant(Number(row.total_amount || 0))}</strong>
+            </div>
+          ))}
+        </div>
+      )}
+    </TropicalCard>
+  )
+}
+
+function SavingsOpportunitiesCard({ hints = [], isKreol, onOpenConseiller }) {
+  return (
+    <TropicalCard variant="gold" texture="💡" style={{ padding: 18, borderRadius: 22 }}>
+      <div style={{ color: COLORS.yellow, fontSize: 13, fontWeight: 950, marginBottom: 8 }}>
+        {isKreol ? "Pistes d'économie" : "Opportunités d'économies"}
+      </div>
+      <div style={{ color: COLORS.text, fontSize: 20, fontWeight: 950, marginBottom: 10 }}>
+        {hints.length} {isKreol ? "pistes détectées" : "pistes d'économies détectées"}
+      </div>
+      <div style={{ display: "grid", gap: 8 }}>
+        {hints.map((hint, index) => (
+          <div key={`${hint}-${index}`} style={{ color: COLORS.whiteSoft, fontSize: 13, lineHeight: 1.45 }}>
+            • {hint}
+          </div>
+        ))}
+      </div>
+      {onOpenConseiller && (
+        <button type="button" onClick={onOpenConseiller} style={{ marginTop: 14, minHeight: 46, border: "none", borderRadius: 14, background: COLORS.accent, color: "#fff", fontWeight: 950, padding: "0 14px", cursor: "pointer" }}>
+          {isKreol ? "Voir conseils" : "Voir mes conseils"}
+        </button>
+      )}
+    </TropicalCard>
+  )
+}
+
+function QuickActionsV2({ isKreol, onAddExpense, onOpenReceipts, onOpenAides, onOpenStats }) {
+  const actions = [
+    { label: isKreol ? "+ Azout dépans" : "+ Ajouter dépense", onClick: onAddExpense, color: COLORS.accent },
+    { label: isKreol ? "Scanner ticket" : "Scanner ticket", onClick: onOpenReceipts, color: COLORS.cyan },
+    { label: isKreol ? "Voir mes aides" : "Voir mes aides", onClick: onOpenAides, color: COLORS.yellow },
+    { label: isKreol ? "Voir mes stats" : "Voir mes stats", onClick: onOpenStats, color: COLORS.green },
+  ].filter(action => action.onClick)
+
+  return (
+    <TropicalCard variant="purple" texture="⚡" style={{ padding: 18, borderRadius: 22 }}>
+      <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 950, marginBottom: 12 }}>
+        {isKreol ? "Aksyon rapid" : "Actions rapides"}
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10 }}>
+        {actions.map(action => (
+          <button key={action.label} type="button" onClick={action.onClick} style={{ minHeight: 52, border: `1px solid ${action.color}55`, borderRadius: 14, background: `${action.color}22`, color: COLORS.text, fontWeight: 950, cursor: "pointer" }}>
+            {action.label}
+          </button>
+        ))}
+      </div>
+    </TropicalCard>
+  )
+}
+
+function ShoppingHabitsDashboardCard({ items = [], isKreol, isMobile, onOpenShopping }) {
+  const habits = buildStoreHabits(items).slice(0, 4)
+  if (habits.length === 0) return null
+
+  const colors = [COLORS.accent, COLORS.green, COLORS.cyan, COLORS.yellow]
+
+  return (
+    <TropicalCard variant="ocean" texture="🛒" style={{ padding: isMobile ? 18 : 22, borderRadius: 22 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 10 }}>
+        <div>
+          <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 950 }}>
+            {isKreol ? "Ousa ou achète le plis ?" : "Où j'achète le plus ?"}
+          </div>
+          <div style={{ color: COLORS.muted, fontSize: 12, marginTop: 4 }}>
+            {isKreol ? "Dapré bann tiké validé." : "D'après vos tickets validés."}
+          </div>
+        </div>
+        {onOpenShopping && (
+          <button
+            type="button"
+            onClick={onOpenShopping}
+            style={{
+              minHeight: 42,
+              border: "1px solid rgba(255,255,255,.14)",
+              borderRadius: 999,
+              background: "rgba(255,255,255,.07)",
+              color: COLORS.cyan,
+              cursor: "pointer",
+              fontFamily: "inherit",
+              fontSize: 12,
+              fontWeight: 950,
+              padding: "0 12px",
+            }}
+          >
+            {isKreol ? "Voir" : "Voir"}
+          </button>
+        )}
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "170px 1fr", gap: 12, alignItems: "center" }}>
+        <div style={{ height: 165 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie data={habits} dataKey="count" nameKey="store" innerRadius={45} outerRadius={66} paddingAngle={3}>
+                {habits.map((_, index) => (
+                  <Cell key={index} fill={colors[index % colors.length]} />
+                ))}
+              </Pie>
+              <Tooltip formatter={(_, __, item) => `${item.payload.percent} %`} />
+            </PieChart>
+          </ResponsiveContainer>
+        </div>
+
+        <div style={{ display: "grid", gap: 8 }}>
+          {habits.map((row, index) => (
+            <div key={row.store} style={{ display: "flex", justifyContent: "space-between", gap: 10, color: COLORS.text, fontWeight: 900 }}>
+              <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                <span style={{ color: colors[index % colors.length] }}>●</span> {row.store}
+              </span>
+              <span>{row.percent} %</span>
+            </div>
+          ))}
+        </div>
       </div>
     </TropicalCard>
   )
@@ -1462,26 +1897,11 @@ function CopilotCards({
   onOpenDemarches,
   onOpenConseiller,
 }) {
-  const hasBudgetData = Number(stats.revenus || 0) > 0 || Number(stats.depenses || 0) > 0 || realTransactions.length > 0
   const demarchesInProgress = reminders.length
   const completedDemarches = 0
 
   return (
-    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(4, 1fr)", gap: 14 }}>
-      <CopilotInfoCard
-        title={isKreol ? "💶 Bidjé du mwa" : "💶 Budget du mois"}
-        value={hasBudgetData ? formatMontant(stats.solde || 0) : isKreol ? "À compléter" : "À compléter"}
-        detail={hasBudgetData
-          ? `${isKreol ? "Larzan i rantre" : "Revenus"} : ${formatMontant(stats.revenus || 0)} · ${isKreol ? "Dépans" : "Dépenses"} : ${formatMontant(stats.depenses || 0)}`
-          : isKreol
-            ? "Ajoute out premières dépans pou suivre out bidjé."
-            : "Ajoutez vos premières dépenses pour suivre votre budget."}
-        buttonLabel={isKreol ? "Voir détail" : "Voir le détail"}
-        onClick={() => navigateTo("solde")}
-        isMobile={isMobile}
-        accent={COLORS.green}
-      />
-
+    <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 14 }}>
       <CopilotInfoCard
         title={isKreol ? "🎯 Opportunités" : "🎯 Opportunités"}
         value={opportunitiesCount > 0
@@ -1584,6 +2004,7 @@ function NextCopilotAction({ action, isKreol, isMobile }) {
 }
 
 export default function Dashboard({
+  userId,
   stats,
   byCategory = [],
   pieData = [],
@@ -1608,10 +2029,19 @@ export default function Dashboard({
   onOpenRevenus,
   onOpenDepenses,
   onOpenSolde,
+  onOpenReceipts,
+  onOpenShopping,
+  onOpenStats,
+  onAddExpense,
 }) {
   const safeStats = stats || {}
   const { revenus = 0, depenses = 0, solde = 0 } = safeStats
   const isKreol = getIsKreol(t)
+  const dashboardInsights = useDashboardInsights({
+    userId,
+    stats: safeStats,
+    byCategory,
+  })
 
   const realTransactions = (transactions || []).filter(tx => {
     const label = normalizeText(tx?.label || tx?.nom || "")
@@ -1854,6 +2284,57 @@ export default function Dashboard({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.35fr .85fr", gap: 16 }}>
+        <BalanceHeroCard
+          insights={dashboardInsights}
+          isKreol={isKreol}
+          isMobile={isMobile}
+        />
+        <ExpensesSnapshotCard
+          stats={safeStats}
+          isKreol={isKreol}
+          isMobile={isMobile}
+        />
+      </div>
+
+      <BudgetAlertCard
+        alert={dashboardInsights.budgetAlert}
+        isKreol={isKreol}
+      />
+
+      <TopCategoriesV2Card
+        categories={dashboardInsights.topCategories}
+        t={t}
+        isKreol={isKreol}
+      />
+
+      <ShoppingHabitsDashboardCard
+        items={dashboardInsights.shoppingItems}
+        isKreol={isKreol}
+        isMobile={isMobile}
+        onOpenShopping={() => navigateTo("shopping", onOpenShopping)}
+      />
+
+      <RecentReceiptsCard
+        receipts={dashboardInsights.recentReceipts}
+        isKreol={isKreol}
+        onOpenReceipts={() => navigateTo("receipts", onOpenReceipts)}
+      />
+
+      <SavingsOpportunitiesCard
+        hints={dashboardInsights.savingsHints}
+        isKreol={isKreol}
+        onOpenConseiller={() => navigateTo("conseiller")}
+      />
+
+      <QuickActionsV2
+        isKreol={isKreol}
+        onAddExpense={onAddExpense}
+        onOpenReceipts={() => navigateTo("receipts", onOpenReceipts)}
+        onOpenAides={() => navigateTo("aides", onOpenAides)}
+        onOpenStats={() => navigateTo("statistics", onOpenStats)}
+      />
+
       <CopilotHero
         profile={profile}
         isKreol={isKreol}
@@ -1861,6 +2342,40 @@ export default function Dashboard({
         profileCompletion={profileCompletion}
         attentionCount={attentionCount}
       />
+
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.45fr .85fr", gap: 16 }}>
+        <PremiumBudgetCard
+          stats={safeStats}
+          realTransactions={realTransactions}
+          isKreol={isKreol}
+          isMobile={isMobile}
+        />
+        <MotivationCard
+          isKreol={isKreol}
+          isMobile={isMobile}
+        />
+      </div>
+
+      {onOpenReceipts && (
+        <button
+          type="button"
+          onClick={() => navigateTo("receipts", onOpenReceipts)}
+          style={{
+            minHeight: 58,
+            border: "none",
+            borderRadius: 18,
+            background: "linear-gradient(135deg, #F97316, #FB923C)",
+            color: "#fff",
+            cursor: "pointer",
+            fontFamily: "inherit",
+            fontSize: 16,
+            fontWeight: 950,
+            boxShadow: "0 18px 34px rgba(249,115,22,.22)",
+          }}
+        >
+          🧾 {isKreol ? "Analiz in course" : "Analyser une course"}
+        </button>
+      )}
 
       <CopilotCards
         isKreol={isKreol}

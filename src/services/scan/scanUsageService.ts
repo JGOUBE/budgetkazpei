@@ -1,0 +1,130 @@
+import { supabase } from "../supabase"
+import { getScanPlan, type ScanPlan } from "../../config/scanLimits"
+
+function monthKey(date = new Date()) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
+}
+
+export async function getScanUsage({
+  userId,
+  isPremium = false,
+  isPremiumPlus = false,
+}: {
+  userId?: string
+  isPremium?: boolean
+  isPremiumPlus?: boolean
+}) {
+  const plan = getScanPlan(isPremium, isPremiumPlus)
+  if (!userId) return { used: 0, aiUsed: 0, manualUsed: 0, plan }
+
+  const { data, error } = await supabase
+    .from("scan_usage")
+    .select("scan_count, ai_scan_count, manual_count, plan")
+    .eq("user_id", userId)
+    .eq("month_key", monthKey())
+    .maybeSingle()
+
+  if (error) throw error
+
+  return {
+    used: Number(data?.ai_scan_count ?? data?.scan_count ?? 0),
+    aiUsed: Number(data?.ai_scan_count || 0),
+    manualUsed: Number(data?.manual_count || 0),
+    plan: (data?.plan as ScanPlan) || plan,
+  }
+}
+
+export async function incrementScanUsage({
+  userId,
+  plan,
+  kind,
+}: {
+  userId?: string
+  plan: ScanPlan
+  kind: "ai" | "manual"
+}) {
+  if (!userId) return null
+
+  const key = monthKey()
+  const { data: existing } = await supabase
+    .from("scan_usage")
+    .select("id, scan_count, ai_scan_count, manual_count")
+    .eq("user_id", userId)
+    .eq("month_key", key)
+    .maybeSingle()
+
+  const next = {
+    user_id: userId,
+    month_key: key,
+    scan_count: Number(existing?.scan_count || 0) + (kind === "ai" ? 1 : 0),
+    ai_scan_count: Number(existing?.ai_scan_count || 0) + (kind === "ai" ? 1 : 0),
+    manual_count: Number(existing?.manual_count || 0) + (kind === "manual" ? 1 : 0),
+    plan,
+    last_scan_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }
+
+  const query = existing?.id
+    ? supabase.from("scan_usage").update(next).eq("id", existing.id).select().single()
+    : supabase.from("scan_usage").insert(next).select().single()
+
+  const { data, error } = await query
+  if (error) throw error
+  return data
+}
+
+export async function createScanMetric({
+  userId,
+  receiptId,
+  metrics = {},
+  status = "success",
+  error,
+}: {
+  userId?: string
+  receiptId?: string | null
+  metrics?: Record<string, any>
+  status?: "success" | "error"
+  error?: { code?: string; message?: string } | null
+}) {
+  if (!userId) return null
+
+  const isSuccess = metrics.success ?? (status === "success")
+  const row = {
+    user_id: userId,
+    receipt_id: receiptId || null,
+    model: metrics.model || "none",
+    provider: metrics.provider || "unknown",
+    ocr_engine: metrics.ocrEngine || metrics.provider || "unknown",
+    ai_used: Boolean(metrics.aiUsed),
+    text_ai_used: Boolean(metrics.textAiUsed),
+    vision_used: Boolean(metrics.visionUsed),
+    fallback_used: Boolean(metrics.fallbackUsed),
+    image_initial_bytes: Number(metrics.imageInitialBytes || 0),
+    image_compressed_bytes: Number(metrics.imageCompressedBytes || 0),
+    ocr_duration_ms: Number(metrics.ocrDurationMs || 0),
+    openai_duration_ms: Number(metrics.openaiDurationMs || 0),
+    parsing_duration_ms: Number(metrics.parsingDurationMs || 0),
+    import_duration_ms: Number(metrics.importDurationMs || 0),
+    input_tokens: Number(metrics.inputTokens || 0),
+    output_tokens: Number(metrics.outputTokens || 0),
+    estimated_cost_eur: Number(metrics.estimatedCostEur || 0),
+    items_detected: Number(metrics.itemsDetected || 0),
+    receipt_items_created: Number(metrics.receiptItemsCreated || 0),
+    shopping_items_created: Number(metrics.shoppingItemsCreated || 0),
+    transaction_created: Boolean(metrics.transactionCreated),
+    scan_usage_incremented: Boolean(metrics.scanUsageIncremented),
+    success: Boolean(isSuccess),
+    status,
+    error_code: error?.code || null,
+    error_message: error?.message || null,
+  }
+
+  const { data, error: insertError } = await supabase
+    .from("scan_metrics")
+    .insert(row)
+    .select()
+    .single()
+
+  if (insertError) throw insertError
+  return data
+}

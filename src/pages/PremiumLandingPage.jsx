@@ -1,21 +1,22 @@
 import { useState } from "react"
 
 const COLORS = {
-  bg: "#0A1628",
-  card: "#0F1E38",
-  cardLight: "#152444",
-  border: "#1E3A5F",
+  bg: "#081426",
+  band: "#0C1B32",
+  card: "#10213D",
+  border: "#1F3D63",
   accent: "#F97316",
   yellow: "#FCD34D",
   green: "#22C55E",
   cyan: "#23D3D6",
   purple: "#A78BFA",
-  muted: "#8EA4C5",
-  text: "#F1F5F9",
-  red: "#FB7185",
+  muted: "#9BB0D0",
+  text: "#F8FAFC",
 }
 
-const WATERMARK = "/icons-creole/palmier.png"
+const LOGO = "/icons-creole/logo-budgetkazpei.png"
+const HERO_BG = "/icons-creole/fond-principal.png"
+
 const PREMIUM_PRICE = "2,99 €"
 const PREMIUM_ANNUAL_PRICE = "29,99 €"
 const PREMIUM_PLUS_PRICE = "4,99 €"
@@ -30,1001 +31,246 @@ const STRIPE_LINKS = {
 
 const CONTENT = {
   fr: {
+    switchLang: "RE Kreol",
     back: "Retour à l'app",
-    switchLang: "🇷🇪 Kréol",
-    heroBadge: "🇷🇪 Pensé pour La Réunion",
-    heroTitle: "💰 Plus d'argent. Moins de stress.",
+    heroBadge: "BudgetKazPei Premium",
+    heroTitle: "Choisissez le niveau d'accompagnement qui vous aide vraiment.",
     heroText:
-      "Aides, démarches et économies locales : BudgetKazPei vous aide à voir clair et à avancer sans stress.",
-    heroButton: "⭐ Voir les avantages Premium",
-    problemTitle: "💡 Aides, économies, réductions, dispositifs locaux...",
-    problemText:
-      "Chaque mois, des opportunités passent inaperçues. BudgetKazPei Premium vous aide à les identifier pour améliorer votre budget et augmenter votre pouvoir d'achat.",
-    imagineTitle: "🌴 Imaginez votre prochain mois",
-    imagineItems: [
-      "Une vision claire de votre budget",
-      "Des aides identifiées",
-      "Des économies réalisées",
-      "Des bons plans découverts",
-      "Moins de mauvaises surprises",
-      "Plus de sérénité",
+      "Premium et Premium+ ne servent pas seulement à ajouter plus de courses. Ils transforment vos données en statistiques, prévisions, conseils et décisions plus simples au quotidien.",
+    plansTitle: "Les offres",
+    monthly: "Mensuel",
+    annual: "Annuel",
+    annualBadge: "2 mois offerts",
+    choosePremiumMonthly: "Choisir Premium mensuel",
+    choosePremiumAnnual: "Choisir Premium annuel",
+    choosePlusMonthly: "Choisir Premium+ mensuel",
+    choosePlusAnnual: "Choisir Premium+ annuel",
+    freeButton: "Commencer gratuitement",
+    plans: [
+      {
+        name: "Gratuit",
+        color: COLORS.green,
+        price: "0 €",
+        promise: "Découvrir BudgetKazPei.",
+        quota: "10 analyses de courses par mois",
+        features: ["Budget simple", "Dépenses et revenus", "Aides en version simple", "Ajout manuel illimité"],
+      },
+      {
+        name: "Premium",
+        color: COLORS.yellow,
+        promise: "Gérer parfaitement son budget.",
+        quota: "30 analyses de courses par mois",
+        features: ["Statistiques avancées", "Historique complet", "Produits et magasins", "Dashboard enrichi", "Alertes budget", "Exports et suivi plus complet"],
+        featured: true,
+      },
+      {
+        name: "Premium+",
+        color: COLORS.purple,
+        promise: "Votre copilote financier intelligent.",
+        quota: "100 analyses de courses par mois",
+        features: ["Assistant IA", "Prévisions budgétaires", "Conseils personnalisés", "Résumé hebdomadaire", "Analyses avancées", "Comparaisons intelligentes prochainement"],
+      },
     ],
-    analysisTitle: "🔎 Exemple d'analyse BudgetKazPei Premium",
-    analysisItems: [
-      "Situation analysée",
-      "Aides potentielles détectées",
-      "Économies possibles identifiées",
-      "Bons plans locaux détectés",
-      "Documents à préparer",
-    ],
-    analysisLocked: "Débloquez l'analyse complète avec Premium",
-    reunionTitle: "🇷🇪 Pourquoi BudgetKazPei ?",
-    reunionText:
-      "Le coût de la vie augmente. Les aides existent. Les bons plans aussi. Encore faut-il les connaître. BudgetKazPei Premium vous aide à identifier les opportunités qui pourraient améliorer votre quotidien et votre pouvoir d'achat.",
-    freeTitle: "Gratuit",
-    premiumTitle: "Premium",
-    premiumPlusTitle: "Premium+",
-    freeSubtitle: "Découvrir BudgetKazPei et suivre l'essentiel.",
-    premiumSubtitle:
-      "Pour débloquer le conseiller aides, les démarches guidées, les alertes budget et jusqu’à 50 échanges par mois.",
-    premiumPlusSubtitle:
-      "Pour aller plus loin avec votre conseiller personnel, jusqu’à 250 échanges par mois et les futures fonctions avancées.",
-    freeButton: "🔍 Voir mes aides possibles",
-    premiumButton: "⭐ Débloquer Premium",
-    premiumPlusButton: "👑 Passer à Premium+",
-    perMonth: "/mois",
-    perYear: "/an",
-    monthlyLabel: "Mensuel",
-    annualLabel: "Annuel",
-    annualBadge: "🎁 2 mois offerts",
-    premiumMonthlyButton: "Choisir Premium mensuel",
-    premiumAnnualButton: "Choisir Premium annuel",
-    premiumPlusMonthlyButton: "Choisir Premium+ mensuel",
-    premiumPlusAnnualButton: "Choisir Premium+ annuel",
-    popularBadge: "POPULAIRE",
-    recommendedPlusBadge: "RECOMMANDÉ ++",
-    premiumSoon: "Stripe sera branché à l’étape suivante. Pour l’instant, l’offre Premium est présentée en pré-lancement.",
-    premiumPlusSoon: "Stripe sera branché à l’étape suivante. Pour l’instant, l’offre Premium+ est présentée en pré-lancement.",
-    trustTitle: "💬 BudgetKazPei évolue avec ses utilisateurs",
-    trustText:
-      "Chaque retour compte. Vos remarques permettront d'améliorer l'application et d'ajouter les fonctionnalités les plus utiles aux Réunionnais.",
+    valueTitle: "Premium+ est votre copilote financier",
+    valueText:
+      "Premium+ est pensé comme un accompagnement : comprendre pourquoi votre budget évolue, anticiper les fins de mois, repérer les économies possibles et vous guider sans complexité.",
     faqTitle: "Questions fréquentes",
     faq: [
-      [
-        "Puis-je résilier mon abonnement ?",
-        "Oui. Vous pourrez mettre fin à votre abonnement à tout moment depuis l'espace prévu sur le site. Votre accès restera actif jusqu'à la fin de la période déjà réglée.",
-      ],
-      [
-        "Puis-je changer d'offre ?",
-        "Oui. Vous pourrez passer de Premium à Premium+ si vous souhaitez accéder à l’Assistant IA Personnel BudgetKazPei et aux fonctionnalités avancées.",
-      ],
-      [
-        "Mes données sont-elles conservées ?",
-        "Oui. Vos données restent associées à votre compte BudgetKazPei et sont stockées de manière sécurisée. Elles ne sont pas revendues à des tiers.",
-      ],
-      [
-        "Pourquoi une offre Premium ?",
-        "Les offres Premium permettent de financer l'évolution de BudgetKazPei tout en proposant davantage d'outils, d'alertes, d'opportunités et de bons plans aux utilisateurs qui veulent aller plus loin.",
-      ],
-      [
-        "BudgetKazPei est-il réservé aux bénéficiaires d'aides ?",
-        "Non. BudgetKazPei s'adresse à tous les Réunionnais qui veulent mieux gérer leur budget, suivre leurs dépenses et rester informés des aides, économies et bons plans existants.",
-      ],
-      [
-        "L’Assistant IA Personnel BudgetKazPei est-il disponible ?",
-        "Le conseiller est disponible selon l’offre choisie : jusqu’à 50 échanges par mois en Premium et jusqu’à 250 échanges par mois en Premium+. Certaines fonctions avancées restent indiquées comme bientôt disponibles tant qu’elles ne sont pas branchées dans l’application.",
-      ],
-      [
-        "Les fonctionnalités vont-elles évoluer ?",
-        "Oui. BudgetKazPei évoluera régulièrement grâce aux retours des utilisateurs, avec de nouvelles aides, de nouveaux bons plans, de nouveaux outils et des améliorations.",
-      ],
-    ],
-    freeFeatures: [
-      "Tableau de bord budget",
-      "Dépenses et revenus",
-      "Charges fixes",
-      "Historique simple",
-      "Profil utilisateur",
-      "Aides & droits en version simple",
-      "Français / créole",
-    ],
-    premiumFeatures: [
-      "Tout le gratuit inclus",
-      "Conseiller Aides Réunion 🇷🇪",
-      "Jusqu’à 50 échanges par mois",
-      "Réponses en français ou créole",
-      "Analyse personnalisée des aides",
-      "Suivi des démarches",
-      "Documents à préparer",
-      "Alertes budget intelligentes",
-      "Nouveautés aides et dispositifs",
-      "Bons plans locaux",
-      "Opportunités & économies",
-      "Historique avancé",
-      "Export PDF mensuel",
-    ],
-    premiumPlusFeatures: [
-      "Tout Premium inclus",
-      "Conseiller IA Personnel BudgetKazPei",
-      "Jusqu’à 250 échanges par mois",
-      "Conversation libre en français ou créole",
-      "Analyse budgétaire avancée — bientôt disponible",
-      "Génération de courriers administratifs — bientôt disponible",
-      "Préparation de dossiers complets — bientôt disponible",
-      "Conseils personnalisés selon le profil",
-      "Comparateur de promotions réunionnaises — bientôt disponible",
-      "Analyse intelligente des courses — bientôt disponible",
-      "Veille automatique des droits et nouvelles aides — bientôt disponible",
+      ["Pourquoi limiter les analyses automatiques ?", "Une analyse automatique utilise OCR, parsing et parfois IA. Les actions manuelles et la consultation restent illimitées."],
+      ["Le scanner est-il obligatoire ?", "Non. Vous pouvez toujours ajouter une course manuellement. Le scanner est simplement le moyen le plus rapide."],
+      ["Que vais-je gagner avec Premium ?", "Une lecture plus complète de vos courses, produits, magasins, historiques et statistiques."],
+      ["Que vais-je gagner avec Premium+ ?", "Un vrai copilote financier : assistant IA, explications, prévisions, conseils et résumés personnalisés."],
     ],
   },
   kr: {
+    switchLang: "FR Français",
     back: "Retour dann l'app",
-    switchLang: "🇫🇷 Français",
-    heroBadge: "🇷🇪 Fait pou La Rényon",
-    heroTitle: "💰 Pli de larzan. Mwins stress.",
+    heroBadge: "BudgetKazPei Premium",
+    heroTitle: "Swazi lakonpagnman ki aide aou pou de vrai.",
     heroText:
-      "Zéd, démarches é lékonomi lokal : BudgetKazPei i aide aou voir pli kler é avance san stress.",
-    heroButton: "⭐ Voir bann avantages Premium",
-    problemTitle: "💡 Zéd, lékonomi, réductions, dispositifs lokal...",
-    problemText:
-      "Chak mwa, bann opportunités i passe inaperçues. BudgetKazPei Premium i aide aou trouv sa ke pourrait améliore out bidjé é augmente out pouvoir d'achat.",
-    imagineTitle: "🌴 Imagine out prochain mwa",
-    imagineItems: [
-      "In vision kler de out bidjé",
-      "Bann zéd identifiées",
-      "Bann lékonomi réalisées",
-      "Bann bon plan découverts",
-      "Mwins mauvaise surprise",
-      "Plis trankilité",
+      "Premium ek Premium+ lé pa zis pou azout plis courses. Zot transforme out donnees an statistik, prevision, konsey ek desizion pli simple.",
+    plansTitle: "Bann offres",
+    monthly: "Mensuel",
+    annual: "Annuel",
+    annualBadge: "2 mwa offert",
+    choosePremiumMonthly: "Choisir Premium mensuel",
+    choosePremiumAnnual: "Choisir Premium annuel",
+    choosePlusMonthly: "Choisir Premium+ mensuel",
+    choosePlusAnnual: "Choisir Premium+ annuel",
+    freeButton: "Koumans gratis",
+    plans: [
+      {
+        name: "Gratis",
+        color: COLORS.green,
+        price: "0 €",
+        promise: "Dekouv BudgetKazPei.",
+        quota: "10 analiz courses par mwa",
+        features: ["Bidze simple", "Depans ek larzan rantre", "Aides version simple", "Azout amain illimite"],
+      },
+      {
+        name: "Premium",
+        color: COLORS.yellow,
+        promise: "Gere bien out bidze.",
+        quota: "30 analiz courses par mwa",
+        features: ["Statistik avance", "Istorik complet", "Produits ek magasins", "Dashboard enrichi", "Alertes bidze", "Swivi pli complet"],
+        featured: true,
+      },
+      {
+        name: "Premium+",
+        color: COLORS.purple,
+        promise: "Out copilote financier entelizan.",
+        quota: "100 analiz courses par mwa",
+        features: ["Assistant IA", "Prevision bidze", "Konsey personnalise", "Resume la semaine", "Analiz avance", "Comparaisons entelizantes bientot"],
+      },
     ],
-    analysisTitle: "🔎 Egzanp analiz BudgetKazPei Premium",
-    analysisItems: [
-      "Sitiasyon analizée",
-      "Zéd potentielles détectées",
-      "Lékonomi possibles identifiées",
-      "Bon plan lokal détectés",
-      "Dokiman pou préparé",
-    ],
-    analysisLocked: "Débloque analiz konplète ek Premium",
-    reunionTitle: "🇷🇪 Poukoi BudgetKazPei ?",
-    reunionText:
-      "La vie i augmente. Bann zéd i existe. Bann bon plan aussi. Mé encore faut connaître azot. BudgetKazPei Premium i aide aou trouv bann opportunités ke pourrait améliore out quotidien é out pouvoir d'achat.",
-    freeTitle: "Gratis",
-    premiumTitle: "Premium",
-    premiumPlusTitle: "Premium+",
-    freeSubtitle: "Découv BudgetKazPei é suivre lessentiel.",
-    premiumSubtitle:
-      "Pou débloque conseiller zéd, démarches guidées, alèrt bidjé é ziska 50 lézanz par mwa.",
-    premiumPlusSubtitle:
-      "Pou allé pli loin ek out conseiller personnel, ziska 250 lézanz par mwa é bann futures fonctions avancées.",
-    freeButton: "🔍 Voir mon bann zéd possibles",
-    premiumButton: "⭐ Débloque Premium",
-    premiumPlusButton: "👑 Pass Premium+",
-    perMonth: "/mwa",
-    perYear: "/an",
-    monthlyLabel: "Mensuel",
-    annualLabel: "Annuel",
-    annualBadge: "🎁 2 mwa offert",
-    premiumMonthlyButton: "Choisir Premium mensuel",
-    premiumAnnualButton: "Choisir Premium annuel",
-    premiumPlusMonthlyButton: "Choisir Premium+ mensuel",
-    premiumPlusAnnualButton: "Choisir Premium+ annuel",
-    popularBadge: "POPILÈR",
-    recommendedPlusBadge: "REKOMANDÉ ++",
-    premiumSoon: "Stripe va être branché dann prochaine étape. Pou l’instant, l’offre Premium lé présenté en pré-lancement.",
-    premiumPlusSoon: "Stripe va être branché dann prochaine étape. Pou l’instant, l’offre Premium+ lé présenté en pré-lancement.",
-    trustTitle: "💬 BudgetKazPei i évolue ek bann utilisateurs",
-    trustText:
-      "Sak retour lé important. Out remarques i va aide améliore l'application é ajoute bann fonctionnalités pli utiles pou bann Rényoné.",
-    faqTitle: "Kestion souvan",
+    valueTitle: "Premium+ lé out copilote financier",
+    valueText:
+      "Premium+ lé fait pou accompagne aou : konprann poukisa out bidze i bouge, anticipe fin de mwa, trouv lekonomi possible ek guide aou simplement.",
+    faqTitle: "Kestion souvent",
     faq: [
-      [
-        "Mi pé résilié mon abonnement ?",
-        "Wi. Ou pourra arrêt out abonnement à tout moment depi lespas prévu su site. Out accès i reste actif ziska la fin période déjà réglée.",
-      ],
-      [
-        "Mi pé changer doffre ?",
-        "Wi. Ou pourra pass Premium à Premium+ si ou veu accès à l’Asistan IA Personnel BudgetKazPei é fonctionnalités avancées.",
-      ],
-      [
-        "Mon bann données lé gardées ?",
-        "Wi. Out données i reste liées ek out compte BudgetKazPei é stockées de manière sécurisée. Zot lé pa revendues à des tiers.",
-      ],
-      [
-        "Poukoi in offre Premium ?",
-        "Bann offres Premium i permet finance évolution BudgetKazPei é proposé plis zouti, alertes, opportunités é bons plans pou bann utilisateurs ke i veu allé pli loin.",
-      ],
-      [
-        "BudgetKazPei lé réservé pou bann bénéficiaires daides ?",
-        "Non. BudgetKazPei lé pou tout bann Rényoné ke i veu mieux gérer zot bidjé, suivre zot dépans é reste informés bann zéd, lékonomi é bons plans existants.",
-      ],
-      [
-        "Lasistan IA Personnel BudgetKazPei lé disponible ?",
-        "Le conseiller lé disponible selon l’offre choisie : ziska 50 lézanz par mwa en Premium é ziska 250 lézanz par mwa en Premium+. Bann fonctions avancées lé indiquées bientôt disponible tant que zot lé pa branchées dann l’application.",
-      ],
-      [
-        "Fonctionnalités i va évolué ?",
-        "Wi. BudgetKazPei i va évolué régulièrement grâce aux retours utilisateurs, ek nouvo zéd, bon plan, zouti é améliorations.",
-      ],
-    ],
-    freeFeatures: [
-      "Tablo débor bidjé",
-      "Dépans é larzan rantre",
-      "Sarz fix",
-      "Istorik simpl",
-      "Profil itilizatèr",
-      "Zéd & drwa an version simpl",
-      "Fransé / kréol",
-    ],
-    premiumFeatures: [
-      "Tout sa lé gratis inclus",
-      "Conseiller Zéd Rényon 🇷🇪",
-      "Ziska 50 lézanz par mwa",
-      "Répons an fransé ou kréol",
-      "Analiz personnalisée bann zéd",
-      "Suivi bann démarches",
-      "Dokiman pou préparé",
-      "Alèrt bidjé entèlizan",
-      "Nouveautés zéd é dispositifs",
-      "Bon plan lokal",
-      "Opportunités & lékonomi",
-      "Istorik avansé",
-      "Export PDF chak mwa",
-    ],
-    premiumPlusFeatures: [
-      "Tout Premium inclus",
-      "Conseiller IA Personnel BudgetKazPei",
-      "Ziska 250 lézanz par mwa",
-      "Diskision libre an fransé ou kréol",
-      "Analiz bidjé pli avansé — bientôt disponible",
-      "Kréation courrier administratif — bientôt disponible",
-      "Préparasyon dosyé konplé — bientôt disponible",
-      "Konsey personnalisés selon out profil",
-      "Comparateur promos rényoné — bientôt disponible",
-      "Analiz entèlizan des courses — bientôt disponible",
-      "Veille otomatik bann drwa é nouvo zéd — bientôt disponible",
+      ["Poukisa limite bann analiz otomatik ?", "In analiz otomatik i servi OCR, parsing ek parfwa IA. Azout amain ek consultation i reste illimite."],
+      ["Scanner lé obligatoire ?", "Non. Ou pe toujours azout in course amain. Scanner-la lé zis fason pli rapide."],
+      ["Kosa Premium i donn amwin ?", "In lecture pli complete de out courses, produits, magasins, istorik ek statistik."],
+      ["Kosa Premium+ i donn amwin ?", "In vrai copilote financier : assistant IA, explications, previsions, konsey ek resumes personnalise."],
     ],
   },
 }
 
-function Watermark({ size = 230, right = -45, bottom = -70 }) {
-  return (
-    <img
-      src={WATERMARK}
-      alt=""
-      style={{
-        position: "absolute",
-        width: size,
-        right,
-        bottom,
-        opacity: 0.055,
-        pointerEvents: "none",
-        userSelect: "none",
-        transform: "rotate(-8deg)",
-        filter: "grayscale(1) brightness(1.9)",
-      }}
-    />
-  )
+function openStripeLink(url) {
+  window.open(url, "_blank", "noopener,noreferrer")
 }
 
-function Feature({ children, color = COLORS.green }) {
+function Button({ children, onClick, href, variant = "primary" }) {
+  const primary = variant === "primary"
+  const style = {
+    minHeight: 46,
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 14,
+    padding: "0 16px",
+    border: primary ? "none" : `1px solid ${COLORS.cyan}66`,
+    background: primary ? `linear-gradient(135deg, ${COLORS.yellow}, ${COLORS.accent})` : "rgba(8,20,38,.72)",
+    color: primary ? COLORS.bg : COLORS.text,
+    fontWeight: 950,
+    fontFamily: "inherit",
+    fontSize: 14,
+    cursor: "pointer",
+    textDecoration: "none",
+  }
+
+  if (href) return <a href={href} style={style}>{children}</a>
+  return <button type="button" onClick={onClick} style={style}>{children}</button>
+}
+
+function BillingChoice({ label, price, period, badge, color, onClick, button }) {
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "flex-start",
-        gap: 10,
-        padding: "9px 0",
-        borderBottom: "1px solid rgba(142,164,197,.12)",
-        color: COLORS.text,
-        fontSize: 14,
-        lineHeight: 1.4,
-        fontWeight: 700,
-      }}
-    >
-      <span style={{ color, fontWeight: 900 }}>✓</span>
-      <span>{children}</span>
+    <div style={{ border: `1px solid ${color}44`, background: "rgba(8,20,38,.55)", borderRadius: 8, padding: 13 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>
+        <strong>{label}</strong>
+        {badge && <span style={{ color, fontSize: 11, fontWeight: 950 }}>{badge}</span>}
+      </div>
+      <div style={{ margin: "10px 0 12px" }}>
+        <span style={{ color, fontSize: 28, fontWeight: 950, fontFamily: "'DM Serif Display', serif" }}>{price}</span>
+        <span style={{ color: COLORS.muted, marginLeft: 5 }}>{period}</span>
+      </div>
+      <Button onClick={onClick}>{button}</Button>
     </div>
-  )
-}
-
-function ValueCard({ title, text, color = COLORS.cyan, children }) {
-  return (
-    <section
-      style={{
-        position: "relative",
-        overflow: "hidden",
-        background: `linear-gradient(135deg, ${color}12, ${COLORS.card})`,
-        border: `1px solid ${color}35`,
-        borderRadius: 24,
-        padding: 24,
-      }}
-    >
-      <Watermark size={190} right={-55} bottom={-70} />
-      <div style={{ position: "relative", zIndex: 1 }}>
-        <h2
-          style={{
-            margin: "0 0 10px",
-            color,
-            fontSize: 24,
-            fontFamily: "'DM Serif Display', serif",
-            fontWeight: 400,
-          }}
-        >
-          {title}
-        </h2>
-        {text && (
-          <p
-            style={{
-              color: COLORS.muted,
-              margin: 0,
-              lineHeight: 1.65,
-              fontSize: 16,
-            }}
-          >
-            {text}
-          </p>
-        )}
-        {children}
-      </div>
-    </section>
-  )
-}
-
-function MiniCheckList({ items, color = COLORS.green }) {
-  return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-        gap: 10,
-        marginTop: 16,
-      }}
-    >
-      {items.map((item, index) => (
-        <div
-          key={index}
-          style={{
-            background: "rgba(255,255,255,.045)",
-            border: "1px solid rgba(255,255,255,.09)",
-            borderRadius: 14,
-            padding: "11px 12px",
-            color: COLORS.text,
-            fontWeight: 800,
-            fontSize: 13.5,
-            display: "flex",
-            alignItems: "center",
-            gap: 8,
-          }}
-        >
-          <span style={{ color, fontWeight: 900 }}>✓</span>
-          {item}
-        </div>
-      ))}
-    </div>
-  )
-}
-
-function AnalysisPreview({ c }) {
-  return (
-    <ValueCard title={c.analysisTitle} color={COLORS.yellow}>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-          gap: 12,
-          marginTop: 14,
-        }}
-      >
-        {c.analysisItems.map((item, index) => (
-          <div
-            key={index}
-            style={{
-              background: "rgba(10,22,40,.65)",
-              border: `1px solid ${COLORS.yellow}30`,
-              borderRadius: 16,
-              padding: 14,
-              minHeight: 82,
-            }}
-          >
-            <div
-              style={{
-                color: COLORS.yellow,
-                fontWeight: 900,
-                fontSize: 19,
-                marginBottom: 8,
-              }}
-            >
-              ✓
-            </div>
-            <div style={{ color: COLORS.text, fontWeight: 900, fontSize: 14 }}>
-              {item}
-            </div>
-            <div
-              style={{
-                marginTop: 8,
-                height: 7,
-                borderRadius: 99,
-                background: "rgba(142,164,197,.22)",
-                overflow: "hidden",
-              }}
-            >
-              <div
-                style={{
-                  width: `${45 + index * 9}%`,
-                  height: "100%",
-                  background: COLORS.yellow,
-                  opacity: 0.55,
-                }}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div
-        style={{
-          marginTop: 16,
-          background: "rgba(252,211,77,.10)",
-          border: `1px solid ${COLORS.yellow}35`,
-          borderRadius: 16,
-          padding: 14,
-          color: COLORS.yellow,
-          fontWeight: 900,
-          textAlign: "center",
-        }}
-      >
-        🔒 {c.analysisLocked}
-      </div>
-    </ValueCard>
-  )
-}
-
-function OfferChoice({ label, price, period, badge, color, buttonText, onClick }) {
-  return (
-    <div
-      style={{
-        background: "rgba(10,22,40,.52)",
-        border: `1px solid ${color}35`,
-        borderRadius: 16,
-        padding: 14,
-        display: "flex",
-        flexDirection: "column",
-        gap: 10,
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-        <span style={{ color: COLORS.text, fontSize: 13, fontWeight: 900 }}>{label}</span>
-        {badge && (
-          <span
-            style={{
-              background: `${color}22`,
-              border: `1px solid ${color}44`,
-              color,
-              borderRadius: 999,
-              padding: "4px 8px",
-              fontSize: 10.5,
-              fontWeight: 900,
-              whiteSpace: "nowrap",
-            }}
-          >
-            {badge}
-          </span>
-        )}
-      </div>
-
-      <div>
-        <span
-          style={{
-            color,
-            fontSize: 30,
-            fontWeight: 900,
-            fontFamily: "'DM Serif Display', serif",
-          }}
-        >
-          {price}
-        </span>
-        <span style={{ color: COLORS.muted, marginLeft: 6, fontSize: 13 }}>{period}</span>
-      </div>
-
-      <button
-        type="button"
-        onClick={onClick}
-        style={{
-          width: "100%",
-          background: `linear-gradient(135deg, ${color}, ${COLORS.accent})`,
-          color: COLORS.bg,
-          border: "none",
-          borderRadius: 13,
-          padding: "12px 13px",
-          fontSize: 13.5,
-          fontWeight: 900,
-          cursor: "pointer",
-          fontFamily: "inherit",
-        }}
-      >
-        {buttonText}
-      </button>
-    </div>
-  )
-}
-
-function PlanCard({
-  icon,
-  title,
-  price,
-  annualPrice,
-  subtitle,
-  features,
-  color,
-  badge,
-  buttonText,
-  annualButtonText,
-  onClick,
-  onAnnualClick,
-  perMonth,
-  perYear,
-  monthlyLabel,
-  annualLabel,
-  annualBadge,
-  featured = false,
-}) {
-  const hasAnnualOffer = Boolean(annualPrice && onAnnualClick)
-
-  return (
-    <article
-      style={{
-        position: "relative",
-        overflow: "hidden",
-        background: `linear-gradient(135deg, ${color}18, ${COLORS.card})`,
-        border: `2px solid ${color}66`,
-        borderRadius: 24,
-        padding: 24,
-        boxShadow: featured ? `0 24px 70px ${color}22` : `0 20px 50px ${color}10`,
-        transform: featured ? "translateY(-6px)" : "none",
-      }}
-    >
-      <Watermark size={190} right={-55} bottom={-70} />
-
-      {badge && (
-        <div
-          style={{
-            position: "absolute",
-            top: 16,
-            right: 16,
-            background: color,
-            color: COLORS.bg,
-            borderRadius: 999,
-            padding: "5px 10px",
-            fontSize: 11,
-            fontWeight: 900,
-            letterSpacing: ".03em",
-            zIndex: 2,
-          }}
-        >
-          {badge}
-        </div>
-      )}
-
-      <div style={{ position: "relative", zIndex: 1 }}>
-        <div style={{ fontSize: 42, marginBottom: 10 }}>{icon}</div>
-        <h2
-          style={{
-            margin: 0,
-            color,
-            fontSize: 25,
-            fontFamily: "'DM Serif Display', serif",
-          }}
-        >
-          {title}
-        </h2>
-        <p style={{ color: COLORS.muted, minHeight: 54, lineHeight: 1.5, fontSize: 14 }}>
-          {subtitle}
-        </p>
-
-        {hasAnnualOffer ? (
-          <div style={{ display: "grid", gap: 12, margin: "16px 0 18px" }}>
-            <OfferChoice
-              label={monthlyLabel}
-              price={price}
-              period={perMonth}
-              color={color}
-              buttonText={buttonText}
-              onClick={onClick}
-            />
-            <OfferChoice
-              label={annualLabel}
-              price={annualPrice}
-              period={perYear}
-              badge={annualBadge}
-              color={color}
-              buttonText={annualButtonText}
-              onClick={onAnnualClick}
-            />
-          </div>
-        ) : (
-          <div style={{ margin: "16px 0 18px" }}>
-            <span
-              style={{
-                color,
-                fontSize: 36,
-                fontWeight: 900,
-                fontFamily: "'DM Serif Display', serif",
-              }}
-            >
-              {price}
-            </span>
-          </div>
-        )}
-
-        <div style={{ display: "grid", gap: 0 }}>
-          {features.map((feature, index) => (
-            <Feature key={index} color={color}>
-              {feature}
-            </Feature>
-          ))}
-        </div>
-
-        {!hasAnnualOffer && (
-          <button
-            type="button"
-            onClick={onClick}
-            style={{
-              width: "100%",
-              marginTop: 20,
-              background: `linear-gradient(135deg, ${color}, ${COLORS.accent})`,
-              color: COLORS.bg,
-              border: "none",
-              borderRadius: 15,
-              padding: "14px 16px",
-              fontSize: 15,
-              fontWeight: 900,
-              cursor: "pointer",
-              fontFamily: "inherit",
-            }}
-          >
-            {buttonText}
-          </button>
-        )}
-      </div>
-    </article>
   )
 }
 
 export default function PremiumLandingPage() {
-  const [message, setMessage] = useState("")
   const [lang, setLang] = useState("fr")
   const c = CONTENT[lang]
 
-  function openStripeLink(url) {
-    window.open(url, "_blank", "noopener,noreferrer")
-  }
-
-  function goHome() {
-  window.location.href = "/app"
-}
-
-  function scrollToPlans() {
-    document.getElementById("offres")?.scrollIntoView({
-      behavior: "smooth",
-      block: "start",
-    })
-  }
-
   return (
-    <main
-      style={{
-        minHeight: "100vh",
-        width: "100vw",
-        maxWidth: "100vw",
-        overflowX: "hidden",
-        background: `radial-gradient(circle at 20% 0%, rgba(35,211,214,.18), transparent 34%), radial-gradient(circle at 80% 8%, rgba(249,115,22,.14), transparent 30%), ${COLORS.bg}`,
-        color: COLORS.text,
-        fontFamily: "'DM Sans', sans-serif",
-        padding: "34px 18px 50px",
-      }}
-    >
+    <main style={{ minHeight: "100vh", background: COLORS.bg, color: COLORS.text, fontFamily: "'DM Sans', sans-serif" }}>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;700;900&display=swap');
         * { box-sizing: border-box; }
-        html, body, #root {
-          margin: 0;
-          padding: 0;
-          width: 100%;
-          min-height: 100%;
-          background: ${COLORS.bg};
-          overflow-x: hidden;
-        }
+        html, body, #root { margin: 0; min-height: 100%; background: ${COLORS.bg}; }
       `}</style>
 
-      <div style={{ width: "100%", maxWidth: 1180, margin: "0 auto" }}>
-        <header
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: 16,
-            marginBottom: 30,
-            flexWrap: "wrap",
-          }}
-        >
-          <img
-            src="/icons-creole/logo-budgetkazpei.png"
-            alt="BudgetKazPei"
-            style={{ width: 145, height: "auto" }}
-          />
-
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <button
-              type="button"
-              onClick={() => setLang(lang === "fr" ? "kr" : "fr")}
-              style={{
-                background: "rgba(35,211,214,.08)",
-                border: `1px solid ${COLORS.cyan}55`,
-                borderRadius: 12,
-                color: COLORS.cyan,
-                padding: "10px 14px",
-                fontWeight: 900,
-                cursor: "pointer",
-                fontFamily: "inherit",
-              }}
-            >
+      <header style={{ padding: "20px 18px", position: "absolute", inset: "0 0 auto", zIndex: 4 }}>
+        <div style={{ maxWidth: 1160, margin: "0 auto", display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
+          <img src={LOGO} alt="BudgetKazPei" style={{ width: 150 }} />
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
+            <button type="button" onClick={() => setLang(lang === "fr" ? "kr" : "fr")} style={{ minHeight: 42, borderRadius: 12, border: `1px solid ${COLORS.cyan}66`, background: "rgba(8,20,38,.72)", color: COLORS.cyan, fontWeight: 950, padding: "0 12px", fontFamily: "inherit", cursor: "pointer" }}>
               {c.switchLang}
             </button>
-
-            <button
-              type="button"
-              onClick={goHome}
-              style={{
-                background: "rgba(255,255,255,.06)",
-                border: `1px solid ${COLORS.border}`,
-                borderRadius: 12,
-                color: COLORS.text,
-                padding: "10px 14px",
-                fontWeight: 800,
-                cursor: "pointer",
-                fontFamily: "inherit",
-              }}
-            >
-              {c.back}
-            </button>
+            <Button href="/app" variant="secondary">{c.back}</Button>
           </div>
-        </header>
-
-        <section
-          style={{
-            position: "relative",
-            overflow: "hidden",
-            textAlign: "center",
-            background: `linear-gradient(135deg, rgba(35,211,214,.14), rgba(252,211,77,.14), rgba(167,139,250,.12), ${COLORS.card})`,
-            border: `1px solid ${COLORS.yellow}44`,
-            borderRadius: 30,
-            padding: "48px 22px",
-            marginBottom: 18,
-          }}
-        >
-          <Watermark size={330} right={-80} bottom={-115} />
-          <div style={{ position: "relative", zIndex: 1 }}>
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 8,
-                background: "rgba(35,211,214,.10)",
-                border: `1px solid ${COLORS.cyan}44`,
-                color: COLORS.cyan,
-                borderRadius: 999,
-                padding: "7px 13px",
-                fontSize: 13,
-                fontWeight: 900,
-                marginBottom: 18,
-              }}
-            >
-              {c.heroBadge}
-            </div>
-
-            <h1
-              style={{
-                margin: 0,
-                color: COLORS.yellow,
-                fontFamily: "'DM Serif Display', serif",
-                fontSize: "clamp(38px, 7vw, 72px)",
-                lineHeight: 1.04,
-                fontWeight: 400,
-              }}
-            >
-              {c.heroTitle}
-            </h1>
-
-            <p
-              style={{
-                color: COLORS.text,
-                maxWidth: 820,
-                margin: "18px auto 0",
-                lineHeight: 1.62,
-                fontSize: 18,
-                fontWeight: 800,
-              }}
-            >
-              {c.heroText}
-            </p>
-
-            <button
-              type="button"
-              onClick={scrollToPlans}
-              style={{
-                marginTop: 24,
-                background: `linear-gradient(135deg, ${COLORS.yellow}, ${COLORS.accent})`,
-                color: COLORS.bg,
-                border: "none",
-                borderRadius: 16,
-                padding: "15px 22px",
-                fontSize: 16,
-                fontWeight: 900,
-                cursor: "pointer",
-                fontFamily: "inherit",
-                boxShadow: `0 12px 36px ${COLORS.yellow}28`,
-              }}
-            >
-              {c.heroButton}
-            </button>
-          </div>
-        </section>
-
-        {message && (
-          <div
-            style={{
-              background: "rgba(35,211,214,.10)",
-              border: "1px solid rgba(35,211,214,.35)",
-              borderRadius: 16,
-              padding: 14,
-              color: COLORS.cyan,
-              fontWeight: 800,
-              marginBottom: 18,
-              textAlign: "center",
-            }}
-          >
-            {message}
-          </div>
-        )}
-
-        <div style={{ display: "grid", gap: 18, marginBottom: 22 }}>
-          <ValueCard title={c.problemTitle} text={c.problemText} color={COLORS.accent} />
-
-          <ValueCard title={c.imagineTitle} color={COLORS.cyan}>
-            <MiniCheckList items={c.imagineItems} color={COLORS.cyan} />
-          </ValueCard>
-
-          <AnalysisPreview c={c} />
-
-          <ValueCard title={c.reunionTitle} text={c.reunionText} color={COLORS.green} />
         </div>
+      </header>
 
-        <section
-          id="offres"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-            gap: 18,
-            alignItems: "stretch",
-            scrollMarginTop: 24,
-          }}
-        >
-          <PlanCard
-            icon="🆓"
-            title={c.freeTitle}
-            price="0 €"
-            subtitle={c.freeSubtitle}
-            features={c.freeFeatures}
-            color={COLORS.green}
-            buttonText={c.freeButton}
-            perMonth={c.perMonth}
-            onClick={goHome}
-          />
-
-          <PlanCard
-            icon="⭐"
-            title={c.premiumTitle}
-            price={PREMIUM_PRICE}
-            annualPrice={PREMIUM_ANNUAL_PRICE}
-            subtitle={c.premiumSubtitle}
-            features={c.premiumFeatures}
-            color={COLORS.yellow}
-            badge={c.popularBadge}
-            buttonText={c.premiumMonthlyButton}
-            annualButtonText={c.premiumAnnualButton}
-            perMonth={c.perMonth}
-            perYear={c.perYear}
-            monthlyLabel={c.monthlyLabel}
-            annualLabel={c.annualLabel}
-            annualBadge={c.annualBadge}
-            onClick={() => openStripeLink(STRIPE_LINKS.premiumMonthly)}
-            onAnnualClick={() => openStripeLink(STRIPE_LINKS.premiumAnnual)}
-          />
-
-          <PlanCard
-            icon="👑"
-            title={c.premiumPlusTitle}
-            price={PREMIUM_PLUS_PRICE}
-            annualPrice={PREMIUM_PLUS_ANNUAL_PRICE}
-            subtitle={c.premiumPlusSubtitle}
-            features={c.premiumPlusFeatures}
-            color={COLORS.purple}
-            badge={c.recommendedPlusBadge}
-            buttonText={c.premiumPlusMonthlyButton}
-            annualButtonText={c.premiumPlusAnnualButton}
-            perMonth={c.perMonth}
-            perYear={c.perYear}
-            monthlyLabel={c.monthlyLabel}
-            annualLabel={c.annualLabel}
-            annualBadge={c.annualBadge}
-            featured
-            onClick={() => openStripeLink(STRIPE_LINKS.premiumPlusMonthly)}
-            onAnnualClick={() => openStripeLink(STRIPE_LINKS.premiumPlusAnnual)}
-          />
-        </section>
-
-        <section
-          style={{
-            marginTop: 24,
-            background: `linear-gradient(135deg, ${COLORS.cyan}10, ${COLORS.card})`,
-            border: `1px solid ${COLORS.cyan}30`,
-            borderRadius: 22,
-            padding: 22,
-          }}
-        >
-          <h2 style={{ margin: "0 0 8px", color: COLORS.cyan, fontSize: 22 }}>
-            {c.trustTitle}
-          </h2>
-          <p style={{ margin: 0, color: COLORS.muted, lineHeight: 1.6, fontWeight: 700 }}>
-            {c.trustText}
-          </p>
-        </section>
-
-        <section
-          style={{
-            marginTop: 24,
-            background: "rgba(255,255,255,.045)",
-            border: `1px solid ${COLORS.border}`,
-            borderRadius: 22,
-            padding: 22,
-          }}
-        >
-          <h2 style={{ margin: "0 0 14px", color: COLORS.text, fontSize: 22 }}>
-            {c.faqTitle}
-          </h2>
-          <div style={{ display: "grid", gap: 12, color: COLORS.muted, lineHeight: 1.55 }}>
-            {c.faq.map(([question, answer]) => (
-              <p key={question} style={{ margin: 0 }}>
-                <strong style={{ color: COLORS.text }}>{question}</strong>
-                <br />
-                {answer}
-              </p>
-            ))}
+      <section style={{ minHeight: "min(700px, calc(100vh - 80px))", display: "grid", placeItems: "center", textAlign: "center", padding: "122px 18px 72px", backgroundImage: `linear-gradient(180deg, rgba(8,20,38,.28), ${COLORS.bg} 96%), linear-gradient(90deg, rgba(8,20,38,.92), rgba(8,20,38,.60)), url(${HERO_BG})`, backgroundSize: "cover", backgroundPosition: "center" }}>
+        <div style={{ maxWidth: 920 }}>
+          <div style={{ display: "inline-flex", color: COLORS.cyan, fontWeight: 950, border: `1px solid ${COLORS.cyan}55`, background: "rgba(35,211,214,.10)", borderRadius: 999, padding: "7px 12px", marginBottom: 16 }}>
+            {c.heroBadge}
           </div>
-        </section>
+          <h1 style={{ margin: 0, fontFamily: "'DM Serif Display', serif", fontSize: "clamp(40px, 7vw, 78px)", lineHeight: 1.04, fontWeight: 400 }}>
+            {c.heroTitle}
+          </h1>
+          <p style={{ maxWidth: 820, margin: "18px auto 0", color: "#D8E4F6", fontSize: "clamp(17px, 2.2vw, 21px)", lineHeight: 1.62, fontWeight: 800 }}>
+            {c.heroText}
+          </p>
+        </div>
+      </section>
 
-        <footer
-          style={{
-            marginTop: 24,
-            display: "flex",
-            justifyContent: "space-between",
-            gap: 12,
-            flexWrap: "wrap",
-            color: COLORS.muted,
-            fontSize: 13,
-            fontWeight: 700,
-          }}
-        >
-          <span>© {new Date().getFullYear()} BudgetKazPei</span>
-          <span style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
-            <a href="/" style={{ color: COLORS.cyan }}>Accueil</a>
-            <a href="/privacy" style={{ color: COLORS.cyan }}>Confidentialité</a>
-            <a href="/terms" style={{ color: COLORS.cyan }}>Conditions</a>
-            <a href="mailto:contact.budgetkazpei@gmail.com" style={{ color: COLORS.cyan }}>Contact</a>
-          </span>
-        </footer>
-      </div>
+      <section style={{ padding: "50px 18px", background: COLORS.bg }}>
+        <h2 style={{ margin: "0 0 22px", textAlign: "center", fontFamily: "'DM Serif Display', serif", fontSize: "clamp(32px, 5vw, 48px)", fontWeight: 400 }}>
+          {c.plansTitle}
+        </h2>
+        <div style={{ maxWidth: 1160, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14 }}>
+          {c.plans.map((plan, index) => (
+            <article key={plan.name} style={{ background: plan.featured ? `linear-gradient(135deg, ${COLORS.yellow}18, ${COLORS.card})` : COLORS.card, border: `1px solid ${plan.featured ? COLORS.yellow : COLORS.border}`, borderRadius: 8, padding: 20 }}>
+              <h3 style={{ margin: 0, color: plan.color, fontSize: 28 }}>{plan.name}</h3>
+              <p style={{ color: COLORS.text, fontWeight: 950, margin: "10px 0 6px" }}>{plan.promise}</p>
+              <p style={{ color: COLORS.cyan, fontWeight: 950, margin: "0 0 16px" }}>{plan.quota}</p>
+              <div style={{ display: "grid", gap: 8, marginBottom: index === 0 ? 18 : 16 }}>
+                {plan.features.map(feature => (
+                  <div key={feature} style={{ color: COLORS.muted, fontWeight: 750 }}>✓ {feature}</div>
+                ))}
+              </div>
+
+              {index === 0 && <Button href="/register">{c.freeButton}</Button>}
+              {index === 1 && (
+                <div style={{ display: "grid", gap: 10 }}>
+                  <BillingChoice label={c.monthly} price={PREMIUM_PRICE} period="/mois" color={plan.color} button={c.choosePremiumMonthly} onClick={() => openStripeLink(STRIPE_LINKS.premiumMonthly)} />
+                  <BillingChoice label={c.annual} price={PREMIUM_ANNUAL_PRICE} period="/an" badge={c.annualBadge} color={plan.color} button={c.choosePremiumAnnual} onClick={() => openStripeLink(STRIPE_LINKS.premiumAnnual)} />
+                </div>
+              )}
+              {index === 2 && (
+                <div style={{ display: "grid", gap: 10 }}>
+                  <BillingChoice label={c.monthly} price={PREMIUM_PLUS_PRICE} period="/mois" color={plan.color} button={c.choosePlusMonthly} onClick={() => openStripeLink(STRIPE_LINKS.premiumPlusMonthly)} />
+                  <BillingChoice label={c.annual} price={PREMIUM_PLUS_ANNUAL_PRICE} period="/an" badge={c.annualBadge} color={plan.color} button={c.choosePlusAnnual} onClick={() => openStripeLink(STRIPE_LINKS.premiumPlusAnnual)} />
+                </div>
+              )}
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section style={{ padding: "46px 18px", background: COLORS.band }}>
+        <div style={{ maxWidth: 920, margin: "0 auto", textAlign: "center" }}>
+          <h2 style={{ margin: "0 0 10px", color: COLORS.purple, fontFamily: "'DM Serif Display', serif", fontSize: "clamp(32px, 5vw, 48px)", fontWeight: 400 }}>
+            {c.valueTitle}
+          </h2>
+          <p style={{ margin: 0, color: COLORS.muted, lineHeight: 1.7, fontWeight: 800, fontSize: 17 }}>{c.valueText}</p>
+        </div>
+      </section>
+
+      <section style={{ padding: "48px 18px", background: COLORS.bg }}>
+        <h2 style={{ margin: "0 0 18px", textAlign: "center", fontFamily: "'DM Serif Display', serif", fontSize: "clamp(30px, 5vw, 44px)", fontWeight: 400 }}>{c.faqTitle}</h2>
+        <div style={{ maxWidth: 900, margin: "0 auto", display: "grid", gap: 10 }}>
+          {c.faq.map(([question, answer]) => (
+            <details key={question} style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 8, padding: "15px 16px" }}>
+              <summary style={{ cursor: "pointer", color: COLORS.text, fontWeight: 950 }}>{question}</summary>
+              <p style={{ margin: "10px 0 0", color: COLORS.muted, lineHeight: 1.6, fontWeight: 700 }}>{answer}</p>
+            </details>
+          ))}
+        </div>
+      </section>
     </main>
   )
 }

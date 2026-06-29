@@ -1,0 +1,1035 @@
+import { useEffect, useMemo, useRef, useState } from "react"
+import { CATEGORIES } from "../../../data/categories"
+import { formatMontant } from "../../../utils/format"
+import { createManualReceiptDraft } from "../utils/receiptParser"
+import {
+  createReceipt,
+  deleteReceipt,
+  getReceiptDetail,
+  getReceiptImageUrl,
+  listReceipts,
+  uploadReceiptImage,
+  validateReceipt,
+} from "../services/receiptService"
+import { useReceiptQuota } from "../hooks/useReceiptQuota"
+import { clearLastScanDraft, getLastScanDraft, runSmartScan } from "../../../services/scan/scanEngine"
+import { findDuplicateReceipt, getConfidenceColor, getConfidenceIcon } from "../../../services/scan/receiptValidator"
+import { importValidatedReceipt } from "../../../services/scan/receiptImporter"
+import { getScanErrorDetails } from "../../../services/scan/scanErrors"
+import { createScanMetric, incrementScanUsage } from "../../../services/scan/scanUsageService"
+import { syncShoppingItemsFromReceipt } from "../../shopping/services/shoppingEngine"
+import { supabase } from "../../../services/supabase"
+
+const COLORS = {
+  card: "#0F1E38",
+  cardLight: "#152444",
+  border: "#1E3A5F",
+  accent: "#F97316",
+  green: "#22C55E",
+  red: "#EF4444",
+  cyan: "#23D3D6",
+  yellow: "#FCD34D",
+  muted: "#8EA4C5",
+  text: "#F8FAFC",
+}
+
+const TEXT = {
+  fr: {
+    title: "Mes courses",
+    scanTitle: "Analyser une course",
+    scanCta: "Analyser une course",
+    camera: "Prendre une photo",
+    gallery: "Importer une image",
+    manual: "Remplir manuellement",
+    quota: quota => `Mes analyses du mois : ${quota.used} / ${quota.limit} - Il vous reste ${quota.remaining} analyses ce mois-ci`,
+    methodTitle: "Choisissez une methode",
+    privacy: "Vos tickets restent privés. Ils servent uniquement à mettre à jour votre budget.",
+    foodHint: "Ajoutez vos courses automatiquement ou manuellement. L'analyse automatique sert surtout aux tickets alimentaires, pour comprendre vos habitudes et recevoir des conseils utiles.",
+    loaded: "Image chargée. Vérifiez les informations détectées.",
+    manualReady: "OCR indisponible : vous pouvez remplir le ticket manuellement.",
+    store: "Magasin",
+    date: "Date",
+    total: "Montant total",
+    category: "Catégorie globale",
+    items: "Articles",
+    addLine: "Ajouter une ligne",
+    remove: "Supprimer",
+    save: "Enregistrer la course",
+    cancel: "Annuler",
+    empty: "Aucun ticket enregistré pour le moment.",
+    status: "Statut",
+    open: "Ouvrir",
+    deleteTicket: "Supprimer le ticket",
+    confirmDelete: "Supprimer ce ticket ? La transaction liée ne sera pas supprimée automatiquement.",
+    saved: "Course enregistrée.",
+    deleted: "Ticket supprimé.",
+    error: "Analyse impossible. Vous pouvez reessayer ou remplir manuellement.",
+    quotaReached: "Quota atteint. Vous pouvez quand même remplir manuellement.",
+    expenseCreated: "Dépense créée",
+    noUser: "Utilisateur non connecté.",
+  },
+  kr: {
+    title: "Mon bann courses",
+    scanTitle: "Analiz in course",
+    scanCta: "Analiz in course",
+    camera: "Pran in foto",
+    gallery: "Import in zimaz",
+    manual: "Ranpli amain",
+    quota: quota => `Bann analiz pou mwa-la : ${quota.used} / ${quota.limit} - I reste ${quota.remaining} analiz pou mwa-la`,
+    methodTitle: "Swazi in fason",
+    privacy: "Bann tiké a ou i reste privé. Nou i servi azot zis pou met azour out bidzé.",
+    foodHint: "Azout out courses otomatikman ou amain. Analiz otomatik-la lé surtout pou bann tiké manzé, pou konprann out labitid ek gagn bann konsey itil.",
+    loaded: "Zimaz la chargé. Vérifie bann zinformasyon.",
+    manualReady: "OCR lé pa disponib : ou pé ranpli tiké-la amain.",
+    store: "Magazin",
+    date: "Dat",
+    total: "Montan total",
+    category: "Katègori",
+    items: "Bann lartik",
+    addLine: "Azout in lign",
+    remove: "Suprim",
+    save: "Anrezistre course-la",
+    cancel: "Anilé",
+    empty: "Nana poin tiké anrezistré pou linstan.",
+    status: "Léta",
+    open: "Ouvrir",
+    deleteTicket: "Suprim tiké-la",
+    confirmDelete: "Suprim tiké-la ? Tranzaksyon liée-la i sera pa supprimé otomatikman.",
+    saved: "Course anrezistrée.",
+    deleted: "Tiké supprimé.",
+    error: "Analiz la pa marche. Ou pe reessaye ou ranpli amain.",
+    quotaReached: "Quota atteint. Ou pé kan même ranpli amain.",
+    expenseCreated: "Dépans créée",
+    noUser: "Utilisateur pa konekté.",
+  },
+}
+
+function getIsKreol(t) {
+  return String(t?.("nav", "dashboard") || "").toLowerCase().includes("tablo")
+}
+
+function emptyItem() {
+  return {
+    name: "",
+    quantity: 1,
+    unit_price: "",
+    total_price: "",
+    category: "alimentaire",
+    confidence_score: null,
+  }
+}
+
+function normalizeLabel(value = "") {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
+function isIsoDate(value = "") {
+  return /^\d{4}-\d{2}-\d{2}$/.test(String(value || ""))
+}
+
+function isBlockedReceiptItem(item = {}) {
+  const name = normalizeLabel(item.name)
+  const ocrName = normalizeLabel(item.ocr_name)
+  const raw = `${name} ${ocrName}`
+  const price = Number(item.total_price ?? item.unit_price ?? 0)
+
+  if (!name || price <= 0) return true
+  if (/produit.*verifier/.test(name)) return true
+  if (raw.includes("jeudi") || raw.includes("judith")) return true
+  if (raw.includes("mdd") && (raw.includes("alcool") || raw.includes("remise") || raw.includes("10"))) return true
+  if (raw.includes("prix promotion") || raw.includes("total") || raw.includes("carte bleue")) return true
+  if (raw.includes("duplicata") || raw.includes("operation") || raw.includes("bienvenue")) return true
+  if (raw.includes("ventilation") || raw.includes("tva") || raw.includes("ttc") || raw.includes(" ht ")) return true
+
+  return false
+}
+
+function getValidDraftItems(draft = {}) {
+  return (draft.items || []).filter(item => !isBlockedReceiptItem(item))
+}
+
+function getDraftValidationError(draft = {}) {
+  if (!String(draft.store_name || "").trim()) {
+    return "Magasin manquant. Verifiez le nom du magasin avant d'enregistrer."
+  }
+
+  if (!isIsoDate(draft.purchase_date)) {
+    return "Date du ticket manquante ou invalide. Verifiez la date avant d'enregistrer."
+  }
+
+  if (Number(draft.total_amount || 0) <= 0) {
+    return "Montant total manquant. Verifiez le total avant d'enregistrer."
+  }
+
+  const validItems = getValidDraftItems(draft)
+  if (validItems.length === 0) {
+    return "Aucun article fiable a enregistrer. Corrigez les articles marques a verifier."
+  }
+
+  const blockedCount = (draft.items || []).filter(isBlockedReceiptItem).length
+  if (blockedCount > 0) {
+    return `${blockedCount} article(s) doivent etre corriges ou supprimes avant enregistrement.`
+  }
+
+  return ""
+}
+
+function inputStyle() {
+  return {
+    width: "100%",
+    minHeight: 48,
+    border: `1px solid ${COLORS.border}`,
+    background: COLORS.cardLight,
+    borderRadius: 14,
+    color: COLORS.text,
+    padding: "11px 13px",
+    fontFamily: "inherit",
+    fontSize: 15,
+    outline: "none",
+  }
+}
+
+function cardStyle(extra = {}) {
+  return {
+    background: `linear-gradient(135deg, ${COLORS.card}, ${COLORS.cardLight})`,
+    border: `1px solid ${COLORS.border}`,
+    borderRadius: 22,
+    padding: 18,
+    ...extra,
+  }
+}
+
+export default function ReceiptsPage({
+  user,
+  t,
+  isMobile = false,
+  isPremium = false,
+  isPremiumPlus = false,
+  onAddTransaction,
+}) {
+  const isKreol = getIsKreol(t)
+  const txt = isKreol ? TEXT.kr : TEXT.fr
+  const quota = useReceiptQuota(user?.id, isPremium, isPremiumPlus)
+  const cameraRef = useRef(null)
+  const galleryRef = useRef(null)
+
+  const [mode, setMode] = useState("history")
+  const [draft, setDraft] = useState(null)
+  const [receipt, setReceipt] = useState(null)
+  const [receipts, setReceipts] = useState([])
+  const [detail, setDetail] = useState(null)
+  const [detailImageUrl, setDetailImageUrl] = useState("")
+  const [message, setMessage] = useState("")
+  const [scanError, setScanError] = useState(null)
+  const [busy, setBusy] = useState(false)
+  const [scanProgress, setScanProgress] = useState(null)
+  const [duplicateReceipt, setDuplicateReceipt] = useState(null)
+  const [allowDuplicateImport, setAllowDuplicateImport] = useState(false)
+  const [scanMetrics, setScanMetrics] = useState(null)
+  const [resumeDraft, setResumeDraft] = useState(null)
+  const [pendingImagePath, setPendingImagePath] = useState(null)
+
+  const globalCategory = draft?.items?.[0]?.category || "alimentaire"
+  const receiptRows = useMemo(() => receipts || [], [receipts])
+  const showMethodActions = mode === "history" || mode === "validate"
+
+  useEffect(() => {
+    refreshReceipts()
+  }, [user?.id])
+
+  useEffect(() => {
+    const lastScan = getLastScanDraft()
+    if (!lastScan?.receipt) return
+    setResumeDraft(lastScan.receipt)
+  }, [])
+
+  function resumeLastScan() {
+    if (!resumeDraft) return
+    setDraft({ ...resumeDraft, items: resumeDraft.items?.length ? resumeDraft.items : [emptyItem()] })
+    setResumeDraft(null)
+    setScanError(null)
+    setMode("validate")
+  }
+
+  function ignoreLastScan() {
+    clearLastScanDraft()
+    setResumeDraft(null)
+  }
+
+  async function refreshReceipts() {
+    if (!user?.id) return
+
+    try {
+      const rows = await listReceipts({ userId: user.id })
+      setReceipts(rows)
+    } catch (error) {
+      console.error("Erreur chargement tickets:", error)
+    }
+  }
+
+  async function handleFile(file) {
+    if (!file) return
+
+    if (!user?.id) {
+      setMessage(txt.noUser)
+      return
+    }
+
+    if (quota.reached) {
+      setMessage(txt.quotaReached)
+      startManual({ keepError: true })
+      return
+    }
+
+    setBusy(true)
+    setMessage("")
+    setScanError(null)
+
+    try {
+      setMode("analysis")
+      setScanProgress({ label: "Préparation...", progress: 5 })
+
+      const scan = await runSmartScan(file, {
+        onProgress: progress => setScanProgress(progress),
+      })
+
+      const { imagePath } = await uploadReceiptImage({ userId: user.id, file: scan.optimizedFile })
+      const parsed = scan.receipt
+      const duplicate = findDuplicateReceipt(parsed, receipts)
+
+      setReceipt(null)
+      setPendingImagePath(imagePath)
+      setScanMetrics(scan.metrics || null)
+      setDraft({ ...parsed, items: parsed.items.length ? parsed.items : [emptyItem()] })
+      setDuplicateReceipt(duplicate)
+      setAllowDuplicateImport(false)
+      setMode("validate")
+      setMessage(scan.ocr.status === "success" ? txt.loaded : txt.manualReady)
+    } catch (error) {
+      console.error("Erreur scanner ticket:", error)
+      const details = getScanErrorDetails(error)
+      setScanError(details)
+      setMessage(details.userMessage || txt.error)
+      try {
+        await createScanMetric({
+          userId: user.id,
+          metrics: { imageInitialBytes: file.size },
+          status: "error",
+          error: { code: details.code, message: details.technicalMessage },
+        })
+      } catch (metricError) {
+        console.warn("Metrique scanner indisponible:", metricError)
+      }
+      startManual({ keepError: true })
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  function startManual(options = {}) {
+    setReceipt(null)
+    setDraft({ ...createManualReceiptDraft(), items: [emptyItem()] })
+    setDuplicateReceipt(null)
+    setAllowDuplicateImport(false)
+    setScanProgress(null)
+    setScanMetrics(null)
+    setPendingImagePath(null)
+    if (!options.keepError) setScanError(null)
+    setMode("validate")
+  }
+
+  function updateItem(index, updates) {
+    setDraft(prev => ({
+      ...prev,
+      items: prev.items.map((item, itemIndex) => itemIndex === index ? { ...item, ...updates } : item),
+    }))
+  }
+
+  function removeItem(index) {
+    setDraft(prev => ({
+      ...prev,
+      items: prev.items.filter((_, itemIndex) => itemIndex !== index),
+    }))
+  }
+
+  async function handleSave() {
+    if (!user?.id || !draft) return
+    const validationError = getDraftValidationError(draft)
+    if (validationError) {
+      console.warn("[scanner] Validation bloquee", { reason: validationError, draft })
+      setMessage(validationError)
+      return
+    }
+    const validItems = getValidDraftItems(draft)
+
+    setBusy(true)
+
+    try {
+      console.info("[scanner] Articles valides", validItems.length)
+      const currentReceipt = receipt || await createReceipt({ userId: user.id, draft, imagePath: pendingImagePath })
+      const amount = Math.abs(Number(draft.total_amount || 0))
+      const transactionPayload = {
+        label: `Courses - ${draft.store_name}`,
+        category: globalCategory || "alimentaire",
+        amount: -amount,
+        date: draft.purchase_date || new Date().toISOString().split("T")[0],
+        icon: "🧾",
+        source: "receipt_scan",
+        receipt_id: currentReceipt.id,
+      }
+
+      const txResult = await onAddTransaction?.(transactionPayload)
+      if (txResult?.error) throw txResult.error
+
+      await validateReceipt({
+        receiptId: currentReceipt.id,
+        userId: user.id,
+        draft,
+        items: validItems,
+        transactionId: txResult?.data?.id,
+      })
+
+      await syncShoppingItemsFromReceipt({
+        userId: user.id,
+        transactionId: txResult?.data?.id,
+        receipt: {
+          id: currentReceipt.id,
+          store_name: draft.store_name,
+          purchase_date: draft.purchase_date,
+        },
+        items: validItems,
+      })
+
+      setMessage(txt.saved)
+      setDraft(null)
+      setReceipt(null)
+      setPendingImagePath(null)
+      setMode("history")
+      await refreshReceipts()
+      window.dispatchEvent(new CustomEvent("budgetkazpei:transactions-updated"))
+    } catch (error) {
+      console.error("[scanner] Enregistrement manuel ERREUR exacte", error)
+      setMessage(`Enregistrement impossible : ${error?.message || txt.error}`)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleSmartImport(options = {}) {
+    if (!user?.id || !draft) return
+    const validationError = getDraftValidationError(draft)
+    if (validationError) {
+      console.warn("[scanner] Validation bloquee", { reason: validationError, draft })
+      setMessage(validationError)
+      return
+    }
+    const validItems = getValidDraftItems(draft)
+
+    setBusy(true)
+    setScanError(null)
+
+    try {
+      const duplicate = duplicateReceipt || findDuplicateReceipt(draft, receipts)
+
+      if (duplicate && !allowDuplicateImport && !options.skipDuplicateCheck) {
+        setDuplicateReceipt(duplicate)
+        setMessage(isKreol ? "Sa course-la i semble déjà anrezistrée." : "Cette course semble déjà enregistrée.")
+        setBusy(false)
+        return
+      }
+
+      const currentReceipt = receipt || await createReceipt({ userId: user.id, draft, imagePath: pendingImagePath })
+      const importStartedAt = performance.now()
+      const importResult = await importValidatedReceipt({
+        userId: user.id,
+        receipt: currentReceipt,
+        draft,
+        items: validItems,
+        onAddTransaction,
+      })
+      const importDurationMs = Math.round(performance.now() - importStartedAt)
+
+      try {
+        const scanWasProcessed = draft.ocr_status !== "manual" || Boolean(scanMetrics?.provider)
+        if (scanWasProcessed) {
+          console.info("[scanner] Mise a jour scan_usage: START", { userId: user.id, plan: quota.plan })
+          await incrementScanUsage({
+            userId: user.id,
+            plan: quota.plan,
+            kind: "ai",
+          })
+          console.info("[scanner] Mise a jour scan_usage: OK")
+        }
+        console.info("[scanner] Creation scan_metrics: START", { receiptId: currentReceipt.id })
+        await createScanMetric({
+          userId: user.id,
+          receiptId: currentReceipt.id,
+          metrics: {
+            ...(scanMetrics || {}),
+            importDurationMs,
+            itemsDetected: validItems.length,
+            receiptItemsCreated: importResult?.receiptItemsCreated || 0,
+            shoppingItemsCreated: importResult?.shoppingItemsCreated || 0,
+            transactionCreated: importResult?.transactionCreated === true,
+            scanUsageIncremented: scanWasProcessed,
+            success: true,
+          },
+          status: "success",
+        })
+        console.info("[scanner] Creation scan_metrics: OK")
+      } catch (usageError) {
+        console.warn("[scanner] scan_usage ou scan_metrics ERREUR exacte:", usageError)
+      }
+
+      setMessage(txt.saved)
+      setDraft(null)
+      setReceipt(null)
+      setDuplicateReceipt(null)
+      setAllowDuplicateImport(false)
+      setScanMetrics(null)
+      setPendingImagePath(null)
+      setMode("history")
+      clearLastScanDraft()
+      await refreshReceipts()
+      window.dispatchEvent(new CustomEvent("budgetkazpei:transactions-updated"))
+    } catch (error) {
+      console.error("[scanner] Import intelligent ERREUR exacte", error)
+      const details = getScanErrorDetails(error)
+      setScanError(details)
+      setMessage(`Enregistrement impossible : ${error?.message || details.technicalMessage || txt.error}`)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function replaceDuplicateAndImport() {
+    if (!user?.id || !duplicateReceipt) return
+
+    setBusy(true)
+
+    try {
+      if (duplicateReceipt.transaction_id) {
+        await supabase
+          .from("shopping_items")
+          .delete()
+          .eq("user_id", user.id)
+          .eq("transaction_id", duplicateReceipt.transaction_id)
+
+        await supabase
+          .from("transactions")
+          .delete()
+          .eq("id", duplicateReceipt.transaction_id)
+          .eq("user_id", user.id)
+      }
+
+      await deleteReceipt({ receipt: duplicateReceipt, userId: user.id })
+      setReceipts(prev => prev.filter(row => row.id !== duplicateReceipt.id))
+      setDuplicateReceipt(null)
+      setAllowDuplicateImport(true)
+    } catch (error) {
+      console.error("Erreur remplacement course:", error)
+      setMessage(txt.error)
+      setBusy(false)
+      return
+    }
+
+    setBusy(false)
+    await handleSmartImport({ skipDuplicateCheck: true })
+  }
+
+  async function openDetail(row) {
+    setBusy(true)
+
+    try {
+      const data = await getReceiptDetail({ receiptId: row.id, userId: user.id })
+      setDetail(data)
+      setDetailImageUrl(await getReceiptImageUrl(data.image_path))
+      setMode("detail")
+    } catch (error) {
+      console.error("Erreur détail ticket:", error)
+      setMessage(txt.error)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleDelete() {
+    if (!detail || !window.confirm(txt.confirmDelete)) return
+
+    setBusy(true)
+
+    try {
+      await deleteReceipt({ receipt: detail, userId: user.id })
+      setDetail(null)
+      setDetailImageUrl("")
+      setMode("history")
+      setMessage(txt.deleted)
+      await refreshReceipts()
+    } catch (error) {
+      console.error("Erreur suppression ticket:", error)
+      setMessage(txt.error)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 18, paddingBottom: isMobile ? 24 : 0 }}>
+      <div style={cardStyle({ padding: isMobile ? 18 : 24 })}>
+        <div style={{ color: COLORS.cyan, fontSize: 13, fontWeight: 900, marginBottom: 7 }}>
+          {txt.scanTitle}
+        </div>
+        <h1 style={{ margin: 0, color: COLORS.text, fontFamily: "'DM Serif Display', serif", fontSize: isMobile ? 30 : 38 }}>
+          {txt.title}
+        </h1>
+        <p style={{ color: COLORS.muted, lineHeight: 1.55, margin: "10px 0 14px", fontSize: 14 }}>
+          {txt.privacy}
+        </p>
+        <p style={{ color: COLORS.cyan, lineHeight: 1.5, margin: "0 0 14px", fontSize: 13, fontWeight: 800 }}>
+          {txt.foodHint}
+        </p>
+        <div style={{ color: COLORS.yellow, fontSize: 13, fontWeight: 900 }}>
+          {quota.loading ? "" : `${txt.quota(quota)} - ${quota.planLabel}`}
+        </div>
+      </div>
+
+      {scanError && <ScanErrorMessage details={scanError} />}
+
+      {message && (
+        <div style={{
+          background: "rgba(35,211,214,.10)",
+          border: "1px solid rgba(35,211,214,.25)",
+          color: COLORS.text,
+          borderRadius: 16,
+          padding: "12px 14px",
+          fontSize: 13,
+          fontWeight: 800,
+        }}>
+          {message}
+        </div>
+      )}
+
+      {resumeDraft && (
+        <div style={cardStyle({
+          display: "grid",
+          gridTemplateColumns: isMobile ? "1fr" : "1fr auto auto",
+          alignItems: "center",
+          gap: 10,
+          padding: 14,
+        })}>
+          <div>
+            <div style={{ color: COLORS.text, fontWeight: 950 }}>
+              Scan en cours retrouve
+            </div>
+            <div style={{ color: COLORS.muted, fontSize: 13, marginTop: 3 }}>
+              Vous pouvez reprendre le dernier ticket detecte ou l'ignorer.
+            </div>
+          </div>
+          <button type="button" disabled={busy} onClick={resumeLastScan} style={{ minHeight: 42, borderRadius: 12, border: "none", background: COLORS.accent, color: "#fff", fontWeight: 950, padding: "0 14px" }}>
+            Reprendre
+          </button>
+          <button type="button" disabled={busy} onClick={ignoreLastScan} style={{ minHeight: 42, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "transparent", color: COLORS.text, fontWeight: 950, padding: "0 14px" }}>
+            Ignorer
+          </button>
+        </div>
+      )}
+
+      {showMethodActions && (
+        <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 950, marginBottom: -6 }}>
+          {txt.methodTitle}
+        </div>
+      )}
+
+      <div style={{ display: showMethodActions ? "grid" : "none", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 12 }}>
+        <ActionButton label={txt.camera} icon="📷" disabled={busy} onClick={() => cameraRef.current?.click()} />
+        <ActionButton label={txt.gallery} icon="🖼️" disabled={busy} onClick={() => galleryRef.current?.click()} />
+        <ActionButton label={txt.manual} icon="✍️" disabled={busy} onClick={startManual} muted />
+      </div>
+
+      <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={event => handleFile(event.target.files?.[0])} />
+      <input ref={galleryRef} type="file" accept="image/*" hidden onChange={event => handleFile(event.target.files?.[0])} />
+
+      {mode === "analysis" && (
+        <AnalysisScreen progress={scanProgress} txt={txt} />
+      )}
+
+      {mode === "validate" && draft && (
+        <ValidationForm
+          txt={txt}
+          draft={draft}
+          busy={busy}
+          duplicateReceipt={duplicateReceipt}
+          allowDuplicateImport={allowDuplicateImport}
+          setAllowDuplicateImport={setAllowDuplicateImport}
+          setDraft={setDraft}
+          updateItem={updateItem}
+          removeItem={removeItem}
+          onSave={handleSmartImport}
+          onOpenDuplicate={() => duplicateReceipt && openDetail(duplicateReceipt)}
+          onReplaceDuplicate={replaceDuplicateAndImport}
+          onCancel={() => setMode("history")}
+        />
+      )}
+
+      {mode === "history" && (
+        <HistoryList
+          txt={txt}
+          rows={receiptRows}
+          busy={busy}
+          onOpen={openDetail}
+        />
+      )}
+
+      {mode === "detail" && detail && (
+        <ReceiptDetail
+          txt={txt}
+          receipt={detail}
+          imageUrl={detailImageUrl}
+          busy={busy}
+          onBack={() => setMode("history")}
+          onDelete={handleDelete}
+        />
+      )}
+    </div>
+  )
+}
+
+function ScanErrorMessage({ details }) {
+  return (
+    <div style={{
+      background: "rgba(239,68,68,.12)",
+      border: "1px solid rgba(239,68,68,.35)",
+      color: COLORS.text,
+      borderRadius: 16,
+      padding: 14,
+      fontSize: 13,
+      lineHeight: 1.5,
+    }}>
+      <strong>{details.title}</strong>
+      <div>Cause probable : {details.userMessage}</div>
+      <div>Action : {details.action}</div>
+      <div style={{ color: COLORS.muted, marginTop: 4 }}>Code : {details.code}</div>
+    </div>
+  )
+}
+
+function ActionButton({ label, icon, onClick, disabled, muted }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        minHeight: 58,
+        border: muted ? `1px solid ${COLORS.border}` : "none",
+        borderRadius: 16,
+        background: muted ? "rgba(255,255,255,.06)" : COLORS.accent,
+        color: muted ? COLORS.text : "#fff",
+        fontWeight: 950,
+        cursor: disabled ? "wait" : "pointer",
+        fontFamily: "inherit",
+        fontSize: 15,
+      }}
+    >
+      {icon} {label}
+    </button>
+  )
+}
+
+function AnalysisScreen({ progress, txt }) {
+  const value = progress?.progress || 8
+  const steps = [
+    ["optimizing", "Optimisation de l'image"],
+    ["reading", "Lecture du ticket"],
+    ["store", "Detection du magasin"],
+    ["products", "Extraction des articles"],
+    ["total", "Verification du total"],
+  ]
+  const currentIndex = Math.max(0, steps.findIndex(([step]) => step === progress?.step))
+
+  return (
+    <div style={{
+      minHeight: "62vh",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    }}>
+      <div style={cardStyle({ width: "100%", maxWidth: 520, textAlign: "center", padding: 28 })}>
+        <div style={{ color: COLORS.cyan, fontSize: 13, fontWeight: 950, marginBottom: 10 }}>
+          {txt.scanTitle}
+        </div>
+        <h2 style={{ color: COLORS.text, margin: "0 0 18px", fontSize: 28 }}>
+          Analyse du ticket
+        </h2>
+        <div style={{ height: 12, borderRadius: 999, background: "rgba(255,255,255,.10)", overflow: "hidden", border: "1px solid rgba(255,255,255,.08)" }}>
+          <div style={{
+            width: `${value}%`,
+            height: "100%",
+            borderRadius: 999,
+            background: `linear-gradient(90deg, ${COLORS.accent}, ${COLORS.cyan})`,
+            transition: "width .35s ease",
+          }} />
+        </div>
+        <div style={{ color: COLORS.text, fontWeight: 950, marginTop: 18 }}>
+          {progress?.label || "Lecture..."}
+        </div>
+        <div style={{ display: "grid", gap: 8, marginTop: 16, textAlign: "left" }}>
+          {steps.map(([step, label], index) => {
+            const done = value >= 100 || index < currentIndex
+            const active = step === progress?.step
+            return (
+              <div key={step} style={{ color: done ? COLORS.green : active ? COLORS.cyan : COLORS.muted, fontSize: 13, fontWeight: 900 }}>
+                {done ? "OK" : active ? "..." : "--"} {label}
+              </div>
+            )
+          })}
+        </div>
+        <div style={{ color: COLORS.muted, fontSize: 13, marginTop: 8, lineHeight: 1.5 }}>
+          Optimisation, OCR, magasin, produits, total et vérification.
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ValidationForm({
+  txt,
+  draft,
+  busy,
+  duplicateReceipt,
+  allowDuplicateImport,
+  setAllowDuplicateImport,
+  setDraft,
+  updateItem,
+  removeItem,
+  onSave,
+  onOpenDuplicate,
+  onReplaceDuplicate,
+  onCancel,
+}) {
+  const validationError = getDraftValidationError(draft)
+
+  return (
+    <div style={cardStyle()}>
+      <div style={{ color: COLORS.text, fontSize: 20, fontWeight: 950, marginBottom: 14 }}>
+        {txt.scanTitle}
+      </div>
+
+      {duplicateReceipt && !allowDuplicateImport && (
+        <div style={{
+          background: "rgba(252,211,77,.12)",
+          border: "1px solid rgba(252,211,77,.35)",
+          borderRadius: 16,
+          padding: 13,
+          marginBottom: 14,
+          color: COLORS.text,
+          fontSize: 13,
+          lineHeight: 1.45,
+        }}>
+          <strong>Cette course semble déjà enregistrée.</strong>
+          <div style={{ color: COLORS.muted, marginTop: 4 }}>
+            {duplicateReceipt.store_name} · {duplicateReceipt.purchase_date} · {formatMontant(Number(duplicateReceipt.total_amount || 0))}
+            {" · "}{duplicateReceipt.receipt_items?.length || 0} article(s)
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 8, marginTop: 10 }}>
+            <button type="button" onClick={onOpenDuplicate} style={{ minHeight: 44, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "rgba(255,255,255,.06)", color: COLORS.text, fontWeight: 950 }}>
+              Voir la course
+            </button>
+            <button type="button" onClick={onReplaceDuplicate} disabled={busy} style={{ minHeight: 44, borderRadius: 12, border: "none", background: COLORS.accent, color: "#fff", fontWeight: 950 }}>
+              Remplacer
+            </button>
+            <button type="button" onClick={() => setAllowDuplicateImport(true)} style={{ minHeight: 44, borderRadius: 12, border: "none", background: COLORS.yellow, color: "#0A1628", fontWeight: 950 }}>
+              Enregistrer quand même
+            </button>
+            <button type="button" onClick={onCancel} style={{ minHeight: 44, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "transparent", color: COLORS.text, fontWeight: 950 }}>
+              Annuler
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: "grid", gap: 12 }}>
+        <Field label={txt.store}>
+          <input style={inputStyle()} value={draft.store_name || ""} onChange={e => setDraft(prev => ({ ...prev, store_name: e.target.value }))} />
+        </Field>
+        <Field label={txt.date}>
+          <input style={inputStyle()} type="date" value={draft.purchase_date || ""} onChange={e => setDraft(prev => ({ ...prev, purchase_date: e.target.value }))} />
+        </Field>
+        <Field label={txt.total}>
+          <input style={inputStyle()} type="number" min="0" step="0.01" value={draft.total_amount || ""} onChange={e => setDraft(prev => ({ ...prev, total_amount: e.target.value }))} />
+        </Field>
+      </div>
+
+      <div style={{ color: COLORS.text, fontWeight: 950, margin: "18px 0 10px" }}>
+        {txt.items}
+      </div>
+
+      {validationError && (
+        <div style={{
+          background: "rgba(252,211,77,.12)",
+          border: "1px solid rgba(252,211,77,.35)",
+          borderRadius: 14,
+          color: COLORS.yellow,
+          padding: "11px 13px",
+          fontSize: 13,
+          fontWeight: 900,
+          marginBottom: 12,
+        }}>
+          {validationError}
+        </div>
+      )}
+
+      <div style={{ display: "grid", gap: 12 }}>
+        {(draft.items || []).map((item, index) => (
+          <div key={index} style={{ background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.09)", borderRadius: 16, padding: 12 }}>
+            <div style={{ display: "grid", gap: 10 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 10, color: COLORS.muted, fontSize: 12, fontWeight: 900 }}>
+                <span>{getConfidenceIcon(item.confidence_score || 0)} Confiance OCR</span>
+                <span style={{ color: getConfidenceColor(item.confidence_score || 0) }}>
+                  {Math.round(item.confidence_score || 0)} %
+                </span>
+              </div>
+              {item.ocr_name && item.ocr_name !== item.name && (
+                <div style={{ color: COLORS.muted, fontSize: 12, lineHeight: 1.4 }}>
+                  Texte OCR : {item.ocr_name}
+                </div>
+              )}
+              {(item.name === "Produit à vérifier" || Number(item.confidence_score || 0) < 70) && (
+                <div style={{ color: COLORS.yellow, fontSize: 12, fontWeight: 900 }}>
+                  Produit à vérifier avant enregistrement.
+                </div>
+              )}
+              <input
+                style={inputStyle()}
+                placeholder={txt.items}
+                value={item.name}
+                onChange={e => updateItem(index, { name: e.target.value, corrected_name: e.target.value, normalized_name: "" })}
+              />
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <input style={inputStyle()} type="number" min="0" step="0.01" value={item.quantity} onChange={e => updateItem(index, { quantity: e.target.value })} />
+                <input style={inputStyle()} type="number" min="0" step="0.01" value={item.total_price ?? ""} onChange={e => updateItem(index, { total_price: e.target.value })} />
+              </div>
+              {(item.department || item.subcategory || item.promotion) && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {item.department && <MetaChip label={`Rayon : ${item.department}`} />}
+                  {item.subcategory && <MetaChip label={`Sous-catégorie : ${item.subcategory}`} />}
+                  {item.promotion && <MetaChip label="Promotion détectée" strong />}
+                </div>
+              )}
+              <select style={inputStyle()} value={item.category || "alimentaire"} onChange={e => updateItem(index, { category: e.target.value })}>
+                {CATEGORIES.map(category => (
+                  <option key={category.id} value={category.id}>{category.emoji} {category.id}</option>
+                ))}
+              </select>
+              <button type="button" onClick={() => removeItem(index)} style={{ minHeight: 48, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "transparent", color: COLORS.muted, fontWeight: 900 }}>
+                {txt.remove}
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <button type="button" onClick={() => setDraft(prev => ({ ...prev, items: [...(prev.items || []), emptyItem()] }))} style={{ marginTop: 12, minHeight: 48, borderRadius: 14, border: `1px solid ${COLORS.cyan}55`, background: "rgba(35,211,214,.10)", color: COLORS.cyan, fontWeight: 950 }}>
+        {txt.addLine}
+      </button>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 10, marginTop: 18 }}>
+        <ActionButton label={txt.cancel} icon="" onClick={onCancel} disabled={busy} muted />
+        <ActionButton label={txt.save} icon="✅" onClick={onSave} disabled={busy || Boolean(validationError)} />
+      </div>
+    </div>
+  )
+}
+
+function Field({ label, children }) {
+  return (
+    <label style={{ display: "grid", gap: 6, color: COLORS.muted, fontSize: 13, fontWeight: 800 }}>
+      {label}
+      {children}
+    </label>
+  )
+}
+
+function MetaChip({ label, strong = false }) {
+  return (
+    <span style={{
+      border: `1px solid ${strong ? COLORS.yellow : COLORS.border}`,
+      background: strong ? "rgba(252,211,77,.13)" : "rgba(255,255,255,.06)",
+      color: strong ? COLORS.yellow : COLORS.muted,
+      borderRadius: 999,
+      padding: "5px 8px",
+      fontSize: 11,
+      fontWeight: 900,
+      lineHeight: 1.2,
+    }}>
+      {label}
+    </span>
+  )
+}
+
+function HistoryList({ txt, rows, busy, onOpen }) {
+  return (
+    <div style={cardStyle()}>
+      {rows.length === 0 ? (
+        <div style={{ color: COLORS.muted, fontSize: 14 }}>{txt.empty}</div>
+      ) : (
+        <div style={{ display: "grid", gap: 10 }}>
+          {rows.map(row => (
+            <button key={row.id} type="button" disabled={busy} onClick={() => onOpen(row)} style={{
+              minHeight: 74,
+              border: "1px solid rgba(255,255,255,.09)",
+              borderRadius: 16,
+              background: "rgba(255,255,255,.05)",
+              color: COLORS.text,
+              padding: 12,
+              display: "grid",
+              gridTemplateColumns: "1fr auto",
+              gap: 12,
+              textAlign: "left",
+              fontFamily: "inherit",
+              cursor: "pointer",
+            }}>
+              <span>
+                <strong>{row.store_name || txt.scanTitle}</strong>
+                <span style={{ display: "block", color: COLORS.muted, fontSize: 12, marginTop: 4 }}>
+                  {row.purchase_date || ""} · {txt.status} : {row.validation_status || "draft"} · {(row.receipt_items || []).length} article(s)
+                </span>
+              </span>
+              <strong style={{ color: COLORS.accent }}>{formatMontant(Number(row.total_amount || 0))}</strong>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ReceiptDetail({ txt, receipt, imageUrl, busy, onBack, onDelete }) {
+  return (
+    <div style={cardStyle()}>
+      <button type="button" onClick={onBack} style={{ minHeight: 44, background: "transparent", border: "none", color: COLORS.cyan, fontWeight: 900, cursor: "pointer" }}>
+        ← {txt.title}
+      </button>
+      <h2 style={{ color: COLORS.text, margin: "10px 0 6px" }}>{receipt.store_name || txt.scanTitle}</h2>
+      <div style={{ color: COLORS.muted, fontSize: 13 }}>{receipt.purchase_date} · {formatMontant(Number(receipt.total_amount || 0))}</div>
+      {imageUrl && <img src={imageUrl} alt="" style={{ width: "100%", borderRadius: 16, marginTop: 14, border: "1px solid rgba(255,255,255,.12)" }} />}
+      <div style={{ display: "grid", gap: 8, marginTop: 14 }}>
+        {(receipt.receipt_items || []).map(item => (
+          <div key={item.id} style={{ display: "flex", justifyContent: "space-between", gap: 10, color: COLORS.text, borderBottom: "1px solid rgba(255,255,255,.08)", paddingBottom: 8 }}>
+            <span>{item.name}</span>
+            <strong>{formatMontant(Number(item.total_price || 0))}</strong>
+          </div>
+        ))}
+      </div>
+      <button type="button" disabled={busy} onClick={onDelete} style={{ marginTop: 18, minHeight: 48, borderRadius: 14, border: "none", background: COLORS.red, color: "#fff", fontWeight: 950, width: "100%" }}>
+        {txt.deleteTicket}
+      </button>
+    </div>
+  )
+}

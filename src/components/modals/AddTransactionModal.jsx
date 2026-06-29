@@ -12,7 +12,7 @@ const COLORS = {
   green: "#22C55E",
 };
 
-export default function AddTransactionModal({ onAdd, onClose, t }) {
+export default function AddTransactionModal({ onAdd, onClose, onOpenReceipts, t }) {
   const [form, setForm] = useState({
     label: "",
     category: "alimentaire",
@@ -94,6 +94,28 @@ export default function AddTransactionModal({ onAdd, onClose, t }) {
         >
           ➕ {tx("transactions", "addTitle", "Nouvelle transaction")}
         </h3>
+
+        {onOpenReceipts && (
+          <button
+            type="button"
+            onClick={onOpenReceipts}
+            style={{
+              width: "100%",
+              minHeight: 52,
+              marginBottom: 14,
+              border: "none",
+              borderRadius: 14,
+              background: "linear-gradient(135deg, #F97316, #FB923C)",
+              color: "#fff",
+              cursor: "pointer",
+              fontFamily: "inherit",
+              fontSize: 15,
+              fontWeight: 900,
+            }}
+          >
+            🧾 {tx("receipts", "scanCta", "Scanner un ticket")}
+          </button>
+        )}
 
         <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
           <button
