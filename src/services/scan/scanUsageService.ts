@@ -108,6 +108,10 @@ export async function createScanMetric({
     input_tokens: Number(metrics.inputTokens || 0),
     output_tokens: Number(metrics.outputTokens || 0),
     estimated_cost_eur: Number(metrics.estimatedCostEur || 0),
+    scan_level_used: Number(metrics.scanLevelUsed || 1),
+    confidence_score: Number(metrics.confidenceScore || 0),
+    escalation_reason: metrics.escalationReason || null,
+    scan_status: metrics.scanStatus || (status === "success" ? "success" : "failed"),
     items_detected: Number(metrics.itemsDetected || 0),
     receipt_items_created: Number(metrics.receiptItemsCreated || 0),
     shopping_items_created: Number(metrics.shoppingItemsCreated || 0),
@@ -119,12 +123,28 @@ export async function createScanMetric({
     error_message: error?.message || null,
   }
 
-  const { data, error: insertError } = await supabase
+  let { data, error: insertError } = await supabase
     .from("scan_metrics")
     .insert(row)
     .select()
     .single()
 
+  if (insertError && isMissingColumnError(insertError)) {
+    const { scan_level_used, confidence_score, escalation_reason, scan_status, ...legacyRow } = row
+    const retry = await supabase
+      .from("scan_metrics")
+      .insert(legacyRow)
+      .select()
+      .single()
+    data = retry.data
+    insertError = retry.error
+  }
+
   if (insertError) throw insertError
   return data
+}
+
+function isMissingColumnError(error: any) {
+  const message = String(error?.message || error?.details || "")
+  return error?.code === "PGRST204" || message.includes("Could not find") || message.includes("column")
 }

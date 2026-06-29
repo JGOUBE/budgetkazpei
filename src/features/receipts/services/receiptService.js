@@ -55,22 +55,61 @@ export async function createReceipt({ userId, draft, imagePath }) {
     date: draft.purchase_date,
     total: draft.total_amount,
   })
-  const { data, error } = await supabase
+  const payload = {
+    user_id: userId,
+    store_name: draft.store_name || "Enseigne non reconnue",
+    merchant_name: draft.merchant_name || draft.store_name || "Enseigne non reconnue",
+    merchant_confidence: Number(draft.merchant_confidence || (draft.store_name ? 90 : 0)),
+    purchase_date: draft.purchase_date || new Date().toISOString().split("T")[0],
+    date_status: draft.date_status || (draft.purchase_date ? "detected" : "estimated"),
+    total_amount: Number(draft.total_amount || 0),
+    currency: "EUR",
+    image_path: imagePath || null,
+    ocr_text: draft.ocr_text || "",
+    ocr_status: draft.ocr_status || "manual",
+    ai_used: Boolean(draft.ai_used),
+    validation_status: "draft",
+    ticket_type: draft.ticket_type || "other",
+    budget_category: draft.budget_category || "divers",
+    is_food_ticket: Boolean(draft.is_food_ticket),
+    scan_level_used: Number(draft.scan_level_used || 1),
+    scan_duration_ms: Number(draft.scan_duration_ms || 0),
+    confidence_score: Number(draft.confidence_score || 0),
+    escalation_reason: draft.escalation_reason || null,
+    scan_status: draft.scan_status || "success",
+  }
+
+  let { data, error } = await supabase
     .from("receipts")
-    .insert({
-      user_id: userId,
-      store_name: draft.store_name || null,
-      purchase_date: draft.purchase_date || new Date().toISOString().split("T")[0],
-      total_amount: Number(draft.total_amount || 0),
-      currency: "EUR",
-      image_path: imagePath || null,
-      ocr_text: draft.ocr_text || "",
-      ocr_status: draft.ocr_status || "manual",
-      ai_used: Boolean(draft.ai_used),
-      validation_status: "draft",
-    })
+    .insert(payload)
     .select()
     .single()
+
+  if (error && isMissingColumnError(error)) {
+    const {
+      merchant_name,
+      merchant_confidence,
+      date_status,
+      ticket_type,
+      budget_category,
+      is_food_ticket,
+      scan_level_used,
+      scan_duration_ms,
+      confidence_score,
+      escalation_reason,
+      scan_status,
+      ...legacyPayload
+    } = payload
+
+    const retry = await supabase
+      .from("receipts")
+      .insert(legacyPayload)
+      .select()
+      .single()
+
+    data = retry.data
+    error = retry.error
+  }
 
   if (error) {
     console.error("[scanner] Creation receipt: ERREUR", error)
@@ -107,6 +146,8 @@ export async function saveReceiptItems({ receiptId, userId, items }) {
       department: item.department || null,
       ticket_section: item.ticket_section || null,
       promotion: Boolean(item.promotion),
+      item_status: item.item_status || (normalizeProductLabel(item.name).includes("produit verifier") ? "a_verifier" : "detected"),
+      line_type: item.line_type || "product",
       confidence_score: item.confidence_score == null ? null : Number(item.confidence_score),
     }))
 
@@ -156,21 +197,62 @@ function isMissingColumnError(error) {
 
 export async function validateReceipt({ receiptId, userId, draft, items, transactionId }) {
   console.info("[scanner] Validation receipt: START", { receiptId, transactionId })
-  const { data, error } = await supabase
+  const payload = {
+    store_name: draft.store_name || "Enseigne non reconnue",
+    merchant_name: draft.merchant_name || draft.store_name || "Enseigne non reconnue",
+    merchant_confidence: Number(draft.merchant_confidence || (draft.store_name ? 90 : 0)),
+    purchase_date: draft.purchase_date || new Date().toISOString().split("T")[0],
+    date_status: draft.date_status || (draft.purchase_date ? "detected" : "estimated"),
+    total_amount: Number(draft.total_amount || 0),
+    validation_status: "validated",
+    ocr_status: draft.ocr_status || "manual",
+    ticket_type: draft.ticket_type || "other",
+    budget_category: draft.budget_category || "divers",
+    is_food_ticket: Boolean(draft.is_food_ticket),
+    scan_level_used: Number(draft.scan_level_used || 1),
+    scan_duration_ms: Number(draft.scan_duration_ms || 0),
+    confidence_score: Number(draft.confidence_score || 0),
+    escalation_reason: draft.escalation_reason || null,
+    scan_status: draft.scan_status || "success",
+    transaction_id: transactionId || null,
+    updated_at: new Date().toISOString(),
+  }
+
+  let { data, error } = await supabase
     .from("receipts")
-    .update({
-      store_name: draft.store_name || null,
-      purchase_date: draft.purchase_date || new Date().toISOString().split("T")[0],
-      total_amount: Number(draft.total_amount || 0),
-      validation_status: "validated",
-      ocr_status: draft.ocr_status || "manual",
-      transaction_id: transactionId || null,
-      updated_at: new Date().toISOString(),
-    })
+    .update(payload)
     .eq("id", receiptId)
     .eq("user_id", userId)
     .select()
     .single()
+
+  if (error && isMissingColumnError(error)) {
+    const {
+      merchant_name,
+      merchant_confidence,
+      date_status,
+      ticket_type,
+      budget_category,
+      is_food_ticket,
+      scan_level_used,
+      scan_duration_ms,
+      confidence_score,
+      escalation_reason,
+      scan_status,
+      ...legacyPayload
+    } = payload
+
+    const retry = await supabase
+      .from("receipts")
+      .update(legacyPayload)
+      .eq("id", receiptId)
+      .eq("user_id", userId)
+      .select()
+      .single()
+
+    data = retry.data
+    error = retry.error
+  }
 
   if (error) {
     console.error("[scanner] Validation receipt: ERREUR", error)
@@ -179,6 +261,89 @@ export async function validateReceipt({ receiptId, userId, draft, items, transac
   await saveReceiptItems({ receiptId, userId, items })
   console.info("[scanner] Validation receipt: OK", data)
   return data
+}
+
+export async function updateReceipt({ receiptId, userId, updates }) {
+  const cleanUpdates = {
+    ...updates,
+    updated_at: new Date().toISOString(),
+  }
+
+  let { data, error } = await supabase
+    .from("receipts")
+    .update(cleanUpdates)
+    .eq("id", receiptId)
+    .eq("user_id", userId)
+    .select()
+    .single()
+
+  if (error && isMissingColumnError(error)) {
+    const {
+      merchant_name,
+      merchant_confidence,
+      date_status,
+      ticket_type,
+      budget_category,
+      is_food_ticket,
+      scan_level_used,
+      scan_duration_ms,
+      confidence_score,
+      escalation_reason,
+      scan_status,
+      ...legacyUpdates
+    } = cleanUpdates
+
+    const retry = await supabase
+      .from("receipts")
+      .update(legacyUpdates)
+      .eq("id", receiptId)
+      .eq("user_id", userId)
+      .select()
+      .single()
+
+    data = retry.data
+    error = retry.error
+  }
+
+  if (error) throw error
+  return data
+}
+
+export async function updateReceiptItem({ itemId, userId, updates }) {
+  let { data, error } = await supabase
+    .from("receipt_items")
+    .update(updates)
+    .eq("id", itemId)
+    .eq("user_id", userId)
+    .select()
+    .single()
+
+  if (error && isMissingColumnError(error)) {
+    const { item_status, line_type, ...legacyUpdates } = updates
+    const retry = await supabase
+      .from("receipt_items")
+      .update(legacyUpdates)
+      .eq("id", itemId)
+      .eq("user_id", userId)
+      .select()
+      .single()
+
+    data = retry.data
+    error = retry.error
+  }
+
+  if (error) throw error
+  return data
+}
+
+export async function deleteReceiptItem({ itemId, userId }) {
+  const { error } = await supabase
+    .from("receipt_items")
+    .delete()
+    .eq("id", itemId)
+    .eq("user_id", userId)
+
+  if (error) throw error
 }
 
 export async function listReceipts({ userId }) {

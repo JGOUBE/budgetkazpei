@@ -1,3 +1,5 @@
+import { classifyReceipt } from "./receiptClassifier"
+
 const STORES = [
   "Leader Price",
   "Leclerc",
@@ -80,13 +82,24 @@ export type ParsedReceiptItem = {
 
 export type ParsedReceipt = {
   store_name: string
+  merchant_name: string
+  merchant_confidence: number
   purchase_date: string
+  date_status: "detected" | "estimated"
   total_amount: number
   currency: "EUR"
   ocr_text: string
   ocr_status: "success" | "failed" | "manual"
   ai_used: boolean
   validation_status: "draft"
+  ticket_type: string
+  budget_category: string
+  is_food_ticket: boolean
+  confidence_score: number
+  scan_level_used?: number
+  scan_duration_ms?: number
+  escalation_reason?: string
+  scan_status?: "success" | "partial" | "failed"
   items: ParsedReceiptItem[]
   warnings: string[]
 }
@@ -99,9 +112,9 @@ function normalize(value = "") {
 }
 
 function money(value = "") {
-  const match = String(value).match(/(\d+[,.]\d{2})/)
+  const match = String(value).match(/(\d+(?:\s?\d{3})*[,.]\d{2})/)
   if (!match) return null
-  return Number(match[1].replace(",", "."))
+  return Number(match[1].replace(/\s/g, "").replace(",", "."))
 }
 
 function lastMoney(value = "") {
@@ -160,16 +173,29 @@ export function normalizeReceiptDate(value = "") {
   return `${year}-${month}-${day}`
 }
 
-function detectTotal(lines: string[]) {
+export function extractReceiptTotal(text = "") {
+  const lines = String(text || "")
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean)
+
+  const totalPatterns = [
+    /\b(total|total\s+ttc|net\s+a\s+payer|a\s+payer|montant)\b/i,
+    /\b(carte\s+bleue|cb|visa|mastercard)\b/i,
+  ]
+
   const totalLine = [...lines].reverse().find(line => {
     const clean = normalize(line)
-    return clean.startsWith("total") || clean.includes("net a payer") || clean.includes("a payer")
+    return totalPatterns.some(pattern => pattern.test(clean))
   })
 
   if (totalLine) return money(totalLine) || 0
 
-  const amounts = lines.map(line => money(line)).filter((value): value is number => Number.isFinite(value))
-  return amounts.length ? Math.max(...amounts) : 0
+  return 0
+}
+
+function detectTotal(lines: string[]) {
+  return extractReceiptTotal(lines.join("\n"))
 }
 
 function categoryFor(name = "") {
@@ -572,21 +598,31 @@ export function parseReceipt({ text = "", ocrStatus = "manual", ocrConfidence = 
   const store = detectStore(text)
   const items = parseItems(lines, ocrConfidence)
   const total = detectTotal(lines)
+  const purchaseDate = detectDate(text)
+  const classification = classifyReceipt({ store_name: store, ocr_text: text, items })
   const warnings = []
 
   if (!store) warnings.push("store_missing")
   if (!total) warnings.push("total_missing")
   if (items.length === 0) warnings.push("items_missing")
+  if (!purchaseDate) warnings.push("date_estimated")
 
   return {
-    store_name: store,
-    purchase_date: detectDate(text),
+    store_name: store || "Enseigne non reconnue",
+    merchant_name: store || "Enseigne non reconnue",
+    merchant_confidence: store ? 90 : 0,
+    purchase_date: purchaseDate || new Date().toISOString().slice(0, 10),
+    date_status: purchaseDate ? "detected" : "estimated",
     total_amount: total,
     currency: "EUR",
     ocr_text: text,
     ocr_status: ocrStatus as ParsedReceipt["ocr_status"],
     ai_used: false,
     validation_status: "draft",
+    ticket_type: classification.ticket_type,
+    budget_category: classification.budget_category,
+    is_food_ticket: classification.is_food_ticket,
+    confidence_score: Math.max(0, Math.min(100, Math.round(((ocrConfidence || 0) + (total ? 20 : 0) + (items.length ? 10 : 0) + (store ? 10 : 0)) / 1.4))),
     items,
     warnings,
   }

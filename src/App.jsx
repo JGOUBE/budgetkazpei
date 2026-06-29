@@ -715,6 +715,8 @@ function BudgetKazPeiApp({ initialAuthPage = "login" }) {
             isPremium={isPremium}
             isPremiumPlus={isPremiumPlus}
             onAddTransaction={addTransaction}
+            onOpenReceipts={() => setActiveNav("receipts")}
+            onOpenShoppingList={() => setActiveNav("shoppingList")}
           />
         )}
 
@@ -756,6 +758,7 @@ function BudgetKazPeiApp({ initialAuthPage = "login" }) {
           <ShoppingListPage
             user={user}
             isMobile={isMobile}
+            onOpenReceipts={() => setActiveNav("receipts")}
           />
         )}
 

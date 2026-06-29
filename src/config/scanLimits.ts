@@ -1,9 +1,9 @@
 export type ScanPlan = "free" | "premium" | "premium_plus"
 
 export const SCAN_LIMITS: Record<ScanPlan, number> = {
-  free: 10,
-  premium: 30,
-  premium_plus: 100,
+  free: 1,
+  premium: 10,
+  premium_plus: 50,
 }
 
 export function getScanPlan(isPremium = false, isPremiumPlus = false): ScanPlan {
@@ -13,7 +13,7 @@ export function getScanPlan(isPremium = false, isPremiumPlus = false): ScanPlan 
 }
 
 export function getScanPlanLabel(plan: ScanPlan) {
-  if (plan === "premium_plus") return "Premium+"
+  if (plan === "premium_plus") return "Premium+ - scans IA illimités"
   if (plan === "premium") return "Premium"
   return "Gratuit"
 }

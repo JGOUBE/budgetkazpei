@@ -10,6 +10,7 @@ alter table public.receipts add column if not exists scan_level_used integer def
 alter table public.receipts add column if not exists scan_duration_ms integer default 0;
 alter table public.receipts add column if not exists confidence_score numeric(5,2) default 0;
 alter table public.receipts add column if not exists escalation_reason text;
+alter table public.receipts add column if not exists scan_status text default 'success';
 
 alter table public.receipt_items add column if not exists item_status text default 'detected';
 alter table public.receipt_items add column if not exists line_type text default 'product';
@@ -17,6 +18,7 @@ alter table public.receipt_items add column if not exists line_type text default
 alter table public.scan_metrics add column if not exists scan_level_used integer;
 alter table public.scan_metrics add column if not exists confidence_score numeric(5,2);
 alter table public.scan_metrics add column if not exists escalation_reason text;
+alter table public.scan_metrics add column if not exists scan_status text;
 
 create table if not exists public.product_dictionary (
   id uuid primary key default gen_random_uuid(),

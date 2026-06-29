@@ -1,7 +1,8 @@
 import { supabase } from "../supabase"
+import { extractReceiptTotal } from "./receiptParser"
 import { ScanError } from "./scanErrors"
 
-const OCR_TIMEOUT_MS = 45000
+const OCR_TIMEOUT_MS = 10000
 
 export type OCRResult = {
   text: string
@@ -148,9 +149,13 @@ export class HybridOCRProvider implements OCRProvider {
 
   async extractText(file: File): Promise<OCRResult> {
     const browser = await new BrowserTextDetectorProvider().extractText(file)
-    if (browser.status === "success" && browser.text.trim()) {
+    const browserTotal = extractReceiptTotal(browser.text)
+
+    if (browser.status === "success" && browser.text.trim() && browserTotal > 0) {
+      console.info("[scanner] Total rapide detecte avant IA", { total: browserTotal, provider: browser.provider })
       return {
         ...browser,
+        provider: "browser-text-detector-fast-total",
         metrics: {
           ...(browser.metrics || {}),
           provider: browser.provider,
@@ -159,11 +164,38 @@ export class HybridOCRProvider implements OCRProvider {
           textAiUsed: false,
           visionUsed: false,
           fallbackUsed: false,
+          scanStatus: "partial",
+          fastTotalDetected: browserTotal,
         },
       }
     }
 
-    const fallback = await new SupabaseReceiptOCRProvider().extractText(file)
+    let fallback: OCRResult
+    try {
+      fallback = await new SupabaseReceiptOCRProvider().extractText(file)
+    } catch (error) {
+      if (browser.status === "success" && browser.text.trim() && browserTotal > 0) {
+        console.warn("[scanner] Timeout IA ignore, ticket conserve avec OCR rapide", error)
+        return {
+          ...browser,
+          provider: "browser-text-detector-partial-timeout",
+          metrics: {
+            ...(browser.metrics || {}),
+            provider: browser.provider,
+            ocrEngine: browser.provider,
+            aiUsed: false,
+            textAiUsed: false,
+            visionUsed: false,
+            fallbackUsed: true,
+            scanStatus: "partial",
+            timeoutReason: error instanceof Error ? error.message : "ai_timeout",
+            fastTotalDetected: browserTotal,
+          },
+        }
+      }
+      throw error
+    }
+
     return {
       ...fallback,
       metrics: {

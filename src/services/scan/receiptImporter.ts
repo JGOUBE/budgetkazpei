@@ -1,5 +1,6 @@
 import { validateReceipt } from "../../features/receipts/services/receiptService"
 import { syncShoppingItemsFromReceipt } from "../../features/shopping/services/shoppingEngine"
+import { enrichProductDictionary } from "./productKnowledgeService"
 
 function scannerLog(step: string, status: "START" | "OK" | "ERREUR", payload?: unknown) {
   if (typeof console === "undefined") return
@@ -27,7 +28,7 @@ export async function importValidatedReceipt({
   onAddTransaction: (payload: any) => Promise<any>
 }) {
   const amount = Math.abs(Number(draft.total_amount || 0))
-  const mainCategory = "alimentaire"
+  const mainCategory = draft.budget_category || draft.items?.[0]?.category || "divers"
   const cleanItems = (items || [])
     .filter(item => String(item.name || "").trim())
     .map(item => ({ ...item, category: item.category || mainCategory }))
@@ -40,7 +41,7 @@ export async function importValidatedReceipt({
       store: draft.store_name,
     })
     txResult = await onAddTransaction?.({
-      label: `Courses - ${draft.store_name || "Ticket"}`,
+      label: `${draft.is_food_ticket ? "Courses" : "Ticket"} - ${draft.store_name || "Enseigne non reconnue"}`,
       category: mainCategory,
       amount: -amount,
       date: draft.purchase_date,
@@ -72,24 +73,38 @@ export async function importValidatedReceipt({
   }
 
   let shoppingRows: any[] = []
+  if (draft.is_food_ticket) {
+    try {
+      scannerLog("Creation shopping_items", "START", {
+        count: cleanItems.length,
+        transactionId: txResult?.data?.id,
+      })
+      shoppingRows = await syncShoppingItemsFromReceipt({
+        userId,
+        transactionId: txResult?.data?.id,
+        receipt: {
+          id: receipt.id,
+          store_name: draft.store_name,
+          purchase_date: draft.purchase_date,
+        },
+        items: cleanItems,
+      })
+      scannerLog("Creation shopping_items", "OK", { count: shoppingRows.length })
+    } catch (error) {
+      throw stageError("Creation shopping_items", error)
+    }
+  }
+
   try {
-    scannerLog("Creation shopping_items", "START", {
-      count: cleanItems.length,
-      transactionId: txResult?.data?.id,
-    })
-    shoppingRows = await syncShoppingItemsFromReceipt({
+    scannerLog("Knowledge Engine", "START", { count: cleanItems.length })
+    await enrichProductDictionary({
       userId,
-      transactionId: txResult?.data?.id,
-      receipt: {
-        id: receipt.id,
-        store_name: draft.store_name,
-        purchase_date: draft.purchase_date,
-      },
+      merchantName: draft.store_name || draft.merchant_name,
       items: cleanItems,
     })
-    scannerLog("Creation shopping_items", "OK", { count: shoppingRows.length })
+    scannerLog("Knowledge Engine", "OK")
   } catch (error) {
-    throw stageError("Creation shopping_items", error)
+    console.warn("[scanner] Knowledge Engine indisponible", error)
   }
 
   return {

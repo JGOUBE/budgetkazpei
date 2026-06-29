@@ -5,17 +5,20 @@ import { createManualReceiptDraft } from "../utils/receiptParser"
 import {
   createReceipt,
   deleteReceipt,
+  deleteReceiptItem,
   getReceiptDetail,
   getReceiptImageUrl,
   listReceipts,
   uploadReceiptImage,
+  updateReceipt,
+  updateReceiptItem,
   validateReceipt,
 } from "../services/receiptService"
 import { useReceiptQuota } from "../hooks/useReceiptQuota"
 import { clearLastScanDraft, getLastScanDraft, runSmartScan } from "../../../services/scan/scanEngine"
 import { findDuplicateReceipt, getConfidenceColor, getConfidenceIcon } from "../../../services/scan/receiptValidator"
 import { importValidatedReceipt } from "../../../services/scan/receiptImporter"
-import { getScanErrorDetails } from "../../../services/scan/scanErrors"
+import { getScanErrorDetails, ScanError } from "../../../services/scan/scanErrors"
 import { createScanMetric, incrementScanUsage } from "../../../services/scan/scanUsageService"
 import { syncShoppingItemsFromReceipt } from "../../shopping/services/shoppingEngine"
 import { supabase } from "../../../services/supabase"
@@ -41,7 +44,9 @@ const TEXT = {
     camera: "Prendre une photo",
     gallery: "Importer une image",
     manual: "Remplir manuellement",
-    quota: quota => `Mes analyses du mois : ${quota.used} / ${quota.limit} - Il vous reste ${quota.remaining} analyses ce mois-ci`,
+    quota: quota => quota.plan === "premium_plus"
+      ? `Scans IA illimités - sécurité interne : ${quota.used} / ${quota.limit}`
+      : `Mes analyses du mois : ${quota.used} / ${quota.limit} - Il vous reste ${quota.remaining} analyses ce mois-ci`,
     methodTitle: "Choisissez une methode",
     privacy: "Vos tickets restent privés. Ils servent uniquement à mettre à jour votre budget.",
     foodHint: "Ajoutez vos courses automatiquement ou manuellement. L'analyse automatique sert surtout aux tickets alimentaires, pour comprendre vos habitudes et recevoir des conseils utiles.",
@@ -65,6 +70,7 @@ const TEXT = {
     deleted: "Ticket supprimé.",
     error: "Analyse impossible. Vous pouvez reessayer ou remplir manuellement.",
     quotaReached: "Quota atteint. Vous pouvez quand même remplir manuellement.",
+    intensiveUsage: "Vous utilisez BudgetKazPei de manière intensive. Contactez-nous afin que nous trouvions la formule la plus adaptée.",
     expenseCreated: "Dépense créée",
     noUser: "Utilisateur non connecté.",
   },
@@ -75,7 +81,9 @@ const TEXT = {
     camera: "Pran in foto",
     gallery: "Import in zimaz",
     manual: "Ranpli amain",
-    quota: quota => `Bann analiz pou mwa-la : ${quota.used} / ${quota.limit} - I reste ${quota.remaining} analiz pou mwa-la`,
+    quota: quota => quota.plan === "premium_plus"
+      ? `Scans IA illimités - sécurité interne : ${quota.used} / ${quota.limit}`
+      : `Bann analiz pou mwa-la : ${quota.used} / ${quota.limit} - I reste ${quota.remaining} analiz pou mwa-la`,
     methodTitle: "Swazi in fason",
     privacy: "Bann tiké a ou i reste privé. Nou i servi azot zis pou met azour out bidzé.",
     foodHint: "Azout out courses otomatikman ou amain. Analiz otomatik-la lé surtout pou bann tiké manzé, pou konprann out labitid ek gagn bann konsey itil.",
@@ -99,6 +107,7 @@ const TEXT = {
     deleted: "Tiké supprimé.",
     error: "Analiz la pa marche. Ou pe reessaye ou ranpli amain.",
     quotaReached: "Quota atteint. Ou pé kan même ranpli amain.",
+    intensiveUsage: "Vous utilisez BudgetKazPei de manière intensive. Contactez-nous afin que nous trouvions la formule la plus adaptée.",
     expenseCreated: "Dépans créée",
     noUser: "Utilisateur pa konekté.",
   },
@@ -139,8 +148,7 @@ function isBlockedReceiptItem(item = {}) {
   const raw = `${name} ${ocrName}`
   const price = Number(item.total_price ?? item.unit_price ?? 0)
 
-  if (!name || price <= 0) return true
-  if (/produit.*verifier/.test(name)) return true
+  if ((!name && !ocrName) || price <= 0) return true
   if (raw.includes("jeudi") || raw.includes("judith")) return true
   if (raw.includes("mdd") && (raw.includes("alcool") || raw.includes("remise") || raw.includes("10"))) return true
   if (raw.includes("prix promotion") || raw.includes("total") || raw.includes("carte bleue")) return true
@@ -151,30 +159,18 @@ function isBlockedReceiptItem(item = {}) {
 }
 
 function getValidDraftItems(draft = {}) {
-  return (draft.items || []).filter(item => !isBlockedReceiptItem(item))
+  return (draft.items || [])
+    .filter(item => !isBlockedReceiptItem(item))
+    .map(item => ({
+      ...item,
+      name: String(item.name || item.ocr_name || "Produit à vérifier").trim(),
+      item_status: /produit.*v.*rifier/.test(normalizeLabel(item.name)) || Number(item.confidence_score || 0) < 70 ? "a_verifier" : "detected",
+    }))
 }
 
 function getDraftValidationError(draft = {}) {
-  if (!String(draft.store_name || "").trim()) {
-    return "Magasin manquant. Verifiez le nom du magasin avant d'enregistrer."
-  }
-
-  if (!isIsoDate(draft.purchase_date)) {
-    return "Date du ticket manquante ou invalide. Verifiez la date avant d'enregistrer."
-  }
-
   if (Number(draft.total_amount || 0) <= 0) {
-    return "Montant total manquant. Verifiez le total avant d'enregistrer."
-  }
-
-  const validItems = getValidDraftItems(draft)
-  if (validItems.length === 0) {
-    return "Aucun article fiable a enregistrer. Corrigez les articles marques a verifier."
-  }
-
-  const blockedCount = (draft.items || []).filter(isBlockedReceiptItem).length
-  if (blockedCount > 0) {
-    return `${blockedCount} article(s) doivent etre corriges ou supprimes avant enregistrement.`
+    return "Montant total non détecté. Veuillez reprendre ou importer une image plus lisible du ticket."
   }
 
   return ""
@@ -212,6 +208,8 @@ export default function ReceiptsPage({
   isPremium = false,
   isPremiumPlus = false,
   onAddTransaction,
+  onOpenReceipts,
+  onOpenShoppingList,
 }) {
   const isKreol = getIsKreol(t)
   const txt = isKreol ? TEXT.kr : TEXT.fr
@@ -282,7 +280,7 @@ export default function ReceiptsPage({
     }
 
     if (quota.reached) {
-      setMessage(txt.quotaReached)
+      setMessage(quota.plan === "premium_plus" ? txt.intensiveUsage : txt.quotaReached)
       startManual({ keepError: true })
       return
     }
@@ -301,21 +299,46 @@ export default function ReceiptsPage({
 
       const { imagePath } = await uploadReceiptImage({ userId: user.id, file: scan.optimizedFile })
       const parsed = scan.receipt
+      const validationError = getDraftValidationError(parsed)
+      if (validationError) {
+        throw new ScanError("SCAN_PARSE_FAILED", validationError)
+      }
+
       const duplicate = findDuplicateReceipt(parsed, receipts)
+      if (duplicate) {
+        setReceipt(null)
+        setPendingImagePath(imagePath)
+        setScanMetrics(scan.metrics || null)
+        setDraft({ ...parsed, items: parsed.items.length ? parsed.items : [emptyItem()] })
+        setDuplicateReceipt(duplicate)
+        setAllowDuplicateImport(false)
+        setMode("validate")
+        setMessage("Cette course semble déjà enregistrée. Vérifiez avant de remplacer ou d'enregistrer quand même.")
+        return
+      }
+
+      const currentReceipt = await autoSaveScan({
+        parsed,
+        imagePath,
+        metrics: scan.metrics || null,
+      })
 
       setReceipt(null)
-      setPendingImagePath(imagePath)
+      setPendingImagePath(null)
       setScanMetrics(scan.metrics || null)
-      setDraft({ ...parsed, items: parsed.items.length ? parsed.items : [emptyItem()] })
-      setDuplicateReceipt(duplicate)
+      setDraft(null)
+      setDuplicateReceipt(null)
       setAllowDuplicateImport(false)
-      setMode("validate")
-      setMessage(scan.ocr.status === "success" ? txt.loaded : txt.manualReady)
+      setMode("detail")
+      await openDetail(currentReceipt)
+      setMessage(parsed.scan_status === "partial"
+        ? "Ticket enregistré. L'analyse complète n'a pas pu être terminée. Les données disponibles ont été sauvegardées."
+        : scan.ocr.status === "success" ? "Ticket enregistré automatiquement. Vous pouvez corriger les lignes si besoin." : txt.manualReady)
     } catch (error) {
       console.error("Erreur scanner ticket:", error)
       const details = getScanErrorDetails(error)
       setScanError(details)
-      setMessage(details.userMessage || txt.error)
+      setMessage(String(details.technicalMessage || "").includes("Montant total non détecté") ? details.technicalMessage : details.userMessage || txt.error)
       try {
         await createScanMetric({
           userId: user.id,
@@ -342,6 +365,61 @@ export default function ReceiptsPage({
     setPendingImagePath(null)
     if (!options.keepError) setScanError(null)
     setMode("validate")
+  }
+
+  async function autoSaveScan({ parsed, imagePath, metrics }) {
+    console.info("[scanner] Auto-save: START", {
+      store: parsed.store_name,
+      total: parsed.total_amount,
+      items: parsed.items?.length || 0,
+      payload: parsed,
+    })
+
+    const validItems = getValidDraftItems(parsed)
+    const currentReceipt = await createReceipt({ userId: user.id, draft: parsed, imagePath })
+    const importStartedAt = performance.now()
+    const importResult = await importValidatedReceipt({
+      userId: user.id,
+      receipt: currentReceipt,
+      draft: parsed,
+      items: validItems,
+      onAddTransaction,
+    })
+    const importDurationMs = Math.round(performance.now() - importStartedAt)
+
+    try {
+      console.info("[scanner] Mise a jour scan_usage: START", { userId: user.id, plan: quota.plan })
+      await incrementScanUsage({
+        userId: user.id,
+        plan: quota.plan,
+        kind: "ai",
+      })
+      console.info("[scanner] Mise a jour scan_usage: OK")
+
+      await createScanMetric({
+        userId: user.id,
+        receiptId: currentReceipt.id,
+        metrics: {
+          ...(metrics || {}),
+          importDurationMs,
+          itemsDetected: validItems.length,
+          receiptItemsCreated: importResult?.receiptItemsCreated || 0,
+          shoppingItemsCreated: importResult?.shoppingItemsCreated || 0,
+          transactionCreated: importResult?.transactionCreated === true,
+          scanUsageIncremented: true,
+          success: true,
+        },
+        status: "success",
+      })
+    } catch (usageError) {
+      console.warn("[scanner] scan_usage ou scan_metrics ERREUR exacte:", usageError)
+    }
+
+    clearLastScanDraft()
+    await refreshReceipts()
+    window.dispatchEvent(new CustomEvent("budgetkazpei:transactions-updated"))
+    console.info("[scanner] Auto-save: OK", { receiptId: currentReceipt.id })
+    return currentReceipt
   }
 
   function updateItem(index, updates) {
@@ -579,6 +657,61 @@ export default function ReceiptsPage({
     }
   }
 
+  async function handleUpdateReceipt(updates) {
+    if (!detail || !user?.id) return
+
+    setBusy(true)
+    try {
+      const next = await updateReceipt({ receiptId: detail.id, userId: user.id, updates })
+      setDetail(prev => ({ ...prev, ...next }))
+      setMessage("Ticket mis à jour.")
+      await refreshReceipts()
+    } catch (error) {
+      console.error("Erreur modification ticket:", error)
+      setMessage(txt.error)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleUpdateReceiptItem(itemId, updates) {
+    if (!detail || !user?.id) return
+
+    setBusy(true)
+    try {
+      const next = await updateReceiptItem({ itemId, userId: user.id, updates })
+      setDetail(prev => ({
+        ...prev,
+        receipt_items: (prev.receipt_items || []).map(item => item.id === itemId ? { ...item, ...next } : item),
+      }))
+      setMessage("Ligne mise à jour.")
+    } catch (error) {
+      console.error("Erreur modification ligne ticket:", error)
+      setMessage(txt.error)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleDeleteReceiptItem(itemId) {
+    if (!detail || !user?.id) return
+
+    setBusy(true)
+    try {
+      await deleteReceiptItem({ itemId, userId: user.id })
+      setDetail(prev => ({
+        ...prev,
+        receipt_items: (prev.receipt_items || []).filter(item => item.id !== itemId),
+      }))
+      setMessage("Ligne supprimée.")
+    } catch (error) {
+      console.error("Erreur suppression ligne ticket:", error)
+      setMessage(txt.error)
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 18, paddingBottom: isMobile ? 24 : 0 }}>
       <div style={cardStyle({ padding: isMobile ? 18 : 24 })}>
@@ -694,6 +827,20 @@ export default function ReceiptsPage({
           busy={busy}
           onBack={() => setMode("history")}
           onDelete={handleDelete}
+          onUpdateReceipt={handleUpdateReceipt}
+          onUpdateItem={handleUpdateReceiptItem}
+          onDeleteItem={handleDeleteReceiptItem}
+          onScanAnother={() => {
+            setDetail(null)
+            setDetailImageUrl("")
+            setMode("history")
+            cameraRef.current?.click()
+          }}
+          onBackToTickets={() => {
+            onOpenReceipts?.()
+            setMode("history")
+          }}
+          onOpenShoppingList={onOpenShoppingList}
         />
       )}
     </div>
@@ -1010,20 +1157,150 @@ function HistoryList({ txt, rows, busy, onOpen }) {
   )
 }
 
-function ReceiptDetail({ txt, receipt, imageUrl, busy, onBack, onDelete }) {
+function ReceiptDetail({
+  txt,
+  receipt,
+  imageUrl,
+  busy,
+  onBack,
+  onDelete,
+  onUpdateReceipt,
+  onUpdateItem,
+  onDeleteItem,
+  onScanAnother,
+  onBackToTickets,
+  onOpenShoppingList,
+}) {
+  const [showOriginal, setShowOriginal] = useState(false)
+  const [receiptDraft, setReceiptDraft] = useState({
+    store_name: receipt.store_name || "",
+    purchase_date: receipt.purchase_date || "",
+    total_amount: receipt.total_amount || "",
+  })
+  const [itemDrafts, setItemDrafts] = useState(() => {
+    const entries = {}
+    ;(receipt.receipt_items || []).forEach(item => {
+      entries[item.id] = {
+        name: item.name || "",
+        total_price: item.total_price ?? "",
+        category: item.category || "alimentaire",
+      }
+    })
+    return entries
+  })
+
+  useEffect(() => {
+    setReceiptDraft({
+      store_name: receipt.store_name || "",
+      purchase_date: receipt.purchase_date || "",
+      total_amount: receipt.total_amount || "",
+    })
+    const entries = {}
+    ;(receipt.receipt_items || []).forEach(item => {
+      entries[item.id] = {
+        name: item.name || "",
+        total_price: item.total_price ?? "",
+        category: item.category || "alimentaire",
+      }
+    })
+    setItemDrafts(entries)
+  }, [receipt])
+
   return (
     <div style={cardStyle()}>
       <button type="button" onClick={onBack} style={{ minHeight: 44, background: "transparent", border: "none", color: COLORS.cyan, fontWeight: 900, cursor: "pointer" }}>
         ← {txt.title}
       </button>
+      <div style={{ marginTop: 6, color: COLORS.green, fontSize: 13, fontWeight: 950 }}>
+        Ticket enregistré avec succès
+      </div>
+      {receipt.scan_status === "partial" && (
+        <div style={{ marginTop: 8, color: COLORS.yellow, fontSize: 13, fontWeight: 900, lineHeight: 1.45 }}>
+          L'analyse complète n'a pas pu être terminée. Les données disponibles ont été sauvegardées.
+        </div>
+      )}
       <h2 style={{ color: COLORS.text, margin: "10px 0 6px" }}>{receipt.store_name || txt.scanTitle}</h2>
-      <div style={{ color: COLORS.muted, fontSize: 13 }}>{receipt.purchase_date} · {formatMontant(Number(receipt.total_amount || 0))}</div>
-      {imageUrl && <img src={imageUrl} alt="" style={{ width: "100%", borderRadius: 16, marginTop: 14, border: "1px solid rgba(255,255,255,.12)" }} />}
-      <div style={{ display: "grid", gap: 8, marginTop: 14 }}>
+      <div style={{ color: COLORS.muted, fontSize: 13, marginBottom: 12 }}>
+        {receipt.purchase_date} · {formatMontant(Number(receipt.total_amount || 0))}
+        {receipt.date_status === "estimated" ? " · date estimée" : ""}
+        {receipt.ticket_type ? ` · ${receipt.ticket_type}` : ""}
+        {receipt.budget_category ? ` · ${receipt.budget_category}` : ""}
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 10, marginBottom: 14 }}>
+        <ActionButton label="Scanner un autre ticket" icon="" onClick={onScanAnother} disabled={busy} />
+        <ActionButton label="Retour à Mes tickets" icon="" onClick={onBackToTickets || onBack} disabled={busy} muted />
+        {receipt.is_food_ticket && <ActionButton label="Voir mes Courses intelligentes" icon="" onClick={onOpenShoppingList} disabled={busy} muted />}
+      </div>
+      <div style={{ display: "grid", gap: 10 }}>
+        <input style={inputStyle()} value={receiptDraft.store_name} onChange={event => setReceiptDraft(prev => ({ ...prev, store_name: event.target.value }))} />
+        <input style={inputStyle()} type="date" value={receiptDraft.purchase_date || ""} onChange={event => setReceiptDraft(prev => ({ ...prev, purchase_date: event.target.value, date_status: "detected" }))} />
+        <input style={inputStyle()} type="number" min="0" step="0.01" value={receiptDraft.total_amount} onChange={event => setReceiptDraft(prev => ({ ...prev, total_amount: event.target.value }))} />
+        <button type="button" disabled={busy || Number(receiptDraft.total_amount || 0) <= 0} onClick={() => onUpdateReceipt({
+          store_name: receiptDraft.store_name || "Enseigne non reconnue",
+          merchant_name: receiptDraft.store_name || "Enseigne non reconnue",
+          purchase_date: receiptDraft.purchase_date || new Date().toISOString().slice(0, 10),
+          date_status: receiptDraft.date_status || "detected",
+          total_amount: Number(receiptDraft.total_amount || 0),
+        })} style={{ minHeight: 44, borderRadius: 12, border: "none", background: COLORS.cyan, color: "#06101F", fontWeight: 950 }}>
+          Mettre à jour le ticket
+        </button>
+      </div>
+      {imageUrl && (
+        <div style={{ marginTop: 14 }}>
+          <button type="button" onClick={() => setShowOriginal(prev => !prev)} style={{ minHeight: 44, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "rgba(255,255,255,.05)", color: COLORS.text, fontWeight: 950, width: "100%" }}>
+            {showOriginal ? "Masquer le ticket original" : "Voir le ticket original"}
+          </button>
+          {showOriginal && <img src={imageUrl} alt="" style={{ width: "100%", maxHeight: 420, objectFit: "contain", borderRadius: 16, marginTop: 10, border: "1px solid rgba(255,255,255,.12)" }} />}
+        </div>
+      )}
+      <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 950, marginTop: 18 }}>
+        Lignes d'articles
+      </div>
+      <div style={{ display: "grid", gap: 8, marginTop: 10 }}>
         {(receipt.receipt_items || []).map(item => (
-          <div key={item.id} style={{ display: "flex", justifyContent: "space-between", gap: 10, color: COLORS.text, borderBottom: "1px solid rgba(255,255,255,.08)", paddingBottom: 8 }}>
-            <span>{item.name}</span>
-            <strong>{formatMontant(Number(item.total_price || 0))}</strong>
+          <div key={item.id} style={{ display: "grid", gap: 8, color: COLORS.text, borderBottom: "1px solid rgba(255,255,255,.08)", paddingBottom: 10 }}>
+            {item.ocr_name && item.ocr_name !== item.name && (
+              <div style={{ color: COLORS.muted, fontSize: 12 }}>OCR : {item.ocr_name}</div>
+            )}
+            <input
+              style={inputStyle()}
+              value={itemDrafts[item.id]?.name ?? item.name ?? ""}
+              onChange={event => setItemDrafts(prev => ({ ...prev, [item.id]: { ...(prev[item.id] || {}), name: event.target.value } }))}
+            />
+            <div style={{ display: "grid", gridTemplateColumns: "1fr auto auto", gap: 8 }}>
+              <input
+                style={inputStyle()}
+                type="number"
+                min="0"
+                step="0.01"
+                value={itemDrafts[item.id]?.total_price ?? item.total_price ?? ""}
+                onChange={event => setItemDrafts(prev => ({ ...prev, [item.id]: { ...(prev[item.id] || {}), total_price: event.target.value } }))}
+              />
+              <button type="button" disabled={busy} onClick={() => onUpdateItem(item.id, {
+                name: itemDrafts[item.id]?.name || item.name,
+                corrected_name: itemDrafts[item.id]?.name || item.name,
+                total_price: Number(itemDrafts[item.id]?.total_price ?? item.total_price ?? 0),
+                category: itemDrafts[item.id]?.category || item.category || "alimentaire",
+                item_status: "detected",
+              })} style={{ minHeight: 44, borderRadius: 12, border: "none", background: COLORS.green, color: "#06101F", fontWeight: 950, padding: "0 12px" }}>
+                Valider
+              </button>
+              <button type="button" disabled={busy} onClick={() => onDeleteItem(item.id)} style={{ minHeight: 44, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "transparent", color: COLORS.muted, fontWeight: 950, padding: "0 12px" }}>
+                {txt.remove}
+              </button>
+            </div>
+            <select
+              style={inputStyle()}
+              value={itemDrafts[item.id]?.category || item.category || "alimentaire"}
+              onChange={event => setItemDrafts(prev => ({ ...prev, [item.id]: { ...(prev[item.id] || {}), category: event.target.value } }))}
+            >
+              {CATEGORIES.map(category => (
+                <option key={category.id} value={category.id}>{category.emoji} {category.id}</option>
+              ))}
+            </select>
+            <div style={{ color: COLORS.muted, fontSize: 12 }}>
+              {formatMontant(Number(item.total_price || 0))} · {item.item_status || "detected"} · {Math.round(Number(item.confidence_score || 0))} %
+            </div>
           </div>
         ))}
       </div>

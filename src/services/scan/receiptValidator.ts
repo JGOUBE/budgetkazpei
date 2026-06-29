@@ -17,10 +17,7 @@ function sameDay(a = "", b = "") {
 export function validateParsedReceipt(receipt: ReceiptLike) {
   const issues = []
 
-  if (!receipt.store_name) issues.push("store_missing")
   if (!amount(receipt.total_amount)) issues.push("total_missing")
-  if (!receipt.purchase_date) issues.push("date_missing")
-  if ((receipt.items || []).length === 0) issues.push("items_missing")
 
   return {
     valid: issues.length === 0,
