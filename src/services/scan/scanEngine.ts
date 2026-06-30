@@ -41,6 +41,16 @@ function getEscalationReason(parsed: any, ocr: any) {
   return reasons.join(",")
 }
 
+function bestItemList(...lists: any[][]) {
+  return lists.reduce<any[]>((best, list) => {
+    return (list || []).length > best.length ? list || [] : best
+  }, [])
+}
+
+function scanDateToday() {
+  return new Date().toISOString().slice(0, 10)
+}
+
 export async function runSmartScan(file: File, options: ScanEngineOptions = {}) {
   const provider = options.provider || getDefaultOCRProvider()
   const scanStartedAt = performance.now()
@@ -53,6 +63,14 @@ export async function runSmartScan(file: File, options: ScanEngineOptions = {}) 
     const ocrStartedAt = performance.now()
     const ocr = await provider.extractText(optimized.file)
     const ocrDurationMs = Math.round(performance.now() - ocrStartedAt)
+    console.info("[scanner] OCR_PROVIDER_RAW_RESPONSE", {
+      provider: ocr.provider,
+      status: ocr.status,
+      confidence: ocr.confidence,
+      metrics: ocr.metrics || null,
+      structured: ocr.structured || null,
+      textLength: String(ocr.text || "").length,
+    })
 
     emit(options.onProgress, "store", "Identification du magasin...", 48)
     const parsingStartedAt = performance.now()
@@ -72,16 +90,37 @@ export async function runSmartScan(file: File, options: ScanEngineOptions = {}) 
       if (structuredDate) {
         parsed.purchase_date = structuredDate
         parsed.date_status = "detected"
+      } else if (structured.purchase_date) {
+        console.warn("[scanner] invalid_ocr_date", structured.purchase_date)
       }
       parsed.total_amount = Number(structured.total_amount || parsed.total_amount || 0)
       const structuredItems = Array.isArray(structured.items) ? structured.items : []
-      parsed.items = parsed.items.length
-        ? mergeReceiptItems(parsed.items, [])
-        : structuredItems.length
-          ? mergeReceiptItems(structuredItems, [])
-          : parsed.items
-      parsed.ai_used = ocr.provider.includes("openai")
+      const parserItems = parsed.items.length ? mergeReceiptItems(parsed.items, []) : []
+      const normalizedStructuredItems = structuredItems.length ? mergeReceiptItems(structuredItems, []) : []
+      parsed.items = bestItemList(
+        mergeReceiptItems(normalizedStructuredItems, parserItems),
+        normalizedStructuredItems,
+        parserItems,
+      )
+      parsed.ai_used = Boolean(ocr.metrics?.aiUsed || ocr.metrics?.openaiCalled || ocr.provider.includes("openai"))
     }
+    const rawDateDetected = String(structured?.purchase_date || parsed.purchase_date || "")
+    const normalizedDate = normalizeReceiptDate(parsed.purchase_date || "")
+    const dateFallbackUsed = !normalizedDate
+    if (dateFallbackUsed) {
+      parsed.purchase_date = scanDateToday()
+      parsed.date_status = "estimated"
+    } else {
+      parsed.purchase_date = normalizedDate
+      parsed.date_status = parsed.date_status || "detected"
+    }
+    console.info("[scanner] date_normalization", {
+      raw_date_detected: rawDateDetected || null,
+      normalized_date: parsed.purchase_date,
+      date_status: parsed.date_status,
+      date_fallback_used: dateFallbackUsed,
+      fallback_scan_date: dateFallbackUsed ? parsed.purchase_date : null,
+    })
     const classification = classifyReceipt(parsed)
     parsed.ticket_type = classification.ticket_type
     parsed.budget_category = classification.budget_category
@@ -90,6 +129,11 @@ export async function runSmartScan(file: File, options: ScanEngineOptions = {}) 
     parsed.scan_level_used = ocr.metrics?.fallbackUsed ? 2 : 1
     parsed.escalation_reason = getEscalationReason(parsed, ocr)
     parsed.scan_status = ocr.metrics?.scanStatus || ((parsed.escalation_reason && parsed.total_amount) ? "partial" : "success")
+    const expectedItemsMin = parsed.is_food_ticket && Number(parsed.total_amount || 0) > 0 ? 3 : 0
+    if (expectedItemsMin && parsed.items.length < expectedItemsMin) {
+      parsed.scan_status = "partial_low_items"
+      parsed.escalation_reason = [parsed.escalation_reason, "articles_alimentaires_insuffisants"].filter(Boolean).join(",")
+    }
 
     console.info("[scanner] Date detectee", parsed.purchase_date || "")
     console.info("[scanner] Magasin detecte", parsed.store_name || "")
@@ -98,6 +142,19 @@ export async function runSmartScan(file: File, options: ScanEngineOptions = {}) 
     console.info("[scanner] Niveau utilise", parsed.scan_level_used)
     console.info("[scanner] Raison escalation", parsed.escalation_reason || "aucune")
     console.info("[scanner] Statut scan", parsed.scan_status)
+    const normalized = {
+      store_name: parsed.store_name,
+      ticket_type: parsed.ticket_type,
+      is_food_ticket: parsed.is_food_ticket,
+      total_amount: parsed.total_amount,
+      items_count: parsed.items.length,
+      expected_items_min: expectedItemsMin,
+      scan_status: parsed.scan_status,
+      provider: ocr.provider,
+      items: parsed.items,
+    }
+    console.log("NORMALIZED_SCAN_RESULT", normalized)
+    console.info("[scanner] NORMALIZED_SCAN_RESULT", normalized)
     ;(parsed as any).ocr_provider = ocr.provider
     const parsingDurationMs = Math.round(performance.now() - parsingStartedAt)
     parsed.scan_duration_ms = Math.round(performance.now() - scanStartedAt)

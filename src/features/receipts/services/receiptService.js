@@ -21,6 +21,59 @@ function normalizeProductLabel(value = "") {
     .trim()
 }
 
+function isValidDateParts(year, month, day) {
+  if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) return false
+  if (month < 1 || month > 12) return false
+  if (day < 1 || day > 31) return false
+
+  const date = new Date(Date.UTC(year, month - 1, day))
+  return date.getUTCFullYear() === year
+    && date.getUTCMonth() === month - 1
+    && date.getUTCDate() === day
+}
+
+function normalizeReceiptDateForDb(value = "") {
+  const raw = String(value || "").trim()
+  const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  if (iso) {
+    const year = Number(iso[1])
+    const month = Number(iso[2])
+    const day = Number(iso[3])
+    return isValidDateParts(year, month, day) ? `${iso[1]}-${iso[2]}-${iso[3]}` : ""
+  }
+
+  const match = raw.match(/\b(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})\b/)
+  if (!match) return ""
+
+  const day = Number(match[1])
+  const month = Number(match[2])
+  const year = Number(match[3].length === 2 ? `20${match[3]}` : match[3])
+  if (!isValidDateParts(year, month, day)) return ""
+
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+}
+
+function resolveReceiptDateForDb(value = "") {
+  const normalized = normalizeReceiptDateForDb(value)
+  const fallback = new Date().toISOString().slice(0, 10)
+  const fallbackUsed = !normalized
+  if (fallbackUsed && value) {
+    console.warn("[scanner] invalid_ocr_date", value)
+  }
+  console.info("[scanner] receipt_date_guard", {
+    raw_date_detected: value || null,
+    normalized_date: normalized || fallback,
+    date_status: fallbackUsed ? "estimated" : "detected",
+    date_fallback_used: fallbackUsed,
+    fallback_scan_date: fallbackUsed ? fallback : null,
+  })
+  return {
+    purchaseDate: normalized || fallback,
+    dateStatus: fallbackUsed ? "estimated" : "detected",
+    fallbackUsed,
+  }
+}
+
 export async function uploadReceiptImage({ userId, file }) {
   const receiptId = getReceiptId()
   const imagePath = `${userId}/${receiptId}.jpg`
@@ -50,9 +103,10 @@ export async function getReceiptImageUrl(imagePath) {
 }
 
 export async function createReceipt({ userId, draft, imagePath }) {
+  const dateGuard = resolveReceiptDateForDb(draft.purchase_date)
   console.info("[scanner] Creation receipt: START", {
     store: draft.store_name,
-    date: draft.purchase_date,
+    date: dateGuard.purchaseDate,
     total: draft.total_amount,
   })
   const payload = {
@@ -60,8 +114,8 @@ export async function createReceipt({ userId, draft, imagePath }) {
     store_name: draft.store_name || "Enseigne non reconnue",
     merchant_name: draft.merchant_name || draft.store_name || "Enseigne non reconnue",
     merchant_confidence: Number(draft.merchant_confidence || (draft.store_name ? 90 : 0)),
-    purchase_date: draft.purchase_date || new Date().toISOString().split("T")[0],
-    date_status: draft.date_status || (draft.purchase_date ? "detected" : "estimated"),
+    purchase_date: dateGuard.purchaseDate,
+    date_status: draft.date_status === "detected" && !dateGuard.fallbackUsed ? "detected" : dateGuard.dateStatus,
     total_amount: Number(draft.total_amount || 0),
     currency: "EUR",
     image_path: imagePath || null,
@@ -140,14 +194,15 @@ export async function saveReceiptItems({ receiptId, userId, items }) {
       quantity: Number(item.quantity || 1),
       unit: item.unit || null,
       unit_price: item.unit_price === "" || item.unit_price == null ? null : Number(item.unit_price),
-      total_price: item.total_price === "" || item.total_price == null ? null : Number(item.total_price),
+      total_price: item.total_price === "" || item.total_price == null ? item.price == null ? null : Number(item.price) : Number(item.total_price),
       category: item.category || "alimentaire",
       subcategory: item.subcategory || null,
       department: item.department || null,
       ticket_section: item.ticket_section || null,
       promotion: Boolean(item.promotion),
-      item_status: item.item_status || (normalizeProductLabel(item.name).includes("produit verifier") ? "a_verifier" : "detected"),
+      item_status: item.item_status || item.status || (normalizeProductLabel(item.name).includes("produit verifier") ? "a_verifier" : "detected"),
       line_type: item.line_type || "product",
+      item_source: item.item_source || item.source || "parser",
       confidence_score: item.confidence_score == null ? null : Number(item.confidence_score),
     }))
 
@@ -197,12 +252,13 @@ function isMissingColumnError(error) {
 
 export async function validateReceipt({ receiptId, userId, draft, items, transactionId }) {
   console.info("[scanner] Validation receipt: START", { receiptId, transactionId })
+  const dateGuard = resolveReceiptDateForDb(draft.purchase_date)
   const payload = {
     store_name: draft.store_name || "Enseigne non reconnue",
     merchant_name: draft.merchant_name || draft.store_name || "Enseigne non reconnue",
     merchant_confidence: Number(draft.merchant_confidence || (draft.store_name ? 90 : 0)),
-    purchase_date: draft.purchase_date || new Date().toISOString().split("T")[0],
-    date_status: draft.date_status || (draft.purchase_date ? "detected" : "estimated"),
+    purchase_date: dateGuard.purchaseDate,
+    date_status: draft.date_status === "detected" && !dateGuard.fallbackUsed ? "detected" : dateGuard.dateStatus,
     total_amount: Number(draft.total_amount || 0),
     validation_status: "validated",
     ocr_status: draft.ocr_status || "manual",
@@ -319,7 +375,7 @@ export async function updateReceiptItem({ itemId, userId, updates }) {
     .single()
 
   if (error && isMissingColumnError(error)) {
-    const { item_status, line_type, ...legacyUpdates } = updates
+    const { item_status, line_type, item_source, ...legacyUpdates } = updates
     const retry = await supabase
       .from("receipt_items")
       .update(legacyUpdates)

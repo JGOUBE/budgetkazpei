@@ -4,6 +4,8 @@ export type ScanErrorCode =
   | "SCAN_OCR_FAILED"
   | "SCAN_OCR_TIMEOUT"
   | "SCAN_OPENAI_KEY_MISSING"
+  | "SCAN_OPENAI_KEY_INVALID"
+  | "SCAN_OPENAI_REQUEST_INVALID"
   | "SCAN_OPENAI_REQUEST_FAILED"
   | "SCAN_OPENAI_QUOTA_EXCEEDED"
   | "SCAN_AI_RESPONSE_INVALID"
@@ -62,6 +64,22 @@ const DETAILS: Record<ScanErrorCode, ScanErrorDetails> = {
     technicalMessage: "OPENAI_API_KEY is missing in the Supabase Edge Function environment.",
     action: "Ajouter OPENAI_API_KEY dans les secrets Supabase puis redeployer la fonction scan-receipt-ocr.",
     retryable: false,
+  },
+  SCAN_OPENAI_KEY_INVALID: {
+    code: "SCAN_OPENAI_KEY_INVALID",
+    title: "Cle IA invalide",
+    userMessage: "La cle du service IA est invalide ou refusee.",
+    technicalMessage: "OPENAI_API_KEY was rejected by OpenAI.",
+    action: "Verifier et remplacer OPENAI_API_KEY dans les secrets Supabase puis redeployer la fonction scan-receipt-ocr.",
+    retryable: false,
+  },
+  SCAN_OPENAI_REQUEST_INVALID: {
+    code: "SCAN_OPENAI_REQUEST_INVALID",
+    title: "Requete IA invalide",
+    userMessage: "Le service IA a refuse la demande envoyee par le scanner.",
+    technicalMessage: "OpenAI rejected the scanner request as invalid.",
+    action: "Consulter les logs scan-receipt-ocr pour voir le message exact du fournisseur.",
+    retryable: true,
   },
   SCAN_OPENAI_REQUEST_FAILED: {
     code: "SCAN_OPENAI_REQUEST_FAILED",
@@ -150,6 +168,8 @@ export function getScanErrorDetails(error: unknown): ScanErrorDetails {
 
   const message = String(anyError?.message || "")
   if (message.includes("OPENAI_API_KEY")) return DETAILS.SCAN_OPENAI_KEY_MISSING
+  if (message.includes("invalid_api_key") || message.includes("SCAN_OPENAI_KEY_INVALID")) return DETAILS.SCAN_OPENAI_KEY_INVALID
+  if (message.includes("invalid_request") || message.includes("SCAN_OPENAI_REQUEST_INVALID")) return DETAILS.SCAN_OPENAI_REQUEST_INVALID
   if (message.includes("quota") || message.includes("rate_limit")) return DETAILS.SCAN_OPENAI_QUOTA_EXCEEDED
   if (typeof navigator !== "undefined" && navigator.onLine === false) return DETAILS.SCAN_NETWORK_OFFLINE
 

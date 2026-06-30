@@ -17,6 +17,7 @@ type ReceiptItem = {
   quantity?: number | string | null
   unit?: string | null
   unit_price?: number | string | null
+  price?: number | string | null
   total_price?: number | string | null
   category?: string
   subcategory?: string | null
@@ -67,7 +68,7 @@ export async function syncShoppingItemsFromReceipt({
       const inferred = inferUnitFromName(productName)
       const quantity = money(item.quantity) || inferred.quantity || 1
       const unit = item.unit || inferred.unit || "piece"
-      const price = money(item.total_price) || money(item.unit_price)
+      const price = money(item.total_price) || money(item.price) || money(item.unit_price)
       const unitPrice = computeUnitPrice({ price, quantity: inferred.quantity || quantity, unit })
 
       return {

@@ -55,7 +55,7 @@ const DEPARTMENTS = [
   { label: "BOUCHERIE", category: "alimentaire", subcategory: "Boucherie", headings: ["boucherie", "viandes", "volaille"], keywords: ["poulet", "boeuf", "porc", "steak", "viande"] },
   { label: "POISSONNERIE", category: "alimentaire", subcategory: "Poissonnerie", headings: ["poissonnerie", "poisson"], keywords: ["poisson", "colin", "saumon", "thon"] },
   { label: "SURGELES", category: "alimentaire", subcategory: "Surgeles", headings: ["surgeles", "surgele", "froid surgele"], keywords: ["glace", "surgel"] },
-  { label: "HYGIENE", category: "sante", subcategory: "Hygiene", headings: ["hygiene", "hygiene beaute", "droguerie parfumerie hygiene", "dph", "beaute"], keywords: ["shampoing", "savon", "dentifrice", "mouch", "mouchoir", "lessive"] },
+  { label: "HYGIENE", category: "sante", subcategory: "Hygiene", headings: ["hygiene", "higiene", "hygiene beaute", "droguerie parfumerie hygiene", "dph", "beaute"], keywords: ["shampoing", "savon", "dentifrice", "mouch", "mouchoir", "lessive"] },
   { label: "FRUITS LEGUMES", category: "alimentaire", subcategory: "Fruits et legumes", headings: ["fruits legumes", "fruits et legumes", "fleurs plantes fruits legumes", "fruits-legumes", "primeur", "fruits", "legumes"], keywords: ["fruit", "legume", "pomme de terre", "banane", "tomate", "salade"] },
   { label: "BEBE", category: "divers", subcategory: "Bebe", headings: ["bebe", "baby"], keywords: ["couche", "lingette", "bebe"] },
   { label: "ANIMALERIE", category: "divers", subcategory: "Animalerie", headings: ["animalerie", "animaux", "pet food"], keywords: ["chat", "chien", "croquette", "litiere"] },
@@ -69,6 +69,7 @@ export type ParsedReceiptItem = {
   brand?: string | null
   quantity: number
   unit?: string | null
+  price?: number | null
   unit_price?: number | null
   total_price?: number | null
   category: string
@@ -77,6 +78,10 @@ export type ParsedReceiptItem = {
   ticket_section?: string | null
   promotion?: boolean
   vat?: number | null
+  status?: string
+  item_status?: string
+  line_type?: string
+  source?: string
   confidence_score: number
 }
 
@@ -99,7 +104,7 @@ export type ParsedReceipt = {
   scan_level_used?: number
   scan_duration_ms?: number
   escalation_reason?: string
-  scan_status?: "success" | "partial" | "failed"
+  scan_status?: "success" | "partial" | "partial_low_items" | "failed"
   items: ParsedReceiptItem[]
   warnings: string[]
 }
@@ -146,31 +151,48 @@ function detectDate(text = "") {
   const rawLine = String(text || "")
     .split(/\r?\n/)
     .find(line => /(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/.test(line))
-  const match = String(rawLine || text).match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/)
-  if (!match) {
-    scanDebug("raw OCR date line", rawLine || "not found")
-    scanDebug("date parsed", "")
-    return ""
+  const parsed = normalizeReceiptDate(rawLine || text)
+  scanDebug("raw_date_detected", rawLine || "not found")
+  scanDebug("normalized_date", parsed)
+  if (!parsed && rawLine) {
+    scanDebug("invalid_ocr_date", rawLine)
+    scanDebug("fallback_scan_date", new Date().toISOString().slice(0, 10))
   }
-
-  const day = match[1].padStart(2, "0")
-  const month = match[2].padStart(2, "0")
-  const year = match[3].length === 2 ? `20${match[3]}` : match[3]
-  const parsed = `${year}-${month}-${day}`
-  scanDebug("raw OCR date line", rawLine || match[0])
-  scanDebug("date parsed", parsed)
   return parsed
+}
+
+function isValidDateParts(year: number, month: number, day: number) {
+  if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) return false
+  if (month < 1 || month > 12) return false
+  if (day < 1 || day > 31) return false
+
+  const date = new Date(Date.UTC(year, month - 1, day))
+  return date.getUTCFullYear() === year
+    && date.getUTCMonth() === month - 1
+    && date.getUTCDate() === day
 }
 
 export function normalizeReceiptDate(value = "") {
   const raw = String(value || "").trim()
-  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw
-  const match = raw.match(/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/)
+  const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+  if (iso) {
+    const year = Number(iso[1])
+    const month = Number(iso[2])
+    const day = Number(iso[3])
+    return isValidDateParts(year, month, day) ? `${iso[1]}-${iso[2]}-${iso[3]}` : ""
+  }
+
+  const match = raw.match(/\b(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})\b/)
   if (!match) return ""
-  const day = match[1].padStart(2, "0")
-  const month = match[2].padStart(2, "0")
-  const year = match[3].length === 2 ? `20${match[3]}` : match[3]
-  return `${year}-${month}-${day}`
+
+  const dayNumber = Number(match[1])
+  const monthNumber = Number(match[2])
+  const yearNumber = Number(match[3].length === 2 ? `20${match[3]}` : match[3])
+  if (!isValidDateParts(yearNumber, monthNumber, dayNumber)) return ""
+
+  const day = String(dayNumber).padStart(2, "0")
+  const month = String(monthNumber).padStart(2, "0")
+  return `${yearNumber}-${month}-${day}`
 }
 
 export function extractReceiptTotal(text = "") {
@@ -371,6 +393,9 @@ function buildItem({
     ticket_section: meta.ticket_section,
     promotion,
     vat: null,
+    item_status: uncertain ? "a_verifier" : "detected",
+    line_type: "product",
+    source: "parser",
     confidence_score: baseConfidence,
   }
 }
@@ -379,6 +404,7 @@ function cleanProductName(line = "") {
   return String(line || "")
     .replace(/^\(?\d+\)?\d{4,}\s*/, "")
     .replace(/^\*+/, "")
+    .replace(/^\d+\s*(kg|g|gr|l|cl|ml)\s+/i, "")
     .replace(/\bprix promotion\b/gi, "")
     .replace(/\s+/g, " ")
     .trim()
@@ -446,13 +472,16 @@ function normalizeIncomingItem(item: Partial<ParsedReceiptItem> = {}): ParsedRec
     quantity: Number(item.quantity || 1),
     unit: item.unit || "piece",
     unit_price: item.unit_price == null ? null : Number(item.unit_price),
-    total_price: item.total_price == null ? null : Number(item.total_price),
+    total_price: item.total_price == null ? item.price == null ? null : Number(item.price) : Number(item.total_price),
     category: meta.category || (VALID_CATEGORIES.has(itemCategory) ? itemCategory : "alimentaire"),
     subcategory: item.subcategory || meta.subcategory,
     department: item.department || meta.department,
     ticket_section: item.ticket_section || meta.ticket_section,
     promotion: Boolean(item.promotion),
     vat: item.vat ?? null,
+    item_status: item.item_status || item.status || (uncertain ? "a_verifier" : "detected"),
+    line_type: item.line_type || "product",
+    source: item.source || "parser",
     confidence_score: Math.max(35, Math.min(98, Number(item.confidence_score || 75) + (uncertain ? -25 : 0))),
   }
 }
@@ -462,7 +491,8 @@ export function mergeReceiptItems(primary: ParsedReceiptItem[] = [], fallback: P
 
   ;[...primary, ...fallback].forEach(item => {
     const sourceText = String(item.ocr_name || item.corrected_name || item.name || "")
-    if (isNonProductText(sourceText)) {
+    const displayText = String(item.name || item.corrected_name || item.ocr_name || "")
+    if (isNonProductText(sourceText) && isNonProductText(displayText)) {
       scanDebug("produit rejeté", { reason: "non_product_text", item })
       return
     }

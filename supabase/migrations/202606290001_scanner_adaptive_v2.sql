@@ -14,6 +14,7 @@ alter table public.receipts add column if not exists scan_status text default 's
 
 alter table public.receipt_items add column if not exists item_status text default 'detected';
 alter table public.receipt_items add column if not exists line_type text default 'product';
+alter table public.receipt_items add column if not exists item_source text default 'parser';
 
 alter table public.scan_metrics add column if not exists scan_level_used integer;
 alter table public.scan_metrics add column if not exists confidence_score numeric(5,2);

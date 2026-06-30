@@ -145,8 +145,8 @@ function isIsoDate(value = "") {
 function isBlockedReceiptItem(item = {}) {
   const name = normalizeLabel(item.name)
   const ocrName = normalizeLabel(item.ocr_name)
-  const raw = `${name} ${ocrName}`
-  const price = Number(item.total_price ?? item.unit_price ?? 0)
+  const raw = name || ocrName
+  const price = Number(item.total_price ?? item.price ?? item.unit_price ?? 0)
 
   if ((!name && !ocrName) || price <= 0) return true
   if (raw.includes("jeudi") || raw.includes("judith")) return true
@@ -164,6 +164,7 @@ function getValidDraftItems(draft = {}) {
     .map(item => ({
       ...item,
       name: String(item.name || item.ocr_name || "Produit à vérifier").trim(),
+      total_price: item.total_price ?? item.price ?? item.unit_price ?? "",
       item_status: /produit.*v.*rifier/.test(normalizeLabel(item.name)) || Number(item.confidence_score || 0) < 70 ? "a_verifier" : "detected",
     }))
 }
@@ -317,11 +318,12 @@ export default function ReceiptsPage({
         return
       }
 
-      const currentReceipt = await autoSaveScan({
+      await autoSaveScan({
         parsed,
         imagePath,
         metrics: scan.metrics || null,
       })
+      const detectedItemsCount = getValidDraftItems(parsed).length
 
       setReceipt(null)
       setPendingImagePath(null)
@@ -329,16 +331,21 @@ export default function ReceiptsPage({
       setDraft(null)
       setDuplicateReceipt(null)
       setAllowDuplicateImport(false)
-      setMode("detail")
-      await openDetail(currentReceipt)
-      setMessage(parsed.scan_status === "partial"
-        ? "Ticket enregistré. L'analyse complète n'a pas pu être terminée. Les données disponibles ont été sauvegardées."
-        : scan.ocr.status === "success" ? "Ticket enregistré automatiquement. Vous pouvez corriger les lignes si besoin." : txt.manualReady)
+      setMode("history")
+      setMessage(detectedItemsCount >= 3
+        ? `Ticket enregistre avec succes - ${detectedItemsCount} articles detectes.`
+        : detectedItemsCount === 0
+          ? "Ticket enregistre, mais aucun article detecte. Vous pouvez ajouter les lignes manuellement."
+          : `Ticket enregistre avec succes - ${detectedItemsCount} article(s) detecte(s). Certaines lignes devront etre completees manuellement.`)
     } catch (error) {
       console.error("Erreur scanner ticket:", error)
       const details = getScanErrorDetails(error)
+      const technicalMessage = String(details.technicalMessage || error?.message || "")
+      const isDateError = /date\/time field value out of range|invalid_ocr_date|date invalide/i.test(technicalMessage)
       setScanError(details)
-      setMessage(String(details.technicalMessage || "").includes("Montant total non détecté") ? details.technicalMessage : details.userMessage || txt.error)
+      setMessage(isDateError
+        ? "Ticket lu, mais la date a ete estimee automatiquement. Reessayez l'enregistrement."
+        : technicalMessage.includes("Montant total non détecté") ? details.technicalMessage : details.userMessage || txt.error)
       try {
         await createScanMetric({
           userId: user.id,
@@ -374,6 +381,15 @@ export default function ReceiptsPage({
       items: parsed.items?.length || 0,
       payload: parsed,
     })
+    console.info("[scanner] scan_summary", {
+      total_detected: Number(parsed.total_amount || 0),
+      merchant_detected: parsed.store_name || parsed.merchant_name || "",
+      articles_regex_count: parsed.items?.filter(item => item.source === "ocr_fallback" || item.item_source === "ocr_fallback").length || 0,
+      articles_parser_count: parsed.items?.filter(item => item.source === "parser").length || 0,
+      articles_gpt_count: parsed.items?.filter(item => !item.source || item.source === "gpt").length || 0,
+      scan_status: parsed.scan_status || "success",
+      processing_time_ms: parsed.scan_duration_ms || 0,
+    })
 
     const validItems = getValidDraftItems(parsed)
     const currentReceipt = await createReceipt({ userId: user.id, draft: parsed, imagePath })
@@ -386,6 +402,11 @@ export default function ReceiptsPage({
       onAddTransaction,
     })
     const importDurationMs = Math.round(performance.now() - importStartedAt)
+    console.info("[scanner] scan_persisted", {
+      receipt_created: Boolean(currentReceipt?.id),
+      receipt_items_inserted: importResult?.receiptItemsCreated || 0,
+      processing_time_ms: importDurationMs,
+    })
 
     try {
       console.info("[scanner] Mise a jour scan_usage: START", { userId: user.id, plan: quota.plan })
@@ -657,6 +678,23 @@ export default function ReceiptsPage({
     }
   }
 
+  async function handleDeleteReceiptRow(row) {
+    if (!row || !window.confirm(txt.confirmDelete)) return
+
+    setBusy(true)
+    try {
+      await deleteReceipt({ receipt: row, userId: user.id })
+      setReceipts(prev => prev.filter(receiptRow => receiptRow.id !== row.id))
+      setMessage(txt.deleted)
+      await refreshReceipts()
+    } catch (error) {
+      console.error("Erreur suppression ticket:", error)
+      setMessage(txt.error)
+    } finally {
+      setBusy(false)
+    }
+  }
+
   async function handleUpdateReceipt(updates) {
     if (!detail || !user?.id) return
 
@@ -816,6 +854,7 @@ export default function ReceiptsPage({
           rows={receiptRows}
           busy={busy}
           onOpen={openDetail}
+          onDelete={handleDeleteReceiptRow}
         />
       )}
 
@@ -1120,7 +1159,7 @@ function MetaChip({ label, strong = false }) {
   )
 }
 
-function HistoryList({ txt, rows, busy, onOpen }) {
+function HistoryList({ txt, rows, busy, onOpen, onDelete }) {
   return (
     <div style={cardStyle()}>
       {rows.length === 0 ? (
@@ -1128,7 +1167,7 @@ function HistoryList({ txt, rows, busy, onOpen }) {
       ) : (
         <div style={{ display: "grid", gap: 10 }}>
           {rows.map(row => (
-            <button key={row.id} type="button" disabled={busy} onClick={() => onOpen(row)} style={{
+            <div key={row.id} style={{
               minHeight: 74,
               border: "1px solid rgba(255,255,255,.09)",
               borderRadius: 16,
@@ -1138,18 +1177,24 @@ function HistoryList({ txt, rows, busy, onOpen }) {
               display: "grid",
               gridTemplateColumns: "1fr auto",
               gap: 12,
-              textAlign: "left",
-              fontFamily: "inherit",
-              cursor: "pointer",
+              alignItems: "center",
             }}>
               <span>
                 <strong>{row.store_name || txt.scanTitle}</strong>
                 <span style={{ display: "block", color: COLORS.muted, fontSize: 12, marginTop: 4 }}>
-                  {row.purchase_date || ""} · {txt.status} : {row.validation_status || "draft"} · {(row.receipt_items || []).length} article(s)
+                  {row.purchase_date || ""} - {(row.receipt_items || []).length} article(s)
                 </span>
+                <strong style={{ color: COLORS.accent, display: "block", marginTop: 5 }}>{formatMontant(Number(row.total_amount || 0))}</strong>
               </span>
-              <strong style={{ color: COLORS.accent }}>{formatMontant(Number(row.total_amount || 0))}</strong>
-            </button>
+              <span style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: 8 }}>
+                <button type="button" disabled={busy} onClick={() => onOpen(row)} style={{ minHeight: 40, borderRadius: 12, border: "none", background: COLORS.accent, color: "#fff", fontWeight: 950, padding: "0 12px" }}>
+                  Modifier
+                </button>
+                <button type="button" disabled={busy} onClick={() => onDelete(row)} style={{ minHeight: 40, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "transparent", color: COLORS.muted, fontWeight: 950, padding: "0 12px" }}>
+                  Supprimer
+                </button>
+              </span>
+            </div>
           ))}
         </div>
       )}
