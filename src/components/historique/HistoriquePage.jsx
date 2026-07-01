@@ -63,10 +63,12 @@ export default function HistoriquePage({
   historiques = [],
   loading = false,
   isPremium = false,
+  isPremiumPlus = false,
   onGoPremium,
   t,
 }) {
   const [generatingPdfId, setGeneratingPdfId] = useState(null)
+  const hasPdfAccess = isPremium || isPremiumPlus
 
   const txt = (key, fallback) => translate(t, "historique", key, fallback)
 
@@ -78,13 +80,13 @@ export default function HistoriquePage({
       await generateMonthlyBudgetPDF(item, pdfLanguage)
     } catch (error) {
       console.error("Erreur génération PDF:", error)
-      alert("Impossible de générer le PDF pour le moment.")
+      alert("Export PDF inclus dans Premium et Premium+, mais le fichier n'a pas pu etre genere pour le moment.")
     } finally {
       setGeneratingPdfId(null)
     }
   }
 
-  if (!isPremium) {
+  if (!hasPdfAccess) {
     return (
       <div
         style={{

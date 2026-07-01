@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { brandLogo } from "../../assets/brand"
 
 const COLORS = {
   bg: "#0A1628",
@@ -186,30 +187,46 @@ export default function LoginPage({
             overflow: "visible",
           }}
         >
-          <img
-            src="/icons-creole/logo-budgetkazpei.png"
-            alt="BudgetKazPei"
+          <div
             style={{
-              display: "block",
-              width: "118vw",
-              maxWidth: 620,
-              minWidth: 430,
-              height: "auto",
-              marginLeft: "45%",
-              transform: "translateX(-50%)",
-              marginTop: 30,
-              marginBottom: -78,
-              objectFit: "contain",
-              filter:
-                "drop-shadow(4px 8px 0 rgba(5,8,12,.88)) drop-shadow(0 0 22px rgba(35,211,214,.28))",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 12,
+              marginTop: 26,
+              marginBottom: 12,
               position: "relative",
               zIndex: 2,
             }}
-          />
+          >
+            <img
+              src={brandLogo}
+              alt="BudgetKazPei"
+              style={{
+                width: 72,
+                height: 72,
+                objectFit: "contain",
+                display: "block",
+                filter: "drop-shadow(0 10px 22px rgba(0,0,0,.35))",
+              }}
+            />
+            <span
+              style={{
+                color: COLORS.cream,
+                fontSize: 31,
+                fontWeight: 950,
+                lineHeight: 1,
+                letterSpacing: 0,
+                textShadow: `3px 3px 0 ${COLORS.ink}`,
+              }}
+            >
+              BudgetKazPei
+            </span>
+          </div>
 
           <p
             style={{
-              margin: "-8px 0 20px",
+              margin: "0 0 20px",
               color: COLORS.cyan,
               fontSize: 20,
               fontWeight: 900,

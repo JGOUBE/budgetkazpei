@@ -8,6 +8,9 @@ export function useLanguage() {
     return t(lang, section, key);
   }
 
+  translate.lang = lang;
+  translate.isKreol = lang === "cr";
+
   function toggleLang() {
     setLang(prev => (prev === "fr" ? "cr" : "fr"));
   }

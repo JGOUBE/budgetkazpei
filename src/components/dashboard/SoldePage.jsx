@@ -1,4 +1,5 @@
 import { formatMontant } from "../../utils/format"
+import { BkIcons } from "../icons-budgetkazpei"
 
 const COLORS = {
   card: "#0F1E38",
@@ -14,6 +15,8 @@ const COLORS = {
 }
 
 function getIsKreol(t) {
+  const lang = String(t?.lang || "").toLowerCase()
+  if (lang === "cr" || lang === "kreol") return true
   return String(t?.("nav", "dashboard") || "").toLowerCase().includes("tablo")
 }
 
@@ -49,12 +52,11 @@ export default function SoldePage({
         }}
       >
         <div style={{ color: COLORS.text, fontSize: 30, fontWeight: 900, fontFamily: "'DM Serif Display', serif" }}>
-          {isKreol ? "🏝️ Larzan disponible" : "🏝️ Solde disponible"}
+          {isKreol ? "Larzan disponible" : "Solde disponible"}
         </div>
         <div style={{ color: COLORS.muted, marginTop: 8, fontSize: 14, lineHeight: 1.5 }}>
-          {isKreol
-            ? "Détail du calcul entre revenus, dépenses, sarz fix ek reste à vivre."
-            : "Détail du calcul entre revenus, dépenses, charges fixes et reste à vivre."}
+          {isKreol ? "DÃ©tail du calcul entre revenus, dÃ©penses, sarz fix ek reste Ã  vivre."
+            : "DÃ©tail du calcul entre revenus, dÃ©penses, charges fixes et reste Ã  vivre."}
         </div>
         <div style={{ color: solde >= 0 ? COLORS.green : COLORS.red, marginTop: 18, fontSize: 42, fontWeight: 900, fontFamily: "'DM Serif Display', serif" }}>
           {formatMontant(solde)}
@@ -62,21 +64,21 @@ export default function SoldePage({
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 14 }}>
-        <MiniCard label={isKreol ? "Revenus" : "Revenus"} value={revenus} color={COLORS.green} icon="💰" />
-        <MiniCard label={isKreol ? "Dépenses" : "Dépenses"} value={depenses} color={COLORS.red} icon="💸" />
-        <MiniCard label={isKreol ? "Solde" : "Solde"} value={solde} color={solde >= 0 ? COLORS.green : COLORS.red} icon="🏝️" />
+        <MiniCard label={isKreol ? "Revenus" : "Revenus"} value={revenus} color={COLORS.green} Icon={BkIcons.savings} />
+        <MiniCard label={isKreol ? "Depenses" : "Depenses"} value={depenses} color={COLORS.red} Icon={BkIcons.depenses} />
+        <MiniCard label={isKreol ? "Solde" : "Solde"} value={solde} color={solde >= 0 ? COLORS.green : COLORS.red} Icon={BkIcons.budget} />
       </div>
 
       <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 20, padding: 20 }}>
         <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 900, marginBottom: 14 }}>
-          {isKreol ? "📊 Calcul détaillé" : "📊 Calcul détaillé"}
+          {isKreol ? "Calcul detaille" : "Calcul detaille"}
         </div>
 
         <Line label={isKreol ? "Revenus du mois" : "Revenus du mois"} value={revenus} color={COLORS.green} />
         <Line label={isKreol ? "Charges fixes" : "Charges fixes"} value={chargesFixes} color={COLORS.yellow} />
-        <Line label={isKreol ? "Dépenses variables" : "Dépenses variables"} value={depensesVariables} color={COLORS.blue} />
-        <Line label={isKreol ? "Dépenses totales" : "Dépenses totales"} value={depenses} color={COLORS.red} />
-        <Line label={isKreol ? "Reste à vivre" : "Reste à vivre"} value={resteAVivre} color={resteAVivre >= 0 ? COLORS.green : COLORS.red} strong />
+        <Line label={isKreol ? "DÃ©penses variables" : "DÃ©penses variables"} value={depensesVariables} color={COLORS.blue} />
+        <Line label={isKreol ? "DÃ©penses totales" : "DÃ©penses totales"} value={depenses} color={COLORS.red} />
+        <Line label={isKreol ? "Reste Ã  vivre" : "Reste Ã  vivre"} value={resteAVivre} color={resteAVivre >= 0 ? COLORS.green : COLORS.red} strong />
 
         <div
           style={{
@@ -90,9 +92,8 @@ export default function SoldePage({
             lineHeight: 1.5,
           }}
         >
-          {isKreol
-            ? `Out charges fixes i représente ${tauxCharges} % de out revenus.`
-            : `Vos charges fixes représentent ${tauxCharges} % de vos revenus.`}
+          {isKreol ? `Out charges fixes i reprÃ©sente ${tauxCharges} % de out revenus.`
+            : `Vos charges fixes reprÃ©sentent ${tauxCharges} % de vos revenus.`}
         </div>
       </div>
 
@@ -105,12 +106,11 @@ export default function SoldePage({
         }}
       >
         <div style={{ color: isPremiumPlus ? COLORS.green : "#DDD6FE", fontSize: 17, fontWeight: 900 }}>
-          {isPremiumPlus ? "✅" : "🔒"} {isKreol ? "Projection fin de mois" : "Projection fin de mois"}
+          {isKreol ? "Projection fin de mois" : "Projection fin de mois"}
         </div>
         <p style={{ color: COLORS.muted, fontSize: 13, lineHeight: 1.55, marginBottom: 0 }}>
-          {isKreol
-            ? "BudgetKazPei pourra estimer lo solde probable à la fin du mois."
-            : "BudgetKazPei pourra estimer le solde probable à la fin du mois."}
+          {isKreol ? "BudgetKazPei pourra estimer lo solde probable Ã  la fin du mois."
+            : "BudgetKazPei pourra estimer le solde probable Ã  la fin du mois."}
         </p>
         {!isPremiumPlus && onGoPremium && (
           <button
@@ -128,7 +128,7 @@ export default function SoldePage({
               fontFamily: "inherit",
             }}
           >
-            Découvrir Premium+
+            DÃ©couvrir Premium+
           </button>
         )}
       </div>
@@ -136,11 +136,11 @@ export default function SoldePage({
   )
 }
 
-function MiniCard({ label, value, color, icon }) {
+function MiniCard({ label, value, color, Icon }) {
   return (
     <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 18, padding: 18 }}>
       <div style={{ color: COLORS.muted, fontSize: 12, fontWeight: 900, marginBottom: 8 }}>
-        {icon} {label}
+        {Icon && <Icon size={16} style={{ marginRight: 6, verticalAlign: "text-bottom", color }} />}{label}
       </div>
       <div style={{ color, fontSize: 25, fontWeight: 900, fontFamily: "'DM Serif Display', serif" }}>
         {formatMontant(value)}
@@ -168,3 +168,5 @@ function Line({ label, value, color, strong = false }) {
     </div>
   )
 }
+
+

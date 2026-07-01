@@ -6,6 +6,13 @@ const kreol = {
     opportunites: "Bon Plan",
     monthlyHistory: "Istorik chak mwa",
     abonnements: "Sarz fix",
+    receipts: "Mon bann tike",
+    shopping: "Mes courses",
+    statistics: "Mes stats",
+    savings: "Mes ekonomi",
+    shoppingList: "Lis courses",
+    financeAssistant: "Mon assistant",
+    rewards: "Defis",
     profil: "Mon Profil",
     premium: "Pas an Premium",
     signOut: "Dékonekté",
@@ -111,7 +118,7 @@ const kreol = {
   },
 
   eligibility: {
-    button: "Mi lé éligib ?",
+    button: "Mi lé éligib ",
     resultIndicatif: "Résilta indikatif",
     probability: "Probabilité",
     strong: "for",
@@ -162,8 +169,8 @@ const kreol = {
     revenus: "Larzan rantre",
   },
   receipts: {
-    title: "Mon bann courses",
-    scanCta: "Analiz in course",
+    title: "Mon bann tike",
+    scanCta: "Scanner tike",
   },
 
   transactions: {
@@ -228,7 +235,7 @@ const kreol = {
     assistantAnalyze: "Analiz mon sitiasyon",
     assistantResponseTitle: "Répons l’asistan",
     assistantPlaceholder:
-      "Ex : Mi lé parent tousèl ek 2 marmay Saint-Leu, kèl èd mi pé vérifié ?",
+      "Ex : Mi lé parent tousèl ek 2 marmay Saint-Leu, kèl èd mi pé vérifié ",
   },
 
   abonnements: {
@@ -244,7 +251,7 @@ const kreol = {
     title: "Sarz fix & abonman",
     description:
       "Azout isi bann dépans i revien chak mwa : loyé, kredi, EDF, dilo, téléfon, internet, lasirans ou streaming.",
-    infoTitle: "Pou kosa sa lé ?",
+    infoTitle: "Pou kosa sa lé ",
     infoText1:
       "Sarz fix sé bann dépans i revien chak mwa. Zot lé otomatikman tiré dan out bidjé é konté dan larzan i reste.",
     infoText2:

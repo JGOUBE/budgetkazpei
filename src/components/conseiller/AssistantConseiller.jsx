@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react"
+﻿import { useEffect, useMemo, useState } from "react"
 import {
   Bot,
   Send,
@@ -38,31 +38,31 @@ const MODE_LABELS = {
   },
   trouver_aide: {
     fr: "Trouver une aide",
-    kreol: "Trouve in zéd",
+    kreol: "Trouve in zÃ©d",
   },
   comprendre_courrier: {
     fr: "Comprendre un courrier",
-    kreol: "Comprann in kourrié",
+    kreol: "Comprann in kourriÃ©",
   },
   preparer_dossier: {
-    fr: "Préparer un dossier",
-    kreol: "Prépar in dossier",
+    fr: "PrÃ©parer un dossier",
+    kreol: "PrÃ©par in dossier",
   },
   generer_email: {
-    fr: "Générer un email",
-    kreol: "Prépar in email",
+    fr: "GÃ©nÃ©rer un email",
+    kreol: "PrÃ©par in email",
   },
   preparer_recours: {
-    fr: "Préparer un recours",
-    kreol: "Prépar in rekour",
+    fr: "PrÃ©parer un recours",
+    kreol: "PrÃ©par in rekour",
   },
   preparer_rdv: {
-    fr: "Préparer un rendez-vous",
-    kreol: "Prépar in rendez-vous",
+    fr: "PrÃ©parer un rendez-vous",
+    kreol: "PrÃ©par in rendez-vous",
   },
   general: {
     fr: "Conseiller",
-    kreol: "Konseyé",
+    kreol: "KonseyÃ©",
   },
 }
 
@@ -79,7 +79,7 @@ function isTrue(value) {
 
 function isKreolLanguage(t) {
   if (typeof t !== "function") return false
-  return t("nav", "dashboard") === "Tablo débor"
+  return t("nav", "dashboard") === "Tablo dÃ©bor"
 }
 
 function looksLikeKreolText(value = "") {
@@ -109,7 +109,7 @@ function looksLikeKreolText(value = "") {
     " marmaille",
     " koz",
     " koze",
-    " zéd",
+    " zÃ©d",
     " led",
   ]
 
@@ -167,7 +167,7 @@ function shouldConsumeAiExchange(message = "", isQuickPreset = false) {
   return countMeaningfulWords(message) > 2
 }
 
-function formatValue(value, fallback = "Non renseigné") {
+function formatValue(value, fallback = "Non renseignÃ©") {
   if (value === null || value === undefined || value === "") return fallback
   return value
 }
@@ -175,68 +175,90 @@ function formatValue(value, fallback = "Non renseigné") {
 function formatMoney(value, isKreol = false) {
   const number = Number(value)
   if (!Number.isFinite(number) || number <= 0) {
-    return isKreol ? "Pa ransényé" : "Non renseigné"
+    return isKreol ? "Pa ransÃ©nyÃ©" : "Non renseignÃ©"
   }
-  return `${number.toFixed(0).replace(".", ",")} € / mois`
+  return `${number.toFixed(0).replace(".", ",")} â‚¬ / mois`
 }
 
 function formatSituation(value, isKreol = false) {
   const fr = {
-    celibataire: "Célibataire",
+    celibataire: "CÃ©libataire",
     couple: "En couple",
-    marie: "Marié(e)",
-    parent_isole: "Parent isolé",
+    marie: "MariÃ©(e)",
+    parent_isole: "Parent isolÃ©",
     locataire: "Locataire",
-    proprietaire: "Propriétaire",
-    heberge: "Hébergé gratuitement",
-    salarie: "Salarié",
-    independant: "Indépendant",
-    demandeur_emploi: "Demandeur d’emploi",
-    etudiant: "Étudiant",
-    retraite: "Retraité",
+    proprietaire: "PropriÃ©taire",
+    heberge: "HÃ©bergÃ© gratuitement",
+    salarie: "SalariÃ©",
+    independant: "IndÃ©pendant",
+    demandeur_emploi: "Demandeur dâ€™emploi",
+    etudiant: "Ã‰tudiant",
+    retraite: "RetraitÃ©",
   }
 
   const kreol = {
-    celibataire: "Sèl",
+    celibataire: "SÃ¨l",
     couple: "An koup",
-    marie: "Maryé",
-    parent_isole: "Parent tousèl",
-    locataire: "Lokatèr",
-    proprietaire: "Propriyétèr",
-    heberge: "Ébèrzé gratwi",
-    salarie: "Salarié",
+    marie: "MaryÃ©",
+    parent_isole: "Parent tousÃ¨l",
+    locataire: "LokatÃ¨r",
+    proprietaire: "PropriyÃ©tÃ¨r",
+    heberge: "Ã‰bÃ¨rzÃ© gratwi",
+    salarie: "SalariÃ©",
     independant: "Travay pou son kont",
-    demandeur_emploi: "Domandèr d'emploi",
-    etudiant: "Étidyan",
-    retraite: "Retraité",
+    demandeur_emploi: "DomandÃ¨r d'emploi",
+    etudiant: "Ã‰tidyan",
+    retraite: "RetraitÃ©",
   }
 
   const map = isKreol ? kreol : fr
-  return map[value] || formatValue(value, isKreol ? "Pa ransényé" : "Non renseigné")
+  return map[value] || formatValue(value, isKreol ? "Pa ransÃ©nyÃ©" : "Non renseignÃ©")
+}
+
+function formatIncomeDetails(details = {}) {
+  if (!details || typeof details !== "object") return ""
+  const parts = []
+  const money = value => {
+    const number = Number(String(value ?? 0).replace(",", "."))
+    return Number.isFinite(number) && number > 0 ? `${number.toFixed(2).replace(".", ",")} EUR` : ""
+  }
+
+  if (money(details.salaire_parent_1)) parts.push(`Salaire parent 1 ${money(details.salaire_parent_1)}`)
+  if (money(details.salaire_parent_2)) parts.push(`Salaire parent 2 ${money(details.salaire_parent_2)}`)
+  if (money(details.france_travail)) parts.push(`France Travail ${money(details.france_travail)}`)
+  if (money(details.autres_revenus)) parts.push(`Autres revenus ${money(details.autres_revenus)}`)
+  ;(Array.isArray(details.aides) ? details.aides : []).forEach(aide => {
+    if (money(aide.amount)) parts.push(`${aide.label || "Aide"} ${money(aide.amount)}`)
+  })
+
+  return parts.join(" ; ")
 }
 
 function buildProfileSummary(profile = {}, isKreol = false) {
+  const revenusDetails = formatIncomeDetails(profile.revenus_details)
   if (isKreol) {
     return [
-      `📍 Komin : ${formatValue(profile.commune, "Pa ransényé")}`,
-      `👨‍👩‍👧‍👦 Sitiasyon famiy : ${formatSituation(profile.situation_familiale, true)}`,
-      `👶 Nomb marmay : ${formatValue(profile.nombre_enfants, "Pa ransényé")}`,
-      `🏠 Sitiasyon kaz : ${formatSituation(profile.logement, true)}`,
-      `💼 Sitiasyon profesyonèl : ${formatSituation(profile.situation_professionnelle, true)}`,
-      `🎂 Laz : ${formatValue(profile.age, "Pa ransényé")}`,
-      `💰 Larzan rant dan kaz : ${formatMoney(profile.revenus_foyer, true)}`,
-    ].join("\n")
+      `ðŸ“ Komin : ${formatValue(profile.commune, "Pa ransÃ©nyÃ©")}`,
+      `ðŸ‘¨â€ðŸ‘©â€ðŸ‘§â€ðŸ‘¦ Sitiasyon famiy : ${formatSituation(profile.situation_familiale, true)}`,
+      `ðŸ‘¶ Nomb marmay : ${formatValue(profile.nombre_enfants, "Pa ransÃ©nyÃ©")}`,
+      `ðŸ  Sitiasyon kaz : ${formatSituation(profile.logement, true)}`,
+      `ðŸ’¼ Sitiasyon profesyonÃ¨l : ${formatSituation(profile.situation_professionnelle, true)}`,
+      `ðŸŽ‚ Laz : ${formatValue(profile.age, "Pa ransÃ©nyÃ©")}`,
+      `ðŸ’° Larzan rant dan kaz : ${formatMoney(profile.revenus_foyer, true)}`,
+      revenusDetails ? `Detail revenus : ${revenusDetails}` : "",
+    ].filter(Boolean).join("\n")
   }
 
   return [
-    `📍 Commune : ${formatValue(profile.commune)}`,
-    `👨‍👩‍👧‍👦 Situation familiale : ${formatSituation(profile.situation_familiale)}`,
-    `👶 Nombre d’enfants : ${formatValue(profile.nombre_enfants)}`,
-    `🏠 Logement : ${formatSituation(profile.logement)}`,
-    `💼 Situation professionnelle : ${formatSituation(profile.situation_professionnelle)}`,
-    `🎂 Âge : ${formatValue(profile.age)}`,
-    `💰 Revenus du foyer : ${formatMoney(profile.revenus_foyer)}`,
-  ].join("\n")
+    `ðŸ“ Commune : ${formatValue(profile.commune)}`,
+    `ðŸ‘¨â€ðŸ‘©â€ðŸ‘§â€ðŸ‘¦ Situation familiale : ${formatSituation(profile.situation_familiale)}`,
+    `ðŸ‘¶ Nombre dâ€™enfants : ${formatValue(profile.nombre_enfants)}`,
+    `ðŸ  Logement : ${formatSituation(profile.logement)}`,
+    `ðŸ’¼ Situation professionnelle : ${formatSituation(profile.situation_professionnelle)}`,
+    `ðŸŽ‚ Ã‚ge : ${formatValue(profile.age)}`,
+    `ðŸ’° Revenus du foyer : ${formatMoney(profile.revenus_foyer)}`,
+    revenusDetails ? `Detail revenus : ${revenusDetails}` : "",
+  ].filter(Boolean).join("\n")
 }
 
 function getModeLabel(mode = "general", isKreol = false) {
@@ -249,34 +271,34 @@ function buildModeInstruction(mode = "general", isKreol = false) {
     trouver_aide:
       "Comportement : chercher les aides les plus pertinentes, expliquer pourquoi elles peuvent correspondre, rester prudent, et proposer une seule prochaine action.",
     comprendre_courrier:
-      "Comportement : aider à comprendre un courrier administratif uniquement à partir des éléments fournis, sans inventer, en distinguant ce qui est écrit et ce qui reste à vérifier.",
+      "Comportement : aider Ã  comprendre un courrier administratif uniquement Ã  partir des Ã©lÃ©ments fournis, sans inventer, en distinguant ce qui est Ã©crit et ce qui reste Ã  vÃ©rifier.",
     preparer_dossier:
-      "Comportement : aider à préparer un dossier concret avec les documents probables, les étapes simples, les informations manquantes et une prochaine action.",
+      "Comportement : aider Ã  prÃ©parer un dossier concret avec les documents probables, les Ã©tapes simples, les informations manquantes et une prochaine action.",
     generer_email:
-      "Comportement : rédiger un email administratif prêt à copier, poli, simple, sans nom/prénom ni situation inventée, avec [À compléter] si besoin.",
+      "Comportement : rÃ©diger un email administratif prÃªt Ã  copier, poli, simple, sans nom/prÃ©nom ni situation inventÃ©e, avec [Ã€ complÃ©ter] si besoin.",
     preparer_recours:
-      "Comportement : aider à structurer un recours avec prudence, sans avis juridique, sans garantir l'acceptation, et uniquement selon les faits donnés.",
+      "Comportement : aider Ã  structurer un recours avec prudence, sans avis juridique, sans garantir l'acceptation, et uniquement selon les faits donnÃ©s.",
     preparer_rdv:
-      "Comportement : préparer un rendez-vous administratif avec les questions utiles, les documents à apporter, les points à vérifier et une phrase simple pour expliquer la situation.",
+      "Comportement : prÃ©parer un rendez-vous administratif avec les questions utiles, les documents Ã  apporter, les points Ã  vÃ©rifier et une phrase simple pour expliquer la situation.",
     general:
-      "Comportement : conseiller naturellement l'utilisateur, comprendre son intention réelle, répondre simplement, et proposer une prochaine action utile si pertinent.",
+      "Comportement : conseiller naturellement l'utilisateur, comprendre son intention rÃ©elle, rÃ©pondre simplement, et proposer une prochaine action utile si pertinent.",
   }
 
   const kreol = {
     trouver_aide:
-      "Komportman : rode bann zéd les plus pertinentes, explique poukosa zot i pé correspond, reste prudent, ek propose une seule prochaine action.",
+      "Komportman : rode bann zÃ©d les plus pertinentes, explique poukosa zot i pÃ© correspond, reste prudent, ek propose une seule prochaine action.",
     comprendre_courrier:
-      "Komportman : aide comprend in kourrié administratif seulement avec sak lé fourni, sans inventer, en séparant sak lé écrit ek sak faut vérifiye.",
+      "Komportman : aide comprend in kourriÃ© administratif seulement avec sak lÃ© fourni, sans inventer, en sÃ©parant sak lÃ© Ã©crit ek sak faut vÃ©rifiye.",
     preparer_dossier:
-      "Komportman : aide prépar in dossier concret avec dokiman probables, étapes simples, infos manquantes ek prochaine action.",
+      "Komportman : aide prÃ©par in dossier concret avec dokiman probables, Ã©tapes simples, infos manquantes ek prochaine action.",
     generer_email:
-      "Komportman : rédige in email administratif prêt pou copier, poli, simple, sans nom/prénom ni situation inventée, avec [À compléter] si besoin.",
+      "Komportman : rÃ©dige in email administratif prÃªt pou copier, poli, simple, sans nom/prÃ©nom ni situation inventÃ©e, avec [Ã€ complÃ©ter] si besoin.",
     preparer_recours:
-      "Komportman : aide structurer in rekour avec prudence, sans avis juridique, sans garantir acceptation, seulement selon faits donnés.",
+      "Komportman : aide structurer in rekour avec prudence, sans avis juridique, sans garantir acceptation, seulement selon faits donnÃ©s.",
     preparer_rdv:
-      "Komportman : prépar in rendez-vous administratif avec kestions utiles, dokiman pou amenné, points pou vérifiye ek phrase simple pou expliquer situation.",
+      "Komportman : prÃ©par in rendez-vous administratif avec kestions utiles, dokiman pou amennÃ©, points pou vÃ©rifiye ek phrase simple pou expliquer situation.",
     general:
-      "Komportman : conseille naturellement l'utilisateur, comprend son intention réelle, répond simplement, ek propose une prochaine action utile si pertinent.",
+      "Komportman : conseille naturellement l'utilisateur, comprend son intention rÃ©elle, rÃ©pond simplement, ek propose une prochaine action utile si pertinent.",
   }
 
   return (isKreol ? kreol : fr)[mode] || (isKreol ? kreol.general : fr.general)
@@ -294,7 +316,8 @@ function buildQuestionForAi(question = "", mode = "general", isKreol = false) {
       (isKreol
         ? "Analyse mon profil et propose la prochaine action utile."
         : "Analyse mon profil et propose la prochaine action utile."),
-  ].join("\n")
+    revenusDetails ? `Detail revenus : ${revenusDetails}` : "",
+  ].filter(Boolean).join("\n")
 }
 
 function formatAideAmount(aide = {}) {
@@ -302,12 +325,12 @@ function formatAideAmount(aide = {}) {
   const max = Number(aide.montant_max)
 
   if (Number.isFinite(min) && Number.isFinite(max) && min > 0 && max > 0) {
-    if (min === max) return `${min} €`
-    return `${min} à ${max} €`
+    if (min === max) return `${min} â‚¬`
+    return `${min} Ã  ${max} â‚¬`
   }
 
-  if (Number.isFinite(max) && max > 0) return `Jusqu'à ${max} €`
-  if (Number.isFinite(min) && min > 0) return `À partir de ${min} €`
+  if (Number.isFinite(max) && max > 0) return `Jusqu'Ã  ${max} â‚¬`
+  if (Number.isFinite(min) && min > 0) return `Ã€ partir de ${min} â‚¬`
   return "Montant variable"
 }
 
@@ -315,7 +338,7 @@ function prepareAideContext(aides = [], isKreol = false) {
   return aides.slice(0, 8).map(aide => ({
     id: aide.id || null,
     nom: aide.nom || aide.aide_nom || "Aide",
-    nom_kreol: aide.nom_kreol || aide.nom || "Zéd",
+    nom_kreol: aide.nom_kreol || aide.nom || "ZÃ©d",
     organisme: aide.organisme || "",
     categorie: aide.categorie || "",
     montant: formatAideAmount(aide),
@@ -536,15 +559,16 @@ export default function AssistantConseiller({
       situation_professionnelle: currentProfile?.situation_professionnelle || "",
       nombre_enfants: currentProfile?.nombre_enfants ?? null,
       revenus_foyer: currentProfile?.revenus_foyer ?? null,
+      revenus_details: currentProfile?.revenus_details ?? null,
       allocataire_caf: currentProfile?.allocataire_caf ?? null,
       organismes_locaux_a_verifier: [
         currentProfile?.commune
           ? `CCAS / Mairie de ${currentProfile.commune}`
           : "CCAS / Mairie de la commune",
-        "CAF Réunion",
-        "Département de La Réunion",
-        "Région Réunion",
-        "France Travail Réunion",
+        "CAF RÃ©union",
+        "DÃ©partement de La RÃ©union",
+        "RÃ©gion RÃ©union",
+        "France Travail RÃ©union",
       ],
     }
 
@@ -585,7 +609,7 @@ export default function AssistantConseiller({
       }
     }
 
-    return data || { success: false, error: "Réponse vide." }
+    return data || { success: false, error: "RÃ©ponse vide." }
   }
 
   async function handleAnalyze() {
@@ -606,8 +630,8 @@ export default function AssistantConseiller({
     if (currentQuestionConsumesExchange && aiQuotaReached) {
       setErrorMessage(
         isKreol
-          ? "Ou la utilisé tout out kestions pou sa mwa-la."
-          : "Vous avez utilisé tous vos échanges du mois."
+          ? "Ou la utilisÃ© tout out kestions pou sa mwa-la."
+          : "Vous avez utilisÃ© tous vos Ã©changes du mois."
       )
       return
     }
@@ -632,7 +656,7 @@ export default function AssistantConseiller({
       setErrorMessage(
         result?.error ||
           (isKreol
-            ? "Le konseyé lé indisponib pou linstan."
+            ? "Le konseyÃ© lÃ© indisponib pou linstan."
             : "Le conseiller est indisponible pour le moment.")
       )
       return
@@ -647,8 +671,8 @@ export default function AssistantConseiller({
     const answer =
       result.answer ||
       (isKreol
-        ? "Mi na pas réussi générer in répons pou linstan."
-        : "Je n’ai pas réussi à générer une réponse pour le moment.")
+        ? "Mi na pas rÃ©ussi gÃ©nÃ©rer in rÃ©pons pou linstan."
+        : "Je nâ€™ai pas rÃ©ussi Ã  gÃ©nÃ©rer une rÃ©ponse pour le moment.")
 
     setHistory(prev =>
       [
@@ -689,14 +713,14 @@ export default function AssistantConseiller({
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
         <Bot size={24} color={COLORS.cyan} />
         <h3 style={{ color: COLORS.text, margin: 0, fontSize: 20 }}>
-          {isKreol ? "Mon konseyé Premium" : "Mon conseiller Premium"}
+          {isKreol ? "Mon konseyÃ© Premium" : "Mon conseiller Premium"}
         </h3>
       </div>
 
       <p style={{ color: COLORS.muted, lineHeight: 1.6, marginTop: 0 }}>
         {isKreol
-          ? "Choisis in bouton, complète si besoin, puis koz ek mon konseyé. Ici, pas de liste doublon : seulement la réponse utile."
-          : "Choisissez un bouton, complétez si besoin, puis discutez avec votre conseiller. Ici, pas de doublon : seulement la réponse utile."}
+          ? "Choisis in bouton, complÃ¨te si besoin, puis koz ek mon konseyÃ©. Ici, pas de liste doublon : seulement la rÃ©ponse utile."
+          : "Choisissez un bouton, complÃ©tez si besoin, puis discutez avec votre conseiller. Ici, pas de doublon : seulement la rÃ©ponse utile."}
       </p>
 
       <div
@@ -729,7 +753,7 @@ export default function AssistantConseiller({
             {loadingAiUsage
               ? "..."
               : `${aiUsed} / ${aiLimit} ${
-                  isKreol ? "kestions utilisées" : "échanges utilisés"
+                  isKreol ? "kestions utilisÃ©es" : "Ã©changes utilisÃ©s"
                 }`}
           </span>
         </div>
@@ -779,8 +803,8 @@ export default function AssistantConseiller({
         }}
         placeholder={
           isKreol
-            ? "Écris out kestion ou colle out kourrié ici..."
-            : "Écrivez votre question ou collez votre courrier ici..."
+            ? "Ã‰cris out kestion ou colle out kourriÃ© ici..."
+            : "Ã‰crivez votre question ou collez votre courrier ici..."
         }
         style={{
           width: "100%",
@@ -811,7 +835,7 @@ export default function AssistantConseiller({
             lineHeight: 1.45,
           }}
         >
-          ⚠️ {errorMessage}
+          âš ï¸ {errorMessage}
         </div>
       )}
 
@@ -840,7 +864,7 @@ export default function AssistantConseiller({
               ? "Analyse an kour..."
               : "Analyse en cours..."
             : isKreol
-              ? "Koz ek mon konseyé"
+              ? "Koz ek mon konseyÃ©"
               : "Discuter avec mon conseiller"}
         </button>
 
@@ -870,8 +894,8 @@ export default function AssistantConseiller({
         <div style={{ marginTop: 18, display: "grid", gap: 12 }}>
           <div style={{ color: COLORS.muted, fontSize: 12, fontWeight: 800 }}>
             {isKreol
-              ? "Dernières réponses : 6 maximum."
-              : "Dernières réponses : 6 maximum."}
+              ? "DerniÃ¨res rÃ©ponses : 6 maximum."
+              : "DerniÃ¨res rÃ©ponses : 6 maximum."}
           </div>
 
           {history.map(item => (
@@ -897,7 +921,7 @@ export default function AssistantConseiller({
                 }}
               >
                 <MessageCircle size={16} />
-                {isKreol ? "Répons" : "Réponse"} · {getModeLabel(item.mode, isKreol)}
+                {isKreol ? "RÃ©pons" : "RÃ©ponse"} Â· {getModeLabel(item.mode, isKreol)}
               </div>
 
               <div
@@ -937,10 +961,11 @@ export default function AssistantConseiller({
           }}
         >
           {isKreol
-            ? "Choisis in bouton anlèr, puis complète out demande. Le konseyé va répondre selon le mode choisi."
-            : "Choisissez un bouton au-dessus, puis complétez votre demande. Le conseiller répondra selon le mode choisi."}
+            ? "Choisis in bouton anlÃ¨r, puis complÃ¨te out demande. Le konseyÃ© va rÃ©pondre selon le mode choisi."
+            : "Choisissez un bouton au-dessus, puis complÃ©tez votre demande. Le conseiller rÃ©pondra selon le mode choisi."}
         </div>
       )}
     </section>
   )
 }
+

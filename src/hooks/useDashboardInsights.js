@@ -47,7 +47,8 @@ function buildSavingsHints({ stats = {}, byCategory = [], shoppingItems = [] }) 
   }
 
   const habits = buildStoreHabits(shoppingItems)
-  if (habits[0]?.percent >= 45) {
+  const mainHabitPercent = Number(habits[0]?.percent || 0)
+  if (mainHabitPercent >= 45) {
     hints.push("Tu vas souvent au même magasin.")
   }
 
@@ -130,7 +131,8 @@ export function useDashboardInsights({ userId, stats = {}, byCategory = [] }) {
     const mainStore = storeHabits[0] || null
     const validatedReceipts = receipts.filter(row => row.validation_status !== "draft")
     const basketAverage = validatedReceipts.length
-      ? validatedReceipts.reduce((sum, row) => sum + money(row.total_amount), 0) / validatedReceipts.length
+      ?
+      validatedReceipts.reduce((sum, row) => sum + money(row.total_amount), 0) / validatedReceipts.length
       : 0
 
     return {

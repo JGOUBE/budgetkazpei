@@ -1,6 +1,7 @@
 import { jsPDF } from "jspdf"
+import { brandLogo } from "../assets/brand"
 
-const LOGO_URL = "/icons-creole/logo-budgetkazpei.png"
+const LOGO_URL = brandLogo
 
 function getLabels(language = "fr") {
   const isKreol = language === "kreol"
@@ -519,16 +520,12 @@ export async function generateMonthlyBudgetPDF(history, language = "fr") {
   drawBackground(doc)
 
   if (logoDataUrl) {
-    doc.addImage(logoDataUrl, "PNG", 14, 10, 82, 38)
-  } else {
-    doc.setTextColor(248, 250, 252)
-    doc.setFontSize(26)
-    doc.text("BudgetKazPei", 20, 28)
+    doc.addImage(logoDataUrl, "PNG", 14, 10, 22, 22)
   }
 
-  doc.setTextColor(35, 211, 214)
-  doc.setFontSize(12)
-  doc.text("Fasilman gèr ou larzan", 22, 48)
+  doc.setTextColor(248, 250, 252)
+  doc.setFontSize(23)
+  doc.text("BudgetKazPei", logoDataUrl ? 40 : 20, 26)
 
   doc.setFillColor(249, 115, 22)
   doc.roundedRect(145, 17, 45, 12, 6, 6, "F")
@@ -563,7 +560,10 @@ export async function generateMonthlyBudgetPDF(history, language = "fr") {
   addNewPage(doc)
 
   if (logoDataUrl) {
-    doc.addImage(logoDataUrl, "PNG", 20, 10, 58, 27)
+    doc.addImage(logoDataUrl, "PNG", 20, 10, 18, 18)
+    doc.setTextColor(248, 250, 252)
+    doc.setFontSize(16)
+    doc.text("BudgetKazPei", 42, 23)
   }
 
   doc.setTextColor(248, 250, 252)
@@ -589,7 +589,10 @@ export async function generateMonthlyBudgetPDF(history, language = "fr") {
         addNewPage(doc)
 
         if (logoDataUrl) {
-          doc.addImage(logoDataUrl, "PNG", 20, 10, 58, 27)
+          doc.addImage(logoDataUrl, "PNG", 20, 10, 18, 18)
+          doc.setTextColor(248, 250, 252)
+          doc.setFontSize(16)
+          doc.text("BudgetKazPei", 42, 23)
         }
 
         doc.setTextColor(248, 250, 252)

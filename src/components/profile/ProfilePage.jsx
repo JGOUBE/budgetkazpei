@@ -1,6 +1,7 @@
-import { useEffect, useState, useRef } from "react"
+﻿import { useEffect, useState, useRef } from "react"
 import { useProfile } from "../../hooks/useProfile"
 import { supabase } from "../../services/supabase"
+import { syncProfileIncomeForCurrentMonth } from "../../services/income/profileIncomeService"
 
 const COLORS = {
   bg: "#0A1628",
@@ -160,98 +161,6 @@ export default function ProfilePage({ user, t }) {
     setForm(f => ({ ...f, [key]: value }))
   }
 
-  function toMoneyNumber(value) {
-    return Number(String(value ?? "").replace(",", ".")) || 0
-  }
-
-  function formatDateYMD(date) {
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, "0")
-    const day = String(date.getDate()).padStart(2, "0")
-    return `${year}-${month}-${day}`
-  }
-
-  async function syncProfileIncomeToMonthlyRevenue(revenusFoyer) {
-    if (!user?.id) return
-
-    const amount = toMoneyNumber(revenusFoyer)
-    const now = new Date()
-    const firstDay = formatDateYMD(new Date(now.getFullYear(), now.getMonth(), 1))
-    const lastDay = formatDateYMD(new Date(now.getFullYear(), now.getMonth() + 1, 0))
-    const today = formatDateYMD(now)
-
-    const { data: existingIncomes, error: selectError } = await supabase
-      .from("transactions")
-      .select("id, created_at")
-      .eq("user_id", user.id)
-      .gte("date", firstDay)
-      .lte("date", lastDay)
-      .or('source.eq.profile_income,label.eq.Revenus du foyer')
-      .order("created_at", { ascending: false })
-
-    if (selectError) throw selectError
-
-    const incomes = existingIncomes || []
-
-    if (amount <= 0) {
-      if (incomes.length > 0) {
-        const idsToDelete = incomes.map(income => income.id)
-
-        const { error: deleteError } = await supabase
-          .from("transactions")
-          .delete()
-          .eq("user_id", user.id)
-          .in("id", idsToDelete)
-
-        if (deleteError) throw deleteError
-      }
-
-      return
-    }
-
-    const payload = {
-      user_id: user.id,
-      label: "Revenus du foyer",
-      category: "revenus",
-      amount,
-      date: today,
-      icon: "💰",
-      source: "profile_income",
-    }
-
-    if (incomes.length > 0) {
-      const mainIncome = incomes[0]
-
-      const { error: updateIncomeError } = await supabase
-        .from("transactions")
-        .update(payload)
-        .eq("id", mainIncome.id)
-        .eq("user_id", user.id)
-
-      if (updateIncomeError) throw updateIncomeError
-
-      const duplicatedIds = incomes.slice(1).map(income => income.id)
-
-      if (duplicatedIds.length > 0) {
-        const { error: deleteDuplicatedError } = await supabase
-          .from("transactions")
-          .delete()
-          .eq("user_id", user.id)
-          .in("id", duplicatedIds)
-
-        if (deleteDuplicatedError) throw deleteDuplicatedError
-      }
-
-      return
-    }
-
-    const { error: insertIncomeError } = await supabase
-      .from("transactions")
-      .insert(payload)
-
-    if (insertIncomeError) throw insertIncomeError
-  }
-
   async function handleSubmit(e) {
     e.preventDefault()
     setError("")
@@ -259,7 +168,12 @@ export default function ProfilePage({ user, t }) {
 
     try {
       await updateProfile(form)
-      await syncProfileIncomeToMonthlyRevenue(form.revenus_foyer)
+      await syncProfileIncomeForCurrentMonth({
+        userId: user?.id,
+        revenusFoyer: form.revenus_foyer,
+        revenusDetails: profile?.revenus_details,
+        mode: "profile_update",
+      })
 
       if (typeof window !== "undefined") {
         window.dispatchEvent(new CustomEvent("budgetkazpei:transactions-updated"))
@@ -350,7 +264,7 @@ export default function ProfilePage({ user, t }) {
         const commune = await detectCommuneFromPosition(position)
 
         if (!commune) {
-          setLocationMessage(tr(isKreol, "Position autorisee, mais la commune n'a pas pu etre determinee. Vous pouvez choisir votre commune manuellement.", "Position lé autorisée, mé kominn la pa pu être trouvée. Ou pe choisir out kominn a la min."))
+          setLocationMessage(tr(isKreol, "Position autorisée, mais la commune n'a pas pu être déterminée. Vous pouvez choisir votre commune manuellement.", "Position lé autorisée, mé kominn la pa pu être trouvée. Ou pe choisir out kominn a la min."))
           return
         }
 
@@ -368,10 +282,10 @@ export default function ProfilePage({ user, t }) {
 
           setForm(nextForm)
           setSuccess(true)
-          setLocationMessage(tr(isKreol, `Commune detectee : ${commune}. Seule votre commune est enregistree.`, `Kominn trouvée : ${commune}. Selman out kominn lé anrezistrée.`))
+          setLocationMessage(tr(isKreol, `Commune détectée : ${commune}. Seule votre commune est enregistrée.`, `Kominn trouvée : ${commune}. Selman out kominn lé anrezistrée.`))
           setTimeout(() => setSuccess(false), 3000)
         } catch {
-          setLocationMessage(tr(isKreol, "Commune detectee, mais la sauvegarde n'a pas abouti. Vous pouvez choisir votre commune manuellement.", "Kominn trouvée, mé sauvegarde la pa marché. Ou pe choisir out kominn a la min."))
+          setLocationMessage(tr(isKreol, "Commune détectée, mais la sauvegarde n'a pas abouti. Vous pouvez choisir votre commune manuellement.", "Kominn trouvée, mé sauvegarde la pa marché. Ou pe choisir out kominn a la min."))
         }
       },
       () => {
@@ -418,7 +332,7 @@ export default function ProfilePage({ user, t }) {
       ? "Compte Premium"
       : tr(isKreol, "Compte Gratuit", "Compte gratuit")
 
-  const accountIcon = isPremiumPlus ? "👑" : isPremiumClassic ? "⭐" : "🆓"
+  const accountIcon = ""
   const accountColor = isPremiumPlus ? COLORS.purple : hasPremiumAccess ? COLORS.yellow : COLORS.muted
 
   function openPremiumOptions() {
@@ -534,7 +448,7 @@ export default function ProfilePage({ user, t }) {
               border: `2px solid ${COLORS.card}`,
             }}
           >
-            ✏️
+            Modifier
           </div>
 
           <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={handleAvatarChange} />
@@ -545,8 +459,8 @@ export default function ProfilePage({ user, t }) {
             {form.nom || t("profil", "title")}
           </div>
 
-          <div style={{ fontSize: 13, color: COLORS.muted, marginTop: 4 }}>📧 {user?.email}</div>
-          <div style={{ fontSize: 13, color: COLORS.muted, marginTop: 2 }}>📍 {form.commune}</div>
+          <div style={{ fontSize: 13, color: COLORS.muted, marginTop: 4 }}>{user?.email}</div>
+          <div style={{ fontSize: 13, color: COLORS.muted, marginTop: 2 }}>{form.commune}</div>
 
           <div
             style={{
@@ -577,7 +491,7 @@ export default function ProfilePage({ user, t }) {
         }}
       >
         <h3 style={{ margin: "0 0 20px", fontSize: 16, color: COLORS.text, fontWeight: 600 }}>
-          ✏️ {t("profil", "modifier")}
+          {t("profil", "modifier")}
         </h3>
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -739,13 +653,13 @@ export default function ProfilePage({ user, t }) {
 
           {error && (
             <div style={{ background: `${COLORS.red}15`, border: `1px solid ${COLORS.red}33`, borderRadius: 8, padding: "10px 14px", fontSize: 13, color: COLORS.red }}>
-              ⚠️ {error}
+              {error}
             </div>
           )}
 
           {success && (
             <div style={{ background: `${COLORS.green}15`, border: `1px solid ${COLORS.green}33`, borderRadius: 8, padding: "10px 14px", fontSize: 13, color: COLORS.green }}>
-              ✅ {t("profil", "success")}
+              {t("profil", "success")}
             </div>
           )}
 
@@ -782,7 +696,7 @@ export default function ProfilePage({ user, t }) {
       >
         <div>
           <div style={{ fontSize: 17, fontWeight: 800, color: COLORS.cyan, marginBottom: 6 }}>
-            📧 {tr(isKreol, "Nous contacter", "Contacte a nou")}
+            {tr(isKreol, "Nous contacter", "Contacte a nou")}
           </div>
           <div style={{ fontSize: 13, color: COLORS.muted, lineHeight: 1.6 }}>
             {tr(isKreol, "Une question, un bug ou une idée pour améliorer BudgetKazPei ? Remplissez le message ci-dessous, il sera envoyé directement à l’équipe BudgetKazPei.", "Ou néna in question, in bug ou in idée pou améliore BudgetKazPei ? Écris out message anba, li sera envoyé directement à l’équipe BudgetKazPei.")}
@@ -845,13 +759,13 @@ export default function ProfilePage({ user, t }) {
 
           {supportError && (
             <div style={{ background: `${COLORS.red}15`, border: `1px solid ${COLORS.red}33`, borderRadius: 8, padding: "10px 14px", fontSize: 13, color: COLORS.red }}>
-              ⚠️ {supportError}
+              {supportError}
             </div>
           )}
 
           {supportSuccess && (
             <div style={{ background: `${COLORS.green}15`, border: `1px solid ${COLORS.green}33`, borderRadius: 8, padding: "10px 14px", fontSize: 13, color: COLORS.green }}>
-              ✅ {tr(isKreol, "Message envoyé. Nous reviendrons vers vous.", "Message envoyé. Nou va revenir vers ou.")}
+              {tr(isKreol, "Message envoyé. Nous reviendrons vers vous.", "Message envoyé. Nou va revenir vers ou.")}
             </div>
           )}
 
@@ -870,7 +784,7 @@ export default function ProfilePage({ user, t }) {
               fontFamily: "inherit",
             }}
           >
-            {supportSending ? tr(isKreol, "Envoi...", "Envoi...") : tr(isKreol, "📩 Envoyer le message", "📩 Envoy message")}
+            {supportSending ? tr(isKreol, "Envoi...", "Envoi...") : tr(isKreol, "Envoyer le message", "Envoy message")}
           </button>
 
           <p style={{ margin: 0, color: COLORS.muted, fontSize: 11.5, lineHeight: 1.45 }}>
@@ -893,7 +807,7 @@ export default function ProfilePage({ user, t }) {
         >
           <div>
             <div style={{ fontSize: 17, fontWeight: 800, color: COLORS.yellow, marginBottom: 6 }}>
-              ⭐ {tr(isKreol, "Découvrir Premium", "Découvre Premium")}
+              {tr(isKreol, "Découvrir Premium", "Découvre Premium")}
             </div>
             <div style={{ fontSize: 13, color: COLORS.muted, lineHeight: 1.6 }}>
               {tr(isKreol, "Comparez les options Premium et Premium+ sur le site BudgetKazPei.", "Compare bann options Premium ek Premium+ su site BudgetKazPei.")}
@@ -909,7 +823,7 @@ export default function ProfilePage({ user, t }) {
                 padding: 14,
               }}
             >
-              <div style={{ color: COLORS.yellow, fontWeight: 800, marginBottom: 6 }}>⭐ Premium</div>
+              <div style={{ color: COLORS.yellow, fontWeight: 800, marginBottom: 6 }}>Premium</div>
               <div style={{ color: COLORS.muted, fontSize: 13, lineHeight: 1.55 }}>
                 {tr(isKreol, "Assistant aides, suivi des démarches, documents à préparer, bons plans intelligents et créole réunionnais.", "Assistant éd, suivi démarches, dokiman pou préparé, bons plans intelligents ek kréol réunionnais.")}
               </div>
@@ -923,7 +837,7 @@ export default function ProfilePage({ user, t }) {
                 padding: 14,
               }}
             >
-              <div style={{ color: COLORS.purple, fontWeight: 800, marginBottom: 6 }}>👑 Premium+</div>
+              <div style={{ color: COLORS.purple, fontWeight: 800, marginBottom: 6 }}>Premium+</div>
               <div style={{ color: COLORS.muted, fontSize: 13, lineHeight: 1.55 }}>
                 {tr(isKreol, "Conseiller IA avancé, aide administrative personnalisée, courriers et accompagnement plus complet.", "Conseiller IA avancé, aide administrative personnalisée, courriers ek accompagnement pli complet.")}
               </div>
@@ -1005,3 +919,4 @@ function Checkbox({ label, checked, onChange }) {
     </label>
   )
 }
+

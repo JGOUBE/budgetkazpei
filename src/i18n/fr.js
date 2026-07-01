@@ -6,6 +6,13 @@ const fr = {
     opportunites: "Argent à récupérer",
     monthlyHistory: "Historique mensuel",
     abonnements: "Charges fixes",
+    receipts: "Mes tickets",
+    shopping: "Mes courses",
+    statistics: "Mes stats",
+    savings: "Mes economies",
+    shoppingList: "Liste courses",
+    financeAssistant: "Mon assistant",
+    rewards: "Defis",
     profil: "Mon Profil",
     premium: "Passer Premium",
     signOut: "Se déconnecter",
@@ -87,8 +94,8 @@ const fr = {
     assurances: "Assurances",
   },
   receipts: {
-    title: "Mes courses",
-    scanCta: "Analyser une course",
+    title: "Mes tickets",
+    scanCta: "Scanner ticket",
   },
   transactions: {
     addTitle: "Nouvelle transaction",
@@ -151,7 +158,7 @@ const fr = {
     assistantAnalyze: "Analyser ma situation",
     assistantResponseTitle: "Réponse de l’assistant",
     assistantPlaceholder:
-      "Ex : Je suis parent isolé avec 2 enfants à Saint-Leu, quelles aides puis-je vérifier ?",
+      "Ex : Je suis parent isolé avec 2 enfants à Saint-Leu, quelles aides puis-je vérifier ",
   },
   abonnements: {
     savingDetected: "Économie potentielle détectée",
@@ -165,7 +172,7 @@ const fr = {
     perMonth: "/mois",
     title: "Charges fixes & abonnements",
     description: "Ajoutez ici vos dépenses récurrentes : loyer, crédit, EDF, eau, téléphone, internet, assurances ou streaming.",
-    infoTitle: "À quoi ça sert ?",
+    infoTitle: "À quoi ça sert ",
     infoText1: "Les charges fixes sont les dépenses qui reviennent chaque mois. Elles sont automatiquement déduites de votre budget et prises en compte dans le solde disponible.",
     infoText2: "Exemples : loyer, crédit immobilier, crédit voiture, EDF, eau, téléphone, internet, mutuelle, assurance, Netflix.",
     totalFixedCharges: "Total charges fixes",

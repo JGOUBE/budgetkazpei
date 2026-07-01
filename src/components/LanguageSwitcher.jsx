@@ -1,22 +1,16 @@
-const COLORS = {
-  card: "#0F1E38",
-  border: "#1E3A5F",
-  accent: "#F97316",
-  muted: "#64748B",
-  text: "#F1F5F9",
-};
+import { ds } from "../styles/designSystem"
 
 export default function LanguageSwitcher({ lang, onToggle }) {
   return (
     <button
       onClick={onToggle}
-      title={lang === "fr" ? "Passer en créole" : "Passer en français"}
+      title={lang === "fr" ? "Passer en kreol" : "Passer en francais"}
       style={{
         background: "transparent",
-        border: `1px solid ${COLORS.border}`,
+        border: `1px solid ${ds.border}`,
         borderRadius: 8,
         padding: "6px 12px",
-        color: COLORS.muted,
+        color: ds.textSecondary,
         cursor: "pointer",
         fontSize: 13,
         fontFamily: "inherit",
@@ -25,10 +19,16 @@ export default function LanguageSwitcher({ lang, onToggle }) {
         gap: 6,
         transition: "all 0.2s",
       }}
-      onMouseEnter={e => { e.currentTarget.style.borderColor = COLORS.accent; e.currentTarget.style.color = COLORS.accent; }}
-      onMouseLeave={e => { e.currentTarget.style.borderColor = COLORS.border; e.currentTarget.style.color = COLORS.muted; }}
+      onMouseEnter={e => {
+        e.currentTarget.style.borderColor = ds.primary
+        e.currentTarget.style.color = ds.primary
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.borderColor = ds.border
+        e.currentTarget.style.color = ds.textSecondary
+      }}
     >
-      {lang === "fr" ? "🇷🇪 Kréol" : "🇫🇷 Français"}
+      {lang === "fr" ? "Kreol" : "Francais"}
     </button>
-  );
+  )
 }

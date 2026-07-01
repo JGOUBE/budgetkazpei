@@ -20,6 +20,8 @@ const COLORS = {
 const CHART_COLORS = ["#F97316", "#22C55E", "#38BDF8", "#FCD34D", "#A78BFA", "#FB7185"]
 
 function getIsKreol(t) {
+  const lang = String(t?.lang || "").toLowerCase()
+  if (lang === "cr" || lang === "kreol") return true
   return String(t?.("nav", "dashboard") || "").toLowerCase().includes("tablo")
 }
 
@@ -52,7 +54,7 @@ export default function ShoppingInsightsPage({ user, t, isMobile = false }) {
       setLoading(true)
 
       try {
-        const rows = await listShoppingItems({ userId: user.id })
+        const rows = await listShoppingItems({ userId: user?.id })
         if (!ignore) setItems(rows)
       } catch (error) {
         console.error("Erreur habitudes courses:", error)
@@ -78,7 +80,7 @@ export default function ShoppingInsightsPage({ user, t, isMobile = false }) {
 
   useEffect(() => {
     if (!selectedProduct && topProducts[0]?.normalizedName) {
-      setSelectedProduct(topProducts[0].normalizedName)
+      setSelectedProduct(topProducts[0]?.normalizedName)
     }
   }, [selectedProduct, topProducts])
 
@@ -86,15 +88,14 @@ export default function ShoppingInsightsPage({ user, t, isMobile = false }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
       <div style={cardStyle({ padding: isMobile ? 18 : 24 })}>
         <div style={{ color: COLORS.cyan, fontSize: 13, fontWeight: 950, marginBottom: 8 }}>
-          {isKreol ? "🛒 Mes labitid courses" : "🛒 Mes habitudes"}
+          {isKreol ? "Mes labitid courses" : "Mes habitudes"}
         </div>
         <h1 style={{ margin: 0, color: COLORS.text, fontFamily: "'DM Serif Display', serif", fontSize: isMobile ? 30 : 38 }}>
           {isKreol ? "Courses intelligentes" : "Courses intelligentes"}
         </h1>
         <p style={{ color: COLORS.muted, margin: "10px 0 0", lineHeight: 1.55 }}>
-          {isKreol
-            ? "BudgetKazPei i analiz bann tiké validé pou montre out magasin ek produits préférés."
-            : "BudgetKazPei analyse les tickets validés pour suivre vos magasins et produits récurrents."}
+          {isKreol ? "BudgetKazPei i analiz bann tike valide pou montre out magazin ek produits prefere."
+            : "BudgetKazPei analyse les tickets valides pour suivre vos magasins et produits recurrents."}
         </p>
       </div>
 
@@ -103,12 +104,11 @@ export default function ShoppingInsightsPage({ user, t, isMobile = false }) {
       ) : items.length === 0 ? (
         <div style={cardStyle()}>
           <div style={{ color: COLORS.text, fontWeight: 950 }}>
-            {isKreol ? "Nana poin données courses pou linstan." : "Aucune donnée courses pour le moment."}
+            {isKreol ? "Nana poin donnees courses pou linstan." : "Aucune donnee courses pour le moment."}
           </div>
           <div style={{ color: COLORS.muted, marginTop: 8, lineHeight: 1.5 }}>
-            {isKreol
-              ? "Eskané ek valide in tiké pou komans voir out habitudes."
-              : "Scannez puis validez un ticket pour commencer à voir vos habitudes."}
+            {isKreol ? "Eskane ek valide in tike pou komans voir out labitid."
+              : "Scannez puis validez un ticket pour commencer a voir vos habitudes."}
           </div>
         </div>
       ) : (
@@ -136,7 +136,7 @@ function StoreHabitsCard({ data, isKreol }) {
   return (
     <div style={cardStyle()}>
       <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 950, marginBottom: 12 }}>
-        {isKreol ? "Ousa ou achète le plis ?" : "Où j'achète le plus ?"}
+        {isKreol ? "Ousa ou achete le plis " : "Ou j'achete le plus "}
       </div>
       <div style={{ height: 220 }}>
         <ResponsiveContainer width="100%" height="100%">
@@ -151,7 +151,7 @@ function StoreHabitsCard({ data, isKreol }) {
       <div style={{ display: "grid", gap: 8 }}>
         {data.map((row, index) => (
           <div key={row.store} style={{ display: "flex", justifyContent: "space-between", color: COLORS.text, fontWeight: 900 }}>
-            <span><span style={{ color: CHART_COLORS[index % CHART_COLORS.length] }}>●</span> {row.store}</span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><span aria-hidden="true" style={{ width: 9, height: 9, borderRadius: 999, background: CHART_COLORS[index % CHART_COLORS.length], display: "inline-block" }} />{row.store}</span>
             <span>{row.percent} %</span>
           </div>
         ))}
@@ -176,12 +176,11 @@ function ProductStatsCard({ stats, isKreol }) {
         <Metric label={isKreol ? "Plus haut" : "Plus haut"} value={formatMontant(stats.highestPrice)} color={COLORS.accent} />
       </div>
       <div style={{ marginTop: 14, color: COLORS.text, fontWeight: 950, lineHeight: 1.45 }}>
-        {isKreol
-          ? `Ou achète produit-la ${stats.yearlyFrequency} fois par an.`
+        {isKreol ? `Ou achete produit-la ${stats.yearlyFrequency} fois par an.`
           : `Vous achetez ce produit ${stats.yearlyFrequency} fois par an.`}
         <br />
         <span style={{ color: COLORS.accent }}>
-          {isKreol ? "Dépans estimée" : "Dépense estimée"} : {formatMontant(stats.yearlySpend)}/an
+          {isKreol ? "Depans estimee" : "Depense estimee"} : {formatMontant(stats.yearlySpend)}/an
         </span>
       </div>
     </div>
@@ -275,3 +274,4 @@ function SkeletonGrid() {
     </div>
   )
 }
+

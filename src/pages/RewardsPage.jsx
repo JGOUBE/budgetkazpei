@@ -5,8 +5,53 @@ import { buildGamificationState } from "../services/gamification/gamificationEng
 const COLORS = { card: "#0F1E38", cardLight: "#152444", border: "#1E3A5F", accent: "#F97316", green: "#22C55E", cyan: "#23D3D6", yellow: "#FCD34D", muted: "#A9BBDD", text: "#F8FAFC", red: "#EF4444" }
 const card = extra => ({ background: `linear-gradient(135deg, ${COLORS.card}, ${COLORS.cardLight})`, border: `1px solid ${COLORS.border}`, borderRadius: 22, padding: 18, ...extra })
 
-export default function RewardsPage({ user, transactions = [], stats = {}, isMobile = false }) {
+const COPY = {
+  fr: {
+    eyebrow: "Progression",
+    title: "Defis & badges",
+    intro: "Chaque point affiche vient de vos vraies depenses, courses et actions enregistrees.",
+    howTitle: "Comment ca fonctionne ",
+    steps: [
+      "Ajoutez vos depenses ou vos courses.",
+      "BudgetKazPei suit vos progres automatiquement.",
+      "Vous gagnez des points.",
+      "Vous debloquez des badges.",
+      "Vous progressez vers le niveau suivant.",
+    ],
+    currentLevel: "Niveau actuel",
+    nextLevel: "Prochain niveau",
+    challenges: "Defis",
+    badges: "Badges",
+    unlocked: "Debloque",
+    inProgress: "En cours",
+    points: "points",
+  },
+  kreol: {
+    eyebrow: "Progresyon",
+    title: "Defi & badges",
+    intro: "Chaque point i vien de out vraies depans, courses ek aksyon anrezistrees.",
+    howTitle: "Koman ca i marche ",
+    steps: [
+      "Azout out depans ou out courses.",
+      "BudgetKazPei i swiv out progres otomatikman.",
+      "Ou gagn bann points.",
+      "Ou debloque bann badges.",
+      "Ou avance vers nivo suivant.",
+    ],
+    currentLevel: "Nivo actuel",
+    nextLevel: "Prochain nivo",
+    challenges: "Defi",
+    badges: "Badges",
+    unlocked: "Debloque",
+    inProgress: "An cours",
+    points: "points",
+  },
+}
+
+export default function RewardsPage({ user, transactions = [], stats = {}, isMobile = false, language = "fr" }) {
   const [receipts, setReceipts] = useState([])
+  const isKreol = language === "cr" || language === "kreol"
+  const copy = isKreol ? COPY.kreol : COPY.fr
 
   useEffect(() => {
     let ignore = false
@@ -14,33 +59,30 @@ export default function RewardsPage({ user, transactions = [], stats = {}, isMob
     supabase
       .from("receipts")
       .select("id, total_amount, purchase_date")
-      .eq("user_id", user.id)
+      .eq("user_id", user?.id)
       .then(({ data }) => !ignore && setReceipts(data || []))
     return () => { ignore = true }
   }, [user?.id])
 
-  const state = useMemo(() => buildGamificationState({ transactions, receipts, stats }), [transactions, receipts, stats])
+  const state = useMemo(
+    () => buildGamificationState({ transactions, receipts, stats, language: isKreol ? "kreol" : "fr" }),
+    [transactions, receipts, stats, isKreol],
+  )
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
       <div style={card({ padding: isMobile ? 18 : 24 })}>
-        <div style={{ color: COLORS.cyan, fontSize: 13, fontWeight: 950 }}>Progression</div>
-        <h1 style={{ color: COLORS.text, margin: "8px 0", fontFamily: "'DM Serif Display', serif", fontSize: isMobile ? 34 : 42 }}>Défis & badges</h1>
+        <div style={{ color: COLORS.cyan, fontSize: 13, fontWeight: 950 }}>{copy.eyebrow}</div>
+        <h1 style={{ color: COLORS.text, margin: "8px 0", fontFamily: "'DM Serif Display', serif", fontSize: isMobile ? 34 : 42 }}>{copy.title}</h1>
         <div style={{ color: COLORS.muted, lineHeight: 1.55 }}>
-          Chaque point affiché vient de vos vraies dépenses, courses et actions enregistrées.
+          {copy.intro}
         </div>
       </div>
 
       <div style={card()}>
-        <h2 style={titleStyle}>Comment ça fonctionne ?</h2>
+        <h2 style={titleStyle}>{copy.howTitle}</h2>
         <div style={{ display: "grid", gap: 9, color: COLORS.text, lineHeight: 1.5 }}>
-          {[
-            "Ajoutez vos dépenses ou vos courses.",
-            "BudgetKazPei suit vos progrès automatiquement.",
-            "Vous gagnez des points.",
-            "Vous débloquez des badges.",
-            "Vous progressez vers le niveau suivant.",
-          ].map((line, index) => (
+          {copy.steps.map((line, index) => (
             <div key={line} style={{ display: "grid", gridTemplateColumns: "28px 1fr", gap: 8, alignItems: "center" }}>
               <strong style={{ color: COLORS.cyan }}>{index + 1}.</strong>
               <span>{line}</span>
@@ -52,18 +94,18 @@ export default function RewardsPage({ user, transactions = [], stats = {}, isMob
       <div style={card()}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 14, flexWrap: "wrap" }}>
           <div>
-            <div style={{ color: COLORS.muted, fontSize: 12, fontWeight: 900 }}>Niveau actuel</div>
+            <div style={{ color: COLORS.muted, fontSize: 12, fontWeight: 900 }}>{copy.currentLevel}</div>
             <h2 style={{ ...titleStyle, marginTop: 4 }}>{state.level.current}</h2>
             <div style={{ color: COLORS.muted, lineHeight: 1.45 }}>{state.level.reason}</div>
           </div>
-          <div style={{ color: COLORS.yellow, fontWeight: 950, fontSize: 24 }}>{state.points} points</div>
+          <div style={{ color: COLORS.yellow, fontWeight: 950, fontSize: 24 }}>{state.points} {copy.points}</div>
         </div>
-        <div style={{ color: COLORS.text, marginTop: 14, fontWeight: 900 }}>Prochain niveau : {state.level.next}</div>
+        <div style={{ color: COLORS.text, marginTop: 14, fontWeight: 900 }}>{copy.nextLevel} : {state.level.next}</div>
         <ProgressBar progress={state.level.progress} />
       </div>
 
       <div style={card()}>
-        <h2 style={titleStyle}>Défis</h2>
+        <h2 style={titleStyle}>{copy.challenges}</h2>
         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, minmax(0, 1fr))", gap: 12 }}>
           {state.challenges.map(challenge => (
             <ProgressCard key={challenge.id} item={challenge} />
@@ -72,17 +114,17 @@ export default function RewardsPage({ user, transactions = [], stats = {}, isMob
       </div>
 
       <div style={card()}>
-        <h2 style={titleStyle}>Badges</h2>
+        <h2 style={titleStyle}>{copy.badges}</h2>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
           {state.badges.map(badge => (
             <div key={badge.id} style={{ borderRadius: 16, border: `1px solid ${badge.unlocked ? COLORS.green : COLORS.border}`, background: badge.unlocked ? "rgba(34,197,94,.12)" : "rgba(255,255,255,.05)", padding: 14 }}>
               <div style={{ color: badge.unlocked ? COLORS.green : COLORS.text, fontWeight: 950 }}>
-                {badge.unlocked ? "✅" : "🔒"} {badge.label}
+                {badge.label}
               </div>
               <div style={{ color: COLORS.muted, fontSize: 12, marginTop: 6, lineHeight: 1.45 }}>{badge.condition}</div>
               <ProgressBar progress={badge.progress} compact />
               <div style={{ color: badge.unlocked ? COLORS.green : COLORS.yellow, fontSize: 12, fontWeight: 900, marginTop: 8 }}>
-                {badge.progress.current} / {badge.progress.target} · {badge.unlocked ? "Débloqué" : "En cours"} · {badge.reward}
+                {badge.progress.current} / {badge.progress.target} - {badge.unlocked ? copy.unlocked : copy.inProgress} - {badge.reward}
               </div>
             </div>
           ))}

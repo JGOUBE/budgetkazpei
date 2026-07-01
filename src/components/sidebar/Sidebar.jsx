@@ -1,52 +1,23 @@
-import {
-  Home,
-  BarChart3,
-  Landmark,
-  ClipboardList,
-  User,
-  Star,
-  LogOut,
-  Sparkles,
-  Lightbulb,
-  Lock,
-  CalendarClock,
-  Bot,
-  Mail,
-  FileCheck2,
-  ReceiptText,
-  ShoppingBasket,
-  PiggyBank,
-  ListChecks,
-  Trophy,
-} from "lucide-react"
-
-const COLORS = {
-  card: "#0F1E38",
-  border: "#1E3A5F",
-  accent: "#F97316",
-  muted: "#8EA4C5",
-  text: "#F1F5F9",
-  yellow: "#FCD34D",
-  cyan: "#23D3D6",
-  purple: "#A78BFA",
-}
+﻿import { BkIcons } from "../icons-budgetkazpei"
+import { ds } from "../../styles/designSystem"
+import { brandLogo } from "../../assets/brand"
 
 const NAV_ITEMS = [
-  { id: "dashboard", icon: Home, section: "nav", key: "dashboard" },
-  { id: "depenses", icon: BarChart3, section: "nav", key: "depenses" },
-  { id: "receipts", icon: ReceiptText, section: "nav", key: "receipts" },
-  { id: "shopping", icon: ShoppingBasket, section: "nav", key: "shopping" },
-  { id: "statistics", icon: BarChart3, section: "nav", key: "statistics" },
-  { id: "savings", icon: PiggyBank, section: "nav", key: "savings" },
-  { id: "shoppingList", icon: ListChecks, section: "nav", key: "shoppingList" },
-  { id: "financeAssistant", icon: Bot, section: "nav", key: "financeAssistant" },
-  { id: "rewards", icon: Trophy, section: "nav", key: "rewards" },
-  { id: "aides", icon: Landmark, section: "nav", key: "aides" },
-  { id: "demarches", icon: FileCheck2, section: "nav", key: "demarches" },
-  { id: "conseiller", icon: Bot, section: "nav", key: "conseiller" },
-  { id: "abonnements", icon: ClipboardList, section: "nav", key: "abonnements" },
-  { id: "historique", icon: CalendarClock, section: "nav", key: "monthlyHistory", premiumOnly: true },
-  { id: "profil", icon: User, section: "nav", key: "profil" },
+  { id: "dashboard", icon: BkIcons.dashboard, section: "nav", key: "dashboard" },
+  { id: "depenses", icon: BkIcons.depenses, section: "nav", key: "depenses" },
+  { id: "receipts", icon: BkIcons.receipts, section: "nav", key: "receipts" },
+  { id: "shopping", icon: BkIcons.shopping, section: "nav", key: "shopping" },
+  { id: "statistics", icon: BkIcons.stats, section: "nav", key: "statistics" },
+  { id: "savings", icon: BkIcons.savings, section: "nav", key: "savings" },
+  { id: "shoppingList", icon: BkIcons.list, section: "nav", key: "shoppingList" },
+  { id: "financeAssistant", icon: BkIcons.assistant, section: "nav", key: "financeAssistant" },
+  { id: "rewards", icon: BkIcons.rewards, section: "nav", key: "rewards" },
+  { id: "aides", icon: BkIcons.aides, section: "nav", key: "aides" },
+  { id: "demarches", icon: BkIcons.demarches, section: "nav", key: "demarches" },
+  { id: "conseiller", icon: BkIcons.assistant, section: "nav", key: "conseiller" },
+  { id: "abonnements", icon: BkIcons.abonnements, section: "nav", key: "abonnements" },
+  { id: "historique", icon: BkIcons.calendar, section: "nav", key: "monthlyHistory", premiumOnly: true },
+  { id: "profil", icon: BkIcons.user, section: "nav", key: "profil" },
 ]
 
 export default function Sidebar({
@@ -56,9 +27,14 @@ export default function Sidebar({
   user,
   isPremium,
   isPremiumPlus = false,
+  lang = "fr",
   t,
 }) {
-  const isKreol = t("nav", "dashboard") === "Tablo débor"
+  const PremiumIcon = BkIcons.premium
+  const ContactIcon = BkIcons.contact
+  const SignOutIcon = BkIcons.user
+  const LockIcon = BkIcons.dark
+  const isKreol = lang === "cr" || lang === "kreol"
   const premiumActive = activeNav === "premium"
   const contactActive = activeNav === "contact"
 
@@ -69,129 +45,46 @@ export default function Sidebar({
     "Utilisateur"
 
   const premiumButtonLabel = isPremiumPlus
-    ? "Gérer Premium+"
+    ? "Gerer Premium+"
     : isPremium
       ? "Passer Premium+"
       : isKreol
         ? "Vir Premium"
-        : "Découvrir Premium"
+        : "Decouvrir Premium"
 
-  const premiumButtonIcon = isPremiumPlus || isPremium ? "👑" : null
-  const premiumColor = isPremiumPlus || isPremium ? COLORS.purple : COLORS.yellow
+  const premiumColor = isPremiumPlus || isPremium ? ds.purple : ds.warning
 
   function getNavLabel(item) {
-    if (item.id === "demarches") {
-      return isKreol ? "📋 Mon démars" : "📋 Mes démarches"
-    }
-
-    if (item.id === "conseiller") {
-      return isKreol ? "🤖 Konseyé" : "🤖 Conseiller"
-    }
-
-    if (item.id === "receipts") {
-      return isKreol ? "🧾 Mon bann tiké" : "🧾 Mes tickets"
-    }
-
-    if (item.id === "shopping") {
-      return isKreol ? "🛒 Mes courses" : "🛒 Mes courses"
-    }
-
-    if (item.id === "statistics") {
-      return isKreol ? "📊 Mes stats" : "📊 Mes stats"
-    }
-
-    if (item.id === "savings") return "💰 Mes économies"
-    if (item.id === "shoppingList") return "📝 Liste courses"
-    if (item.id === "financeAssistant") return "🧠 Mon assistant"
-    if (item.id === "rewards") return "🏆 Défis"
-
     return t(item.section, item.key)
   }
 
   return (
     <aside
       style={{
-        width: 236,
+        width: 248,
         height: "100dvh",
-        background: COLORS.card,
-        borderRight: `1px solid ${COLORS.border}`,
+        background: ds.sidebar,
+        borderRight: `1px solid ${ds.border}`,
         display: "flex",
         flexDirection: "column",
-        padding: "20px 16px 14px",
+        padding: "18px 16px 14px",
         overflow: "hidden",
       }}
     >
-      <div
-        style={{
-          flex: 1,
-          overflowY: "auto",
-          overflowX: "hidden",
-          paddingRight: 2,
-          paddingBottom: 10,
-        }}
-      >
-        <div style={{ textAlign: "center", marginBottom: 14 }}>
-          <img
-            src="/icons-creole/logo-budgetkazpei.png"
-            alt="BudgetKazPei"
-            style={{
-              width: "100%",
-              maxWidth: 700,
-              height: "auto",
-              display: "block",
-              margin: "35px auto -35px",
-              objectFit: "contain",
-              filter: "drop-shadow(2px 5px 0 rgba(5,8,12,.75))",
-            }}
-          />
-
-          <div
-            style={{
-              marginTop: -45,
-              fontSize: 13,
-              color: COLORS.cyan,
-              fontWeight: 900,
-              fontFamily: "Poppins, 'DM Sans', sans-serif",
-              whiteSpace: "nowrap",
-            }}
-          >
-            {t("header", "tagline")}
+      <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden", paddingRight: 2, paddingBottom: 10 }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, margin: "12px 0 18px" }}>
+          <img src={brandLogo} alt="BudgetKazPei" style={{ width: 68, height: 68, objectFit: "contain", display: "block" }} />
+          <div style={{ color: ds.textPrimary, fontWeight: 950, fontSize: 19, letterSpacing: 0, lineHeight: 1 }}>
+            BudgetKazPei
           </div>
         </div>
 
-        <div
-          style={{
-            background: "rgba(249,115,22,.10)",
-            border: "1px solid rgba(249,115,22,.30)",
-            borderRadius: 14,
-            padding: "11px 13px",
-            marginBottom: 10,
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              fontSize: 12,
-              color: COLORS.accent,
-              fontWeight: 900,
-            }}
-          >
-            <Sparkles size={13} />
+        <div style={{ background: "rgba(249,115,22,.10)", border: `1px solid ${ds.primary}55`, borderRadius: ds.radius, padding: "11px 13px", marginBottom: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, color: ds.primary, fontWeight: 900 }}>
+            <PremiumIcon size={14} />
             {isKreol ? "Bienvenu," : "Bienvenue,"}
           </div>
-
-          <div
-            style={{
-              marginTop: 3,
-              fontSize: 15,
-              color: COLORS.text,
-              fontWeight: 900,
-              lineHeight: 1.15,
-              wordBreak: "break-word",
-            }}
-          >
+          <div style={{ marginTop: 3, fontSize: 15, color: ds.textPrimary, fontWeight: 900, lineHeight: 1.15, wordBreak: "break-word" }}>
             {prenom}
           </div>
         </div>
@@ -206,13 +99,7 @@ export default function Sidebar({
               <button
                 key={item.id}
                 type="button"
-                onClick={() => {
-                  if (locked) {
-                    onNavChange("premium")
-                  } else {
-                    onNavChange(item.id)
-                  }
-                }}
+                onClick={() => onNavChange(locked ? "premium" : item.id)}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -220,21 +107,9 @@ export default function Sidebar({
                   width: "100%",
                   padding: "10px 13px",
                   borderRadius: 12,
-                  border: active
-                    ? `1px solid ${COLORS.accent}66`
-                    : locked
-                      ? `1px solid ${COLORS.yellow}35`
-                      : "1px solid transparent",
-                  background: active
-                    ? "rgba(249,115,22,.15)"
-                    : locked
-                      ? "rgba(252,211,77,.08)"
-                      : "transparent",
-                  color: active
-                    ? COLORS.accent
-                    : locked
-                      ? COLORS.yellow
-                      : COLORS.muted,
+                  border: active ? `1px solid ${ds.primary}66` : locked ? `1px solid ${ds.warning}35` : "1px solid transparent",
+                  background: active ? "rgba(249,115,22,.15)" : locked ? "rgba(252,211,77,.08)" : "transparent",
+                  color: active ? ds.primary : locked ? ds.warning : ds.textSecondary,
                   cursor: "pointer",
                   fontSize: 14,
                   fontWeight: active || locked ? 900 : 700,
@@ -244,7 +119,7 @@ export default function Sidebar({
               >
                 <Icon size={17} />
                 <span style={{ flex: 1 }}>{getNavLabel(item)}</span>
-                {locked && <Lock size={14} />}
+                {locked && <LockIcon size={14} />}
               </button>
             )
           })}
@@ -258,65 +133,22 @@ export default function Sidebar({
             alignItems: "center",
             gap: 9,
             width: "100%",
-            marginTop: 10,
+            marginTop: 12,
             padding: "11px 13px",
             borderRadius: 13,
             border: `1px solid ${premiumColor}66`,
-            background: premiumActive
-              ? `linear-gradient(135deg, ${premiumColor}30, rgba(249,115,22,.16))`
-              : `linear-gradient(135deg, ${premiumColor}22, rgba(245,158,11,.10))`,
+            background: premiumActive ? `${premiumColor}30` : `${premiumColor}18`,
             color: premiumColor,
             cursor: "pointer",
             fontSize: 14,
             fontWeight: 900,
             fontFamily: "inherit",
             textAlign: "left",
-            boxShadow: premiumActive ? `0 0 18px ${premiumColor}20` : "none",
           }}
         >
-          {premiumButtonIcon ? (
-            <span style={{ fontSize: 17 }}>{premiumButtonIcon}</span>
-          ) : (
-            <Star size={17} fill={COLORS.yellow} />
-          )}
+          <PremiumIcon size={17} />
           <span>{premiumButtonLabel}</span>
         </button>
-
-        <div
-          style={{
-            marginTop: 12,
-            background:
-              "linear-gradient(135deg, rgba(35,211,214,.12), rgba(249,115,22,.08))",
-            border: "1px solid rgba(35,211,214,.25)",
-            borderRadius: 14,
-            padding: "11px 12px",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              fontSize: 13,
-              color: COLORS.cyan,
-              fontWeight: 900,
-              marginBottom: 5,
-            }}
-          >
-            <Lightbulb size={14} />
-            {t("bonPlan", "title")}
-          </div>
-
-          <div
-            style={{
-              fontSize: 10.5,
-              color: COLORS.muted,
-              lineHeight: 1.35,
-            }}
-          >
-            {t("bonPlan", "message")}
-          </div>
-        </div>
 
         <button
           type="button"
@@ -330,20 +162,16 @@ export default function Sidebar({
             marginTop: 12,
             padding: "11px 13px",
             borderRadius: 14,
-            border: contactActive
-              ? `1px solid ${COLORS.cyan}66`
-              : "1px solid rgba(35,211,214,.35)",
-            background: contactActive
-              ? "linear-gradient(135deg, rgba(35,211,214,.22), rgba(15,30,56,.95))"
-              : "linear-gradient(135deg, rgba(35,211,214,.12), rgba(15,30,56,.95))",
-            color: COLORS.cyan,
+            border: contactActive ? `1px solid ${ds.cyan}66` : `1px solid ${ds.cyan}40`,
+            background: contactActive ? "rgba(35,211,214,.20)" : "rgba(35,211,214,.10)",
+            color: ds.cyan,
             cursor: "pointer",
             fontSize: 14,
             fontWeight: 900,
             fontFamily: "inherit",
           }}
         >
-          <Mail size={17} />
+          <ContactIcon size={17} />
           {isKreol ? "Contacte a nou" : "Contactez-nous"}
         </button>
 
@@ -360,9 +188,8 @@ export default function Sidebar({
             marginBottom: 90,
             padding: "11px 13px",
             borderRadius: 14,
-            border: "1px solid rgba(239,68,68,.38)",
-            background:
-              "linear-gradient(135deg, rgba(239,68,68,.13), rgba(15,30,56,.95))",
+            border: `1px solid ${ds.danger}55`,
+            background: "rgba(239,68,68,.10)",
             color: "#FCA5A5",
             cursor: "pointer",
             fontSize: 14,
@@ -370,10 +197,11 @@ export default function Sidebar({
             fontFamily: "inherit",
           }}
         >
-          <LogOut size={17} />
+          <SignOutIcon size={17} />
           {t("nav", "signOut")}
         </button>
       </div>
     </aside>
   )
 }
+

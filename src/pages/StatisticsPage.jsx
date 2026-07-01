@@ -16,7 +16,52 @@ const COLORS = {
   text: "#F8FAFC",
 }
 
-const CHART_COLORS = ["#F97316", "#22C55E", "#38BDF8", "#FCD34D", "#A78BFA", "#FB7185"]
+const CATEGORY_COLORS = {
+  logement: "#F97316",
+  alimentaire: "#22C55E",
+  energie: "#38BDF8",
+  loisirs: "#FCD34D",
+  transport: "#A78BFA",
+  divers: "#FB7185",
+  sante: "#23D3D6",
+}
+
+const CHART_COLORS = ["#22C55E", "#F97316", "#38BDF8", "#FCD34D", "#A78BFA", "#FB7185"]
+
+function normalizeCategoryId(value = "") {
+  const clean = String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+  if (clean.includes("aliment") || clean.includes("course")) return "alimentaire"
+  if (clean.includes("logement") || clean.includes("loyer")) return "logement"
+  if (clean.includes("energie") || clean.includes("electricite") || clean.includes("eau")) return "energie"
+  if (clean.includes("loisir")) return "loisirs"
+  if (clean.includes("transport") || clean.includes("essence")) return "transport"
+  if (clean.includes("sante")) return "sante"
+  return clean || "divers"
+}
+
+function getCategoryColor(category, index = 0) {
+  return CATEGORY_COLORS[normalizeCategoryId(category)] || CHART_COLORS[index % CHART_COLORS.length]
+}
+
+function getCategoryLabel(category = "") {
+  const key = normalizeCategoryId(category)
+  const labels = {
+    alimentaire: "Alimentaire",
+    logement: "Logement",
+    energie: "Energie",
+    loisirs: "Loisirs",
+    transport: "Transport",
+    divers: "Divers",
+    sante: "Sante",
+  }
+  return labels[key] || String(category || "Categorie")
+}
 
 function card(extra = {}) {
   return {
@@ -137,7 +182,7 @@ function CategoriesChart({ data }) {
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie data={data.slice(0, 6)} dataKey="depense" nameKey="label" innerRadius={58} outerRadius={90}>
-                  {data.slice(0, 6).map((_, index) => <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />)}
+                  {data.slice(0, 6).map((row, index) => <Cell key={index} fill={getCategoryColor(row.id || row.category || row.label, index)} />)}
                 </Pie>
                 <Tooltip formatter={(value, name) => [formatMontant(value), name || "Catégorie"]} />
               </PieChart>
@@ -146,7 +191,7 @@ function CategoriesChart({ data }) {
           <div style={{ display: "grid", gap: 8, marginTop: 10 }}>
             {data.slice(0, 6).map((row, index) => (
               <div key={row.id || row.label || index} style={{ display: "grid", gridTemplateColumns: "auto 1fr auto", gap: 8, alignItems: "center", color: COLORS.text, fontSize: 13 }}>
-                <span style={{ width: 10, height: 10, borderRadius: 999, background: CHART_COLORS[index % CHART_COLORS.length] }} />
+                <span style={{ width: 10, height: 10, borderRadius: 999, background: getCategoryColor(row.id || row.category || row.label, index) }} />
                 <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.label || row.id || "Catégorie"}</span>
                 <span style={{ color: COLORS.muted, fontWeight: 900 }}>{formatMontant(row.depense)}</span>
               </div>
@@ -159,6 +204,9 @@ function CategoriesChart({ data }) {
 }
 
 function EvolutionChart({ data }) {
+  const categoryKeys = Array.from(new Set((data || []).flatMap(row => row.allCategoryKeys || row.categoryKeys || [])))
+  const keys = categoryKeys.length ? categoryKeys : ["divers"]
+
   return (
     <div style={card()}>
       <h2 style={{ color: COLORS.text, fontSize: 18, margin: "0 0 12px" }}>Évolution</h2>
@@ -167,8 +215,17 @@ function EvolutionChart({ data }) {
           <BarChart data={data}>
             <XAxis dataKey="label" tick={{ fill: COLORS.muted, fontSize: 11 }} />
             <YAxis tick={{ fill: COLORS.muted, fontSize: 11 }} />
-            <Tooltip formatter={value => [formatMontant(value), "Dépenses"]} />
-            <Bar dataKey="amount" name="Dépenses" fill={COLORS.accent} radius={[8, 8, 0, 0]} />
+            <Tooltip formatter={(value, name) => [formatMontant(value), getCategoryLabel(name)]} />
+            {keys.map((key, index) => (
+              <Bar
+                key={key}
+                dataKey={key}
+                name={getCategoryLabel(key)}
+                stackId="categories"
+                fill={getCategoryColor(key, index)}
+                radius={index === keys.length - 1 ? [8, 8, 0, 0] : [0, 0, 0, 0]}
+              />
+            ))}
           </BarChart>
         </ResponsiveContainer>
       </div>

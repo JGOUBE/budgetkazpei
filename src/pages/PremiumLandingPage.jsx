@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { brandLogo } from "../assets/brand"
 
 const COLORS = {
   bg: "#081426",
@@ -14,7 +15,6 @@ const COLORS = {
   text: "#F8FAFC",
 }
 
-const LOGO = "/icons-creole/logo-budgetkazpei.png"
 const HERO_BG = "/icons-creole/fond-principal.png"
 
 const PREMIUM_PRICE = "2,99 €"
@@ -193,7 +193,10 @@ export default function PremiumLandingPage() {
 
       <header style={{ padding: "20px 18px", position: "absolute", inset: "0 0 auto", zIndex: 4 }}>
         <div style={{ maxWidth: 1160, margin: "0 auto", display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
-          <img src={LOGO} alt="BudgetKazPei" style={{ width: 150 }} />
+          <a href="/" aria-label="BudgetKazPei accueil" style={{ display: "inline-flex", alignItems: "center", gap: 9, textDecoration: "none" }}>
+            <img src={brandLogo} alt="BudgetKazPei" style={{ width: 38, height: 38, objectFit: "contain", display: "block" }} />
+            <span style={{ color: COLORS.text, fontWeight: 950, fontSize: 19, lineHeight: 1 }}>BudgetKazPei</span>
+          </a>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
             <button type="button" onClick={() => setLang(lang === "fr" ? "kr" : "fr")} style={{ minHeight: 42, borderRadius: 12, border: `1px solid ${COLORS.cyan}66`, background: "rgba(8,20,38,.72)", color: COLORS.cyan, fontWeight: 950, padding: "0 12px", fontFamily: "inherit", cursor: "pointer" }}>
               {c.switchLang}

@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { brandLogo } from "../../assets/brand"
 
 const COLORS = {
   bg: "#0A1628",
@@ -93,24 +94,43 @@ export default function RegisterPage({ onRegister, onGoLogin }) {
     <div style={pageStyle}>
       <div style={{ width: 440, maxWidth: "94vw" }}>
         <div style={{ textAlign: "center", marginBottom: 18 }}>
-          <img
-            src="/icons-creole/logo-budgetkazpei.png"
-            alt="BudgetKazPei"
+          <div
             style={{
-              width: 195,
-              maxWidth: "80vw",
-              height: "auto",
-              margin: "0 auto",
-              display: "block",
-              objectFit: "contain",
-              pointerEvents: "none",
-              filter: "drop-shadow(3px 5px 0 rgba(5,8,12,.65))",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 11,
+              margin: "0 auto 10px",
             }}
-          />
+          >
+            <img
+              src={brandLogo}
+              alt="BudgetKazPei"
+              style={{
+                width: 64,
+                height: 64,
+                objectFit: "contain",
+                display: "block",
+                pointerEvents: "none",
+                filter: "drop-shadow(0 10px 20px rgba(0,0,0,.32))",
+              }}
+            />
+            <span
+              style={{
+                color: COLORS.cream,
+                fontSize: 28,
+                fontWeight: 950,
+                lineHeight: 1,
+                textShadow: `3px 3px 0 ${COLORS.ink}`,
+              }}
+            >
+              BudgetKazPei
+            </span>
+          </div>
 
           <p
             style={{
-              margin: "-30px 0 0",
+              margin: "0",
               color: "#23D3D6",
               fontSize: 15,
               fontWeight: 700,

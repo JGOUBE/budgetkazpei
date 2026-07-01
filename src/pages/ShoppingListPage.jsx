@@ -1,19 +1,136 @@
 import { useEffect, useMemo, useState } from "react"
+import { Copy, Eye, Mail, MessageCircle, ScanLine, Send, Share2, Trash2 } from "lucide-react"
 import { listShoppingItems } from "../features/shopping/services/shoppingEngine"
-import { estimateShoppingList, getAutocompleteSuggestions, getPairingSuggestion } from "../services/shoppingList/shoppingListEngine"
+import {
+  buildShoppingListShareText,
+  estimateShoppingList,
+  getAutocompleteSuggestions,
+  getPairingSuggestion,
+} from "../services/shoppingList/shoppingListEngine"
+import {
+  listShoppingListSnapshots,
+  markShoppingListSnapshotDeleted,
+  saveShoppingListSnapshot,
+} from "../services/shoppingList/shoppingListSnapshots"
 import { formatMontant } from "../utils/format"
 
-const COLORS = { card: "#0F1E38", cardLight: "#152444", border: "#1E3A5F", accent: "#F97316", green: "#22C55E", cyan: "#23D3D6", yellow: "#FCD34D", muted: "#8EA4C5", text: "#F8FAFC" }
+const COLORS = { card: "#0F1E38", cardLight: "#152444", border: "#1E3A5F", accent: "#F97316", green: "#22C55E", cyan: "#23D3D6", yellow: "#FCD34D", muted: "#8EA4C5", text: "#F8FAFC", danger: "#EF4444" }
 const card = extra => ({ background: `linear-gradient(135deg, ${COLORS.card}, ${COLORS.cardLight})`, border: `1px solid ${COLORS.border}`, borderRadius: 22, padding: 18, ...extra })
 
-export default function ShoppingListPage({ user, isMobile = false, onOpenReceipts }) {
+function daysUntil(dateValue) {
+  const time = new Date(dateValue).getTime()
+  if (!time) return 0
+  return Math.max(0, Math.ceil((time - Date.now()) / 86400000))
+}
+
+const COPY = {
+  fr: {
+    snapshotTitle: "Liste de courses",
+    smartLabel: "Liste intelligente",
+    title: "Ma liste de courses",
+    learningTitle: "Nous apprenons encore vos habitudes.",
+    learningText: "Scannez quelques tickets alimentaires pour activer les Courses intelligentes.",
+    moreDataTitle: "Encore un peu de donnees necessaires.",
+    moreDataText: "Apres quelques tickets, nous pourrons estimer vos prix habituels et vous aider a preparer vos courses.",
+    estimate: "Estimation",
+    basketRange: (min, max) => `Ce panier coute generalement ${min} a ${max}.`,
+    priceInfo: "Les prix affiches sont bases sur vos tickets deja scannes. Ils deviendront plus precis au fur et a mesure de vos prochains achats.",
+    learningCardTitle: "Vos Courses intelligentes s'ameliorent avec le temps",
+    learningCardText: "Plus vous scannez de tickets alimentaires, plus BudgetKazPei reconnait vos produits, retrouve vos derniers prix et estime votre panier avec precision.",
+    scan: "Scanner",
+    addPlaceholder: "Ajouter : pain, lait, beurre...",
+    add: "Ajouter",
+    share: "Partager",
+    noProduct: "Aucun produit trouve. Appuyez sur Ajouter pour creer ce produit.",
+    empty: "Ajoute un produit pour commencer.",
+    priceMissing: "prix a estimer",
+    savedLists: "Mes listes sauvegardees",
+    savedListsText: "Les listes partagees ou copiees restent disponibles 7 jours.",
+    noSavedLists: "Aucune liste sauvegardee pour le moment.",
+    expiresIn: days => `expire dans ${days} jour(s)`,
+    products: count => `${count} produit(s)`,
+    missingPrices: count => `${count} prix a estimer`,
+    view: "Voir",
+    delete: "Supprimer",
+    shareTitle: "Partager la liste",
+    copy: "Copier",
+    close: "Fermer",
+    addBeforeShare: "Ajoutez au moins un produit avant de partager la liste.",
+    unknownPricesConfirm: count => `${count} produit(s) n'ont pas encore de prix connu. Partager quand meme ?`,
+    sharedNative: "Liste partagee et sauvegardee pendant 7 jours.",
+    copied: "Liste copiee et sauvegardee pendant 7 jours.",
+    emailReady: "Email prepare. La liste est sauvegardee pendant 7 jours.",
+    smsReady: "SMS prepare. La liste est sauvegardee pendant 7 jours.",
+    whatsappReady: "WhatsApp ouvert. La liste est sauvegardee pendant 7 jours.",
+  },
+  kreol: {
+    snapshotTitle: "Lis courses",
+    smartLabel: "Lis intelligente",
+    title: "Ma lis courses",
+    learningTitle: "Nou le encore en train aprann out labitid.",
+    learningText: "Eskane quelques tike alimentaire pou active Courses intelligentes.",
+    moreDataTitle: "I fo encore in peu donnees.",
+    moreDataText: "Apre quelques tike, nou va estim out prix habituels ek aide aou prepar out courses.",
+    estimate: "Estimasyon",
+    basketRange: (min, max) => `Sa panier-la i coute generalement ${min} a ${max}.`,
+    priceInfo: "Bann prix affiches i vien de out tike deja scannes. Zot va devenir pli precis au fur ek a mesure out prochains achats.",
+    learningCardTitle: "Out Courses intelligentes i ameliore ek le temps",
+    learningCardText: "Plus ou scanne bann tike alimentaires, plus BudgetKazPei i reconnait out produits, retrouve out derniers prix ek estime out panier correctement.",
+    scan: "Scanner",
+    addPlaceholder: "Azout : pain, lait, beurre...",
+    add: "Azoute",
+    share: "Partaze",
+    noProduct: "Aucun produit trouve. Appuie su Azoute pou creer produit-la.",
+    empty: "Azout in produit pou commencer.",
+    priceMissing: "prix pou estimer",
+    savedLists: "Mes lis sauvegardees",
+    savedListsText: "Bann lis partagees ou copiees i reste disponible 7 jours.",
+    noSavedLists: "Aucune lis sauvegardee pou le moment.",
+    expiresIn: days => `expire dan ${days} jour(s)`,
+    products: count => `${count} produit(s)`,
+    missingPrices: count => `${count} prix pou estimer`,
+    view: "Voir",
+    delete: "Supprime",
+    shareTitle: "Partaz la lis",
+    copy: "Copie",
+    close: "Ferme",
+    addBeforeShare: "Azout au moins in produit avan partaz la lis.",
+    unknownPricesConfirm: count => `${count} produit(s) na poin prix connu encore. Partaz quand meme ?`,
+    sharedNative: "Lis partagee ek sauvegardee pendant 7 jours.",
+    copied: "Lis copiee ek sauvegardee pendant 7 jours.",
+    emailReady: "Email prepare. La lis le sauvegardee pendant 7 jours.",
+    smsReady: "SMS prepare. La lis le sauvegardee pendant 7 jours.",
+    whatsappReady: "WhatsApp ouvert. La lis le sauvegardee pendant 7 jours.",
+  },
+}
+
+function isKreolLanguage(language) {
+  return ["cr", "kreol", "kr"].includes(String(language || "").toLowerCase())
+}
+
+function snapshotTitle(txt) {
+  return `${txt.snapshotTitle} - ${new Date().toLocaleDateString("fr-FR")}`
+}
+
+export default function ShoppingListPage({ user, isMobile = false, onOpenReceipts, language = "fr" }) {
+  const txt = isKreolLanguage(language) ? COPY.kreol : COPY.fr
   const [shoppingItems, setShoppingItems] = useState([])
   const [items, setItems] = useState([])
   const [query, setQuery] = useState("")
+  const [snapshots, setSnapshots] = useState([])
+  const [shareModal, setShareModal] = useState(null)
+  const [previewSnapshot, setPreviewSnapshot] = useState(null)
+  const [notice, setNotice] = useState("")
 
   useEffect(() => {
     let ignore = false
     listShoppingItems({ userId: user?.id }).then(rows => !ignore && setShoppingItems(rows || [])).catch(() => !ignore && setShoppingItems([]))
+    return () => { ignore = true }
+  }, [user?.id])
+
+  useEffect(() => {
+    let ignore = false
+    listShoppingListSnapshots({ userId: user?.id }).then(rows => !ignore && setSnapshots(rows || [])).catch(() => !ignore && setSnapshots([]))
     return () => { ignore = true }
   }, [user?.id])
 
@@ -22,58 +139,290 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
   const pairing = useMemo(() => getPairingSuggestion(items, shoppingItems), [items, shoppingItems])
   const foodReceiptCount = useMemo(() => new Set((shoppingItems || []).map(item => item.receipt_id).filter(Boolean)).size, [shoppingItems])
   const learningReady = foodReceiptCount >= 3
+  const shareText = useMemo(() => buildShoppingListShareText({ title: snapshotTitle(txt), estimate }), [estimate, txt])
+  const hasQueryWithoutResult = query.trim().length > 0 && suggestions.length === 0
 
   function addItem(name) {
     const clean = String(name || query).trim()
     if (!clean) return
-    setItems(prev => [...prev, { id: Date.now(), name: clean, checked: false }])
+    setItems(prev => [...prev, { id: `${Date.now()}-${Math.random()}`, name: clean, checked: false }])
     setQuery("")
+  }
+
+  async function refreshSnapshots() {
+    try {
+      const rows = await listShoppingListSnapshots({ userId: user?.id })
+      setSnapshots(rows || [])
+    } catch {
+      setSnapshots([])
+    }
+  }
+
+  async function saveSnapshot(method, payload = {}) {
+    const rows = payload.items || estimate.items
+    try {
+      const saved = await saveShoppingListSnapshot({
+        userId: user?.id,
+        title: payload.title || snapshotTitle(txt),
+        items: rows,
+        totalEstimated: payload.totalEstimated ?? estimate.total,
+        missingPriceCount: payload.missingPriceCount ?? estimate.missingPriceCount,
+        totalItems: payload.totalItems ?? estimate.totalItems,
+        shareMethod: method,
+      })
+      if (saved) setSnapshots(prev => [saved, ...prev.filter(row => row.id !== saved.id)])
+      return saved
+    } catch (error) {
+      console.warn("Sauvegarde temporaire liste impossible:", error)
+      return null
+    }
+  }
+
+  async function startShare() {
+    if (estimate.items.length === 0) {
+      setNotice(txt.addBeforeShare)
+      return
+    }
+
+    if (estimate.missingPriceCount > 0) {
+      const ok = window.confirm(txt.unknownPricesConfirm(estimate.missingPriceCount))
+      if (!ok) return
+    }
+
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: snapshotTitle(txt), text: shareText })
+        await saveSnapshot("native_share")
+        await refreshSnapshots()
+        setNotice(txt.sharedNative)
+        return
+      } catch (error) {
+        if (error?.name === "AbortError") return
+      }
+    }
+
+    setShareModal({
+      text: shareText,
+      items: estimate.items,
+      totalEstimated: estimate.total,
+      missingPriceCount: estimate.missingPriceCount,
+      totalItems: estimate.totalItems,
+    })
+  }
+
+  async function shareWith(method, text = shareModal?.text || shareText) {
+    const encoded = encodeURIComponent(text)
+
+    if (method === "copy") {
+      await navigator.clipboard?.writeText(text)
+      setNotice(txt.copied)
+    }
+
+    if (method === "email") {
+      window.location.href = `mailto:?subject=${encodeURIComponent(snapshotTitle(txt))}&body=${encoded}`
+      setNotice(txt.emailReady)
+    }
+
+    if (method === "sms") {
+      window.location.href = `sms:?&body=${encoded}`
+      setNotice(txt.smsReady)
+    }
+
+    if (method === "whatsapp") {
+      window.open(`https://wa.me/?text=${encoded}`, "_blank", "noopener,noreferrer")
+      setNotice(txt.whatsappReady)
+    }
+
+    await saveSnapshot(method, shareModal || {})
+    await refreshSnapshots()
+    setShareModal(null)
+  }
+
+  async function deleteSnapshot(id) {
+    await markShoppingListSnapshotDeleted({ userId: user?.id, id })
+    setSnapshots(prev => prev.filter(row => row.id !== id))
+  }
+
+  function shareSavedSnapshot(snapshot) {
+    const text = buildShoppingListShareText({
+      title: snapshot.title,
+      estimate: {
+        items: snapshot.items,
+        total: snapshot.totalEstimated,
+        missingPriceCount: snapshot.missingPriceCount,
+      },
+    })
+    setShareModal({
+      text,
+      items: snapshot.items,
+      totalEstimated: snapshot.totalEstimated,
+      missingPriceCount: snapshot.missingPriceCount,
+      totalItems: snapshot.totalItems,
+      title: snapshot.title,
+      snapshot,
+    })
   }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
       <div style={card({ padding: isMobile ? 18 : 24 })}>
-        <div style={{ color: COLORS.cyan, fontSize: 13, fontWeight: 950 }}>Liste intelligente</div>
-        <h1 style={{ color: COLORS.text, margin: "8px 0", fontFamily: "'DM Serif Display', serif", fontSize: isMobile ? 34 : 42 }}>Ma liste de courses</h1>
+        <div style={{ color: COLORS.cyan, fontSize: 13, fontWeight: 950 }}>{txt.smartLabel}</div>
+        <h1 style={{ color: COLORS.text, margin: "8px 0", fontFamily: "'DM Serif Display', serif", fontSize: isMobile ? 34 : 42 }}>{txt.title}</h1>
         {foodReceiptCount === 0 ? (
           <>
-            <div style={{ color: COLORS.yellow, fontSize: 22, fontWeight: 950 }}>Nous apprenons encore vos habitudes.</div>
-            <div style={{ color: COLORS.muted, marginTop: 6 }}>Scannez quelques tickets alimentaires pour activer les Courses intelligentes.</div>
+            <div style={{ color: COLORS.yellow, fontSize: 22, fontWeight: 950 }}>{txt.learningTitle}</div>
+            <div style={{ color: COLORS.muted, marginTop: 6 }}>{txt.learningText}</div>
           </>
         ) : !learningReady ? (
           <>
-            <div style={{ color: COLORS.yellow, fontSize: 22, fontWeight: 950 }}>Encore un peu de données nécessaires.</div>
-            <div style={{ color: COLORS.muted, marginTop: 6 }}>Après quelques tickets, nous pourrons estimer vos prix habituels et vous aider à préparer vos courses.</div>
+            <div style={{ color: COLORS.yellow, fontSize: 22, fontWeight: 950 }}>{txt.moreDataTitle}</div>
+            <div style={{ color: COLORS.muted, marginTop: 6 }}>{txt.moreDataText}</div>
           </>
         ) : (
           <>
-            <div style={{ color: COLORS.green, fontSize: 28, fontWeight: 950 }}>Estimation : {formatMontant(estimate.total)}</div>
-            <div style={{ color: COLORS.muted, marginTop: 6 }}>Ce panier coûte généralement {formatMontant(estimate.min)} à {formatMontant(estimate.max)}.</div>
+            <div style={{ color: COLORS.green, fontSize: 28, fontWeight: 950 }}>{txt.estimate} : {formatMontant(estimate.total)}</div>
+            <div style={{ color: COLORS.muted, marginTop: 6 }}>{txt.basketRange(formatMontant(estimate.min), formatMontant(estimate.max))}</div>
           </>
         )}
-        {!learningReady && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 14 }}>
-            <button type="button" onClick={onOpenReceipts} style={{ minHeight: 44, border: "none", borderRadius: 14, background: COLORS.accent, color: "#fff", fontWeight: 950, padding: "0 16px" }}>Scanner un ticket</button>
-            <button type="button" onClick={() => document.querySelector("[data-shopping-add]")?.focus()} style={{ minHeight: 44, border: `1px solid ${COLORS.border}`, borderRadius: 14, background: "rgba(255,255,255,.06)", color: COLORS.text, fontWeight: 950, padding: "0 16px" }}>Ajouter un produit</button>
-          </div>
-        )}
+        <div style={{ color: COLORS.muted, marginTop: 10, lineHeight: 1.5 }}>
+          {txt.priceInfo}
+        </div>
       </div>
+
+      <div style={card({ borderColor: "#23D3D655" })}>
+        <div style={{ display: "flex", gap: 12, alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap" }}>
+          <div style={{ flex: "1 1 320px" }}>
+            <div style={{ color: COLORS.cyan, fontWeight: 950, fontSize: 18 }}>{txt.learningCardTitle}</div>
+            <p style={{ color: COLORS.muted, lineHeight: 1.55, margin: "8px 0 0" }}>
+              {txt.learningCardText}
+            </p>
+          </div>
+          <button type="button" onClick={onOpenReceipts} style={{ minHeight: 44, border: "none", borderRadius: 14, background: COLORS.accent, color: "#fff", fontWeight: 950, padding: "0 16px", display: "inline-flex", alignItems: "center", gap: 8 }}>
+            <ScanLine size={18} /> {txt.scan}
+          </button>
+        </div>
+      </div>
+
+      {notice && (
+        <div style={{ background: "rgba(35,211,214,.12)", border: `1px solid ${COLORS.cyan}55`, color: COLORS.text, borderRadius: 14, padding: 12, fontWeight: 800 }}>
+          {notice}
+        </div>
+      )}
+
       <div style={card()}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 10 }}>
-          <input data-shopping-add value={query} onChange={e => setQuery(e.target.value)} placeholder="Ajouter : pain, lait, beurre..." style={{ minHeight: 50, borderRadius: 14, border: `1px solid ${COLORS.border}`, background: COLORS.cardLight, color: COLORS.text, padding: "0 14px" }} />
-          <button type="button" onClick={() => addItem()} style={{ minHeight: 50, border: "none", borderRadius: 14, background: COLORS.accent, color: "#fff", fontWeight: 950, padding: "0 16px" }}>Ajouter</button>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr auto auto", gap: 10 }}>
+          <input data-shopping-add value={query} onChange={e => setQuery(e.target.value)} onKeyDown={e => e.key === "Enter" && addItem()} placeholder={txt.addPlaceholder} style={{ minHeight: 50, borderRadius: 14, border: `1px solid ${COLORS.border}`, background: COLORS.cardLight, color: COLORS.text, padding: "0 14px" }} />
+          <button type="button" onClick={() => addItem()} style={{ minHeight: 50, border: "none", borderRadius: 14, background: COLORS.accent, color: "#fff", fontWeight: 950, padding: "0 16px" }}>{txt.add}</button>
+          <button type="button" onClick={startShare} style={{ minHeight: 50, border: `1px solid ${COLORS.cyan}66`, borderRadius: 14, background: "rgba(35,211,214,.12)", color: COLORS.text, fontWeight: 950, padding: "0 16px", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+            <Share2 size={18} /> {txt.share}
+          </button>
         </div>
         {suggestions.length > 0 && <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>{suggestions.map(s => <button key={s.normalizedName} type="button" onClick={() => addItem(s.label)} style={{ minHeight: 38, borderRadius: 999, border: `1px solid ${COLORS.cyan}55`, background: "rgba(35,211,214,.12)", color: COLORS.text }}>{s.label}</button>)}</div>}
+        {hasQueryWithoutResult && <div style={{ color: COLORS.muted, marginTop: 10 }}>{txt.noProduct}</div>}
         {pairing && <div style={{ color: COLORS.yellow, marginTop: 12, fontWeight: 900 }}>{pairing}</div>}
       </div>
+
       <div style={card()}>
-        {estimate.items.length === 0 ? <div style={{ color: COLORS.muted }}>Ajoute un produit pour commencer.</div> : estimate.items.map(item => (
+        {estimate.items.length === 0 ? <div style={{ color: COLORS.muted }}>{txt.empty}</div> : estimate.items.map(item => (
           <label key={item.id} style={{ display: "grid", gridTemplateColumns: "auto 1fr auto", gap: 10, alignItems: "center", color: COLORS.text, borderBottom: "1px solid rgba(255,255,255,.08)", padding: "10px 0" }}>
             <input type="checkbox" checked={item.checked} onChange={e => setItems(prev => prev.map(row => row.id === item.id ? { ...row, checked: e.target.checked } : row))} />
-            <span style={{ textDecoration: item.checked ? "line-through" : "none" }}>{item.name}</span>
-            <strong>{learningReady && item.estimatedPrice ? formatMontant(item.estimatedPrice) : "—"}</strong>
+            <span style={{ textDecoration: item.checked ? "line-through" : "none" }}>
+              {item.name}
+              <span style={{ display: "block", color: COLORS.muted, fontSize: 12, marginTop: 2 }}>
+                {item.priceSource === "known" ? item.priceLabel : txt.priceMissing}
+              </span>
+            </span>
+            <strong style={{ color: item.estimatedPrice ? COLORS.green : COLORS.muted }}>
+              {item.estimatedPrice ? formatMontant(item.estimatedPrice) : txt.priceMissing}
+            </strong>
           </label>
         ))}
+      </div>
+
+      <div style={card()}>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+          <div>
+            <h2 style={{ color: COLORS.text, margin: 0, fontSize: 22 }}>{txt.savedLists}</h2>
+            <div style={{ color: COLORS.muted, marginTop: 4 }}>{txt.savedListsText}</div>
+          </div>
+        </div>
+        <div style={{ display: "grid", gap: 10, marginTop: 14 }}>
+          {snapshots.length === 0 ? (
+            <div style={{ color: COLORS.muted }}>{txt.noSavedLists}</div>
+          ) : snapshots.map(snapshot => (
+            <div key={snapshot.id} style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr auto", gap: 12, alignItems: "center", border: "1px solid rgba(255,255,255,.08)", borderRadius: 14, padding: 12 }}>
+              <div>
+                <div style={{ color: COLORS.text, fontWeight: 950 }}>{snapshot.title}</div>
+                <div style={{ color: COLORS.muted, marginTop: 4, fontSize: 13 }}>
+                  {new Date(snapshot.createdAt).toLocaleDateString("fr-FR")} - {txt.expiresIn(daysUntil(snapshot.expiresAt))} - {txt.products(snapshot.totalItems)} - {formatMontant(snapshot.totalEstimated)}
+                  {snapshot.missingPriceCount > 0 ? ` - ${txt.missingPrices(snapshot.missingPriceCount)}` : ""}
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <SmallButton onClick={() => setPreviewSnapshot(snapshot)} icon={<Eye size={16} />} label={txt.view} />
+                <SmallButton onClick={() => shareSavedSnapshot(snapshot)} icon={<Send size={16} />} label={txt.share} />
+                <SmallButton onClick={() => deleteSnapshot(snapshot.id)} icon={<Trash2 size={16} />} label={txt.delete} danger />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {shareModal && (
+        <Modal title={txt.shareTitle} closeLabel={txt.close} onClose={() => setShareModal(null)}>
+          <textarea readOnly value={shareModal.text} style={{ width: "100%", minHeight: 190, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: COLORS.card, color: COLORS.text, padding: 12, resize: "vertical" }} />
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(4, 1fr)", gap: 10, marginTop: 12 }}>
+            <ActionButton onClick={() => shareWith("copy", shareModal.text)} icon={<Copy size={18} />} label={txt.copy} />
+            <ActionButton onClick={() => shareWith("email", shareModal.text)} icon={<Mail size={18} />} label="Email" />
+            <ActionButton onClick={() => shareWith("sms", shareModal.text)} icon={<MessageCircle size={18} />} label="SMS" />
+            <ActionButton onClick={() => shareWith("whatsapp", shareModal.text)} icon={<Send size={18} />} label="WhatsApp" />
+          </div>
+        </Modal>
+      )}
+
+      {previewSnapshot && (
+        <Modal title={previewSnapshot.title} closeLabel={txt.close} onClose={() => setPreviewSnapshot(null)}>
+          <div style={{ display: "grid", gap: 8 }}>
+            {previewSnapshot.items.map((item, index) => (
+              <div key={`${item.name}-${index}`} style={{ display: "flex", justifyContent: "space-between", gap: 12, color: COLORS.text }}>
+                <span>{item.name}</span>
+                <strong style={{ color: item.estimatedPrice ? COLORS.green : COLORS.muted }}>
+                  {item.estimatedPrice ? formatMontant(item.estimatedPrice) : txt.priceMissing}
+                </strong>
+              </div>
+            ))}
+          </div>
+        </Modal>
+      )}
+    </div>
+  )
+}
+
+function SmallButton({ icon, label, onClick, danger = false }) {
+  return (
+    <button type="button" onClick={onClick} style={{ minHeight: 36, borderRadius: 12, border: `1px solid ${danger ? COLORS.danger : COLORS.border}`, background: "rgba(255,255,255,.04)", color: danger ? "#FCA5A5" : COLORS.text, fontWeight: 850, padding: "0 10px", display: "inline-flex", alignItems: "center", gap: 6 }}>
+      {icon} {label}
+    </button>
+  )
+}
+
+function ActionButton({ icon, label, onClick }) {
+  return (
+    <button type="button" onClick={onClick} style={{ minHeight: 44, borderRadius: 14, border: `1px solid ${COLORS.cyan}55`, background: "rgba(35,211,214,.12)", color: COLORS.text, fontWeight: 950, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
+      {icon} {label}
+    </button>
+  )
+}
+
+function Modal({ title, children, onClose, closeLabel = "Fermer" }) {
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(2,6,23,.72)", display: "flex", alignItems: "center", justifyContent: "center", padding: 18 }}>
+      <div style={{ width: "min(680px, 100%)", background: COLORS.cardLight, border: `1px solid ${COLORS.border}`, borderRadius: 18, padding: 18, boxShadow: "0 24px 80px rgba(0,0,0,.35)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 12 }}>
+          <h3 style={{ margin: 0, color: COLORS.text }}>{title}</h3>
+          <button type="button" onClick={onClose} style={{ minHeight: 36, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "rgba(255,255,255,.06)", color: COLORS.text, fontWeight: 900, padding: "0 12px" }}>{closeLabel}</button>
+        </div>
+        {children}
       </div>
     </div>
   )

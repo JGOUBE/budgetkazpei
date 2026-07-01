@@ -107,10 +107,10 @@ const DETAILS: Record<ScanErrorCode, ScanErrorDetails> = {
   },
   SCAN_PARSE_FAILED: {
     code: "SCAN_PARSE_FAILED",
-    title: "Extraction incomplete",
-    userMessage: "Le ticket a ete lu, mais les donnees n'ont pas pu etre structurees.",
+    title: "Verification necessaire",
+    userMessage: "Nous avons lu le ticket, mais certaines lignes doivent etre verifiees.",
     technicalMessage: "Receipt parser failed to extract usable fields.",
-    action: "Corrigez les champs detectes ou passez en saisie manuelle.",
+    action: "Vous pouvez reessayer avec une photo plus nette ou completer les lignes detectees.",
     retryable: true,
   },
   SCAN_SUPABASE_INSERT_FAILED: {

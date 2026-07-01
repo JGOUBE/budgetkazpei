@@ -7,25 +7,27 @@ import { CATEGORIES } from "../../data/categories"
 import { supabase } from "../../services/supabase"
 import { buildStoreHabits } from "../../features/shopping/services/priceHistory"
 import { useDashboardInsights } from "../../hooks/useDashboardInsights"
+import { BkIcons } from "../icons-budgetkazpei"
+import { ds } from "../../styles/designSystem"
 
 // Dashboard V2 - Mobile First
-// Règle UX : Carte = Action
-// Le dashboard reste un résumé. Les détails doivent vivre dans des pages dédiées.
+// Regle UX : Carte = Action
+// Le dashboard reste un resume. Les details doivent vivre dans des pages dediees.
 
 const COLORS = {
-  card: "#0F1E38",
-  cardLight: "#152444",
-  border: "#1E3A5F",
-  accent: "#F97316",
+  card: ds.card,
+  cardLight: ds.cardHover,
+  border: ds.border,
+  accent: ds.primary,
   accentSoft: "#FB923C",
-  green: "#22C55E",
-  red: "#EF4444",
+  green: ds.success,
+  red: ds.danger,
   blue: "#38BDF8",
-  cyan: "#23D3D6",
-  yellow: "#FCD34D",
-  purple: "#A78BFA",
-  muted: "#8EA4C5",
-  text: "#F8FAFC",
+  cyan: ds.cyan,
+  yellow: ds.warning,
+  purple: ds.purple,
+  muted: ds.textSecondary,
+  text: ds.textPrimary,
   whiteSoft: "rgba(248,250,252,.82)",
 }
 
@@ -35,6 +37,8 @@ function tr(t, section, key, fallback) {
 }
 
 function getIsKreol(t) {
+  const lang = String(t?.lang || "").toLowerCase()
+  if (lang === "cr" || lang === "kreol") return true
   return String(t?.("nav", "dashboard") || "").toLowerCase().includes("tablo")
 }
 
@@ -100,18 +104,18 @@ function navigateTo(target, fallback) {
 
 function getEmptyMoneyText(type, isKreol) {
   if (type === "revenus") {
-    return isKreol ? "Aucun revenu anrezistré" : "Aucun revenu enregistré"
+    return isKreol ? "Aucun revenu anrezistre" : "Aucun revenu enregistre"
   }
 
   if (type === "depenses") {
-    return isKreol ? "Aucune dépans anrezistré" : "Aucune dépense enregistrée"
+    return isKreol ? "Aucune depans anrezistre" : "Aucune depense enregistree"
   }
 
   if (type === "charges") {
-    return isKreol ? "Aucune sarz fix anrezistré" : "Aucune charge fixe enregistrée"
+    return isKreol ? "Aucune sarz fix anrezistre" : "Aucune charge fixe enregistree"
   }
 
-  return isKreol ? "À compléter" : "À compléter"
+  return isKreol ? "A completer" : "A completer"
 }
 
 function formatSmartAmount(value, type, isKreol) {
@@ -198,9 +202,9 @@ function buildBudgetScore({ stats = {}, byCategory = [], gainsAides = 0, nbAides
 }
 
 function getScoreLabel(level, isKreol) {
-  if (level === "excellent") return isKreol ? "Tré bien" : "Excellent"
+  if (level === "excellent") return isKreol ? "Tre bien" : "Excellent"
   if (level === "correct") return isKreol ? "Correct" : "Correct"
-  return isKreol ? "À surveyé" : "À surveiller"
+  return isKreol ? "A surveye" : "A surveiller"
 }
 
 function getSignalText(key, isKreol) {
@@ -209,29 +213,29 @@ function getSignalText(key, isKreol) {
     charges_ok: "Charges fixes raisonnables",
     solde_ok: "Solde positif ce mois-ci",
     categories_ok: "Budgets par catégorie suivis",
-    aides_obtenues: "Aides obtenues enregistrées",
+    aides_obtenues: "Aides obtenues enregistrees",
     depenses_hautes: "Dépenses trop élevées ce mois-ci",
     depenses_a_surveille: "Dépenses à surveiller",
     charges_hautes: "Charges fixes importantes",
-    revenus_manquants: "Revenus à compléter",
-    solde_negatif: "Solde négatif ce mois-ci",
+    revenus_manquants: "Revenus a completer",
+    solde_negatif: "Solde negatif ce mois-ci",
     budgets_depasses: "Une ou plusieurs catégories dépassées",
     aides_a_verifier: "Opportunités à vérifier",
   }
 
   const kr = {
-    budget_maitrise: "Out bidjé lé anba kontrol",
-    charges_ok: "Sarz fix lé rézonab",
-    solde_ok: "Larzan i reste lé positif",
-    categories_ok: "Bidjé par katégori lé suivi",
-    aides_obtenues: "Éd gagné lé anrezistré",
-    depenses_hautes: "Dépans lé tro haut pou mwa-la",
-    depenses_a_surveille: "Dépans à surveillé",
-    charges_hautes: "Sarz fix lé trop haut",
-    revenus_manquants: "Larzan i rantre lé à compléter",
-    solde_negatif: "Larzan i reste lé négatif",
-    budgets_depasses: "Na katégori la dépassé out bidjé",
-    aides_a_verifier: "Bon plan à vérifié",
+    budget_maitrise: "Out bidje le anba kontrol",
+    charges_ok: "Sarz fix le rezonab",
+    solde_ok: "Larzan i reste le positif",
+    categories_ok: "Bidje par kategori le suivi",
+    aides_obtenues: "Ed gagne le anrezistre",
+    depenses_hautes: "Depans le tro haut pou mwa-la",
+    depenses_a_surveille: "Depans a surveille",
+    charges_hautes: "Sarz fix le trop haut",
+    revenus_manquants: "Larzan i rantre le a completer",
+    solde_negatif: "Larzan i reste le negatif",
+    budgets_depasses: "Na kategori la depasse out bidje",
+    aides_a_verifier: "Bon plan a verifie",
   }
 
   return (isKreol ? kr : fr)[key] || key
@@ -294,7 +298,7 @@ function ClickableStatCard({ label, value, sub, color, emoji, variant, texture, 
               fontWeight: 900,
             }}
           >
-            ›
+            â€º
           </span>
         </div>
 
@@ -336,31 +340,30 @@ function EmptyWelcomeCard({ t, isMobile, onGoProfile, onGoAides, onGoCharges }) 
   const isKreol = getIsKreol(t)
 
   return (
-    <TropicalCard variant="lagoon" texture="🌴" style={{ padding: isMobile ? 18 : 24 }}>
+    <TropicalCard variant="lagoon" texture="ðŸŒ´" style={{ padding: isMobile ? 18 : 24 }}>
       <div style={{ color: COLORS.text, fontWeight: 900, fontSize: isMobile ? 22 : 28, marginBottom: 8 }}>
-        {isKreol ? "Bienvenue su BudgetKazPei 👋" : "Bienvenue sur BudgetKazPei 👋"}
+        {isKreol ? "Bienvenue su BudgetKazPei ðŸ‘‹" : "Bienvenue sur BudgetKazPei ðŸ‘‹"}
       </div>
 
       <div style={{ color: COLORS.whiteSoft, fontSize: 14, lineHeight: 1.65, marginBottom: 16 }}>
-        {isKreol
-          ? "Pou komans, complète out profil, ajoute out sarz fix, ajoute out dépans épi rode bann éd possibles."
-          : "Pour commencer, complétez votre profil, ajoutez vos charges fixes, vos dépenses, puis découvrez les aides possibles."}
+        {isKreol ? "Pou komans, complete out profil, ajoute out sarz fix, ajoute out depans epi rode bann ed possibles."
+          : "Pour commencer, completez votre profil, ajoutez vos charges fixes, vos depenses, puis decouvrez les aides possibles."}
       </div>
 
       <div style={{ display: "grid", gap: 10, gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)" }}>
         <WelcomeActionButton
-          label={isKreol ? "Complète mon profil" : "Compléter mon profil"}
-          icon="👤"
+          label={isKreol ? "Complete mon profil" : "Completer mon profil"}
+          icon="ðŸ‘¤"
           onClick={onGoProfile}
         />
         <WelcomeActionButton
           label={isKreol ? "Ajoute in sarz fix" : "Ajouter une charge fixe"}
-          icon="📌"
+          icon="ðŸ“Œ"
           onClick={onGoCharges}
         />
         <WelcomeActionButton
-          label={isKreol ? "Rod mon bann éd" : "Rechercher mes aides"}
-          icon="🏛️"
+          label={isKreol ? "Rod mon bann ed" : "Rechercher mes aides"}
+          icon="ðŸ›ï¸"
           onClick={onGoAides}
         />
       </div>
@@ -398,38 +401,32 @@ function SmartWelcomeCard({ t, isMobile, stats = {}, gainsAides = 0, nbAidesObte
   const solde = Number(stats.solde || 0)
 
   return (
-    <TropicalCard variant="lagoon" texture="🌴" style={{ padding: isMobile ? 16 : 22 }}>
+    <TropicalCard variant="lagoon" texture="ðŸŒ´" style={{ padding: isMobile ? 16 : 22 }}>
       <div style={{ color: COLORS.text, fontWeight: 900, fontSize: isMobile ? 18 : 22, marginBottom: 8 }}>
-        {isKreol ? "Bonzour 👋" : "Bonjour 👋"}
+        {isKreol ? "Bonzour ðŸ‘‹" : "Bonjour ðŸ‘‹"}
       </div>
 
       <div style={{ color: COLORS.whiteSoft, fontSize: 14, lineHeight: 1.65 }}>
         {gains > 0
-          ? isKreol
-            ? `Ou la déjà récupéré ${gains.toFixed(0)} € ek BudgetKazPei.`
-            : `Vous avez déjà récupéré ${gains.toFixed(0)} € grâce à BudgetKazPei.`
-          : isKreol
-            ? "Komans par azout in démarche. Kan in éd lé aksepté, mark lo gain gagné."
-            : "Commencez par ajouter une démarche, puis renseignez le gain quand l’aide est acceptée."}
+          ? isKreol ? `Ou la deja recupere ${gains.toFixed(0)} EUR ek BudgetKazPei.`
+            : `Vous avez deja recupere ${gains.toFixed(0)} EUR grÃ¢ce a BudgetKazPei.`
+          : isKreol ? "Komans par azout in demarche. Kan in ed le aksepte, mark lo gain gagne."
+            : "Commencez par ajouter une demarche, puis renseignez le gain quand l'aide est acceptee."}
         {" "}
         {restantObjectif > 0
-          ? isKreol
-            ? `I reste ${restantObjectif.toFixed(0)} € pou atenn lobzektif lanné.`
-            : `Il reste ${restantObjectif.toFixed(0)} € pour atteindre l’objectif annuel.`
-          : isKreol
-            ? "Lobzektif lanné lé atteint. Bravo !"
-            : "L’objectif annuel est atteint. Bravo !"}
+          ? isKreol ? `I reste ${restantObjectif.toFixed(0)} EUR pou atenn lobzektif lanne.`
+            : `Il reste ${restantObjectif.toFixed(0)} EUR pour atteindre l'objectif annuel.`
+          : isKreol ? "Lobzektif lanne le atteint. Bravo !"
+            : "L'objectif annuel est atteint. Bravo !"}
         <br />
         {opportunitiesCount > 0
-          ? isKreol
-            ? `${opportunitiesCount} bon plan i mérite d'être vérifié${commune ? ` à ${commune}` : ""}.`
-            : `${opportunitiesCount} opportunité(s) méritent d’être vérifiées${commune ? ` à ${commune}` : ""}.`
-          : isKreol
-            ? "Pa na okenn bon plan urgent détecté pou le moman."
-            : "Aucune opportunité urgente détectée pour le moment."}
+          ? isKreol ? `${opportunitiesCount} bon plan i merite d'etre verifie${commune ? ` a ${commune}` : ""}.`
+            : `${opportunitiesCount} opportunite(s) meritent d'etre verifiees${commune ? ` a ${commune}` : ""}.`
+          : isKreol ? "Pa na okenn bon plan urgent detecte pou le moman."
+            : "Aucune opportunite urgente detectee pour le moment."}
         {solde < 0 && (
           <span style={{ color: COLORS.red, fontWeight: 900 }}>
-            {isKreol ? " Attention : out solde lé négatif." : " Attention : votre solde est négatif."}
+            {isKreol ? " Attention : out solde le negatif." : " Attention : votre solde est negatif."}
           </span>
         )}
       </div>
@@ -442,7 +439,7 @@ function BudgetScoreCard({ t, isMobile, stats = {}, byCategory = [], gainsAides 
   const result = buildBudgetScore({ stats, byCategory, gainsAides, nbAidesObtenues, opportunitiesCount })
 
   return (
-    <TropicalCard variant="purple" texture="🏆" style={{ padding: isMobile ? 16 : 22 }}>
+    <TropicalCard variant="purple" emoji={BkIcons.stats} style={{ padding: isMobile ? 16 : 22 }} innerStyle={{ paddingLeft: isMobile ? 0 : 64 }}>
       <div
         style={{
           display: "flex",
@@ -454,7 +451,7 @@ function BudgetScoreCard({ t, isMobile, stats = {}, byCategory = [], gainsAides 
       >
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ color: result.color, fontSize: 13, fontWeight: 900, marginBottom: 6 }}>
-            🏆 {isKreol ? "Score BudgetKazPei" : "Score BudgetKazPei"}
+            {isKreol ? "Score BudgetKazPei" : "Score BudgetKazPei"}
           </div>
 
           <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
@@ -490,12 +487,12 @@ function BudgetScoreCard({ t, isMobile, stats = {}, byCategory = [], gainsAides 
         <div style={{ width: isMobile ? "100%" : 360, display: "grid", gap: 7 }}>
           {result.positive.map(key => (
             <div key={key} style={{ color: COLORS.green, fontSize: 12, fontWeight: 800 }}>
-              ✅ {getSignalText(key, isKreol)}
+              {getSignalText(key, isKreol)}
             </div>
           ))}
           {result.warnings.map(key => (
             <div key={key} style={{ color: COLORS.yellow, fontSize: 12, fontWeight: 800 }}>
-              ⚠️ {getSignalText(key, isKreol)}
+              {getSignalText(key, isKreol)}
             </div>
           ))}
         </div>
@@ -522,7 +519,7 @@ function MoneyDetectedCard({ t, isMobile, opportunitiesCount = 0, commune = "", 
         textAlign: "left",
       }}
     >
-      <TropicalCard variant="gold" texture="💰" style={{ padding: isMobile ? 16 : 22 }}>
+      <TropicalCard variant="gold" texture="ðŸ’°" style={{ padding: isMobile ? 16 : 22 }}>
         <div
           style={{
             display: "flex",
@@ -533,7 +530,7 @@ function MoneyDetectedCard({ t, isMobile, opportunitiesCount = 0, commune = "", 
         >
           <div style={{ minWidth: 0 }}>
             <div style={{ color: COLORS.yellow, fontWeight: 900, fontSize: 13, marginBottom: 5 }}>
-              {isKreol ? "🎯 Bon plan détèkté pou ou" : "🎯 Opportunités détectées pour vous"}
+              {isKreol ? "ðŸŽ¯ Bon plan detekte pou ou" : "ðŸŽ¯ Opportunites detectees pour vous"}
             </div>
 
             <div
@@ -544,19 +541,18 @@ function MoneyDetectedCard({ t, isMobile, opportunitiesCount = 0, commune = "", 
                 lineHeight: 1.15,
               }}
             >
-              {opportunitiesCount} {isKreol ? "bon plan pou vérifié" : "aides ou bons plans à vérifier"}
+              {opportunitiesCount} {isKreol ? "bon plan pou verifie" : "aides ou bons plans a verifier"}
             </div>
 
             <div style={{ color: COLORS.muted, fontSize: 13, marginTop: 6, lineHeight: 1.45 }}>
-              📍 {commune || (isKreol ? "La Rényon" : "La Réunion")}
+              ðŸ“ {commune || (isKreol ? "La Renyon" : "La Reunion")}
               <br />
-              {isKreol
-                ? "Bann éd, bon plan ek démarche i pé konsern aou."
-                : "Aides, bons plans et démarches susceptibles de vous concerner."}
+              {isKreol ? "Bann ed, bon plan ek demarche i pe konsern aou."
+                : "Aides, bons plans et demarches susceptibles de vous concerner."}
             </div>
           </div>
 
-          <span style={{ color: COLORS.yellow, fontSize: 24, fontWeight: 900 }}>›</span>
+          <span style={{ color: COLORS.yellow, fontSize: 24, fontWeight: 900 }}>â€º</span>
         </div>
       </TropicalCard>
     </button>
@@ -595,7 +591,7 @@ function RecoveredMoneyCard({
         textAlign: "left",
       }}
     >
-      <TropicalCard variant="green" texture="💸" style={{ padding: isMobile ? 16 : 22 }}>
+      <TropicalCard variant="green" texture="ðŸ’¸" style={{ padding: isMobile ? 16 : 22 }}>
         <div
           style={{
             display: "flex",
@@ -607,7 +603,7 @@ function RecoveredMoneyCard({
         >
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ color: "#BEF264", fontWeight: 900, fontSize: 13, marginBottom: 6 }}>
-              {isKreol ? "💰 Larzan ou la récupéré ek BudgetKazPei" : "💰 Argent récupéré grâce à BudgetKazPei"}
+              {isKreol ? "ðŸ’° Larzan ou la recupere ek BudgetKazPei" : "ðŸ’° Argent recupere grÃ¢ce a BudgetKazPei"}
             </div>
 
             <div
@@ -619,25 +615,23 @@ function RecoveredMoneyCard({
                 fontFamily: "'DM Serif Display', Georgia, serif",
               }}
             >
-              {gains.toFixed(0)} €
+              {gains.toFixed(0)} EUR
             </div>
 
             <div style={{ marginTop: 8, color: COLORS.muted, fontSize: 13, lineHeight: 1.45 }}>
-              ✅ {nbAidesObtenues} {isKreol ? "éd gagné" : "aide(s) obtenue(s)"}
+              âœ… {nbAidesObtenues} {isKreol ? "ed gagne" : "aide(s) obtenue(s)"}
               <br />
               {hasGains
-                ? isKreol
-                  ? "Out démarche i komans rapport aou pou vré."
-                  : "Vos démarches commencent à rapporter concrètement."
-                : isKreol
-                  ? "Mèt in démarche an Gagné, épi mark lo montan gagné."
-                  : "Passez une démarche en accepté puis renseignez le gain."}
+                ? isKreol ? "Out demarche i komans rapport aou pou vre."
+                  : "Vos demarches commencent a rapporter concretement."
+                : isKreol ? "Met in demarche an Gagne, epi mark lo montan gagne."
+                  : "Passez une demarche en accepte puis renseignez le gain."}
             </div>
 
             {gainsDetails.length > 0 && (
               <div style={{ marginTop: 12, display: "grid", gap: 6 }}>
                 <div style={{ color: COLORS.green, fontSize: 12, fontWeight: 900 }}>
-                  {isKreol ? "Dernyé gains anrezistré" : "Derniers gains enregistrés"}
+                  {isKreol ? "Dernye gains anrezistre" : "Derniers gains enregistres"}
                 </div>
                 {gainsDetails.slice(0, 3).map((gain, index) => (
                   <div
@@ -658,7 +652,7 @@ function RecoveredMoneyCard({
                     <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {gain.label}
                     </span>
-                    <span style={{ color: COLORS.green, flexShrink: 0 }}>{Number(gain.amount || 0).toFixed(0)} €</span>
+                    <span style={{ color: COLORS.green, flexShrink: 0 }}>{Number(gain.amount || 0).toFixed(0)} EUR</span>
                   </div>
                 ))}
               </div>
@@ -685,7 +679,7 @@ function RecoveredMoneyCard({
                 marginBottom: 8,
               }}
             >
-              <span>{isKreol ? "Lobzektif lanné" : "Objectif annuel"}</span>
+              <span>{isKreol ? "Lobzektif lanne" : "Objectif annuel"}</span>
               <span style={{ color: "#BEF264" }}>{rawProgress}%</span>
             </div>
 
@@ -702,10 +696,10 @@ function RecoveredMoneyCard({
             </div>
 
             <div style={{ color: COLORS.muted, fontSize: 12, lineHeight: 1.45 }}>
-              {gains.toFixed(0)} € / {objectif.toFixed(0)} €
+              {gains.toFixed(0)} EUR / {objectif.toFixed(0)} EUR
               {objectifAtteint && (
                 <div style={{ color: "#BEF264", fontWeight: 900, marginTop: 4 }}>
-                  🎉 {isKreol ? "Lobzektif dépassé" : "Objectif dépassé"}
+                  ðŸŽ‰ {isKreol ? "Lobzektif depasse" : "Objectif depasse"}
                 </div>
               )}
             </div>
@@ -735,40 +729,40 @@ function RecommendedActionsCard({
   const solde = Number(stats.solde || 0)
 
   if (solde < 0) {
-    actions.push({ icon: "🚨", text: isKreol ? "Rédui in dépans ou ajoute larzan i rantre pou repass solde positif." : "Réduire une dépense ou ajouter un revenu pour repasser en solde positif." })
+    actions.push({ icon: "ðŸš¨", text: isKreol ? "Redui in depans ou ajoute larzan i rantre pou repass solde positif." : "Reduire une depense ou ajouter un revenu pour repasser en solde positif." })
   }
 
   const overBudget = byCategory.find(cat => Number(cat.budget || 0) > 0 && Number(cat.depense || 0) > Number(cat.budget || 0))
   if (overBudget) {
-    actions.push({ icon: "⚠️", text: isKreol ? `Surveille katégori ${overBudget.emoji || ""} ${overBudget.id}.` : `Surveiller la catégorie ${overBudget.emoji || ""} ${overBudget.id}.` })
+    actions.push({ icon: "âš ï¸", text: isKreol ? `Surveille kategori ${overBudget.emoji || ""} ${overBudget.id}.` : `Surveiller la categorie ${overBudget.emoji || ""} ${overBudget.id}.` })
   }
 
   if (opportunitiesCount > 0) {
-    actions.push({ icon: "🎯", text: isKreol ? `Vérifie ${opportunitiesCount} bon plan détèkté.` : `Vérifier ${opportunitiesCount} opportunité(s) détectée(s).` })
+    actions.push({ icon: "ðŸŽ¯", text: isKreol ? `Verifie ${opportunitiesCount} bon plan detekte.` : `Verifier ${opportunitiesCount} opportunite(s) detectee(s).` })
   }
 
   if (Number(gainsAides || 0) <= 0 && Number(nbAidesObtenues || 0) <= 0) {
-    actions.push({ icon: "💰", text: isKreol ? "Passe in démarche an Aksepté épi rant lo montan gagné." : "Passer une démarche en Acceptée puis renseigner le gain." })
+    actions.push({ icon: "ðŸ’°", text: isKreol ? "Passe in demarche an Aksepte epi rant lo montan gagne." : "Passer une demarche en Acceptee puis renseigner le gain." })
   }
 
   if (!transactions || transactions.length === 0) {
-    actions.push({ icon: "➕", text: isKreol ? "Azout out premiers mouvman pou rann tablo-la pli précis." : "Ajouter vos premiers mouvements pour rendre le tableau plus précis." })
+    actions.push({ icon: "âž•", text: isKreol ? "Azout out premiers mouvman pou rann tablo-la pli precis." : "Ajouter vos premiers mouvements pour rendre le tableau plus precis." })
   }
 
   if (!hasPremiumAccess) {
-    actions.push({ icon: "👑", text: isKreol ? "Déblok alertes bidjé ek PDF ek Premium." : "Débloquer les alertes budget et PDF avec Premium." })
+    actions.push({ icon: "ðŸ‘‘", text: isKreol ? "Deblok alertes bidje ek PDF ek Premium." : "Debloquer les alertes budget et PDF avec Premium." })
   }
 
   const displayedActions = actions.slice(0, 4)
 
   if (displayedActions.length === 0) {
-    displayedActions.push({ icon: "✅", text: isKreol ? "Out situation lé stable pou le moman." : "Votre situation semble stable pour le moment." })
+    displayedActions.push({ icon: "âœ…", text: isKreol ? "Out situation le stable pou le moman." : "Votre situation semble stable pour le moment." })
   }
 
   return (
-    <TropicalCard variant="ocean" texture="🎯" style={{ padding: isMobile ? 16 : 22 }}>
+    <TropicalCard variant="ocean" texture="ðŸŽ¯" style={{ padding: isMobile ? 16 : 22 }}>
       <div style={{ color: COLORS.text, fontWeight: 900, fontSize: 16, marginBottom: 12 }}>
-        🎯 {isKreol ? "Bann actions pou fé" : "Actions recommandées"}
+        ðŸŽ¯ {isKreol ? "Bann actions pou fe" : "Actions recommandees"}
       </div>
 
       <div style={{ display: "grid", gap: 8 }}>
@@ -797,12 +791,12 @@ function RecommendedActionsCard({
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
         {onOpenAides && (
           <ActionChip onClick={onOpenAides} color="#BEF264">
-            {isKreol ? "Éd & démarches" : "Aides & démarches"}
+            {isKreol ? "Ed & demarches" : "Aides & demarches"}
           </ActionChip>
         )}
         {onOpenOpportunities && (
           <ActionChip onClick={onOpenOpportunities} color="#FDE68A">
-            {isKreol ? "Bon plan" : "Opportunités"}
+            {isKreol ? "Bon plan" : "Opportunites"}
           </ActionChip>
         )}
         {!hasPremiumAccess && onGoPremium && (
@@ -840,16 +834,16 @@ function PremiumLockedCard({ t, isMobile, hasPremiumAccess, hasPremiumPlusAccess
   const isKreol = getIsKreol(t)
 
   return (
-    <TropicalCard variant="purple" texture="👑" style={{ padding: isMobile ? 16 : 22 }}>
+    <TropicalCard variant="purple" texture="ðŸ‘‘" style={{ padding: isMobile ? 16 : 22 }}>
       <div style={{ color: COLORS.purple, fontWeight: 900, fontSize: 13, marginBottom: 8 }}>
-        👑 {isKreol ? "Fonksyon Premium" : "Fonctions Premium"}
+        ðŸ‘‘ {isKreol ? "Fonksyon Premium" : "Fonctions Premium"}
       </div>
 
       <div style={{ display: "grid", gap: 10, gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)" }}>
         <PremiumFeature
           locked={!hasPremiumAccess}
-          title={isKreol ? "Alertes bidjé" : "Alertes budget"}
-          text="80 % · 100 %"
+          title={isKreol ? "Alertes bidje" : "Alertes budget"}
+          text="80 % - 100 %"
         />
         <PremiumFeature
           locked={!hasPremiumAccess}
@@ -858,7 +852,7 @@ function PremiumLockedCard({ t, isMobile, hasPremiumAccess, hasPremiumPlusAccess
         />
         <PremiumFeature
           locked={!hasPremiumPlusAccess}
-          title={isKreol ? "Analyse avancée" : "Analyse avancée"}
+          title={isKreol ? "Analyse avancee" : "Analyse avancee"}
           text="Premium+"
         />
       </div>
@@ -879,7 +873,7 @@ function PremiumLockedCard({ t, isMobile, hasPremiumAccess, hasPremiumPlusAccess
             fontFamily: "inherit",
           }}
         >
-          {isKreol ? "Découvre Premium" : "Découvrir Premium"}
+          {isKreol ? "Decouvre Premium" : "Decouvrir Premium"}
         </button>
       )}
     </TropicalCard>
@@ -898,7 +892,7 @@ function PremiumFeature({ locked, title, text }) {
       }}
     >
       <div style={{ fontWeight: 900, fontSize: 13, marginBottom: 5 }}>
-        {locked ? "🔒 " : "✅ "}
+        {locked ? "ðŸ”’ " : "âœ… "}
         {title}
       </div>
       <div style={{ color: COLORS.muted, fontSize: 12 }}>{text}</div>
@@ -922,7 +916,7 @@ function BudgetCategoriesCard({
 
   return (
     <>
-      <TropicalCard variant="lagoon" texture="📊" style={{ padding: isMobile ? 16 : 22 }}>
+      <TropicalCard variant="lagoon" emoji={BkIcons.budget} style={{ padding: isMobile ? 16 : 22 }} innerStyle={{ paddingLeft: isMobile ? 0 : 62 }}>
         <div
           style={{
             display: "flex",
@@ -935,10 +929,10 @@ function BudgetCategoriesCard({
         >
           <div>
             <div style={{ color: COLORS.text, fontWeight: 900, fontSize: 16 }}>
-              📊 {isKreol ? "Bidjé par katégori" : "Budgets par catégorie"}
+              {isKreol ? "Bidjé par kategori" : "Budgets par catégorie"}
             </div>
             <div style={{ color: COLORS.muted, fontSize: 12, marginTop: 4 }}>
-              {isKreol ? "Résumé rapide. Lo détail i sera dann page Dépenses." : "Résumé rapide. Le détail sera dans la page Dépenses."}
+              {isKreol ? "Résumé rapide. Lo détail i sera dann page Dépans." : "Résumé rapide. Le détail sera dans la page Dépenses."}
             </div>
           </div>
 
@@ -952,11 +946,9 @@ function BudgetCategoriesCard({
               }
             }}
             style={{
-              background: hasPremiumAccess
-                ? "rgba(255,255,255,.09)"
+              background: hasPremiumAccess ? "rgba(255,255,255,.09)"
                 : "linear-gradient(135deg, rgba(252,211,77,.22), rgba(245,158,11,.14))",
-              border: hasPremiumAccess
-                ? "1px solid rgba(255,255,255,.14)"
+              border: hasPremiumAccess ? "1px solid rgba(255,255,255,.14)"
                 : "1px solid rgba(252,211,77,.35)",
               borderRadius: 999,
               color: hasPremiumAccess ? COLORS.whiteSoft : "#FDE68A",
@@ -968,8 +960,8 @@ function BudgetCategoriesCard({
             }}
           >
             {hasPremiumAccess
-              ? isKreol ? "⚙️ Modifie bidjé" : "⚙️ Modifier mes budgets"
-              : isKreol ? "🔒 Bidjé personnalisés" : "🔒 Budgets personnalisés"}
+              ? isKreol ? "Modifie bidje" : "Modifier mes budgets"
+              : isKreol ? "Bidje personnalises" : "Budgets personnalises"}
           </button>
         </div>
 
@@ -991,10 +983,11 @@ function BudgetCategoriesCard({
               <div key={cat.id}>
                 <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 7 }}>
                   <span style={{ fontSize: 14, color: COLORS.text, fontWeight: 800 }}>
-                    {cat.emoji} {t("categories", cat.id)}
+                    <span style={{ width: 9, height: 9, borderRadius: 999, background: cat.color || COLORS.cyan, display: "inline-block", marginRight: 8 }} />
+                    {t("categories", cat.id)}
                   </span>
                   <span style={{ fontSize: 12, color: isOver ? COLORS.red : COLORS.whiteSoft, flexShrink: 0 }}>
-                    {depense.toFixed(0)} / {budget} €
+                    {depense.toFixed(0)} / {budget} EUR
                   </span>
                 </div>
                 <div style={{ background: "rgba(255,255,255,.14)", borderRadius: 99, height: 7, overflow: "hidden" }}>
@@ -1036,14 +1029,14 @@ function PieSummaryCard({ t, isMobile, pieData = [], onOpenDepenses }) {
   if (filtered.length === 0) return null
 
   return (
-    <TropicalCard variant="ocean" texture="🌊" style={{ padding: isMobile ? 18 : 24, borderRadius: 22 }}>
+    <TropicalCard variant="ocean" emoji={BkIcons.stats} style={{ padding: isMobile ? 18 : 24, borderRadius: 22 }} innerStyle={{ paddingLeft: isMobile ? 0 : 62 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 14 }}>
         <div>
           <div style={{ color: COLORS.text, fontWeight: 900, fontSize: 16 }}>
             {isKreol ? "Répartition dépans" : "Répartition des dépenses"}
           </div>
           <div style={{ color: COLORS.muted, fontSize: 12, marginTop: 4 }}>
-            {isKreol ? "Tape in katégori pou voir détail." : "Touchez une catégorie pour la mettre en avant."}
+            {isKreol ? "Tape in kategori pou voir détail." : "Touchez une catégorie pour la mettre en avant."}
           </div>
         </div>
         {onOpenDepenses && (
@@ -1134,7 +1127,7 @@ function PieSummaryCard({ t, isMobile, pieData = [], onOpenDepenses }) {
                 <span style={{ width: 12, height: 12, borderRadius: 999, background: item.color || COLORS.cyan, boxShadow: active ? `0 0 12px ${item.color || COLORS.cyan}` : "none" }} />
                 <span style={{ minWidth: 0 }}>
                   <span style={{ display: "block", fontSize: 13, fontWeight: 900, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                    {item.emoji ? `${item.emoji} ` : ""}{item.name || item.label || (isKreol ? "Katègori" : "Catégorie")}
+                    {item.name || item.label || (isKreol ? "Kategori" : "Catégorie")}
                   </span>
                   <span style={{ display: "block", color: COLORS.muted, fontSize: 11, marginTop: 2 }}>
                     {percent} %
@@ -1183,7 +1176,7 @@ function isAcceptedDashboardDemarche(item = {}) {
 }
 
 function formatReminderDate(value) {
-  if (!value) return "—"
+  if (!value) return "â€”"
 
   try {
     const [year, month, day] = String(value).split("-")
@@ -1201,7 +1194,7 @@ function getReminderState(reminderDate, isKreol) {
   if (!reminderDate) {
     return {
       color: COLORS.yellow,
-      icon: "🟡",
+      icon: "ðŸŸ¡",
       label: isKreol ? "Rappel sans date" : "Rappel sans date",
       sortValue: 999999999,
     }
@@ -1216,9 +1209,8 @@ function getReminderState(reminderDate, isKreol) {
   if (diffDays < 0) {
     return {
       color: COLORS.red,
-      icon: "🔴",
-      label: isKreol
-        ? `An retard depuis ${Math.abs(diffDays)} jour(s)`
+      icon: "ðŸ”´",
+      label: isKreol ? `An retard depuis ${Math.abs(diffDays)} jour(s)`
         : `En retard depuis ${Math.abs(diffDays)} jour(s)`,
       sortValue: diffDays,
     }
@@ -1227,15 +1219,15 @@ function getReminderState(reminderDate, isKreol) {
   if (diffDays === 0) {
     return {
       color: COLORS.orange,
-      icon: "🟠",
-      label: isKreol ? "À fé aujourd'hui" : "À faire aujourd’hui",
+      icon: "ðŸŸ ",
+      label: isKreol ? "A fe aujourd'hui" : "A faire aujourd'hui",
       sortValue: 0,
     }
   }
 
   return {
     color: COLORS.green,
-    icon: "🟢",
+    icon: "ðŸŸ¢",
     label: isKreol ? `Dann ${diffDays} jour(s)` : `Dans ${diffDays} jour(s)`,
     sortValue: diffDays,
   }
@@ -1269,7 +1261,7 @@ function DashboardRemindersCard({ t, isMobile, reminders = [], onOpenDemarches }
         textAlign: "left",
       }}
     >
-      <TropicalCard variant="ocean" texture="⏰" style={{ padding: isMobile ? 16 : 22 }}>
+      <TropicalCard variant="ocean" texture="â°" style={{ padding: isMobile ? 16 : 22 }}>
         <div
           style={{
             display: "flex",
@@ -1281,14 +1273,14 @@ function DashboardRemindersCard({ t, isMobile, reminders = [], onOpenDemarches }
         >
           <div>
             <div style={{ color: COLORS.yellow, fontWeight: 900, fontSize: 13, marginBottom: 4 }}>
-              ⏰ {isKreol ? "Rappels administratifs" : "Rappels administratifs"}
+              â° {isKreol ? "Rappels administratifs" : "Rappels administratifs"}
             </div>
             <div style={{ color: COLORS.muted, fontSize: 12 }}>
-              {isKreol ? "Bann démarches à suivre" : "Vos prochaines relances à suivre"}
+              {isKreol ? "Bann demarches a suivre" : "Vos prochaines relances a suivre"}
             </div>
           </div>
 
-          <span style={{ color: COLORS.yellow, fontSize: 24, fontWeight: 900 }}>›</span>
+          <span style={{ color: COLORS.yellow, fontSize: 24, fontWeight: 900 }}>â€º</span>
         </div>
 
         <div style={{ display: "grid", gap: 8 }}>
@@ -1321,12 +1313,12 @@ function DashboardRemindersCard({ t, isMobile, reminders = [], onOpenDemarches }
                       whiteSpace: "nowrap",
                     }}
                   >
-                    {reminder.aideLabel || (isKreol ? "Démarche" : "Démarche")}
+                    {reminder.aideLabel || (isKreol ? "Demarche" : "Demarche")}
                   </div>
 
                   <div style={{ color: COLORS.muted, fontSize: 12, marginTop: 4, lineHeight: 1.4 }}>
-                    📅 {formatReminderDate(reminder.reminder_date)}
-                    {reminder.note ? ` · ${reminder.note}` : ""}
+                    ðŸ“… {formatReminderDate(reminder.reminder_date)}
+                    {reminder.note ? ` - ${reminder.note}` : ""}
                   </div>
                 </div>
 
@@ -1374,7 +1366,7 @@ function computeProfileCompletion(profile = {}) {
 }
 
 function getUserFirstName(profile = {}) {
-  const name = String(profile?.nom || "").trim()
+  const name = String(profile.nom || "").trim()
   if (!name) return ""
   return name.split(/\s+/)[0]
 }
@@ -1389,17 +1381,15 @@ function getNextCopilotAction({
 }) {
   if (profileCompletion < 65) {
     return {
-      text: isKreol
-        ? "Complète out profil pou améliore bann conseils."
-        : "Compléter votre profil pour améliorer les conseils.",
+      text: isKreol ? "Complete out profil pou ameliore bann conseils."
+        : "Completer votre profil pour ameliorer les conseils.",
       target: "profil",
     }
   }
 
   if (!commune) {
     return {
-      text: isKreol
-        ? "Ajoute out kominn pou gagne bann pistes lokal."
+      text: isKreol ? "Ajoute out kominn pou gagne bann pistes lokal."
         : "Ajouter votre commune pour obtenir des pistes locales.",
       target: "profil",
     }
@@ -1407,34 +1397,30 @@ function getNextCopilotAction({
 
   if (!realTransactions || realTransactions.length === 0) {
     return {
-      text: isKreol
-        ? "Ajoute out premières dépans."
-        : "Ajouter vos premières dépenses.",
+      text: isKreol ? "Ajoute out premieres depans."
+        : "Ajouter vos premieres depenses.",
       target: "depenses",
     }
   }
 
   if (!abonnements || abonnements.length === 0) {
     return {
-      text: isKreol
-        ? "Ajoute out premières sarz fix."
-        : "Ajouter vos premières charges fixes.",
+      text: isKreol ? "Ajoute out premieres sarz fix."
+        : "Ajouter vos premieres charges fixes.",
       target: "abonnements",
     }
   }
 
   if (reminders && reminders.length > 0) {
     return {
-      text: isKreol
-        ? "Regarde out prochaine démarche à suivre."
-        : "Vérifier votre prochaine démarche en attente.",
+      text: isKreol ? "Regarde out prochaine demarche a suivre."
+        : "Verifier votre prochaine demarche en attente.",
       target: "demarches",
     }
   }
 
   return {
-    text: isKreol
-      ? "Pose in kestion au Konsèyé."
+    text: isKreol ? "Pose in kestion au Konseye."
       : "Poser une question au Conseiller.",
     target: "conseiller",
   }
@@ -1445,40 +1431,36 @@ function CopilotHero({ profile, isKreol, isMobile, profileCompletion, attentionC
   const hour = new Date().getHours()
   const isEvening = hour >= 18 || hour < 5
   const greeting = firstName
-    ? isKreol
-      ? `${isEvening ? "Bonswar" : "Bonzour"} ${firstName} ${isEvening ? "🌙" : "👋"}`
-      : `${isEvening ? "Bonsoir" : "Bonjour"} ${firstName} ${isEvening ? "🌙" : "👋"}`
-    : isKreol
-      ? `${isEvening ? "Bonswar" : "Bonzour"} ${isEvening ? "🌙" : "👋"}`
-      : `${isEvening ? "Bonsoir" : "Bonjour"} ${isEvening ? "🌙" : "👋"}`
+    ? isKreol ? `${isEvening ? "Bonswar" : "Bonzour"} ${firstName} ${isEvening ? "ðŸŒ™" : "ðŸ‘‹"}`
+      : `${isEvening ? "Bonsoir" : "Bonjour"} ${firstName} ${isEvening ? "ðŸŒ™" : "ðŸ‘‹"}`
+    : isKreol ? `${isEvening ? "Bonswar" : "Bonzour"} ${isEvening ? "ðŸŒ™" : "ðŸ‘‹"}`
+      : `${isEvening ? "Bonsoir" : "Bonjour"} ${isEvening ? "ðŸŒ™" : "ðŸ‘‹"}`
 
   const rotatingLines = isKreol
     ? [
-      "Out bidjé lé sous contrôle zordi.",
-      `${attentionCount} piste${attentionCount > 1 ? "s" : ""} i mérite out attention.`,
-      "Chaque ti décision i aide out budget avancé.",
+      "Out bidje le sous controle zordi.",
+      `${attentionCount} piste${attentionCount > 1 ? "s" : ""} i merite out attention.`,
+      "Chaque ti decision i aide out budget avance.",
     ]
     : [
-      "Votre budget est sous contrôle aujourd'hui.",
-      `${attentionCount} piste${attentionCount > 1 ? "s" : ""} mérite${attentionCount > 1 ? "nt" : ""} votre attention.`,
+      "Votre budget est sous controle aujourd'hui.",
+      `${attentionCount} piste${attentionCount > 1 ? "s" : ""} merite${attentionCount > 1 ? "nt" : ""} votre attention.`,
       "Chaque euro compte pour avancer sereinement.",
     ]
   const rotatingLine = rotatingLines[new Date().getMinutes() % rotatingLines.length]
 
   const subtitle = profileCompletion < 65
-    ? isKreol
-      ? "Complète out profil pou gagne bann conseils pli précis."
-      : "Complétez votre profil pour obtenir des conseils plus précis."
+    ? isKreol ? "Complete out profil pou gagne bann conseils pli precis."
+      : "Completez votre profil pour obtenir des conseils plus precis."
     : attentionCount > 0
-      ? isKreol
-        ? `Out bidjé lé sous contrôle. ${attentionCount} piste${attentionCount > 1 ? "s" : ""} i mérite out attention.`
-        : `Budget sous contrôle. ${attentionCount} piste${attentionCount > 1 ? "s" : ""} mérite${attentionCount > 1 ? "nt" : ""} votre attention.`
+      ? isKreol ? `Out bidje le sous controle. ${attentionCount} piste${attentionCount > 1 ? "s" : ""} i merite out attention.`
+        : `Budget sous controle. ${attentionCount} piste${attentionCount > 1 ? "s" : ""} merite${attentionCount > 1 ? "nt" : ""} votre attention.`
       : rotatingLine
 
   return (
     <TropicalCard
       variant="lagoon"
-      texture="🌴"
+      texture="ðŸŒ´"
       style={{
         padding: isMobile ? 20 : 30,
         borderRadius: isMobile ? 24 : 28,
@@ -1492,7 +1474,7 @@ function CopilotHero({ profile, isKreol, isMobile, profileCompletion, attentionC
         {greeting}
       </div>
       <div style={{ color: COLORS.whiteSoft, fontSize: isMobile ? 15 : 17, fontWeight: 800, marginBottom: 6 }}>
-        {isKreol ? "Voilà out situation zordi." : "Voici votre situation aujourd’hui."}
+        {isKreol ? "Voila out situation zordi." : "Voici votre situation aujourd'hui."}
       </div>
       <div style={{ color: COLORS.muted, fontSize: 14, lineHeight: 1.6 }}>
         {subtitle}
@@ -1509,28 +1491,27 @@ function PremiumBudgetCard({ stats = {}, realTransactions = [], isKreol, isMobil
   const hasBudgetData = revenus > 0 || depenses > 0 || realTransactions.length > 0
 
   return (
-    <TropicalCard variant="green" texture="💶" style={{ padding: isMobile ? 18 : 22, borderRadius: 22 }}>
+    <TropicalCard variant="green" texture="ðŸ’¶" style={{ padding: isMobile ? 18 : 22, borderRadius: 22 }}>
       <div style={{ color: COLORS.text, fontWeight: 950, fontSize: 18, marginBottom: 14 }}>
-        {isKreol ? "💶 Bidjé du mwa" : "💶 Budget du mois"}
+        {isKreol ? "ðŸ’¶ Bidje du mwa" : "ðŸ’¶ Budget du mois"}
       </div>
 
       {!hasBudgetData ? (
         <div style={{ color: COLORS.whiteSoft, fontSize: 14, lineHeight: 1.55 }}>
-          {isKreol
-            ? "Ajoute out premières dépans pou suivre out bidjé."
-            : "Ajoutez vos premières dépenses pour suivre votre budget."}
+          {isKreol ? "Ajoute out premieres depans pou suivre out bidje."
+            : "Ajoutez vos premieres depenses pour suivre votre budget."}
         </div>
       ) : (
         <>
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 10 }}>
             <BudgetMetric label={isKreol ? "Revenus" : "Revenus"} value={formatMontant(revenus)} color={COLORS.green} />
-            <BudgetMetric label={isKreol ? "Dépans" : "Dépenses"} value={formatMontant(depenses)} color={COLORS.accentSoft} />
+            <BudgetMetric label={isKreol ? "Depans" : "Depenses"} value={formatMontant(depenses)} color={COLORS.accentSoft} />
             <BudgetMetric label={isKreol ? "Reste" : "Reste disponible"} value={formatMontant(solde)} color={solde >= 0 ? COLORS.cyan : COLORS.red} />
           </div>
 
           <div style={{ marginTop: 16 }}>
             <div style={{ display: "flex", justifyContent: "space-between", gap: 10, color: COLORS.whiteSoft, fontSize: 12, fontWeight: 900, marginBottom: 8 }}>
-              <span>{isKreol ? "Budget utilisé" : "Budget utilisé"}</span>
+              <span>{isKreol ? "Budget utilise" : "Budget utilise"}</span>
               <span>{usedPercent} %</span>
             </div>
             <div style={{ height: 12, borderRadius: 99, background: "rgba(255,255,255,.12)", overflow: "hidden", border: "1px solid rgba(255,255,255,.08)" }}>
@@ -1577,15 +1558,15 @@ function MotivationCard({ isKreol, isMobile }) {
     ]
     : [
       "Chaque euro compte.",
-      "Petit à petit, vous avancez.",
+      "Petit a petit, vous avancez.",
       "Chaque effort rapproche de vos objectifs.",
     ]
   const line = lines[new Date().getDate() % lines.length]
 
   return (
-    <TropicalCard variant="gold" texture="🌿" style={{ padding: isMobile ? 18 : 22, borderRadius: 22 }}>
+    <TropicalCard variant="gold" texture="ðŸŒ¿" style={{ padding: isMobile ? 18 : 22, borderRadius: 22 }}>
       <div style={{ color: COLORS.yellow, fontSize: 13, fontWeight: 950, marginBottom: 8 }}>
-        {isKreol ? "✨ Motivation du jour" : "✨ Motivation du jour"}
+        {isKreol ? "âœ¨ Motivation du jour" : "âœ¨ Motivation du jour"}
       </div>
       <div style={{ color: COLORS.text, fontSize: isMobile ? 20 : 24, fontWeight: 950, lineHeight: 1.2 }}>
         {line}
@@ -1594,27 +1575,30 @@ function MotivationCard({ isKreol, isMobile }) {
   )
 }
 
-function BalanceHeroCard({ insights, isKreol, isMobile }) {
+function BalanceHeroCard({ insights, stats = {}, isKreol, isMobile, onOpenRevenus }) {
+  const revenus = Number(stats.revenus || 0)
   const balance = Number(insights.monthlyBalance || 0)
-  const daily = Number(insights.dailyBalance || 0)
 
   return (
-    <TropicalCard variant="lagoon" texture="💶" style={{ padding: isMobile ? 22 : 30, borderRadius: 28 }}>
+    <TropicalCard variant="lagoon" emoji={BkIcons.savings} style={{ padding: isMobile ? 22 : 30, borderRadius: 28 }} innerStyle={{ paddingLeft: isMobile ? 0 : 64 }}>
       <div style={{ color: COLORS.cyan, fontSize: 13, fontWeight: 950, marginBottom: 8 }}>
-        {isKreol ? "Solde estimé" : "Solde mensuel estimé"}
+        {isKreol ? "Larzan i rantre" : "Revenus du mois"}
       </div>
       <div style={{ color: COLORS.whiteSoft, fontSize: 16, fontWeight: 850 }}>
-        {isKreol ? "I reste aou environ" : "Il te reste environ"}
+        {isKreol ? "Base chak mwa i reprend otomatikman" : "Base mensuelle reprise automatiquement"}
       </div>
-      <div style={{ color: balance >= 0 ? COLORS.green : COLORS.red, fontSize: isMobile ? 48 : 62, fontWeight: 950, lineHeight: 1, fontFamily: "'DM Serif Display', Georgia, serif", margin: "8px 0" }}>
-        {formatMontant(balance)}
+      <div style={{ color: revenus >= 0 ? COLORS.green : COLORS.red, fontSize: isMobile ? 48 : 62, fontWeight: 950, lineHeight: 1, fontFamily: "'DM Serif Display', Georgia, serif", margin: "8px 0" }}>
+        {formatMontant(revenus)}
       </div>
       <div style={{ color: COLORS.whiteSoft, fontSize: 16, fontWeight: 850 }}>
-        {isKreol ? "pou fini le mwa" : "pour finir le mois"}
+        {isKreol ? "modifiable pou le mwa" : "modifiable pour le mois en cours"}
       </div>
       <div style={{ color: COLORS.muted, fontSize: 13, marginTop: 10 }}>
-        {isKreol ? "Soit environ" : "Soit environ"} <strong style={{ color: COLORS.text }}>{formatMontant(daily)}</strong> / jour
+        {isKreol ? "Larzan disponible estimé" : "Solde disponible estimé"} <strong style={{ color: balance >= 0 ? COLORS.green : COLORS.red }}>{formatMontant(balance)}</strong>
       </div>
+      <button type="button" onClick={onOpenRevenus} style={{ marginTop: 16, minHeight: 44, border: `1px solid ${COLORS.green}66`, borderRadius: 14, background: "rgba(34,197,94,.14)", color: COLORS.text, cursor: "pointer", fontWeight: 950, padding: "0 16px" }}>
+        {isKreol ? "Voir / modifier revenus" : "Voir / modifier mes revenus"}
+      </button>
     </TropicalCard>
   )
 }
@@ -1625,7 +1609,7 @@ function ExpensesSnapshotCard({ stats, isKreol, isMobile }) {
   const pct = revenus > 0 ? Math.min(100, Math.round((depenses / revenus) * 100)) : 0
 
   return (
-    <TropicalCard variant="coral" texture="💸" style={{ padding: isMobile ? 18 : 22, borderRadius: 22 }}>
+    <TropicalCard variant="coral" emoji={BkIcons.depenses} style={{ padding: isMobile ? 18 : 22, borderRadius: 22 }} innerStyle={{ paddingLeft: isMobile ? 0 : 62 }}>
       <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 950 }}>
         {isKreol ? "Dépans du mwa" : "Dépenses du mois"}
       </div>
@@ -1644,14 +1628,23 @@ function ExpensesSnapshotCard({ stats, isKreol, isMobile }) {
 
 function BudgetAlertCard({ alert, isKreol }) {
   const color = alert.level === "ok" ? COLORS.green : alert.level === "warning" ? COLORS.yellow : alert.level === "alert" ? COLORS.accent : COLORS.red
+  const alertText =
+    alert.level === "ok"
+      ? isKreol ? "Tout i sava bien, out depans i reste maitrisees mwa-la."
+        : "Tout va bien, tes depenses restent maitrisees ce mois-ci."
+      : alert.level === "danger"
+        ? isKreol ? `Bidze alimentaire depasse : ${alert.percent || 0} % utilise.`
+          : `Budget alimentaire depasse : ${alert.percent || 0} % utilise.`
+        : isKreol ? `Vigilance, out budget i arrive a ${alert.percent || 0} %.`
+          : `Vigilance, ton budget atteint ${alert.percent || 0} %.`
 
   return (
-    <TropicalCard variant={alert.level === "ok" ? "green" : "gold"} texture="⚠️" style={{ padding: 18, borderRadius: 22 }}>
+    <TropicalCard variant={alert.level === "ok" ? "green" : "gold"} emoji={BkIcons.alert} style={{ padding: 18, borderRadius: 22 }} innerStyle={{ paddingLeft: 62 }}>
       <div style={{ color, fontSize: 13, fontWeight: 950, marginBottom: 8 }}>
-        {isKreol ? "Alerte bidjé" : "Alerte budget"}
+        {isKreol ? "Alèrte bidjé" : "Alerte budget"}
       </div>
       <div style={{ color: COLORS.text, fontSize: 18, lineHeight: 1.35, fontWeight: 950 }}>
-        {alert.text}
+        {alertText}
       </div>
     </TropicalCard>
   )
@@ -1660,9 +1653,9 @@ function BudgetAlertCard({ alert, isKreol }) {
 function TopCategoriesV2Card({ categories = [], t, isKreol }) {
   if (!categories.length) {
     return (
-      <TropicalCard variant="ocean" texture="📊" style={{ padding: 18, borderRadius: 22 }}>
-        <div style={{ color: COLORS.text, fontWeight: 950 }}>{isKreol ? "Top katégori" : "Top catégories"}</div>
-        <div style={{ color: COLORS.muted, marginTop: 8 }}>Ajoute quelques dépenses pour voir où part ton argent.</div>
+      <TropicalCard variant="ocean" emoji={BkIcons.stats} style={{ padding: 18, borderRadius: 22 }} innerStyle={{ paddingLeft: 62 }}>
+        <div style={{ color: COLORS.text, fontWeight: 950 }}>{isKreol ? "Top kategori" : "Top catégories"}</div>
+        <div style={{ color: COLORS.muted, marginTop: 8 }}>{isKreol ? "Azout quelques dépans pou voir ousa larzan i sava." : "Ajoute quelques dépenses pour voir où part ton argent."}</div>
       </TropicalCard>
     )
   }
@@ -1670,9 +1663,9 @@ function TopCategoriesV2Card({ categories = [], t, isKreol }) {
   const max = Math.max(...categories.map(cat => Number(cat.depense || 0)), 1)
 
   return (
-    <TropicalCard variant="ocean" texture="📊" style={{ padding: 18, borderRadius: 22 }}>
+    <TropicalCard variant="ocean" emoji={BkIcons.stats} style={{ padding: 18, borderRadius: 22 }} innerStyle={{ paddingLeft: 62 }}>
       <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 950, marginBottom: 12 }}>
-        {isKreol ? "Top katégori" : "Top catégories"}
+        {isKreol ? "Top kategori" : "Top catégories"}
       </div>
       <div style={{ display: "grid", gap: 12 }}>
         {categories.map(cat => {
@@ -1681,7 +1674,10 @@ function TopCategoriesV2Card({ categories = [], t, isKreol }) {
           return (
             <div key={cat.id}>
               <div style={{ display: "flex", justifyContent: "space-between", color: COLORS.text, fontWeight: 900, fontSize: 13 }}>
-                <span>{cat.emoji || "•"} {t?.("categories", cat.id) || cat.label || cat.id}</span>
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ width: 9, height: 9, borderRadius: 999, background: cat.color || COLORS.cyan, display: "inline-block", flexShrink: 0 }} />
+                  {t?.("categories", cat.id) || cat.label || cat.id}
+                </span>
                 <span>{formatMontant(amount)}</span>
               </div>
               <div style={{ height: 8, borderRadius: 99, background: "rgba(255,255,255,.12)", overflow: "hidden", marginTop: 7 }}>
@@ -1697,10 +1693,10 @@ function TopCategoriesV2Card({ categories = [], t, isKreol }) {
 
 function RecentReceiptsCard({ receipts = [], isKreol, onOpenReceipts }) {
   return (
-    <TropicalCard variant="lagoon" texture="🧾" style={{ padding: 18, borderRadius: 22 }}>
+    <TropicalCard variant="lagoon" emoji={BkIcons.receipts} style={{ padding: 18, borderRadius: 22 }} innerStyle={{ paddingLeft: 62 }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 12 }}>
         <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 950 }}>
-          {isKreol ? "Dernières courses" : "Dernières courses analysées"}
+          {isKreol ? "Dèrnyé courses" : "Dernières courses analysées"}
         </div>
         {onOpenReceipts && (
           <button type="button" onClick={onOpenReceipts} style={{ minHeight: 40, borderRadius: 999, border: "1px solid rgba(255,255,255,.14)", background: "rgba(255,255,255,.07)", color: COLORS.cyan, fontWeight: 950, padding: "0 12px", cursor: "pointer" }}>
@@ -1731,9 +1727,9 @@ function RecentReceiptsCard({ receipts = [], isKreol, onOpenReceipts }) {
 
 function SavingsOpportunitiesCard({ hints = [], isKreol, onOpenConseiller }) {
   return (
-    <TropicalCard variant="gold" texture="💡" style={{ padding: 18, borderRadius: 22 }}>
+    <TropicalCard variant="gold" emoji={BkIcons.savings} style={{ padding: 18, borderRadius: 22 }} innerStyle={{ paddingLeft: 62 }}>
       <div style={{ color: COLORS.yellow, fontSize: 13, fontWeight: 950, marginBottom: 8 }}>
-        {isKreol ? "Pistes d'économie" : "Opportunités d'économies"}
+        {isKreol ? "Pistes lékonomi" : "Opportunités d'économies"}
       </div>
       <div style={{ color: COLORS.text, fontSize: 20, fontWeight: 950, marginBottom: 10 }}>
         {hints.length} {isKreol ? "pistes détectées" : "pistes d'économies détectées"}
@@ -1756,23 +1752,27 @@ function SavingsOpportunitiesCard({ hints = [], isKreol, onOpenConseiller }) {
 
 function QuickActionsV2({ isKreol, onAddExpense, onOpenReceipts, onOpenAides, onOpenStats }) {
   const actions = [
-    { label: isKreol ? "+ Azout dépans" : "+ Ajouter dépense", onClick: onAddExpense, color: COLORS.accent },
-    { label: isKreol ? "Scanner ticket" : "Scanner ticket", onClick: onOpenReceipts, color: COLORS.cyan },
-    { label: isKreol ? "Voir mes aides" : "Voir mes aides", onClick: onOpenAides, color: COLORS.yellow },
-    { label: isKreol ? "Voir mes stats" : "Voir mes stats", onClick: onOpenStats, color: COLORS.green },
+    { label: isKreol ? "Azout dépans" : "Ajouter dépense", onClick: onAddExpense, color: COLORS.accent, Icon: BkIcons.add },
+    { label: isKreol ? "Scanner tike" : "Scanner ticket", onClick: onOpenReceipts, color: COLORS.cyan, Icon: BkIcons.scan },
+    { label: isKreol ? "Voir mon bann aides" : "Voir mes aides", onClick: onOpenAides, color: COLORS.yellow, Icon: BkIcons.aides },
+    { label: isKreol ? "Voir mon bann stats" : "Voir mes stats", onClick: onOpenStats, color: COLORS.green, Icon: BkIcons.stats },
   ].filter(action => action.onClick)
 
   return (
-    <TropicalCard variant="purple" texture="⚡" style={{ padding: 18, borderRadius: 22 }}>
+    <TropicalCard variant="purple" emoji={BkIcons.budget} style={{ padding: 18, borderRadius: 22 }} innerStyle={{ paddingLeft: 62 }}>
       <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 950, marginBottom: 12 }}>
         {isKreol ? "Aksyon rapid" : "Actions rapides"}
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10 }}>
-        {actions.map(action => (
-          <button key={action.label} type="button" onClick={action.onClick} style={{ minHeight: 52, border: `1px solid ${action.color}55`, borderRadius: 14, background: `${action.color}22`, color: COLORS.text, fontWeight: 950, cursor: "pointer" }}>
+        {actions.map(action => {
+          const Icon = action.Icon
+          return (
+          <button key={action.label} type="button" onClick={action.onClick} style={{ minHeight: 52, border: `1px solid ${action.color}55`, borderRadius: 14, background: `${action.color}22`, color: COLORS.text, fontWeight: 950, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "inherit", padding: "0 12px" }}>
+            <Icon size={18} />
             {action.label}
           </button>
-        ))}
+          )
+        })}
       </div>
     </TropicalCard>
   )
@@ -1785,14 +1785,14 @@ function ShoppingHabitsDashboardCard({ items = [], isKreol, isMobile, onOpenShop
   const colors = [COLORS.accent, COLORS.green, COLORS.cyan, COLORS.yellow]
 
   return (
-    <TropicalCard variant="ocean" texture="🛒" style={{ padding: isMobile ? 18 : 22, borderRadius: 22 }}>
+    <TropicalCard variant="ocean" emoji={BkIcons.shopping} style={{ padding: isMobile ? 18 : 22, borderRadius: 22 }} innerStyle={{ paddingLeft: isMobile ? 0 : 62 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 10 }}>
         <div>
           <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 950 }}>
             {isKreol ? "Ousa ou achète le plis ?" : "Où j'achète le plus ?"}
           </div>
           <div style={{ color: COLORS.muted, fontSize: 12, marginTop: 4 }}>
-            {isKreol ? "Dapré bann tiké validé." : "D'après vos tickets validés."}
+            {isKreol ? "Dapré bann tike validés." : "D'après vos tickets validés."}
           </div>
         </div>
         {onOpenShopping && (
@@ -1835,7 +1835,8 @@ function ShoppingHabitsDashboardCard({ items = [], isKreol, isMobile, onOpenShop
           {habits.map((row, index) => (
             <div key={row.store} style={{ display: "flex", justifyContent: "space-between", gap: 10, color: COLORS.text, fontWeight: 900 }}>
               <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                <span style={{ color: colors[index % colors.length] }}>●</span> {row.store}
+                <span style={{ width: 9, height: 9, borderRadius: 999, background: colors[index % colors.length], display: "inline-block", marginRight: 8 }} />
+                {row.store}
               </span>
               <span>{row.percent} %</span>
             </div>
@@ -1903,25 +1904,24 @@ function CopilotCards({
   return (
     <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 14 }}>
       <CopilotInfoCard
-        title={isKreol ? "🎯 Opportunités" : "🎯 Opportunités"}
+        title={isKreol ? "ðŸŽ¯ Opportunites" : "ðŸŽ¯ Opportunites"}
         value={opportunitiesCount > 0
-          ? isKreol ? `${opportunitiesCount} pistes pou vérifié` : `${opportunitiesCount} pistes à vérifier`
-          : isKreol ? "Profil à compléter" : "Profil à compléter"}
+          ? isKreol ? `${opportunitiesCount} pistes pou verifie` : `${opportunitiesCount} pistes a verifier`
+          : isKreol ? "Profil a completer" : "Profil a completer"}
         detail={opportunitiesCount > 0
-          ? isKreol ? "Opportunité possible. Pou confirme ek l’organisme concerné." : "Opportunité possible. À confirmer avec l’organisme concerné."
-          : isKreol ? "Complète out profil pou détecte plis opportunités." : "Complétez votre profil pour détecter plus d’opportunités."}
-        buttonLabel={isKreol ? "Vérifié" : "Vérifier"}
+          ? isKreol ? "Opportunite possible. Pou confirme ek l'organisme concerne." : "Opportunite possible. A confirmer avec l'organisme concerne."
+          : isKreol ? "Complete out profil pou detecte plis opportunites." : "Completez votre profil pour detecter plus d'opportunites."}
+        buttonLabel={isKreol ? "Verifie" : "Verifier"}
         onClick={onOpenOpportunities}
         isMobile={isMobile}
         accent={COLORS.yellow}
       />
 
       <CopilotInfoCard
-        title={commune ? isKreol ? "📍 Kominn" : "📍 Commune" : isKreol ? "📍 Kominn pa renseignée" : "📍 Commune non renseignée"}
-        value={commune || (isKreol ? "Pa renseignée" : "Non renseignée")}
-        detail={commune
-          ? isKreol ? "Bann conseils adapté pou out kominn." : "Conseils adaptés à votre commune."
-          : isKreol ? "Ajoute out kominn pou améliore bann conseils." : "Ajoutez votre commune pour améliorer vos conseils."}
+        title={commune ? isKreol ? "ðŸ“ Kominn" : "ðŸ“ Commune" : isKreol ? "ðŸ“ Kominn pa renseignee" : "ðŸ“ Commune non renseignee"}
+        value={commune || (isKreol ? "Pa renseignee" : "Non renseignee")}
+        detail={commune ? isKreol ? "Bann conseils adapte pou out kominn." : "Conseils adaptes a votre commune."
+          : isKreol ? "Ajoute out kominn pou ameliore bann conseils." : "Ajoutez votre commune pour ameliorer vos conseils."}
         buttonLabel={!commune ? isKreol ? "Renseigne" : "Renseigner" : isKreol ? "Modifier" : "Modifier"}
         onClick={onGoProfile}
         isMobile={isMobile}
@@ -1929,13 +1929,13 @@ function CopilotCards({
       />
 
       <CopilotInfoCard
-        title={isKreol ? "📄 Démarches" : "📄 Démarches"}
+        title={isKreol ? "ðŸ“„ Demarches" : "ðŸ“„ Demarches"}
         value={demarchesInProgress > 0
           ? isKreol ? `${demarchesInProgress} en cours` : `${demarchesInProgress} en cours`
-          : isKreol ? "Okenn démarche" : "Aucune démarche"}
+          : isKreol ? "Okenn demarche" : "Aucune demarche"}
         detail={demarchesInProgress > 0
-          ? `${completedDemarches} ${isKreol ? "terminées" : "terminées"}`
-          : isKreol ? "Okenn démarche suivie pou le moment." : "Aucune démarche suivie pour le moment."}
+          ? `${completedDemarches} ${isKreol ? "terminees" : "terminees"}`
+          : isKreol ? "Okenn demarche suivie pou le moment." : "Aucune demarche suivie pour le moment."}
         buttonLabel={isKreol ? "Ouvrir" : "Ouvrir"}
         onClick={onOpenDemarches}
         isMobile={isMobile}
@@ -1943,21 +1943,20 @@ function CopilotCards({
       />
 
       <CopilotInfoCard
-        title={isKreol ? "👤 Profil" : "👤 Profil"}
+        title={isKreol ? "ðŸ‘¤ Profil" : "ðŸ‘¤ Profil"}
         value={`${profileCompletion} %`}
-        detail={isKreol ? "Profil complété : plus li lé complet, plus bann conseils lé précis." : "Profil complété : plus il est complet, plus les conseils sont précis."}
-        buttonLabel={profileCompletion < 100 ? isKreol ? "Complète" : "Compléter" : isKreol ? "Voir" : "Voir"}
+        detail={isKreol ? "Profil complete : plus li le complet, plus bann conseils le precis." : "Profil complete : plus il est complet, plus les conseils sont precis."}
+        buttonLabel={profileCompletion < 100 ? isKreol ? "Complete" : "Completer" : isKreol ? "Voir" : "Voir"}
         onClick={onGoProfile}
         isMobile={isMobile}
         accent={COLORS.green}
       />
 
       <CopilotInfoCard
-        title={isKreol ? "🤖 Konsèyé BudgetKazPei" : "🤖 Conseiller BudgetKazPei"}
-        value={isKreol ? "Koz ek mon konsèyé" : "Poser une question"}
-        detail={isKreol
-          ? "Mi pé aide aou comprend in zéd, prépare in démarche ou vérifié out situation."
-          : "Je peux vous aider à comprendre une aide, préparer une démarche ou vérifier votre situation."}
+        title={isKreol ? "ðŸ¤– Konseye BudgetKazPei" : "ðŸ¤– Conseiller BudgetKazPei"}
+        value={isKreol ? "Koz ek mon konseye" : "Poser une question"}
+        detail={isKreol ? "Mi pe aide aou comprend in zed, prepare in demarche ou verifie out situation."
+          : "Je peux vous aider a comprendre une aide, preparer une demarche ou verifier votre situation."}
         buttonLabel={isKreol ? "Koz ek li" : "Poser une question"}
         onClick={onOpenConseiller}
         isMobile={isMobile}
@@ -1969,11 +1968,11 @@ function CopilotCards({
 
 function NextCopilotAction({ action, isKreol, isMobile }) {
   return (
-    <TropicalCard variant="ocean" texture="👉" style={{ padding: isMobile ? 18 : 22 }}>
+    <TropicalCard variant="ocean" texture="ðŸ‘‰" style={{ padding: isMobile ? 18 : 22 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center", gap: 14, flexDirection: isMobile ? "column" : "row" }}>
         <div>
           <div style={{ color: COLORS.accentSoft, fontSize: 13, fontWeight: 950, marginBottom: 8 }}>
-            {isKreol ? "👉 Mon proshenn aksyon" : "👉 Ma prochaine action"}
+            {isKreol ? "ðŸ‘‰ Mon proshenn aksyon" : "ðŸ‘‰ Ma prochaine action"}
           </div>
           <div style={{ color: COLORS.text, fontSize: isMobile ? 18 : 21, fontWeight: 950, lineHeight: 1.25 }}>
             {action.text}
@@ -1996,7 +1995,7 @@ function NextCopilotAction({ action, isKreol, isMobile }) {
             whiteSpace: "nowrap",
           }}
         >
-          {isKreol ? "Fé sa maintenant" : "Agir maintenant"}
+          {isKreol ? "Fe sa maintenant" : "Agir maintenant"}
         </button>
       </div>
     </TropicalCard>
@@ -2044,8 +2043,8 @@ export default function Dashboard({
   })
 
   const realTransactions = (transactions || []).filter(tx => {
-    const label = normalizeText(tx?.label || tx?.nom || "")
-    const source = normalizeText(tx?.source || "")
+    const label = normalizeText(tx.label || tx.nom || "")
+    const source = normalizeText(tx.source || "")
     return source !== "profile_income" && label !== "revenus du foyer"
   })
 
@@ -2053,7 +2052,7 @@ export default function Dashboard({
     Number(revenus || 0) === 0 &&
     Number(depenses || 0) === 0 &&
     realTransactions.length === 0 &&
-    (abonnements?.length || 0) === 0
+    (abonnements.length || 0) === 0
 
   const [dashboardAideGains, setDashboardAideGains] = useState({
     gainsAides: 0,
@@ -2092,7 +2091,7 @@ export default function Dashboard({
     profileCompletion < 65,
     !commune,
     realTransactions.length === 0,
-    (abonnements?.length || 0) === 0,
+    (abonnements.length || 0) === 0,
     dashboardReminders.items.length > 0,
     Number(opportunitiesCount || 0) > 0,
   ].filter(Boolean).length
@@ -2106,15 +2105,15 @@ export default function Dashboard({
   })
 
   const revenusSub = Number(revenus || 0) === 0
-    ? isKreol ? "Touchez pou compléter" : "Touchez pour compléter"
-    : isKreol ? "Touchez pou voir détail" : "Touchez pour voir le détail"
+    ? isKreol ? "Touchez pou completer" : "Touchez pour completer"
+    : isKreol ? "Touchez pou voir detail" : "Touchez pour voir le detail"
 
   const depensesSub = Number(depenses || 0) === 0
     ? isKreol ? "Touchez pou ajouter" : "Touchez pour ajouter"
     : isKreol ? `${safeStats.tauxChargesFixes || 0} % des revenus en sarz fix` : `${safeStats.tauxChargesFixes || 0} % des revenus en charges fixes`
 
   const soldeSub = Number(solde || 0) === 0
-    ? isKreol ? "Calcul revenus - dépans" : "Calcul revenus - dépenses"
+    ? isKreol ? "Calcul revenus - depans" : "Calcul revenus - depenses"
     : isKreol ? "Touchez pou voir calcul" : "Touchez pour voir le calcul"
 
   useEffect(() => {
@@ -2123,13 +2122,13 @@ export default function Dashboard({
     async function fetchSubscription() {
       try {
         const { data: authData } = await supabase.auth.getUser()
-        const user = authData?.user
+        const user = authData.user
         if (!user?.id) return
 
         const { data, error } = await supabase
           .from("profiles")
           .select("plan, subscription_type, stripe_subscription_status, premium, is_premium, premium_plus")
-          .eq("id", user.id)
+          .eq("id", user?.id)
           .maybeSingle()
 
         if (error) throw error
@@ -2161,7 +2160,7 @@ export default function Dashboard({
     async function fetchAideGains() {
       try {
         const { data: authData } = await supabase.auth.getUser()
-        const user = authData?.user
+        const user = authData.user
         if (!user?.id) return
 
         const { data, error } = await supabase
@@ -2181,7 +2180,7 @@ export default function Dashboard({
               nom_kreol
             )
           `)
-          .eq("user_id", user.id)
+          .eq("user_id", user?.id)
           .order("updated_at", { ascending: false })
 
         if (error) throw error
@@ -2190,7 +2189,7 @@ export default function Dashboard({
         const accepted = (data || []).filter(item => isAcceptedDashboardDemarche(item))
         const gainsDetails = accepted
           .map(item => ({
-            label: item.aides_reunion?.nom || item.aide_nom || item.title || item.nom || "Aide",
+            label: item.aides_reunion.nom || item.aide_nom || item.title || item.nom || "Aide",
             amount: getDashboardGainAmount(item),
             date: item.date_obtention || item.updated_at || item.created_at || "",
           }))
@@ -2225,7 +2224,7 @@ export default function Dashboard({
     async function fetchDashboardReminders() {
       try {
         const { data: authData } = await supabase.auth.getUser()
-        const user = authData?.user
+        const user = authData.user
         if (!user?.id) return
 
         const { data, error } = await supabase
@@ -2248,7 +2247,7 @@ export default function Dashboard({
               )
             )
           `)
-          .eq("user_id", user.id)
+          .eq("user_id", user?.id)
           .order("reminder_date", { ascending: true, nullsFirst: false })
           .limit(8)
 
@@ -2258,9 +2257,9 @@ export default function Dashboard({
         const items = (data || []).map(item => ({
           ...item,
           aideLabel:
-            item.user_aide_demarche?.aides_reunion?.nom ||
-            item.user_aide_demarche?.aides_reunion?.nom_kreol ||
-            "Démarche",
+            item.user_aide_demarche.aides_reunion.nom ||
+            item.user_aide_demarche.aides_reunion.nom_kreol ||
+            "Demarche",
         }))
 
         setDashboardReminders({
@@ -2287,8 +2286,10 @@ export default function Dashboard({
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.35fr .85fr", gap: 16 }}>
         <BalanceHeroCard
           insights={dashboardInsights}
+          stats={safeStats}
           isKreol={isKreol}
           isMobile={isMobile}
+          onOpenRevenus={() => navigateTo("revenus", onOpenRevenus)}
         />
         <ExpensesSnapshotCard
           stats={safeStats}
@@ -2296,6 +2297,14 @@ export default function Dashboard({
           isMobile={isMobile}
         />
       </div>
+
+      <QuickActionsV2
+        isKreol={isKreol}
+        onAddExpense={onAddExpense}
+        onOpenReceipts={() => navigateTo("receipts", onOpenReceipts)}
+        onOpenAides={() => navigateTo("aides", onOpenAides)}
+        onOpenStats={() => navigateTo("statistics", onOpenStats)}
+      />
 
       <BudgetAlertCard
         alert={dashboardInsights.budgetAlert}
@@ -2327,143 +2336,6 @@ export default function Dashboard({
         onOpenConseiller={() => navigateTo("conseiller")}
       />
 
-      <QuickActionsV2
-        isKreol={isKreol}
-        onAddExpense={onAddExpense}
-        onOpenReceipts={() => navigateTo("receipts", onOpenReceipts)}
-        onOpenAides={() => navigateTo("aides", onOpenAides)}
-        onOpenStats={() => navigateTo("statistics", onOpenStats)}
-      />
-
-      <CopilotHero
-        profile={profile}
-        isKreol={isKreol}
-        isMobile={isMobile}
-        profileCompletion={profileCompletion}
-        attentionCount={attentionCount}
-      />
-
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.45fr .85fr", gap: 16 }}>
-        <PremiumBudgetCard
-          stats={safeStats}
-          realTransactions={realTransactions}
-          isKreol={isKreol}
-          isMobile={isMobile}
-        />
-        <MotivationCard
-          isKreol={isKreol}
-          isMobile={isMobile}
-        />
-      </div>
-
-      {onOpenReceipts && (
-        <button
-          type="button"
-          onClick={() => navigateTo("receipts", onOpenReceipts)}
-          style={{
-            minHeight: 58,
-            border: "none",
-            borderRadius: 18,
-            background: "linear-gradient(135deg, #F97316, #FB923C)",
-            color: "#fff",
-            cursor: "pointer",
-            fontFamily: "inherit",
-            fontSize: 16,
-            fontWeight: 950,
-            boxShadow: "0 18px 34px rgba(249,115,22,.22)",
-          }}
-        >
-          🧾 {isKreol ? "Analiz in course" : "Analyser une course"}
-        </button>
-      )}
-
-      <CopilotCards
-        isKreol={isKreol}
-        isMobile={isMobile}
-        stats={safeStats}
-        commune={commune}
-        profileCompletion={profileCompletion}
-        opportunitiesCount={opportunitiesCount}
-        reminders={dashboardReminders.items}
-        abonnements={abonnements}
-        realTransactions={realTransactions}
-        onGoProfile={() => navigateTo("profil")}
-        onOpenOpportunities={() => navigateTo("opportunites", onOpenOpportunities)}
-        onOpenDemarches={() => navigateTo("demarches", onOpenAides)}
-        onOpenConseiller={() => navigateTo("conseiller")}
-      />
-
-      <NextCopilotAction
-        action={nextCopilotAction}
-        isKreol={isKreol}
-        isMobile={isMobile}
-      />
-
-      {isNewUser ? (
-        <EmptyWelcomeCard
-          t={t}
-          isMobile={isMobile}
-          onGoProfile={() => navigateTo("profil")}
-          onGoAides={() => navigateTo("aides", onOpenAides)}
-          onGoCharges={() => navigateTo("abonnements")}
-        />
-      ) : (
-        <SmartWelcomeCard
-          t={t}
-          isMobile={isMobile}
-          stats={safeStats}
-          gainsAides={effectiveGainsAides}
-          nbAidesObtenues={effectiveNbAidesObtenues}
-          opportunitiesCount={opportunitiesCount}
-          objectifGains={objectifGains}
-          commune={commune}
-        />
-      )}
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)",
-          gap: 16,
-        }}
-      >
-        <ClickableStatCard
-          label={tr(t, "dashboard", "revenus", "Revenus du mois")}
-          value={formatSmartAmount(revenus, "revenus", isKreol)}
-          sub={revenusSub}
-          color="#BEF264"
-          emoji="💰"
-          variant="green"
-          texture="🍃"
-          isMobile={isMobile}
-          onClick={() => navigateTo("revenus", onOpenRevenus)}
-        />
-
-        <ClickableStatCard
-          label={tr(t, "dashboard", "depenses", "Dépenses du mois")}
-          value={formatSmartAmount(depenses, "depenses", isKreol)}
-          sub={depensesSub}
-          color="#FDBA74"
-          emoji="💸"
-          variant="coral"
-          texture="🌞"
-          isMobile={isMobile}
-          onClick={() => navigateTo("depenses", onOpenDepenses)}
-        />
-
-        <ClickableStatCard
-          label={tr(t, "dashboard", "solde", "Solde disponible")}
-          value={formatMontant(solde)}
-          sub={soldeSub}
-          color={Number(solde || 0) >= 0 ? COLORS.green : COLORS.red}
-          emoji="🏝️"
-          variant="lagoon"
-          texture="🌴"
-          isMobile={isMobile}
-          onClick={() => navigateTo("solde", onOpenSolde)}
-        />
-      </div>
-
       <BudgetScoreCard
         t={t}
         isMobile={isMobile}
@@ -2472,62 +2344,6 @@ export default function Dashboard({
         gainsAides={effectiveGainsAides}
         nbAidesObtenues={effectiveNbAidesObtenues}
         opportunitiesCount={opportunitiesCount}
-      />
-
-      <DashboardRemindersCard
-        t={t}
-        isMobile={isMobile}
-        reminders={dashboardReminders.items}
-        onOpenDemarches={() => navigateTo("demarches", onOpenAides)}
-      />
-
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
-          gap: 16,
-        }}
-      >
-        <MoneyDetectedCard
-          t={t}
-          isMobile={isMobile}
-          opportunitiesCount={opportunitiesCount}
-          commune={commune}
-          onOpenOpportunities={() => navigateTo("aides", onOpenOpportunities)}
-        />
-
-        <RecoveredMoneyCard
-          t={t}
-          isMobile={isMobile}
-          gainsAides={effectiveGainsAides}
-          nbAidesObtenues={effectiveNbAidesObtenues}
-          objectifGains={objectifGains}
-          gainsDetails={dashboardAideGains.gainsDetails}
-          onOpenAides={() => navigateTo("demarches", onOpenAides)}
-        />
-      </div>
-
-      <RecommendedActionsCard
-        t={t}
-        isMobile={isMobile}
-        stats={safeStats}
-        byCategory={byCategory}
-        opportunitiesCount={opportunitiesCount}
-        gainsAides={effectiveGainsAides}
-        nbAidesObtenues={effectiveNbAidesObtenues}
-        transactions={transactions}
-        hasPremiumAccess={hasPremiumAccess}
-        onOpenOpportunities={() => navigateTo("aides", onOpenOpportunities)}
-        onOpenAides={() => navigateTo("demarches", onOpenAides)}
-        onGoPremium={onGoPremium}
-      />
-
-      <PremiumLockedCard
-        t={t}
-        isMobile={isMobile}
-        hasPremiumAccess={hasPremiumAccess}
-        hasPremiumPlusAccess={hasPremiumPlusAccess}
-        onGoPremium={onGoPremium}
       />
 
       <div
@@ -2557,3 +2373,4 @@ export default function Dashboard({
     </div>
   )
 }
+

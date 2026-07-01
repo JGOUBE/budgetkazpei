@@ -22,6 +22,7 @@ import { getScanErrorDetails, ScanError } from "../../../services/scan/scanError
 import { createScanMetric, incrementScanUsage } from "../../../services/scan/scanUsageService"
 import { syncShoppingItemsFromReceipt } from "../../shopping/services/shoppingEngine"
 import { supabase } from "../../../services/supabase"
+import { BkIcons } from "../../../components/icons-budgetkazpei"
 
 const COLORS = {
   card: "#0F1E38",
@@ -38,82 +39,84 @@ const COLORS = {
 
 const TEXT = {
   fr: {
-    title: "Mes courses",
-    scanTitle: "Analyser une course",
-    scanCta: "Analyser une course",
+    title: "Mes tickets",
+    scanTitle: "Scanner ticket",
+    scanCta: "Scanner ticket",
     camera: "Prendre une photo",
     gallery: "Importer une image",
     manual: "Remplir manuellement",
     quota: quota => quota.plan === "premium_plus"
-      ? `Scans IA illimités - sécurité interne : ${quota.used} / ${quota.limit}`
+      ? `Scans IA illimites - securite interne : ${quota.used} / ${quota.limit}`
       : `Mes analyses du mois : ${quota.used} / ${quota.limit} - Il vous reste ${quota.remaining} analyses ce mois-ci`,
     methodTitle: "Choisissez une methode",
-    privacy: "Vos tickets restent privés. Ils servent uniquement à mettre à jour votre budget.",
+    privacy: "Vos tickets restent prives. Ils servent uniquement a mettre a jour votre budget.",
     foodHint: "Ajoutez vos courses automatiquement ou manuellement. L'analyse automatique sert surtout aux tickets alimentaires, pour comprendre vos habitudes et recevoir des conseils utiles.",
-    loaded: "Image chargée. Vérifiez les informations détectées.",
+    loaded: "Image chargee. Verifiez les informations detectees.",
     manualReady: "OCR indisponible : vous pouvez remplir le ticket manuellement.",
     store: "Magasin",
     date: "Date",
     total: "Montant total",
-    category: "Catégorie globale",
+    category: "Categorie globale",
     items: "Articles",
     addLine: "Ajouter une ligne",
     remove: "Supprimer",
     save: "Enregistrer la course",
     cancel: "Annuler",
-    empty: "Aucun ticket enregistré pour le moment.",
+    empty: "Aucun ticket enregistre pour le moment.",
     status: "Statut",
     open: "Ouvrir",
     deleteTicket: "Supprimer le ticket",
-    confirmDelete: "Supprimer ce ticket ? La transaction liée ne sera pas supprimée automatiquement.",
-    saved: "Course enregistrée.",
-    deleted: "Ticket supprimé.",
+    confirmDelete: "Supprimer ce ticket La transaction liee ne sera pas supprimee automatiquement.",
+    saved: "Course enregistree.",
+    deleted: "Ticket supprime.",
     error: "Analyse impossible. Vous pouvez reessayer ou remplir manuellement.",
-    quotaReached: "Quota atteint. Vous pouvez quand même remplir manuellement.",
-    intensiveUsage: "Vous utilisez BudgetKazPei de manière intensive. Contactez-nous afin que nous trouvions la formule la plus adaptée.",
-    expenseCreated: "Dépense créée",
-    noUser: "Utilisateur non connecté.",
+    quotaReached: "Quota atteint. Vous pouvez quand meme remplir manuellement.",
+    intensiveUsage: "Vous utilisez BudgetKazPei de maniere intensive. Contactez-nous afin que nous trouvions la formule la plus adaptee.",
+    expenseCreated: "Depense creee",
+    noUser: "Utilisateur non connecte.",
   },
   kr: {
-    title: "Mon bann courses",
-    scanTitle: "Analiz in course",
-    scanCta: "Analiz in course",
+    title: "Mon bann tike",
+    scanTitle: "Scanner tike",
+    scanCta: "Scanner tike",
     camera: "Pran in foto",
     gallery: "Import in zimaz",
     manual: "Ranpli amain",
     quota: quota => quota.plan === "premium_plus"
-      ? `Scans IA illimités - sécurité interne : ${quota.used} / ${quota.limit}`
+      ? `Scans IA illimites - securite interne : ${quota.used} / ${quota.limit}`
       : `Bann analiz pou mwa-la : ${quota.used} / ${quota.limit} - I reste ${quota.remaining} analiz pou mwa-la`,
     methodTitle: "Swazi in fason",
-    privacy: "Bann tiké a ou i reste privé. Nou i servi azot zis pou met azour out bidzé.",
-    foodHint: "Azout out courses otomatikman ou amain. Analiz otomatik-la lé surtout pou bann tiké manzé, pou konprann out labitid ek gagn bann konsey itil.",
-    loaded: "Zimaz la chargé. Vérifie bann zinformasyon.",
-    manualReady: "OCR lé pa disponib : ou pé ranpli tiké-la amain.",
+    privacy: "Bann tike a ou i reste prive. Nou i servi azot zis pou met azour out bidze.",
+    foodHint: "Azout out courses otomatikman ou amain. Analiz otomatik-la le surtout pou bann tike manze, pou konprann out labitid ek gagn bann konsey itil.",
+    loaded: "Zimaz la charge. Verifie bann zinformasyon.",
+    manualReady: "OCR le pa disponib : ou pe ranpli tike-la amain.",
     store: "Magazin",
     date: "Dat",
     total: "Montan total",
-    category: "Katègori",
+    category: "Kategori",
     items: "Bann lartik",
     addLine: "Azout in lign",
     remove: "Suprim",
     save: "Anrezistre course-la",
-    cancel: "Anilé",
-    empty: "Nana poin tiké anrezistré pou linstan.",
-    status: "Léta",
+    cancel: "Anile",
+    empty: "Nana poin tike anrezistre pou linstan.",
+    status: "Leta",
     open: "Ouvrir",
-    deleteTicket: "Suprim tiké-la",
-    confirmDelete: "Suprim tiké-la ? Tranzaksyon liée-la i sera pa supprimé otomatikman.",
-    saved: "Course anrezistrée.",
-    deleted: "Tiké supprimé.",
+    deleteTicket: "Suprim tike-la",
+    confirmDelete: "Suprim tike-la Tranzaksyon liee-la i sera pa supprime otomatikman.",
+    saved: "Course anrezistree.",
+    deleted: "Tike supprime.",
     error: "Analiz la pa marche. Ou pe reessaye ou ranpli amain.",
-    quotaReached: "Quota atteint. Ou pé kan même ranpli amain.",
-    intensiveUsage: "Vous utilisez BudgetKazPei de manière intensive. Contactez-nous afin que nous trouvions la formule la plus adaptée.",
-    expenseCreated: "Dépans créée",
-    noUser: "Utilisateur pa konekté.",
+    quotaReached: "Quota atteint. Ou pe kan meme ranpli amain.",
+    intensiveUsage: "Vous utilisez BudgetKazPei de maniere intensive. Contactez-nous afin que nous trouvions la formule la plus adaptee.",
+    expenseCreated: "Depans creee",
+    noUser: "Utilisateur pa konekte.",
   },
 }
 
 function getIsKreol(t) {
+  const lang = String(t?.lang || "").toLowerCase()
+  if (lang === "cr" || lang === "kreol") return true
   return String(t?.("nav", "dashboard") || "").toLowerCase().includes("tablo")
 }
 
@@ -163,7 +166,7 @@ function getValidDraftItems(draft = {}) {
     .filter(item => !isBlockedReceiptItem(item))
     .map(item => ({
       ...item,
-      name: String(item.name || item.ocr_name || "Produit à vérifier").trim(),
+      name: String(item.name || item.ocr_name || "Produit a verifier").trim(),
       total_price: item.total_price ?? item.price ?? item.unit_price ?? "",
       item_status: /produit.*v.*rifier/.test(normalizeLabel(item.name)) || Number(item.confidence_score || 0) < 70 ? "a_verifier" : "detected",
     }))
@@ -171,7 +174,7 @@ function getValidDraftItems(draft = {}) {
 
 function getDraftValidationError(draft = {}) {
   if (Number(draft.total_amount || 0) <= 0) {
-    return "Montant total non détecté. Veuillez reprendre ou importer une image plus lisible du ticket."
+    return "Montant total non detecte. Veuillez reprendre ou importer une image plus lisible du ticket."
   }
 
   return ""
@@ -234,7 +237,7 @@ export default function ReceiptsPage({
   const [resumeDraft, setResumeDraft] = useState(null)
   const [pendingImagePath, setPendingImagePath] = useState(null)
 
-  const globalCategory = draft?.items?.[0]?.category || "alimentaire"
+  const globalCategory = draft.items?.[0]?.category || "alimentaire"
   const receiptRows = useMemo(() => receipts || [], [receipts])
   const showMethodActions = mode === "history" || mode === "validate"
 
@@ -244,13 +247,13 @@ export default function ReceiptsPage({
 
   useEffect(() => {
     const lastScan = getLastScanDraft()
-    if (!lastScan?.receipt) return
+    if (!lastScan.receipt) return
     setResumeDraft(lastScan.receipt)
   }, [])
 
   function resumeLastScan() {
     if (!resumeDraft) return
-    setDraft({ ...resumeDraft, items: resumeDraft.items?.length ? resumeDraft.items : [emptyItem()] })
+    setDraft({ ...resumeDraft, items: resumeDraft.items.length ? resumeDraft.items : [emptyItem()] })
     setResumeDraft(null)
     setScanError(null)
     setMode("validate")
@@ -265,7 +268,7 @@ export default function ReceiptsPage({
     if (!user?.id) return
 
     try {
-      const rows = await listReceipts({ userId: user.id })
+      const rows = await listReceipts({ userId: user?.id })
       setReceipts(rows)
     } catch (error) {
       console.error("Erreur chargement tickets:", error)
@@ -292,13 +295,13 @@ export default function ReceiptsPage({
 
     try {
       setMode("analysis")
-      setScanProgress({ label: "Préparation...", progress: 5 })
+      setScanProgress({ label: "Preparation...", progress: 5 })
 
       const scan = await runSmartScan(file, {
         onProgress: progress => setScanProgress(progress),
       })
 
-      const { imagePath } = await uploadReceiptImage({ userId: user.id, file: scan.optimizedFile })
+      const { imagePath } = await uploadReceiptImage({ userId: user?.id, file: scan.optimizedFile })
       const parsed = scan.receipt
       const validationError = getDraftValidationError(parsed)
       if (validationError) {
@@ -314,7 +317,7 @@ export default function ReceiptsPage({
         setDuplicateReceipt(duplicate)
         setAllowDuplicateImport(false)
         setMode("validate")
-        setMessage("Cette course semble déjà enregistrée. Vérifiez avant de remplacer ou d'enregistrer quand même.")
+        setMessage("Cette course semble deja enregistree. Verifiez avant de remplacer ou d'enregistrer quand meme.")
         return
       }
 
@@ -340,15 +343,15 @@ export default function ReceiptsPage({
     } catch (error) {
       console.error("Erreur scanner ticket:", error)
       const details = getScanErrorDetails(error)
-      const technicalMessage = String(details.technicalMessage || error?.message || "")
+      const technicalMessage = String(details.technicalMessage || error.message || "")
       const isDateError = /date\/time field value out of range|invalid_ocr_date|date invalide/i.test(technicalMessage)
       setScanError(details)
       setMessage(isDateError
         ? "Ticket lu, mais la date a ete estimee automatiquement. Reessayez l'enregistrement."
-        : technicalMessage.includes("Montant total non détecté") ? details.technicalMessage : details.userMessage || txt.error)
+        : details.userMessage || txt.error)
       try {
         await createScanMetric({
-          userId: user.id,
+          userId: user?.id,
           metrics: { imageInitialBytes: file.size },
           status: "error",
           error: { code: details.code, message: details.technicalMessage },
@@ -378,24 +381,24 @@ export default function ReceiptsPage({
     console.info("[scanner] Auto-save: START", {
       store: parsed.store_name,
       total: parsed.total_amount,
-      items: parsed.items?.length || 0,
+      items: parsed.items.length || 0,
       payload: parsed,
     })
     console.info("[scanner] scan_summary", {
       total_detected: Number(parsed.total_amount || 0),
       merchant_detected: parsed.store_name || parsed.merchant_name || "",
-      articles_regex_count: parsed.items?.filter(item => item.source === "ocr_fallback" || item.item_source === "ocr_fallback").length || 0,
-      articles_parser_count: parsed.items?.filter(item => item.source === "parser").length || 0,
-      articles_gpt_count: parsed.items?.filter(item => !item.source || item.source === "gpt").length || 0,
+      articles_regex_count: parsed.items.filter(item => item.source === "ocr_fallback" || item.item_source === "ocr_fallback").length || 0,
+      articles_parser_count: parsed.items.filter(item => item.source === "parser").length || 0,
+      articles_gpt_count: parsed.items.filter(item => !item.source || item.source === "gpt").length || 0,
       scan_status: parsed.scan_status || "success",
       processing_time_ms: parsed.scan_duration_ms || 0,
     })
 
     const validItems = getValidDraftItems(parsed)
-    const currentReceipt = await createReceipt({ userId: user.id, draft: parsed, imagePath })
+    const currentReceipt = await createReceipt({ userId: user?.id, draft: parsed, imagePath })
     const importStartedAt = performance.now()
     const importResult = await importValidatedReceipt({
-      userId: user.id,
+      userId: user?.id,
       receipt: currentReceipt,
       draft: parsed,
       items: validItems,
@@ -403,30 +406,30 @@ export default function ReceiptsPage({
     })
     const importDurationMs = Math.round(performance.now() - importStartedAt)
     console.info("[scanner] scan_persisted", {
-      receipt_created: Boolean(currentReceipt?.id),
-      receipt_items_inserted: importResult?.receiptItemsCreated || 0,
+      receipt_created: Boolean(currentReceipt.id),
+      receipt_items_inserted: importResult.receiptItemsCreated || 0,
       processing_time_ms: importDurationMs,
     })
 
     try {
-      console.info("[scanner] Mise a jour scan_usage: START", { userId: user.id, plan: quota.plan })
+      console.info("[scanner] Mise a jour scan_usage: START", { userId: user?.id, plan: quota.plan })
       await incrementScanUsage({
-        userId: user.id,
+        userId: user?.id,
         plan: quota.plan,
         kind: "ai",
       })
       console.info("[scanner] Mise a jour scan_usage: OK")
 
       await createScanMetric({
-        userId: user.id,
+        userId: user?.id,
         receiptId: currentReceipt.id,
         metrics: {
           ...(metrics || {}),
           importDurationMs,
           itemsDetected: validItems.length,
-          receiptItemsCreated: importResult?.receiptItemsCreated || 0,
-          shoppingItemsCreated: importResult?.shoppingItemsCreated || 0,
-          transactionCreated: importResult?.transactionCreated === true,
+          receiptItemsCreated: importResult.receiptItemsCreated || 0,
+          shoppingItemsCreated: importResult.shoppingItemsCreated || 0,
+          transactionCreated: importResult.transactionCreated === true,
           scanUsageIncremented: true,
           success: true,
         },
@@ -471,32 +474,32 @@ export default function ReceiptsPage({
 
     try {
       console.info("[scanner] Articles valides", validItems.length)
-      const currentReceipt = receipt || await createReceipt({ userId: user.id, draft, imagePath: pendingImagePath })
+      const currentReceipt = receipt || await createReceipt({ userId: user?.id, draft, imagePath: pendingImagePath })
       const amount = Math.abs(Number(draft.total_amount || 0))
       const transactionPayload = {
         label: `Courses - ${draft.store_name}`,
         category: globalCategory || "alimentaire",
         amount: -amount,
         date: draft.purchase_date || new Date().toISOString().split("T")[0],
-        icon: "🧾",
+        icon: "",
         source: "receipt_scan",
         receipt_id: currentReceipt.id,
       }
 
       const txResult = await onAddTransaction?.(transactionPayload)
-      if (txResult?.error) throw txResult.error
+      if (txResult.error) throw txResult.error
 
       await validateReceipt({
         receiptId: currentReceipt.id,
-        userId: user.id,
+        userId: user?.id,
         draft,
         items: validItems,
-        transactionId: txResult?.data?.id,
+        transactionId: txResult.data.id,
       })
 
       await syncShoppingItemsFromReceipt({
-        userId: user.id,
-        transactionId: txResult?.data?.id,
+        userId: user?.id,
+        transactionId: txResult.data.id,
         receipt: {
           id: currentReceipt.id,
           store_name: draft.store_name,
@@ -514,7 +517,7 @@ export default function ReceiptsPage({
       window.dispatchEvent(new CustomEvent("budgetkazpei:transactions-updated"))
     } catch (error) {
       console.error("[scanner] Enregistrement manuel ERREUR exacte", error)
-      setMessage(`Enregistrement impossible : ${error?.message || txt.error}`)
+      setMessage(`Enregistrement impossible : ${error.message || txt.error}`)
     } finally {
       setBusy(false)
     }
@@ -538,15 +541,15 @@ export default function ReceiptsPage({
 
       if (duplicate && !allowDuplicateImport && !options.skipDuplicateCheck) {
         setDuplicateReceipt(duplicate)
-        setMessage(isKreol ? "Sa course-la i semble déjà anrezistrée." : "Cette course semble déjà enregistrée.")
+        setMessage(isKreol ? "Sa course-la i semble deja anrezistree." : "Cette course semble deja enregistree.")
         setBusy(false)
         return
       }
 
-      const currentReceipt = receipt || await createReceipt({ userId: user.id, draft, imagePath: pendingImagePath })
+      const currentReceipt = receipt || await createReceipt({ userId: user?.id, draft, imagePath: pendingImagePath })
       const importStartedAt = performance.now()
       const importResult = await importValidatedReceipt({
-        userId: user.id,
+        userId: user?.id,
         receipt: currentReceipt,
         draft,
         items: validItems,
@@ -555,11 +558,11 @@ export default function ReceiptsPage({
       const importDurationMs = Math.round(performance.now() - importStartedAt)
 
       try {
-        const scanWasProcessed = draft.ocr_status !== "manual" || Boolean(scanMetrics?.provider)
+        const scanWasProcessed = draft.ocr_status !== "manual" || Boolean(scanMetrics.provider)
         if (scanWasProcessed) {
-          console.info("[scanner] Mise a jour scan_usage: START", { userId: user.id, plan: quota.plan })
+          console.info("[scanner] Mise a jour scan_usage: START", { userId: user?.id, plan: quota.plan })
           await incrementScanUsage({
-            userId: user.id,
+            userId: user?.id,
             plan: quota.plan,
             kind: "ai",
           })
@@ -567,15 +570,15 @@ export default function ReceiptsPage({
         }
         console.info("[scanner] Creation scan_metrics: START", { receiptId: currentReceipt.id })
         await createScanMetric({
-          userId: user.id,
+          userId: user?.id,
           receiptId: currentReceipt.id,
           metrics: {
             ...(scanMetrics || {}),
             importDurationMs,
             itemsDetected: validItems.length,
-            receiptItemsCreated: importResult?.receiptItemsCreated || 0,
-            shoppingItemsCreated: importResult?.shoppingItemsCreated || 0,
-            transactionCreated: importResult?.transactionCreated === true,
+            receiptItemsCreated: importResult.receiptItemsCreated || 0,
+            shoppingItemsCreated: importResult.shoppingItemsCreated || 0,
+            transactionCreated: importResult.transactionCreated === true,
             scanUsageIncremented: scanWasProcessed,
             success: true,
           },
@@ -601,7 +604,7 @@ export default function ReceiptsPage({
       console.error("[scanner] Import intelligent ERREUR exacte", error)
       const details = getScanErrorDetails(error)
       setScanError(details)
-      setMessage(`Enregistrement impossible : ${error?.message || details.technicalMessage || txt.error}`)
+      setMessage(`Enregistrement impossible : ${error.message || details.technicalMessage || txt.error}`)
     } finally {
       setBusy(false)
     }
@@ -617,17 +620,17 @@ export default function ReceiptsPage({
         await supabase
           .from("shopping_items")
           .delete()
-          .eq("user_id", user.id)
+          .eq("user_id", user?.id)
           .eq("transaction_id", duplicateReceipt.transaction_id)
 
         await supabase
           .from("transactions")
           .delete()
           .eq("id", duplicateReceipt.transaction_id)
-          .eq("user_id", user.id)
+          .eq("user_id", user?.id)
       }
 
-      await deleteReceipt({ receipt: duplicateReceipt, userId: user.id })
+      await deleteReceipt({ receipt: duplicateReceipt, userId: user?.id })
       setReceipts(prev => prev.filter(row => row.id !== duplicateReceipt.id))
       setDuplicateReceipt(null)
       setAllowDuplicateImport(true)
@@ -646,12 +649,12 @@ export default function ReceiptsPage({
     setBusy(true)
 
     try {
-      const data = await getReceiptDetail({ receiptId: row.id, userId: user.id })
+      const data = await getReceiptDetail({ receiptId: row.id, userId: user?.id })
       setDetail(data)
       setDetailImageUrl(await getReceiptImageUrl(data.image_path))
       setMode("detail")
     } catch (error) {
-      console.error("Erreur détail ticket:", error)
+      console.error("Erreur detail ticket:", error)
       setMessage(txt.error)
     } finally {
       setBusy(false)
@@ -664,7 +667,7 @@ export default function ReceiptsPage({
     setBusy(true)
 
     try {
-      await deleteReceipt({ receipt: detail, userId: user.id })
+      await deleteReceipt({ receipt: detail, userId: user?.id })
       setDetail(null)
       setDetailImageUrl("")
       setMode("history")
@@ -683,7 +686,7 @@ export default function ReceiptsPage({
 
     setBusy(true)
     try {
-      await deleteReceipt({ receipt: row, userId: user.id })
+      await deleteReceipt({ receipt: row, userId: user?.id })
       setReceipts(prev => prev.filter(receiptRow => receiptRow.id !== row.id))
       setMessage(txt.deleted)
       await refreshReceipts()
@@ -700,9 +703,9 @@ export default function ReceiptsPage({
 
     setBusy(true)
     try {
-      const next = await updateReceipt({ receiptId: detail.id, userId: user.id, updates })
+      const next = await updateReceipt({ receiptId: detail.id, userId: user?.id, updates })
       setDetail(prev => ({ ...prev, ...next }))
-      setMessage("Ticket mis à jour.")
+      setMessage("Ticket mis a jour.")
       await refreshReceipts()
     } catch (error) {
       console.error("Erreur modification ticket:", error)
@@ -717,12 +720,12 @@ export default function ReceiptsPage({
 
     setBusy(true)
     try {
-      const next = await updateReceiptItem({ itemId, userId: user.id, updates })
+      const next = await updateReceiptItem({ itemId, userId: user?.id, updates })
       setDetail(prev => ({
         ...prev,
         receipt_items: (prev.receipt_items || []).map(item => item.id === itemId ? { ...item, ...next } : item),
       }))
-      setMessage("Ligne mise à jour.")
+      setMessage("Ligne mise a jour.")
     } catch (error) {
       console.error("Erreur modification ligne ticket:", error)
       setMessage(txt.error)
@@ -736,12 +739,12 @@ export default function ReceiptsPage({
 
     setBusy(true)
     try {
-      await deleteReceiptItem({ itemId, userId: user.id })
+      await deleteReceiptItem({ itemId, userId: user?.id })
       setDetail(prev => ({
         ...prev,
         receipt_items: (prev.receipt_items || []).filter(item => item.id !== itemId),
       }))
-      setMessage("Ligne supprimée.")
+      setMessage("Ligne supprimee.")
     } catch (error) {
       console.error("Erreur suppression ligne ticket:", error)
       setMessage(txt.error)
@@ -818,9 +821,9 @@ export default function ReceiptsPage({
       )}
 
       <div style={{ display: showMethodActions ? "grid" : "none", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 12 }}>
-        <ActionButton label={txt.camera} icon="📷" disabled={busy} onClick={() => cameraRef.current?.click()} />
-        <ActionButton label={txt.gallery} icon="🖼️" disabled={busy} onClick={() => galleryRef.current?.click()} />
-        <ActionButton label={txt.manual} icon="✍️" disabled={busy} onClick={startManual} muted />
+        <ActionButton label={txt.camera} Icon={BkIcons.scan} disabled={busy} onClick={() => cameraRef.current.click()} />
+        <ActionButton label={txt.gallery} Icon={BkIcons.receipts} disabled={busy} onClick={() => galleryRef.current.click()} />
+        <ActionButton label={txt.manual} Icon={BkIcons.add} disabled={busy} onClick={startManual} muted />
       </div>
 
       <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={event => handleFile(event.target.files?.[0])} />
@@ -873,7 +876,7 @@ export default function ReceiptsPage({
             setDetail(null)
             setDetailImageUrl("")
             setMode("history")
-            cameraRef.current?.click()
+            cameraRef.current.click()
           }}
           onBackToTickets={() => {
             onOpenReceipts?.()
@@ -900,12 +903,11 @@ function ScanErrorMessage({ details }) {
       <strong>{details.title}</strong>
       <div>Cause probable : {details.userMessage}</div>
       <div>Action : {details.action}</div>
-      <div style={{ color: COLORS.muted, marginTop: 4 }}>Code : {details.code}</div>
     </div>
   )
 }
 
-function ActionButton({ label, icon, onClick, disabled, muted }) {
+function ActionButton({ label, Icon, onClick, disabled, muted }) {
   return (
     <button
       type="button"
@@ -923,13 +925,14 @@ function ActionButton({ label, icon, onClick, disabled, muted }) {
         fontSize: 15,
       }}
     >
-      {icon} {label}
+      {Icon && <Icon size={18} style={{ marginRight: 8, verticalAlign: "text-bottom" }} />}
+      {label}
     </button>
   )
 }
 
 function AnalysisScreen({ progress, txt }) {
-  const value = progress?.progress || 8
+  const value = progress.progress || 8
   const steps = [
     ["optimizing", "Optimisation de l'image"],
     ["reading", "Lecture du ticket"],
@@ -937,7 +940,7 @@ function AnalysisScreen({ progress, txt }) {
     ["products", "Extraction des articles"],
     ["total", "Verification du total"],
   ]
-  const currentIndex = Math.max(0, steps.findIndex(([step]) => step === progress?.step))
+  const currentIndex = Math.max(0, steps.findIndex(([step]) => step === progress.step))
 
   return (
     <div style={{
@@ -963,12 +966,12 @@ function AnalysisScreen({ progress, txt }) {
           }} />
         </div>
         <div style={{ color: COLORS.text, fontWeight: 950, marginTop: 18 }}>
-          {progress?.label || "Lecture..."}
+          {progress.label || "Lecture..."}
         </div>
         <div style={{ display: "grid", gap: 8, marginTop: 16, textAlign: "left" }}>
           {steps.map(([step, label], index) => {
             const done = value >= 100 || index < currentIndex
-            const active = step === progress?.step
+            const active = step === progress.step
             return (
               <div key={step} style={{ color: done ? COLORS.green : active ? COLORS.cyan : COLORS.muted, fontSize: 13, fontWeight: 900 }}>
                 {done ? "OK" : active ? "..." : "--"} {label}
@@ -977,7 +980,7 @@ function AnalysisScreen({ progress, txt }) {
           })}
         </div>
         <div style={{ color: COLORS.muted, fontSize: 13, marginTop: 8, lineHeight: 1.5 }}>
-          Optimisation, OCR, magasin, produits, total et vérification.
+          Optimisation, OCR, magasin, produits, total et verification.
         </div>
       </div>
     </div>
@@ -1018,10 +1021,10 @@ function ValidationForm({
           fontSize: 13,
           lineHeight: 1.45,
         }}>
-          <strong>Cette course semble déjà enregistrée.</strong>
+          <strong>Cette course semble deja enregistree.</strong>
           <div style={{ color: COLORS.muted, marginTop: 4 }}>
-            {duplicateReceipt.store_name} · {duplicateReceipt.purchase_date} · {formatMontant(Number(duplicateReceipt.total_amount || 0))}
-            {" · "}{duplicateReceipt.receipt_items?.length || 0} article(s)
+            {duplicateReceipt.store_name} - {duplicateReceipt.purchase_date} - {formatMontant(Number(duplicateReceipt.total_amount || 0))}
+            {" - "}{duplicateReceipt.receipt_items.length || 0} article(s)
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 8, marginTop: 10 }}>
             <button type="button" onClick={onOpenDuplicate} style={{ minHeight: 44, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "rgba(255,255,255,.06)", color: COLORS.text, fontWeight: 950 }}>
@@ -1031,7 +1034,7 @@ function ValidationForm({
               Remplacer
             </button>
             <button type="button" onClick={() => setAllowDuplicateImport(true)} style={{ minHeight: 44, borderRadius: 12, border: "none", background: COLORS.yellow, color: "#0A1628", fontWeight: 950 }}>
-              Enregistrer quand même
+              Enregistrer quand meme
             </button>
             <button type="button" onClick={onCancel} style={{ minHeight: 44, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "transparent", color: COLORS.text, fontWeight: 950 }}>
               Annuler
@@ -1086,9 +1089,9 @@ function ValidationForm({
                   Texte OCR : {item.ocr_name}
                 </div>
               )}
-              {(item.name === "Produit à vérifier" || Number(item.confidence_score || 0) < 70) && (
+              {(item.name === "Produit a verifier" || Number(item.confidence_score || 0) < 70) && (
                 <div style={{ color: COLORS.yellow, fontSize: 12, fontWeight: 900 }}>
-                  Produit à vérifier avant enregistrement.
+                  Produit a verifier avant enregistrement.
                 </div>
               )}
               <input
@@ -1104,13 +1107,13 @@ function ValidationForm({
               {(item.department || item.subcategory || item.promotion) && (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                   {item.department && <MetaChip label={`Rayon : ${item.department}`} />}
-                  {item.subcategory && <MetaChip label={`Sous-catégorie : ${item.subcategory}`} />}
-                  {item.promotion && <MetaChip label="Promotion détectée" strong />}
+                  {item.subcategory && <MetaChip label={`Sous-categorie : ${item.subcategory}`} />}
+                  {item.promotion && <MetaChip label="Promotion detectee" strong />}
                 </div>
               )}
               <select style={inputStyle()} value={item.category || "alimentaire"} onChange={e => updateItem(index, { category: e.target.value })}>
                 {CATEGORIES.map(category => (
-                  <option key={category.id} value={category.id}>{category.emoji} {category.id}</option>
+                  <option key={category.id} value={category.id}>{category.id}</option>
                 ))}
               </select>
               <button type="button" onClick={() => removeItem(index)} style={{ minHeight: 48, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "transparent", color: COLORS.muted, fontWeight: 900 }}>
@@ -1127,7 +1130,7 @@ function ValidationForm({
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 10, marginTop: 18 }}>
         <ActionButton label={txt.cancel} icon="" onClick={onCancel} disabled={busy} muted />
-        <ActionButton label={txt.save} icon="✅" onClick={onSave} disabled={busy || Boolean(validationError)} />
+        <ActionButton label={txt.save} icon="" onClick={onSave} disabled={busy || Boolean(validationError)} />
       </div>
     </div>
   )
@@ -1261,19 +1264,19 @@ function ReceiptDetail({
       </div>
       {receipt.scan_status === "partial" && (
         <div style={{ marginTop: 8, color: COLORS.yellow, fontSize: 13, fontWeight: 900, lineHeight: 1.45 }}>
-          L'analyse complète n'a pas pu être terminée. Les données disponibles ont été sauvegardées.
+          L'analyse complete n'a pas pu etre terminee. Les donnees disponibles ont ete sauvegardees.
         </div>
       )}
       <h2 style={{ color: COLORS.text, margin: "10px 0 6px" }}>{receipt.store_name || txt.scanTitle}</h2>
       <div style={{ color: COLORS.muted, fontSize: 13, marginBottom: 12 }}>
-        {receipt.purchase_date} · {formatMontant(Number(receipt.total_amount || 0))}
-        {receipt.date_status === "estimated" ? " · date estimée" : ""}
-        {receipt.ticket_type ? ` · ${receipt.ticket_type}` : ""}
-        {receipt.budget_category ? ` · ${receipt.budget_category}` : ""}
+        {receipt.purchase_date} - {formatMontant(Number(receipt.total_amount || 0))}
+        {receipt.date_status === "estimated" ? " - date estimee" : ""}
+        {receipt.ticket_type ? ` - ${receipt.ticket_type}` : ""}
+        {receipt.budget_category ? ` - ${receipt.budget_category}` : ""}
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 10, marginBottom: 14 }}>
         <ActionButton label="Scanner un autre ticket" icon="" onClick={onScanAnother} disabled={busy} />
-        <ActionButton label="Retour à Mes tickets" icon="" onClick={onBackToTickets || onBack} disabled={busy} muted />
+        <ActionButton label="Retour a Mes tickets" icon="" onClick={onBackToTickets || onBack} disabled={busy} muted />
         {receipt.is_food_ticket && <ActionButton label="Voir mes Courses intelligentes" icon="" onClick={onOpenShoppingList} disabled={busy} muted />}
       </div>
       <div style={{ display: "grid", gap: 10 }}>
@@ -1287,7 +1290,7 @@ function ReceiptDetail({
           date_status: receiptDraft.date_status || "detected",
           total_amount: Number(receiptDraft.total_amount || 0),
         })} style={{ minHeight: 44, borderRadius: 12, border: "none", background: COLORS.cyan, color: "#06101F", fontWeight: 950 }}>
-          Mettre à jour le ticket
+          Mettre a jour le ticket
         </button>
       </div>
       {imageUrl && (
@@ -1309,7 +1312,7 @@ function ReceiptDetail({
             )}
             <input
               style={inputStyle()}
-              value={itemDrafts[item.id]?.name ?? item.name ?? ""}
+                    value={itemDrafts[item.id]?.name ?? item.name ?? ""}
               onChange={event => setItemDrafts(prev => ({ ...prev, [item.id]: { ...(prev[item.id] || {}), name: event.target.value } }))}
             />
             <div style={{ display: "grid", gridTemplateColumns: "1fr auto auto", gap: 8 }}>
@@ -1318,14 +1321,14 @@ function ReceiptDetail({
                 type="number"
                 min="0"
                 step="0.01"
-                value={itemDrafts[item.id]?.total_price ?? item.total_price ?? ""}
+                    value={itemDrafts[item.id]?.total_price ?? item.total_price ?? ""}
                 onChange={event => setItemDrafts(prev => ({ ...prev, [item.id]: { ...(prev[item.id] || {}), total_price: event.target.value } }))}
               />
               <button type="button" disabled={busy} onClick={() => onUpdateItem(item.id, {
-                name: itemDrafts[item.id]?.name || item.name,
-                corrected_name: itemDrafts[item.id]?.name || item.name,
-                total_price: Number(itemDrafts[item.id]?.total_price ?? item.total_price ?? 0),
-                category: itemDrafts[item.id]?.category || item.category || "alimentaire",
+                name: itemDrafts[item.id].name || item.name,
+                corrected_name: itemDrafts[item.id].name || item.name,
+                      total_price: Number(itemDrafts[item.id]?.total_price ?? item.total_price ?? 0),
+                category: itemDrafts[item.id].category || item.category || "alimentaire",
                 item_status: "detected",
               })} style={{ minHeight: 44, borderRadius: 12, border: "none", background: COLORS.green, color: "#06101F", fontWeight: 950, padding: "0 12px" }}>
                 Valider
@@ -1336,15 +1339,15 @@ function ReceiptDetail({
             </div>
             <select
               style={inputStyle()}
-              value={itemDrafts[item.id]?.category || item.category || "alimentaire"}
+              value={itemDrafts[item.id].category || item.category || "alimentaire"}
               onChange={event => setItemDrafts(prev => ({ ...prev, [item.id]: { ...(prev[item.id] || {}), category: event.target.value } }))}
             >
               {CATEGORIES.map(category => (
-                <option key={category.id} value={category.id}>{category.emoji} {category.id}</option>
+                <option key={category.id} value={category.id}>{category.id}</option>
               ))}
             </select>
             <div style={{ color: COLORS.muted, fontSize: 12 }}>
-              {formatMontant(Number(item.total_price || 0))} · {item.item_status || "detected"} · {Math.round(Number(item.confidence_score || 0))} %
+              {formatMontant(Number(item.total_price || 0))} - {item.item_status || "detected"} - {Math.round(Number(item.confidence_score || 0))} %
             </div>
           </div>
         ))}
@@ -1355,3 +1358,5 @@ function ReceiptDetail({
     </div>
   )
 }
+
+

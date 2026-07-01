@@ -8,10 +8,7 @@ import {
   CalendarDays,
 } from "lucide-react"
 
-import * as AssistantConseillerModule from "./AssistantConseiller"
-
-const AssistantConseiller =
-  AssistantConseillerModule.default || AssistantConseillerModule.AssistantConseiller
+import AssistantConseiller from "./AssistantConseiller"
 
 const COLORS = {
   text: "#F1F5F9",
@@ -25,7 +22,9 @@ const COLORS = {
 }
 
 function isKreolLang(t) {
-  return t?.("nav", "dashboard") === "Tablo débor"
+  const lang = String(t?.lang || "").toLowerCase()
+  if (lang === "cr" || lang === "kreol") return true
+  return t?.("nav", "dashboard") === "Tablo debor"
 }
 
 function sendAssistantPrompt(prompt, mode = "general") {

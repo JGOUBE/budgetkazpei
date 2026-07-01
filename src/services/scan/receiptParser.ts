@@ -1,6 +1,8 @@
 import { classifyReceipt } from "./receiptClassifier"
 
 const STORES = [
+  "E.Leclerc Le Portail",
+  "E.Leclerc",
   "Leader Price",
   "Leclerc",
   "Carrefour",
@@ -12,6 +14,10 @@ const STORES = [
   "Intermarche",
   "Jumbo",
   "Run Market",
+  "Casino",
+  "Spar",
+  "Vival",
+  "Auchan",
 ]
 
 const CATEGORY_HINTS: Record<string, string> = {
@@ -133,14 +139,28 @@ function normalizeLookup(value = "") {
 }
 
 const STORE_ALIASES: Record<string, string> = {
+  eleclercleportail: "E.Leclerc Le Portail",
+  leclercleportail: "E.Leclerc Le Portail",
+  leportail: "E.Leclerc Le Portail",
+  eleclerc: "E.Leclerc",
   leaderprix: "Leader Price",
   leaderprx: "Leader Price",
   leaderprice: "Leader Price",
   leaderprice974: "Leader Price",
+  carrefourreunion: "Carrefour",
+  hyperu: "Hyper U",
+  superu: "Super U",
+  runmarket: "Run Market",
+  jumbo: "Jumbo",
+  casino: "Casino",
+  spar: "Spar",
+  vival: "Vival",
+  auchan: "Auchan",
 }
 
 function detectStore(text = "") {
   const cleaned = normalizeLookup(text)
+  if (cleaned.includes("leclerc") && cleaned.includes("portail")) return "E.Leclerc Le Portail"
   const store = STORES.find(storeName => cleaned.includes(normalizeLookup(storeName)))
   if (store) return store
   const aliasEntry = Object.entries(STORE_ALIASES).find(([alias]) => cleaned.includes(alias))
@@ -206,12 +226,19 @@ export function extractReceiptTotal(text = "") {
     /\b(carte\s+bleue|cb|visa|mastercard)\b/i,
   ]
 
-  const totalLine = [...lines].reverse().find(line => {
+  for (let index = lines.length - 1; index >= 0; index -= 1) {
+    const line = lines[index]
     const clean = normalize(line)
-    return totalPatterns.some(pattern => pattern.test(clean))
-  })
+    const isTotalLine = totalPatterns.some(pattern => pattern.test(clean))
+    if (!isTotalLine) continue
 
-  if (totalLine) return money(totalLine) || 0
+    const sameLineTotal = money(line)
+    if (sameLineTotal) return sameLineTotal
+
+    const nearby = [lines[index + 1], lines[index - 1]].filter(Boolean).join(" ")
+    const nearbyTotal = money(nearby)
+    if (nearbyTotal) return nearbyTotal
+  }
 
   return 0
 }

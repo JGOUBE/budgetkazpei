@@ -24,6 +24,11 @@ function cleanProfileUpdates(updates = {}) {
         ? null
         : Number(updates.revenus_foyer),
 
+    revenus_details:
+      updates.revenus_details && typeof updates.revenus_details === "object"
+        ? updates.revenus_details
+        : updates.revenus_details ?? null,
+
     etudiant: Boolean(updates.etudiant),
     retraite: Boolean(updates.retraite),
     handicap: Boolean(updates.handicap),
