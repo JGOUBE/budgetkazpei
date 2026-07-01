@@ -781,6 +781,7 @@ function BudgetKazPeiApp({ initialAuthPage = "login" }) {
             }}
             byCategory={byCategory}
             isMobile={isMobile}
+            language={lang}
           />
         )}
 
@@ -816,6 +817,7 @@ function BudgetKazPeiApp({ initialAuthPage = "login" }) {
               tauxChargesFixes,
             }}
             isMobile={isMobile}
+            language={lang}
           />
         )}
 

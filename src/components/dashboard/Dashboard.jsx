@@ -1584,14 +1584,8 @@ function BalanceHeroCard({ insights, stats = {}, isKreol, isMobile, onOpenRevenu
       <div style={{ color: COLORS.cyan, fontSize: 13, fontWeight: 950, marginBottom: 8 }}>
         {isKreol ? "Larzan i rantre" : "Revenus du mois"}
       </div>
-      <div style={{ color: COLORS.whiteSoft, fontSize: 16, fontWeight: 850 }}>
-        {isKreol ? "Base chak mwa i reprend otomatikman" : "Base mensuelle reprise automatiquement"}
-      </div>
       <div style={{ color: revenus >= 0 ? COLORS.green : COLORS.red, fontSize: isMobile ? 48 : 62, fontWeight: 950, lineHeight: 1, fontFamily: "'DM Serif Display', Georgia, serif", margin: "8px 0" }}>
         {formatMontant(revenus)}
-      </div>
-      <div style={{ color: COLORS.whiteSoft, fontSize: 16, fontWeight: 850 }}>
-        {isKreol ? "modifiable pou le mwa" : "modifiable pour le mois en cours"}
       </div>
       <div style={{ color: COLORS.muted, fontSize: 13, marginTop: 10 }}>
         {isKreol ? "Larzan disponible estimé" : "Solde disponible estimé"} <strong style={{ color: balance >= 0 ? COLORS.green : COLORS.red }}>{formatMontant(balance)}</strong>

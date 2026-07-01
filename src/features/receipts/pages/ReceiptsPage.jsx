@@ -237,8 +237,8 @@ export default function ReceiptsPage({
   const [resumeDraft, setResumeDraft] = useState(null)
   const [pendingImagePath, setPendingImagePath] = useState(null)
 
-  const globalCategory = draft.items?.[0]?.category || "alimentaire"
-  const receiptRows = useMemo(() => receipts || [], [receipts])
+  const globalCategory = draft?.items?.[0]?.category || "alimentaire"
+  const receiptRows = useMemo(() => Array.isArray(receipts) ? receipts : [], [receipts])
   const showMethodActions = mode === "history" || mode === "validate"
 
   useEffect(() => {
@@ -247,13 +247,14 @@ export default function ReceiptsPage({
 
   useEffect(() => {
     const lastScan = getLastScanDraft()
-    if (!lastScan.receipt) return
+    if (!lastScan?.receipt) return
     setResumeDraft(lastScan.receipt)
   }, [])
 
   function resumeLastScan() {
     if (!resumeDraft) return
-    setDraft({ ...resumeDraft, items: resumeDraft.items.length ? resumeDraft.items : [emptyItem()] })
+    const items = Array.isArray(resumeDraft.items) && resumeDraft.items.length ? resumeDraft.items : [emptyItem()]
+    setDraft({ ...resumeDraft, items })
     setResumeDraft(null)
     setScanError(null)
     setMode("validate")
@@ -1024,7 +1025,7 @@ function ValidationForm({
           <strong>Cette course semble deja enregistree.</strong>
           <div style={{ color: COLORS.muted, marginTop: 4 }}>
             {duplicateReceipt.store_name} - {duplicateReceipt.purchase_date} - {formatMontant(Number(duplicateReceipt.total_amount || 0))}
-            {" - "}{duplicateReceipt.receipt_items.length || 0} article(s)
+            {" - "}{(duplicateReceipt.receipt_items || []).length} article(s)
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 8, marginTop: 10 }}>
             <button type="button" onClick={onOpenDuplicate} style={{ minHeight: 44, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "rgba(255,255,255,.06)", color: COLORS.text, fontWeight: 950 }}>
@@ -1163,13 +1164,15 @@ function MetaChip({ label, strong = false }) {
 }
 
 function HistoryList({ txt, rows, busy, onOpen, onDelete }) {
+  const safeRows = Array.isArray(rows) ? rows : []
+
   return (
     <div style={cardStyle()}>
-      {rows.length === 0 ? (
+      {safeRows.length === 0 ? (
         <div style={{ color: COLORS.muted, fontSize: 14 }}>{txt.empty}</div>
       ) : (
         <div style={{ display: "grid", gap: 10 }}>
-          {rows.map(row => (
+          {safeRows.map(row => (
             <div key={row.id} style={{
               minHeight: 74,
               border: "1px solid rgba(255,255,255,.09)",

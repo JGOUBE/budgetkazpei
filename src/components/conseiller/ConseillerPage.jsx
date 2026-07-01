@@ -1,11 +1,11 @@
 import {
   Bot,
-  SearchCheck,
-  Mail,
-  FolderCheck,
-  Scale,
-  HelpCircle,
   CalendarDays,
+  FolderCheck,
+  HelpCircle,
+  Mail,
+  SearchCheck,
+  Scale,
 } from "lucide-react"
 
 import AssistantConseiller from "./AssistantConseiller"
@@ -33,7 +33,7 @@ function sendAssistantPrompt(prompt, mode = "general") {
   window.dispatchEvent(
     new CustomEvent("budgetkazpei:assistant-prompt", {
       detail: { prompt, mode },
-    })
+    }),
   )
 }
 
@@ -48,88 +48,88 @@ export default function ConseillerPage({
 
   const modes = [
     {
-  mode: "scan_profil",
-  icon: Bot,
-  color: COLORS.green,
-  title: isKreol ? "Scan mon profil" : "Scanner mon profil",
-  text: isKreol
-    ? "Analyse out profil gratuitement pou trouve bann zéd ek démarches les plus utiles."
-    : "Analyse gratuitement votre profil pour identifier les aides et démarches les plus pertinentes.",
-  prompt: isKreol
-    ? "Analyse mon profil BudgetKazPei. Donne a moin bann zéd, droits ek démarches les plus utiles selon ma situation. Répond en créole réunionnais simple. Pose une seule question seulement si in information essentielle i manque."
-    : "Analyse mon profil BudgetKazPei. Indique les aides, droits et démarches les plus pertinents selon ma situation. Pose une seule question uniquement si une information essentielle manque.",
-},
+      mode: "scan_profil",
+      icon: Bot,
+      color: COLORS.green,
+      title: isKreol ? "Scan mon profil" : "Scanner mon profil",
+      text: isKreol
+        ? "Analyse out profil gratuitement pou trouve bann aides ek demarches les plus utiles."
+        : "Analyse gratuitement votre profil pour identifier les aides et demarches les plus pertinentes.",
+      prompt: isKreol
+        ? "Analyse mon profil BudgetKazPei. Donne a moin bann aides, droits ek demarches les plus utiles selon ma situation. Repond en creole reunionnais simple. Pose une seule question seulement si in information essentielle i manque."
+        : "Analyse mon profil BudgetKazPei. Indique les aides, droits et demarches les plus pertinents selon ma situation. Pose une seule question uniquement si une information essentielle manque.",
+    },
     {
       mode: "trouver_aide",
       icon: SearchCheck,
       color: COLORS.cyan,
-      title: isKreol ? "Trouve in zéd" : "Trouver une aide",
+      title: isKreol ? "Trouve in aide" : "Trouver une aide",
       text: isKreol
-        ? "Le konseyé i analyse out profil ek i priorise bann zéd les plus utiles."
+        ? "Le konseye i analyse out profil ek i priorise bann aides les plus utiles."
         : "Le conseiller analyse votre profil et priorise les aides les plus utiles.",
       prompt: isKreol
-        ? "Mi veux trouver bann zéd possibles selon mon profil. Guide a moin naturellement et pose seulement une question si une info importante i manque."
+        ? "Mi veux trouver bann aides possibles selon mon profil. Guide a moin naturellement et pose seulement une question si une info importante i manque."
         : "Je veux trouver les aides possibles selon mon profil. Guide-moi naturellement et pose seulement une question si une information importante manque.",
     },
     {
       mode: "comprendre_courrier",
       icon: HelpCircle,
       color: COLORS.yellow,
-      title: isKreol ? "Comprann in kourrié" : "Comprendre un courrier",
+      title: isKreol ? "Comprann in courrier" : "Comprendre un courrier",
       text: isKreol
-        ? "Colle in kourrié CAF, CCAS, France Travail ou autre. Le konseyé n'invente rien."
+        ? "Colle in courrier CAF, CCAS, France Travail ou autre. Le konseye n'invente rien."
         : "Collez un courrier CAF, CCAS, France Travail ou autre. Le conseiller n'invente rien.",
       prompt: isKreol
-        ? "Mi sava colle in kourrié administratif. Aide a moin comprendre seulement sak lé écrit, sak i manque, sak faut vérifiye, ek prochaine action."
-        : "Je vais coller un courrier administratif. Aide-moi à comprendre uniquement ce qui est écrit, ce qui manque, ce qu'il faut vérifier, et la prochaine action.",
+        ? "Mi sava colle in courrier administratif. Aide a moin comprendre seulement sak le ecrit, sak i manque, sak faut verifier, ek prochaine action."
+        : "Je vais coller un courrier administratif. Aide-moi a comprendre uniquement ce qui est ecrit, ce qui manque, ce qu'il faut verifier, et la prochaine action.",
     },
     {
       mode: "preparer_dossier",
       icon: FolderCheck,
       color: COLORS.green,
-      title: isKreol ? "Prépar in dossier" : "Préparer un dossier",
+      title: isKreol ? "Prepar in dossier" : "Preparer un dossier",
       text: isKreol
-        ? "Dokiman, étapes, organisme, ek prochaine action sans noyer aou."
-        : "Documents, étapes, organisme et prochaine action sans vous noyer.",
+        ? "Dokiman, etapes, organisme, ek prochaine action sans noyer aou."
+        : "Documents, etapes, organisme et prochaine action sans vous noyer.",
       prompt: isKreol
-        ? "Aide a moin prépar in dossier administratif selon ma situation. Donne seulement les infos utiles, les dokiman probables, et la prochaine action."
-        : "Aide-moi à préparer un dossier administratif selon ma situation. Donne seulement les informations utiles, les documents probables, et la prochaine action.",
+        ? "Aide a moin prepar in dossier administratif selon ma situation. Donne seulement les infos utiles, les dokiman probables, et la prochaine action."
+        : "Aide-moi a preparer un dossier administratif selon ma situation. Donne seulement les informations utiles, les documents probables, et la prochaine action.",
     },
     {
       mode: "generer_email",
       icon: Mail,
       color: COLORS.purple,
-      title: isKreol ? "Prépar in email" : "Générer un email",
+      title: isKreol ? "Prepar in email" : "Generer un email",
       text: isKreol
-        ? "Email simple, poli, prêt pou copier, sans donnée inventée."
-        : "Email simple, poli, prêt à copier, sans donnée inventée.",
+        ? "Email simple, poli, pret pou copier, sans donnee inventee."
+        : "Email simple, poli, pret a copier, sans donnee inventee.",
       prompt: isKreol
-        ? "Aide a moin rédiz in email administratif simple ek poli. Pa mette aucun nom ni prénom automatiquement. Utilise [À compléter] si in info i manque."
-        : "Aide-moi à rédiger un email administratif simple et poli. Ne mets aucun nom ni prénom automatiquement. Utilise [À compléter] si une information manque.",
+        ? "Aide a moin rediz in email administratif simple ek poli. Pa mette aucun nom ni prenom automatiquement. Utilise [A completer] si in info i manque."
+        : "Aide-moi a rediger un email administratif simple et poli. Ne mets aucun nom ni prenom automatiquement. Utilise [A completer] si une information manque.",
     },
     {
       mode: "preparer_recours",
       icon: Scale,
       color: COLORS.red,
-      title: isKreol ? "Prépar in rekour" : "Préparer un recours",
+      title: isKreol ? "Prepar in recours" : "Preparer un recours",
       text: isKreol
-        ? "Structurer in réponse à in refus, avec prudence, sans promesse."
-        : "Structurer une réponse à un refus, avec prudence, sans promesse.",
+        ? "Structurer in reponse a in refus, avec prudence, sans promesse."
+        : "Structurer une reponse a un refus, avec prudence, sans promesse.",
       prompt: isKreol
-        ? "Aide a moin prépar in rekour administratif. Reste prudent, n'invente rien, demande les motifs exacts si besoin, ek aide a moin structurer."
-        : "Aide-moi à préparer un recours administratif. Reste prudent, n'invente rien, demande les motifs exacts si besoin, et aide-moi à structurer.",
+        ? "Aide a moin prepar in recours administratif. Reste prudent, n'invente rien, demande les motifs exacts si besoin, ek aide a moin structurer."
+        : "Aide-moi a preparer un recours administratif. Reste prudent, n'invente rien, demande les motifs exacts si besoin, et aide-moi a structurer.",
     },
     {
       mode: "preparer_rdv",
       icon: CalendarDays,
       color: COLORS.accent,
-      title: isKreol ? "Prépar in rendez-vous" : "Préparer un rendez-vous",
+      title: isKreol ? "Prepar in rendez-vous" : "Preparer un rendez-vous",
       text: isKreol
         ? "Questions, dokiman, points importants pou CAF, CCAS, mairie..."
         : "Questions, documents, points importants pour CAF, CCAS, mairie...",
       prompt: isKreol
-        ? "Aide a moin prépar in rendez-vous administratif. Donne les questions importantes, les dokiman à amenné, et une phrase simple pou expliquer ma situation."
-        : "Aide-moi à préparer un rendez-vous administratif. Donne les questions importantes, les documents à apporter, et une phrase simple pour expliquer ma situation.",
+        ? "Aide a moin prepar in rendez-vous administratif. Donne les questions importantes, les dokiman a amene, et une phrase simple pou expliquer ma situation."
+        : "Aide-moi a preparer un rendez-vous administratif. Donne les questions importantes, les documents a apporter, et une phrase simple pour expliquer ma situation.",
     },
   ]
 
@@ -147,20 +147,6 @@ export default function ConseillerPage({
           boxShadow: "0 18px 40px rgba(0,0,0,.22)",
         }}
       >
-        <div
-          style={{
-            position: "absolute",
-            right: -16,
-            top: -22,
-            fontSize: 126,
-            opacity: 0.06,
-            transform: "rotate(-12deg)",
-            pointerEvents: "none",
-          }}
-        >
-          🤖
-        </div>
-
         <div style={{ position: "relative", zIndex: 1 }}>
           <div
             style={{
@@ -190,7 +176,7 @@ export default function ConseillerPage({
               fontWeight: 900,
             }}
           >
-            🤖 {isKreol ? "Konseyé BudgetKazPei" : "Conseiller BudgetKazPei"}
+            {isKreol ? "Konseye BudgetKazPei" : "Conseiller BudgetKazPei"}
           </h2>
 
           <p
@@ -203,8 +189,8 @@ export default function ConseillerPage({
             }}
           >
             {isKreol
-              ? "In konseyé numérique réunionnais pou aide aou comprendre, préparer, décider ek avancer sans répétition inutile."
-              : "Un conseiller numérique réunionnais pour vous aider à comprendre, préparer, décider et avancer sans répétition inutile."}
+              ? "In konseye numerique reunionnais pou aide aou comprendre, preparer, decider ek avancer sans repetition inutile."
+              : "Un conseiller numerique reunionnais pour vous aider a comprendre, preparer, decider et avancer sans repetition inutile."}
           </p>
         </div>
       </section>
@@ -218,7 +204,7 @@ export default function ConseillerPage({
         }}
       >
         <div style={{ color: COLORS.text, fontSize: 17, fontWeight: 900, marginBottom: 12 }}>
-          {isKreol ? "Kosa ou veux fé ?" : "Que souhaitez-vous faire ?"}
+          {isKreol ? "Kosa ou veux fe ?" : "Que souhaitez-vous faire ?"}
         </div>
 
         <div

@@ -28,7 +28,6 @@ export default function RevenusPage({
   user,
   profile = {},
   isPremiumPlus = false,
-  onEditTransaction,
   onRefreshTransactions,
   onGoPremium,
   t,
@@ -51,54 +50,59 @@ export default function RevenusPage({
       raw: tx,
     }))
 
-  const revenusRecurrents = revenusItems.filter(item => item.source === "profile_income" || item.label === "Revenus du foyer")
-  const revenusPonctuels = revenusItems.filter(item => item.source !== "profile_income" && item.label !== "Revenus du foyer")
+  const isProfileIncome = item => item.source === "profile_income" || item.label === "Revenus du foyer"
+  const revenusRecurrents = revenusItems.filter(isProfileIncome)
+  const revenusPonctuels = revenusItems.filter(item => !isProfileIncome(item))
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
       <HeaderCard
         title={isKreol ? "Larzan i rantre mwa-la" : "Revenus du mois"}
         subtitle={
-          isKreol ? "Retrouv ici tout larzan la rantre pou mwa-la."
+          isKreol ? "Retrouv ici tout larzan la rant pou mwa-la."
             : "Retrouvez ici les revenus enregistres pour le mois en cours."
         }
         total={revenus}
         color={COLORS.green}
         onEdit={() => setIncomeEditorOpen(true)}
+        isKreol={isKreol}
       />
 
       <InfoCard
-        title={isKreol ? "Base mensuelle automatique" : "Revenus mensuels automatiques"}
+        title={isKreol ? "Baz mwa otomatik" : "Revenus mensuels automatiques"}
         text={
-          isKreol ? "Le revenu saisi dans le profil revient automatiquement chaque mois. Si ou change seulement le mois courant, clique Modifier sur la ligne du revenu."
+          isKreol ? "Larzan ou la met dan profil i revient otomatikman sak mwa. Si ou change zis mwa-la, klik Modifier su la ligne revenu-la."
             : "Le revenu saisi dans votre profil est repris automatiquement chaque mois. Vous pouvez modifier simplement le montant du mois en cliquant sur Modifier."
         }
       />
 
       <SectionCard
-        title={isKreol ? "Revenus reguliers" : "Revenus recurrents"}
-        emptyText={isKreol ? "Aucun revenu regulier enregistre." : "Aucun revenu recurrent enregistre."}
+        title={isKreol ? "Larzan i rant sak mwa" : "Revenus recurrents"}
+        emptyText={isKreol ? "Nana pa revenu regulier anrezistre." : "Aucun revenu recurrent enregistre."}
         items={revenusRecurrents}
         color={COLORS.green}
-        onEdit={onEditTransaction}
+        onEdit={() => setIncomeEditorOpen(true)}
+        isKreol={isKreol}
       />
 
       <SectionCard
-        title={isKreol ? "Revenus ponctuels" : "Revenus ponctuels"}
-        emptyText={isKreol ? "Aucun revenu ponctuel enregistre." : "Aucun revenu ponctuel enregistre."}
+        title={isKreol ? "Larzan ponctuel" : "Revenus ponctuels"}
+        emptyText={isKreol ? "Nana pa revenu ponctuel anrezistre." : "Aucun revenu ponctuel enregistre."}
         items={revenusPonctuels}
         color={COLORS.cyan}
-        onEdit={onEditTransaction}
+        onEdit={() => setIncomeEditorOpen(true)}
+        isKreol={isKreol}
       />
 
       <LockedPremiumPlusCard
         isUnlocked={isPremiumPlus}
         onGoPremium={onGoPremium}
-        title={isKreol ? "Analyse evolution revenus" : "Analyse evolution revenus"}
+        title={isKreol ? "Analiz evolution revenus" : "Analyse evolution revenus"}
         text={
-          isKreol ? "BudgetKazPei pourra analyser l'evolution de out revenus ek preparer des previsions."
+          isKreol ? "BudgetKazPei va pouvoir analiz evolution out revenus ek prepar bann previsions."
             : "BudgetKazPei pourra analyser l'evolution de vos revenus et preparer des previsions."
         }
+        isKreol={isKreol}
       />
 
       {incomeEditorOpen && (
@@ -127,7 +131,7 @@ export default function RevenusPage({
   )
 }
 
-function HeaderCard({ title, subtitle, total, color, onEdit }) {
+function HeaderCard({ title, subtitle, total, color, onEdit, isKreol = false }) {
   return (
     <div style={{ background: `linear-gradient(135deg, ${COLORS.card}, ${COLORS.cardLight})`, border: `1px solid ${COLORS.border}`, borderRadius: 22, padding: 24 }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
@@ -141,7 +145,7 @@ function HeaderCard({ title, subtitle, total, color, onEdit }) {
         </div>
         {onEdit && (
           <button type="button" onClick={onEdit} style={{ minHeight: 42, border: `1px solid ${COLORS.green}66`, borderRadius: 13, background: "rgba(34,197,94,.14)", color: COLORS.text, cursor: "pointer", fontWeight: 950, padding: "0 14px" }}>
-            Modifier
+            {isKreol ? "Modifie" : "Modifier"}
           </button>
         )}
       </div>
@@ -194,7 +198,7 @@ function IncomeEditorModal({ profile = {}, isKreol = false, saving = false, onCl
       <div style={{ width: "min(720px, 100%)", maxHeight: "92vh", overflow: "auto", background: COLORS.cardLight, border: `1px solid ${COLORS.border}`, borderRadius: 20, padding: 20, boxShadow: "0 24px 80px rgba(0,0,0,.35)" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
           <div>
-            <h2 style={{ color: COLORS.text, margin: 0, fontSize: 24 }}>{isKreol ? "Larzan i rantre mwa-la" : "Revenus du mois"}</h2>
+            <h2 style={{ color: COLORS.text, margin: 0, fontSize: 24 }}>{isKreol ? "Larzan i rant mwa-la" : "Revenus du mois"}</h2>
             <p style={{ color: COLORS.muted, margin: "8px 0 0", lineHeight: 1.45 }}>
               {isKreol ? "Bann ligne-la i alimante mwa-la ek i sera repriz otomatikman mwa prosin. Bann aides ou ajoute isi i reste dan profil pou conseiller."
                 : "Ces lignes alimentent le mois en cours et seront reprises automatiquement le mois prochain. Les aides ajoutees ici sont aussi conservees dans le profil pour le conseiller."}
@@ -204,8 +208,8 @@ function IncomeEditorModal({ profile = {}, isKreol = false, saving = false, onCl
         </div>
 
         <div style={{ display: "grid", gap: 12, marginTop: 18 }}>
-          <MoneyField label={isKreol ? "Salaire parent 1" : "Salaire parent 1"} value={form.salaire_parent_1} onChange={value => updateField("salaire_parent_1", value)} />
-          <MoneyField label={isKreol ? "Salaire parent 2" : "Salaire parent 2"} value={form.salaire_parent_2} onChange={value => updateField("salaire_parent_2", value)} />
+          <MoneyField label={isKreol ? "Saler parent 1" : "Salaire parent 1"} value={form.salaire_parent_1} onChange={value => updateField("salaire_parent_1", value)} />
+          <MoneyField label={isKreol ? "Saler parent 2" : "Salaire parent 2"} value={form.salaire_parent_2} onChange={value => updateField("salaire_parent_2", value)} />
           <MoneyField label={isKreol ? "France Travail / chomaz" : "France Travail / chomage"} value={form.france_travail} onChange={value => updateField("france_travail", value)} />
           <MoneyField label={isKreol ? "Autres revenus ki revient" : "Revenus recurrents"} value={form.autres_revenus} onChange={value => updateField("autres_revenus", value)} />
 
@@ -265,22 +269,30 @@ function InfoCard({ title, text }) {
   )
 }
 
-function SectionCard({ title, emptyText, items, color, onEdit }) {
-  const total = items.reduce((sum, item) => sum + moneyValue(item.amount), 0)
+function displayIncomeLabel(item, isKreol = false) {
+  if (item.source === "profile_income" || item.label === "Revenus du foyer") {
+    return isKreol ? "Larzan foyer" : "Revenus du foyer"
+  }
+  return item.label
+}
+
+function SectionCard({ title, emptyText, items, color, onEdit, isKreol = false }) {
+  const safeItems = Array.isArray(items) ? items : []
+  const total = safeItems.reduce((sum, item) => sum + moneyValue(item.amount), 0)
 
   return (
     <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 20, padding: 20 }}>
       <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 900, marginBottom: 12 }}>{title}</div>
 
-      {items.length === 0 ? (
+      {safeItems.length === 0 ? (
         <div style={{ color: COLORS.muted, fontSize: 13 }}>{emptyText}</div>
       ) : (
         <div style={{ display: "grid", gap: 10 }}>
-          {items.map((item, index) => (
+          {safeItems.map((item, index) => (
             <div key={item.id || `${item.label}-${index}`} style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", background: "rgba(10,22,40,.45)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 14, padding: "12px 13px" }}>
               <div style={{ minWidth: 0 }}>
                 <div style={{ color: COLORS.text, fontWeight: 900, fontSize: 14 }}>
-                  {item.icon} {item.label}
+                  {item.icon} {displayIncomeLabel(item, isKreol)}
                 </div>
                 <div style={{ color: COLORS.muted, fontSize: 11, marginTop: 3 }}>
                   {item.date || "-"}
@@ -290,7 +302,7 @@ function SectionCard({ title, emptyText, items, color, onEdit }) {
                 <strong style={{ color }}>{formatMontant(item.amount)}</strong>
                 {onEdit && (
                   <button type="button" onClick={() => onEdit(item.raw)} style={{ minHeight: 34, borderRadius: 10, border: `1px solid ${COLORS.border}`, background: "rgba(255,255,255,.05)", color: COLORS.text, cursor: "pointer", fontWeight: 850, fontSize: 12, padding: "0 10px" }}>
-                    Modifier
+                    {isKreol ? "Modifie" : "Modifier"}
                   </button>
                 )}
               </div>
@@ -300,14 +312,14 @@ function SectionCard({ title, emptyText, items, color, onEdit }) {
       )}
 
       <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,.08)", display: "flex", justifyContent: "space-between", color: COLORS.text, fontWeight: 900 }}>
-        <span>Total</span>
+        <span>{isKreol ? "Total" : "Total"}</span>
         <span style={{ color }}>{formatMontant(total)}</span>
       </div>
     </div>
   )
 }
 
-function LockedPremiumPlusCard({ isUnlocked, title, text, onGoPremium }) {
+function LockedPremiumPlusCard({ isUnlocked, title, text, onGoPremium, isKreol = false }) {
   return (
     <div style={{ background: "rgba(167,139,250,.08)", border: "1px solid rgba(167,139,250,.28)", borderRadius: 20, padding: 20 }}>
       <div style={{ color: "#DDD6FE", fontSize: 17, fontWeight: 900 }}>
@@ -318,7 +330,7 @@ function LockedPremiumPlusCard({ isUnlocked, title, text, onGoPremium }) {
       </p>
       {!isUnlocked && onGoPremium && (
         <button type="button" onClick={onGoPremium} style={{ marginTop: 14, background: "rgba(167,139,250,.18)", border: "1px solid rgba(167,139,250,.35)", color: "#DDD6FE", borderRadius: 12, padding: "10px 13px", cursor: "pointer", fontWeight: 900, fontFamily: "inherit" }}>
-          Decouvrir Premium+
+          {isKreol ? "Dekouvrir Premium+" : "Decouvrir Premium+"}
         </button>
       )}
     </div>

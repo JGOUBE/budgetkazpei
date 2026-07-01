@@ -10,12 +10,14 @@ export function useStatisticsInsights({
   stats = {},
   byCategory = [],
   period = "month",
+  language = "fr",
 }: {
   userId?: string
   transactions?: any[]
   stats?: any
   byCategory?: any[]
   period?: string
+  language?: string
 }) {
   const [shoppingItems, setShoppingItems] = useState<any[]>([])
   const [receipts, setReceipts] = useState<any[]>([])
@@ -78,7 +80,7 @@ export function useStatisticsInsights({
     return {
       loading,
       insights,
-      advice: buildStatisticsAdvice(insights),
+      advice: buildStatisticsAdvice(insights, language),
     }
-  }, [loading, transactions, stats, byCategory, shoppingItems, receipts, period])
+  }, [loading, transactions, stats, byCategory, shoppingItems, receipts, period, language])
 }

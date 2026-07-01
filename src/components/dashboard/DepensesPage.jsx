@@ -18,6 +18,31 @@ const COLORS = {
 
 const CHART_COLORS = ["#22C55E", "#38BDF8", "#FCD34D", "#A78BFA", "#FB7185", "#23D3D6", "#F97316"]
 
+const CATEGORY_LABELS = {
+  fr: {
+    alimentaire: "Alimentaire",
+    logement: "Logement",
+    transport: "Transport",
+    energie: "Energie",
+    telecom: "Telecom",
+    assurances: "Assurances",
+    sante: "Sante",
+    loisirs: "Loisirs",
+    divers: "Divers",
+  },
+  kreol: {
+    alimentaire: "Manze",
+    logement: "Kaz",
+    transport: "Transport",
+    energie: "Kouran / Dilo",
+    telecom: "Telefon / Internet",
+    assurances: "Lasirans",
+    sante: "Lasante",
+    loisirs: "Amizman",
+    divers: "Lot depans",
+  },
+}
+
 function getIsKreol(t) {
   const lang = String(t?.lang || "").toLowerCase()
   if (lang === "cr" || lang === "kreol") return true
@@ -26,6 +51,21 @@ function getIsKreol(t) {
 
 function moneyValue(value) {
   return Number(String(value ?? 0).replace(",", ".")) || 0
+}
+
+function normalizeCategoryId(value = "") {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
+function categoryLabel(value = "", isKreol = false) {
+  const key = normalizeCategoryId(value)
+  return (isKreol ? CATEGORY_LABELS.kreol : CATEGORY_LABELS.fr)[key] || String(value || (isKreol ? "Kategori" : "Categorie"))
 }
 
 function iconBubble(Icon, color = COLORS.cyan) {
@@ -81,7 +121,7 @@ export default function DepensesPage({
       : safeByCategory
           .filter(cat => moneyValue(cat.depense) > 0)
           .map(cat => ({
-            name: cat.label || cat.id,
+            name: categoryLabel(cat.id || cat.category || cat.label, isKreol),
             value: moneyValue(cat.depense),
           }))
 
@@ -102,7 +142,7 @@ export default function DepensesPage({
               {isKreol ? "Depans mwa-la" : "Depenses du mois"}
             </div>
             <div style={{ color: COLORS.muted, marginTop: 6, fontSize: 14, lineHeight: 1.5 }}>
-              {isKreol ? "Retrouv ici repartition, dernieres depans ek suivi par kategori."
+              {isKreol ? "Retrouv ici koman out larzan i sorte, dernieres depans ek suivi par kategori."
                 : "Retrouvez ici la repartition, les dernieres transactions et les budgets par categorie."}
             </div>
           </div>
@@ -112,7 +152,7 @@ export default function DepensesPage({
           {formatMontant(depenses)}
         </div>
         <div style={{ color: COLORS.muted, fontSize: 12 }}>
-          {ratio} % {isKreol ? "des revenus" : "des revenus"}
+          {ratio} % {isKreol ? "out revenus" : "des revenus"}
         </div>
       </div>
 
@@ -138,8 +178,8 @@ export default function DepensesPage({
 
       <LockedCard
         unlocked={isPremium}
-        title={isKreol ? "Alertes budget" : "Alertes budget"}
-        text={isKreol ? "Recevoir alertes a 80 %, 100 % ek depassement." : "Recevoir des alertes a 80 %, 100 % et en cas de depassement."}
+        title={isKreol ? "Alert bidze" : "Alertes budget"}
+        text={isKreol ? "Recevoir alert kan ou arrive a 80 %, 100 % ek kan ou depasse." : "Recevoir des alertes a 80 %, 100 % et en cas de depassement."}
         required="Premium"
         onGoPremium={onGoPremium}
         Icon={BkIcons.alert}
@@ -147,8 +187,8 @@ export default function DepensesPage({
 
       <LockedCard
         unlocked={isPremium}
-        title="Export PDF"
-        text={isKreol ? "Exporter depenses ou mois complet en PDF." : "Exporter vos depenses ou le mois complet en PDF."}
+        title={isKreol ? "Export PDF" : "Export PDF"}
+        text={isKreol ? "Exporter out depans ou out mwa complet en PDF." : "Exporter vos depenses ou le mois complet en PDF."}
         required="Premium"
         onGoPremium={onGoPremium}
         Icon={BkIcons.receipts}
@@ -156,8 +196,8 @@ export default function DepensesPage({
 
       <LockedCard
         unlocked={isPremiumPlus}
-        title={isKreol ? "Analyse budgetaire avancee" : "Analyse budgetaire avancee"}
-        text={isKreol ? "Detecter categories problematiques, depenses excessives ek potentiel d'economie." : "Detecter les categories problematiques, depenses excessives et potentiels d'economies."}
+        title={isKreol ? "Analiz bidze avance" : "Analyse budgetaire avancee"}
+        text={isKreol ? "Detecte bann kategori problematik, depans trop for ek potentiel lekonomi." : "Detecter les categories problematiques, depenses excessives et potentiels d'economies."}
         required="Premium+"
         onGoPremium={onGoPremium}
         Icon={BkIcons.stats}
@@ -166,7 +206,7 @@ export default function DepensesPage({
       <LockedCard
         unlocked={isPremiumPlus}
         title={isKreol ? "Courses intelligentes" : "Courses intelligentes"}
-        text={isKreol ? "Analyse alimentaire, panier, budget recommande ek conseils economies." : "Analyse alimentaire, panier, budget recommande et conseils d'economies."}
+        text={isKreol ? "Analiz manze, panier, bidze conseille ek konsey pou fer lekonomi." : "Analyse alimentaire, panier, budget recommande et conseils d'economies."}
         required="Premium+"
         onGoPremium={onGoPremium}
         Icon={BkIcons.shopping}
@@ -183,11 +223,11 @@ function ChartCard({ data, isKreol }) {
     <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 20, padding: 20 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, color: COLORS.text, fontSize: 18, fontWeight: 900, marginBottom: 12 }}>
         {iconBubble(BkIcons.stats, COLORS.cyan)}
-        {isKreol ? "Repartition depans" : "Repartition des depenses"}
+        {isKreol ? "Koman depans i reparti" : "Repartition des depenses"}
       </div>
 
       {safeData.length === 0 ? (
-        <div style={{ color: COLORS.muted, fontSize: 13 }}>{isKreol ? "Aucune depense enregistree." : "Aucune depense enregistree."}</div>
+        <div style={{ color: COLORS.muted, fontSize: 13 }}>{isKreol ? "Nana pa depans anrezistree." : "Aucune depense enregistree."}</div>
       ) : (
         <div>
           <div style={{ height: 260 }}>
@@ -250,11 +290,11 @@ function RecentExpensesCard({ transactions, isKreol }) {
     <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 20, padding: 20 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, color: COLORS.text, fontSize: 18, fontWeight: 900, marginBottom: 12 }}>
         {iconBubble(BkIcons.receipts, COLORS.cyan)}
-        {isKreol ? "Dernieres depenses" : "Dernieres transactions"}
+        {isKreol ? "Dernieres depans" : "Dernieres transactions"}
       </div>
 
       {transactions.length === 0 ? (
-        <div style={{ color: COLORS.muted, fontSize: 13 }}>{isKreol ? "Aucune depense recente." : "Aucune depense recente."}</div>
+        <div style={{ color: COLORS.muted, fontSize: 13 }}>{isKreol ? "Nana pa depans resan." : "Aucune depense recente."}</div>
       ) : (
         <div style={{ display: "grid", gap: 10 }}>
           {transactions.map(tx => (
@@ -272,7 +312,7 @@ function RecentExpensesCard({ transactions, isKreol }) {
             >
               <div style={{ minWidth: 0 }}>
                 <div style={{ color: COLORS.text, fontWeight: 900, fontSize: 13 }}>
-                  {tx.label || tx.nom || "Depense"}
+                  {tx.label || tx.nom || (isKreol ? "Depans" : "Depense")}
                 </div>
                 <div style={{ color: COLORS.muted, fontSize: 11, marginTop: 3 }}>
                   {tx.date || "-"}
@@ -296,11 +336,11 @@ function BudgetsByCategoryCard({ byCategory, isKreol }) {
     <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 20, padding: 20 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, color: COLORS.text, fontSize: 18, fontWeight: 900, marginBottom: 12 }}>
         {iconBubble(BkIcons.budget, COLORS.green)}
-        {isKreol ? "Bidje par kategori" : "Budgets par categorie"}
+        {isKreol ? "Bidze par kategori" : "Budgets par categorie"}
       </div>
 
       {safeByCategory.length === 0 ? (
-        <div style={{ color: COLORS.muted, fontSize: 13 }}>{isKreol ? "Aucun budget par kategori." : "Aucun budget par categorie."}</div>
+        <div style={{ color: COLORS.muted, fontSize: 13 }}>{isKreol ? "Nana pa bidze par kategori." : "Aucun budget par categorie."}</div>
       ) : (
         <div style={{ display: "grid", gap: 12 }}>
           {safeByCategory.map(cat => {
@@ -315,7 +355,7 @@ function BudgetsByCategoryCard({ byCategory, isKreol }) {
                 <div style={{ display: "flex", justifyContent: "space-between", color: COLORS.text, fontSize: 13, fontWeight: 900, gap: 10 }}>
                   <span style={{ display: "inline-flex", alignItems: "center", gap: 8, minWidth: 0 }}>
                     <span aria-hidden="true" style={{ width: 9, height: 9, borderRadius: 999, background: color, flexShrink: 0 }} />
-                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{cat.label || cat.id}</span>
+                    <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{categoryLabel(cat.id || cat.category || cat.label, isKreol)}</span>
                   </span>
                   <span style={{ color: over ? COLORS.red : COLORS.muted, flexShrink: 0 }}>
                     {formatMontant(depense)} / {formatMontant(budget)}
@@ -366,7 +406,7 @@ function LockedCard({ unlocked, title, text, required, onGoPremium, Icon }) {
             fontFamily: "inherit",
           }}
         >
-          Debloquer avec {required}
+          {required === "Premium+" ? "Premium+" : required}
         </button>
       )}
     </div>

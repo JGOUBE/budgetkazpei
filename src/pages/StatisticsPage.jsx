@@ -28,6 +28,94 @@ const CATEGORY_COLORS = {
 
 const CHART_COLORS = ["#22C55E", "#F97316", "#38BDF8", "#FCD34D", "#A78BFA", "#FB7185"]
 
+const TEXT = {
+  fr: {
+    title: "Mes statistiques",
+    subtitle: "Comprends tes habitudes et repere les economies possibles.",
+    periods: {
+      month: "Ce mois-ci",
+      lastMonth: "Mois dernier",
+      "3months": "3 derniers mois",
+      "6months": "6 derniers mois",
+    },
+    expenses: "Depenses",
+    income: "Revenus",
+    remaining: "Reste estime",
+    budgetUse: "Budget utilise",
+    categories: "Categories",
+    noCategories: "Ajoute des depenses pour voir la repartition.",
+    evolution: "Evolution",
+    courses: "Courses",
+    tickets: "tickets",
+    products: "produits",
+    basketAverage: "Panier moyen",
+    topProduct: "Produit frequent",
+    notEnoughData: "Pas encore assez de donnees",
+    stores: "Magasins",
+    noStores: "Scanne un ticket pour voir tes magasins.",
+    frequentProducts: "Produits frequents",
+    noProducts: "Les produits frequents apparaitront apres quelques courses analysees.",
+    purchases: "achats",
+    advice: "Conseils automatiques V1",
+    categoryFallback: "Categorie",
+  },
+  kreol: {
+    title: "Mes stats",
+    subtitle: "Comprann out labitid ek trouve kot ou pe fer lekonomi.",
+    periods: {
+      month: "Mwa-la",
+      lastMonth: "Mwa dernier",
+      "3months": "3 derniers mwa",
+      "6months": "6 derniers mwa",
+    },
+    expenses: "Depans",
+    income: "Revenus",
+    remaining: "Larzan i reste",
+    budgetUse: "Bidze itilize",
+    categories: "Kategori",
+    noCategories: "Azout depans pou voir repartition.",
+    evolution: "Evolution",
+    courses: "Courses",
+    tickets: "tike",
+    products: "produits",
+    basketAverage: "Panier moyen",
+    topProduct: "Produit frequent",
+    notEnoughData: "Pas encore assez donnees",
+    stores: "Magasins",
+    noStores: "Scanne in tike pou voir out magasins.",
+    frequentProducts: "Produits frequents",
+    noProducts: "Bann produits frequents va apparaitre apres quelques courses analysees.",
+    purchases: "achats",
+    advice: "Konsey otomatik V1",
+    categoryFallback: "Kategori",
+  },
+}
+
+const CATEGORY_LABELS = {
+  fr: {
+    alimentaire: "Alimentaire",
+    logement: "Logement",
+    energie: "Energie",
+    loisirs: "Loisirs",
+    transport: "Transport",
+    divers: "Divers",
+    sante: "Sante",
+  },
+  kreol: {
+    alimentaire: "Manze",
+    logement: "Kaz",
+    energie: "Kouran / Dilo",
+    loisirs: "Amizman",
+    transport: "Transport",
+    divers: "Lot depans",
+    sante: "Lasante",
+  },
+}
+
+function isKreolLanguage(language = "fr") {
+  return ["cr", "kreol", "kr"].includes(String(language || "").toLowerCase())
+}
+
 function normalizeCategoryId(value = "") {
   const clean = String(value || "")
     .normalize("NFD")
@@ -49,18 +137,9 @@ function getCategoryColor(category, index = 0) {
   return CATEGORY_COLORS[normalizeCategoryId(category)] || CHART_COLORS[index % CHART_COLORS.length]
 }
 
-function getCategoryLabel(category = "") {
+function getCategoryLabel(category = "", isKreol = false) {
   const key = normalizeCategoryId(category)
-  const labels = {
-    alimentaire: "Alimentaire",
-    logement: "Logement",
-    energie: "Energie",
-    loisirs: "Loisirs",
-    transport: "Transport",
-    divers: "Divers",
-    sante: "Sante",
-  }
-  return labels[key] || String(category || "Categorie")
+  return (isKreol ? CATEGORY_LABELS.kreol : CATEGORY_LABELS.fr)[key] || String(category || (isKreol ? TEXT.kreol.categoryFallback : TEXT.fr.categoryFallback))
 }
 
 function card(extra = {}) {
@@ -79,7 +158,10 @@ export default function StatisticsPage({
   stats = {},
   byCategory = [],
   isMobile = false,
+  language = "fr",
 }) {
+  const isKreol = isKreolLanguage(language)
+  const txt = isKreol ? TEXT.kreol : TEXT.fr
   const [period, setPeriod] = useState("month")
   const { loading, insights, advice } = useStatisticsInsights({
     userId: user?.id,
@@ -87,6 +169,7 @@ export default function StatisticsPage({
     stats,
     byCategory,
     period,
+    language,
   })
 
   if (loading) {
@@ -104,20 +187,15 @@ export default function StatisticsPage({
       <div style={card({ padding: isMobile ? 18 : 24 })}>
         <div style={{ color: COLORS.cyan, fontSize: 13, fontWeight: 950, marginBottom: 8 }}>Stats</div>
         <h1 style={{ color: COLORS.text, margin: 0, fontFamily: "'DM Serif Display', serif", fontSize: isMobile ? 32 : 40 }}>
-          Mes statistiques
+          {txt.title}
         </h1>
         <p style={{ color: COLORS.muted, margin: "10px 0 0", lineHeight: 1.55 }}>
-          Comprends tes habitudes et repère les économies possibles.
+          {txt.subtitle}
         </p>
       </div>
 
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        {[
-          ["month", "Ce mois-ci"],
-          ["lastMonth", "Mois dernier"],
-          ["3months", "3 derniers mois"],
-          ["6months", "6 derniers mois"],
-        ].map(([id, label]) => (
+        {Object.entries(txt.periods).map(([id, label]) => (
           <button
             key={id}
             type="button"
@@ -139,24 +217,24 @@ export default function StatisticsPage({
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(4, 1fr)", gap: 14 }}>
-        <Metric title="Dépenses" value={formatMontant(insights.monthly.totalExpenses)} color={COLORS.accent} />
-        <Metric title="Revenus" value={formatMontant(insights.monthly.revenus)} color={COLORS.green} />
-        <Metric title="Reste estimé" value={formatMontant(insights.monthly.remaining)} color={COLORS.cyan} />
-        <Metric title="Budget utilisé" value={`${insights.monthly.budgetUse} %`} color={COLORS.yellow} />
+        <Metric title={txt.expenses} value={formatMontant(insights.monthly.totalExpenses)} color={COLORS.accent} />
+        <Metric title={txt.income} value={formatMontant(insights.monthly.revenus)} color={COLORS.green} />
+        <Metric title={txt.remaining} value={formatMontant(insights.monthly.remaining)} color={COLORS.cyan} />
+        <Metric title={txt.budgetUse} value={`${insights.monthly.budgetUse} %`} color={COLORS.yellow} />
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
-        <CategoriesChart data={insights.categories} />
-        <EvolutionChart data={insights.weeklyEvolution} />
+        <CategoriesChart data={insights.categories} txt={txt} isKreol={isKreol} />
+        <EvolutionChart data={insights.weeklyEvolution} txt={txt} isKreol={isKreol} />
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
-        <CoursesCard courses={insights.courses} />
-        <StoresCard stores={insights.stores} />
+        <CoursesCard courses={insights.courses} txt={txt} />
+        <StoresCard stores={insights.stores} txt={txt} />
       </div>
 
-      <ProductsCard products={insights.topProducts} />
-      <AdviceCard advice={advice} />
+      <ProductsCard products={insights.topProducts} txt={txt} />
+      <AdviceCard advice={advice} txt={txt} />
     </div>
   )
 }
@@ -170,21 +248,21 @@ function Metric({ title, value, color }) {
   )
 }
 
-function CategoriesChart({ data }) {
+function CategoriesChart({ data, txt, isKreol }) {
   return (
     <div style={card()}>
-      <h2 style={{ color: COLORS.text, fontSize: 18, margin: "0 0 12px" }}>Catégories</h2>
+      <h2 style={{ color: COLORS.text, fontSize: 18, margin: "0 0 12px" }}>{txt.categories}</h2>
       {data.length === 0 ? (
-        <div style={{ color: COLORS.muted }}>Ajoute des dépenses pour voir la répartition.</div>
+        <div style={{ color: COLORS.muted }}>{txt.noCategories}</div>
       ) : (
         <div>
           <div style={{ height: 250 }}>
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={data.slice(0, 6)} dataKey="depense" nameKey="label" innerRadius={58} outerRadius={90}>
+                <Pie data={data.slice(0, 6)} dataKey="depense" nameKey="id" innerRadius={58} outerRadius={90}>
                   {data.slice(0, 6).map((row, index) => <Cell key={index} fill={getCategoryColor(row.id || row.category || row.label, index)} />)}
                 </Pie>
-                <Tooltip formatter={(value, name) => [formatMontant(value), name || "Catégorie"]} />
+                <Tooltip formatter={(value, name) => [formatMontant(value), getCategoryLabel(name, isKreol)]} />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -192,7 +270,7 @@ function CategoriesChart({ data }) {
             {data.slice(0, 6).map((row, index) => (
               <div key={row.id || row.label || index} style={{ display: "grid", gridTemplateColumns: "auto 1fr auto", gap: 8, alignItems: "center", color: COLORS.text, fontSize: 13 }}>
                 <span style={{ width: 10, height: 10, borderRadius: 999, background: getCategoryColor(row.id || row.category || row.label, index) }} />
-                <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{row.label || row.id || "Catégorie"}</span>
+                <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{getCategoryLabel(row.id || row.category || row.label, isKreol)}</span>
                 <span style={{ color: COLORS.muted, fontWeight: 900 }}>{formatMontant(row.depense)}</span>
               </div>
             ))}
@@ -203,24 +281,24 @@ function CategoriesChart({ data }) {
   )
 }
 
-function EvolutionChart({ data }) {
+function EvolutionChart({ data, txt, isKreol }) {
   const categoryKeys = Array.from(new Set((data || []).flatMap(row => row.allCategoryKeys || row.categoryKeys || [])))
   const keys = categoryKeys.length ? categoryKeys : ["divers"]
 
   return (
     <div style={card()}>
-      <h2 style={{ color: COLORS.text, fontSize: 18, margin: "0 0 12px" }}>Évolution</h2>
+      <h2 style={{ color: COLORS.text, fontSize: 18, margin: "0 0 12px" }}>{txt.evolution}</h2>
       <div style={{ height: 250 }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data}>
             <XAxis dataKey="label" tick={{ fill: COLORS.muted, fontSize: 11 }} />
             <YAxis tick={{ fill: COLORS.muted, fontSize: 11 }} />
-            <Tooltip formatter={(value, name) => [formatMontant(value), getCategoryLabel(name)]} />
+            <Tooltip formatter={(value, name) => [formatMontant(value), getCategoryLabel(name, isKreol)]} />
             {keys.map((key, index) => (
               <Bar
                 key={key}
                 dataKey={key}
-                name={getCategoryLabel(key)}
+                name={getCategoryLabel(key, isKreol)}
                 stackId="categories"
                 fill={getCategoryColor(key, index)}
                 radius={index === keys.length - 1 ? [8, 8, 0, 0] : [0, 0, 0, 0]}
@@ -233,26 +311,26 @@ function EvolutionChart({ data }) {
   )
 }
 
-function CoursesCard({ courses }) {
+function CoursesCard({ courses, txt }) {
   return (
     <div style={card()}>
-      <h2 style={{ color: COLORS.text, fontSize: 18, margin: "0 0 12px" }}>Courses</h2>
+      <h2 style={{ color: COLORS.text, fontSize: 18, margin: "0 0 12px" }}>{txt.courses}</h2>
       <div style={{ display: "grid", gap: 10, color: COLORS.text, fontWeight: 900 }}>
-        <span>{courses.receiptsCount} tickets</span>
-        <span>{courses.productsCount} produits</span>
-        <span>Panier moyen : {formatMontant(courses.basketAverage)}</span>
-        <span>Produit fréquent : {courses.topProduct?.label || "Pas encore assez de données"}</span>
+        <span>{courses.receiptsCount} {txt.tickets}</span>
+        <span>{courses.productsCount} {txt.products}</span>
+        <span>{txt.basketAverage} : {formatMontant(courses.basketAverage)}</span>
+        <span>{txt.topProduct} : {courses.topProduct?.label || txt.notEnoughData}</span>
       </div>
     </div>
   )
 }
 
-function StoresCard({ stores }) {
+function StoresCard({ stores, txt }) {
   return (
     <div style={card()}>
-      <h2 style={{ color: COLORS.text, fontSize: 18, margin: "0 0 12px" }}>Magasins</h2>
+      <h2 style={{ color: COLORS.text, fontSize: 18, margin: "0 0 12px" }}>{txt.stores}</h2>
       {stores.length === 0 ? (
-        <div style={{ color: COLORS.muted }}>Scanne un ticket pour voir tes magasins.</div>
+        <div style={{ color: COLORS.muted }}>{txt.noStores}</div>
       ) : (
         <div style={{ display: "grid", gap: 11 }}>
           {stores.slice(0, 5).map(row => (
@@ -272,18 +350,18 @@ function StoresCard({ stores }) {
   )
 }
 
-function ProductsCard({ products }) {
+function ProductsCard({ products, txt }) {
   return (
     <div style={card()}>
-      <h2 style={{ color: COLORS.text, fontSize: 18, margin: "0 0 12px" }}>Produits fréquents</h2>
+      <h2 style={{ color: COLORS.text, fontSize: 18, margin: "0 0 12px" }}>{txt.frequentProducts}</h2>
       {products.length === 0 ? (
-        <div style={{ color: COLORS.muted }}>Les produits fréquents apparaîtront après quelques courses analysées.</div>
+        <div style={{ color: COLORS.muted }}>{txt.noProducts}</div>
       ) : (
         <div style={{ display: "grid", gap: 9 }}>
           {products.map(product => (
             <div key={product.normalizedName} style={{ display: "flex", justifyContent: "space-between", color: COLORS.text, borderBottom: "1px solid rgba(255,255,255,.08)", paddingBottom: 8 }}>
               <strong>{product.label}</strong>
-              <span>{product.purchaseCount} achats</span>
+              <span>{product.purchaseCount} {txt.purchases}</span>
             </div>
           ))}
         </div>
@@ -292,14 +370,14 @@ function ProductsCard({ products }) {
   )
 }
 
-function AdviceCard({ advice }) {
+function AdviceCard({ advice, txt }) {
   return (
     <div style={card()}>
-      <h2 style={{ color: COLORS.text, fontSize: 18, margin: "0 0 12px" }}>Conseils automatiques V1</h2>
+      <h2 style={{ color: COLORS.text, fontSize: 18, margin: "0 0 12px" }}>{txt.advice}</h2>
       <div style={{ display: "grid", gap: 9 }}>
         {advice.map((item, index) => (
-          <div key={`${item}-${index}`} style={{ color: COLORS.whiteSoft, lineHeight: 1.5 }}>
-            • {item}
+          <div key={`${item}-${index}`} style={{ color: COLORS.text, lineHeight: 1.5 }}>
+            - {item}
           </div>
         ))}
       </div>
