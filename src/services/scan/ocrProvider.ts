@@ -1,8 +1,8 @@
 import { supabase } from "../supabase"
-import { extractReceiptTotal, mergeReceiptItems, parseReceipt } from "./receiptParser"
+import { extractReceiptDueTotal, extractReceiptTotal, mergeReceiptItems, parseReceipt } from "./receiptParser"
 import { ScanError, type ScanErrorCode } from "./scanErrors"
 
-const OCR_TIMEOUT_MS = 15000
+const OCR_TIMEOUT_MS = 60000
 const MIN_FAST_BROWSER_ITEMS = 8
 const MIN_LOCAL_OCR_TEXT_LENGTH = 20
 
@@ -18,7 +18,7 @@ export type OCRResult = {
 
 export interface OCRProvider {
   name: string
-  extractText(file: File): Promise<OCRResult>
+  extractText(file: File, browserText?: string, imageMeta?: Record<string, any>): Promise<OCRResult>
 }
 
 export class BrowserTextDetectorProvider implements OCRProvider {
@@ -73,6 +73,23 @@ function fileToBase64(file: File) {
     reader.onerror = () => reject(new ScanError("SCAN_IMAGE_UNREADABLE", "Unable to read receipt image as base64."))
     reader.readAsDataURL(file)
   })
+}
+
+async function encodeImageSegments(rawSegments: any[] = []) {
+  const segments = Array.isArray(rawSegments) ? rawSegments : []
+  return Promise.all(segments
+    .filter(segment => segment?.file instanceof File)
+    .map(async segment => ({
+      segment: String(segment.segment || ""),
+      imageBase64: await fileToBase64(segment.file),
+      mimeType: segment.file.type || "image/jpeg",
+      width: segment.width ?? null,
+      height: segment.height ?? null,
+      yStartPercent: segment.yStartPercent ?? null,
+      yEndPercent: segment.yEndPercent ?? null,
+      overlapPercent: segment.overlapPercent ?? null,
+      estimatedBytes: segment.file.size,
+    })))
 }
 
 function withTimeout<T>(promise: Promise<T>, timeoutMs = OCR_TIMEOUT_MS): Promise<T> {
@@ -156,7 +173,8 @@ async function readFunctionErrorPayload(error: any) {
 }
 
 function money(value: unknown) {
-  return Number(String(value ?? "").replace(",", ".")) || 0
+  const match = String(value ?? "").match(/(-?\d+(?:\s?\d{3})*[,.]\d{2})/)
+  return match ? Number(match[1].replace(/\s/g, "").replace(",", ".")) || 0 : 0
 }
 
 function firstText(...values: unknown[]) {
@@ -182,6 +200,10 @@ function normalizeFunctionItems(items: any[] = []) {
         source: item.source || item.item_source || "ocr_fallback",
         item_status: item.item_status || item.status || "a_verifier",
         status: item.status || item.item_status || "a_verifier",
+        review_status: item.review_status || (item.item_status === "detected" ? "trusted" : "needs_review"),
+        needs_review: Boolean(item.needs_review || item.review_status === "needs_review" || item.item_status === "a_verifier" || item.status === "a_verifier"),
+        raw_text: firstText(item.raw_text, item.source_line),
+        source_line: firstText(item.source_line, item.raw_text),
         confidence_score: item.confidence_score == null ? 65 : Number(item.confidence_score),
         line_type: item.line_type || "product",
         category: item.category || "alimentaire",
@@ -190,12 +212,52 @@ function normalizeFunctionItems(items: any[] = []) {
     .filter(item => item.total_price > 0)
 }
 
+function isUiStoreName(value = "") {
+  const clean = String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+  if (!clean) return true
+  return [
+    "budgetkazpei",
+    "budget kaz pei",
+    "scanner ticket",
+    "mes tickets",
+    "analyse du ticket",
+    "choisissez une methode",
+  ].some(blocked => clean.includes(blocked))
+}
+
 function normalizeFunctionReceiptPayload(data: any = {}) {
   data = data && typeof data === "object" ? data : {}
   const receipt = data.receipt && typeof data.receipt === "object" ? data.receipt : {}
   const items = normalizeFunctionItems(Array.isArray(receipt.items) ? receipt.items : Array.isArray(data.items) ? data.items : [])
-  const totalAmount = money(receipt.total_amount) || money(receipt.total) || money(receipt.totalAmount) || money(data.total_amount) || money(data.total) || money(data.totalAmount)
-  const storeName = firstText(receipt.store_name, receipt.merchant_name, receipt.merchant, data.store_name, data.merchant_name, data.merchant)
+  const ocrText = firstText(data.text, receipt.ocr_text, data.ocr_text)
+  const dueTextTotal = extractReceiptDueTotal(ocrText)
+  const textTotal = extractReceiptTotal(ocrText)
+  const explicitTotal = money(receipt.reste_a_payer)
+    || money(receipt.amount_due)
+    || money(receipt.net_a_payer)
+    || money(data.reste_a_payer)
+    || money(data.amount_due)
+    || money(data.net_a_payer)
+    || dueTextTotal
+    || money(receipt.total_final)
+    || money(receipt.total_amount)
+    || money(receipt.total)
+    || money(receipt.totalAmount)
+    || money(data.total_final)
+    || money(data.total_amount)
+    || money(data.total)
+    || money(data.totalAmount)
+    || textTotal
+  const totalNeedsReview = Boolean(receipt.total_needs_review || data.total_needs_review)
+  const totalAmount = totalNeedsReview ? explicitTotal : (explicitTotal || (items.length >= 3 ? itemsTotalAmount(items) : 0))
+  const rawStoreName = firstText(receipt.store_name, receipt.merchant_name, receipt.merchant, data.store_name, data.merchant_name, data.merchant)
+  const storeName = isUiStoreName(rawStoreName) ? "Enseigne à vérifier" : rawStoreName
   const purchaseDate = firstText(receipt.purchase_date, receipt.date, data.purchase_date, data.date)
 
   return {
@@ -204,6 +266,16 @@ function normalizeFunctionReceiptPayload(data: any = {}) {
     merchant_name: firstText(receipt.merchant_name, storeName),
     purchase_date: purchaseDate,
     total_amount: totalAmount,
+    total_raw_text: firstText(receipt.total_raw_text, data.total_raw_text),
+    total_confidence: Number(receipt.total_confidence ?? data.total_confidence ?? 0),
+    total_needs_review: totalNeedsReview || totalAmount <= 0,
+    total_source: firstText(receipt.total_source, data.total_source, totalAmount > 0 ? "detected" : "missing_or_unreliable"),
+    total_rejected_reason: firstText(receipt.total_rejected_reason, data.total_rejected_reason),
+    total_raw_text_verified_against_ocr: Boolean(receipt.total_raw_text_verified_against_ocr || data.total_raw_text_verified_against_ocr),
+    openai_total_value: receipt.openai_total_value ?? data.openai_total_value ?? null,
+    openai_total_raw_text: firstText(receipt.openai_total_raw_text, data.openai_total_raw_text),
+    openai_total_confidence: Number(receipt.openai_total_confidence ?? data.openai_total_confidence ?? 0),
+    estimated_items_sum: Number(receipt.estimated_items_sum ?? data.estimated_items_sum ?? 0) || null,
     items,
   }
 }
@@ -211,11 +283,13 @@ function normalizeFunctionReceiptPayload(data: any = {}) {
 function hasUsableLocalFallback(data: any = {}) {
   data = data && typeof data === "object" ? data : {}
   const receipt = normalizeFunctionReceiptPayload(data)
-  return Boolean(data?.ok !== false && receipt.total_amount > 0) || Boolean(receipt.total_amount > 0 && (data?.provider === "local_fallback" || data?.source === "local_fallback"))
+  return Boolean(data?.ok !== false && (receipt.total_amount > 0 || receipt.items?.length >= 3))
+    || Boolean((receipt.total_amount > 0 || receipt.items?.length >= 3) && (data?.provider === "local_fallback" || data?.source === "local_fallback"))
 }
 
 function resolveScanStatus(data: any, structured: any) {
   if (data?.scanStatus || data?.scan_status) return data.scanStatus || data.scan_status
+  if (Number(structured?.total_amount || 0) <= 0 && (structured?.items || []).length >= 3) return "partial_low_items"
   if (Number(structured?.total_amount || 0) <= 0) return "failed"
   return (structured?.items || []).length < 3 ? "partial_low_items" : "partial"
 }
@@ -252,8 +326,71 @@ function isGroceryText(text = "") {
 }
 
 function localScanStatus(text: string, total: number, itemCount: number) {
-  if (total <= 0) return "failed"
+  if (total <= 0) return itemCount >= 3 ? "partial_low_items" : "failed"
   return isGroceryText(text) && itemCount < 3 ? "partial_low_items" : "partial"
+}
+
+function itemsTotalAmount(items: any[] = []) {
+  const total = (items || []).reduce((sum, item) => {
+    return sum + Number(item?.total_price ?? item?.price ?? item?.unit_price ?? 0)
+  }, 0)
+  return Number(total.toFixed(2))
+}
+
+function declaredReceiptItemCount(text = "") {
+  const match = String(text || "").match(/\btotal\s+(\d{1,3})\s+articles?\b/i)
+  return match ? Number(match[1]) || 0 : 0
+}
+
+function localOcrIsGoodEnough(text: string, total: number, itemCount: number) {
+  if (total <= 0) return false
+  const declaredCount = declaredReceiptItemCount(text)
+  if (declaredCount > 0 && itemCount < Math.ceil(declaredCount * 0.6)) return false
+  if (isGroceryText(text) && itemCount < 3) return false
+  return true
+}
+
+type RotationCandidate = 0 | 90 | 180 | 270
+
+async function createRotatedImageVariant(file: File, rotation: RotationCandidate) {
+  if (rotation === 0) return file
+
+  const bitmap = await createImageBitmap(file)
+  const swap = rotation === 90 || rotation === 270
+  const canvas = document.createElement("canvas")
+  canvas.width = swap ? bitmap.height : bitmap.width
+  canvas.height = swap ? bitmap.width : bitmap.height
+  const ctx = canvas.getContext("2d")
+  if (!ctx) return file
+
+  ctx.imageSmoothingEnabled = true
+  ctx.imageSmoothingQuality = "high"
+
+  if (rotation === 90) {
+    ctx.translate(canvas.width, 0)
+    ctx.rotate(Math.PI / 2)
+  } else if (rotation === 180) {
+    ctx.translate(canvas.width, canvas.height)
+    ctx.rotate(Math.PI)
+  } else if (rotation === 270) {
+    ctx.translate(0, canvas.height)
+    ctx.rotate((3 * Math.PI) / 2)
+  }
+
+  ctx.drawImage(bitmap, 0, 0)
+
+  const blob = await new Promise<Blob>((resolve, reject) => {
+    canvas.toBlob(result => result ? resolve(result) : reject(new Error("rotation_variant_failed")), "image/jpeg", 0.86)
+  })
+
+  return new File([blob], `receipt-rotation-${rotation}.jpg`, { type: "image/jpeg", lastModified: Date.now() })
+}
+
+function scoreOcrCandidate({ text, confidence, parsed }: { text: string; confidence: number; parsed: any }) {
+  const total = Number(parsed?.total_amount || extractReceiptTotal(text) || 0)
+  const items = Array.isArray(parsed?.items) ? parsed.items.length : 0
+  const lineCount = String(text || "").split(/\r?\n/).filter(Boolean).length
+  return Math.round(Number(confidence || 0) + (total > 0 ? 80 : 0) + Math.min(items, 30) * 8 + Math.min(lineCount, 120) * 0.3)
 }
 
 async function runTesseractLocalOCR(file: File): Promise<OCRResult> {
@@ -274,12 +411,43 @@ async function runTesseractLocalOCR(file: File): Promise<OCRResult> {
       },
     })
 
-    const result = await worker.recognize(file)
-    const text = String(result?.data?.text || "")
-    const confidence = Math.max(0, Math.min(100, Number(result?.data?.confidence || 0)))
-    const parsed = text.trim().length >= MIN_LOCAL_OCR_TEXT_LENGTH
-      ? parseReceipt({ text, ocrStatus: "success", ocrConfidence: confidence })
-      : null
+    const rotations: RotationCandidate[] = [0, 90, 180, 270]
+    const candidates = []
+
+    for (const rotation of rotations) {
+      const variant = await createRotatedImageVariant(file, rotation)
+      const result = await worker.recognize(variant)
+      const text = String(result?.data?.text || "")
+      const confidence = Math.max(0, Math.min(100, Number(result?.data?.confidence || 0)))
+      const parsed = text.trim().length >= MIN_LOCAL_OCR_TEXT_LENGTH
+        ? parseReceipt({ text, ocrStatus: "success", ocrConfidence: confidence })
+        : null
+      const score = scoreOcrCandidate({ text, confidence, parsed })
+      const total = Number(parsed?.total_amount || extractReceiptTotal(text) || 0)
+      const items = Array.isArray(parsed?.items) ? parsed.items.length : 0
+
+      candidates.push({ rotation, text, confidence, parsed, score, total, items })
+      console.info("[scanner] OCR local rotation candidate", { rotation, score, confidence, total, items, textLength: text.length })
+
+      const declaredCount = declaredReceiptItemCount(text)
+      const enoughItems = declaredCount > 0
+        ? items >= Math.ceil(declaredCount * 0.6)
+        : items >= 20
+      if (localOcrIsGoodEnough(text, total, items) && enoughItems) {
+        console.info("[scanner] OCR local rotation suffisante", { rotation, total, items, declaredCount })
+        break
+      }
+
+      if (performance.now() - startedAt > 30_000) {
+        console.info("[scanner] OCR local rotations interrompues", { elapsedMs: Math.round(performance.now() - startedAt), candidates: candidates.length })
+        break
+      }
+    }
+
+    const best = candidates.sort((a, b) => b.score - a.score)[0] || { rotation: 0, text: "", confidence: 0, parsed: null, score: 0, total: 0, items: 0 }
+    const text = best.text
+    const confidence = best.confidence
+    const parsed = best.parsed
 
     return {
       text,
@@ -295,6 +463,14 @@ async function runTesseractLocalOCR(file: File): Promise<OCRResult> {
         textAiUsed: false,
         visionUsed: false,
         fallbackUsed: true,
+        rotationApplied: best.rotation,
+        rotationCandidates: candidates.map(candidate => ({
+          rotation: candidate.rotation,
+          score: candidate.score,
+          confidence: candidate.confidence,
+          total: candidate.total,
+          items: candidate.items,
+        })),
       },
       error: text.trim() ? "" : "empty_local_ocr",
     }
@@ -328,12 +504,14 @@ async function runTesseractLocalOCR(file: File): Promise<OCRResult> {
 export class SupabaseReceiptOCRProvider implements OCRProvider {
   name = "supabase-openai-vision"
 
-  async extractText(file: File, browserText = ""): Promise<OCRResult> {
+  async extractText(file: File, browserText = "", imageMeta: Record<string, any> = {}): Promise<OCRResult> {
     if (typeof navigator !== "undefined" && navigator.onLine === false) {
       throw new ScanError("SCAN_NETWORK_OFFLINE")
     }
 
     const imageBase64 = await fileToBase64(file)
+    const imageSegments = await encodeImageSegments(imageMeta.imageSegments)
+    const { imageSegments: _rawImageSegments, ...safeImageMeta } = imageMeta
     const startedAt = performance.now()
     const { data, error } = await withTimeout(
       supabase.functions.invoke("scan-receipt-ocr", {
@@ -341,6 +519,9 @@ export class SupabaseReceiptOCRProvider implements OCRProvider {
           imageBase64,
           mimeType: file.type || "image/jpeg",
           browserText,
+          imageMeta: safeImageMeta,
+          imageSegments,
+          userPlan: safeImageMeta.user_plan || "free",
         },
       })
     )
@@ -350,6 +531,8 @@ export class SupabaseReceiptOCRProvider implements OCRProvider {
       error,
       imageBytes: file.size,
       browserTextLength: browserText.length,
+      imageMeta: safeImageMeta,
+      imageSegmentsCount: imageSegments.length,
     })
 
     if (error) {
@@ -371,7 +554,8 @@ export class SupabaseReceiptOCRProvider implements OCRProvider {
             stage: payload?.stage || null,
             source: payload?.source || payload?.provider || null,
             aiUsed: Boolean(payload?.openai_called),
-            visionUsed: Boolean(payload?.openai_called),
+            textAiUsed: Boolean(payload?.text_ai_used || String(payload?.provider || "").includes("text")),
+            visionUsed: Boolean(payload?.vision_used || String(payload?.provider || "").includes("vision")),
             fastLocalExtractionUsed: Boolean(payload?.fast_local_extraction_used || isLocalFallback(payload)),
             openaiCalled: Boolean(payload?.openai_called),
             itemsDetectedBeforeOpenAi: payload?.items_detected_before_openai ?? structured.items.length,
@@ -426,16 +610,57 @@ export class SupabaseReceiptOCRProvider implements OCRProvider {
         estimatedCostEur: data.estimatedCostEur ?? null,
         ocrDurationMs: Math.round(performance.now() - startedAt),
         scanStatus,
+        scanStrategyUsed: data.scan_strategy_used || null,
+        scanAiCallsCount: data.scan_ai_calls_count ?? null,
+        splitRetryEligible: data.split_retry_eligible ?? data.diagnostics?.split_retry_eligible ?? false,
+        splitRetryUsed: data.split_retry_used ?? false,
+        splitRetrySkippedReason: data.split_retry_skipped_reason || data.diagnostics?.split_retry_skipped_reason || null,
+        splitSegmentsCount: data.split_segments_count ?? null,
+        splitSegmentsStrategy: data.split_segments_strategy || null,
+        splitSegmentsOverlapPercent: data.split_segments_overlap_percent ?? null,
+        splitSegmentsResults: data.split_segments_results || null,
+        primaryStage: data.primary_stage || data.diagnostics?.primary_stage || null,
+        primaryError: data.primary_error || data.diagnostics?.primary_error || null,
+        fallbackStage: data.fallback_stage || data.diagnostics?.fallback_stage || null,
+        premiumPlusDetected: data.premium_plus_detected ?? data.diagnostics?.premium_plus_detected ?? false,
+        segmentsReceivedByEdgeFunction: data.segments_received_by_edge_function ?? data.diagnostics?.segments_received_by_edge_function ?? null,
         timeoutReason: data.timeoutReason || null,
         totalDetectionDurationMs: data.totalDetectionDurationMs ?? null,
         stage: data.stage || null,
         source: data.source || data.provider || null,
         aiUsed: Boolean(data.openai_called),
-        visionUsed: Boolean(data.openai_called),
+        textAiUsed: Boolean(data.text_ai_used || providerName.includes("text")),
+        visionUsed: Boolean(data.vision_used || providerName.includes("vision")),
         fastLocalExtractionUsed: Boolean(data.fast_local_extraction_used || isLocalFallback(data)),
         openaiCalled: Boolean(data.openai_called),
         itemsDetectedBeforeOpenAi: data.items_detected_before_openai ?? structured.items.length,
         totalDetectedBeforeOpenAi: data.total_detected_before_openai ?? hasStructuredTotal,
+        totalNeedsReview: data.total_needs_review ?? structured.total_needs_review ?? false,
+        totalRawText: data.total_raw_text || structured.total_raw_text || "",
+        totalConfidence: data.total_confidence ?? structured.total_confidence ?? null,
+        totalSource: data.total_source || structured.total_source || null,
+        totalRejectedReason: data.total_rejected_reason || structured.total_rejected_reason || null,
+        totalRawTextVerifiedAgainstOcr: data.total_raw_text_verified_against_ocr ?? structured.total_raw_text_verified_against_ocr ?? false,
+        openaiTotalValue: data.openai_total_value ?? structured.openai_total_value ?? null,
+        openaiTotalRawText: data.openai_total_raw_text || structured.openai_total_raw_text || "",
+        openaiTotalConfidence: data.openai_total_confidence ?? structured.openai_total_confidence ?? null,
+        estimatedItemsSum: data.estimated_items_sum ?? structured.estimated_items_sum ?? null,
+        expectedItemsMin: data.expected_items_min ?? null,
+        openaiPrompt: data.openai_prompt || null,
+        openaiRawContent: data.openai_raw_content || null,
+        openaiRawResponseBody: data.openai_raw_response_body || null,
+        visionInputMode: data.vision_input_mode || null,
+        visionImageSize: data.vision_image_size || null,
+        rawItemsDetectedByVision: data.raw_items_detected_by_vision ?? null,
+        reliableItemsDetectedByVision: data.reliable_items_detected_by_vision ?? null,
+        rawItemsDetectedBySplit: data.raw_items_detected_by_split ?? null,
+        reliableItemsDetectedBySplit: data.reliable_items_detected_by_split ?? null,
+        splitTotalValue: data.split_total_value ?? null,
+        splitTotalRawText: data.split_total_raw_text || "",
+        splitTotalConfidence: data.split_total_confidence ?? null,
+        calculatedItemsSum: data.calculated_items_sum ?? null,
+        totalDifference: data.total_difference ?? null,
+        discardedHallucinatedItemsCount: data.discarded_hallucinated_items_count ?? null,
       },
       error: "",
     }
@@ -445,7 +670,7 @@ export class SupabaseReceiptOCRProvider implements OCRProvider {
 export class HybridOCRProvider implements OCRProvider {
   name = "hybrid-browser-edge"
 
-  async extractText(file: File): Promise<OCRResult> {
+  async extractText(file: File, _browserText = "", imageMeta: Record<string, any> = {}): Promise<OCRResult> {
     const browser = await new BrowserTextDetectorProvider().extractText(file)
     const browserTotal = extractReceiptTotal(browser.text)
     const browserParsed = browser.status === "success" && browser.text.trim()
@@ -486,7 +711,7 @@ export class HybridOCRProvider implements OCRProvider {
     const localItems = Array.isArray(localParsed?.items) ? localParsed.items : []
     const localTotal = Number(localParsed?.total_amount || extractReceiptTotal(localText) || browserTotal || 0)
 
-    if (localTotal > 0) {
+    if (localOcrIsGoodEnough(localText, localTotal, localItems.length)) {
       const items = mergeReceiptItems(localItems, browserItems)
       const scanStatus = localScanStatus(localText, localTotal, items.length)
 
@@ -531,34 +756,37 @@ export class HybridOCRProvider implements OCRProvider {
 
     let fallback: OCRResult
     try {
-      fallback = await new SupabaseReceiptOCRProvider().extractText(file, localText || browser.text)
+      fallback = await new SupabaseReceiptOCRProvider().extractText(file, localText || browser.text, imageMeta)
     } catch (error) {
-      if (localText.trim() && localTotal > 0) {
+      const preservedItems = mergeReceiptItems(localItems, browserItems)
+      const provisionalTotal = localTotal || (preservedItems.length >= 3 ? itemsTotalAmount(preservedItems) : 0)
+      if (localText.trim() && (localTotal > 0 || preservedItems.length >= 3)) {
         console.warn("[scanner] Erreur serveur ignoree, ticket conserve avec OCR local", error)
         return {
           text: localText,
           status: "success",
-          provider: "local-ocr-regex-fallback",
-          confidence: Math.max(Number(localOcr.confidence || 0), Number(browser.confidence || 0), localItems.length ? 68 : 55),
+          provider: localTotal > 0 ? "local-ocr-regex-fallback" : "local-ocr-items-preserved",
+          confidence: Math.max(Number(localOcr.confidence || 0), Number(browser.confidence || 0), preservedItems.length ? 68 : 55),
           structured: {
             ...(localParsed || {}),
-            total_amount: localTotal,
-            items: mergeReceiptItems(localItems, browserItems),
+            total_amount: provisionalTotal,
+            items: preservedItems,
           },
           metrics: {
             ...(localOcr.metrics || {}),
-            provider: "local-ocr-regex-fallback",
+            provider: localTotal > 0 ? "local-ocr-regex-fallback" : "local-ocr-items-preserved",
             ocrEngine: localOcr.provider,
             aiUsed: false,
             textAiUsed: false,
             visionUsed: false,
             fallbackUsed: true,
-            scanStatus: localScanStatus(localText, localTotal, localItems.length),
+            scanStatus: localTotal > 0 ? localScanStatus(localText, localTotal, preservedItems.length) : "partial_low_items",
             timeoutReason: error instanceof Error ? error.message : "server_ocr_fallback_failed",
             browserItemsDetected: browserItems.length,
-            localOcrItemsDetected: localItems.length,
-            itemsDetectedBeforeOpenAi: localItems.length,
-            totalDetectedBeforeOpenAi: true,
+            localOcrItemsDetected: preservedItems.length,
+            itemsDetectedBeforeOpenAi: preservedItems.length,
+            totalDetectedBeforeOpenAi: localTotal > 0,
+            totalEstimatedFromItems: localTotal <= 0 && provisionalTotal > 0,
           },
         }
       }

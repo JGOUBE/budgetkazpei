@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { countMonthlyReceipts } from "../services/receiptService"
 import { getScanPlan, getScanPlanLabel, SCAN_LIMITS } from "../../../config/scanLimits"
 import { getScanUsage } from "../../../services/scan/scanUsageService"
@@ -10,13 +10,11 @@ export function useReceiptQuota(userId, isPremium = false, isPremiumPlus = false
 
   const plan = getScanPlan(isPremium, isPremiumPlus)
   const limit = SCAN_LIMITS[plan]
-  const remaining = Math.max(limit - used, 0)
-  const reached = remaining <= 0
+  const remaining = plan === "premium_plus" ? Infinity : Math.max(limit - used, 0)
+  const reached = plan !== "premium_plus" && remaining <= 0
 
-  useEffect(() => {
-    let ignore = false
-
-    async function loadQuota() {
+  const refresh = useCallback(async (options = {}) => {
+    const ignore = Boolean(options.ignore)
       if (!userId) {
         setUsed(0)
         setLoading(false)
@@ -45,14 +43,17 @@ export function useReceiptQuota(userId, isPremium = false, isPremiumPlus = false
       } finally {
         if (!ignore) setLoading(false)
       }
-    }
+  }, [userId, isPremium, isPremiumPlus])
 
-    loadQuota()
+  useEffect(() => {
+    let ignore = false
+
+    refresh({ ignore })
 
     return () => {
       ignore = true
     }
-  }, [userId, isPremium, isPremiumPlus])
+  }, [refresh])
 
   return {
     used,
@@ -63,5 +64,6 @@ export function useReceiptQuota(userId, isPremium = false, isPremiumPlus = false
     planLabel: getScanPlanLabel(plan),
     source,
     loading,
+    refresh,
   }
 }

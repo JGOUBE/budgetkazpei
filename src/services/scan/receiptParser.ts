@@ -1,6 +1,22 @@
 import { classifyReceipt } from "./receiptClassifier"
+import {
+  SCAN_MERCHANTS,
+  getProductDictionaryMeta,
+  normalizeMerchantName,
+  normalizeProductOcrName,
+} from "./receiptDictionaries"
+import {
+  extractDeclaredItemsCount,
+  extractReliableDateCandidates,
+  extractTrustedTotal,
+  isPhoneLine,
+  normalizeReceiptRuleDate,
+  normalizeStoreName as normalizeStoreFromRules,
+  shouldRejectLineAsProduct,
+} from "./receiptRules"
 
 const STORES = [
+  ...SCAN_MERCHANTS,
   "E.Leclerc Le Portail",
   "E.Leclerc",
   "Leader Price",
@@ -95,8 +111,8 @@ export type ParsedReceipt = {
   store_name: string
   merchant_name: string
   merchant_confidence: number
-  purchase_date: string
-  date_status: "detected" | "estimated"
+  purchase_date: string | null
+  date_status: "detected" | "needs_review"
   total_amount: number
   currency: "EUR"
   ocr_text: string
@@ -110,7 +126,9 @@ export type ParsedReceipt = {
   scan_level_used?: number
   scan_duration_ms?: number
   escalation_reason?: string
-  scan_status?: "success" | "partial" | "partial_low_items" | "failed"
+  scan_status?: "success" | "trusted" | "usable_review" | "partial" | "partial_low_items" | "failed"
+  expected_items_count?: number | null
+  parser_debug?: Record<string, unknown>
   items: ParsedReceiptItem[]
   warnings: string[]
 }
@@ -132,6 +150,29 @@ function lastMoney(value = "") {
   const matches = Array.from(String(value).matchAll(/(\d+[,.]\d{2})/g))
   if (matches.length === 0) return null
   return Number(matches[matches.length - 1][1].replace(",", "."))
+}
+
+export function extractReceiptDueTotal(text = "") {
+  const lines = String(text || "")
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .filter(Boolean)
+
+  for (let index = lines.length - 1; index >= 0; index -= 1) {
+    const line = lines[index]
+    const clean = normalize(line)
+    const isDueLine = clean.includes("reste a payer") || clean.includes("net a payer") || clean.includes("a payer")
+    if (!isDueLine) continue
+
+    const sameLineTotal = money(line)
+    if (sameLineTotal) return sameLineTotal
+
+    const nearby = [lines[index + 1], lines[index - 1]].filter(Boolean).join(" ")
+    const nearbyTotal = money(nearby)
+    if (nearbyTotal) return nearbyTotal
+  }
+
+  return 0
 }
 
 function normalizeLookup(value = "") {
@@ -159,6 +200,12 @@ const STORE_ALIASES: Record<string, string> = {
 }
 
 function detectStore(text = "") {
+  const ruleStore = normalizeStoreFromRules(text)
+  if (ruleStore.store_name) return ruleStore.store_name
+
+  const dictionaryHit = normalizeMerchantName(text)
+  if (dictionaryHit) return dictionaryHit
+
   const cleaned = normalizeLookup(text)
   if (cleaned.includes("leclerc") && cleaned.includes("portail")) return "E.Leclerc Le Portail"
   const store = STORES.find(storeName => cleaned.includes(normalizeLookup(storeName)))
@@ -168,15 +215,12 @@ function detectStore(text = "") {
 }
 
 function detectDate(text = "") {
-  const rawLine = String(text || "")
-    .split(/\r?\n/)
-    .find(line => /(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/.test(line))
-  const parsed = normalizeReceiptDate(rawLine || text)
-  scanDebug("raw_date_detected", rawLine || "not found")
+  const candidate = extractReliableDateCandidates(text)[0]
+  const parsed = candidate?.normalized || ""
+  scanDebug("raw_date_detected", candidate?.raw || "not found")
   scanDebug("normalized_date", parsed)
-  if (!parsed && rawLine) {
-    scanDebug("invalid_ocr_date", rawLine)
-    scanDebug("fallback_scan_date", new Date().toISOString().slice(0, 10))
+  if (!parsed) {
+    scanDebug("date_status", "needs_review")
   }
   return parsed
 }
@@ -193,42 +237,33 @@ function isValidDateParts(year: number, month: number, day: number) {
 }
 
 export function normalizeReceiptDate(value = "") {
-  const raw = String(value || "").trim()
-  const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/)
-  if (iso) {
-    const year = Number(iso[1])
-    const month = Number(iso[2])
-    const day = Number(iso[3])
-    return isValidDateParts(year, month, day) ? `${iso[1]}-${iso[2]}-${iso[3]}` : ""
-  }
-
-  const match = raw.match(/\b(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})\b/)
-  if (!match) return ""
-
-  const dayNumber = Number(match[1])
-  const monthNumber = Number(match[2])
-  const yearNumber = Number(match[3].length === 2 ? `20${match[3]}` : match[3])
-  if (!isValidDateParts(yearNumber, monthNumber, dayNumber)) return ""
-
-  const day = String(dayNumber).padStart(2, "0")
-  const month = String(monthNumber).padStart(2, "0")
-  return `${yearNumber}-${month}-${day}`
+  return normalizeReceiptRuleDate(value)
 }
 
 export function extractReceiptTotal(text = "") {
+  const trusted = extractTrustedTotal(text)
+  if (trusted.amount) return trusted.amount
+
+  const dueTotal = extractReceiptDueTotal(text)
+  if (dueTotal) return dueTotal
+
   const lines = String(text || "")
     .split(/\r?\n/)
     .map(line => line.trim())
     .filter(Boolean)
 
   const totalPatterns = [
-    /\b(total|total\s+ttc|net\s+a\s+payer|a\s+payer|montant)\b/i,
-    /\b(carte\s+bleue|cb|visa|mastercard)\b/i,
+    /\b(total|total\s+ttc|net\s+a\s+payer|a\s+payer)\b/i,
   ]
+
+  const isArticleCountTotalLine = (value = "") => /\btotal\s+\d{1,3}\s+articles?\b/i.test(normalize(value))
 
   for (let index = lines.length - 1; index >= 0; index -= 1) {
     const line = lines[index]
     const clean = normalize(line)
+    if (isArticleCountTotalLine(line)) {
+      continue
+    }
     const isTotalLine = totalPatterns.some(pattern => pattern.test(clean))
     if (!isTotalLine) continue
 
@@ -278,12 +313,47 @@ function isDiscountLine(line = "") {
   return hasMoneyAmount(line) && (clean.includes("jeudi 10") || clean.includes("remise") || clean.includes("mdd")) && /-\s*\d+[,.]\d{2}/.test(line)
 }
 
+function isVatSectionStart(line = "") {
+  const clean = normalize(line).replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim()
+  return clean.includes("ventilation")
+    || clean.includes("code tot")
+    || clean.includes("t v a")
+    || clean.includes("tva")
+    || clean.includes("t t c")
+    || clean.includes("ttc")
+}
+
+function isVatSectionContinuation(line = "") {
+  const clean = normalize(line).replace(/[^a-z0-9%,. ]/g, " ").replace(/\s+/g, " ").trim()
+  return /^[0-9 ]+\d+[,.]\d{3,4}\s+\d+[,.]\d{2}%\s+\d+[,.]\d{3,4}\s+\d+[,.]\d{2}$/.test(clean)
+    || /^total\s+\d+[,.]\d{3,4}\s+\d+[,.]\d{2}$/.test(clean)
+}
+
+function isHardIgnoredPricedLine(line = "") {
+  const clean = normalize(line)
+    .replace(/[^a-z0-9% ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+  if (!clean) return true
+  if (shouldRejectLineAsProduct(line)) return true
+  if (isDiscountLine(line)) return true
+  if (clean.includes("total") || clean.includes("sous total") || clean.includes("net a payer") || clean.includes("a payer")) return true
+  if (clean.includes("carte bleue") || clean === "cb" || clean.includes(" visa ") || clean.includes("mastercard")) return true
+  if (clean.includes("tva") || clean.includes("ttc") || clean.includes("ht") || clean.includes("ventilation")) return true
+  if (clean.includes("fidelite") || clean.includes("point") || clean.includes("cagnotte") || clean.includes("solde")) return true
+  if (clean.includes("operation") || clean.includes("duplicata") || clean.includes("recu par")) return true
+  if (clean.includes("caisse") || clean.includes("ticket") || clean.includes("code")) return true
+  if (clean.includes("merci") || clean.includes("beneficiez") || clean.includes("publicite")) return true
+  return false
+}
+
 function isNonProductText(value = "") {
   const clean = normalize(value)
     .replace(/[^a-z0-9% ]/g, " ")
     .replace(/\s+/g, " ")
     .trim()
   if (!clean) return true
+  if (shouldRejectLineAsProduct(value)) return true
   if (clean.includes("jeudi") || clean.includes("judith")) return true
   if (clean.includes("mdd") && (clean.includes("alcool") || clean.includes("remise") || clean.includes("10"))) return true
   if (clean.includes("prix promotion")) return true
@@ -291,8 +361,13 @@ function isNonProductText(value = "") {
   if (clean.includes("operation") || clean.includes("bienvenue") || clean.includes("ventilation")) return true
   if (clean.includes("tva") || clean.includes("ttc") || clean.includes("ht")) return true
   if (clean.includes("point") || clean.includes("fidelite") || clean.includes("solde")) return true
-  if (clean.includes("beneficiez") || clean.includes("merci")) return true
+  if (clean.includes("cagnotte") || clean.includes("caisse") || clean.includes("ticket") || clean.includes("code")) return true
+  if (clean.includes("beneficiez") || clean.includes("merci") || clean.includes("publicite")) return true
   return false
+}
+
+function isPhoneOrContactLine(value = "") {
+  return isPhoneLine(value)
 }
 
 function isBarcodeOnlyLine(line = "") {
@@ -303,6 +378,21 @@ function isBarcodeOnlyLine(line = "") {
 function scanDebug(label: string, payload?: unknown) {
   if (typeof console === "undefined") return
   console.info(`[scanner] ${label}`, payload ?? "")
+}
+
+function createParserDebug(lines: string[]) {
+  return {
+    rawLinesCount: lines.length,
+    candidateLinesCount: 0,
+    rejectedLinesCount: 0,
+    rejectedLines: [] as Array<{ line: string; reason: string }>,
+  }
+}
+
+function rejectParserLine(debug: ReturnType<typeof createParserDebug>, line: string, reason: string) {
+  debug.rejectedLinesCount += 1
+  debug.rejectedLines.push({ line, reason })
+  scanDebug("ligne rejetee", { reason, line })
 }
 
 function isQuantityOnlyCandidate(value = "") {
@@ -324,10 +414,11 @@ function applyDepartmentToSection(items: ParsedReceiptItem[], startIndex: number
 
 function metadataFor(name = "", currentDepartment: (typeof DEPARTMENTS)[number] | null = null) {
   const clean = normalize(name)
+  const dictionaryMeta = getProductDictionaryMeta(name)
   const dept = currentDepartment || DEPARTMENTS.find(row => row.keywords.some(keyword => clean.includes(normalize(keyword)))) || null
   return {
-    category: dept?.category || categoryFor(name),
-    subcategory: dept?.subcategory || null,
+    category: dictionaryMeta?.category || dept?.category || categoryFor(name),
+    subcategory: dictionaryMeta?.subcategory || dept?.subcategory || null,
     department: dept?.label || null,
     ticket_section: dept?.label || null,
   }
@@ -399,17 +490,19 @@ function buildItem({
   promotion?: boolean
 }): ParsedReceiptItem {
   const ocrName = cleanProductName(rawName)
+  const dictionaryName = normalizeProductOcrName(ocrName)
   const uncertain = looksUncertain(ocrName)
   const correctedName = uncertain ? "Produit à vérifier" : ocrName
-  const meta = metadataFor(ocrName, currentDepartment)
+  const meta = metadataFor(dictionaryName || ocrName, currentDepartment)
+  const finalName = dictionaryName && dictionaryName !== ocrName ? dictionaryName : correctedName
   const baseConfidence = Math.max(45, Math.min(98, Math.round(ocrConfidence + (uncertain ? -10 : 15))))
 
   return {
-    name: correctedName,
+    name: finalName,
     ocr_name: ocrName,
-    corrected_name: correctedName,
-    normalized_name: normalizedProductName(isVerificationPlaceholder(correctedName) ? ocrName : correctedName),
-    brand: guessBrandFromName(ocrName),
+    corrected_name: finalName,
+    normalized_name: normalizedProductName(isVerificationPlaceholder(finalName) ? ocrName : finalName),
+    brand: getProductDictionaryMeta(ocrName)?.brand || guessBrandFromName(dictionaryName || ocrName),
     quantity,
     unit,
     unit_price: unitPrice,
@@ -429,7 +522,9 @@ function buildItem({
 
 function cleanProductName(line = "") {
   return String(line || "")
+    .replace(/^\(\d+\)\s*\d{4,}\s*/, "")
     .replace(/^\(?\d+\)?\d{4,}\s*/, "")
+    .replace(/^\(pm\)\s*/i, "")
     .replace(/^\*+/, "")
     .replace(/^\d+\s*(kg|g|gr|l|cl|ml)\s+/i, "")
     .replace(/\bprix promotion\b/gi, "")
@@ -439,6 +534,7 @@ function cleanProductName(line = "") {
 
 function isStoreLine(line = "") {
   const clean = normalizeLookup(line)
+  if (normalizeMerchantName(line)) return true
   if (STORES.some(store => clean === normalizeLookup(store) || clean.includes(normalizeLookup(store)))) return true
   if (Object.keys(STORE_ALIASES).some(alias => clean.includes(alias))) return true
   return false
@@ -446,7 +542,8 @@ function isStoreLine(line = "") {
 
 function isIgnoredLine(line = "") {
   const clean = normalize(line)
-  const ignored = !clean
+    const ignored = !clean
+    || shouldRejectLineAsProduct(line)
     || clean.includes("total")
     || clean.includes("carte")
     || clean.includes("fidelite")
@@ -462,6 +559,7 @@ function isIgnoredLine(line = "") {
     || clean.includes("cagnotte")
     || clean.includes("recu par")
     || clean.includes("tel")
+    || clean.includes("telephone")
     || clean.includes("rue")
     || clean.includes("974")
     || clean.includes("mes tickets")
@@ -485,17 +583,19 @@ function normalizeIncomingItem(item: Partial<ParsedReceiptItem> = {}): ParsedRec
   const rawName = cleanProductName(String(item.ocr_name || item.name || ""))
   const displayName = cleanProductName(String(item.corrected_name || item.name || rawName))
   const sourceName = isVerificationPlaceholder(displayName) && rawName ? rawName : displayName || rawName
+  const dictionaryName = normalizeProductOcrName(sourceName)
   const uncertain = looksUncertain(sourceName)
   const correctedName = uncertain ? "Produit à vérifier" : sourceName
-  const meta = metadataFor(sourceName)
+  const finalName = dictionaryName && dictionaryName !== sourceName ? dictionaryName : correctedName
+  const meta = metadataFor(dictionaryName || sourceName)
   const itemCategory = String(item.category || "").trim()
 
   return {
-    name: correctedName,
+    name: finalName,
     ocr_name: rawName || sourceName,
-    corrected_name: correctedName,
-    normalized_name: item.normalized_name || normalizedProductName(isVerificationPlaceholder(correctedName) ? rawName || sourceName : correctedName),
-    brand: item.brand || guessBrandFromName(sourceName),
+    corrected_name: finalName,
+    normalized_name: item.normalized_name || normalizedProductName(isVerificationPlaceholder(finalName) ? rawName || sourceName : finalName),
+    brand: item.brand || getProductDictionaryMeta(sourceName)?.brand || guessBrandFromName(dictionaryName || sourceName),
     quantity: Number(item.quantity || 1),
     unit: item.unit || "piece",
     unit_price: item.unit_price == null ? null : Number(item.unit_price),
@@ -541,23 +641,50 @@ export function mergeReceiptItems(primary: ParsedReceiptItem[] = [], fallback: P
   return Array.from(byName.values())
 }
 
-function parseItems(lines: string[], ocrConfidence: number): ParsedReceiptItem[] {
+function parseItems(lines: string[], ocrConfidence: number, debug = createParserDebug(lines)): ParsedReceiptItem[] {
   const items: ParsedReceiptItem[] = []
   let pendingName = ""
   let currentDepartment: (typeof DEPARTMENTS)[number] | null = null
   let pendingPromotion = false
   let sectionStartIndex = 0
+  let inVatSection = false
 
   for (const rawLine of lines) {
     const line = rawLine.trim()
+    const price = lastMoney(line)
+    const promotionLine = normalize(line).includes("prix promotion") || normalize(line).includes("promotion")
+    const weightLine = /\bkg\b/i.test(line) && /x/i.test(line) && Number.isFinite(price)
+
+    if (isVatSectionStart(line)) {
+      inVatSection = true
+      pendingName = ""
+      rejectParserLine(debug, line, "vat_section")
+      continue
+    }
+
+    if (inVatSection) {
+      rejectParserLine(debug, line, isVatSectionContinuation(line) ? "vat_section_numeric" : "vat_section_tail")
+      continue
+    }
 
     if (isDiscountLine(line)) {
       if (items.length > 0) items[items.length - 1] = { ...items[items.length - 1], promotion: true }
       pendingPromotion = false
+      rejectParserLine(debug, line, "discount")
       continue
     }
 
-    if (isIgnoredLine(line)) continue
+    if (Number.isFinite(price) && price > 0 && isHardIgnoredPricedLine(line)) {
+      rejectParserLine(debug, line, "hard_ignored_priced_line")
+      continue
+    }
+
+    if (Number.isFinite(price) && price > 0) {
+      debug.candidateLinesCount += 1
+    } else if (isIgnoredLine(line)) {
+      rejectParserLine(debug, line, "ignored_non_product")
+      continue
+    }
 
     const department = departmentFromLine(line)
     if (department) {
@@ -577,10 +704,6 @@ function parseItems(lines: string[], ocrConfidence: number): ParsedReceiptItem[]
       sectionStartIndex = items.length
       continue
     }
-
-    const price = lastMoney(line)
-    const promotionLine = normalize(line).includes("prix promotion") || normalize(line).includes("promotion")
-    const weightLine = /\bkg\b/i.test(line) && /x/i.test(line) && Number.isFinite(price)
 
     if (weightLine && pendingName) {
       const quantityMatch = line.match(/(\d+[,.]\d{1,3})\s*kg/i)
@@ -606,12 +729,13 @@ function parseItems(lines: string[], ocrConfidence: number): ParsedReceiptItem[]
     if (Number.isFinite(price)) {
       const candidateName = cleanProductName(line.replace(/(\d+[,.]\d{2})\s*(eur|euro|euros)?/gi, ""))
       const quantityLine = pendingName && isQuantityOnlyCandidate(candidateName)
-      const name = quantityLine ? pendingName : candidateName.length >= 3 ? candidateName : pendingName
+      const nextLinePriceForPendingProduct = pendingName && (promotionLine || candidateName.length < 3 || isQuantityOnlyCandidate(candidateName))
+      const name = quantityLine || nextLinePriceForPendingProduct ? pendingName : candidateName.length >= 2 ? candidateName : pendingName
       const quantityMatch = quantityLine ? line.match(/\b(\d+)\s*x\s*(\d+[,.]\d{2})/i) : null
       const quantity = quantityMatch ? Number(quantityMatch[1]) : 1
       const unitPrice = quantityMatch ? Number(quantityMatch[2].replace(",", ".")) : price
 
-      if (name && name.length >= 3 && !isIgnoredLine(name)) {
+      if (name && name.length >= 2 && !isHardIgnoredPricedLine(name)) {
         items.push(buildItem({
           rawName: name,
           quantity,
@@ -636,14 +760,14 @@ function parseItems(lines: string[], ocrConfidence: number): ParsedReceiptItem[]
       pendingPromotion = true
       continue
     }
-    if (maybeProduct.length >= 4 && /[a-zA-Z]/.test(maybeProduct)) {
+    if (maybeProduct.length >= 2 && /[a-zA-Z]/.test(maybeProduct)) {
       pendingName = maybeProduct
     } else {
       scanDebug("produit rejeté", { reason: "no_price_or_invalid_pending", line })
     }
   }
 
-  return mergeReceiptItems(items, []).slice(0, 60)
+  return mergeReceiptItems(items, []).slice(0, 80)
 }
 
 export function parseReceipt({ text = "", ocrStatus = "manual", ocrConfidence = 0 }) {
@@ -653,10 +777,29 @@ export function parseReceipt({ text = "", ocrStatus = "manual", ocrConfidence = 
     .filter(Boolean)
 
   const store = detectStore(text)
-  const items = parseItems(lines, ocrConfidence)
+  const storeMeta = normalizeStoreFromRules(text)
+  const parserDebug = createParserDebug(lines)
+  const expectedItemsCount = extractDeclaredItemsCount(text)
+  const rawItems = parseItems(lines, ocrConfidence, parserDebug)
+  const items = expectedItemsCount > 0 && rawItems.length > expectedItemsCount
+    ? rawItems.slice(0, expectedItemsCount)
+    : rawItems
   const total = detectTotal(lines)
   const purchaseDate = detectDate(text)
   const classification = classifyReceipt({ store_name: store, ocr_text: text, items })
+  const itemsTotal = items.reduce((sum, item) => sum + Number(item.total_price ?? item.price ?? item.unit_price ?? 0), 0)
+  const exactDeclaredCount = expectedItemsCount > 0 && items.length === expectedItemsCount
+  console.info("[scanner] OCR_DEBUG_SUMMARY", {
+    raw_lines_count: parserDebug.rawLinesCount,
+    article_candidate_lines_count: parserDebug.candidateLinesCount,
+    rejected_lines_count: parserDebug.rejectedLinesCount,
+    rejected_lines: parserDebug.rejectedLines,
+    final_items_count: items.length,
+    expected_items_count: expectedItemsCount || null,
+    total_detected: total,
+    items_sum: Number(itemsTotal.toFixed(2)),
+    source_used: "parser",
+  })
   const warnings = []
 
   if (!store) warnings.push("store_missing")
@@ -665,11 +808,13 @@ export function parseReceipt({ text = "", ocrStatus = "manual", ocrConfidence = 
   if (!purchaseDate) warnings.push("date_estimated")
 
   return {
-    store_name: store || "Enseigne non reconnue",
-    merchant_name: store || "Enseigne non reconnue",
+    store_name: storeMeta.store_name || store || "Enseigne non reconnue",
+    merchant_name: storeMeta.store_name || store || "Enseigne non reconnue",
     merchant_confidence: store ? 90 : 0,
-    purchase_date: purchaseDate || new Date().toISOString().slice(0, 10),
-    date_status: purchaseDate ? "detected" : "estimated",
+    normalized_store_name: storeMeta.normalized_store_name || "",
+    store_location: storeMeta.store_location || "",
+    purchase_date: purchaseDate || null,
+    date_status: purchaseDate ? "detected" : "needs_review",
     total_amount: total,
     currency: "EUR",
     ocr_text: text,
@@ -679,7 +824,20 @@ export function parseReceipt({ text = "", ocrStatus = "manual", ocrConfidence = 
     ticket_type: classification.ticket_type,
     budget_category: classification.budget_category,
     is_food_ticket: classification.is_food_ticket,
+    scan_status: exactDeclaredCount && total && store && purchaseDate ? "trusted" : items.length >= 3 && total ? "usable_review" : "failed",
+    expected_items_count: expectedItemsCount || null,
     confidence_score: Math.max(0, Math.min(100, Math.round(((ocrConfidence || 0) + (total ? 20 : 0) + (items.length ? 10 : 0) + (store ? 10 : 0)) / 1.4))),
+    parser_debug: {
+      raw_lines_count: parserDebug.rawLinesCount,
+      article_candidate_lines_count: parserDebug.candidateLinesCount,
+      rejected_lines_count: parserDebug.rejectedLinesCount,
+      rejected_lines: parserDebug.rejectedLines,
+      final_items_count: items.length,
+      expected_items_count: expectedItemsCount || null,
+      total_detected: total,
+      items_sum: Number(itemsTotal.toFixed(2)),
+      source_used: "parser",
+    },
     items,
     warnings,
   }

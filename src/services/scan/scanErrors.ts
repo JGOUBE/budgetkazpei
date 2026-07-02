@@ -83,8 +83,8 @@ const DETAILS: Record<ScanErrorCode, ScanErrorDetails> = {
   },
   SCAN_OPENAI_REQUEST_FAILED: {
     code: "SCAN_OPENAI_REQUEST_FAILED",
-    title: "Service IA indisponible",
-    userMessage: "Le service d'analyse n'a pas repondu correctement.",
+    title: "Erreur technique scanner",
+    userMessage: "Le service de scan a rencontre une erreur technique. Reessayez dans un instant.",
     technicalMessage: "OpenAI or Supabase Edge Function request failed.",
     action: "Reessayez dans quelques instants ou passez en saisie manuelle.",
     retryable: true,
@@ -99,8 +99,8 @@ const DETAILS: Record<ScanErrorCode, ScanErrorDetails> = {
   },
   SCAN_AI_RESPONSE_INVALID: {
     code: "SCAN_AI_RESPONSE_INVALID",
-    title: "Reponse IA invalide",
-    userMessage: "L'analyse a repondu, mais dans un format inutilisable.",
+    title: "Erreur technique scanner",
+    userMessage: "Le service de scan a rencontre une erreur technique. Reessayez dans un instant.",
     technicalMessage: "AI response JSON is missing or invalid.",
     action: "Reessayez avec une photo plus nette ou remplissez manuellement.",
     retryable: true,

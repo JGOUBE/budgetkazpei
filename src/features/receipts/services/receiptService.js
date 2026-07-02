@@ -125,12 +125,16 @@ export async function createReceipt({ userId, draft, imagePath }) {
     validation_status: "draft",
     ticket_type: draft.ticket_type || "other",
     budget_category: draft.budget_category || "divers",
+    normalized_store_name: draft.normalized_store_name || draft.merchant_normalized_name || null,
+    store_location: draft.store_location || draft.location || null,
     is_food_ticket: Boolean(draft.is_food_ticket),
     scan_level_used: Number(draft.scan_level_used || 1),
     scan_duration_ms: Number(draft.scan_duration_ms || 0),
     confidence_score: Number(draft.confidence_score || 0),
     escalation_reason: draft.escalation_reason || null,
     scan_status: draft.scan_status || "success",
+    duplicate_confirmed: Boolean(draft.duplicate_confirmed),
+    duplicate_of_receipt_id: draft.duplicate_of_receipt_id || null,
   }
 
   let { data, error } = await supabase
@@ -146,12 +150,16 @@ export async function createReceipt({ userId, draft, imagePath }) {
       date_status,
       ticket_type,
       budget_category,
+      normalized_store_name,
+      store_location,
       is_food_ticket,
       scan_level_used,
       scan_duration_ms,
       confidence_score,
       escalation_reason,
       scan_status,
+      duplicate_confirmed,
+      duplicate_of_receipt_id,
       ...legacyPayload
     } = payload
 
@@ -201,6 +209,7 @@ export async function saveReceiptItems({ receiptId, userId, items }) {
       ticket_section: item.ticket_section || null,
       promotion: Boolean(item.promotion),
       item_status: item.item_status || item.status || (normalizeProductLabel(item.name).includes("produit verifier") ? "a_verifier" : "detected"),
+      review_status: item.review_status || (item.needs_review || item.item_status === "a_verifier" || item.status === "a_verifier" ? "needs_review" : "trusted"),
       line_type: item.line_type || "product",
       item_source: item.item_source || item.source || "parser",
       confidence_score: item.confidence_score == null ? null : Number(item.confidence_score),
@@ -250,6 +259,94 @@ function isMissingColumnError(error) {
   return error?.code === "PGRST204" || message.includes("Could not find") || message.includes("column")
 }
 
+export async function upsertReceiptTransaction({ userId, receipt, draft, transactionId }) {
+  const receiptId = receipt?.id
+  const amount = Math.abs(Number(draft?.total_amount || receipt?.total_amount || 0))
+
+  if (!userId || !receiptId) {
+    return { transaction: null, created: false, updated: false, skipReason: "missing_user_or_receipt" }
+  }
+
+  if (amount <= 0 || draft?.total_needs_review) {
+    return { transaction: null, created: false, updated: false, skipReason: "total_missing_or_needs_review" }
+  }
+
+  const payload = {
+    label: `Courses - ${draft?.store_name || receipt?.store_name || "Enseigne non reconnue"}`,
+    category: "alimentaire",
+    amount: -amount,
+    date: draft?.purchase_date || receipt?.purchase_date || new Date().toISOString().split("T")[0],
+    icon: "ticket",
+    source: "receipt_scan",
+    receipt_id: receiptId,
+  }
+
+  const lookup = transactionId
+    ? await supabase
+        .from("transactions")
+        .select("*")
+        .eq("id", transactionId)
+        .eq("user_id", userId)
+        .maybeSingle()
+    : await supabase
+        .from("transactions")
+        .select("*")
+        .eq("user_id", userId)
+        .eq("receipt_id", receiptId)
+        .maybeSingle()
+
+  if (lookup.error && !isMissingColumnError(lookup.error)) {
+    throw lookup.error
+  }
+
+  if (lookup.data?.id) {
+    let { data, error } = await supabase
+      .from("transactions")
+      .update(payload)
+      .eq("id", lookup.data.id)
+      .eq("user_id", userId)
+      .select()
+      .single()
+
+    if (error && isMissingColumnError(error)) {
+      const { source, receipt_id, ...legacyPayload } = payload
+      const retry = await supabase
+        .from("transactions")
+        .update(legacyPayload)
+        .eq("id", lookup.data.id)
+        .eq("user_id", userId)
+        .select()
+        .single()
+      data = retry.data
+      error = retry.error
+    }
+
+    if (error) throw error
+    return { transaction: data, created: false, updated: true, skipReason: "" }
+  }
+
+  const insertPayload = { ...payload, user_id: userId }
+  let { data, error } = await supabase
+    .from("transactions")
+    .insert(insertPayload)
+    .select()
+    .single()
+
+  if (error && isMissingColumnError(error)) {
+    const { source, receipt_id, ...legacyPayload } = insertPayload
+    const retry = await supabase
+      .from("transactions")
+      .insert(legacyPayload)
+      .select()
+      .single()
+    data = retry.data
+    error = retry.error
+  }
+
+  if (error) throw error
+  return { transaction: data, created: true, updated: false, skipReason: "" }
+}
+
 export async function validateReceipt({ receiptId, userId, draft, items, transactionId }) {
   console.info("[scanner] Validation receipt: START", { receiptId, transactionId })
   const dateGuard = resolveReceiptDateForDb(draft.purchase_date)
@@ -264,12 +361,16 @@ export async function validateReceipt({ receiptId, userId, draft, items, transac
     ocr_status: draft.ocr_status || "manual",
     ticket_type: draft.ticket_type || "other",
     budget_category: draft.budget_category || "divers",
+    normalized_store_name: draft.normalized_store_name || draft.merchant_normalized_name || null,
+    store_location: draft.store_location || draft.location || null,
     is_food_ticket: Boolean(draft.is_food_ticket),
     scan_level_used: Number(draft.scan_level_used || 1),
     scan_duration_ms: Number(draft.scan_duration_ms || 0),
     confidence_score: Number(draft.confidence_score || 0),
     escalation_reason: draft.escalation_reason || null,
     scan_status: draft.scan_status || "success",
+    duplicate_confirmed: Boolean(draft.duplicate_confirmed),
+    duplicate_of_receipt_id: draft.duplicate_of_receipt_id || null,
     transaction_id: transactionId || null,
     updated_at: new Date().toISOString(),
   }
@@ -289,12 +390,16 @@ export async function validateReceipt({ receiptId, userId, draft, items, transac
       date_status,
       ticket_type,
       budget_category,
+      normalized_store_name,
+      store_location,
       is_food_ticket,
       scan_level_used,
       scan_duration_ms,
       confidence_score,
       escalation_reason,
       scan_status,
+      duplicate_confirmed,
+      duplicate_of_receipt_id,
       ...legacyPayload
     } = payload
 
@@ -340,12 +445,21 @@ export async function updateReceipt({ receiptId, userId, updates }) {
       date_status,
       ticket_type,
       budget_category,
+      normalized_store_name,
+      store_location,
       is_food_ticket,
       scan_level_used,
       scan_duration_ms,
       confidence_score,
       escalation_reason,
       scan_status,
+      duplicate_confirmed,
+      duplicate_of_receipt_id,
+      hidden_at,
+      image_deleted_at,
+      removed_from_history_at,
+      removal_type,
+      image_deleted_reason,
       ...legacyUpdates
     } = cleanUpdates
 
@@ -375,7 +489,7 @@ export async function updateReceiptItem({ itemId, userId, updates }) {
     .single()
 
   if (error && isMissingColumnError(error)) {
-    const { item_status, line_type, item_source, ...legacyUpdates } = updates
+    const { item_status, review_status, line_type, item_source, ...legacyUpdates } = updates
     const retry = await supabase
       .from("receipt_items")
       .update(legacyUpdates)
@@ -402,12 +516,29 @@ export async function deleteReceiptItem({ itemId, userId }) {
   if (error) throw error
 }
 
-export async function listReceipts({ userId }) {
-  const { data, error } = await supabase
+export async function listReceipts({ userId, includeHidden = false }) {
+  let query = supabase
     .from("receipts")
     .select("*, receipt_items(id)")
     .eq("user_id", userId)
+
+  if (!includeHidden) {
+    query = query.is("removed_from_history_at", null)
+  }
+
+  let { data, error } = await query
     .order("created_at", { ascending: false })
+
+  if (error && isMissingColumnError(error) && !includeHidden) {
+    const retry = await supabase
+      .from("receipts")
+      .select("*, receipt_items(id)")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+
+    data = retry.data
+    error = retry.error
+  }
 
   if (error) throw error
   return data || []
@@ -425,7 +556,66 @@ export async function getReceiptDetail({ receiptId, userId }) {
   return data
 }
 
-export async function deleteReceipt({ receipt, userId }) {
+export async function removeReceiptFromHistory({ receipt, userId }) {
+  if (!receipt?.id || !userId) return
+
+  const now = new Date().toISOString()
+  const imagePath = receipt?.image_path || receipt?.storage_path || null
+
+  if (imagePath) {
+    const { error: storageError } = await supabase.storage.from(RECEIPT_BUCKET).remove([imagePath])
+    if (storageError) {
+      console.warn("[scanner] Suppression image ticket indisponible", storageError)
+    }
+  }
+
+  const payload = {
+    image_path: null,
+    image_url: null,
+    storage_path: null,
+    hidden_at: now,
+    image_deleted_at: imagePath ? now : null,
+    removed_from_history_at: now,
+    removal_type: "hidden_keep_analytics",
+    image_deleted_reason: imagePath ? "removed_from_history" : null,
+    updated_at: now,
+  }
+
+  let { error } = await supabase
+    .from("receipts")
+    .update(payload)
+    .eq("id", receipt.id)
+    .eq("user_id", userId)
+
+  if (error && isMissingColumnError(error)) {
+    const {
+      image_url,
+      storage_path,
+      hidden_at,
+      image_deleted_at,
+      removed_from_history_at,
+      removal_type,
+      image_deleted_reason,
+      ...legacyPayload
+    } = payload
+
+    const retry = await supabase
+      .from("receipts")
+      .update(legacyPayload)
+      .eq("id", receipt.id)
+      .eq("user_id", userId)
+
+    error = retry.error
+  }
+
+  if (error) throw error
+}
+
+export async function deleteReceipt(args) {
+  return removeReceiptFromHistory(args)
+}
+
+export async function hardDeleteReceipt({ receipt, userId }) {
   if (receipt?.image_path) {
     await supabase.storage.from(RECEIPT_BUCKET).remove([receipt.image_path])
   }

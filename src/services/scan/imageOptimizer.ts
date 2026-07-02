@@ -6,6 +6,23 @@ export type OptimizedImage = {
   file: File
   width: number
   height: number
+  originalWidth: number
+  originalHeight: number
+  orientation: "portrait" | "landscape"
+  rotationApplied: 0 | 90
+  compressionQuality: number
+  preProcessing: string[]
+  segments: OptimizedImageSegment[]
+}
+
+export type OptimizedImageSegment = {
+  segment: "top" | "middle" | "bottom"
+  file: File
+  width: number
+  height: number
+  yStartPercent: number
+  yEndPercent: number
+  overlapPercent: number
 }
 
 export async function optimizeReceiptImage(file: File): Promise<OptimizedImage> {
@@ -43,9 +60,55 @@ export async function optimizeReceiptImage(file: File): Promise<OptimizedImage> 
     canvas.toBlob(result => result ? resolve(result) : reject(new Error("image_optimization_failed")), "image/jpeg", QUALITY)
   })
 
+  const segmentSpecs: Array<{ segment: OptimizedImageSegment["segment"]; start: number; end: number }> = [
+    { segment: "top", start: 0, end: 0.4 },
+    { segment: "middle", start: 0.32, end: 0.72 },
+    { segment: "bottom", start: 0.64, end: 1 },
+  ]
+
+  const segments = await Promise.all(segmentSpecs.map(async spec => {
+    const y = Math.max(0, Math.floor(height * spec.start))
+    const segmentHeight = Math.max(1, Math.min(height - y, Math.ceil(height * (spec.end - spec.start))))
+    const segmentCanvas = document.createElement("canvas")
+    segmentCanvas.width = width
+    segmentCanvas.height = segmentHeight
+    const segmentCtx = segmentCanvas.getContext("2d")
+    if (!segmentCtx) throw new Error("canvas_unavailable")
+    segmentCtx.imageSmoothingEnabled = true
+    segmentCtx.imageSmoothingQuality = "high"
+    segmentCtx.drawImage(canvas, 0, y, width, segmentHeight, 0, 0, width, segmentHeight)
+    const segmentBlob = await new Promise<Blob>((resolve, reject) => {
+      segmentCanvas.toBlob(result => result ? resolve(result) : reject(new Error("image_segment_failed")), "image/jpeg", QUALITY)
+    })
+
+    return {
+      segment: spec.segment,
+      file: new File([segmentBlob], `receipt-${spec.segment}.jpg`, { type: "image/jpeg", lastModified: Date.now() }),
+      width,
+      height: segmentHeight,
+      yStartPercent: spec.start,
+      yEndPercent: spec.end,
+      overlapPercent: 8,
+    }
+  }))
+
   return {
     file: new File([blob], "receipt-optimized.jpg", { type: "image/jpeg", lastModified: Date.now() }),
     width,
     height,
+    originalWidth: bitmap.width,
+    originalHeight: bitmap.height,
+    orientation: shouldRotateToPortrait ? "landscape" : "portrait",
+    rotationApplied: shouldRotateToPortrait ? 90 : 0,
+    compressionQuality: QUALITY,
+    preProcessing: [
+      "auto_resize",
+      "soft_grayscale",
+      "contrast_boost",
+      "brightness_boost",
+      "soft_deskew_orientation",
+      shouldRotateToPortrait ? "landscape_to_portrait_rotation" : "rotation_kept",
+    ],
+    segments,
   }
 }

@@ -13,7 +13,7 @@ export function getScanPlan(isPremium = false, isPremiumPlus = false): ScanPlan 
 }
 
 export function getScanPlanLabel(plan: ScanPlan) {
-  if (plan === "premium_plus") return "Premium+ - scans IA illimités"
+  if (plan === "premium_plus") return "Premium+ - analyses IA illimitees"
   if (plan === "premium") return "Premium"
   return "Gratuit"
 }

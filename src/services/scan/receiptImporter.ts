@@ -1,4 +1,4 @@
-import { validateReceipt } from "../../features/receipts/services/receiptService"
+import { upsertReceiptTransaction, validateReceipt } from "../../features/receipts/services/receiptService"
 import { syncShoppingItemsFromReceipt } from "../../features/shopping/services/shoppingEngine"
 import { enrichProductDictionary } from "./productKnowledgeService"
 
@@ -14,43 +14,58 @@ function stageError(step: string, error: unknown) {
   return new Error(`${step} echouee: ${message}`)
 }
 
+function isTrustedItemForLearning(item: any, draft: any) {
+  if (String(draft?.scan_status || "").includes("partial_low_items")) return false
+  if (item?.needs_review === true) return false
+  if (item?.review_status === "needs_review") return false
+  if (item?.item_status === "a_verifier" || item?.status === "a_verifier") return false
+  return true
+}
+
+function buildTransactionDiagnostics(result: any, duplicateConfirmed = false) {
+  return {
+    transaction_created: Boolean(result?.created),
+    transaction_updated: Boolean(result?.updated),
+    transaction_skip_reason: result?.skipReason || "",
+    transaction_id: result?.transaction?.id || null,
+    duplicate_confirmed: Boolean(duplicateConfirmed),
+  }
+}
+
 export async function importValidatedReceipt({
   userId,
   receipt,
   draft,
   items,
-  onAddTransaction,
 }: {
   userId: string
   receipt: any
   draft: any
   items: any[]
-  onAddTransaction: (payload: any) => Promise<any>
 }) {
-  const amount = Math.abs(Number(draft.total_amount || 0))
-  const mainCategory = draft.budget_category || draft.items?.[0]?.category || "divers"
+  const mainCategory = "alimentaire"
   const cleanItems = (items || [])
     .filter(item => String(item.name || "").trim())
     .map(item => ({ ...item, category: item.category || mainCategory }))
 
   let txResult: any = null
+  let transactionDiagnostics = buildTransactionDiagnostics(null, draft?.duplicate_confirmed)
   try {
     scannerLog("Creation transaction", "START", {
-      amount,
+      amount: Math.abs(Number(draft.total_amount || 0)),
       date: draft.purchase_date,
       store: draft.store_name,
-    })
-    txResult = await onAddTransaction?.({
-      label: `${draft.is_food_ticket ? "Courses" : "Ticket"} - ${draft.store_name || "Enseigne non reconnue"}`,
-      category: mainCategory,
-      amount: -amount,
-      date: draft.purchase_date,
-      icon: "ticket",
-      source: "receipt_scan",
       receipt_id: receipt.id,
+      duplicate_confirmed: Boolean(draft?.duplicate_confirmed),
     })
-    if (txResult?.error) throw txResult.error
-    scannerLog("Creation transaction", "OK", txResult?.data)
+    txResult = await upsertReceiptTransaction({
+      userId,
+      receipt,
+      draft,
+      transactionId: receipt.transaction_id,
+    })
+    transactionDiagnostics = buildTransactionDiagnostics(txResult, draft?.duplicate_confirmed)
+    scannerLog("Creation transaction", "OK", transactionDiagnostics)
   } catch (error) {
     throw stageError("Creation transaction", error)
   }
@@ -65,7 +80,7 @@ export async function importValidatedReceipt({
       userId,
       draft,
       items: cleanItems,
-      transactionId: txResult?.data?.id,
+      transactionId: txResult?.transaction?.id,
     })
     scannerLog("Creation receipt_items", "OK", { count: cleanItems.length })
   } catch (error) {
@@ -77,15 +92,16 @@ export async function importValidatedReceipt({
     try {
       scannerLog("Creation shopping_items", "START", {
         count: cleanItems.length,
-        transactionId: txResult?.data?.id,
+        transactionId: txResult?.transaction?.id,
       })
       shoppingRows = await syncShoppingItemsFromReceipt({
         userId,
-        transactionId: txResult?.data?.id,
+        transactionId: txResult?.transaction?.id,
         receipt: {
           id: receipt.id,
           store_name: draft.store_name,
           purchase_date: draft.purchase_date,
+          scan_status: draft.scan_status,
         },
         items: cleanItems,
       })
@@ -96,11 +112,12 @@ export async function importValidatedReceipt({
   }
 
   try {
-    scannerLog("Knowledge Engine", "START", { count: cleanItems.length })
+    const trustedItems = cleanItems.filter(item => isTrustedItemForLearning(item, draft))
+    scannerLog("Knowledge Engine", "START", { count: trustedItems.length })
     await enrichProductDictionary({
       userId,
       merchantName: draft.store_name || draft.merchant_name,
-      items: cleanItems,
+      items: trustedItems,
     })
     scannerLog("Knowledge Engine", "OK")
   } catch (error) {
@@ -108,9 +125,12 @@ export async function importValidatedReceipt({
   }
 
   return {
-    transaction: txResult?.data,
-    transactionCreated: Boolean(txResult?.data?.id),
+    transaction: txResult?.transaction,
+    transactionCreated: Boolean(txResult?.created),
+    transactionUpdated: Boolean(txResult?.updated),
+    transactionSkipReason: txResult?.skipReason || "",
     receiptItemsCreated: cleanItems.length,
     shoppingItemsCreated: shoppingRows.length,
+    diagnostics: transactionDiagnostics,
   }
 }

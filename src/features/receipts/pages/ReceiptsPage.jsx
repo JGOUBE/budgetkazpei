@@ -12,6 +12,7 @@ import {
   uploadReceiptImage,
   updateReceipt,
   updateReceiptItem,
+  upsertReceiptTransaction,
   validateReceipt,
 } from "../services/receiptService"
 import { useReceiptQuota } from "../hooks/useReceiptQuota"
@@ -21,7 +22,6 @@ import { importValidatedReceipt } from "../../../services/scan/receiptImporter"
 import { getScanErrorDetails, ScanError } from "../../../services/scan/scanErrors"
 import { createScanMetric, incrementScanUsage } from "../../../services/scan/scanUsageService"
 import { syncShoppingItemsFromReceipt } from "../../shopping/services/shoppingEngine"
-import { supabase } from "../../../services/supabase"
 import { BkIcons } from "../../../components/icons-budgetkazpei"
 
 const COLORS = {
@@ -46,8 +46,8 @@ const TEXT = {
     gallery: "Importer une image",
     manual: "Remplir manuellement",
     quota: quota => quota.plan === "premium_plus"
-      ? `Scans IA illimites - securite interne : ${quota.used} / ${quota.limit}`
-      : `Mes analyses du mois : ${quota.used} / ${quota.limit} - Il vous reste ${quota.remaining} analyses ce mois-ci`,
+      ? `Analyses IA : ${quota.used} / illimite`
+      : `Analyses IA : ${quota.used} / ${quota.limit}`,
     methodTitle: "Choisissez une methode",
     privacy: "Vos tickets restent prives. Ils servent uniquement a mettre a jour votre budget.",
     foodHint: "Ajoutez vos courses automatiquement ou manuellement. L'analyse automatique sert surtout aux tickets alimentaires, pour comprendre vos habitudes et recevoir des conseils utiles.",
@@ -56,19 +56,27 @@ const TEXT = {
     store: "Magasin",
     date: "Date",
     total: "Montant total",
+    totalReview: "Total a verifier",
+    totalReviewMessage: "BudgetKazPei n'a pas pu lire le total avec certitude. Verifiez ou saisissez le montant avant d'enregistrer.",
+    estimatedLinesSum: "Somme estimee des lignes detectees :",
     category: "Categorie globale",
     items: "Articles",
     addLine: "Ajouter une ligne",
     remove: "Supprimer",
     save: "Enregistrer la course",
+    saveAnyway: "Enregistrer quand meme",
     cancel: "Annuler",
     empty: "Aucun ticket enregistre pour le moment.",
     status: "Statut",
     open: "Ouvrir",
-    deleteTicket: "Supprimer le ticket",
-    confirmDelete: "Supprimer ce ticket La transaction liee ne sera pas supprimee automatiquement.",
+    deleteTicket: "Retirer le ticket",
+    confirmDelete: "Le ticket ne sera plus affiche dans votre historique. L'image du ticket sera supprimee si elle existe. Les donnees de courses resteront utilisees pour vos statistiques et vos Courses intelligentes.",
+    duplicateTitle: "Ticket deja enregistre ?",
+    duplicateMessage: "Ce ticket semble deja enregistre. Voulez-vous quand meme l'ajouter ?",
+    duplicateAddAnyway: "Ajouter quand meme",
+    duplicateCancel: "Annuler",
     saved: "Course enregistree.",
-    deleted: "Ticket supprime.",
+    deleted: "Ticket retire de l'historique.",
     error: "Analyse impossible. Vous pouvez reessayer ou remplir manuellement.",
     quotaReached: "Quota atteint. Vous pouvez quand meme remplir manuellement.",
     intensiveUsage: "Vous utilisez BudgetKazPei de maniere intensive. Contactez-nous afin que nous trouvions la formule la plus adaptee.",
@@ -83,8 +91,8 @@ const TEXT = {
     gallery: "Import in zimaz",
     manual: "Ranpli amain",
     quota: quota => quota.plan === "premium_plus"
-      ? `Scans IA illimites - securite interne : ${quota.used} / ${quota.limit}`
-      : `Bann analiz pou mwa-la : ${quota.used} / ${quota.limit} - I reste ${quota.remaining} analiz pou mwa-la`,
+      ? `Analiz IA : ${quota.used} / san limit`
+      : `Analiz IA : ${quota.used} / ${quota.limit}`,
     methodTitle: "Swazi in fason",
     privacy: "Bann tike a ou i reste prive. Nou i servi azot zis pou met azour out bidze.",
     foodHint: "Azout out courses otomatikman ou amain. Analiz otomatik-la le surtout pou bann tike manze, pou konprann out labitid ek gagn bann konsey itil.",
@@ -93,25 +101,37 @@ const TEXT = {
     store: "Magazin",
     date: "Dat",
     total: "Montan total",
+    totalReview: "Total pou verifie",
+    totalReviewMessage: "BudgetKazPei la pa reisi lir total-la bien. Verifie ousa rant montan-la avan anrezistre.",
+    estimatedLinesSum: "Som bann lign detecte an estimasyon :",
     category: "Kategori",
     items: "Bann lartik",
     addLine: "Azout in lign",
     remove: "Suprim",
     save: "Anrezistre course-la",
+    saveAnyway: "Anrezistre kan meme",
     cancel: "Anile",
     empty: "Nana poin tike anrezistre pou linstan.",
     status: "Leta",
     open: "Ouvrir",
-    deleteTicket: "Suprim tike-la",
-    confirmDelete: "Suprim tike-la Tranzaksyon liee-la i sera pa supprime otomatikman.",
+    deleteTicket: "Tir tike-la",
+    confirmDelete: "Tike-la va disparet dann listwar ou. Zimaz tike-la va etre supprime si li existe. Me bann done kours-la va kontinye servi pou statistik ek Kours intelligentes.",
+    duplicateTitle: "Tike-la deja anrezistre ?",
+    duplicateMessage: "Sa tike-la i semble deja anrezistre. Ou veu azout ali kan meme ?",
+    duplicateAddAnyway: "Azout kan meme",
+    duplicateCancel: "Anile",
     saved: "Course anrezistree.",
-    deleted: "Tike supprime.",
+    deleted: "Tike retire dann listwar.",
     error: "Analiz la pa marche. Ou pe reessaye ou ranpli amain.",
     quotaReached: "Quota atteint. Ou pe kan meme ranpli amain.",
     intensiveUsage: "Vous utilisez BudgetKazPei de maniere intensive. Contactez-nous afin que nous trouvions la formule la plus adaptee.",
     expenseCreated: "Depans creee",
     noUser: "Utilisateur pa konekte.",
   },
+}
+
+function hasRealAiCall(metrics = {}) {
+  return Boolean(metrics?.aiUsed || metrics?.openaiCalled || metrics?.visionUsed || metrics?.textAiUsed || Number(metrics?.openaiDurationMs || 0) > 0)
 }
 
 function getIsKreol(t) {
@@ -162,22 +182,117 @@ function isBlockedReceiptItem(item = {}) {
 }
 
 function getValidDraftItems(draft = {}) {
+  const partialLowItems = String(draft.scan_status || "").includes("partial_low_items")
   return (draft.items || [])
     .filter(item => !isBlockedReceiptItem(item))
     .map(item => ({
       ...item,
       name: String(item.name || item.ocr_name || "Produit a verifier").trim(),
       total_price: item.total_price ?? item.price ?? item.unit_price ?? "",
-      item_status: /produit.*v.*rifier/.test(normalizeLabel(item.name)) || Number(item.confidence_score || 0) < 70 ? "a_verifier" : "detected",
+      item_status: partialLowItems || item.needs_review || item.review_status === "needs_review" || /produit.*v.*rifier/.test(normalizeLabel(item.name)) || Number(item.confidence_score || 0) < 70 ? "a_verifier" : "detected",
+      review_status: partialLowItems || item.needs_review || item.review_status === "needs_review" ? "needs_review" : (item.review_status || "trusted"),
+      needs_review: partialLowItems || Boolean(item.needs_review),
     }))
 }
 
 function getDraftValidationError(draft = {}) {
   if (Number(draft.total_amount || 0) <= 0) {
-    return "Montant total non detecte. Veuillez reprendre ou importer une image plus lisible du ticket."
+    return draft.total_needs_review
+      ? "BudgetKazPei n'a pas pu lire le total avec certitude. Verifiez ou saisissez le montant avant d'enregistrer."
+      : "Montant total non detecte. Veuillez reprendre ou importer une image plus lisible du ticket."
   }
 
   return ""
+}
+
+function isTrustedScanResult(parsed = {}, validItems = []) {
+  const expectedCount = Number(parsed.expected_items_count || 0)
+  const total = Number(parsed.total_amount || 0)
+  const scanStatus = String(parsed.scan_status || "")
+
+  return scanStatus.includes("trusted")
+    && total > 0
+    && parsed.total_needs_review !== true
+    && parsed.date_status === "detected"
+    && Boolean(parsed.store_name || parsed.merchant_name)
+    && expectedCount > 0
+    && validItems.length === expectedCount
+}
+
+function getScanResultMessage({ parsed = {}, detectedItemsCount = 0, issues = [], isKreol = false }) {
+  const scanStatus = String(parsed.scan_status || "")
+
+  if (isTrustedScanResult(parsed, Array(detectedItemsCount).fill(true))) {
+    return isKreol
+      ? `Tike-la le bien lir - ${detectedItemsCount} lartik trouve.`
+      : `Ticket lu avec succes - ${detectedItemsCount} articles detectes.`
+  }
+
+  if (scanStatus.includes("usable_review")) {
+    return isKreol
+      ? "Tike-la le lir, verifie vitman bann zinfo avan anrezistre."
+      : "Ticket lu, verifiez rapidement les informations avant d'enregistrer."
+  }
+
+  const partialScan = scanStatus.includes("partial") || issues.includes("items_total_mismatch")
+  if (partialScan) {
+    return isKreol
+      ? `Tike-la lir an parti - verifie bann lign trouve (${detectedItemsCount} lartik).`
+      : `Ticket lu partiellement - verifiez les lignes detectees (${detectedItemsCount} article(s)).`
+  }
+
+  if (detectedItemsCount >= 3) {
+    return isKreol
+      ? `Tike anrezistre - ${detectedItemsCount} lartik trouve.`
+      : `Ticket enregistre avec succes - ${detectedItemsCount} articles detectes.`
+  }
+
+  if (detectedItemsCount === 0) {
+    return isKreol
+      ? "Tike anrezistre, me okenn lartik trouve. Ou pe azout bann lign amain."
+      : "Ticket enregistre, mais aucun article detecte. Vous pouvez ajouter les lignes manuellement."
+  }
+
+  return isKreol
+    ? `Tike-la lir an parti - verifie bann lign trouve (${detectedItemsCount} lartik).`
+    : `Ticket lu partiellement - verifiez les lignes detectees (${detectedItemsCount} article(s)).`
+}
+
+function buildScannerSummary({ parsed = {}, items = [], metrics = {}, importResult = {}, duplicateDetected = false, duplicateConfirmed = false }) {
+  const trustedItems = items.filter(item => !item.needs_review && item.review_status !== "needs_review" && item.item_status !== "a_verifier" && item.status !== "a_verifier")
+  const needsReviewItems = items.filter(item => !trustedItems.includes(item))
+  const rejectedLines = parsed.parser_debug?.rejected_lines || parsed.rejected_lines || metrics?.rejectedLines || []
+  const rejectedReasons = Array.isArray(rejectedLines)
+    ? rejectedLines.map(line => line?.reason).filter(Boolean)
+    : []
+
+  return {
+    provider: metrics?.provider || parsed.provider || parsed.source || "local",
+    scan_strategy_used: metrics?.scanStrategyUsed || parsed.scan_strategy_used || metrics?.scan_strategy_used || "",
+    ai_calls_count: Number(metrics?.scanAiCallsCount || metrics?.aiCallsCount || metrics?.scan_ai_calls_count || 0),
+    inputTokens: Number(metrics?.inputTokens || metrics?.input_tokens || 0),
+    expected_items_count: Number(parsed.expected_items_count || parsed.expected_items_min || 0),
+    items_detected: items.length,
+    trusted_items: trustedItems.length,
+    needs_review_items: needsReviewItems.length,
+    rejected_items: Number(parsed.parser_debug?.rejected_lines_count || metrics?.rejectedLinesCount || rejectedReasons.length || 0),
+    rejected_reasons: [...new Set(rejectedReasons)].slice(0, 8),
+    date_raw_text: parsed.raw_date_detected || parsed.date_raw_text || "",
+    date_source: parsed.date_source || parsed.date_status || "",
+    total_status: parsed.total_needs_review ? "needs_review" : "trusted",
+    total_source: parsed.total_source || "",
+    split_status: metrics?.splitRetryUsed ? "used" : (metrics?.splitRetryEligible ? "eligible_not_used" : "not_used"),
+    final_scan_status: parsed.scan_status || "",
+    receipt_saved: Boolean(importResult?.receiptSaved || importResult?.receipt_id),
+    receipt_id: importResult?.receipt_id || null,
+    receipt_items_saved_count: Number(importResult?.receiptItemsCreated || 0),
+    transaction_created: Boolean(importResult?.transactionCreated),
+    transaction_updated: Boolean(importResult?.transactionUpdated),
+    transaction_skip_reason: importResult?.transactionSkipReason || "",
+    transaction_id: importResult?.transaction?.id || null,
+    duplicate_detected: Boolean(duplicateDetected),
+    duplicate_confirmed: Boolean(duplicateConfirmed),
+  }
 }
 
 function inputStyle() {
@@ -300,10 +415,42 @@ export default function ReceiptsPage({
 
       const scan = await runSmartScan(file, {
         onProgress: progress => setScanProgress(progress),
+        plan: quota.plan,
       })
 
       const { imagePath } = await uploadReceiptImage({ userId: user?.id, file: scan.optimizedFile })
       const parsed = scan.receipt
+      const scanStatus = String(parsed.scan_status || "")
+      const requiresManualCorrection = ["partial_low_items", "manual_review_required"].some(status => scanStatus.includes(status)) || parsed.total_needs_review
+      const requiresQuickReview = scanStatus.includes("usable_review")
+      if (requiresManualCorrection || requiresQuickReview) {
+        setReceipt(null)
+        setPendingImagePath(imagePath)
+        setScanMetrics(scan.metrics || null)
+        setDraft({ ...parsed, items: parsed.items.length ? parsed.items : [emptyItem()] })
+        setDuplicateReceipt(null)
+        setAllowDuplicateImport(false)
+        setMode("validate")
+        const splitRetryUsed = Boolean(scan.metrics?.splitRetryUsed)
+        const splitStillNeedsReview = splitRetryUsed && String(parsed.scan_status || "").includes("manual_review_required")
+        setMessage(isKreol
+          ? splitStillNeedsReview
+            ? "Tike-la ankor difisil pou lir. Korize bann zinformasyon avan anrezistre."
+            : splitRetryUsed
+              ? "Lektir renforcee Premium+ fini. Verifie bann zinfo avan anrezistre."
+            : requiresQuickReview
+              ? "Tike-la le lir, verifie vitman bann zinfo avan anrezistre."
+              : "BudgetKazPei la pa reisi lir total-la bien. Verifie ousa rant montan-la avan anrezistre."
+          : splitStillNeedsReview
+            ? "Le ticket reste difficile a lire. Corrigez les informations avant d'enregistrer."
+            : splitRetryUsed
+              ? "Lecture renforcee Premium+ terminee. Verifiez les informations avant d'enregistrer."
+            : requiresQuickReview
+              ? "Ticket lu, verifiez rapidement les informations avant d'enregistrer."
+              : "BudgetKazPei n'a pas pu lire le total avec certitude. Verifiez ou saisissez le montant avant d'enregistrer.")
+        return
+      }
+
       const validationError = getDraftValidationError(parsed)
       if (validationError) {
         throw new ScanError("SCAN_PARSE_FAILED", validationError)
@@ -318,7 +465,9 @@ export default function ReceiptsPage({
         setDuplicateReceipt(duplicate)
         setAllowDuplicateImport(false)
         setMode("validate")
-        setMessage("Cette course semble deja enregistree. Verifiez avant de remplacer ou d'enregistrer quand meme.")
+        setMessage(isKreol
+          ? "Sa tike-la i semble deja anrezistre. Ou pe anile ou azout ali kan meme."
+          : "Ce ticket semble deja enregistre. Vous pouvez annuler ou l'ajouter quand meme.")
         return
       }
 
@@ -336,11 +485,12 @@ export default function ReceiptsPage({
       setDuplicateReceipt(null)
       setAllowDuplicateImport(false)
       setMode("history")
-      setMessage(detectedItemsCount >= 3
-        ? `Ticket enregistre avec succes - ${detectedItemsCount} articles detectes.`
-        : detectedItemsCount === 0
-          ? "Ticket enregistre, mais aucun article detecte. Vous pouvez ajouter les lignes manuellement."
-          : `Ticket enregistre avec succes - ${detectedItemsCount} article(s) detecte(s). Certaines lignes devront etre completees manuellement.`)
+      setMessage(getScanResultMessage({
+        parsed,
+        detectedItemsCount,
+        issues: scan.validation?.issues || [],
+        isKreol,
+      }))
     } catch (error) {
       console.error("Erreur scanner ticket:", error)
       const details = getScanErrorDetails(error)
@@ -403,7 +553,6 @@ export default function ReceiptsPage({
       receipt: currentReceipt,
       draft: parsed,
       items: validItems,
-      onAddTransaction,
     })
     const importDurationMs = Math.round(performance.now() - importStartedAt)
     console.info("[scanner] scan_persisted", {
@@ -413,13 +562,19 @@ export default function ReceiptsPage({
     })
 
     try {
-      console.info("[scanner] Mise a jour scan_usage: START", { userId: user?.id, plan: quota.plan })
-      await incrementScanUsage({
-        userId: user?.id,
-        plan: quota.plan,
-        kind: "ai",
-      })
-      console.info("[scanner] Mise a jour scan_usage: OK")
+      const scanUsageIncremented = hasRealAiCall(metrics)
+      if (scanUsageIncremented) {
+        console.info("[scanner] Mise a jour scan_usage: START", { userId: user?.id, plan: quota.plan })
+        await incrementScanUsage({
+          userId: user?.id,
+          plan: quota.plan,
+          kind: "ai",
+        })
+        await quota.refresh?.()
+        console.info("[scanner] Mise a jour scan_usage: OK")
+      } else {
+        console.info("[scanner] Mise a jour scan_usage: SKIP", { reason: "no_real_ai_call" })
+      }
 
       await createScanMetric({
         userId: user?.id,
@@ -431,7 +586,9 @@ export default function ReceiptsPage({
           receiptItemsCreated: importResult.receiptItemsCreated || 0,
           shoppingItemsCreated: importResult.shoppingItemsCreated || 0,
           transactionCreated: importResult.transactionCreated === true,
-          scanUsageIncremented: true,
+          transactionUpdated: importResult.transactionUpdated === true,
+          transactionSkipReason: importResult.transactionSkipReason || "",
+          scanUsageIncremented,
           success: true,
         },
         status: "success",
@@ -443,6 +600,16 @@ export default function ReceiptsPage({
     clearLastScanDraft()
     await refreshReceipts()
     window.dispatchEvent(new CustomEvent("budgetkazpei:transactions-updated"))
+    console.info("SCANNER_SUMMARY", buildScannerSummary({
+      parsed,
+      items: validItems,
+      metrics,
+      importResult: {
+        ...importResult,
+        receiptSaved: Boolean(currentReceipt.id),
+        receipt_id: currentReceipt.id,
+      },
+    }))
     console.info("[scanner] Auto-save: OK", { receiptId: currentReceipt.id })
     return currentReceipt
   }
@@ -542,32 +709,38 @@ export default function ReceiptsPage({
 
       if (duplicate && !allowDuplicateImport && !options.skipDuplicateCheck) {
         setDuplicateReceipt(duplicate)
-        setMessage(isKreol ? "Sa course-la i semble deja anrezistree." : "Cette course semble deja enregistree.")
+        setMessage(isKreol ? txt.duplicateMessage : txt.duplicateMessage)
         setBusy(false)
         return
       }
 
-      const currentReceipt = receipt || await createReceipt({ userId: user?.id, draft, imagePath: pendingImagePath })
+      const draftToSave = duplicate
+        ? { ...draft, duplicate_confirmed: true, duplicate_of_receipt_id: duplicate.id }
+        : draft
+      const currentReceipt = receipt || await createReceipt({ userId: user?.id, draft: draftToSave, imagePath: pendingImagePath })
       const importStartedAt = performance.now()
       const importResult = await importValidatedReceipt({
         userId: user?.id,
         receipt: currentReceipt,
-        draft,
+        draft: draftToSave,
         items: validItems,
-        onAddTransaction,
       })
       const importDurationMs = Math.round(performance.now() - importStartedAt)
 
       try {
-        const scanWasProcessed = draft.ocr_status !== "manual" || Boolean(scanMetrics.provider)
-        if (scanWasProcessed) {
+        const scanWasProcessed = draft.ocr_status !== "manual" || Boolean(scanMetrics?.provider)
+        const scanUsageIncremented = scanWasProcessed && hasRealAiCall(scanMetrics)
+        if (scanUsageIncremented) {
           console.info("[scanner] Mise a jour scan_usage: START", { userId: user?.id, plan: quota.plan })
           await incrementScanUsage({
             userId: user?.id,
             plan: quota.plan,
             kind: "ai",
           })
+          await quota.refresh?.()
           console.info("[scanner] Mise a jour scan_usage: OK")
+        } else if (scanWasProcessed) {
+          console.info("[scanner] Mise a jour scan_usage: SKIP", { reason: "no_real_ai_call" })
         }
         console.info("[scanner] Creation scan_metrics: START", { receiptId: currentReceipt.id })
         await createScanMetric({
@@ -580,7 +753,9 @@ export default function ReceiptsPage({
             receiptItemsCreated: importResult.receiptItemsCreated || 0,
             shoppingItemsCreated: importResult.shoppingItemsCreated || 0,
             transactionCreated: importResult.transactionCreated === true,
-            scanUsageIncremented: scanWasProcessed,
+            transactionUpdated: importResult.transactionUpdated === true,
+            transactionSkipReason: importResult.transactionSkipReason || "",
+            scanUsageIncremented,
             success: true,
           },
           status: "success",
@@ -601,6 +776,18 @@ export default function ReceiptsPage({
       clearLastScanDraft()
       await refreshReceipts()
       window.dispatchEvent(new CustomEvent("budgetkazpei:transactions-updated"))
+      console.info("SCANNER_SUMMARY", buildScannerSummary({
+        parsed: draftToSave,
+        items: validItems,
+        metrics: scanMetrics,
+        importResult: {
+          ...importResult,
+          receiptSaved: Boolean(currentReceipt.id),
+          receipt_id: currentReceipt.id,
+        },
+        duplicateDetected: Boolean(duplicate),
+        duplicateConfirmed: Boolean(draftToSave.duplicate_confirmed),
+      }))
     } catch (error) {
       console.error("[scanner] Import intelligent ERREUR exacte", error)
       const details = getScanErrorDetails(error)
@@ -609,41 +796,6 @@ export default function ReceiptsPage({
     } finally {
       setBusy(false)
     }
-  }
-
-  async function replaceDuplicateAndImport() {
-    if (!user?.id || !duplicateReceipt) return
-
-    setBusy(true)
-
-    try {
-      if (duplicateReceipt.transaction_id) {
-        await supabase
-          .from("shopping_items")
-          .delete()
-          .eq("user_id", user?.id)
-          .eq("transaction_id", duplicateReceipt.transaction_id)
-
-        await supabase
-          .from("transactions")
-          .delete()
-          .eq("id", duplicateReceipt.transaction_id)
-          .eq("user_id", user?.id)
-      }
-
-      await deleteReceipt({ receipt: duplicateReceipt, userId: user?.id })
-      setReceipts(prev => prev.filter(row => row.id !== duplicateReceipt.id))
-      setDuplicateReceipt(null)
-      setAllowDuplicateImport(true)
-    } catch (error) {
-      console.error("Erreur remplacement course:", error)
-      setMessage(txt.error)
-      setBusy(false)
-      return
-    }
-
-    setBusy(false)
-    await handleSmartImport({ skipDuplicateCheck: true })
   }
 
   async function openDetail(row) {
@@ -705,9 +857,28 @@ export default function ReceiptsPage({
     setBusy(true)
     try {
       const next = await updateReceipt({ receiptId: detail.id, userId: user?.id, updates })
-      setDetail(prev => ({ ...prev, ...next }))
+      const mergedReceipt = { ...detail, ...next }
+      const transactionResult = await upsertReceiptTransaction({
+        userId: user?.id,
+        receipt: mergedReceipt,
+        draft: {
+          ...mergedReceipt,
+          total_needs_review: false,
+          is_food_ticket: mergedReceipt.is_food_ticket ?? true,
+        },
+        transactionId: mergedReceipt.transaction_id,
+      })
+      setDetail(prev => ({ ...prev, ...next, transaction_id: transactionResult?.transaction?.id || next.transaction_id || prev?.transaction_id }))
+      console.info("[scanner] receipt_update_transaction", {
+        receipt_id: detail.id,
+        transaction_created: Boolean(transactionResult?.created),
+        transaction_updated: Boolean(transactionResult?.updated),
+        transaction_skip_reason: transactionResult?.skipReason || "",
+        transaction_id: transactionResult?.transaction?.id || null,
+      })
       setMessage("Ticket mis a jour.")
       await refreshReceipts()
+      window.dispatchEvent(new CustomEvent("budgetkazpei:transactions-updated"))
     } catch (error) {
       console.error("Erreur modification ticket:", error)
       setMessage(txt.error)
@@ -846,8 +1017,6 @@ export default function ReceiptsPage({
           updateItem={updateItem}
           removeItem={removeItem}
           onSave={handleSmartImport}
-          onOpenDuplicate={() => duplicateReceipt && openDetail(duplicateReceipt)}
-          onReplaceDuplicate={replaceDuplicateAndImport}
           onCancel={() => setMode("history")}
         />
       )}
@@ -999,11 +1168,10 @@ function ValidationForm({
   updateItem,
   removeItem,
   onSave,
-  onOpenDuplicate,
-  onReplaceDuplicate,
   onCancel,
 }) {
   const validationError = getDraftValidationError(draft)
+  const partialLowItems = String(draft?.scan_status || "").includes("partial_low_items")
 
   return (
     <div style={cardStyle()}>
@@ -1022,23 +1190,31 @@ function ValidationForm({
           fontSize: 13,
           lineHeight: 1.45,
         }}>
-          <strong>Cette course semble deja enregistree.</strong>
+          <strong>{txt.duplicateTitle}</strong>
+          <div style={{ color: COLORS.text, marginTop: 4, fontWeight: 850 }}>
+            {txt.duplicateMessage}
+          </div>
           <div style={{ color: COLORS.muted, marginTop: 4 }}>
             {duplicateReceipt.store_name} - {duplicateReceipt.purchase_date} - {formatMontant(Number(duplicateReceipt.total_amount || 0))}
             {" - "}{(duplicateReceipt.receipt_items || []).length} article(s)
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 8, marginTop: 10 }}>
-            <button type="button" onClick={onOpenDuplicate} style={{ minHeight: 44, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "rgba(255,255,255,.06)", color: COLORS.text, fontWeight: 950 }}>
-              Voir la course
-            </button>
-            <button type="button" onClick={onReplaceDuplicate} disabled={busy} style={{ minHeight: 44, borderRadius: 12, border: "none", background: COLORS.accent, color: "#fff", fontWeight: 950 }}>
-              Remplacer
-            </button>
-            <button type="button" onClick={() => setAllowDuplicateImport(true)} style={{ minHeight: 44, borderRadius: 12, border: "none", background: COLORS.yellow, color: "#0A1628", fontWeight: 950 }}>
-              Enregistrer quand meme
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 8, marginTop: 10 }}>
+            <button
+              type="button"
+              onClick={() => {
+                setAllowDuplicateImport(true)
+                setDraft(prev => ({
+                  ...prev,
+                  duplicate_confirmed: true,
+                  duplicate_of_receipt_id: duplicateReceipt.id,
+                }))
+              }}
+              style={{ minHeight: 44, borderRadius: 12, border: "none", background: COLORS.yellow, color: "#0A1628", fontWeight: 950 }}
+            >
+              {txt.duplicateAddAnyway}
             </button>
             <button type="button" onClick={onCancel} style={{ minHeight: 44, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "transparent", color: COLORS.text, fontWeight: 950 }}>
-              Annuler
+              {txt.duplicateCancel}
             </button>
           </div>
         </div>
@@ -1051,8 +1227,24 @@ function ValidationForm({
         <Field label={txt.date}>
           <input style={inputStyle()} type="date" value={draft.purchase_date || ""} onChange={e => setDraft(prev => ({ ...prev, purchase_date: e.target.value }))} />
         </Field>
-        <Field label={txt.total}>
-          <input style={inputStyle()} type="number" min="0" step="0.01" value={draft.total_amount || ""} onChange={e => setDraft(prev => ({ ...prev, total_amount: e.target.value }))} />
+        <Field label={draft.total_needs_review ? (txt.totalReview || txt.total) : txt.total}>
+          <input style={inputStyle()} type="number" min="0" step="0.01" value={draft.total_amount || ""} onChange={e => setDraft(prev => ({
+            ...prev,
+            total_amount: e.target.value,
+            total_needs_review: Number(e.target.value || 0) <= 0,
+            total_source: Number(e.target.value || 0) > 0 ? "user_confirmed" : "missing_or_unreliable",
+            total_confidence: Number(e.target.value || 0) > 0 ? 1 : 0,
+          }))} />
+          {draft.total_needs_review && (
+            <div style={{ color: COLORS.yellow, fontSize: 13, fontWeight: 850, marginTop: 7 }}>
+              {txt.totalReviewMessage}
+            </div>
+          )}
+          {draft.estimated_items_sum > 0 && (
+            <div style={{ color: COLORS.muted, fontSize: 12, marginTop: 5 }}>
+              {txt.estimatedLinesSum} {formatMontant(Number(draft.estimated_items_sum || 0))}
+            </div>
+          )}
         </Field>
       </div>
 
@@ -1131,7 +1323,7 @@ function ValidationForm({
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 10, marginTop: 18 }}>
         <ActionButton label={txt.cancel} icon="" onClick={onCancel} disabled={busy} muted />
-        <ActionButton label={txt.save} icon="" onClick={onSave} disabled={busy || Boolean(validationError)} />
+        <ActionButton label={partialLowItems ? txt.saveAnyway : txt.save} icon="" onClick={onSave} disabled={busy || Boolean(validationError)} />
       </div>
     </div>
   )
@@ -1197,7 +1389,7 @@ function HistoryList({ txt, rows, busy, onOpen, onDelete }) {
                   Modifier
                 </button>
                 <button type="button" disabled={busy} onClick={() => onDelete(row)} style={{ minHeight: 40, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "transparent", color: COLORS.muted, fontWeight: 950, padding: "0 12px" }}>
-                  Supprimer
+                  {txt.deleteTicket}
                 </button>
               </span>
             </div>

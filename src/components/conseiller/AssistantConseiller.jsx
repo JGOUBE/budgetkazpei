@@ -234,8 +234,34 @@ function formatIncomeDetails(details = {}) {
   return parts.join(" ; ")
 }
 
+function resolveRevenusDetails(profile = {}, isKreol = false) {
+  const details =
+    profile?.revenusDetails ??
+    profile?.revenus_details ??
+    profile?.incomeDetails ??
+    profile?.revenus ??
+    null
+
+  if (typeof details === "string") return details.trim()
+
+  if (typeof details === "number" && Number.isFinite(details) && details > 0) {
+    return formatMoney(details, isKreol)
+  }
+
+  if (details && typeof details === "object") {
+    const formattedDetails = formatIncomeDetails(details)
+    if (formattedDetails) return formattedDetails
+  }
+
+  const revenusFoyer = profile?.revenus_foyer ?? profile?.revenusFoyer ?? null
+  const revenusText = formatMoney(revenusFoyer, isKreol)
+  return revenusText.includes("Non renseigne") || revenusText.includes("Pa renseigne")
+    ? ""
+    : revenusText
+}
+
 function buildProfileSummary(profile = {}, isKreol = false) {
-  const revenusDetails = formatIncomeDetails(profile.revenus_details)
+  const revenusDetails = resolveRevenusDetails(profile, isKreol)
   if (isKreol) {
     return [
       `Komin : ${formatValue(profile.commune, "Pa renseigne")}`,
@@ -304,8 +330,9 @@ function buildModeInstruction(mode = "general", isKreol = false) {
   return (isKreol ? kreol : fr)[mode] || (isKreol ? kreol.general : fr.general)
 }
 
-function buildQuestionForAi(question = "", mode = "general", isKreol = false) {
+function buildQuestionForAi(question = "", mode = "general", isKreol = false, profile = {}) {
   const cleanQuestion = String(question || "").trim()
+  const revenusDetails = resolveRevenusDetails(profile, isKreol)
 
   return [
     "INTENTION / COMPORTEMENT ATTENDU :",
@@ -574,7 +601,7 @@ export default function AssistantConseiller({
 
     const { data, error } = await supabase.functions.invoke("assistant-aisupabase", {
       body: {
-        question: buildQuestionForAi(sentQuestion, mode, assistantIsKreol),
+        question: buildQuestionForAi(sentQuestion, mode, assistantIsKreol, currentProfile),
         originalQuestion: sentQuestion,
         assistantMode: mode,
         assistantModeLabel: getModeLabel(mode, assistantIsKreol),
@@ -616,7 +643,19 @@ export default function AssistantConseiller({
     const sentQuestion = question.trim()
     if (!sentQuestion) return
 
-    const currentProfile = profile || (await fetchProfile())
+    let currentProfile
+
+    try {
+      currentProfile = profile || (await fetchProfile())
+    } catch (error) {
+      console.error("Erreur chargement profil conseiller:", error)
+      setErrorMessage(
+        isKreol
+          ? "Inposib sharj out profil pou linstan."
+          : "Impossible de charger votre profil pour le moment."
+      )
+      return
+    }
 
     if (!currentProfile) {
       setErrorMessage(
@@ -639,16 +678,29 @@ export default function AssistantConseiller({
     setLoadingAssistant(true)
     setErrorMessage("")
 
-    const aides = await fetchAides()
     const currentMode = assistantMode || "general"
+    let result
 
-    const result = await callAssistantAi({
-      sentQuestion,
-      currentProfile,
-      aides,
-      mode: currentMode,
-      recentHistory: history,
-    })
+    try {
+      const aides = await fetchAides()
+
+      result = await callAssistantAi({
+        sentQuestion,
+        currentProfile,
+        aides,
+        mode: currentMode,
+        recentHistory: history,
+      })
+    } catch (error) {
+      console.error("Erreur analyse conseiller:", error)
+      setLoadingAssistant(false)
+      setErrorMessage(
+        isKreol
+          ? "Le konseye le indisponib pou linstan. Reessay in pe plus tar."
+          : "Le conseiller est indisponible pour le moment. Reessayez dans quelques instants."
+      )
+      return
+    }
 
     setLoadingAssistant(false)
 

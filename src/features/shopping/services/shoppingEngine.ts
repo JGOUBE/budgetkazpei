@@ -6,6 +6,7 @@ type Receipt = {
   id?: string
   store_name?: string
   purchase_date?: string
+  scan_status?: string
 }
 
 type ReceiptItem = {
@@ -26,10 +27,45 @@ type ReceiptItem = {
   promotion?: boolean
   confidence_score?: number | string | null
   barcode?: string | null
+  item_status?: string | null
+  status?: string | null
+  review_status?: string | null
+  needs_review?: boolean
 }
 
 function money(value: number | string | null | undefined) {
   return Number(String(value ?? 0).replace(",", ".")) || 0
+}
+
+function normalizeForGuard(value = "") {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
+function isReviewItem(item: ReceiptItem, receipt?: Receipt) {
+  return String(receipt?.scan_status || "").includes("partial_low_items")
+    || item.needs_review === true
+    || item.review_status === "needs_review"
+    || item.item_status === "a_verifier"
+    || item.status === "a_verifier"
+}
+
+function isParasiteProductName(value = "") {
+  const raw = String(value || "")
+  const clean = normalizeForGuard(value)
+  if (!clean) return true
+  if (/\b02[\s.:-]*62(?:[\s.:-]*\d{2}){3,4}\b/.test(raw)) return true
+  if (/\b0[0-9](?:[\s.:-]*\d{2}){4}\b/.test(raw)) return true
+  if ((raw.match(/\d{2}\./g) || []).length >= 3) return true
+  if (clean.includes("article illisible") || clean.includes("produit a verifier")) return true
+  if (/^(tel|telephone|siret|sirene|cb|carte|total|reste a payer|net a payer|tva|fid|fidelite)\b/.test(clean)) return true
+  if (/\b(total|carte bleue|ticket|caisse|merci|siret|telephone|tel)\b/.test(clean)) return true
+  return false
 }
 
 export async function listShoppingItems({ userId }: { userId?: string }) {
@@ -60,6 +96,7 @@ export async function syncShoppingItemsFromReceipt({
 
   const rows = (items || [])
     .filter(item => String(item.name || "").trim())
+    .filter(item => !isReviewItem(item, receipt))
     .map(item => {
       const originalName = String(item.ocr_name || item.name || "").trim()
       const correctedName = String(item.corrected_name || item.name || originalName).trim()
@@ -95,7 +132,7 @@ export async function syncShoppingItemsFromReceipt({
         created_at: receipt.purchase_date ? `${receipt.purchase_date}T12:00:00.000Z` : new Date().toISOString(),
       }
     })
-    .filter(row => row.normalized_name && row.price > 0)
+    .filter(row => row.normalized_name && row.price > 0 && !isParasiteProductName(row.product_name))
 
   if (rows.length === 0) return []
 
