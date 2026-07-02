@@ -205,6 +205,33 @@ function getDraftValidationError(draft = {}) {
   return ""
 }
 
+function getCurrentMonthKey(date = new Date()) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
+}
+
+function getTicketMonthDiagnostic(purchaseDate) {
+  const ticketDate = String(purchaseDate || "").slice(0, 10)
+  const currentMonth = getCurrentMonthKey()
+  const ticketMonth = /^\d{4}-\d{2}-\d{2}$/.test(ticketDate) ? ticketDate.slice(0, 7) : ""
+
+  return {
+    ticket_date: ticketDate || null,
+    current_month: currentMonth,
+    date_in_current_month: Boolean(ticketMonth && ticketMonth === currentMonth),
+    save_blocked_reason: ticketMonth && ticketMonth !== currentMonth ? "ticket_outside_current_month" : "",
+  }
+}
+
+function isScannedReceiptDraft(draft = {}, scanMetrics = null) {
+  return draft?.ocr_status !== "manual" || Boolean(scanMetrics?.provider)
+}
+
+function getTicketOutsideCurrentMonthMessage(isKreol = false) {
+  return isKreol
+    ? "Tike-la le pa dann mwa-la. Nou pa pe azout ali dann depans mwa-la."
+    : "Ce ticket n'appartient pas au mois en cours. Il ne peut pas etre ajoute aux depenses de ce mois."
+}
+
 function isTrustedScanResult(parsed = {}, validItems = []) {
   const expectedCount = Number(parsed.expected_items_count || 0)
   const total = Number(parsed.total_amount || 0)
@@ -265,6 +292,7 @@ function buildScannerSummary({ parsed = {}, items = [], metrics = {}, importResu
   const rejectedReasons = Array.isArray(rejectedLines)
     ? rejectedLines.map(line => line?.reason).filter(Boolean)
     : []
+  const dateDiagnostic = getTicketMonthDiagnostic(parsed.purchase_date)
 
   return {
     provider: metrics?.provider || parsed.provider || parsed.source || "local",
@@ -277,6 +305,10 @@ function buildScannerSummary({ parsed = {}, items = [], metrics = {}, importResu
     needs_review_items: needsReviewItems.length,
     rejected_items: Number(parsed.parser_debug?.rejected_lines_count || metrics?.rejectedLinesCount || rejectedReasons.length || 0),
     rejected_reasons: [...new Set(rejectedReasons)].slice(0, 8),
+    ticket_date: dateDiagnostic.ticket_date,
+    current_month: dateDiagnostic.current_month,
+    date_in_current_month: dateDiagnostic.date_in_current_month,
+    save_blocked_reason: importResult?.transactionSkipReason === "ticket_outside_current_month" ? "ticket_outside_current_month" : dateDiagnostic.save_blocked_reason,
     date_raw_text: parsed.raw_date_detected || parsed.date_raw_text || "",
     date_source: parsed.date_source || parsed.date_status || "",
     total_status: parsed.total_needs_review ? "needs_review" : "trusted",
@@ -418,8 +450,34 @@ export default function ReceiptsPage({
         plan: quota.plan,
       })
 
-      const { imagePath } = await uploadReceiptImage({ userId: user?.id, file: scan.optimizedFile })
       const parsed = scan.receipt
+      const dateDiagnostic = getTicketMonthDiagnostic(parsed.purchase_date)
+      console.info("[scanner] ticket_date_month_check", dateDiagnostic)
+      if (!dateDiagnostic.date_in_current_month) {
+        setReceipt(null)
+        setPendingImagePath(null)
+        setScanMetrics(scan.metrics || null)
+        setDraft(null)
+        setDuplicateReceipt(null)
+        setAllowDuplicateImport(false)
+        setMode("history")
+        setMessage(getTicketOutsideCurrentMonthMessage(isKreol))
+        console.info("SCANNER_SUMMARY", buildScannerSummary({
+          parsed,
+          items: getValidDraftItems(parsed),
+          metrics: scan.metrics || null,
+          importResult: {
+            receiptSaved: false,
+            receiptItemsCreated: 0,
+            transactionCreated: false,
+            transactionUpdated: false,
+            transactionSkipReason: "ticket_outside_current_month",
+          },
+        }))
+        return
+      }
+
+      const { imagePath } = await uploadReceiptImage({ userId: user?.id, file: scan.optimizedFile })
       const scanStatus = String(parsed.scan_status || "")
       const requiresManualCorrection = ["partial_low_items", "manual_review_required"].some(status => scanStatus.includes(status)) || parsed.total_needs_review
       const requiresQuickReview = scanStatus.includes("usable_review")
@@ -693,6 +751,25 @@ export default function ReceiptsPage({
 
   async function handleSmartImport(options = {}) {
     if (!user?.id || !draft) return
+    const dateDiagnostic = getTicketMonthDiagnostic(draft.purchase_date)
+    console.info("[scanner] ticket_date_month_check", dateDiagnostic)
+    if (isScannedReceiptDraft(draft, scanMetrics) && !dateDiagnostic.date_in_current_month) {
+      setMessage(getTicketOutsideCurrentMonthMessage(isKreol))
+      console.info("SCANNER_SUMMARY", buildScannerSummary({
+        parsed: draft,
+        items: getValidDraftItems(draft),
+        metrics: scanMetrics,
+        importResult: {
+          receiptSaved: false,
+          receiptItemsCreated: 0,
+          transactionCreated: false,
+          transactionUpdated: false,
+          transactionSkipReason: "ticket_outside_current_month",
+        },
+      }))
+      return
+    }
+
     const validationError = getDraftValidationError(draft)
     if (validationError) {
       console.warn("[scanner] Validation bloquee", { reason: validationError, draft })
