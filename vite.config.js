@@ -6,6 +6,7 @@ export default defineConfig({
 
   optimizeDeps: {
     entries: ["index.html"],
+    include: ["tesseract.js"],
   },
 
   server: {

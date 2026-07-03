@@ -6,10 +6,11 @@ import {
   normalizeProductOcrName,
 } from "./receiptDictionaries"
 import {
-  extractDeclaredItemsCount,
+  extractDeclaredItemsEvidence,
   extractReliableDateCandidates,
   extractTrustedTotal,
   isPhoneLine,
+  isSectionSubtotalLine,
   normalizeReceiptRuleDate,
   normalizeStoreName as normalizeStoreFromRules,
   shouldRejectLineAsProduct,
@@ -128,6 +129,18 @@ export type ParsedReceipt = {
   escalation_reason?: string
   scan_status?: "success" | "trusted" | "usable_review" | "partial" | "partial_low_items" | "failed"
   expected_items_count?: number | null
+  expected_items_source?: string
+  declared_items_count?: number | null
+  declared_items_raw_text?: string
+  items_count_status?: string
+  total_needs_review?: boolean
+  total_source?: string
+  total_raw_text?: string
+  total_confidence?: number
+  payment_method?: string | null
+  payment_total_value?: number | null
+  payment_total_raw_text?: string
+  total_payment_consistent?: boolean
   parser_debug?: Record<string, unknown>
   items: ParsedReceiptItem[]
   warnings: string[]
@@ -280,6 +293,44 @@ export function extractReceiptTotal(text = "") {
 
 function detectTotal(lines: string[]) {
   return extractReceiptTotal(lines.join("\n"))
+}
+
+function detectPaymentMethod(line = "") {
+  const clean = normalize(line)
+  if (clean.includes("especes") || clean.includes("espece") || clean.includes("cash")) return "especes"
+  if (clean.includes("carte bleue") || clean === "cb" || clean.includes(" visa ") || clean.includes("mastercard")) return "carte"
+  return null
+}
+
+function sectionSubtotalDiagnostics(lines: string[]) {
+  const rejected = lines
+    .filter(line => isSectionSubtotalLine(line))
+    .map(line => ({ line, amount: lastMoney(line) }))
+  const amount = rejected.reduce((sum, item) => sum + Number(item.amount || 0), 0)
+  return {
+    rejected,
+    rejectedCount: rejected.length,
+    rejectedAmount: Number(amount.toFixed(2)),
+  }
+}
+
+function localOcrTextPresenceDiagnostics(lines: string[], total = 0, declaredCount = 0) {
+  const totalLikeLine = lines.find((line) => {
+    const clean = normalize(line)
+    return /\b(total|tuial|t0tal|totai|t0ial|toial|tutal|reste a payer|net a payer|a payer)\b/.test(clean)
+  }) || ""
+  const paymentLine = lines.find((line) => detectPaymentMethod(line) && lastMoney(line) > 0) || ""
+  return {
+    ocr_text_has_total: Boolean(totalLikeLine),
+    ocr_text_has_payment: Boolean(paymentLine),
+    ocr_text_has_declared_items_count: declaredCount > 0,
+    ocr_text_last_lines: lines.slice(-8),
+    local_total_missing_reason: total > 0
+      ? ""
+      : totalLikeLine
+        ? (paymentLine ? "total_like_present_but_not_trusted" : "total_like_without_matching_payment")
+        : "bottom_total_not_present_in_ocr_text",
+  }
 }
 
 function categoryFor(name = "") {
@@ -543,6 +594,7 @@ function isStoreLine(line = "") {
 function isIgnoredLine(line = "") {
   const clean = normalize(line)
     const ignored = !clean
+    || /^>+/.test(String(line || "").trim())
     || shouldRejectLineAsProduct(line)
     || clean.includes("total")
     || clean.includes("carte")
@@ -779,15 +831,22 @@ export function parseReceipt({ text = "", ocrStatus = "manual", ocrConfidence = 
   const store = detectStore(text)
   const storeMeta = normalizeStoreFromRules(text)
   const parserDebug = createParserDebug(lines)
-  const expectedItemsCount = extractDeclaredItemsCount(text)
+  const declaredEvidence = extractDeclaredItemsEvidence(text)
+  const expectedItemsCount = declaredEvidence.count
   const rawItems = parseItems(lines, ocrConfidence, parserDebug)
   const items = expectedItemsCount > 0 && rawItems.length > expectedItemsCount
     ? rawItems.slice(0, expectedItemsCount)
     : rawItems
   const total = detectTotal(lines)
+  const trustedTotal = extractTrustedTotal(text)
   const purchaseDate = detectDate(text)
   const classification = classifyReceipt({ store_name: store, ocr_text: text, items })
   const itemsTotal = items.reduce((sum, item) => sum + Number(item.total_price ?? item.price ?? item.unit_price ?? 0), 0)
+  const sectionSubtotal = sectionSubtotalDiagnostics(lines)
+  const textPresence = localOcrTextPresenceDiagnostics(lines, total, expectedItemsCount)
+  const itemsTotalRounded = Number(itemsTotal.toFixed(2))
+  const calculatedBeforeSectionFilter = Number((itemsTotal + sectionSubtotal.rejectedAmount).toFixed(2))
+  const totalDelta = total ? Number(Math.abs(itemsTotalRounded - total).toFixed(2)) : null
   const exactDeclaredCount = expectedItemsCount > 0 && items.length === expectedItemsCount
   console.info("[scanner] OCR_DEBUG_SUMMARY", {
     raw_lines_count: parserDebug.rawLinesCount,
@@ -797,7 +856,13 @@ export function parseReceipt({ text = "", ocrStatus = "manual", ocrConfidence = 
     final_items_count: items.length,
     expected_items_count: expectedItemsCount || null,
     total_detected: total,
-    items_sum: Number(itemsTotal.toFixed(2)),
+    items_sum: itemsTotalRounded,
+    calculated_items_sum_before_section_filter: calculatedBeforeSectionFilter,
+    calculated_items_sum_after_section_filter: itemsTotalRounded,
+    section_subtotals_rejected_count: sectionSubtotal.rejectedCount,
+    section_subtotals_rejected_amount: sectionSubtotal.rejectedAmount,
+    items_total_vs_receipt_total_delta: totalDelta,
+    ...textPresence,
     source_used: "parser",
   })
   const warnings = []
@@ -826,6 +891,18 @@ export function parseReceipt({ text = "", ocrStatus = "manual", ocrConfidence = 
     is_food_ticket: classification.is_food_ticket,
     scan_status: exactDeclaredCount && total && store && purchaseDate ? "trusted" : items.length >= 3 && total ? "usable_review" : "failed",
     expected_items_count: expectedItemsCount || null,
+    expected_items_source: expectedItemsCount ? declaredEvidence.source : "not_found",
+    declared_items_count: expectedItemsCount || null,
+    declared_items_raw_text: declaredEvidence.raw,
+    items_count_status: expectedItemsCount ? "declared" : "unknown",
+    total_needs_review: !total,
+    total_source: trustedTotal.source || (total ? "explicit_total_line" : "missing_or_unreliable"),
+    total_raw_text: trustedTotal.raw || "",
+    total_confidence: trustedTotal.confidence || (total ? 0.82 : 0),
+    payment_method: detectPaymentMethod(trustedTotal.paymentRaw || ""),
+    payment_total_value: trustedTotal.paymentAmount || null,
+    payment_total_raw_text: trustedTotal.paymentRaw || "",
+    total_payment_consistent: Boolean(trustedTotal.paymentConsistent),
     confidence_score: Math.max(0, Math.min(100, Math.round(((ocrConfidence || 0) + (total ? 20 : 0) + (items.length ? 10 : 0) + (store ? 10 : 0)) / 1.4))),
     parser_debug: {
       raw_lines_count: parserDebug.rawLinesCount,
@@ -835,7 +912,16 @@ export function parseReceipt({ text = "", ocrStatus = "manual", ocrConfidence = 
       final_items_count: items.length,
       expected_items_count: expectedItemsCount || null,
       total_detected: total,
-      items_sum: Number(itemsTotal.toFixed(2)),
+      items_sum: itemsTotalRounded,
+      calculated_items_sum_before_section_filter: calculatedBeforeSectionFilter,
+      calculated_items_sum_after_section_filter: itemsTotalRounded,
+      section_subtotals_rejected_count: sectionSubtotal.rejectedCount,
+      section_subtotals_rejected_amount: sectionSubtotal.rejectedAmount,
+      section_subtotals_rejected: sectionSubtotal.rejected,
+      section_subtotals_rejected_lines: sectionSubtotal.rejected.map(item => item.line),
+      items_kept_lines: items.map(item => item.ocr_name || item.name),
+      items_total_vs_receipt_total_delta: totalDelta,
+      ...textPresence,
       source_used: "parser",
     },
     items,

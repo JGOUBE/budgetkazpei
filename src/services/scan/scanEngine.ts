@@ -152,7 +152,7 @@ export async function runSmartScan(file: File, options: ScanEngineOptions = {}) 
     }
     parsed.total_amount = serverTotalNeedsReview ? 0 : repairReceiptTotal(parsed.total_amount, ocr.text)
     const scanIsUnreliableForTotal = serverTotalNeedsReview
-      || ["partial_low_items", "partial_unreliable", "low_confidence", "needs_review"].some(status => serverScanStatus.includes(status))
+      || ["partial_low_items", "partial_unreliable", "low_confidence", "needs_review", "manual_review_required", "long_manual_review", "long_usable_review"].some(status => serverScanStatus.includes(status))
     if (Number(parsed.total_amount || 0) <= 0 && parsed.items.length >= 3 && !scanIsUnreliableForTotal) {
       parsed.total_amount = estimateTotalFromItems(parsed.items)
       ;(parsed as any).total_status = "estimated_from_items"
@@ -201,7 +201,15 @@ export async function runSmartScan(file: File, options: ScanEngineOptions = {}) 
       parsed.scan_status = "partial_low_items"
       parsed.escalation_reason = [parsed.escalation_reason, "moins_de_60_pourcent_articles_probables"].filter(Boolean).join(",")
     }
-    const expectedItemsMin = Number(ocr.metrics?.expectedItemsMin || 0) || (parsed.is_food_ticket && Number(parsed.total_amount || 0) > 0 ? 3 : 0)
+    const expectedItemsMin = Number(ocr.metrics?.expectedItemsMin || 0)
+    ;(parsed as any).expected_items_min = expectedItemsMin || null
+    ;(parsed as any).expected_items_source = ocr.metrics?.expectedItemsSource || "not_found"
+    ;(parsed as any).declared_items_count = ocr.metrics?.declaredItemsCount ?? null
+    ;(parsed as any).declared_items_raw_text = ocr.metrics?.declaredItemsRawText ?? ""
+    ;(parsed as any).items_count_status = ocr.metrics?.itemsCountStatus || "unknown"
+    ;(parsed as any).recovery_ratio = ocr.metrics?.recoveryRatio ?? null
+    ;(parsed as any).recovery_ratio_status = ocr.metrics?.recoveryRatioStatus ?? null
+    ;(parsed as any).split_cost_warning = ocr.metrics?.splitCostWarning ?? null
     if (expectedItemsMin && parsed.items.length < expectedItemsMin) {
       parsed.scan_status = "partial_low_items"
       parsed.escalation_reason = [parsed.escalation_reason, "articles_alimentaires_insuffisants"].filter(Boolean).join(",")
@@ -225,7 +233,10 @@ export async function runSmartScan(file: File, options: ScanEngineOptions = {}) 
       items_count: parsed.items.length,
       probable_product_lines: probableProductLines,
       extraction_ratio: Number(extractionRatio.toFixed(2)),
-      expected_items_min: expectedItemsMin,
+      expected_items_min: expectedItemsMin || null,
+      expected_items_source: ocr.metrics?.expectedItemsSource || "not_found",
+      declared_items_count: ocr.metrics?.declaredItemsCount ?? null,
+      items_count_status: ocr.metrics?.itemsCountStatus || "unknown",
       scan_status: parsed.scan_status,
       provider: ocr.provider,
       items: parsed.items,
@@ -301,6 +312,46 @@ export async function runSmartScan(file: File, options: ScanEngineOptions = {}) 
         splitSegmentsStrategy: ocr.metrics?.splitSegmentsStrategy ?? null,
         splitSegmentsOverlapPercent: ocr.metrics?.splitSegmentsOverlapPercent ?? null,
         splitSegmentsResults: ocr.metrics?.splitSegmentsResults ?? null,
+        splitSegmentsSuccessCount: ocr.metrics?.splitSegmentsSuccessCount ?? null,
+        splitSegmentsTimeoutCount: ocr.metrics?.splitSegmentsTimeoutCount ?? null,
+        splitTotalInputTokens: ocr.metrics?.splitTotalInputTokens ?? null,
+        splitTotalOutputTokens: ocr.metrics?.splitTotalOutputTokens ?? null,
+        splitTotalDurationMs: ocr.metrics?.splitTotalDurationMs ?? null,
+        recoveryRatio: ocr.metrics?.recoveryRatio ?? null,
+        recoveryRatioRaw: ocr.metrics?.recoveryRatioRaw ?? null,
+        recoveryRatioCapped: ocr.metrics?.recoveryRatioCapped ?? null,
+        recoveryRatioStatus: ocr.metrics?.recoveryRatioStatus ?? null,
+        splitCostWarning: ocr.metrics?.splitCostWarning ?? null,
+        splitFailureReason: ocr.metrics?.splitFailureReason ?? null,
+        localOcrAvailable: ocr.metrics?.localOcrAvailable ?? null,
+        localOcrAttempted: ocr.metrics?.localOcrAttempted ?? null,
+        localOcrEngine: ocr.metrics?.localOcrEngine ?? null,
+        localOcrImportStatus: ocr.metrics?.localOcrImportStatus ?? null,
+        localOcrWorkerStatus: ocr.metrics?.localOcrWorkerStatus ?? null,
+        localOcrErrorType: ocr.metrics?.localOcrErrorType ?? null,
+        localOcrDurationMs: ocr.metrics?.localOcrDurationMs ?? null,
+        localOcrError: ocr.metrics?.localOcrError ?? null,
+        localOcrSkippedReason: ocr.metrics?.localOcrSkippedReason ?? null,
+        browserTextLength: ocr.metrics?.browserTextLength ?? null,
+        browserTextLengthBeforePayload: ocr.metrics?.browserTextLengthBeforePayload ?? null,
+        browserTextLengthSentToEdge: ocr.metrics?.browserTextLengthSentToEdge ?? null,
+        edgeTextLength: ocr.metrics?.edgeTextLength ?? null,
+        imagePreprocessingForOcr: ocr.metrics?.imagePreprocessingForOcr ?? null,
+        textEmptyReason: ocr.metrics?.textEmptyReason ?? null,
+        expectedItemsMinIsProven: ocr.metrics?.expectedItemsMinIsProven ?? null,
+        recoveryRatioDenominatorSource: ocr.metrics?.recoveryRatioDenominatorSource ?? null,
+        recoveryRatioBlockedReason: ocr.metrics?.recoveryRatioBlockedReason ?? null,
+        imageQualityWarning: ocr.metrics?.imageQualityWarning ?? null,
+        aiCalledAfterLocalOcrTechnicalFailure: ocr.metrics?.aiCalledAfterLocalOcrTechnicalFailure ?? null,
+        aiCallRiskReason: ocr.metrics?.aiCallRiskReason ?? null,
+        shouldSkipAiDueToLocalOcrFailure: ocr.metrics?.shouldSkipAiDueToLocalOcrFailure ?? null,
+        scanReliabilityBlockedReason: ocr.metrics?.scanReliabilityBlockedReason ?? null,
+        totalVerifiedAgainstLocalOcr: ocr.metrics?.totalVerifiedAgainstLocalOcr ?? null,
+        totalVerifiedAgainstSegmentText: ocr.metrics?.totalVerifiedAgainstSegmentText ?? null,
+        expectedItemsSource: ocr.metrics?.expectedItemsSource ?? null,
+        declaredItemsCount: ocr.metrics?.declaredItemsCount ?? null,
+        declaredItemsRawText: ocr.metrics?.declaredItemsRawText ?? "",
+        itemsCountStatus: ocr.metrics?.itemsCountStatus ?? null,
         primaryStage: ocr.metrics?.primaryStage ?? null,
         primaryError: ocr.metrics?.primaryError ?? null,
         fallbackStage: ocr.metrics?.fallbackStage ?? null,

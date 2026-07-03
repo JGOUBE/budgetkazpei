@@ -1,9 +1,12 @@
+import { classifyLocalOcrError, isTechnicalLocalOcrFailure } from "./ocrDiagnostics"
 import { parseReceipt } from "./receiptParser"
 import {
   extractDeclaredItemsCount,
+  extractDeclaredItemsEvidence,
   extractReliableDateCandidates,
   extractTrustedTotal,
   isPhoneLine,
+  isSectionSubtotalLine,
   shouldRejectLineAsProduct,
 } from "./receiptRules"
 
@@ -77,6 +80,64 @@ export const LEADER_PRICE_SHORT_NOISY_REFERENCE = {
   ].join("\n"),
 }
 
+export const LEADER_PRICE_SMALL_FUZZY_CB_REFERENCE = {
+  id: "leader_price_2026_07_03_small_total_fuzzy_cb",
+  expectedStore: "Leader Price Saint-Leu",
+  expectedNormalizedStore: "leader price",
+  expectedStoreLocation: "Saint-Leu",
+  expectedDate: "2026-07-03",
+  expectedTotal: 14.53,
+  expectedItemsCount: 6,
+  expectedItemsSource: "declared_total_articles_ocr_fuzzy",
+  expectedDeclaredItemsRawText: "GRE ARTICLES : 6",
+  expectedTotalSource: "explicit_total_line_ocr_fuzzy",
+  expectedPaymentMethod: "carte",
+  expectedAiCalls: 0,
+  expectedSectionSubtotalsRejectedCount: 4,
+  expectedSectionSubtotalsRejectedAmount: 14.53,
+  expectedItems: [
+    { name: "VEGGIE NUGGETS 300G", total: 2.49 },
+    { name: "Q.CREVETTE TROP 8/12 280G", total: 3.99 },
+    { name: "BROCOLI 20/40 450G", total: 2.4 },
+    { name: "TLJ BARRE CEREALE CHOCO B", total: 1.7 },
+    { name: "COCCIOLE RISCOSSA 500G", total: 1.5 },
+    { name: "EMMENTAL RAP 45MG 200G", total: 2.45 },
+  ],
+  sectionSubtotalLines: [
+    "SURGELES 8.88 EUR",
+    "EPICERIE SUCREE 1.70 EUR",
+    "EPICERIE SALEE 1.50 EUR",
+    "CREMERIE 2.45 EUR",
+  ],
+  text: [
+    "LEADER PRICE SAINT LEU",
+    "150, Rue du General Lambert",
+    "97436 SAINT-LEU",
+    "Tel : 02.62.34.78.73",
+    "BIENVENUE",
+    "VOUS AVEZ ETE RECU PAR (VIRASSAMY MARIE REINE)",
+    "03/07/2026 - 18:36:21",
+    "OPERATION : VENTE",
+    "(1)3701004823141 VEGGIE NUGGETS 300G",
+    "PRIX PROMOTION 2.49 EUR",
+    "(9)3503040014008 Q.CREVETTE TROP 8/12 280G",
+    "PRIX PROMOTION 3.99 EUR",
+    "(9)5413406121317 BROCOLI 20/40 450G 2.40 EUR",
+    "SURGELES 8.88 EUR",
+    "(1)3700311866469 TLJ BARRE CEREALE CHOCO B 1.70 EUR",
+    "EPICERIE SUCREE 1.70 EUR",
+    "(1)8011780009406 COCCIOLE RISCOSSA 500G 1.50 EUR",
+    "EPICERIE SALEE 1.50 EUR",
+    "(9)8436039437142 EMMENTAL RAP 45MG 200G",
+    "PRIX PROMOTION 2.45 EUR",
+    "CREMERIE 2.45 EUR",
+    "Ry TUIAL : 14.53 EUR",
+    "CARTE BLEUE 14.53 EUR",
+    "GRE ARTICLES : 6",
+    "CARTE FIDELITE",
+  ].join("\n"),
+}
+
 export const LEADER_PRICE_SAINT_LEU_REFERENCE = {
   id: "leader-price-saint-leu-2026-06-25-37-46",
   expectedStore: "Leader Price Saint-Leu",
@@ -111,6 +172,86 @@ export const LEADER_PRICE_SAINT_LEU_REFERENCE = {
     "0.484 kg x 1.95 EUR/kg 0.94 EUR",
     "TOTAL : 37.46 EUR",
     "CARTE BLEUE 37.46 EUR",
+  ].join("\n"),
+}
+
+export const LEADER_PRICE_MEDIUM_TOTAL_CASH_REFERENCE = {
+  id: "leader_price_2026_07_03_medium_total_cash",
+  expectedStore: "Leader Price Saint-Leu",
+  expectedNormalizedStore: "leader price",
+  expectedStoreLocation: "Saint-Leu",
+  expectedDate: "2026-07-03",
+  expectedTotal: 55.89,
+  expectedMinItems: 15,
+  expectedSectionSubtotalsRejectedCount: 7,
+  expectedSectionSubtotalsRejectedAmount: 55.89,
+  expectedPaymentMethod: "especes",
+  expectedAiCalls: 0,
+  expectedItems: [
+    { name: "HUILE LESIEUR TOURNESOL", quantity: 2, unitPrice: 2.79, total: 5.58 },
+    { name: "FIDO FUNTASTIX BACON FROM", total: 7 },
+    { name: "PEDIGREE VISCHOK 500G", total: 2.49 },
+    { name: "KINDER BUENO T2 43G", total: 1.87 },
+    { name: "KINDER BUENO WHITE T2 39G", total: 1.87 },
+    { name: "JOKER TEINA ORAN BANAN CA", total: 3.1 },
+    { name: "SAL MUSEAU TB BOT S/ ATM", total: 5.07 },
+    { name: "SAUCISSES SECHE FUETEC 17", total: 3.7 },
+    { name: "MATTHES15UEUFSPONDOUSPLEIN", total: 6.66 },
+    { name: "PETSAI CHINOIS PIECE", total: 1.95 },
+    { name: "SALADE PIECE", total: 1.5 },
+    { name: "POMME DE TERRE REUNION KG", quantity: 1.082, unitPrice: 1.95, total: 2.11 },
+    { name: "CHAMPIGNON PIED COUPE POL", quantity: 0.424, unitPrice: 11.8, total: 5 },
+    { name: "ECHALOTE FRANCE FILET 250", total: 2.3 },
+    { name: "DOLCE V. MOUSSE CHOCO NR", total: 5.69 },
+  ],
+  sectionSubtotalLines: [
+    "EPICERIE SALEE 15.07 EUR",
+    "EPICERIE SUCREE 3.74 EUR",
+    "BOISSONS SANS ALCOOL 3.10 EUR",
+    "CHARCUTERIE LS 8.77 EUR",
+    "CREMERIE 6.66 EUR",
+    "FLEURS PLANTES, FRUITS-LEGUMES 12.86 EUR",
+    "ULTRA FRAIS 5.69 EUR",
+  ],
+  text: [
+    "LEADER PRICE SAINT LEU",
+    "150, Rue du General Lambert",
+    "97436 SAINT-LEU",
+    "Tel : 02.62.34.78.73",
+    "BIENVENUE",
+    "VOUS AVEZ ETE RECU PAR (VIRASSAMY MARIE REINE)",
+    "03/07/2026 - 18:37:39",
+    "OPERATION : VENTE",
+    "(9)3265471000110 *HUILE LESIEUR TOURNESOL",
+    "PRIX PROMOTION",
+    "2 x 2.79 EUR 5.58 EUR",
+    "(3)8445290782793 FIDO FUNTASTIX BACON FROM 7.00 EUR",
+    "(3)5010394193852 PEDIGREE VISCHOK 500G",
+    "PRIX PROMOTION 2.49 EUR",
+    "EPICERIE SALEE 15.07 EUR",
+    "(1)80052760 KINDER BUENO T2 43G 1.87 EUR",
+    "(1)80761761 KINDER BUENO WHITE T2 39G 1.87 EUR",
+    "EPICERIE SUCREE 3.74 EUR",
+    "(1)3123349017168 JOKER TEINA ORAN BANAN CA 3.10 EUR",
+    "BOISSONS SANS ALCOOL 3.10 EUR",
+    "(1)3345100005324 SAL MUSEAU TB BOT S/ ATM 5.07 EUR",
+    "(1)8410843077657 SAUCISSES SECHE FUETEC 17 3.70 EUR",
+    "CHARCUTERIE LS 8.77 EUR",
+    "(9)3282070015130 MATTHES15UEUFSPONDOUSPLEIN 6.66 EUR",
+    "CREMERIE 6.66 EUR",
+    "(1)9116 PETSAI CHINOIS PIECE 1.95 EUR",
+    "(1)12779 SALADE PIECE 1.50 EUR",
+    "(1)9639 POMME DE TERRE REUNION KG",
+    "1.082 kg x 1.95 EUR/kg 2.11 EUR",
+    "(1)12661 CHAMPIGNON PIED COUPE POL",
+    "0.424 kg x 11.80 EUR/kg 5.00 EUR",
+    "(1)11452 ECHALOTE FRANCE FILET 250 2.30 EUR",
+    "FLEURS PLANTES, FRUITS-LEGUMES 12.86 EUR",
+    "(1)3297560114323 DOLCE V. MOUSSE CHOCO NR",
+    "PRIX PROMOTION 5.69 EUR",
+    "ULTRA FRAIS 5.69 EUR",
+    "TOTAL : 55.89 EUR",
+    "ESPECES 55.89 EUR",
   ].join("\n"),
 }
 
@@ -158,6 +299,67 @@ export const LECLERC_HORIZONTAL_REFERENCE = {
     "Bon immediat 1.00 EUR",
     "Reste a payer 88.81 EUR",
     "CB 88.81 EUR",
+  ].join("\n"),
+}
+
+export const ELECLERC_LONG_REAL_OCR_REFERENCE = {
+  id: "e-leclerc-le-portail-real-ocr-32-items-noisy",
+  expectedStore: "E.Leclerc Le Portail",
+  expectedNormalizedStore: "e.leclerc",
+  expectedStoreLocation: "Le Portail",
+  expectedDate: "2026-06-19",
+  expectedItemsMin: 32,
+  expectedSubtotalBeforeDiscount: 89.81,
+  expectedDiscount: 1.00,
+  expectedFinalTotalManualReference: 88.81,
+  expectedTotalNeedsReview: true,
+  expectedTrustedTotal: 0,
+  text: [
+    "E.Lecierc",
+    "LE PoRTAIL",
+    "02.62.71-30,.00",
+    "Caisse 011-1032 19. suin 2026 17:07",
+    "TT AMM",
+    ">> EPICERIE",
+    "R12 BASHATI STD LE FORBAN 1a 3.56 1",
+    "LE paIN BaP x4 YAN 2608 2.52 2",
+    "BARO CHIEN VOLATLLE, 3000 0.89 3",
+    "LENTILLES CUIST, 2650 1.09 2",
+    "GRESSIN RONAR OLIVE, 125q 1.90 2",
+    "COFFRET APERO,1008 1.25 2",
+    "RUSTICA OLGNONS 37CL 1.40 2",
+    "LENTILLE GRA OTE NOTRE JARDIN 1.72 1",
+    "GENOISE FRAISE NR 1.50 2",
+    "SCE BOURGUIGHE POT,2506 1.415 1",
+    "RAVIOLI AUX 6 LEGUHES 8008 2.25 4",
+    "SOJA CUISINE 3X200HL BIO VILLA 2.49 1",
+    "CHOCO STARS HARVEL 3.99 1",
+    "CROQ MIX SENOIR VOL FIDO 2.5K 9.38 3",
+    ">> LIQUIDE",
+    "BOISSON DE NOIX DE COCO 500HL 1.16 2",
+    ">> CREMERIE",
+    "BLEU AUVERGN.AOP ENTREHONT 125 2.10 2",
+    "LAIT CDA VIUA 1/2ECR BK 1L BOP 1.27",
+    "KOKOT X12 OEUFS PLEIN AIR 5.35 1",
+    "RACLETTE PAST. BAR 250GRS 4.09 2",
+    "EMMENTAL RAPE 26% MG 2000 ECO+",
+    "2X1.80 9 3.60 2",
+    "MEULE FRUITEE 35% BLOC 2200 HR 2.90 2",
+    "BOISSON COCO 1L 2.62 2",
+    "PF SHOP & 100 VEG DS 4506 2.80 1",
+    ">> FRUITS",
+    "CAROTTE IMPORT",
+    "0.654kg X 1.20 EUR/kg 0.78",
+    "SO. T6kg x 2.99 EUR/kg 2.28 2",
+    ">> CHARCUTERIE TRAITEUR",
+    "COPPA 190G SAINT AZQ 2",
+    "BON VEGET. STEAK SOJA 2.26",
+    "FILETS DE COLIN",
+    "POLIN PH 400GR 2.19",
+    "TRUITE DE BRETAGNE 200 NAT",
+    "Total 32 articles",
+    "Bon immediat",
+    "Code",
   ].join("\n"),
 }
 
@@ -218,10 +420,186 @@ function assertLeaderPriceShortFixture(fixture = LEADER_PRICE_SHORT_REFERENCE) {
   }
 }
 
+function assertLeaderPriceSmallFuzzyCbFixture(fixture = LEADER_PRICE_SMALL_FUZZY_CB_REFERENCE) {
+  const parsed = parseReceipt({ text: fixture.text, ocrStatus: "success", ocrConfidence: 88 })
+  const trustedTotal = extractTrustedTotal(fixture.text)
+  const declaredEvidence = extractDeclaredItemsEvidence(fixture.text)
+  const itemNames = parsed.items.map(item => String(item.ocr_name || item.name || ""))
+  const debug = (parsed.parser_debug || {}) as Record<string, any>
+  const itemTotalSum = Number(parsed.items.reduce((sum, item) => sum + Number(item.total_price ?? item.price ?? 0), 0).toFixed(2))
+  const forbiddenSectionNames = /(surgeles|epicerie sucree|epicerie salee|cremerie)/i
+
+  return {
+    id: fixture.id,
+    passed: parsed.store_name === fixture.expectedStore
+      && (parsed as any).normalized_store_name === fixture.expectedNormalizedStore
+      && (parsed as any).store_location === fixture.expectedStoreLocation
+      && parsed.purchase_date === fixture.expectedDate
+      && parsed.date_status === "detected"
+      && Math.abs(Number(parsed.total_amount || 0) - fixture.expectedTotal) <= 0.01
+      && (parsed as any).total_needs_review === false
+      && (parsed as any).total_source === fixture.expectedTotalSource
+      && (parsed as any).total_payment_consistent === true
+      && Math.abs(Number((parsed as any).payment_total_value || 0) - fixture.expectedTotal) <= 0.01
+      && (parsed as any).payment_method === fixture.expectedPaymentMethod
+      && parsed.expected_items_count === fixture.expectedItemsCount
+      && (parsed as any).expected_items_source === fixture.expectedItemsSource
+      && (parsed as any).declared_items_count === fixture.expectedItemsCount
+      && (parsed as any).declared_items_raw_text === fixture.expectedDeclaredItemsRawText
+      && parsed.items.length === fixture.expectedItemsCount
+      && fixture.sectionSubtotalLines.every(line => isSectionSubtotalLine(line) && shouldRejectLineAsProduct(line))
+      && Number(debug.section_subtotals_rejected_count || 0) === fixture.expectedSectionSubtotalsRejectedCount
+      && Math.abs(Number(debug.section_subtotals_rejected_amount || 0) - fixture.expectedSectionSubtotalsRejectedAmount) <= 0.01
+      && Math.abs(Number(debug.calculated_items_sum_after_section_filter || 0) - fixture.expectedTotal) <= 0.01
+      && Math.abs(itemTotalSum - fixture.expectedTotal) <= 0.01
+      && Math.abs(Number(debug.items_total_vs_receipt_total_delta || 0)) <= 0.01
+      && debug.ocr_text_has_total === true
+      && debug.ocr_text_has_payment === true
+      && debug.ocr_text_has_declared_items_count === true
+      && debug.local_total_missing_reason === ""
+      && itemNames.every(name => !forbiddenSectionNames.test(name))
+      && fixture.expectedItems.every(expected => {
+        const item = parsed.items.find(candidate => String(candidate.ocr_name || candidate.name || "").toUpperCase().includes(expected.name.toUpperCase().slice(0, 12)))
+        return Boolean(item) && Math.abs(Number(item?.total_price || 0) - expected.total) <= 0.01
+      })
+      && trustedTotal.amount === fixture.expectedTotal
+      && trustedTotal.source === fixture.expectedTotalSource
+      && trustedTotal.paymentConsistent === true
+      && declaredEvidence.count === fixture.expectedItemsCount
+      && declaredEvidence.source === fixture.expectedItemsSource,
+    expected: {
+      store: fixture.expectedStore,
+      date: fixture.expectedDate,
+      total: fixture.expectedTotal,
+      totalSource: fixture.expectedTotalSource,
+      paymentMethod: fixture.expectedPaymentMethod,
+      declaredItemsCount: fixture.expectedItemsCount,
+      declaredItemsSource: fixture.expectedItemsSource,
+      sectionSubtotalsRejected: fixture.expectedSectionSubtotalsRejectedCount,
+      aiCalls: fixture.expectedAiCalls,
+    },
+    actual: {
+      store: parsed.store_name,
+      normalizedStore: (parsed as any).normalized_store_name,
+      storeLocation: (parsed as any).store_location,
+      date: parsed.purchase_date,
+      total: parsed.total_amount,
+      totalNeedsReview: (parsed as any).total_needs_review,
+      totalSource: (parsed as any).total_source,
+      totalRawText: (parsed as any).total_raw_text,
+      paymentMethod: (parsed as any).payment_method,
+      paymentTotalValue: (parsed as any).payment_total_value,
+      paymentTotalRawText: (parsed as any).payment_total_raw_text,
+      expectedItemsCount: parsed.expected_items_count,
+      expectedItemsSource: (parsed as any).expected_items_source,
+      declaredItemsCount: (parsed as any).declared_items_count,
+      declaredItemsRawText: (parsed as any).declared_items_raw_text,
+      items: parsed.items.length,
+      itemTotalSum,
+      sectionSubtotalsRejected: debug.section_subtotals_rejected_count,
+      sectionSubtotalsRejectedAmount: debug.section_subtotals_rejected_amount,
+      calculatedItemsSumBeforeSectionFilter: debug.calculated_items_sum_before_section_filter,
+      calculatedItemsSumAfterSectionFilter: debug.calculated_items_sum_after_section_filter,
+      itemsTotalVsReceiptTotalDelta: debug.items_total_vs_receipt_total_delta,
+      ocrTextHasTotal: debug.ocr_text_has_total,
+      ocrTextHasPayment: debug.ocr_text_has_payment,
+      ocrTextHasDeclaredItemsCount: debug.ocr_text_has_declared_items_count,
+      localTotalMissingReason: debug.local_total_missing_reason,
+      itemNames,
+    },
+  }
+}
+
+function assertLeaderPriceMediumTotalCashFixture(fixture = LEADER_PRICE_MEDIUM_TOTAL_CASH_REFERENCE) {
+  const parsed = parseReceipt({ text: fixture.text, ocrStatus: "success", ocrConfidence: 90 })
+  const trustedTotal = extractTrustedTotal(fixture.text)
+  const itemNames = parsed.items.map(item => String(item.ocr_name || item.name || ""))
+  const forbiddenSectionNames = /(epicerie|boissons sans alcool|charcuterie|cremerie|fleurs.*legumes|ultra frais)/i
+  const oilItem = parsed.items.find(item => String(item.ocr_name || item.name || "").toUpperCase().includes("HUILE LESIEUR"))
+  const weightedPotato = parsed.items.find(item => String(item.ocr_name || item.name || "").toUpperCase().includes("POMME DE TERRE"))
+  const weightedMushroom = parsed.items.find(item => String(item.ocr_name || item.name || "").toUpperCase().includes("CHAMPIGNON"))
+  const debug = (parsed.parser_debug || {}) as Record<string, any>
+  const itemTotalSum = Number(parsed.items.reduce((sum, item) => sum + Number(item.total_price ?? item.price ?? 0), 0).toFixed(2))
+
+  return {
+    id: fixture.id,
+    passed: parsed.store_name === fixture.expectedStore
+      && (parsed as any).normalized_store_name === fixture.expectedNormalizedStore
+      && (parsed as any).store_location === fixture.expectedStoreLocation
+      && parsed.purchase_date === fixture.expectedDate
+      && parsed.date_status === "detected"
+      && Math.abs(Number(parsed.total_amount || 0) - fixture.expectedTotal) <= 0.01
+      && (parsed as any).total_needs_review === false
+      && ((parsed as any).total_source === "explicit_total_line" || (parsed as any).total_payment_consistent === true)
+      && Math.abs(Number((parsed as any).payment_total_value || 0) - fixture.expectedTotal) <= 0.01
+      && (parsed as any).payment_method === fixture.expectedPaymentMethod
+      && fixture.sectionSubtotalLines.every(line => isSectionSubtotalLine(line) && shouldRejectLineAsProduct(line))
+      && Number(debug.section_subtotals_rejected_count || 0) === fixture.expectedSectionSubtotalsRejectedCount
+      && Math.abs(Number(debug.section_subtotals_rejected_amount || 0) - fixture.expectedSectionSubtotalsRejectedAmount) <= 0.01
+      && Math.abs(Number(debug.calculated_items_sum_after_section_filter || 0) - fixture.expectedTotal) <= 0.01
+      && Math.abs(itemTotalSum - fixture.expectedTotal) <= 0.01
+      && Math.abs(Number(debug.items_total_vs_receipt_total_delta || 0)) <= 0.01
+      && parsed.items.length >= fixture.expectedMinItems
+      && itemNames.every(name => !forbiddenSectionNames.test(name))
+      && Boolean(oilItem)
+      && Math.abs(Number(oilItem?.quantity || 0) - 2) <= 0.01
+      && Math.abs(Number(oilItem?.unit_price || 0) - 2.79) <= 0.01
+      && Math.abs(Number(oilItem?.total_price || 0) - 5.58) <= 0.01
+      && Math.abs(Number(weightedPotato?.quantity || 0) - 1.082) <= 0.001
+      && Math.abs(Number(weightedPotato?.unit_price || 0) - 1.95) <= 0.01
+      && Math.abs(Number(weightedPotato?.total_price || 0) - 2.11) <= 0.01
+      && Math.abs(Number(weightedMushroom?.quantity || 0) - 0.424) <= 0.001
+      && Math.abs(Number(weightedMushroom?.unit_price || 0) - 11.8) <= 0.01
+      && Math.abs(Number(weightedMushroom?.total_price || 0) - 5) <= 0.01
+      && trustedTotal.amount === fixture.expectedTotal
+      && trustedTotal.source === "explicit_total_line"
+      && trustedTotal.paymentConsistent === true,
+    expected: {
+      store: fixture.expectedStore,
+      date: fixture.expectedDate,
+      total: fixture.expectedTotal,
+      minItems: fixture.expectedMinItems,
+      sectionSubtotalsRejected: fixture.expectedSectionSubtotalsRejectedCount,
+      sectionSubtotalsRejectedAmount: fixture.expectedSectionSubtotalsRejectedAmount,
+      paymentMethod: fixture.expectedPaymentMethod,
+      aiCalls: fixture.expectedAiCalls,
+    },
+    actual: {
+      store: parsed.store_name,
+      normalizedStore: (parsed as any).normalized_store_name,
+      storeLocation: (parsed as any).store_location,
+      date: parsed.purchase_date,
+      dateStatus: parsed.date_status,
+      total: parsed.total_amount,
+      totalNeedsReview: (parsed as any).total_needs_review,
+      totalSource: (parsed as any).total_source,
+      totalRawText: (parsed as any).total_raw_text,
+      totalConfidence: (parsed as any).total_confidence,
+      paymentMethod: (parsed as any).payment_method,
+      paymentTotalValue: (parsed as any).payment_total_value,
+      paymentTotalRawText: (parsed as any).payment_total_raw_text,
+      totalPaymentConsistent: (parsed as any).total_payment_consistent,
+      items: parsed.items.length,
+      itemTotalSum,
+      sectionSubtotalsRejected: debug.section_subtotals_rejected_count,
+      sectionSubtotalsRejectedAmount: debug.section_subtotals_rejected_amount,
+      calculatedItemsSumBeforeSectionFilter: debug.calculated_items_sum_before_section_filter,
+      calculatedItemsSumAfterSectionFilter: debug.calculated_items_sum_after_section_filter,
+      itemsTotalVsReceiptTotalDelta: debug.items_total_vs_receipt_total_delta,
+      itemNames,
+      oilItem,
+      weightedPotato,
+      weightedMushroom,
+    },
+  }
+}
+
 export function runScannerRegressionFixtures() {
   const leaderShort = assertLeaderPriceShortFixture(LEADER_PRICE_SHORT_REFERENCE)
   const leaderShortNoPm = assertLeaderPriceShortFixture(LEADER_PRICE_SHORT_NO_PM_REFERENCE)
   const leaderShortNoisy = assertLeaderPriceShortFixture(LEADER_PRICE_SHORT_NOISY_REFERENCE)
+  const leaderSmallFuzzyCb = assertLeaderPriceSmallFuzzyCbFixture(LEADER_PRICE_SMALL_FUZZY_CB_REFERENCE)
+  const leaderMediumTotalCash = assertLeaderPriceMediumTotalCashFixture(LEADER_PRICE_MEDIUM_TOTAL_CASH_REFERENCE)
 
   const existing = [LEADER_PRICE_SAINT_LEU_REFERENCE, LECLERC_HORIZONTAL_REFERENCE].map((fixture) => {
     const parsed = parseReceipt({ text: fixture.text, ocrStatus: "success", ocrConfidence: 85 })
@@ -247,5 +625,113 @@ export function runScannerRegressionFixtures() {
     }
   })
 
-  return [leaderShort, leaderShortNoPm, leaderShortNoisy, ...existing]
+  const eLeclercReal = (() => {
+    const fixture = ELECLERC_LONG_REAL_OCR_REFERENCE
+    const parsed = parseReceipt({ text: fixture.text, ocrStatus: "success", ocrConfidence: 58 })
+    const trustedTotal = extractTrustedTotal(fixture.text)
+    const declaredEvidence = extractDeclaredItemsEvidence(fixture.text)
+    const declaredItemsCount = extractDeclaredItemsCount(fixture.text)
+    const totalLineRejectedAsProduct = shouldRejectLineAsProduct("Total 32 articles")
+    const phoneDateRejected = extractReliableDateCandidates("02.62.71-30,.00").length === 0
+    const recoveryRatio = Number((9 / fixture.expectedItemsMin).toFixed(2))
+
+    return {
+      id: fixture.id,
+      passed: parsed.store_name === fixture.expectedStore
+        && (parsed as any).normalized_store_name === fixture.expectedNormalizedStore
+        && (parsed as any).store_location === fixture.expectedStoreLocation
+        && parsed.purchase_date === fixture.expectedDate
+        && declaredItemsCount === fixture.expectedItemsMin
+        && declaredEvidence.source === "declared_total_articles"
+        && trustedTotal.amount === fixture.expectedTrustedTotal
+        && totalLineRejectedAsProduct
+        && phoneDateRejected
+        && Number(parsed.total_amount || 0) === 0
+        && recoveryRatio <= 1
+        && recoveryRatio === 0.28,
+      expected: {
+        store: fixture.expectedStore,
+        normalizedStore: fixture.expectedNormalizedStore,
+        storeLocation: fixture.expectedStoreLocation,
+        date: fixture.expectedDate,
+        expectedItemsMin: fixture.expectedItemsMin,
+        expectedSubtotalBeforeDiscount: fixture.expectedSubtotalBeforeDiscount,
+        expectedDiscount: fixture.expectedDiscount,
+        expectedFinalTotalManualReference: fixture.expectedFinalTotalManualReference,
+        trustedTotal: fixture.expectedTrustedTotal,
+        totalNeedsReview: fixture.expectedTotalNeedsReview,
+      },
+      actual: {
+        store: parsed.store_name,
+        normalizedStore: (parsed as any).normalized_store_name,
+        storeLocation: (parsed as any).store_location,
+        date: parsed.purchase_date,
+        declaredItemsCount,
+        declaredItemsRawText: declaredEvidence.raw,
+        declaredItemsSource: declaredEvidence.source,
+        recoveryRatioFor9TrustedItems: recoveryRatio,
+        trustedTotal: trustedTotal.amount,
+        total: parsed.total_amount,
+        items: parsed.items.length,
+        itemNames: parsed.items.map(item => item.ocr_name || item.name),
+      },
+    }
+  })()
+
+  const eLeclercSyntheticPrintedCountRejected = (() => {
+    const syntheticEvidence = extractDeclaredItemsEvidence("printed_items_count:3")
+    const expectedItemsMin = syntheticEvidence.count || null
+    const recoveryRatioRaw = expectedItemsMin ? 10 / expectedItemsMin : null
+
+    return {
+      id: "e-leclerc-synthetic-printed-items-count-rejected",
+      passed: syntheticEvidence.count === 0
+        && syntheticEvidence.source === "missing"
+        && expectedItemsMin === null
+        && recoveryRatioRaw === null,
+      expected: {
+        declaredItemsCount: null,
+        expectedItemsMin: null,
+        expectedItemsSource: "not_found",
+        recoveryRatioStatus: "unknown_expected_items",
+      },
+      actual: {
+        declaredItemsCount: syntheticEvidence.count || null,
+        declaredItemsRawText: syntheticEvidence.raw,
+        declaredItemsSource: syntheticEvidence.source === "missing" ? "not_found" : syntheticEvidence.source,
+        expectedItemsMin,
+        recoveryRatioRaw,
+      },
+    }
+  })()
+
+  const tesseractViteImportFailure = (() => {
+    const error = new Error("Failed to fetch dynamically imported module: http://localhost:5173/node_modules/.vite/deps/tesseract__js.js?v=89a2de5f")
+    const type = classifyLocalOcrError(error)
+
+    return {
+      id: "tesseract-vite-dynamic-import-failure-classified",
+      passed: type === "module_load_failed" && isTechnicalLocalOcrFailure(type),
+      expected: {
+        localOcrErrorType: "module_load_failed",
+        technicalFailure: true,
+      },
+      actual: {
+        localOcrErrorType: type,
+        technicalFailure: isTechnicalLocalOcrFailure(type),
+      },
+    }
+  })()
+
+  return [
+    leaderShort,
+    leaderShortNoPm,
+    leaderShortNoisy,
+    leaderSmallFuzzyCb,
+    leaderMediumTotalCash,
+    ...existing,
+    eLeclercReal,
+    eLeclercSyntheticPrintedCountRejected,
+    tesseractViteImportFailure,
+  ]
 }

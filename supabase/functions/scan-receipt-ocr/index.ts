@@ -1,8 +1,10 @@
 import {
   extractDeclaredItemsCount,
+  extractDeclaredItemsEvidence,
   extractReliableDateCandidates,
   extractTrustedTotal,
   isPhoneLine,
+  isSectionSubtotalLine,
   normalizeReceiptRuleDate,
   normalizeStoreName as normalizeStoreFromRules,
   shouldRejectLineAsProduct,
@@ -102,6 +104,13 @@ function normalizeText(value = "") {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
+}
+
+function localOcrTechnicalFailure(errorType = "") {
+  return errorType === "module_load_failed"
+    || errorType === "worker_load_failed"
+    || errorType === "language_data_load_failed"
+    || errorType === "timeout"
 }
 
 const GENERIC_HALLUCINATION_NAMES = new Set([
@@ -623,10 +632,60 @@ function detectLocalDate(text = "") {
   return normalized
 }
 
+function detectPaymentMethod(line = "") {
+  const clean = normalizeText(line)
+  if (clean.includes("especes") || clean.includes("espece") || clean.includes("cash")) return "especes"
+  if (clean.includes("carte bleue") || clean === "cb" || clean.includes("visa") || clean.includes("mastercard")) return "carte"
+  return null
+}
+
+function sectionSubtotalDiagnostics(text = "") {
+  const rejected = String(text || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .filter((line) => isSectionSubtotalLine(line))
+    .map((line) => ({ line, amount: lastMoney(line) }))
+  const rejectedAmount = rejected.reduce((sum, row) => sum + Number(row.amount || 0), 0)
+  return {
+    rejected,
+    rejectedCount: rejected.length,
+    rejectedAmount: Number(rejectedAmount.toFixed(2)),
+  }
+}
+
+function localOcrTextPresenceDiagnostics(text = "", total = 0, declaredCount = 0) {
+  const lines = String(text || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+  const totalLikeLine = lines.find((line) => {
+    const clean = normalizeText(line)
+    return /\b(total|tuial|t0tal|totai|t0ial|toial|tutal|reste a payer|net a payer|a payer)\b/.test(clean)
+  }) || ""
+  const paymentLine = lines.find((line) => detectPaymentMethod(line) && lastMoney(line) > 0) || ""
+  const hasDeclaredLine = declaredCount > 0
+  const localTotalMissingReason = total > 0
+    ? ""
+    : totalLikeLine
+      ? (paymentLine ? "total_like_present_but_not_trusted" : "total_like_without_matching_payment")
+      : "bottom_total_not_present_in_ocr_text"
+
+  return {
+    ocr_text_has_total: Boolean(totalLikeLine),
+    ocr_text_has_payment: Boolean(paymentLine),
+    ocr_text_has_declared_items_count: hasDeclaredLine,
+    ocr_text_last_lines: lines.slice(-8),
+    local_total_missing_reason: localTotalMissingReason,
+  }
+}
+
 function buildFastLocalExtraction(text = "") {
   const total = extractTotalFromText(text)
+  const trustedTotal = extractTrustedTotal(text)
   const storeName = detectLocalMerchant(text)
-  const expectedItemsCount = getDeclaredItemsCount(text)
+  const declaredEvidence = getDeclaredItemsEvidence(text)
+  const expectedItemsCount = declaredEvidence.count
   const rawItems = parseFallbackItemsFromText(text)
   const finalItems = expectedItemsCount > 0 && rawItems.length > expectedItemsCount
     ? rawItems.slice(0, expectedItemsCount)
@@ -641,6 +700,10 @@ function buildFastLocalExtraction(text = "") {
     confidence_score: exactDeclaredCount ? 88 : Number(item.confidence_score || 62),
     source: "ocr_fallback",
   }))
+  const sectionSubtotal = sectionSubtotalDiagnostics(text)
+  const calculatedItemsSum = Number(items.reduce((sum, item) => sum + Number(item.total_price || item.price || item.unit_price || 0), 0).toFixed(2))
+  const calculatedItemsSumBeforeFilter = Number((calculatedItemsSum + sectionSubtotal.rejectedAmount).toFixed(2))
+  const textPresence = localOcrTextPresenceDiagnostics(text, total, expectedItemsCount)
 
   return {
     store_name: storeName,
@@ -648,7 +711,29 @@ function buildFastLocalExtraction(text = "") {
     store_location: detectLocalStoreLocation(text, storeName),
     purchase_date: detectLocalDate(text),
     total_amount: total,
+    total_needs_review: !total,
+    total_source: trustedTotal.source || (total ? "explicit_total_line" : "missing_or_unreliable"),
+    total_raw_text: trustedTotal.raw || "",
+    total_confidence: trustedTotal.confidence || (total ? 0.82 : 0),
+    payment_method: detectPaymentMethod(trustedTotal.paymentRaw || ""),
+    payment_total_value: trustedTotal.paymentAmount || null,
+    payment_total_raw_text: trustedTotal.paymentRaw || "",
+    total_payment_consistent: Boolean(trustedTotal.paymentConsistent),
     expected_items_count: expectedItemsCount || null,
+    expected_items_min: expectedItemsCount || null,
+    expected_items_source: expectedItemsCount ? declaredEvidence.source : "not_found",
+    declared_items_count: expectedItemsCount || null,
+    declared_items_raw_text: declaredEvidence.raw,
+    items_count_status: expectedItemsCount ? "declared" : "unknown",
+    calculated_items_sum_before_section_filter: calculatedItemsSumBeforeFilter,
+    calculated_items_sum_after_section_filter: calculatedItemsSum,
+    section_subtotals_rejected_count: sectionSubtotal.rejectedCount,
+    section_subtotals_rejected_amount: sectionSubtotal.rejectedAmount,
+    section_subtotals_rejected: sectionSubtotal.rejected,
+    section_subtotals_rejected_lines: sectionSubtotal.rejected.map((row) => row.line),
+    items_kept_lines: items.map((item) => String(item.ocr_name || item.name || "")),
+    items_total_vs_receipt_total_delta: total ? Number(Math.abs(calculatedItemsSum - total).toFixed(2)) : null,
+    ...textPresence,
     items,
   }
 }
@@ -997,18 +1082,35 @@ function countOcrLines(text = "") {
   return String(text || "").split(/\r?\n/).map((line) => line.trim()).filter(Boolean).length
 }
 
-function expectedItemsForFoodTicket(text = "", itemCount = 0) {
-  const lineCount = countOcrLines(text)
+function expectedItemsForFoodTicket(text = "") {
   const declaredCount = getDeclaredItemsCount(text)
   if (declaredCount) return declaredCount
-  if (lineCount >= 35) return 32
-  if (lineCount >= 25) return 16
-  if (lineCount >= 15) return Math.max(8, itemCount)
-  return 3
+  return 0
 }
 
 function getDeclaredItemsCount(text = "") {
   return extractDeclaredItemsCount(text)
+}
+
+function getDeclaredItemsEvidence(text = "") {
+  return extractDeclaredItemsEvidence(text)
+}
+
+function normalizeDeclaredItemsEvidence(candidate: { count?: unknown; raw?: unknown; source?: unknown }) {
+  const raw = String(candidate.raw || "").trim()
+  if (!raw) return { count: 0, raw: "", source: "missing" }
+
+  const evidence = extractDeclaredItemsEvidence(raw)
+  const count = Number(candidate.count || evidence.count || 0)
+  if (!evidence.count || (count > 0 && evidence.count !== count)) {
+    return { count: 0, raw: "", source: "missing" }
+  }
+
+  return {
+    count: evidence.count,
+    raw: evidence.raw || raw,
+    source: evidence.source,
+  }
 }
 
 function pickBestItems(...lists: Record<string, unknown>[][]) {
@@ -1024,11 +1126,43 @@ function reliableItemsCount(items: Record<string, unknown>[] = []) {
   }).length
 }
 
+function needsReviewItemsCount(items: Record<string, unknown>[] = []) {
+  return items.filter((item) => {
+    const status = String(item.review_status || item.item_status || "")
+    return Boolean(item.needs_review) || status === "needs_review" || status === "a_verifier"
+  }).length
+}
+
 function sumReceiptItems(items: Record<string, unknown>[] = []) {
   const total = (items || []).reduce((sum, item) => {
     return sum + numericTotal(item.total_price) + (numericTotal(item.total_price) ? 0 : numericTotal(item.price) || numericTotal(item.unit_price))
   }, 0)
   return Number(total.toFixed(2))
+}
+
+function classifyLongTicketScanStatus({
+  totalAmount,
+  reliableCount,
+  expectedItemsMin,
+  improved,
+}: {
+  totalAmount: number
+  reliableCount: number
+  expectedItemsMin: number
+  improved: boolean
+}) {
+  if (expectedItemsMin <= 0) {
+    return "long_manual_review"
+  }
+
+  if (expectedItemsMin < 15) {
+    return totalAmount > 0 && reliableCount >= 3 ? "usable_review" : (improved ? "usable_review" : "manual_review_required")
+  }
+
+  const recoveryRatio = expectedItemsMin > 0 ? reliableCount / expectedItemsMin : 0
+  if (totalAmount > 0 && recoveryRatio >= 0.85) return "long_trusted"
+  if (recoveryRatio >= 0.4) return "long_usable_review"
+  return "long_manual_review"
 }
 
 function buildSegmentPrompt(segment = "") {
@@ -1076,17 +1210,50 @@ function buildSegmentPrompt(segment = "") {
   ].join("\n")
 }
 
+function declaredItemsEvidenceFromParsed(parsed: Record<string, unknown>) {
+  const fromRawText = extractDeclaredItemsEvidence([
+    parsed.printed_items_raw_text,
+    parsed.declared_items_raw_text,
+    parsed.items_count_raw_text,
+    parsed.total_raw_text,
+    parsed.total_source_line,
+    parsed.raw_total_text,
+  ].filter(Boolean).join("\n"))
+  return fromRawText.count ? fromRawText : { count: 0, raw: "", source: "missing" }
+}
+
+function isDueTotalLabel(line = "") {
+  const clean = normalizeText(line)
+  return clean.includes("reste a payer")
+    || clean.includes("net a payer")
+    || /\ba payer\b/.test(clean)
+    || clean.includes("solde a payer")
+}
+
 function resolveSegmentTotal(parsed: Record<string, unknown>) {
   const amount = numericTotal(parsed.total) || numericTotal(parsed.total_amount)
   const rawText = String(parsed.total_raw_text || parsed.total_source_line || "").trim()
   const confidence = confidence01(parsed.total_confidence)
+  const dueLine = isDueTotalLabel(rawText)
+  const bareTotalLine = /\btotal\b/i.test(normalizeText(rawText)) && !dueLine
 
   if (amount > 0 && rawText && isTrustedTotalLabel(rawText) && !isArticleCountTotalLine(rawText) && confidence >= 0.7) {
+    if (bareTotalLine) {
+      return {
+        amount: 0,
+        rawText,
+        confidence,
+        source: "missing_or_unreliable",
+        rejectedReason: "total_line_not_proven",
+      }
+    }
+
     return {
       amount,
       rawText,
       confidence,
       source: "split_bottom_total_line",
+      rejectedReason: "",
     }
   }
 
@@ -1095,6 +1262,7 @@ function resolveSegmentTotal(parsed: Record<string, unknown>) {
     rawText,
     confidence,
     source: "missing_or_unreliable",
+    rejectedReason: rawText ? "total_line_not_proven" : "total_missing",
   }
 }
 
@@ -1114,12 +1282,14 @@ async function runOpenAiVisionSegment({
   mimeType,
   imageSize,
   hintText = "",
+  expectedItemsMin = 0,
 }: {
   segment: string
   imageBase64: string
   mimeType: string
   imageSize: Record<string, unknown>
   hintText?: string
+  expectedItemsMin?: number
 }) {
   const apiKey = Deno.env.get("OPENAI_API_KEY") || ""
   if (!apiKey) return null
@@ -1202,12 +1372,27 @@ async function runOpenAiVisionSegment({
     }
   }
 
-  const totalEvidence = segment === "bottom" ? resolveSegmentTotal(parsed) : { amount: 0, rawText: "", confidence: 0, source: "missing_or_unreliable" }
+  const declaredEvidence = declaredItemsEvidenceFromParsed(parsed)
+  const segmentExpectedItemsMin = Math.max(Number(expectedItemsMin || 0), Number(declaredEvidence.count || 0))
+  const totalEvidence = segment === "bottom"
+    ? resolveSegmentTotal(parsed)
+    : { amount: 0, rawText: "", confidence: 0, source: "missing_or_unreliable", rejectedReason: "" }
   const items = normalizeOpenAiItems(Array.isArray(parsed.items) ? parsed.items : [])
+    .map((item) => ({
+      ...item,
+      segment_source: segment,
+      raw_text: String(item.raw_text || item.source_line || item.name || ""),
+      review_status: item.review_status || (item.needs_review ? "needs_review" : item.item_status || "detected"),
+      rejection_reason: "",
+    }))
   const storeName = cleanStoreCandidate(String(parsed.store_name || parsed.normalized_store_name || ""))
+  const reliableCount = reliableItemsCount(items)
+  const reviewCount = needsReviewItemsCount(items)
+  const rawItemsCount = Array.isArray(parsed.items) ? parsed.items.length : 0
   return {
     segment,
     parsed,
+    segment_status: items.length ? "success" : "empty",
     receipt: {
       store_name: storeName,
       normalized_store_name: normalizeLocalMerchantName(storeName),
@@ -1219,6 +1404,13 @@ async function runOpenAiVisionSegment({
       total_confidence: totalEvidence.confidence,
       total_source: totalEvidence.source,
       total_needs_review: totalEvidence.amount <= 0,
+      total_rejected_reason: totalEvidence.rejectedReason || "",
+      total_raw_text_verified_against_ocr: false,
+      expected_items_count: declaredEvidence.count || null,
+      expected_items_min: segmentExpectedItemsMin || null,
+      expected_items_source: declaredEvidence.count ? declaredEvidence.source : "not_found",
+      declared_items_count: declaredEvidence.count || null,
+      declared_items_raw_text: declaredEvidence.raw,
       items,
       warnings: Array.isArray(parsed.warnings) ? parsed.warnings.map(String) : [],
     },
@@ -1229,8 +1421,13 @@ async function runOpenAiVisionSegment({
     rawContent: content,
     rawResponseBody: bodyText,
     imageSize,
-    rawItemsCount: Array.isArray(parsed.items) ? parsed.items.length : 0,
-    reliableItemsCount: reliableItemsCount(items),
+    rawItemsCount,
+    reliableItemsCount: reliableCount,
+    needsReviewItemsCount: reviewCount,
+    rejectedItemsCount: Math.max(0, rawItemsCount - items.length),
+    declaredItemsCount: declaredEvidence.count || null,
+    declaredItemsRawText: declaredEvidence.raw,
+    expectedItemsMin: segmentExpectedItemsMin || null,
   }
 }
 
@@ -1245,6 +1442,7 @@ function mergeSplitReceiptResults(
   splitResults: Record<string, unknown>[],
   baseReceipt: Record<string, unknown> & { items?: Record<string, unknown>[]; warnings?: unknown[] },
   expectedItemsMin: number,
+  options: { imageQualityWarning?: boolean } = {},
 ) {
   const validResults = splitResults.filter((result) => result && !("error" in result))
   const receipts = validResults.map((result) => (result.receipt || {}) as Record<string, unknown> & { items?: Record<string, unknown>[]; warnings?: unknown[] })
@@ -1264,13 +1462,33 @@ function mergeSplitReceiptResults(
   }
 
   const items = Array.from(byKey.values())
+  const declaredEvidenceCandidates = [
+    {
+      count: Number(baseReceipt.expected_items_count || baseReceipt.declared_items_count || 0),
+      raw: String(baseReceipt.declared_items_raw_text || ""),
+      source: String(baseReceipt.expected_items_source || ""),
+    },
+    ...validResults.map((result) => ({
+      count: Number(result.declaredItemsCount || ((result.receipt || {}) as Record<string, unknown>).declared_items_count || 0),
+      raw: String(result.declaredItemsRawText || ((result.receipt || {}) as Record<string, unknown>).declared_items_raw_text || ""),
+      source: String(((result.receipt || {}) as Record<string, unknown>).expected_items_source || ""),
+    })),
+  ].map(normalizeDeclaredItemsEvidence).filter((candidate) => candidate.count > 0)
+  const bestDeclaredEvidence = declaredEvidenceCandidates.sort((a, b) => b.count - a.count)[0] || { count: 0, raw: "", source: "missing" }
+  const effectiveExpectedItemsMin = bestDeclaredEvidence.count || Number(expectedItemsMin || 0)
   const bottomReceipt = receipts.find((receipt) => Number(receipt.total_amount || 0) > 0 && String(receipt.total_source || "").includes("split_bottom"))
-  const totalAmount = Number(bottomReceipt?.total_amount || 0)
+  const detectedTotalAmount = Number(bottomReceipt?.total_amount || 0)
   const rawItemsCount = items.length
   const reliableCount = reliableItemsCount(items)
   const improved = rawItemsCount > (Array.isArray(baseReceipt.items) ? baseReceipt.items.length : 0)
-  const enoughItems = expectedItemsMin > 0 ? reliableCount >= Math.ceil(expectedItemsMin * 0.6) : reliableCount >= 3
-  const scanStatus = totalAmount > 0 && enoughItems ? "usable_review" : (improved ? "usable_review" : "manual_review_required")
+  const totalBlockedByQuality = Boolean(options.imageQualityWarning && effectiveExpectedItemsMin >= 20 && detectedTotalAmount > 0)
+  const totalAmount = totalBlockedByQuality ? 0 : detectedTotalAmount
+  const scanStatus = classifyLongTicketScanStatus({
+    totalAmount,
+    reliableCount,
+    expectedItemsMin: effectiveExpectedItemsMin,
+    improved,
+  })
   const baseStore = cleanStoreCandidate(String(baseReceipt.store_name || ""))
   const splitStore = cleanStoreCandidate(String(receipts.find((receipt) => receipt.store_name)?.store_name || ""))
   const finalStore = baseStore || splitStore || "Enseigne a verifier"
@@ -1293,8 +1511,15 @@ function mergeSplitReceiptResults(
       total_confidence: totalAmount ? Number(bottomReceipt?.total_confidence || 0) : 0,
       total_needs_review: totalAmount <= 0,
       total_source: totalAmount ? "split_bottom_total_line" : "missing_or_unreliable",
-      total_rejected_reason: totalAmount ? "" : "split_total_missing_or_unreliable",
-      total_raw_text_verified_against_ocr: totalAmount > 0,
+      total_rejected_reason: totalAmount ? "" : (totalBlockedByQuality ? "low_image_quality_total_not_auto_trusted" : "split_total_missing_or_unreliable"),
+      total_raw_text_verified_against_ocr: false,
+      total_verified_against_segment_text: totalAmount > 0,
+      expected_items_count: bestDeclaredEvidence.count || baseReceipt.expected_items_count || null,
+      expected_items_min: effectiveExpectedItemsMin || null,
+      expected_items_source: bestDeclaredEvidence.count ? bestDeclaredEvidence.source : "not_found",
+      declared_items_count: bestDeclaredEvidence.count || null,
+      declared_items_raw_text: bestDeclaredEvidence.raw || "",
+      items_count_status: bestDeclaredEvidence.count ? "declared" : "unknown",
       estimated_items_sum: totalAmount ? null : sumReceiptItems(items),
       items,
       warnings: totalAmount ? warnings : [...warnings, "Total non lu avec certitude. Verification manuelle necessaire."],
@@ -1303,6 +1528,10 @@ function mergeSplitReceiptResults(
     scanStatus,
     rawItemsCount,
     reliableItemsCount: reliableCount,
+    expectedItemsMin: effectiveExpectedItemsMin,
+    declaredItemsCount: bestDeclaredEvidence.count || null,
+    declaredItemsRawText: bestDeclaredEvidence.raw || "",
+    expectedItemsSource: bestDeclaredEvidence.count ? bestDeclaredEvidence.source : "not_found",
     splitTotalValue: totalAmount || null,
     splitTotalRawText: totalAmount ? String(bottomReceipt?.total_raw_text || "") : "",
     splitTotalConfidence: totalAmount ? Number(bottomReceipt?.total_confidence || 0) : 0,
@@ -1362,11 +1591,13 @@ async function runSplitRetry({
   browserText,
   baseReceipt,
   expectedItemsMin,
+  imageQualityWarning = false,
 }: {
   imageSegments: Record<string, unknown>[]
   browserText: string
   baseReceipt: Record<string, unknown> & { items?: Record<string, unknown>[]; warnings?: unknown[] }
   expectedItemsMin: number
+  imageQualityWarning?: boolean
 }) {
   const usableSegments = (Array.isArray(imageSegments) ? imageSegments : [])
     .filter((segment) => segment?.imageBase64 && segment?.mimeType && segment?.segment)
@@ -1382,27 +1613,140 @@ async function runSplitRetry({
 
   const splitResults = []
   for (const segment of usableSegments) {
-    const result = await runOpenAiVisionSegment({
-      segment: String(segment.segment),
-      imageBase64: String(segment.imageBase64),
-      mimeType: String(segment.mimeType || "image/jpeg"),
-      imageSize: {
-        width: segment.width ?? null,
-        height: segment.height ?? null,
-        yStartPercent: segment.yStartPercent ?? null,
-        yEndPercent: segment.yEndPercent ?? null,
-        overlapPercent: segment.overlapPercent ?? null,
-      },
-      hintText: segmentOcrHint(browserText, String(segment.segment)),
-    })
-    if (result) splitResults.push(result as Record<string, unknown>)
+    const segmentStartedAt = performance.now()
+    const segmentName = String(segment.segment)
+    const segmentImageSize = {
+      width: segment.width ?? null,
+      height: segment.height ?? null,
+      yStartPercent: segment.yStartPercent ?? null,
+      yEndPercent: segment.yEndPercent ?? null,
+      overlapPercent: segment.overlapPercent ?? null,
+      base64Size: String(segment.imageBase64 || "").length,
+      estimatedBytes: segment.estimatedBytes ?? null,
+    }
+
+    try {
+      const result = await runOpenAiVisionSegment({
+        segment: segmentName,
+        imageBase64: String(segment.imageBase64),
+        mimeType: String(segment.mimeType || "image/jpeg"),
+        imageSize: segmentImageSize,
+        hintText: segmentOcrHint(browserText, segmentName),
+        expectedItemsMin,
+      })
+      if (result) splitResults.push(result as Record<string, unknown>)
+    } catch (segmentError) {
+      const message = errorMessage(segmentError)
+      splitResults.push({
+        error: true,
+        segment: segmentName,
+        segment_status: message.toLowerCase().includes("timeout") ? "timeout" : "technical_error",
+        message,
+        durationMs: Math.round(performance.now() - segmentStartedAt),
+        imageSize: segmentImageSize,
+        rawItemsCount: 0,
+        reliableItemsCount: 0,
+        needsReviewItemsCount: 0,
+        rejectedItemsCount: 0,
+        warnings: ["Segment non exploitable."],
+      })
+    }
   }
 
-  const merged = mergeSplitReceiptResults(splitResults, baseReceipt, expectedItemsMin)
+  const merged = mergeSplitReceiptResults(splitResults, baseReceipt, expectedItemsMin, { imageQualityWarning })
   return {
     error: false,
     splitResults,
     merged,
+  }
+}
+
+function summarizeSplitSegmentResult(result: Record<string, unknown>, index = 0) {
+  const receipt = (result.receipt || {}) as Record<string, unknown> & { items?: Record<string, unknown>[]; warnings?: unknown[] }
+  const items = Array.isArray(receipt.items) ? receipt.items : []
+  const imageSize = (result.imageSize || {}) as Record<string, unknown>
+  const rawItemsCount = Number(result.rawItemsCount || items.length || 0)
+  const reliableCount = Number(result.reliableItemsCount ?? reliableItemsCount(items))
+  const reviewCount = Number(result.needsReviewItemsCount ?? needsReviewItemsCount(items))
+  const segmentStatus = String(result.segment_status || (result.error ? "parse_error" : items.length ? "success" : "empty"))
+  const errorMessageText = String(result.message || result.error_message || "")
+
+  return {
+    segment_index: index,
+    segment: result.segment,
+    segment_name: result.segment,
+    image_width: Number(imageSize.width || 0) || null,
+    image_height: Number(imageSize.height || 0) || null,
+    base64_size: Number(imageSize.base64Size || 0) || null,
+    estimated_bytes: Number(imageSize.estimatedBytes || 0) || null,
+    input_tokens: result.inputTokens ?? null,
+    output_tokens: result.outputTokens ?? null,
+    duration_ms: Number(result.durationMs || 0) || null,
+    status: segmentStatus,
+    raw_items_count: rawItemsCount,
+    reliable_items_count: reliableCount,
+    declared_items_count: Number(result.declaredItemsCount || receipt.declared_items_count || 0) || null,
+    declared_items_raw_text: String(result.declaredItemsRawText || receipt.declared_items_raw_text || ""),
+    needs_review_items_count: reviewCount,
+    rejected_items_count: Number(result.rejectedItemsCount ?? Math.max(0, rawItemsCount - reliableCount - reviewCount)) || 0,
+    first_items_names: items.slice(0, 5).map((item) => String(item.name || item.ocr_name || "")).filter(Boolean),
+    total_found: Number(receipt.total_amount || 0) > 0,
+    warnings: Array.isArray(receipt.warnings)
+      ? receipt.warnings
+      : Array.isArray(result.warnings)
+        ? result.warnings
+        : [],
+    error_message: errorMessageText,
+    segment_quality_score: Math.min(100, Math.round((Number(imageSize.width || 0) * Number(imageSize.height || 0)) / 18000)),
+  }
+}
+
+function buildSplitDiagnostics({
+  splitResults,
+  expectedItemsMin,
+  reliableItemsDetectedBySplit,
+}: {
+  splitResults: Record<string, unknown>[]
+  expectedItemsMin: number
+  reliableItemsDetectedBySplit: number
+}) {
+  const segmentDiagnostics = (splitResults || []).map((result, index) => summarizeSplitSegmentResult(result, index))
+  const successCount = segmentDiagnostics.filter((segment) => segment.status === "success").length
+  const timeoutCount = segmentDiagnostics.filter((segment) => segment.status === "timeout").length
+  const rawItems = segmentDiagnostics.reduce((sum, segment) => sum + Number(segment.raw_items_count || 0), 0)
+  const inputTokens = (splitResults || []).reduce((sum, result) => sum + Number(result.inputTokens || 0), 0)
+  const outputTokens = (splitResults || []).reduce((sum, result) => sum + Number(result.outputTokens || 0), 0)
+  const durationMs = (splitResults || []).reduce((sum, result) => sum + Number(result.durationMs || 0), 0)
+  const recoveryRatioRaw = expectedItemsMin > 0 ? reliableItemsDetectedBySplit / expectedItemsMin : null
+  const recoveryRatio = recoveryRatioRaw === null ? null : Number(Math.min(1, recoveryRatioRaw).toFixed(2))
+  const recoveryRatioStatus = expectedItemsMin > 0 ? "computed" : "unknown_expected_items"
+  const expectedItemsMinIsProven = expectedItemsMin > 0
+  const splitFailureReason = timeoutCount === segmentDiagnostics.length && segmentDiagnostics.length > 0
+    ? "all_segments_timeout"
+    : expectedItemsMin > 0 && reliableItemsDetectedBySplit < Math.ceil(expectedItemsMin * 0.4)
+      ? "low_recovery_ratio"
+      : ""
+
+  return {
+    split_segments_results: segmentDiagnostics,
+    split_segments_success_count: successCount,
+    split_segments_timeout_count: timeoutCount,
+    split_total_input_tokens: inputTokens || null,
+    split_total_output_tokens: outputTokens || null,
+    split_total_duration_ms: durationMs || null,
+    raw_items_detected_by_split: rawItems,
+    reliable_items_detected_by_split: reliableItemsDetectedBySplit,
+    expected_items_min: expectedItemsMin || null,
+    expected_items_min_is_proven: expectedItemsMinIsProven,
+    recovery_ratio_denominator_source: expectedItemsMinIsProven ? "declared_total_articles" : "not_found",
+    recovery_ratio_blocked_reason: expectedItemsMinIsProven ? "" : "expected_items_min_not_proven",
+    recovery_ratio_raw: recoveryRatioRaw === null ? null : Number(recoveryRatioRaw.toFixed(2)),
+    recovery_ratio: recoveryRatio,
+    recovery_ratio_capped: recoveryRatioRaw !== null && recoveryRatioRaw > 1,
+    recovery_ratio_status: recoveryRatioStatus,
+    estimated_cost_eur: null,
+    split_cost_warning: inputTokens > 100000,
+    split_failure_reason: splitFailureReason,
   }
 }
 
@@ -1462,7 +1806,7 @@ function manualReviewResponse({
     normalized_store_name: String(localReceipt.normalized_store_name || localReceipt.store_name || ""),
     store_location: String(localReceipt.store_location || ""),
     purchase_date: null,
-    date_status: "estimated",
+    date_status: "missing",
     total_amount: null,
     total_status: "missing_or_unreliable",
     total_raw_text: "",
@@ -1476,6 +1820,12 @@ function manualReviewResponse({
     openai_total_confidence: 0,
     total_estimated_from_items: false,
     estimated_items_sum: reviewItems.length ? sumReceiptItems(reviewItems) : null,
+    expected_items_count: Number(localReceipt.expected_items_count || 0) || null,
+    expected_items_min: expectedItemsMin || null,
+    expected_items_source: String(localReceipt.expected_items_source || (expectedItemsMin > 0 ? "declared_total_articles" : "not_found")),
+    declared_items_count: Number(localReceipt.declared_items_count || 0) || null,
+    declared_items_raw_text: String(localReceipt.declared_items_raw_text || ""),
+    items_count_status: String(localReceipt.items_count_status || "unknown"),
     items: reviewItems,
     needs_review: true,
     warnings,
@@ -1520,7 +1870,18 @@ function manualReviewResponse({
     vision_used: visionUsed,
     items_detected_before_openai: itemsDetectedBeforeOpenAi,
     total_detected_before_openai: totalDetectedBeforeOpenAi,
-    expected_items_min: expectedItemsMin,
+    expected_items_min: expectedItemsMin || null,
+    expected_items_source: String(diagnostics.expected_items_source || localReceipt.expected_items_source || "not_found"),
+    declared_items_count: Number(diagnostics.declared_items_count || localReceipt.declared_items_count || 0) || null,
+    declared_items_raw_text: String(diagnostics.declared_items_raw_text || localReceipt.declared_items_raw_text || ""),
+    items_count_status: String(diagnostics.items_count_status || localReceipt.items_count_status || "unknown"),
+    expected_items_min_is_proven: Boolean(diagnostics.expected_items_min_is_proven || expectedItemsMin > 0),
+    recovery_ratio_raw: diagnostics.recovery_ratio_raw ?? null,
+    recovery_ratio: diagnostics.recovery_ratio ?? null,
+    recovery_ratio_capped: Boolean(diagnostics.recovery_ratio_capped || false),
+    recovery_ratio_status: String(diagnostics.recovery_ratio_status || (expectedItemsMin > 0 ? "computed" : "unknown_expected_items")),
+    recovery_ratio_denominator_source: String(diagnostics.recovery_ratio_denominator_source || (expectedItemsMin > 0 ? "declared_total_articles" : "not_found")),
+    recovery_ratio_blocked_reason: String(diagnostics.recovery_ratio_blocked_reason || (expectedItemsMin > 0 ? "" : "expected_items_min_not_proven")),
     premium_plus_daily_ai_limit: PREMIUM_PLUS_DAILY_AI_LIMIT,
     split_retry_eligible: Boolean(diagnostics.split_retry_eligible),
     split_retry_used: Boolean(diagnostics.split_retry_used),
@@ -1766,12 +2127,77 @@ Deno.serve(async (req) => {
       ...imageSizeInfo(imageBase64),
       ...imageMeta,
     }
+    const segmentQualityScore = Math.min(100, Math.round((Number(requestImageSize.optimized_image_width || requestImageSize.width || 0) * Number(requestImageSize.optimized_image_height || requestImageSize.height || 0)) / 65000))
+    const imageQualityWarning = segmentQualityScore > 0 && segmentQualityScore < 50
+    const localOcrAttempted = Boolean(imageMeta.local_ocr_attempted ?? imageMeta.localOcrAttempted ?? false)
+    const localOcrEngine = String(imageMeta.local_ocr_engine || imageMeta.localOcrEngine || "")
+    const localOcrDurationMs = Number(imageMeta.local_ocr_duration_ms ?? imageMeta.localOcrDurationMs ?? 0) || null
+    const localOcrError = String(imageMeta.local_ocr_error || imageMeta.localOcrError || "")
+    const localOcrStatus = String(imageMeta.local_ocr_status || imageMeta.localOcrStatus || "")
+    const localOcrImportStatus = String(imageMeta.local_ocr_import_status || imageMeta.localOcrImportStatus || "")
+    const localOcrWorkerStatus = String(imageMeta.local_ocr_worker_status || imageMeta.localOcrWorkerStatus || "")
+    const localOcrErrorType = String(imageMeta.local_ocr_error_type || imageMeta.localOcrErrorType || "")
+    const browserTextLengthBeforePayload = Number(imageMeta.browserTextLength_before_payload ?? imageMeta.browser_text_length_before_payload ?? imageMeta.browserTextLengthBeforePayload ?? browserText.length)
+    const browserTextLengthSentToEdge = browserText.length
+    const localOcrAvailable = browserText.trim().length > 0
+    const hasLocalOcrTechnicalFailure = localOcrTechnicalFailure(localOcrErrorType)
+    const shouldSkipAiDueToLocalOcrFailure = Boolean(imageMeta.should_skip_ai_due_to_local_ocr_failure ?? imageMeta.shouldSkipAiDueToLocalOcrFailure ?? false)
+    const textEmptyReason = localOcrAvailable
+      ? ""
+      : !localOcrAttempted
+        ? "local_ocr_not_attempted"
+        : browserTextLengthBeforePayload > 0 && browserTextLengthSentToEdge === 0
+          ? "browser_text_not_sent"
+          : browserTextLengthSentToEdge > 0 && browserText.length === 0
+            ? "edge_text_missing"
+            : localOcrStatus === "failed" && localOcrError && localOcrError !== "empty_local_ocr"
+              ? "local_ocr_failed"
+              : imageQualityWarning
+                ? "image_quality_too_low_for_local_ocr"
+                : "local_ocr_empty"
+    const localOcrSkippedReason = localOcrAttempted ? "" : "local_ocr_not_attempted"
+    const localOcrAiRiskReason = hasLocalOcrTechnicalFailure
+      ? `local_ocr_${localOcrErrorType}`
+      : ""
+    const imagePreprocessingForOcr = {
+      rotation_applied: requestImageSize.rotationApplied ?? requestImageSize.rotation_applied ?? null,
+      optimized_image_width: requestImageSize.optimized_image_width ?? requestImageSize.width ?? null,
+      optimized_image_height: requestImageSize.optimized_image_height ?? requestImageSize.height ?? null,
+      compression_quality: requestImageSize.compressionQuality ?? requestImageSize.compression_quality ?? null,
+      segment_quality_score: segmentQualityScore,
+    }
+    const localOcrDiagnostics = {
+      local_ocr_attempted: localOcrAttempted,
+      local_ocr_engine: localOcrEngine,
+      local_ocr_import_status: localOcrImportStatus,
+      local_ocr_worker_status: localOcrWorkerStatus,
+      local_ocr_duration_ms: localOcrDurationMs,
+      local_ocr_error: localOcrError,
+      local_ocr_error_type: localOcrErrorType,
+      local_ocr_skipped_reason: localOcrSkippedReason,
+      browserTextLength_before_payload: browserTextLengthBeforePayload,
+      browserTextLength_sent_to_edge: browserTextLengthSentToEdge,
+      edge_text_length: browserText.length,
+      image_preprocessing_for_ocr: imagePreprocessingForOcr,
+      local_ocr_available: localOcrAvailable,
+      text_empty_reason: textEmptyReason,
+      ai_called_after_local_ocr_technical_failure: false,
+      ai_call_risk_reason: localOcrAiRiskReason,
+      should_skip_ai_due_to_local_ocr_failure: shouldSkipAiDueToLocalOcrFailure,
+    }
+    const markAiCalledAfterLocalOcrFailure = () => {
+      if (hasLocalOcrTechnicalFailure) {
+        localOcrDiagnostics.ai_called_after_local_ocr_technical_failure = true
+        localOcrDiagnostics.ai_call_risk_reason = localOcrAiRiskReason || "local_ocr_technical_failure"
+      }
+    }
 
     console.info("[scan-receipt-ocr] request_received", {
       model: MODEL,
       mimeType,
       image_size: requestImageSize,
       browserTextLength: browserText.length,
+      ...localOcrDiagnostics,
       browserItemsDetected: browserItems.length,
       browserTotal,
       userPlan,
@@ -1818,8 +2244,9 @@ Deno.serve(async (req) => {
     const itemsDetectedBeforeOpenAi = localReceipt.items.length
     const totalDetectedBeforeOpenAi = localReceipt.total_amount > 0
     const isFoodTicket = isLikelyFoodTicket(localReceipt, browserText)
-    const expectedItemsMin = isFoodTicket ? expectedItemsForFoodTicket(browserText, itemsDetectedBeforeOpenAi) : 0
+    const expectedItemsMin = isFoodTicket ? expectedItemsForFoodTicket(browserText) : 0
     const declaredItemsCount = Number(localReceipt.expected_items_count || 0)
+    const declaredEvidence = getDeclaredItemsEvidence(browserText)
     const localExactDeclaredCount = declaredItemsCount > 0 && itemsDetectedBeforeOpenAi === declaredItemsCount
     const scanStatus = totalDetectedBeforeOpenAi && localReceipt.store_name && localReceipt.purchase_date && localExactDeclaredCount
       ? "trusted"
@@ -1832,10 +2259,33 @@ Deno.serve(async (req) => {
       openai_called: false,
       items_detected_before_openai: itemsDetectedBeforeOpenAi,
       total_detected_before_openai: totalDetectedBeforeOpenAi,
-        expected_items_min: expectedItemsMin,
-        expected_items_count: declaredItemsCount || null,
-        scan_status: scanStatus,
+      expected_items_min: expectedItemsMin || null,
+      expected_items_source: declaredEvidence.count ? declaredEvidence.source : "not_found",
+      declared_items_raw_text: declaredEvidence.raw,
+      expected_items_count: declaredItemsCount || null,
+      items_count_status: declaredItemsCount ? "declared" : "unknown",
+      ...localOcrDiagnostics,
+      image_quality_warning: imageQualityWarning,
+      segment_quality_score: segmentQualityScore,
+      scan_status: scanStatus,
       total_amount: localReceipt.total_amount,
+      total_raw_text: localReceipt.total_raw_text,
+      total_source: localReceipt.total_source,
+      payment_total_value: localReceipt.payment_total_value,
+      payment_total_raw_text: localReceipt.payment_total_raw_text,
+      total_payment_consistent: localReceipt.total_payment_consistent,
+      calculated_items_sum_before_section_filter: localReceipt.calculated_items_sum_before_section_filter,
+      calculated_items_sum_after_section_filter: localReceipt.calculated_items_sum_after_section_filter,
+      section_subtotals_rejected_count: localReceipt.section_subtotals_rejected_count,
+      section_subtotals_rejected_amount: localReceipt.section_subtotals_rejected_amount,
+      section_subtotals_rejected_lines: localReceipt.section_subtotals_rejected_lines,
+      items_kept_lines: localReceipt.items_kept_lines,
+      items_total_vs_receipt_total_delta: localReceipt.items_total_vs_receipt_total_delta,
+      ocr_text_has_total: localReceipt.ocr_text_has_total,
+      ocr_text_has_payment: localReceipt.ocr_text_has_payment,
+      ocr_text_has_declared_items_count: localReceipt.ocr_text_has_declared_items_count,
+      ocr_text_last_lines: localReceipt.ocr_text_last_lines,
+      local_total_missing_reason: localReceipt.local_total_missing_reason,
       store_name: localReceipt.store_name,
       purchase_date: localReceipt.purchase_date,
       durationMs: localDurationMs,
@@ -1902,6 +2352,7 @@ Deno.serve(async (req) => {
             fallback_stage: "manual_review_required",
             premium_plus_detected: isPremiumPlus,
             segments_received_by_edge_function: imageSegments.length,
+            ...localOcrDiagnostics,
           },
         }
       }
@@ -1910,45 +2361,42 @@ Deno.serve(async (req) => {
         scheduled: true,
         scan_strategy_used: "mini_split_3",
         reason: primaryStage,
-        expected_items_min: expectedItemsMin,
+        expected_items_min: expectedItemsMin || null,
+        expected_items_source: declaredEvidence.count ? declaredEvidence.source : "not_found",
+        declared_items_count: declaredEvidence.count || null,
+        declared_items_raw_text: declaredEvidence.raw || "",
+        items_count_status: declaredEvidence.count ? "declared" : "unknown",
+        expected_items_min_is_proven: expectedItemsMin > 0,
+        ...localOcrDiagnostics,
         reliable_items_detected_by_vision: primaryReliableItemsDetected,
         split_segments_count: imageSegments.length,
       })
 
       try {
+        markAiCalledAfterLocalOcrFailure()
         const splitRetry = await runSplitRetry({
           imageSegments,
           browserText,
           baseReceipt,
           expectedItemsMin,
+          imageQualityWarning,
         })
 
-        const splitSegmentsResults = (splitRetry.splitResults || []).map((result: Record<string, unknown>) => {
-          const receipt = (result.receipt || {}) as Record<string, unknown> & { items?: Record<string, unknown>[]; warnings?: unknown[] }
-          const items = Array.isArray(receipt.items) ? receipt.items : []
-          const imageSize = (result.imageSize || {}) as Record<string, unknown>
-          const reliableCount = reliableItemsCount(items)
-          return {
-            segment: result.segment,
-            segment_name: result.segment,
-            image_width: Number(imageSize.width || 0) || null,
-            image_height: Number(imageSize.height || 0) || null,
-            input_tokens: result.inputTokens ?? null,
-            items_count: items.length,
-            raw_items_count: Number(result.rawItemsCount || items.length),
-            reliable_items_count: reliableCount,
-            rejected_items_count: Math.max(0, Number(result.rawItemsCount || items.length) - reliableCount),
-            first_items_names: items.slice(0, 5).map((item) => String(item.name || item.ocr_name || "")).filter(Boolean),
-            total_found: Number(receipt.total_amount || 0) > 0,
-            error: result.error || "",
-            warnings: Array.isArray(receipt.warnings) ? receipt.warnings : [],
-            segment_quality_score: Math.min(100, Math.round((Number(imageSize.width || 0) * Number(imageSize.height || 0)) / 18000)),
-          }
+        const splitDiagnostics = buildSplitDiagnostics({
+          splitResults: splitRetry.splitResults || [],
+          expectedItemsMin: splitRetry.merged?.expectedItemsMin || expectedItemsMin,
+          reliableItemsDetectedBySplit: splitRetry.merged?.reliableItemsCount || 0,
         })
+        const splitSegmentsResults = splitDiagnostics.split_segments_results
 
         if (!splitRetry.error && splitRetry.merged) {
           const merged = splitRetry.merged
           const splitReceipt = merged.receipt
+          const scanReliabilityBlockedReason = !localOcrAvailable && imageQualityWarning && Boolean(splitReceipt.total_needs_review)
+            ? "local_ocr_empty_quality_low_total_unreliable"
+            : imageQualityWarning && splitDiagnostics.recovery_ratio !== null && Number(splitDiagnostics.recovery_ratio) < 0.4
+              ? "low_image_quality_and_low_recovery"
+              : ""
 
           return {
             response: jsonResponse({
@@ -1962,7 +2410,7 @@ Deno.serve(async (req) => {
               scan_status: merged.scanStatus,
               source: "openai_vision_split",
               text: browserText,
-              confidence: merged.scanStatus === "usable_review" ? 68 : 42,
+              confidence: String(merged.scanStatus || "").includes("usable_review") ? 68 : 42,
               receipt: splitReceipt,
               openaiDurationMs: Number(primaryDurationMs || 0) + (splitRetry.splitResults || []).reduce((sum: number, result: Record<string, unknown>) => sum + Number(result.durationMs || 0), 0),
               totalDetectionDurationMs: localDurationMs,
@@ -1981,10 +2429,34 @@ Deno.serve(async (req) => {
               split_segments_strategy: "vertical_3_overlap",
               split_segments_overlap_percent: 8,
               split_segments_results: splitSegmentsResults,
+              split_segments_success_count: splitDiagnostics.split_segments_success_count,
+              split_segments_timeout_count: splitDiagnostics.split_segments_timeout_count,
+              split_total_input_tokens: splitDiagnostics.split_total_input_tokens,
+              split_total_output_tokens: splitDiagnostics.split_total_output_tokens,
+              split_total_duration_ms: splitDiagnostics.split_total_duration_ms,
+              split_cost_warning: splitDiagnostics.split_cost_warning,
+              recovery_ratio_raw: splitDiagnostics.recovery_ratio_raw,
+              recovery_ratio: splitDiagnostics.recovery_ratio,
+              recovery_ratio_capped: splitDiagnostics.recovery_ratio_capped,
+              recovery_ratio_status: splitDiagnostics.recovery_ratio_status,
+              expected_items_min_is_proven: splitDiagnostics.expected_items_min_is_proven,
+              recovery_ratio_denominator_source: splitDiagnostics.recovery_ratio_denominator_source,
+              recovery_ratio_blocked_reason: splitDiagnostics.recovery_ratio_blocked_reason,
+              split_failure_reason: splitDiagnostics.split_failure_reason,
               rotation_applied: requestImageSize.rotationApplied ?? requestImageSize.rotation_applied ?? null,
               orientation_confidence: requestImageSize.orientation ? 85 : 45,
               deskew_applied: Array.isArray(requestImageSize.preProcessing) ? requestImageSize.preProcessing.includes("soft_deskew_orientation") : false,
-              segment_quality_score: Math.min(100, Math.round((Number(requestImageSize.optimized_image_width || requestImageSize.width || 0) * Number(requestImageSize.optimized_image_height || requestImageSize.height || 0)) / 65000)),
+              segment_quality_score: segmentQualityScore,
+              image_quality_warning: imageQualityWarning,
+              split_after_rotation: Number(requestImageSize.rotationApplied ?? requestImageSize.rotation_applied ?? 0) !== 0,
+              local_ocr_available: localOcrAvailable,
+              browserTextLength: browserText.length,
+              edge_text_length: browserText.length,
+              text_empty_reason: textEmptyReason,
+              ...localOcrDiagnostics,
+              total_verified_against_local_ocr: splitReceipt.total_raw_text_verified_against_ocr === true && localOcrAvailable,
+              total_verified_against_segment_text: splitReceipt.total_verified_against_segment_text === true,
+              scan_reliability_blocked_reason: scanReliabilityBlockedReason,
               scan_strategy_used_detail: "primary_failed_then_mini_split_3",
               primary_stage: primaryStage,
               primary_error: primaryError,
@@ -2014,17 +2486,45 @@ Deno.serve(async (req) => {
               total_confidence: splitReceipt.total_confidence || 0,
               total_source: splitReceipt.total_source || "missing_or_unreliable",
               estimated_items_sum: splitReceipt.estimated_items_sum ?? null,
-              expected_items_min: expectedItemsMin,
+              expected_items_min: merged.expectedItemsMin || expectedItemsMin || null,
+              expected_items_source: merged.expectedItemsSource || "not_found",
+              declared_items_count: merged.declaredItemsCount || null,
+              declared_items_raw_text: merged.declaredItemsRawText || "",
+              items_count_status: merged.declaredItemsCount ? "declared" : "unknown",
               diagnostics: {
                 split_retry_eligible: true,
                 split_retry_used: true,
                 split_retry_skipped_reason: "",
                 split_segments_count: (splitRetry.splitResults || []).length,
                 split_segments_results: splitSegmentsResults,
+                split_segments_success_count: splitDiagnostics.split_segments_success_count,
+                split_segments_timeout_count: splitDiagnostics.split_segments_timeout_count,
+                split_total_input_tokens: splitDiagnostics.split_total_input_tokens,
+                split_total_output_tokens: splitDiagnostics.split_total_output_tokens,
+                split_total_duration_ms: splitDiagnostics.split_total_duration_ms,
+                split_cost_warning: splitDiagnostics.split_cost_warning,
+                recovery_ratio_raw: splitDiagnostics.recovery_ratio_raw,
+                recovery_ratio: splitDiagnostics.recovery_ratio,
+                recovery_ratio_capped: splitDiagnostics.recovery_ratio_capped,
+                recovery_ratio_status: splitDiagnostics.recovery_ratio_status,
+                expected_items_min_is_proven: splitDiagnostics.expected_items_min_is_proven,
+                recovery_ratio_denominator_source: splitDiagnostics.recovery_ratio_denominator_source,
+                recovery_ratio_blocked_reason: splitDiagnostics.recovery_ratio_blocked_reason,
+                split_failure_reason: splitDiagnostics.split_failure_reason,
                 rotation_applied: requestImageSize.rotationApplied ?? requestImageSize.rotation_applied ?? null,
                 orientation_confidence: requestImageSize.orientation ? 85 : 45,
                 deskew_applied: Array.isArray(requestImageSize.preProcessing) ? requestImageSize.preProcessing.includes("soft_deskew_orientation") : false,
-                segment_quality_score: Math.min(100, Math.round((Number(requestImageSize.optimized_image_width || requestImageSize.width || 0) * Number(requestImageSize.optimized_image_height || requestImageSize.height || 0)) / 65000)),
+                segment_quality_score: segmentQualityScore,
+                image_quality_warning: imageQualityWarning,
+                split_after_rotation: Number(requestImageSize.rotationApplied ?? requestImageSize.rotation_applied ?? 0) !== 0,
+                local_ocr_available: localOcrAvailable,
+                browserTextLength: browserText.length,
+                edge_text_length: browserText.length,
+                text_empty_reason: textEmptyReason,
+                ...localOcrDiagnostics,
+                total_verified_against_local_ocr: splitReceipt.total_raw_text_verified_against_ocr === true && localOcrAvailable,
+                total_verified_against_segment_text: splitReceipt.total_verified_against_segment_text === true,
+                scan_reliability_blocked_reason: scanReliabilityBlockedReason,
                 primary_stage: primaryStage,
                 primary_error: primaryError,
                 fallback_stage: "openai_vision_split_retry",
@@ -2068,6 +2568,7 @@ Deno.serve(async (req) => {
             premium_plus_detected: isPremiumPlus,
             segments_received_by_edge_function: imageSegments.length,
             split_error: errorMessage(splitError),
+            ...localOcrDiagnostics,
           },
         }
       }
@@ -2083,19 +2584,25 @@ Deno.serve(async (req) => {
         reason: "local_high_confidence_skip_openai",
         items_detected_before_openai: itemsDetectedBeforeOpenAi,
         total_detected_before_openai: totalDetectedBeforeOpenAi,
-        expected_items_min: expectedItemsMin,
+        expected_items_min: expectedItemsMin || null,
+        expected_items_source: declaredEvidence.count ? declaredEvidence.source : "not_found",
+        declared_items_count: declaredEvidence.count || null,
+        declared_items_raw_text: declaredEvidence.raw || "",
+        items_count_status: declaredEvidence.count ? "declared" : "unknown",
+        expected_items_min_is_proven: expectedItemsMin > 0,
+        ...localOcrDiagnostics,
       })
 
       return jsonResponse({
         ok: true,
         pipeline_version: "scanner_v2_ai_first_cost_guard",
-        provider: "local_high_confidence",
+        provider: "local-ocr-regex-fallback",
         model: MODEL,
         stage: "fast_local_extraction",
         scan_strategy_used: localExactDeclaredCount ? "local_fast" : "local_ocr_regex",
         scanStatus: scanStatus,
         scan_status: scanStatus,
-        source: "local_high_confidence",
+        source: "local-ocr-regex-fallback",
         text: browserText,
         confidence: 88,
         receipt: localReceipt,
@@ -2110,9 +2617,32 @@ Deno.serve(async (req) => {
         vision_used: false,
         scan_ai_calls_count: 0,
         split_retry_used: false,
+        local_scan_sufficient: true,
+        local_scan_sufficient_reason: localExactDeclaredCount
+          ? "store_date_total_items_declared_from_local_ocr"
+          : "store_date_total_items_detected_locally",
+        ai_skipped_reason: "local_scan_sufficient",
         items_detected_before_openai: itemsDetectedBeforeOpenAi,
         total_detected_before_openai: totalDetectedBeforeOpenAi,
-        expected_items_min: expectedItemsMin,
+        calculated_items_sum_before_section_filter: localReceipt.calculated_items_sum_before_section_filter,
+        calculated_items_sum_after_section_filter: localReceipt.calculated_items_sum_after_section_filter,
+        section_subtotals_rejected_count: localReceipt.section_subtotals_rejected_count,
+        section_subtotals_rejected_amount: localReceipt.section_subtotals_rejected_amount,
+        section_subtotals_rejected_lines: localReceipt.section_subtotals_rejected_lines,
+        items_kept_lines: localReceipt.items_kept_lines,
+        items_total_vs_receipt_total_delta: localReceipt.items_total_vs_receipt_total_delta,
+        ocr_text_has_total: localReceipt.ocr_text_has_total,
+        ocr_text_has_payment: localReceipt.ocr_text_has_payment,
+        ocr_text_has_declared_items_count: localReceipt.ocr_text_has_declared_items_count,
+        ocr_text_last_lines: localReceipt.ocr_text_last_lines,
+        local_total_missing_reason: localReceipt.local_total_missing_reason,
+        expected_items_min: expectedItemsMin || null,
+        expected_items_source: declaredEvidence.count ? declaredEvidence.source : "not_found",
+        declared_items_count: declaredEvidence.count || null,
+        declared_items_raw_text: declaredEvidence.raw || "",
+        items_count_status: declaredEvidence.count ? "declared" : "unknown",
+        expected_items_min_is_proven: expectedItemsMin > 0,
+        ...localOcrDiagnostics,
         expected_items_count: declaredItemsCount || null,
         premium_plus_daily_ai_limit: PREMIUM_PLUS_DAILY_AI_LIMIT,
       })
@@ -2128,6 +2658,7 @@ Deno.serve(async (req) => {
     })
 
     try {
+      markAiCalledAfterLocalOcrFailure()
       const visionPrimary = await runOpenAiVisionFallback({
         imageBase64,
         mimeType,
@@ -2140,7 +2671,7 @@ Deno.serve(async (req) => {
         let visionValidation
         try {
           visionExpectedMinBeforeMerge = isLikelyFoodTicket(visionPrimary.receipt, browserText)
-            ? expectedItemsForFoodTicket(browserText, Array.isArray(visionPrimary.receipt.items) ? visionPrimary.receipt.items.length : 0)
+            ? expectedItemsForFoodTicket(browserText)
             : 0
           visionValidation = applyVisionServerValidation({
             receipt: visionPrimary.receipt,
@@ -2219,7 +2750,7 @@ Deno.serve(async (req) => {
         }
         const visionItemsCount = mergedItems.length
         const visionFoodTicket = isLikelyFoodTicket(visionReceipt, browserText)
-        const visionExpectedMin = visionFoodTicket ? expectedItemsForFoodTicket(browserText, visionItemsCount) : 0
+        const visionExpectedMin = visionFoodTicket ? expectedItemsForFoodTicket(browserText) : 0
         const needsReview = !visionTotal
           || Boolean(visionReceipt.needs_review)
           || (visionExpectedMin > 0 && visionItemsCount < Math.ceil(visionExpectedMin * 0.6))
@@ -2243,37 +2774,29 @@ Deno.serve(async (req) => {
             split_segments_count: imageSegments.length,
           })
 
+          markAiCalledAfterLocalOcrFailure()
           const splitRetry = await runSplitRetry({
             imageSegments,
             browserText,
             baseReceipt: visionReceipt,
             expectedItemsMin: visionExpectedMin,
+            imageQualityWarning,
           })
 
           if (!splitRetry.error && splitRetry.merged) {
             const merged = splitRetry.merged
             const splitReceipt = merged.receipt
-            const splitSegmentsResults = (splitRetry.splitResults || []).map((result: Record<string, unknown>) => {
-              const receipt = (result.receipt || {}) as Record<string, unknown> & { items?: Record<string, unknown>[]; warnings?: unknown[] }
-              const items = Array.isArray(receipt.items) ? receipt.items : []
-              const imageSize = (result.imageSize || {}) as Record<string, unknown>
-              const reliableCount = reliableItemsCount(items)
-              return {
-                segment: result.segment,
-                segment_name: result.segment,
-                image_width: Number(imageSize.width || 0) || null,
-                image_height: Number(imageSize.height || 0) || null,
-                input_tokens: result.inputTokens ?? null,
-                items_count: items.length,
-                raw_items_count: Number(result.rawItemsCount || items.length),
-                reliable_items_count: reliableCount,
-                rejected_items_count: Math.max(0, Number(result.rawItemsCount || items.length) - reliableCount),
-                first_items_names: items.slice(0, 5).map((item) => String(item.name || item.ocr_name || "")).filter(Boolean),
-                total_found: Number(receipt.total_amount || 0) > 0,
-                warnings: Array.isArray(receipt.warnings) ? receipt.warnings : [],
-                segment_quality_score: Math.min(100, Math.round((Number(imageSize.width || 0) * Number(imageSize.height || 0)) / 18000)),
-              }
+            const splitDiagnostics = buildSplitDiagnostics({
+              splitResults: splitRetry.splitResults || [],
+              expectedItemsMin: merged.expectedItemsMin || visionExpectedMin,
+              reliableItemsDetectedBySplit: merged.reliableItemsCount,
             })
+            const splitSegmentsResults = splitDiagnostics.split_segments_results
+            const scanReliabilityBlockedReason = !localOcrAvailable && imageQualityWarning && Boolean(splitReceipt.total_needs_review)
+              ? "local_ocr_empty_quality_low_total_unreliable"
+              : imageQualityWarning && splitDiagnostics.recovery_ratio !== null && Number(splitDiagnostics.recovery_ratio) < 0.4
+                ? "low_image_quality_and_low_recovery"
+                : ""
 
             return jsonResponse({
               ok: true,
@@ -2286,7 +2809,7 @@ Deno.serve(async (req) => {
               scan_status: merged.scanStatus,
               source: "openai_vision_split",
               text: browserText,
-              confidence: merged.scanStatus === "usable_review" ? 68 : 42,
+              confidence: String(merged.scanStatus || "").includes("usable_review") ? 68 : 42,
               receipt: splitReceipt,
               openaiDurationMs: Number(visionPrimary.durationMs || 0) + (splitRetry.splitResults || []).reduce((sum: number, result: Record<string, unknown>) => sum + Number(result.durationMs || 0), 0),
               totalDetectionDurationMs: localDurationMs,
@@ -2332,26 +2855,78 @@ Deno.serve(async (req) => {
               total_confidence: splitReceipt.total_confidence || 0,
               total_source: splitReceipt.total_source || "missing_or_unreliable",
               estimated_items_sum: splitReceipt.estimated_items_sum ?? null,
-              expected_items_min: visionExpectedMin,
+              expected_items_min: merged.expectedItemsMin || visionExpectedMin || null,
+              expected_items_source: merged.expectedItemsSource || "not_found",
+              declared_items_count: merged.declaredItemsCount || null,
+              declared_items_raw_text: merged.declaredItemsRawText || "",
+              items_count_status: merged.declaredItemsCount ? "declared" : "unknown",
               split_segments_count: (splitRetry.splitResults || []).length,
               split_segments_strategy: "vertical_3_overlap",
               split_segments_overlap_percent: 8,
               split_segments_results: splitSegmentsResults,
+              split_segments_success_count: splitDiagnostics.split_segments_success_count,
+              split_segments_timeout_count: splitDiagnostics.split_segments_timeout_count,
+              split_total_input_tokens: splitDiagnostics.split_total_input_tokens,
+              split_total_output_tokens: splitDiagnostics.split_total_output_tokens,
+              split_total_duration_ms: splitDiagnostics.split_total_duration_ms,
+              split_cost_warning: splitDiagnostics.split_cost_warning,
+              recovery_ratio_raw: splitDiagnostics.recovery_ratio_raw,
+              recovery_ratio: splitDiagnostics.recovery_ratio,
+              recovery_ratio_capped: splitDiagnostics.recovery_ratio_capped,
+              recovery_ratio_status: splitDiagnostics.recovery_ratio_status,
+              expected_items_min_is_proven: splitDiagnostics.expected_items_min_is_proven,
+              recovery_ratio_denominator_source: splitDiagnostics.recovery_ratio_denominator_source,
+              recovery_ratio_blocked_reason: splitDiagnostics.recovery_ratio_blocked_reason,
+              split_failure_reason: splitDiagnostics.split_failure_reason,
               rotation_applied: requestImageSize.rotationApplied ?? requestImageSize.rotation_applied ?? null,
               orientation_confidence: requestImageSize.orientation ? 85 : 45,
               deskew_applied: Array.isArray(requestImageSize.preProcessing) ? requestImageSize.preProcessing.includes("soft_deskew_orientation") : false,
-              segment_quality_score: Math.min(100, Math.round((Number(requestImageSize.optimized_image_width || requestImageSize.width || 0) * Number(requestImageSize.optimized_image_height || requestImageSize.height || 0)) / 65000)),
+              segment_quality_score: segmentQualityScore,
+              image_quality_warning: imageQualityWarning,
+              split_after_rotation: Number(requestImageSize.rotationApplied ?? requestImageSize.rotation_applied ?? 0) !== 0,
+              local_ocr_available: localOcrAvailable,
+              browserTextLength: browserText.length,
+              edge_text_length: browserText.length,
+              text_empty_reason: textEmptyReason,
+              ...localOcrDiagnostics,
+              total_verified_against_local_ocr: splitReceipt.total_raw_text_verified_against_ocr === true && localOcrAvailable,
+              total_verified_against_segment_text: splitReceipt.total_verified_against_segment_text === true,
+              scan_reliability_blocked_reason: scanReliabilityBlockedReason,
               diagnostics: {
                 split_retry_eligible: true,
                 split_retry_used: true,
                 split_retry_skipped_reason: "",
                 split_segments_count: (splitRetry.splitResults || []).length,
                 split_segments_results: splitSegmentsResults,
+                split_segments_success_count: splitDiagnostics.split_segments_success_count,
+                split_segments_timeout_count: splitDiagnostics.split_segments_timeout_count,
+                split_total_input_tokens: splitDiagnostics.split_total_input_tokens,
+                split_total_output_tokens: splitDiagnostics.split_total_output_tokens,
+                split_total_duration_ms: splitDiagnostics.split_total_duration_ms,
+                split_cost_warning: splitDiagnostics.split_cost_warning,
+                recovery_ratio_raw: splitDiagnostics.recovery_ratio_raw,
+                recovery_ratio: splitDiagnostics.recovery_ratio,
+                recovery_ratio_capped: splitDiagnostics.recovery_ratio_capped,
+                recovery_ratio_status: splitDiagnostics.recovery_ratio_status,
+                expected_items_min_is_proven: splitDiagnostics.expected_items_min_is_proven,
+                recovery_ratio_denominator_source: splitDiagnostics.recovery_ratio_denominator_source,
+                recovery_ratio_blocked_reason: splitDiagnostics.recovery_ratio_blocked_reason,
+                split_failure_reason: splitDiagnostics.split_failure_reason,
                 split_improved_items: merged.improved,
                 rotation_applied: requestImageSize.rotationApplied ?? requestImageSize.rotation_applied ?? null,
                 orientation_confidence: requestImageSize.orientation ? 85 : 45,
                 deskew_applied: Array.isArray(requestImageSize.preProcessing) ? requestImageSize.preProcessing.includes("soft_deskew_orientation") : false,
-                segment_quality_score: Math.min(100, Math.round((Number(requestImageSize.optimized_image_width || requestImageSize.width || 0) * Number(requestImageSize.optimized_image_height || requestImageSize.height || 0)) / 65000)),
+                segment_quality_score: segmentQualityScore,
+                image_quality_warning: imageQualityWarning,
+                split_after_rotation: Number(requestImageSize.rotationApplied ?? requestImageSize.rotation_applied ?? 0) !== 0,
+                local_ocr_available: localOcrAvailable,
+                browserTextLength: browserText.length,
+                edge_text_length: browserText.length,
+                text_empty_reason: textEmptyReason,
+                ...localOcrDiagnostics,
+                total_verified_against_local_ocr: splitReceipt.total_raw_text_verified_against_ocr === true && localOcrAvailable,
+                total_verified_against_segment_text: splitReceipt.total_verified_against_segment_text === true,
+                scan_reliability_blocked_reason: scanReliabilityBlockedReason,
                 primary_stage: "openai_vision_primary",
                 primary_error: "",
                 fallback_stage: "openai_vision_split_retry",
@@ -2481,6 +3056,7 @@ Deno.serve(async (req) => {
         diagnostics: {
           error_code: "VISION_PRIMARY_EXCEPTION",
           error_message: errorMessage(visionPrimaryError),
+          ...localOcrDiagnostics,
           ...(splitAttempt.diagnostics || {}),
         },
       })
@@ -2546,7 +3122,7 @@ Deno.serve(async (req) => {
         total_raw_text: partialReceipt.total_raw_text,
         total_confidence: partialReceipt.total_confidence,
         total_source: partialReceipt.total_source,
-        expected_items_min: expectedItemsMin,
+        expected_items_min: expectedItemsMin || null,
         premium_plus_daily_ai_limit: PREMIUM_PLUS_DAILY_AI_LIMIT,
         split_retry_eligible: Boolean(splitAttempt.diagnostics?.split_retry_eligible),
         split_retry_used: Boolean(splitAttempt.diagnostics?.split_retry_used),
@@ -2584,6 +3160,7 @@ Deno.serve(async (req) => {
         error_code: "SCAN_AI_RESPONSE_INVALID",
         image_size: requestImageSize,
         reason: "no_usable_receipt_data_after_single_ai_call",
+        ...localOcrDiagnostics,
         ...(splitAttempt.diagnostics || {}),
       },
     })
@@ -2608,6 +3185,7 @@ Deno.serve(async (req) => {
         })
 
         try {
+          markAiCalledAfterLocalOcrFailure()
           const aiFallback = await runOpenAiTextFallback(browserText, requestImageSize)
           if (aiFallback && !("error" in aiFallback) && aiFallback.receipt.total_amount > 0) {
             const aiReceipt = {
@@ -2669,6 +3247,7 @@ Deno.serve(async (req) => {
       })
 
       try {
+        markAiCalledAfterLocalOcrFailure()
         const visionFallback = await runOpenAiVisionFallback({
           imageBase64,
           mimeType,
@@ -2758,7 +3337,7 @@ Deno.serve(async (req) => {
           items_detected_before_openai: itemsDetectedBeforeOpenAi,
           total_detected_before_openai: false,
           total_estimated_from_items: provisionalTotal > 0,
-          expected_items_min: expectedItemsMin,
+          expected_items_min: expectedItemsMin || null,
         })
       }
 
@@ -2788,14 +3367,14 @@ Deno.serve(async (req) => {
         reason: "local_items_below_quality_threshold",
         textLength: browserText.length,
         items_detected_before_openai: itemsDetectedBeforeOpenAi,
-        expected_items_min: expectedItemsMin,
+        expected_items_min: expectedItemsMin || null,
         image_size: requestImageSize,
       })
 
       try {
         const aiFallback = browserText.trim().length >= 30
-          ? await runOpenAiTextFallback(browserText, requestImageSize)
-          : await runOpenAiVisionFallback({ imageBase64, mimeType, imageSize: requestImageSize, hintText: browserText })
+        ? (markAiCalledAfterLocalOcrFailure(), await runOpenAiTextFallback(browserText, requestImageSize))
+        : (markAiCalledAfterLocalOcrFailure(), await runOpenAiVisionFallback({ imageBase64, mimeType, imageSize: requestImageSize, hintText: browserText }))
 
         if (aiFallback && !("error" in aiFallback) && aiFallback.receipt.total_amount > 0) {
           const aiReceipt = {
@@ -2833,7 +3412,7 @@ Deno.serve(async (req) => {
             vision_used: usedVision,
             items_detected_before_openai: itemsDetectedBeforeOpenAi,
             total_detected_before_openai: true,
-            expected_items_min: expectedItemsMin,
+            expected_items_min: expectedItemsMin || null,
           })
         }
 
@@ -2854,7 +3433,7 @@ Deno.serve(async (req) => {
       reason: "ticket_acceptance_is_local_only",
       items_detected_before_openai: itemsDetectedBeforeOpenAi,
       total_detected_before_openai: true,
-      expected_items_min: expectedItemsMin,
+      expected_items_min: expectedItemsMin || null,
     })
 
     return jsonResponse({
@@ -2880,7 +3459,7 @@ Deno.serve(async (req) => {
       vision_used: false,
       items_detected_before_openai: itemsDetectedBeforeOpenAi,
       total_detected_before_openai: true,
-      expected_items_min: expectedItemsMin,
+      expected_items_min: expectedItemsMin || null,
     })
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown scanner error."

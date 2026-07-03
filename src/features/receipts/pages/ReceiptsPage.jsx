@@ -182,7 +182,8 @@ function isBlockedReceiptItem(item = {}) {
 }
 
 function getValidDraftItems(draft = {}) {
-  const partialLowItems = String(draft.scan_status || "").includes("partial_low_items")
+  const scanStatus = String(draft.scan_status || "")
+  const partialLowItems = scanStatus.includes("partial_low_items") || scanStatus.includes("long_manual_review") || scanStatus.includes("long_usable_review")
   return (draft.items || [])
     .filter(item => !isBlockedReceiptItem(item))
     .map(item => ({
@@ -256,9 +257,21 @@ function getScanResultMessage({ parsed = {}, detectedItemsCount = 0, issues = []
   }
 
   if (scanStatus.includes("usable_review")) {
+    if (scanStatus.includes("long_usable_review")) {
+      return isKreol
+        ? "Tike long-la le lir an parti. Verifie bann lalinn avan anrezistre."
+        : "Ticket long lu partiellement. Verifiez les lignes avant d'enregistrer."
+    }
+
     return isKreol
       ? "Tike-la le lir, verifie vitman bann zinfo avan anrezistre."
       : "Ticket lu, verifiez rapidement les informations avant d'enregistrer."
+  }
+
+  if (scanStatus.includes("long_manual_review")) {
+    return isKreol
+      ? "Tike-la ankor difisil pou lir. Korize bann zinformasyon avan anrezistre."
+      : "Le ticket reste difficile a lire. Corrigez les informations avant d'enregistrer."
   }
 
   const partialScan = scanStatus.includes("partial") || issues.includes("items_total_mismatch")
@@ -314,6 +327,33 @@ function buildScannerSummary({ parsed = {}, items = [], metrics = {}, importResu
     total_status: parsed.total_needs_review ? "needs_review" : "trusted",
     total_source: parsed.total_source || "",
     split_status: metrics?.splitRetryUsed ? "used" : (metrics?.splitRetryEligible ? "eligible_not_used" : "not_used"),
+    expected_items_source: parsed.expected_items_source || metrics?.expectedItemsSource || "",
+    declared_items_count: parsed.declared_items_count || metrics?.declaredItemsCount || null,
+    declared_items_raw_text: parsed.declared_items_raw_text || metrics?.declaredItemsRawText || "",
+    recovery_ratio: parsed.recovery_ratio ?? metrics?.recoveryRatio ?? null,
+    recovery_ratio_status: parsed.recovery_ratio_status || metrics?.recoveryRatioStatus || "",
+    split_cost_warning: parsed.split_cost_warning ?? metrics?.splitCostWarning ?? false,
+    local_ocr_available: metrics?.localOcrAvailable ?? null,
+    local_ocr_attempted: metrics?.localOcrAttempted ?? null,
+    local_ocr_engine: metrics?.localOcrEngine ?? "",
+    local_ocr_import_status: metrics?.localOcrImportStatus ?? "",
+    local_ocr_worker_status: metrics?.localOcrWorkerStatus ?? "",
+    local_ocr_error_type: metrics?.localOcrErrorType ?? "",
+    local_ocr_duration_ms: metrics?.localOcrDurationMs ?? null,
+    local_ocr_error: metrics?.localOcrError ?? "",
+    local_ocr_skipped_reason: metrics?.localOcrSkippedReason ?? "",
+    browserTextLength_before_payload: metrics?.browserTextLengthBeforePayload ?? null,
+    browserTextLength_sent_to_edge: metrics?.browserTextLengthSentToEdge ?? null,
+    ai_called_after_local_ocr_technical_failure: metrics?.aiCalledAfterLocalOcrTechnicalFailure ?? null,
+    ai_call_risk_reason: metrics?.aiCallRiskReason ?? "",
+    should_skip_ai_due_to_local_ocr_failure: metrics?.shouldSkipAiDueToLocalOcrFailure ?? null,
+    edge_text_length: metrics?.edgeTextLength ?? null,
+    image_preprocessing_for_ocr: metrics?.imagePreprocessingForOcr ?? null,
+    text_empty_reason: metrics?.textEmptyReason || "",
+    expected_items_min_is_proven: metrics?.expectedItemsMinIsProven ?? null,
+    recovery_ratio_denominator_source: metrics?.recoveryRatioDenominatorSource || "",
+    recovery_ratio_blocked_reason: metrics?.recoveryRatioBlockedReason || "",
+    image_quality_warning: metrics?.imageQualityWarning ?? false,
     final_scan_status: parsed.scan_status || "",
     receipt_saved: Boolean(importResult?.receiptSaved || importResult?.receipt_id),
     receipt_id: importResult?.receipt_id || null,
@@ -479,8 +519,8 @@ export default function ReceiptsPage({
 
       const { imagePath } = await uploadReceiptImage({ userId: user?.id, file: scan.optimizedFile })
       const scanStatus = String(parsed.scan_status || "")
-      const requiresManualCorrection = ["partial_low_items", "manual_review_required"].some(status => scanStatus.includes(status)) || parsed.total_needs_review
-      const requiresQuickReview = scanStatus.includes("usable_review")
+      const requiresManualCorrection = ["partial_low_items", "manual_review_required", "long_manual_review"].some(status => scanStatus.includes(status)) || parsed.total_needs_review
+      const requiresQuickReview = scanStatus.includes("usable_review") || scanStatus.includes("long_usable_review")
       if (requiresManualCorrection || requiresQuickReview) {
         setReceipt(null)
         setPendingImagePath(imagePath)
@@ -490,12 +530,15 @@ export default function ReceiptsPage({
         setAllowDuplicateImport(false)
         setMode("validate")
         const splitRetryUsed = Boolean(scan.metrics?.splitRetryUsed)
-        const splitStillNeedsReview = splitRetryUsed && String(parsed.scan_status || "").includes("manual_review_required")
+        const splitStillNeedsReview = splitRetryUsed && (String(parsed.scan_status || "").includes("manual_review_required") || String(parsed.scan_status || "").includes("long_manual_review"))
+        const longUsableReview = String(parsed.scan_status || "").includes("long_usable_review")
         setMessage(isKreol
           ? splitStillNeedsReview
             ? "Tike-la ankor difisil pou lir. Korize bann zinformasyon avan anrezistre."
             : splitRetryUsed
               ? "Lektir renforcee Premium+ fini. Verifie bann zinfo avan anrezistre."
+            : longUsableReview
+              ? "Tike long-la le lir an parti. Verifie bann lalinn avan anrezistre."
             : requiresQuickReview
               ? "Tike-la le lir, verifie vitman bann zinfo avan anrezistre."
               : "BudgetKazPei la pa reisi lir total-la bien. Verifie ousa rant montan-la avan anrezistre."
@@ -503,6 +546,8 @@ export default function ReceiptsPage({
             ? "Le ticket reste difficile a lire. Corrigez les informations avant d'enregistrer."
             : splitRetryUsed
               ? "Lecture renforcee Premium+ terminee. Verifiez les informations avant d'enregistrer."
+            : longUsableReview
+              ? "Ticket long lu partiellement. Verifiez les lignes avant d'enregistrer."
             : requiresQuickReview
               ? "Ticket lu, verifiez rapidement les informations avant d'enregistrer."
               : "BudgetKazPei n'a pas pu lire le total avec certitude. Verifiez ou saisissez le montant avant d'enregistrer.")

@@ -15,7 +15,10 @@ function stageError(step: string, error: unknown) {
 }
 
 function isTrustedItemForLearning(item: any, draft: any) {
-  if (String(draft?.scan_status || "").includes("partial_low_items")) return false
+  const scanStatus = String(draft?.scan_status || "")
+  if (scanStatus.includes("partial_low_items") || scanStatus.includes("long_manual_review") || scanStatus.includes("long_usable_review")) return false
+  if (draft?.total_needs_review === true) return false
+  if (Number(draft?.recovery_ratio || draft?.metrics?.recoveryRatio || 1) < 0.85) return false
   if (item?.needs_review === true) return false
   if (item?.review_status === "needs_review") return false
   if (item?.item_status === "a_verifier" || item?.status === "a_verifier") return false
@@ -30,6 +33,14 @@ function buildTransactionDiagnostics(result: any, duplicateConfirmed = false) {
     transaction_id: result?.transaction?.id || null,
     duplicate_confirmed: Boolean(duplicateConfirmed),
   }
+}
+
+function canFeedShoppingIntelligence(draft: any) {
+  const scanStatus = String(draft?.scan_status || "")
+  if (scanStatus.includes("long_manual_review") || scanStatus.includes("long_usable_review") || scanStatus.includes("partial_low_items")) return false
+  if (draft?.total_needs_review === true) return false
+  if (Number(draft?.recovery_ratio || draft?.metrics?.recoveryRatio || 1) < 0.85) return false
+  return true
 }
 
 export async function importValidatedReceipt({
@@ -88,7 +99,7 @@ export async function importValidatedReceipt({
   }
 
   let shoppingRows: any[] = []
-  if (draft.is_food_ticket) {
+  if (draft.is_food_ticket && canFeedShoppingIntelligence(draft)) {
     try {
       scannerLog("Creation shopping_items", "START", {
         count: cleanItems.length,

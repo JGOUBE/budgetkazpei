@@ -1,8 +1,17 @@
 export type TrustedTotal = {
   amount: number
   raw: string
-  source: "total_line" | "due_line" | "missing"
+  source: "explicit_total_line" | "explicit_total_line_ocr_fuzzy" | "total_line" | "due_line" | "missing"
   confidence: number
+  paymentAmount?: number
+  paymentRaw?: string
+  paymentConsistent?: boolean
+}
+
+export type DeclaredItemsEvidence = {
+  count: number
+  raw: string
+  source: "declared_total_articles" | "declared_total_articles_ocr_fuzzy" | "missing"
 }
 
 export function normalizeScannerText(value = "") {
@@ -25,6 +34,71 @@ function moneyFromLine(value = "") {
   return Number(matches[matches.length - 1][1].replace(/\s/g, "").replace(",", ".")) || 0
 }
 
+function stripMoneyAndCurrency(value = "") {
+  return compactLine(value)
+    .replace(/\b\d+(?:\s?\d{3})*[,.]\d{2}\b/g, " ")
+    .replace(/\beur(?:os?)?\b/g, " ")
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
+function totalLabelKind(line = ""): "" | "exact" | "fuzzy" | "due" {
+  const clean = compactLine(line)
+  if (/\b(reste a payer|net a payer|a payer)\b/.test(clean)) return "due"
+  if (/\btotal\b/.test(clean)) return "exact"
+
+  const label = stripMoneyAndCurrency(line)
+  if (/\b(tuial|t0tal|totai|t0ial|toial|tutal|tuilal)\b/.test(label)) return "fuzzy"
+  return ""
+}
+
+function isDeclaredItemsLine(line = "") {
+  const clean = compactLine(line)
+  const joinedLetters = clean.replace(/\b([a-z])(?:\s+(?=[a-z]\b)[a-z])+\b/g, (match) => match.replace(/\s+/g, ""))
+  return /\b(?:nombre|nb|nbr)\s+articles?\s*[:=]?\s*\d{1,3}\b|\b(?:total|nombre)\s+\d{1,3}\s+articles?\b|\bgre\s+articles?\s*[:=]?\s*\d{1,3}\b/.test(joinedLetters)
+}
+
+const SECTION_SUBTOTAL_HEADINGS = [
+  "epicerie salee",
+  "epicerie sale",
+  "epicerie sucree",
+  "boissons sans alcool",
+  "boissons",
+  "charcuterie ls",
+  "charcuterie",
+  "cremerie",
+  "fleurs plantes fruits legumes",
+  "fleurs plantes fruits-legumes",
+  "fruits legumes",
+  "fruits et legumes",
+  "ultra frais",
+  "volaille",
+  "animalerie",
+  "liquide",
+  "liquides",
+  "frais",
+  "surgeles",
+  "surgele",
+  "bazar",
+  "hygiene",
+  "higiene",
+  "entretien",
+]
+
+export function isSectionSubtotalLine(line = "") {
+  const amount = moneyFromLine(line)
+  if (amount <= 0) return false
+  const clean = compactLine(line)
+    .replace(/\b\d+(?:\s?\d{3})*[,.]\d{2}\b/g, " ")
+    .replace(/\beur\b/g, " ")
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+  if (!clean) return false
+  return SECTION_SUBTOTAL_HEADINGS.some((heading) => clean === heading)
+}
+
 function isValidDateParts(year: number, month: number, day: number) {
   if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) return false
   if (month < 1 || month > 12 || day < 1 || day > 31) return false
@@ -44,7 +118,35 @@ export function normalizeReceiptRuleDate(value = "") {
     return isValidDateParts(year, month, day) ? `${iso[1]}-${iso[2]}-${iso[3]}` : ""
   }
   const match = raw.match(/\b(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})\b/)
-  if (!match) return ""
+  if (!match) {
+    const clean = normalizeScannerText(raw)
+      .replace(/[^a-z0-9 ]/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+    const monthAliases: Record<string, number> = {
+      janvier: 1,
+      fevrier: 2,
+      mars: 3,
+      avril: 4,
+      mai: 5,
+      juin: 6,
+      suin: 6,
+      juih: 6,
+      juillet: 7,
+      aout: 8,
+      septembre: 9,
+      octobre: 10,
+      novembre: 11,
+      decembre: 12,
+    }
+    const wordMatch = clean.match(/\b(\d{1,2})\s+([a-z]{3,10})\s+(\d{2,4})\b/)
+    const month = wordMatch ? monthAliases[wordMatch[2]] : 0
+    if (!wordMatch || !month) return ""
+    const day = Number(wordMatch[1])
+    const year = Number(wordMatch[3].length === 2 ? `20${wordMatch[3]}` : wordMatch[3])
+    if (!isValidDateParts(year, month, day)) return ""
+    return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`
+  }
   const day = Number(match[1])
   const month = Number(match[2])
   const year = Number(match[3].length === 2 ? `20${match[3]}` : match[3])
@@ -57,6 +159,7 @@ export function isPhoneLine(line = "") {
   const clean = compactLine(raw)
   if (/\b(tel|telephone|telephones?)\b/.test(clean)) return true
   if (/\b02[\s.:-]*62(?:[\s.:-]*\d{2}){3,4}\b/.test(raw)) return true
+  if (/\b02[\s.:-]*62[\s.:-]*\d{2}[\s.:-]*\d{2}[,.:\s-]*\d{2}\b/.test(raw)) return true
   if (/\b0[0-9](?:[\s.:-]*\d{2}){4}\b/.test(raw)) return true
   return (raw.match(/\d{2}\./g) || []).length >= 3
 }
@@ -64,7 +167,7 @@ export function isPhoneLine(line = "") {
 export function isVatOrPaymentLine(line = "") {
   const clean = compactLine(line)
   if (!clean) return false
-  if (/\b(carte bleue|cb|visa|mastercard|american express|ticket restaurant)\b/.test(clean)) return true
+  if (/\b(especes|espece|cash|carte bleue|cb|visa|mastercard|american express|ticket restaurant)\b/.test(clean)) return true
   if (/\b(ventilation|tva|t v a|t\.v\.a|ttc|t t c|t\.t\.c|tot ht|tot\.ht|code tot)\b/.test(clean)) return true
   if (/^\d+\s+\d+[,.]\d{3,4}\s+\d+[,.]\d{2}%\s+\d+[,.]\d{3,4}\s+\d+[,.]\d{2}$/.test(clean)) return true
   if (/^total\s+\d+[,.]\d{3,4}\s+\d+[,.]\d{2}$/.test(clean)) return true
@@ -84,12 +187,15 @@ export function isReceiptMetaLine(line = "") {
   if (!clean) return true
   if (/\b(duplicata|operation|vente|caisse|ticket|bienvenue|recu par|nombre articles?)\b/.test(clean)) return true
   if (/\b(total|sous total|net a payer|reste a payer|a payer)\b/.test(clean)) return true
+  if (totalLabelKind(line)) return true
+  if (isDeclaredItemsLine(line)) return true
   if (/\b(rue|974\d{2}|saint leu|saint-leu)\b/.test(clean)) return true
   return false
 }
 
 export function isNonProductLine(line = "") {
   return isPhoneLine(line)
+    || isSectionSubtotalLine(line)
     || isVatOrPaymentLine(line)
     || isLoyaltyLine(line)
     || isMarketingLine(line)
@@ -101,10 +207,27 @@ export function shouldRejectLineAsProduct(line = "") {
 }
 
 export function extractDeclaredItemsCount(text = "") {
+  return extractDeclaredItemsEvidence(text).count
+}
+
+export function extractDeclaredItemsEvidence(text = ""): DeclaredItemsEvidence {
   const compact = compactLine(text)
   const joinedLetters = compact.replace(/\b([a-z])(?:\s+(?=[a-z]\b)[a-z])+\b/g, (match) => match.replace(/\s+/g, ""))
-  const match = joinedLetters.match(/\b(?:total|nombre)\s+articles?\s*[:=]?\s*(\d{1,3})\b|\b(?:total|nombre)\s+(\d{1,3})\s+articles?\b/)
-  return Number(match?.[1] || match?.[2] || 0) || 0
+  const match = joinedLetters.match(/\b(?:total|nombre)\s+articles?\s*[:=]?\s*(\d{1,3})\b|\b(?:total|nombre)\s+(\d{1,3})\s+articles?\b|\b(?:nb|nbr|gre)\s+articles?\s*[:=]?\s*(\d{1,3})\b/)
+  const count = Number(match?.[1] || match?.[2] || match?.[3] || 0) || 0
+  const raw = String(text || "").split(/\r?\n/).find((line) => {
+    const clean = compactLine(line)
+    const joined = clean.replace(/\b([a-z])(?:\s+(?=[a-z]\b)[a-z])+\b/g, (value) => value.replace(/\s+/g, ""))
+    return /\b(?:total|nombre)\s+articles?\s*[:=]?\s*\d{1,3}\b|\b(?:total|nombre)\s+\d{1,3}\s+articles?\b|\b(?:nb|nbr|gre)\s+articles?\s*[:=]?\s*\d{1,3}\b/.test(joined)
+  }) || ""
+  const fallbackCount = Number(raw.match(/\b(\d{1,3})\b(?!.*\b\d{1,3}\b)/)?.[1] || 0) || 0
+  const finalCount = count || fallbackCount
+  if (!finalCount) return { count: 0, raw: "", source: "missing" }
+  const rawClean = compactLine(raw)
+  const source = /\b(nombre|total)\b/.test(rawClean) && !/\b(nb|nbr|gre)\b/.test(rawClean)
+    ? "declared_total_articles"
+    : "declared_total_articles_ocr_fuzzy"
+  return { count: finalCount, raw: raw.trim(), source }
 }
 
 export function extractReliableDateCandidates(text = "") {
@@ -124,11 +247,30 @@ export function extractTrustedTotal(text = ""): TrustedTotal {
     const line = lines[index]
     const clean = compactLine(line)
     if (/\btotal\s+\d{1,3}\s+articles?\b/.test(clean)) continue
-    const isDue = /\b(reste a payer|net a payer|a payer)\b/.test(clean)
-    const isTotal = /\btotal\b/.test(clean)
-    if (!isDue && !isTotal) continue
-    const amount = moneyFromLine(line)
-    if (amount > 0) return { amount, raw: line, source: isDue ? "due_line" : "total_line", confidence: 0.95 }
+    const labelKind = totalLabelKind(line)
+    const isDue = labelKind === "due"
+    const isFuzzyTotal = labelKind === "fuzzy"
+    if (!labelKind) continue
+    const nextLine = lines[index + 1] || ""
+    const previousLine = lines[index - 1] || ""
+    const amount = moneyFromLine(line) || moneyFromLine([line, nextLine].filter(Boolean).join(" ")) || moneyFromLine([previousLine, line].filter(Boolean).join(" "))
+    if (amount > 0) {
+      const paymentLine = lines.slice(index + 1, index + 3).find(candidate => {
+        const cleanPayment = compactLine(candidate)
+        if (!/\b(especes|espece|cash|carte bleue|cb|visa|mastercard)\b/.test(cleanPayment)) return false
+        return Math.abs(moneyFromLine(candidate) - amount) <= 0.01
+      }) || ""
+      if (isFuzzyTotal && !paymentLine) continue
+      return {
+        amount,
+        raw: moneyFromLine(line) ? line : [line, nextLine].filter(Boolean).join(" "),
+        source: isDue ? "due_line" : (isFuzzyTotal ? "explicit_total_line_ocr_fuzzy" : "explicit_total_line"),
+        confidence: paymentLine ? 0.99 : 0.95,
+        paymentAmount: paymentLine ? moneyFromLine(paymentLine) : 0,
+        paymentRaw: paymentLine,
+        paymentConsistent: Boolean(paymentLine),
+      }
+    }
   }
   return { amount: 0, raw: "", source: "missing", confidence: 0 }
 }

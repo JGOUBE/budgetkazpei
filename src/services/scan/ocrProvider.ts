@@ -1,4 +1,5 @@
 import { supabase } from "../supabase"
+import { classifyLocalOcrError, isTechnicalLocalOcrFailure } from "./ocrDiagnostics"
 import { extractReceiptDueTotal, extractReceiptTotal, mergeReceiptItems, parseReceipt } from "./receiptParser"
 import { ScanError, type ScanErrorCode } from "./scanErrors"
 
@@ -396,9 +397,14 @@ function scoreOcrCandidate({ text, confidence, parsed }: { text: string; confide
 async function runTesseractLocalOCR(file: File): Promise<OCRResult> {
   const startedAt = performance.now()
   let worker: any = null
+  let importStatus = "not_started"
+  let workerStatus = "not_started"
 
   try {
+    importStatus = "loading"
     const tesseract = await import("tesseract.js")
+    importStatus = "loaded"
+    workerStatus = "creating"
     worker = await tesseract.createWorker("eng", 1, {
       langPath: "https://tessdata.projectnaptha.com/4.0.0_fast",
       logger: (message: any) => {
@@ -410,6 +416,7 @@ async function runTesseractLocalOCR(file: File): Promise<OCRResult> {
         }
       },
     })
+    workerStatus = "ready"
 
     const rotations: RotationCandidate[] = [0, 90, 180, 270]
     const candidates = []
@@ -471,10 +478,16 @@ async function runTesseractLocalOCR(file: File): Promise<OCRResult> {
           total: candidate.total,
           items: candidate.items,
         })),
+        localOcrImportStatus: importStatus,
+        localOcrWorkerStatus: workerStatus,
+        localOcrErrorType: text.trim() ? "none" : "empty_result",
       },
       error: text.trim() ? "" : "empty_local_ocr",
     }
   } catch (error) {
+    const errorType = classifyLocalOcrError(error)
+    if (importStatus === "loading") importStatus = "failed"
+    if (workerStatus === "creating") workerStatus = "failed"
     console.warn("[scanner] OCR local Tesseract indisponible", error)
     return {
       text: "",
@@ -489,12 +502,16 @@ async function runTesseractLocalOCR(file: File): Promise<OCRResult> {
         textAiUsed: false,
         visionUsed: false,
         fallbackUsed: true,
+        localOcrImportStatus: importStatus,
+        localOcrWorkerStatus: workerStatus,
+        localOcrErrorType: errorType,
       },
       error: error instanceof Error ? error.message : "local_ocr_failed",
     }
   } finally {
     try {
       await worker?.terminate?.()
+      if (workerStatus === "ready") workerStatus = "terminated"
     } catch {
       // Worker cleanup failure should not block the scanner.
     }
@@ -619,6 +636,42 @@ export class SupabaseReceiptOCRProvider implements OCRProvider {
         splitSegmentsStrategy: data.split_segments_strategy || null,
         splitSegmentsOverlapPercent: data.split_segments_overlap_percent ?? null,
         splitSegmentsResults: data.split_segments_results || null,
+        splitSegmentsSuccessCount: data.split_segments_success_count ?? data.diagnostics?.split_segments_success_count ?? null,
+        splitSegmentsTimeoutCount: data.split_segments_timeout_count ?? data.diagnostics?.split_segments_timeout_count ?? null,
+        splitTotalInputTokens: data.split_total_input_tokens ?? data.diagnostics?.split_total_input_tokens ?? null,
+        splitTotalOutputTokens: data.split_total_output_tokens ?? data.diagnostics?.split_total_output_tokens ?? null,
+        splitTotalDurationMs: data.split_total_duration_ms ?? data.diagnostics?.split_total_duration_ms ?? null,
+        recoveryRatio: data.recovery_ratio ?? data.diagnostics?.recovery_ratio ?? null,
+        recoveryRatioRaw: data.recovery_ratio_raw ?? data.diagnostics?.recovery_ratio_raw ?? null,
+        recoveryRatioCapped: data.recovery_ratio_capped ?? data.diagnostics?.recovery_ratio_capped ?? null,
+        recoveryRatioStatus: data.recovery_ratio_status ?? data.diagnostics?.recovery_ratio_status ?? null,
+        splitCostWarning: data.split_cost_warning ?? data.diagnostics?.split_cost_warning ?? null,
+        splitFailureReason: data.split_failure_reason || data.diagnostics?.split_failure_reason || null,
+        localOcrAvailable: data.local_ocr_available ?? data.diagnostics?.local_ocr_available ?? null,
+        localOcrAttempted: data.local_ocr_attempted ?? data.diagnostics?.local_ocr_attempted ?? null,
+        localOcrEngine: data.local_ocr_engine || data.diagnostics?.local_ocr_engine || null,
+        localOcrImportStatus: data.local_ocr_import_status || data.diagnostics?.local_ocr_import_status || null,
+        localOcrWorkerStatus: data.local_ocr_worker_status || data.diagnostics?.local_ocr_worker_status || null,
+        localOcrErrorType: data.local_ocr_error_type || data.diagnostics?.local_ocr_error_type || null,
+        localOcrDurationMs: data.local_ocr_duration_ms ?? data.diagnostics?.local_ocr_duration_ms ?? null,
+        localOcrError: data.local_ocr_error || data.diagnostics?.local_ocr_error || null,
+        localOcrSkippedReason: data.local_ocr_skipped_reason || data.diagnostics?.local_ocr_skipped_reason || null,
+        browserTextLength: data.browserTextLength ?? data.diagnostics?.browserTextLength ?? null,
+        browserTextLengthBeforePayload: data.browserTextLength_before_payload ?? data.diagnostics?.browserTextLength_before_payload ?? null,
+        browserTextLengthSentToEdge: data.browserTextLength_sent_to_edge ?? data.diagnostics?.browserTextLength_sent_to_edge ?? null,
+        edgeTextLength: data.edge_text_length ?? data.diagnostics?.edge_text_length ?? null,
+        imagePreprocessingForOcr: data.image_preprocessing_for_ocr ?? data.diagnostics?.image_preprocessing_for_ocr ?? null,
+        textEmptyReason: data.text_empty_reason || data.diagnostics?.text_empty_reason || null,
+        expectedItemsMinIsProven: data.expected_items_min_is_proven ?? data.diagnostics?.expected_items_min_is_proven ?? null,
+        recoveryRatioDenominatorSource: data.recovery_ratio_denominator_source || data.diagnostics?.recovery_ratio_denominator_source || null,
+        recoveryRatioBlockedReason: data.recovery_ratio_blocked_reason || data.diagnostics?.recovery_ratio_blocked_reason || null,
+        imageQualityWarning: data.image_quality_warning ?? data.diagnostics?.image_quality_warning ?? null,
+        aiCalledAfterLocalOcrTechnicalFailure: data.ai_called_after_local_ocr_technical_failure ?? data.diagnostics?.ai_called_after_local_ocr_technical_failure ?? null,
+        aiCallRiskReason: data.ai_call_risk_reason || data.diagnostics?.ai_call_risk_reason || null,
+        shouldSkipAiDueToLocalOcrFailure: data.should_skip_ai_due_to_local_ocr_failure ?? data.diagnostics?.should_skip_ai_due_to_local_ocr_failure ?? null,
+        scanReliabilityBlockedReason: data.scan_reliability_blocked_reason || data.diagnostics?.scan_reliability_blocked_reason || null,
+        totalVerifiedAgainstLocalOcr: data.total_verified_against_local_ocr ?? data.diagnostics?.total_verified_against_local_ocr ?? null,
+        totalVerifiedAgainstSegmentText: data.total_verified_against_segment_text ?? data.diagnostics?.total_verified_against_segment_text ?? null,
         primaryStage: data.primary_stage || data.diagnostics?.primary_stage || null,
         primaryError: data.primary_error || data.diagnostics?.primary_error || null,
         fallbackStage: data.fallback_stage || data.diagnostics?.fallback_stage || null,
@@ -646,6 +699,10 @@ export class SupabaseReceiptOCRProvider implements OCRProvider {
         openaiTotalConfidence: data.openai_total_confidence ?? structured.openai_total_confidence ?? null,
         estimatedItemsSum: data.estimated_items_sum ?? structured.estimated_items_sum ?? null,
         expectedItemsMin: data.expected_items_min ?? null,
+        expectedItemsSource: data.expected_items_source ?? null,
+        declaredItemsCount: data.declared_items_count ?? null,
+        declaredItemsRawText: data.declared_items_raw_text || "",
+        itemsCountStatus: data.items_count_status || null,
         openaiPrompt: data.openai_prompt || null,
         openaiRawContent: data.openai_raw_content || null,
         openaiRawResponseBody: data.openai_raw_response_body || null,
@@ -701,6 +758,27 @@ export class HybridOCRProvider implements OCRProvider {
 
     const localOcr = await runTesseractLocalOCR(file)
     const localText = [browser.text, localOcr.text].filter(text => String(text || "").trim()).join("\n")
+    const localOcrPayloadDiagnostics = {
+      local_ocr_attempted: true,
+      local_ocr_engine: localOcr.provider || "tesseract-browser-local",
+      local_ocr_status: localOcr.status,
+      local_ocr_import_status: localOcr.metrics?.localOcrImportStatus || "unknown",
+      local_ocr_worker_status: localOcr.metrics?.localOcrWorkerStatus || "unknown",
+      local_ocr_duration_ms: localOcr.metrics?.ocrDurationMs ?? null,
+      local_ocr_error: localOcr.error || "",
+      local_ocr_error_type: localOcr.metrics?.localOcrErrorType || classifyLocalOcrError(localOcr.error),
+      local_ocr_skipped_reason: "",
+      browser_ocr_status: browser.status,
+      browser_ocr_error: browser.error || "",
+      browser_ocr_text_length: browser.text.length,
+      tesseract_text_length: localOcr.text.length,
+      browserTextLength_before_payload: localText.length,
+      browser_text_length_before_payload: localText.length,
+      browserTextLength_sent_to_edge: localText.length,
+      ai_called_after_local_ocr_technical_failure: false,
+      ai_call_risk_reason: "",
+      should_skip_ai_due_to_local_ocr_failure: isTechnicalLocalOcrFailure(localOcr.metrics?.localOcrErrorType || classifyLocalOcrError(localOcr.error)),
+    }
     const localParsed = localText.trim()
       ? parseReceipt({
         text: localText,
@@ -756,7 +834,10 @@ export class HybridOCRProvider implements OCRProvider {
 
     let fallback: OCRResult
     try {
-      fallback = await new SupabaseReceiptOCRProvider().extractText(file, localText || browser.text, imageMeta)
+      fallback = await new SupabaseReceiptOCRProvider().extractText(file, localText || browser.text, {
+        ...imageMeta,
+        ...localOcrPayloadDiagnostics,
+      })
     } catch (error) {
       const preservedItems = mergeReceiptItems(localItems, browserItems)
       const provisionalTotal = localTotal || (preservedItems.length >= 3 ? itemsTotalAmount(preservedItems) : 0)
