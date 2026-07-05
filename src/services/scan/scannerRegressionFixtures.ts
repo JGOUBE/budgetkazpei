@@ -508,9 +508,10 @@ function assertLeaderPriceSmallFuzzyCbFixture(fixture = LEADER_PRICE_SMALL_FUZZY
       && debug.lost_possible_product_lines.length === 0
       && Number(debug.items_sent_to_smart_shopping_count || 0) === fixture.expectedItemsCount
       && Number(debug.items_excluded_from_smart_shopping_count || 0) === 0
-      && debug.items_quality_status === "trusted_enough"
+      && debug.items_quality_status === "trusted"
       && debug.budget_status === "reliable"
       && debug.smart_shopping_safe === true
+      && debug.final_scan_status === "budget_ok_articles_ok"
       && eligibleSmartShoppingItems.length === fixture.expectedItemsCount
       && !sectionSubtotalEligible
       && debug.ocr_text_has_total === true
@@ -597,6 +598,10 @@ function assertLeaderPriceSmallUnsafeSmartShoppingFixture(fixture = LEADER_PRICE
       && debug.budget_status === "reliable"
       && Number(debug.items_total_vs_receipt_total_delta || 0) > 0.05
       && debug.smart_shopping_safe === false
+      && debug.items_quality_status === "blocked"
+      && debug.final_scan_status === "budget_ok_articles_blocked"
+      && parsed.scan_status === "budget_ok_articles_blocked"
+      && parsed.scan_status !== "trusted"
       && Number(debug.items_sent_to_smart_shopping_count || 0) === 0
       && Number(debug.items_excluded_from_smart_shopping_count || 0) === parsed.items.length
       && Array.isArray(debug.smart_shopping_blocked_reasons)
@@ -610,6 +615,7 @@ function assertLeaderPriceSmallUnsafeSmartShoppingFixture(fixture = LEADER_PRICE
       declaredItemsCount: fixture.expectedItemsCount,
       budgetStatus: "reliable",
       smartShoppingSafe: false,
+      finalScanStatus: "budget_ok_articles_blocked",
       smartShoppingEligibleItems: 0,
       requiredBlockReason: "items_total_mismatch",
     },
@@ -624,7 +630,11 @@ function assertLeaderPriceSmallUnsafeSmartShoppingFixture(fixture = LEADER_PRICE
       itemTotalSum,
       itemsTotalVsReceiptTotalDelta: debug.items_total_vs_receipt_total_delta,
       budgetStatus: debug.budget_status,
+      itemsQualityStatus: debug.items_quality_status,
       smartShoppingSafe: debug.smart_shopping_safe,
+      finalScanStatus: debug.final_scan_status,
+      scanStatus: parsed.scan_status,
+      scanStatusLegacy: debug.scan_status_legacy,
       smartShoppingEligibleItems: eligibleSmartShoppingItems.length,
       smartShoppingSent: debug.items_sent_to_smart_shopping_count,
       smartShoppingExcluded: debug.items_excluded_from_smart_shopping_count,

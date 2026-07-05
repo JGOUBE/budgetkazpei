@@ -18,7 +18,16 @@ function stageError(step: string, error: unknown) {
 function isTrustedItemForLearning(item: any, draft: any) {
   if (!isItemEligibleForSmartShopping(item)) return false
   const scanStatus = String(draft?.scan_status || "")
-  if (scanStatus.includes("partial_low_items") || scanStatus.includes("long_manual_review") || scanStatus.includes("long_usable_review")) return false
+  if (
+    scanStatus.includes("partial_low_items")
+    || scanStatus.includes("long_manual_review")
+    || scanStatus.includes("long_usable_review")
+    || scanStatus.includes("budget_ok_articles_blocked")
+    || scanStatus.includes("budget_needs_review")
+    || scanStatus.includes("rejected")
+  ) return false
+  if (draft?.smart_shopping_safe === false) return false
+  if (draft?.items_quality_status === "blocked" || draft?.items_quality_status === "needs_review") return false
   if (draft?.total_needs_review === true) return false
   if (Number(draft?.recovery_ratio || draft?.metrics?.recoveryRatio || 1) < 0.85) return false
   if (item?.needs_review === true) return false
@@ -39,7 +48,16 @@ function buildTransactionDiagnostics(result: any, duplicateConfirmed = false) {
 
 function canFeedShoppingIntelligence(draft: any) {
   const scanStatus = String(draft?.scan_status || "")
-  if (scanStatus.includes("long_manual_review") || scanStatus.includes("long_usable_review") || scanStatus.includes("partial_low_items")) return false
+  if (
+    scanStatus.includes("long_manual_review")
+    || scanStatus.includes("long_usable_review")
+    || scanStatus.includes("partial_low_items")
+    || scanStatus.includes("budget_ok_articles_blocked")
+    || scanStatus.includes("budget_needs_review")
+    || scanStatus.includes("rejected")
+  ) return false
+  if (draft?.smart_shopping_safe === false) return false
+  if (draft?.items_quality_status === "blocked" || draft?.items_quality_status === "needs_review") return false
   if (draft?.total_needs_review === true) return false
   if (Number(draft?.recovery_ratio || draft?.metrics?.recoveryRatio || 1) < 0.85) return false
   return true

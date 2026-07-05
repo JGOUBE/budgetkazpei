@@ -846,13 +846,29 @@ function buildFastLocalExtraction(text = "") {
   const items = applySmartShoppingGuard(initialItems, smartShoppingBlockedReasons)
   const calculatedItemsSum = Number(items.reduce((sum, item) => sum + Number(item.total_price || item.price || item.unit_price || 0), 0).toFixed(2))
   const calculatedItemsSumBeforeFilter = Number((calculatedItemsSum + sectionSubtotal.rejectedAmount).toFixed(2))
-  const qualitySummary = summarizeItemQuality(items, rejectedBeforeItemLimitLines)
+  const qualitySummaryRaw = summarizeItemQuality(items, rejectedBeforeItemLimitLines)
+  const itemsQualityStatus = resolveItemsQualityStatus({
+    items,
+    qualitySummary: qualitySummaryRaw,
+    smartShoppingBlockedReasons,
+  })
+  const qualitySummary = {
+    ...qualitySummaryRaw,
+    items_quality_status: itemsQualityStatus,
+  }
   const budgetReliable = Boolean(storeName && purchaseDate && total)
+  const budgetStatus = budgetReliable ? "reliable" : "needs_review"
   const smartShoppingSafe = Boolean(
     budgetReliable
       && smartShoppingBlockedReasons.length === 0
       && qualitySummary.items_sent_to_smart_shopping_count > 0
   )
+  const scanStatusLegacy = exactDeclaredCount && storeName && total && purchaseDate ? "trusted" : "usable_review"
+  const finalScanStatus = resolveFinalScanStatus({
+    budgetStatus,
+    itemsQualityStatus,
+    smartShoppingSafe,
+  })
 
   return {
     store_name: storeName,
@@ -891,10 +907,11 @@ function buildFastLocalExtraction(text = "") {
     items_total_vs_receipt_total_delta: itemsTotalVsReceiptTotalDelta,
     ...qualitySummary,
     budget_reliable: budgetReliable,
-    budget_status: budgetReliable ? "reliable" : "needs_review",
+    budget_status: budgetStatus,
     smart_shopping_safe: smartShoppingSafe,
     smart_shopping_blocked_reasons: smartShoppingBlockedReasons,
-    final_scan_status: exactDeclaredCount && storeName && total && purchaseDate ? "trusted" : "usable_review",
+    final_scan_status: finalScanStatus,
+    scan_status_legacy: scanStatusLegacy,
     ...textPresence,
     items,
   }
@@ -2302,6 +2319,38 @@ function summarizeItemQuality(items: Record<string, unknown>[] = [], rejectedLin
   }
 }
 
+function resolveItemsQualityStatus({
+  items,
+  qualitySummary,
+  smartShoppingBlockedReasons,
+}: {
+  items: Record<string, unknown>[]
+  qualitySummary: ReturnType<typeof summarizeItemQuality>
+  smartShoppingBlockedReasons: string[]
+}) {
+  if (items.length === 0) return "blocked"
+  if (smartShoppingBlockedReasons.length > 0) return "blocked"
+  if (qualitySummary.items_sent_to_smart_shopping_count === 0) return "needs_review"
+  if (qualitySummary.trusted_items_ratio >= 0.8) return "trusted"
+  return "partial"
+}
+
+function resolveFinalScanStatus({
+  budgetStatus,
+  itemsQualityStatus,
+  smartShoppingSafe,
+}: {
+  budgetStatus: string
+  itemsQualityStatus: string
+  smartShoppingSafe: boolean
+}) {
+  if (budgetStatus === "rejected") return "rejected"
+  if (budgetStatus !== "reliable") return "budget_needs_review"
+  if (smartShoppingSafe && itemsQualityStatus === "trusted") return "budget_ok_articles_ok"
+  if (itemsQualityStatus === "partial") return "budget_ok_articles_partial"
+  return "budget_ok_articles_blocked"
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders })
@@ -2462,11 +2511,12 @@ Deno.serve(async (req) => {
     const declaredItemsCount = Number(localReceipt.expected_items_count || 0)
     const declaredEvidence = getDeclaredItemsEvidence(browserText)
     const localExactDeclaredCount = declaredItemsCount > 0 && itemsDetectedBeforeOpenAi === declaredItemsCount
-    const scanStatus = totalDetectedBeforeOpenAi && localReceipt.store_name && localReceipt.purchase_date && localExactDeclaredCount
+    const scanStatusLegacy = totalDetectedBeforeOpenAi && localReceipt.store_name && localReceipt.purchase_date && localExactDeclaredCount
       ? "trusted"
       : isFoodTicket && totalDetectedBeforeOpenAi && itemsDetectedBeforeOpenAi < expectedItemsMin
         ? "partial_low_items"
         : "partial"
+    const scanStatus = String(localReceipt.final_scan_status || scanStatusLegacy)
 
     console.info("[scan-receipt-ocr] fast_local_extraction", {
       fast_local_extraction_used: true,
@@ -2504,6 +2554,12 @@ Deno.serve(async (req) => {
       purchase_date: localReceipt.purchase_date,
       durationMs: localDurationMs,
       image_size: requestImageSize,
+      budget_status: localReceipt.budget_status,
+      items_quality_status: localReceipt.items_quality_status,
+      smart_shopping_safe: localReceipt.smart_shopping_safe,
+      smart_shopping_blocked_reasons: localReceipt.smart_shopping_blocked_reasons,
+      final_scan_status: localReceipt.final_scan_status,
+      scan_status_legacy: localReceipt.scan_status_legacy || scanStatusLegacy,
     })
 
     const runPremiumPlusSplitOrNull = async ({
@@ -2816,6 +2872,8 @@ Deno.serve(async (req) => {
         scan_strategy_used: localExactDeclaredCount ? "local_fast" : "local_ocr_regex",
         scanStatus: scanStatus,
         scan_status: scanStatus,
+        scan_status_legacy: localReceipt.scan_status_legacy || scanStatusLegacy,
+        final_scan_status: localReceipt.final_scan_status || scanStatus,
         source: "local-ocr-regex-fallback",
         text: browserText,
         confidence: 88,
@@ -2838,6 +2896,10 @@ Deno.serve(async (req) => {
         ai_skipped_reason: "local_scan_sufficient",
         items_detected_before_openai: itemsDetectedBeforeOpenAi,
         total_detected_before_openai: totalDetectedBeforeOpenAi,
+        budget_status: localReceipt.budget_status,
+        items_quality_status: localReceipt.items_quality_status,
+        smart_shopping_safe: localReceipt.smart_shopping_safe,
+        smart_shopping_blocked_reasons: localReceipt.smart_shopping_blocked_reasons,
         calculated_items_sum_before_section_filter: localReceipt.calculated_items_sum_before_section_filter,
         calculated_items_sum_after_section_filter: localReceipt.calculated_items_sum_after_section_filter,
         section_subtotals_rejected_count: localReceipt.section_subtotals_rejected_count,

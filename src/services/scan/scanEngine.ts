@@ -72,6 +72,22 @@ function estimateTotalFromItems(items: any[] = []) {
   return Number(total.toFixed(2))
 }
 
+function resolveFinalScanStatus({
+  budgetStatus,
+  itemsQualityStatus,
+  smartShoppingSafe,
+}: {
+  budgetStatus: string
+  itemsQualityStatus: string
+  smartShoppingSafe: boolean
+}) {
+  if (budgetStatus === "rejected") return "rejected"
+  if (budgetStatus !== "reliable") return "budget_needs_review"
+  if (smartShoppingSafe && itemsQualityStatus === "trusted") return "budget_ok_articles_ok"
+  if (itemsQualityStatus === "partial") return "budget_ok_articles_partial"
+  return "budget_ok_articles_blocked"
+}
+
 export async function runSmartScan(file: File, options: ScanEngineOptions = {}) {
   const provider = options.provider || getDefaultOCRProvider()
   const scanStartedAt = performance.now()
@@ -216,12 +232,24 @@ export async function runSmartScan(file: File, options: ScanEngineOptions = {}) 
     }
     const parserDebug = ((parsed as any).parser_debug || {}) as Record<string, any>
     const budgetStatus = ocr.metrics?.budgetStatus || parserDebug.budget_status || (Number(parsed.total_amount || 0) > 0 && !(parsed as any).total_needs_review ? "reliable" : "needs_review")
-    const itemsQualityStatus = ocr.metrics?.itemsQualityStatus || parserDebug.items_quality_status || (parsed.items.length >= 3 ? "trusted_enough" : "insufficient")
+    const itemsQualityStatus = ocr.metrics?.itemsQualityStatus || parserDebug.items_quality_status || (parsed.items.length >= 3 ? "partial" : "blocked")
     const smartShoppingSafe = ocr.metrics?.smartShoppingSafe ?? parserDebug.smart_shopping_safe ?? false
-    const finalScanStatus = ocr.metrics?.finalScanStatus || parserDebug.final_scan_status || parsed.scan_status
+    const scanStatusLegacy = ocr.metrics?.scanStatusLegacy || parserDebug.scan_status_legacy || parsed.scan_status
+    let finalScanStatus = ocr.metrics?.finalScanStatus || parserDebug.final_scan_status || resolveFinalScanStatus({
+      budgetStatus,
+      itemsQualityStatus,
+      smartShoppingSafe,
+    })
+    if (
+      (budgetStatus === "reliable" && smartShoppingSafe === false)
+      || (budgetStatus === "reliable" && itemsQualityStatus === "blocked")
+    ) {
+      finalScanStatus = "budget_ok_articles_blocked"
+    }
     ;(parsed as any).budget_status = budgetStatus
     ;(parsed as any).items_quality_status = itemsQualityStatus
     ;(parsed as any).smart_shopping_safe = smartShoppingSafe
+    ;(parsed as any).scan_status_legacy = scanStatusLegacy
     if (finalScanStatus) parsed.scan_status = finalScanStatus
 
     console.info("[scanner] Date detectee", parsed.purchase_date || "")
@@ -250,6 +278,7 @@ export async function runSmartScan(file: File, options: ScanEngineOptions = {}) 
       items_quality_status: itemsQualityStatus,
       smart_shopping_safe: smartShoppingSafe,
       scan_status: parsed.scan_status,
+      scan_status_legacy: scanStatusLegacy,
       provider: ocr.provider,
       items: parsed.items,
     }

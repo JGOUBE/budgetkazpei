@@ -76,6 +76,15 @@ const TEXT = {
     duplicateMessage: "Ce ticket semble deja enregistre. Voulez-vous quand meme l'ajouter ?",
     duplicateAddAnyway: "Ajouter quand meme",
     duplicateCancel: "Annuler",
+    budgetArticlesBlockedTitle: "Ticket reconnu pour le budget.",
+    budgetArticlesBlockedMessage: "Les articles detectes ne sont pas assez fiables pour vos Courses intelligentes.",
+    budgetTransactionPossible: "Transaction possible : oui",
+    smartShoppingNotFed: "Courses intelligentes : non alimentees",
+    blockedSaveNotice: "Ce ticket sera enregistre pour votre budget, mais ses articles ne seront pas utilises pour vos Courses intelligentes.",
+    showDetectedLines: "Voir les lignes detectees",
+    hideDetectedLines: "Masquer les lignes detectees",
+    itemNeedsReview: "A verifier",
+    itemNotUsedForSmartShopping: "Non utilise pour Courses intelligentes",
     saved: "Course enregistree.",
     deleted: "Ticket retire de l'historique.",
     error: "Analyse impossible. Vous pouvez reessayer ou remplir manuellement.",
@@ -121,6 +130,15 @@ const TEXT = {
     duplicateMessage: "Sa tike-la i semble deja anrezistre. Ou veu azout ali kan meme ?",
     duplicateAddAnyway: "Azout kan meme",
     duplicateCancel: "Anile",
+    budgetArticlesBlockedTitle: "Tike-la rekonu pou bidze.",
+    budgetArticlesBlockedMessage: "Bann lartik trouve pa ase sir pou out Courses intelligentes.",
+    budgetTransactionPossible: "Tranzaksyon posib : wi",
+    smartShoppingNotFed: "Courses intelligentes : pa alimante",
+    blockedSaveNotice: "Tike-la va anrezistre pou out bidze, me bann lartik-la pa va servi pou out Courses intelligentes.",
+    showDetectedLines: "War bann lign trouve",
+    hideDetectedLines: "Kasiet bann lign trouve",
+    itemNeedsReview: "Pou verifie",
+    itemNotUsedForSmartShopping: "Pa servi pou Courses intelligentes",
     saved: "Course anrezistree.",
     deleted: "Tike retire dann listwar.",
     error: "Analiz la pa marche. Ou pe reessaye ou ranpli amain.",
@@ -247,8 +265,14 @@ function isTrustedScanResult(parsed = {}, validItems = []) {
   const expectedCount = Number(parsed.expected_items_count || 0)
   const total = Number(parsed.total_amount || 0)
   const scanStatus = String(parsed.scan_status || "")
+  const itemsQualityStatus = String(parsed.items_quality_status || parsed.parser_debug?.items_quality_status || "")
+  const smartShoppingSafe = parsed.smart_shopping_safe ?? parsed.parser_debug?.smart_shopping_safe
 
-  return scanStatus.includes("trusted")
+  if (isBudgetOkArticlesBlocked(parsed)) return false
+  if (smartShoppingSafe === false) return false
+  if (itemsQualityStatus === "blocked" || itemsQualityStatus === "needs_review") return false
+
+  return (scanStatus.includes("budget_ok_articles_ok") || scanStatus.includes("trusted"))
     && total > 0
     && parsed.total_needs_review !== true
     && parsed.date_status === "detected"
@@ -257,8 +281,35 @@ function isTrustedScanResult(parsed = {}, validItems = []) {
     && validItems.length === expectedCount
 }
 
+function isBudgetOkArticlesBlocked(parsed = {}) {
+  const scanStatus = String(parsed.scan_status || parsed.final_scan_status || parsed.parser_debug?.final_scan_status || "")
+  const budgetStatus = String(parsed.budget_status || parsed.parser_debug?.budget_status || "")
+  const itemsQualityStatus = String(parsed.items_quality_status || parsed.parser_debug?.items_quality_status || "")
+  const smartShoppingSafe = parsed.smart_shopping_safe ?? parsed.parser_debug?.smart_shopping_safe
+
+  return scanStatus.includes("budget_ok_articles_blocked")
+    || (budgetStatus === "reliable" && smartShoppingSafe === false)
+    || (budgetStatus === "reliable" && itemsQualityStatus === "blocked")
+}
+
+function canFeedSmartShoppingFromDraft(draft = {}) {
+  const scanStatus = String(draft.scan_status || "")
+  if (isBudgetOkArticlesBlocked(draft)) return false
+  if (draft.smart_shopping_safe === false || draft.parser_debug?.smart_shopping_safe === false) return false
+  if (String(draft.items_quality_status || draft.parser_debug?.items_quality_status || "") === "blocked") return false
+  if (scanStatus.includes("budget_needs_review") || scanStatus.includes("rejected")) return false
+  if (draft.total_needs_review === true) return false
+  return true
+}
+
 function getScanResultMessage({ parsed = {}, detectedItemsCount = 0, issues = [], isKreol = false }) {
   const scanStatus = String(parsed.scan_status || "")
+
+  if (isBudgetOkArticlesBlocked(parsed)) {
+    return isKreol
+      ? "Tike-la rekonu pou bidze. Bann lartik trouve pa ase sir pou out Courses intelligentes."
+      : "Ticket reconnu pour le budget. Les articles detectes ne sont pas assez fiables pour vos Courses intelligentes."
+  }
 
   if (isTrustedScanResult(parsed, Array(detectedItemsCount).fill(true))) {
     return isKreol
@@ -333,6 +384,7 @@ function buildScannerSummary({ parsed = {}, items = [], metrics = {}, importResu
     items_sent_to_smart_shopping_count: Number(importResult?.smartShoppingEligibleItems ?? metrics?.itemsSentToSmartShoppingCount ?? parsed.parser_debug?.items_sent_to_smart_shopping_count ?? trustedItems.length),
     items_excluded_from_smart_shopping_count: Number(importResult?.smartShoppingExcludedItems ?? metrics?.itemsExcludedFromSmartShoppingCount ?? parsed.parser_debug?.items_excluded_from_smart_shopping_count ?? needsReviewItems.length),
     items_excluded_reasons_summary: metrics?.itemsExcludedReasonsSummary || parsed.parser_debug?.items_excluded_reasons_summary || {},
+    smart_shopping_blocked_reasons: metrics?.smartShoppingBlockedReasons || parsed.smart_shopping_blocked_reasons || parsed.parser_debug?.smart_shopping_blocked_reasons || [],
     section_subtotals_rejected_count: Number(metrics?.sectionSubtotalsRejectedCount ?? parsed.parser_debug?.section_subtotals_rejected_count ?? 0),
     section_subtotals_rejected_lines: metrics?.sectionSubtotalsRejectedLines || parsed.parser_debug?.section_subtotals_rejected_lines || [],
     items_kept_lines: metrics?.itemsKeptLines || parsed.parser_debug?.items_kept_lines || [],
@@ -377,7 +429,8 @@ function buildScannerSummary({ parsed = {}, items = [], metrics = {}, importResu
     recovery_ratio_denominator_source: metrics?.recoveryRatioDenominatorSource || "",
     recovery_ratio_blocked_reason: metrics?.recoveryRatioBlockedReason || "",
     image_quality_warning: metrics?.imageQualityWarning ?? false,
-    final_scan_status: metrics?.finalScanStatus || parsed.parser_debug?.final_scan_status || parsed.scan_status || "",
+    final_scan_status: metrics?.finalScanStatus || parsed.final_scan_status || parsed.parser_debug?.final_scan_status || parsed.scan_status || "",
+    scan_status_legacy: metrics?.scanStatusLegacy || parsed.scan_status_legacy || parsed.parser_debug?.scan_status_legacy || "",
     receipt_saved: Boolean(importResult?.receiptSaved || importResult?.receipt_id),
     receipt_id: importResult?.receipt_id || null,
     receipt_items_saved_count: Number(importResult?.receiptItemsCreated || 0),
@@ -446,10 +499,17 @@ export default function ReceiptsPage({
   const [scanMetrics, setScanMetrics] = useState(null)
   const [resumeDraft, setResumeDraft] = useState(null)
   const [pendingImagePath, setPendingImagePath] = useState(null)
+  const [showBlockedDetectedLines, setShowBlockedDetectedLines] = useState(false)
 
   const globalCategory = draft?.items?.[0]?.category || "alimentaire"
   const receiptRows = useMemo(() => Array.isArray(receipts) ? receipts : [], [receipts])
   const showMethodActions = mode === "history" || mode === "validate"
+
+  useEffect(() => {
+    if (!draft || !isBudgetOkArticlesBlocked(draft)) {
+      setShowBlockedDetectedLines(false)
+    }
+  }, [draft?.scan_status, draft?.smart_shopping_safe, draft?.items_quality_status])
 
   useEffect(() => {
     refreshReceipts()
@@ -791,16 +851,18 @@ export default function ReceiptsPage({
         transactionId: txResult.data.id,
       })
 
-      await syncShoppingItemsFromReceipt({
-        userId: user?.id,
-        transactionId: txResult.data.id,
-        receipt: {
-          id: currentReceipt.id,
-          store_name: draft.store_name,
-          purchase_date: draft.purchase_date,
-        },
-        items: validItems,
-      })
+      if (draft.is_food_ticket && canFeedSmartShoppingFromDraft(draft)) {
+        await syncShoppingItemsFromReceipt({
+          userId: user?.id,
+          transactionId: txResult.data.id,
+          receipt: {
+            id: currentReceipt.id,
+            store_name: draft.store_name,
+            purchase_date: draft.purchase_date,
+          },
+          items: validItems.filter(item => isItemEligibleForSmartShopping(item)),
+        })
+      }
 
       setMessage(txt.saved)
       setDraft(null)
@@ -1158,6 +1220,8 @@ export default function ReceiptsPage({
           duplicateReceipt={duplicateReceipt}
           allowDuplicateImport={allowDuplicateImport}
           setAllowDuplicateImport={setAllowDuplicateImport}
+          showBlockedDetectedLines={showBlockedDetectedLines}
+          setShowBlockedDetectedLines={setShowBlockedDetectedLines}
           setDraft={setDraft}
           updateItem={updateItem}
           removeItem={removeItem}
@@ -1309,6 +1373,8 @@ function ValidationForm({
   duplicateReceipt,
   allowDuplicateImport,
   setAllowDuplicateImport,
+  showBlockedDetectedLines,
+  setShowBlockedDetectedLines,
   setDraft,
   updateItem,
   removeItem,
@@ -1316,7 +1382,9 @@ function ValidationForm({
   onCancel,
 }) {
   const validationError = getDraftValidationError(draft)
-  const partialLowItems = String(draft?.scan_status || "").includes("partial_low_items")
+  const articlesBlocked = isBudgetOkArticlesBlocked(draft)
+  const partialLowItems = String(draft?.scan_status || "").includes("partial_low_items") || articlesBlocked
+  const displayDetectedLines = !articlesBlocked || showBlockedDetectedLines
 
   return (
     <div style={cardStyle()}>
@@ -1393,6 +1461,40 @@ function ValidationForm({
         </Field>
       </div>
 
+      {articlesBlocked && (
+        <div style={{
+          background: "rgba(252,211,77,.11)",
+          border: "1px solid rgba(252,211,77,.32)",
+          borderRadius: 16,
+          padding: 13,
+          marginTop: 14,
+          color: COLORS.text,
+          fontSize: 13,
+          lineHeight: 1.45,
+        }}>
+          <strong>{txt.budgetArticlesBlockedTitle}</strong>
+          <div style={{ marginTop: 4, color: COLORS.text, fontWeight: 850 }}>
+            {txt.budgetArticlesBlockedMessage}
+          </div>
+          <div style={{ color: COLORS.muted, marginTop: 8 }}>
+            {txt.budgetTransactionPossible}
+          </div>
+          <div style={{ color: COLORS.muted, marginTop: 3 }}>
+            {txt.smartShoppingNotFed}
+          </div>
+          <div style={{ color: COLORS.yellow, marginTop: 8, fontWeight: 850 }}>
+            {txt.blockedSaveNotice}
+          </div>
+          <button
+            type="button"
+            onClick={() => setShowBlockedDetectedLines(prev => !prev)}
+            style={{ marginTop: 10, minHeight: 42, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "rgba(255,255,255,.06)", color: COLORS.text, fontWeight: 950, padding: "0 14px" }}
+          >
+            {showBlockedDetectedLines ? txt.hideDetectedLines : txt.showDetectedLines}
+          </button>
+        </div>
+      )}
+
       <div style={{ color: COLORS.text, fontWeight: 950, margin: "18px 0 10px" }}>
         {txt.items}
       </div>
@@ -1412,10 +1514,19 @@ function ValidationForm({
         </div>
       )}
 
-      <div style={{ display: "grid", gap: 12 }}>
-        {(draft.items || []).map((item, index) => (
+      <div style={{ display: displayDetectedLines ? "grid" : "none", gap: 12 }}>
+        {(draft.items || []).map((item, index) => {
+          const itemAllowed = isItemEligibleForSmartShopping(item)
+          const itemNeedsReview = normalizeItemQualityStatus(item) !== "trusted" || articlesBlocked || item.needs_review === true
+          return (
           <div key={index} style={{ background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.09)", borderRadius: 16, padding: 12 }}>
             <div style={{ display: "grid", gap: 10 }}>
+              {(itemNeedsReview || !itemAllowed) && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {itemNeedsReview && <MetaChip label={txt.itemNeedsReview} strong />}
+                  {!itemAllowed && <MetaChip label={txt.itemNotUsedForSmartShopping} />}
+                </div>
+              )}
               <div style={{ display: "flex", justifyContent: "space-between", gap: 10, color: COLORS.muted, fontSize: 12, fontWeight: 900 }}>
                 <span>{getConfidenceIcon(item.confidence_score || 0)} Confiance OCR</span>
                 <span style={{ color: getConfidenceColor(item.confidence_score || 0) }}>
@@ -1459,10 +1570,14 @@ function ValidationForm({
               </button>
             </div>
           </div>
-        ))}
+          )
+        })}
       </div>
 
-      <button type="button" onClick={() => setDraft(prev => ({ ...prev, items: [...(prev.items || []), emptyItem()] }))} style={{ marginTop: 12, minHeight: 48, borderRadius: 14, border: `1px solid ${COLORS.cyan}55`, background: "rgba(35,211,214,.10)", color: COLORS.cyan, fontWeight: 950 }}>
+      <button type="button" onClick={() => {
+        setShowBlockedDetectedLines(true)
+        setDraft(prev => ({ ...prev, items: [...(prev.items || []), emptyItem()] }))
+      }} style={{ marginTop: 12, minHeight: 48, borderRadius: 14, border: `1px solid ${COLORS.cyan}55`, background: "rgba(35,211,214,.10)", color: COLORS.cyan, fontWeight: 950 }}>
         {txt.addLine}
       </button>
 

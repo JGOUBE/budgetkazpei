@@ -136,7 +136,7 @@ export type ParsedReceipt = {
   scan_level_used?: number
   scan_duration_ms?: number
   escalation_reason?: string
-  scan_status?: "success" | "trusted" | "usable_review" | "partial" | "partial_low_items" | "failed"
+  scan_status?: "success" | "trusted" | "usable_review" | "partial" | "partial_low_items" | "failed" | "budget_ok_articles_ok" | "budget_ok_articles_partial" | "budget_ok_articles_blocked" | "budget_needs_review" | "rejected"
   expected_items_count?: number | null
   expected_items_source?: string
   declared_items_count?: number | null
@@ -763,6 +763,38 @@ function summarizeItemQuality(items: ParsedReceiptItem[] = [], rejectedLines: Ar
   }
 }
 
+function resolveItemsQualityStatus({
+  items,
+  qualitySummary,
+  smartShoppingBlockedReasons,
+}: {
+  items: ParsedReceiptItem[]
+  qualitySummary: ReturnType<typeof summarizeItemQuality>
+  smartShoppingBlockedReasons: string[]
+}) {
+  if (items.length === 0) return "blocked"
+  if (smartShoppingBlockedReasons.length > 0) return "blocked"
+  if (qualitySummary.items_sent_to_smart_shopping_count === 0) return "needs_review"
+  if (qualitySummary.trusted_items_ratio >= 0.8) return "trusted"
+  return "partial"
+}
+
+function resolveFinalScanStatus({
+  budgetStatus,
+  itemsQualityStatus,
+  smartShoppingSafe,
+}: {
+  budgetStatus: string
+  itemsQualityStatus: string
+  smartShoppingSafe: boolean
+}) {
+  if (budgetStatus === "rejected") return "rejected"
+  if (budgetStatus !== "reliable") return "budget_needs_review"
+  if (smartShoppingSafe && itemsQualityStatus === "trusted") return "budget_ok_articles_ok"
+  if (itemsQualityStatus === "partial") return "budget_ok_articles_partial"
+  return "budget_ok_articles_blocked"
+}
+
 const SECTION_SUBTOTAL_KEYWORDS = [
   "surgeles",
   "surgele",
@@ -1025,12 +1057,27 @@ export function parseReceipt({ text = "", ocrStatus = "manual", ocrConfidence = 
   const itemsTotal = items.reduce((sum, item) => sum + Number(item.total_price ?? item.price ?? item.unit_price ?? 0), 0)
   const itemsTotalRounded = Number(itemsTotal.toFixed(2))
   const exactDeclaredCount = expectedItemsCount > 0 && items.length === expectedItemsCount
-  const qualitySummary = summarizeItemQuality(items, parserDebug.rejectedLines)
+  const qualitySummaryRaw = summarizeItemQuality(items, parserDebug.rejectedLines)
+  const itemsQualityStatus = resolveItemsQualityStatus({
+    items,
+    qualitySummary: qualitySummaryRaw,
+    smartShoppingBlockedReasons,
+  })
+  const qualitySummary = {
+    ...qualitySummaryRaw,
+    items_quality_status: itemsQualityStatus,
+  }
   const budgetReliable = Boolean(store && purchaseDate && total && !(trustedTotal.amount && trustedTotal.paymentRaw && !trustedTotal.paymentConsistent))
+  const budgetStatus = budgetReliable ? "reliable" : "needs_review"
   const smartShoppingSafe = budgetReliable
     && smartShoppingBlockedReasons.length === 0
     && qualitySummary.items_sent_to_smart_shopping_count > 0
-  const finalScanStatus = exactDeclaredCount && total && store && purchaseDate ? "trusted" : items.length >= 3 && total ? "usable_review" : "failed"
+  const scanStatusLegacy = exactDeclaredCount && total && store && purchaseDate ? "trusted" : items.length >= 3 && total ? "usable_review" : "failed"
+  const finalScanStatus = resolveFinalScanStatus({
+    budgetStatus,
+    itemsQualityStatus,
+    smartShoppingSafe,
+  })
   console.info("[scanner] OCR_DEBUG_SUMMARY", {
     raw_lines_count: parserDebug.rawLinesCount,
     candidate_items_before_rejection: candidateItemsBeforeRejection,
@@ -1053,10 +1100,11 @@ export function parseReceipt({ text = "", ocrStatus = "manual", ocrConfidence = 
     items_total_vs_receipt_total_delta: totalDelta,
     ...qualitySummary,
     budget_reliable: budgetReliable,
-    budget_status: budgetReliable ? "reliable" : "needs_review",
+    budget_status: budgetStatus,
     smart_shopping_safe: smartShoppingSafe,
     smart_shopping_blocked_reasons: smartShoppingBlockedReasons,
     final_scan_status: finalScanStatus,
+    scan_status_legacy: scanStatusLegacy,
     ...textPresence,
     source_used: "parser",
   })
@@ -1098,6 +1146,12 @@ export function parseReceipt({ text = "", ocrStatus = "manual", ocrConfidence = 
     payment_total_value: trustedTotal.paymentAmount || null,
     payment_total_raw_text: trustedTotal.paymentRaw || "",
     total_payment_consistent: Boolean(trustedTotal.paymentConsistent),
+    budget_status: budgetStatus,
+    items_quality_status: itemsQualityStatus,
+    smart_shopping_safe: smartShoppingSafe,
+    smart_shopping_blocked_reasons: smartShoppingBlockedReasons,
+    final_scan_status: finalScanStatus,
+    scan_status_legacy: scanStatusLegacy,
     confidence_score: Math.max(0, Math.min(100, Math.round(((ocrConfidence || 0) + (total ? 20 : 0) + (items.length ? 10 : 0) + (store ? 10 : 0)) / 1.4))),
     parser_debug: {
       raw_lines_count: parserDebug.rawLinesCount,
@@ -1125,10 +1179,11 @@ export function parseReceipt({ text = "", ocrStatus = "manual", ocrConfidence = 
       items_total_vs_receipt_total_delta: totalDelta,
       ...qualitySummary,
       budget_reliable: budgetReliable,
-      budget_status: budgetReliable ? "reliable" : "needs_review",
+      budget_status: budgetStatus,
       smart_shopping_safe: smartShoppingSafe,
       smart_shopping_blocked_reasons: smartShoppingBlockedReasons,
       final_scan_status: finalScanStatus,
+      scan_status_legacy: scanStatusLegacy,
       ...textPresence,
       source_used: "parser",
     },
