@@ -92,19 +92,52 @@ const SECTION_SUBTOTAL_HEADINGS = [
   "hygiene",
   "higiene",
   "entretien",
+  "ppi",
 ]
+
+function normalizeSectionSubtotalLabel(line = "") {
+  return compactLine(line)
+    .replace(/\b\d+(?:\s?\d{3})*[,.]\d{2}\b/g, " ")
+    .replace(/\beur\b/g, " ")
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\bcharcuter(?:ie|1e|te)\b/g, "charcuterie")
+    .replace(/\bepicer(?:ie|1e|te)\b/g, "epicerie")
+    .replace(/\bsucr(?:ee+|ef|e)\b/g, "sucree")
+    .replace(/\bsale(?:e|)\b/g, "salee")
+    .replace(/\bcrererie\b/g, "cremerie")
+    .replace(/\bsungeles\b/g, "surgeles")
+    .replace(/\bvola1lle\b/g, "volaille")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
+function removeOcrDepartmentSuffix(label = "") {
+  return label
+    .replace(/\s+(?:1s|ls|l5|is)$/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+}
 
 export function isSectionSubtotalLine(line = "") {
   const amount = moneyFromLine(line)
   if (amount <= 0) return false
-  const clean = compactLine(line)
-    .replace(/\b\d+(?:\s?\d{3})*[,.]\d{2}\b/g, " ")
-    .replace(/\beur\b/g, " ")
-    .replace(/[^a-z0-9 ]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
+  const clean = normalizeSectionSubtotalLabel(line)
   if (!clean) return false
-  return SECTION_SUBTOTAL_HEADINGS.some((heading) => clean === heading)
+
+  const candidates = [
+    clean,
+    removeOcrDepartmentSuffix(clean),
+    clean.replace(/\bfruits legumes\b/g, "fruits plantes fruits legumes"),
+  ].filter(Boolean)
+
+  if (candidates.some((candidate) => SECTION_SUBTOTAL_HEADINGS.includes(candidate))) return true
+  if (/^charcuterie(?:\s+(?:1s|ls|l5|is))?$/.test(clean)) return true
+  if (/^epicerie\s+(?:sucree|salee)(?:\s+(?:1s|ls|l5|is))?$/.test(clean)) return true
+  if (/^boissons\s+sans\s+alcool(?:\s+(?:1s|ls|l5|is))?$/.test(clean)) return true
+  if (/^fleurs\s+plantes\s+fruits\s+legumes(?:\s+(?:1s|ls|l5|is))?$/.test(clean)) return true
+  if (/^(?:cremerie|surgeles|surgele|ultra frais|volaille|ppi)(?:\s+(?:1s|ls|l5|is))?$/.test(clean)) return true
+
+  return false
 }
 
 function isValidDateParts(year: number, month: number, day: number) {

@@ -795,18 +795,88 @@ function resolveFinalScanStatus({
   return "budget_ok_articles_blocked"
 }
 
+function resolveDisplayedItemsDiagnostics({
+  items,
+  expectedItemsCount,
+  expectedItemsSource,
+  qualitySummary,
+  itemsQualityStatus,
+  smartShoppingSafe,
+  finalScanStatus,
+}: {
+  items: ParsedReceiptItem[]
+  expectedItemsCount: number
+  expectedItemsSource: string
+  qualitySummary: ReturnType<typeof summarizeItemQuality>
+  itemsQualityStatus: string
+  smartShoppingSafe: boolean
+  finalScanStatus: string
+}) {
+  const declaredCountKnown = expectedItemsCount > 0 && String(expectedItemsSource || "").includes("declared")
+  const blocked = finalScanStatus === "budget_ok_articles_blocked"
+    || smartShoppingSafe === false
+    || itemsQualityStatus === "blocked"
+    || itemsQualityStatus === "needs_review"
+    || qualitySummary.needs_review_items_count > 0
+
+  if (blocked) {
+    return {
+      displayed_items_count: null,
+      displayed_items_count_source: "blocked_unreliable",
+      real_items_count_if_known: declaredCountKnown ? expectedItemsCount : null,
+      item_count_display_label: "Articles a verifier",
+    }
+  }
+
+  if (declaredCountKnown && qualitySummary.trusted_items_count === expectedItemsCount) {
+    return {
+      displayed_items_count: expectedItemsCount,
+      displayed_items_count_source: "declared_trusted_count",
+      real_items_count_if_known: expectedItemsCount,
+      item_count_display_label: `${expectedItemsCount} article(s)`,
+    }
+  }
+
+  if (smartShoppingSafe && qualitySummary.trusted_items_count > 0 && qualitySummary.trusted_items_count === items.length) {
+    return {
+      displayed_items_count: qualitySummary.trusted_items_count,
+      displayed_items_count_source: "trusted_items_count",
+      real_items_count_if_known: declaredCountKnown ? expectedItemsCount : null,
+      item_count_display_label: `${qualitySummary.trusted_items_count} article(s)`,
+    }
+  }
+
+  return {
+    displayed_items_count: null,
+    displayed_items_count_source: "unknown_or_unreliable",
+    real_items_count_if_known: declaredCountKnown ? expectedItemsCount : null,
+    item_count_display_label: "Articles a verifier",
+  }
+}
+
 const SECTION_SUBTOTAL_KEYWORDS = [
   "surgeles",
+  "sungeles",
   "surgele",
   "epicerie sucree",
+  "epicerie sucr",
+  "epicerte sucree",
+  "epicer1e sucree",
   "epicerie salee",
+  "epicerte salee",
+  "epicer1e salee",
   "cremerie",
+  "crererie",
   "charcuterie",
+  "charcuter1e",
+  "charcuterte",
   "charcuterie ls",
   "boissons sans alcool",
   "ultra frais",
   "fleurs plantes fruits legumes",
   "fruits legumes",
+  "volaille",
+  "ppi",
 ]
 
 function containsSectionSubtotalKeyword(value = "") {
@@ -1078,6 +1148,15 @@ export function parseReceipt({ text = "", ocrStatus = "manual", ocrConfidence = 
     itemsQualityStatus,
     smartShoppingSafe,
   })
+  const displayedItemsDiagnostics = resolveDisplayedItemsDiagnostics({
+    items,
+    expectedItemsCount,
+    expectedItemsSource: declaredEvidence.source,
+    qualitySummary,
+    itemsQualityStatus,
+    smartShoppingSafe,
+    finalScanStatus,
+  })
   console.info("[scanner] OCR_DEBUG_SUMMARY", {
     raw_lines_count: parserDebug.rawLinesCount,
     candidate_items_before_rejection: candidateItemsBeforeRejection,
@@ -1097,8 +1176,11 @@ export function parseReceipt({ text = "", ocrStatus = "manual", ocrConfidence = 
     calculated_items_sum_after_section_filter: itemsTotalRounded,
     section_subtotals_rejected_count: sectionSubtotal.rejectedCount,
     section_subtotals_rejected_amount: sectionSubtotal.rejectedAmount,
+    section_subtotals_rejected_lines: sectionSubtotal.rejected.map(item => item.line),
+    rejected_section_subtotal_examples: sectionSubtotal.rejected.map(item => item.line).slice(0, 8),
     items_total_vs_receipt_total_delta: totalDelta,
     ...qualitySummary,
+    ...displayedItemsDiagnostics,
     budget_reliable: budgetReliable,
     budget_status: budgetStatus,
     smart_shopping_safe: smartShoppingSafe,
@@ -1174,10 +1256,12 @@ export function parseReceipt({ text = "", ocrStatus = "manual", ocrConfidence = 
       section_subtotals_rejected_amount: sectionSubtotal.rejectedAmount,
       section_subtotals_rejected: sectionSubtotal.rejected,
       section_subtotals_rejected_lines: sectionSubtotal.rejected.map(item => item.line),
+      rejected_section_subtotal_examples: sectionSubtotal.rejected.map(item => item.line).slice(0, 8),
       items_kept_lines: items.map(item => item.ocr_name || item.name),
       items_rejected_lines: rejectedBeforeItemLimitLines,
       items_total_vs_receipt_total_delta: totalDelta,
       ...qualitySummary,
+      ...displayedItemsDiagnostics,
       budget_reliable: budgetReliable,
       budget_status: budgetStatus,
       smart_shopping_safe: smartShoppingSafe,

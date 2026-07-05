@@ -85,6 +85,9 @@ const TEXT = {
     hideDetectedLines: "Masquer les lignes detectees",
     itemNeedsReview: "A verifier",
     itemNotUsedForSmartShopping: "Non utilise pour Courses intelligentes",
+    articlesToReview: "Articles a verifier",
+    unreliableDetectedLines: "Lignes detectees non fiables",
+    viewDetails: "Voir le detail",
     saved: "Course enregistree.",
     deleted: "Ticket retire de l'historique.",
     error: "Analyse impossible. Vous pouvez reessayer ou remplir manuellement.",
@@ -139,6 +142,9 @@ const TEXT = {
     hideDetectedLines: "Kasiet bann lign trouve",
     itemNeedsReview: "Pou verifie",
     itemNotUsedForSmartShopping: "Pa servi pou Courses intelligentes",
+    articlesToReview: "Bann lartik pou verifie",
+    unreliableDetectedLines: "Bann lign trouve pa ase sir",
+    viewDetails: "War detay",
     saved: "Course anrezistree.",
     deleted: "Tike retire dann listwar.",
     error: "Analiz la pa marche. Ou pe reessaye ou ranpli amain.",
@@ -302,6 +308,73 @@ function canFeedSmartShoppingFromDraft(draft = {}) {
   return true
 }
 
+function receiptHasUnreliableArticleCount(receipt = {}) {
+  const scanStatus = String(receipt.scan_status || receipt.final_scan_status || receipt.parser_debug?.final_scan_status || "")
+  const itemsQualityStatus = String(receipt.items_quality_status || receipt.parser_debug?.items_quality_status || "")
+  const smartShoppingSafe = receipt.smart_shopping_safe ?? receipt.parser_debug?.smart_shopping_safe
+
+  return scanStatus.includes("budget_ok_articles_blocked")
+    || scanStatus.includes("partial_low_items")
+    || scanStatus.includes("long_manual_review")
+    || scanStatus.includes("long_usable_review")
+    || scanStatus.includes("budget_needs_review")
+    || smartShoppingSafe === false
+    || itemsQualityStatus === "blocked"
+    || itemsQualityStatus === "needs_review"
+}
+
+function getReceiptArticleCountLabel(receipt = {}, txt) {
+  if (receiptHasUnreliableArticleCount(receipt)) return txt.articlesToReview
+  const count = Array.isArray(receipt.receipt_items) ? receipt.receipt_items.length : 0
+  return count > 0 ? `${count} article(s)` : txt.unreliableDetectedLines
+}
+
+function getArticleCountDisplayInfo({ parsed = {}, items = [], trustedItems = [], needsReviewItems = [] }) {
+  const expectedCount = Number(parsed.expected_items_count || parsed.expected_items_min || parsed.declared_items_count || 0)
+  const declaredCountKnown = expectedCount > 0 && String(parsed.expected_items_source || parsed.items_count_status || "").includes("declared")
+  const itemsQualityStatus = String(parsed.items_quality_status || parsed.parser_debug?.items_quality_status || "")
+  const smartShoppingSafe = parsed.smart_shopping_safe ?? parsed.parser_debug?.smart_shopping_safe
+  const blocked = isBudgetOkArticlesBlocked(parsed)
+    || smartShoppingSafe === false
+    || itemsQualityStatus === "blocked"
+    || itemsQualityStatus === "needs_review"
+    || needsReviewItems.length > 0
+
+  if (blocked) {
+    return {
+      displayed_items_count: null,
+      displayed_items_count_source: "blocked_unreliable",
+      real_items_count_if_known: declaredCountKnown ? expectedCount : null,
+      item_count_display_label: "Articles a verifier",
+    }
+  }
+
+  if (declaredCountKnown && trustedItems.length === expectedCount) {
+    return {
+      displayed_items_count: expectedCount,
+      displayed_items_count_source: "declared_trusted_count",
+      real_items_count_if_known: expectedCount,
+      item_count_display_label: `${expectedCount} article(s)`,
+    }
+  }
+
+  if (smartShoppingSafe === true && trustedItems.length > 0 && trustedItems.length === items.length) {
+    return {
+      displayed_items_count: trustedItems.length,
+      displayed_items_count_source: "trusted_items_count",
+      real_items_count_if_known: declaredCountKnown ? expectedCount : null,
+      item_count_display_label: `${trustedItems.length} article(s)`,
+    }
+  }
+
+  return {
+    displayed_items_count: null,
+    displayed_items_count_source: "unknown_or_unreliable",
+    real_items_count_if_known: declaredCountKnown ? expectedCount : null,
+    item_count_display_label: "Articles a verifier",
+  }
+}
+
 function getScanResultMessage({ parsed = {}, detectedItemsCount = 0, issues = [], isKreol = false }) {
   const scanStatus = String(parsed.scan_status || "")
 
@@ -362,6 +435,7 @@ function getScanResultMessage({ parsed = {}, detectedItemsCount = 0, issues = []
 function buildScannerSummary({ parsed = {}, items = [], metrics = {}, importResult = {}, duplicateDetected = false, duplicateConfirmed = false }) {
   const trustedItems = items.filter(item => isItemEligibleForSmartShopping(item))
   const needsReviewItems = items.filter(item => !trustedItems.includes(item))
+  const countDisplay = getArticleCountDisplayInfo({ parsed, items, trustedItems, needsReviewItems })
   const rejectedLines = parsed.parser_debug?.rejected_lines || parsed.rejected_lines || metrics?.rejectedLines || []
   const rejectedReasons = Array.isArray(rejectedLines)
     ? rejectedLines.map(line => line?.reason).filter(Boolean)
@@ -383,10 +457,15 @@ function buildScannerSummary({ parsed = {}, items = [], metrics = {}, importResu
     items_quality_status: metrics?.itemsQualityStatus || parsed.parser_debug?.items_quality_status || "",
     items_sent_to_smart_shopping_count: Number(importResult?.smartShoppingEligibleItems ?? metrics?.itemsSentToSmartShoppingCount ?? parsed.parser_debug?.items_sent_to_smart_shopping_count ?? trustedItems.length),
     items_excluded_from_smart_shopping_count: Number(importResult?.smartShoppingExcludedItems ?? metrics?.itemsExcludedFromSmartShoppingCount ?? parsed.parser_debug?.items_excluded_from_smart_shopping_count ?? needsReviewItems.length),
+    displayed_items_count: countDisplay.displayed_items_count,
+    displayed_items_count_source: countDisplay.displayed_items_count_source,
+    real_items_count_if_known: countDisplay.real_items_count_if_known,
+    item_count_display_label: countDisplay.item_count_display_label,
     items_excluded_reasons_summary: metrics?.itemsExcludedReasonsSummary || parsed.parser_debug?.items_excluded_reasons_summary || {},
     smart_shopping_blocked_reasons: metrics?.smartShoppingBlockedReasons || parsed.smart_shopping_blocked_reasons || parsed.parser_debug?.smart_shopping_blocked_reasons || [],
     section_subtotals_rejected_count: Number(metrics?.sectionSubtotalsRejectedCount ?? parsed.parser_debug?.section_subtotals_rejected_count ?? 0),
     section_subtotals_rejected_lines: metrics?.sectionSubtotalsRejectedLines || parsed.parser_debug?.section_subtotals_rejected_lines || [],
+    rejected_section_subtotal_examples: (metrics?.sectionSubtotalsRejectedLines || parsed.parser_debug?.section_subtotals_rejected_lines || []).slice(0, 8),
     items_kept_lines: metrics?.itemsKeptLines || parsed.parser_debug?.items_kept_lines || [],
     items_rejected_lines: metrics?.itemsRejectedLines || parsed.parser_debug?.items_rejected_lines || rejectedLines,
     item_quality_summary: metrics?.itemQualitySummary || parsed.parser_debug?.item_quality_summary || {},
@@ -1409,7 +1488,7 @@ function ValidationForm({
           </div>
           <div style={{ color: COLORS.muted, marginTop: 4 }}>
             {duplicateReceipt.store_name} - {duplicateReceipt.purchase_date} - {formatMontant(Number(duplicateReceipt.total_amount || 0))}
-            {" - "}{(duplicateReceipt.receipt_items || []).length} article(s)
+            {" - "}{getReceiptArticleCountLabel(duplicateReceipt, txt)}
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 8, marginTop: 10 }}>
             <button
@@ -1640,13 +1719,13 @@ function HistoryList({ txt, rows, busy, onOpen, onDelete }) {
               <span>
                 <strong>{row.store_name || txt.scanTitle}</strong>
                 <span style={{ display: "block", color: COLORS.muted, fontSize: 12, marginTop: 4 }}>
-                  {row.purchase_date || ""} - {(row.receipt_items || []).length} article(s)
+                  {row.purchase_date || ""} - {getReceiptArticleCountLabel(row, txt)}
                 </span>
                 <strong style={{ color: COLORS.accent, display: "block", marginTop: 5 }}>{formatMontant(Number(row.total_amount || 0))}</strong>
               </span>
               <span style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: 8 }}>
                 <button type="button" disabled={busy} onClick={() => onOpen(row)} style={{ minHeight: 40, borderRadius: 12, border: "none", background: COLORS.accent, color: "#fff", fontWeight: 950, padding: "0 12px" }}>
-                  Modifier
+                  {receiptHasUnreliableArticleCount(row) ? txt.viewDetails : "Modifier"}
                 </button>
                 <button type="button" disabled={busy} onClick={() => onDelete(row)} style={{ minHeight: 40, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "transparent", color: COLORS.muted, fontWeight: 950, padding: "0 12px" }}>
                   {txt.deleteTicket}

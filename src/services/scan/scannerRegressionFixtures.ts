@@ -176,6 +176,59 @@ export const LEADER_PRICE_SMALL_UNSAFE_SMART_SHOPPING_REFERENCE = {
   ].join("\n"),
 }
 
+export const LEADER_PRICE_SECTION_SUBTOTAL_REFERENCE = {
+  id: "leader_price_2026_07_04_18_39_section_subtotals",
+  expectedStore: "Leader Price Saint-Leu",
+  expectedNormalizedStore: "leader price",
+  expectedStoreLocation: "Saint-Leu",
+  expectedDate: "2026-07-04",
+  expectedTotal: 18.39,
+  expectedItemsCount: 8,
+  expectedSectionSubtotalsRejectedCount: 4,
+  expectedSectionSubtotalsRejectedAmount: 18.39,
+  expectedAiCalls: 0,
+  expectedItems: [
+    { name: "ROSETTE 8TR 80G", total: 2.49 },
+    { name: "FUET D OLOT 150", total: 2.49 },
+    { name: "TLJ BARRE CEREALE CHOCO B", total: 1.7 },
+    { name: "MIMOLETTE 10 TRANCHES 160", total: 3.24 },
+    { name: "GOUDA 10 TRANCHES 160G", total: 2.19 },
+    { name: "CAMEMBERT LE GOUVERNEUR", total: 2.28 },
+    { name: "VEGGIE NUGGETS 300G", total: 2.49 },
+    { name: "BROCOLI 20/40 450G", total: 1.51 },
+  ],
+  sectionSubtotalLines: [
+    "CHARCUTERIE 1S 4.98 EUR",
+    "EPICERIE SUCREE 1.70 EUR",
+    "CREMERIE 7.71 EUR",
+    "SUNGELES 4.00 EUR",
+  ],
+  text: [
+    "LEADER PRICE SAINT LEU",
+    "150, Rue du General Lambert",
+    "97436 SAINT-LEU",
+    "Tel : 02.62.34.78.73",
+    "BIENVENUE",
+    "04/07/2026 - 18:22:09",
+    "OPERATION : VENTE",
+    "(1)3282070011111 ROSETTE 8TR 80G 2.49 EUR",
+    "(1)8410843077657 FUET D OLOT 150 2.49 EUR",
+    "CHARCUTERIE 1S 4.98 EUR",
+    "(1)3700311866469 TLJ BARRE CEREALE CHOCO B 1.70 EUR",
+    "EPICERIE SUCREE 1.70 EUR",
+    "(1)3412290032949 MIMOLETTE 10 TRANCHES 160 3.24 EUR",
+    "(1)3412290049275 GOUDA 10 TRANCHES 160G 2.19 EUR",
+    "(1)3301234567890 CAMEMBERT LE GOUVERNEUR 2.28 EUR",
+    "CRERERIE 7.71 EUR",
+    "(1)3701004823141 VEGGIE NUGGETS 300G 2.49 EUR",
+    "(9)5413406121317 BROCOLI 20/40 450G 1.51 EUR",
+    "SUNGELES 4.00 EUR",
+    "TOTAL : 18.39 EUR",
+    "CARTE BLEUE 18.39 EUR",
+    "NOMBRE ARTICLES : 8",
+  ].join("\n"),
+}
+
 export const LEADER_PRICE_SAINT_LEU_REFERENCE = {
   id: "leader-price-saint-leu-2026-06-25-37-46",
   expectedStore: "Leader Price Saint-Leu",
@@ -604,6 +657,9 @@ function assertLeaderPriceSmallUnsafeSmartShoppingFixture(fixture = LEADER_PRICE
       && parsed.scan_status !== "trusted"
       && Number(debug.items_sent_to_smart_shopping_count || 0) === 0
       && Number(debug.items_excluded_from_smart_shopping_count || 0) === parsed.items.length
+      && debug.displayed_items_count == null
+      && debug.displayed_items_count_source === "blocked_unreliable"
+      && debug.item_count_display_label === "Articles a verifier"
       && Array.isArray(debug.smart_shopping_blocked_reasons)
       && debug.smart_shopping_blocked_reasons.includes("items_total_mismatch")
       && statuses.every(status => status === "needs_review")
@@ -617,6 +673,7 @@ function assertLeaderPriceSmallUnsafeSmartShoppingFixture(fixture = LEADER_PRICE
       smartShoppingSafe: false,
       finalScanStatus: "budget_ok_articles_blocked",
       smartShoppingEligibleItems: 0,
+      displayedItemsCountSource: "blocked_unreliable",
       requiredBlockReason: "items_total_mismatch",
     },
     actual: {
@@ -638,9 +695,82 @@ function assertLeaderPriceSmallUnsafeSmartShoppingFixture(fixture = LEADER_PRICE
       smartShoppingEligibleItems: eligibleSmartShoppingItems.length,
       smartShoppingSent: debug.items_sent_to_smart_shopping_count,
       smartShoppingExcluded: debug.items_excluded_from_smart_shopping_count,
+      displayedItemsCount: debug.displayed_items_count,
+      displayedItemsCountSource: debug.displayed_items_count_source,
+      itemCountDisplayLabel: debug.item_count_display_label,
       smartShoppingBlockedReasons: debug.smart_shopping_blocked_reasons,
       statuses,
       itemNames: parsed.items.map(item => item.ocr_name || item.name),
+    },
+  }
+}
+
+function assertLeaderPriceSectionSubtotalFixture(fixture = LEADER_PRICE_SECTION_SUBTOTAL_REFERENCE) {
+  const parsed = parseReceipt({ text: fixture.text, ocrStatus: "success", ocrConfidence: 90 })
+  const debug = (parsed.parser_debug || {}) as Record<string, any>
+  const itemNames = parsed.items.map(item => String(item.ocr_name || item.name || ""))
+  const itemTotalSum = Number(parsed.items.reduce((sum, item) => sum + Number(item.total_price ?? item.price ?? 0), 0).toFixed(2))
+  const eligibleSmartShoppingItems = parsed.items.filter(item => isItemEligibleForSmartShopping(item as Record<string, unknown>))
+  const forbiddenSectionNames = /(charcuterie|epicerie sucree|cremerie|crererie|sungeles|surgeles)/i
+
+  return {
+    id: fixture.id,
+    passed: parsed.store_name === fixture.expectedStore
+      && (parsed as any).normalized_store_name === fixture.expectedNormalizedStore
+      && (parsed as any).store_location === fixture.expectedStoreLocation
+      && parsed.purchase_date === fixture.expectedDate
+      && Math.abs(Number(parsed.total_amount || 0) - fixture.expectedTotal) <= 0.01
+      && parsed.expected_items_count === fixture.expectedItemsCount
+      && parsed.items.length === fixture.expectedItemsCount
+      && Math.abs(itemTotalSum - fixture.expectedTotal) <= 0.01
+      && fixture.sectionSubtotalLines.every(line => isSectionSubtotalLine(line) && shouldRejectLineAsProduct(line))
+      && Number(debug.section_subtotals_rejected_count || 0) === fixture.expectedSectionSubtotalsRejectedCount
+      && Math.abs(Number(debug.section_subtotals_rejected_amount || 0) - fixture.expectedSectionSubtotalsRejectedAmount) <= 0.01
+      && Number(debug.displayed_items_count || 0) === fixture.expectedItemsCount
+      && debug.displayed_items_count_source === "declared_trusted_count"
+      && debug.item_count_display_label === `${fixture.expectedItemsCount} article(s)`
+      && debug.items_quality_status === "trusted"
+      && debug.smart_shopping_safe === true
+      && debug.final_scan_status === "budget_ok_articles_ok"
+      && Number(debug.items_sent_to_smart_shopping_count || 0) === fixture.expectedItemsCount
+      && Number(debug.items_excluded_from_smart_shopping_count || 0) === 0
+      && itemNames.every(name => !forbiddenSectionNames.test(name))
+      && eligibleSmartShoppingItems.length === fixture.expectedItemsCount
+      && fixture.expectedItems.every(expected => {
+        const item = parsed.items.find(candidate => String(candidate.ocr_name || candidate.name || "").toUpperCase().includes(expected.name.toUpperCase().slice(0, 12)))
+        return Boolean(item) && Math.abs(Number(item?.total_price || 0) - expected.total) <= 0.01
+      }),
+    expected: {
+      store: fixture.expectedStore,
+      date: fixture.expectedDate,
+      total: fixture.expectedTotal,
+      items: fixture.expectedItemsCount,
+      sectionSubtotalsRejected: fixture.expectedSectionSubtotalsRejectedCount,
+      sectionSubtotalsRejectedAmount: fixture.expectedSectionSubtotalsRejectedAmount,
+      smartShoppingEligibleItems: fixture.expectedItemsCount,
+      displayedItemsCountSource: "declared_trusted_count",
+    },
+    actual: {
+      store: parsed.store_name,
+      normalizedStore: (parsed as any).normalized_store_name,
+      storeLocation: (parsed as any).store_location,
+      date: parsed.purchase_date,
+      total: parsed.total_amount,
+      expectedItemsCount: parsed.expected_items_count,
+      items: parsed.items.length,
+      itemTotalSum,
+      itemNames,
+      sectionSubtotalsRejected: debug.section_subtotals_rejected_count,
+      sectionSubtotalsRejectedLines: debug.section_subtotals_rejected_lines,
+      sectionSubtotalsRejectedAmount: debug.section_subtotals_rejected_amount,
+      displayedItemsCount: debug.displayed_items_count,
+      displayedItemsCountSource: debug.displayed_items_count_source,
+      itemCountDisplayLabel: debug.item_count_display_label,
+      smartShoppingSafe: debug.smart_shopping_safe,
+      smartShoppingEligibleItems: eligibleSmartShoppingItems.length,
+      smartShoppingSent: debug.items_sent_to_smart_shopping_count,
+      smartShoppingExcluded: debug.items_excluded_from_smart_shopping_count,
+      finalScanStatus: debug.final_scan_status,
     },
   }
 }
@@ -736,6 +866,7 @@ export function runScannerRegressionFixtures() {
   const leaderSmallFuzzyCb = assertLeaderPriceSmallFuzzyCbFixture(LEADER_PRICE_SMALL_FUZZY_CB_REFERENCE)
   const leaderSmallPaymentOnlyTotal = assertLeaderPriceSmallFuzzyCbFixture(LEADER_PRICE_SMALL_PAYMENT_ONLY_TOTAL_REFERENCE)
   const leaderSmallUnsafeSmartShopping = assertLeaderPriceSmallUnsafeSmartShoppingFixture(LEADER_PRICE_SMALL_UNSAFE_SMART_SHOPPING_REFERENCE)
+  const leaderSectionSubtotal = assertLeaderPriceSectionSubtotalFixture(LEADER_PRICE_SECTION_SUBTOTAL_REFERENCE)
   const leaderMediumTotalCash = assertLeaderPriceMediumTotalCashFixture(LEADER_PRICE_MEDIUM_TOTAL_CASH_REFERENCE)
 
   const existing = [LEADER_PRICE_SAINT_LEU_REFERENCE, LECLERC_HORIZONTAL_REFERENCE].map((fixture) => {
@@ -867,6 +998,7 @@ export function runScannerRegressionFixtures() {
     leaderSmallFuzzyCb,
     leaderSmallPaymentOnlyTotal,
     leaderSmallUnsafeSmartShopping,
+    leaderSectionSubtotal,
     leaderMediumTotalCash,
     ...existing,
     eLeclercReal,
