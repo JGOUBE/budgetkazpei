@@ -1,4 +1,5 @@
 import { supabase } from "../../../services/supabase"
+import { isItemEligibleForSmartShopping } from "../../../services/scan/receiptRules"
 import { guessBrand, normalizeProductName } from "./normalizer"
 import { computeUnitPrice, inferUnitFromName } from "./unitPrice"
 
@@ -31,6 +32,9 @@ type ReceiptItem = {
   status?: string | null
   review_status?: string | null
   needs_review?: boolean
+  raw_text?: string | null
+  source_line?: string | null
+  line_type?: string | null
 }
 
 function money(value: number | string | null | undefined) {
@@ -48,6 +52,7 @@ function normalizeForGuard(value = "") {
 }
 
 function isReviewItem(item: ReceiptItem, receipt?: Receipt) {
+  if (!isItemEligibleForSmartShopping(item as Record<string, unknown>)) return true
   return String(receipt?.scan_status || "").includes("partial_low_items")
     || item.needs_review === true
     || item.review_status === "needs_review"

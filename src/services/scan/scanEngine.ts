@@ -214,6 +214,15 @@ export async function runSmartScan(file: File, options: ScanEngineOptions = {}) 
       parsed.scan_status = "partial_low_items"
       parsed.escalation_reason = [parsed.escalation_reason, "articles_alimentaires_insuffisants"].filter(Boolean).join(",")
     }
+    const parserDebug = ((parsed as any).parser_debug || {}) as Record<string, any>
+    const budgetStatus = ocr.metrics?.budgetStatus || parserDebug.budget_status || (Number(parsed.total_amount || 0) > 0 && !(parsed as any).total_needs_review ? "reliable" : "needs_review")
+    const itemsQualityStatus = ocr.metrics?.itemsQualityStatus || parserDebug.items_quality_status || (parsed.items.length >= 3 ? "trusted_enough" : "insufficient")
+    const smartShoppingSafe = ocr.metrics?.smartShoppingSafe ?? parserDebug.smart_shopping_safe ?? false
+    const finalScanStatus = ocr.metrics?.finalScanStatus || parserDebug.final_scan_status || parsed.scan_status
+    ;(parsed as any).budget_status = budgetStatus
+    ;(parsed as any).items_quality_status = itemsQualityStatus
+    ;(parsed as any).smart_shopping_safe = smartShoppingSafe
+    if (finalScanStatus) parsed.scan_status = finalScanStatus
 
     console.info("[scanner] Date detectee", parsed.purchase_date || "")
     console.info("[scanner] Magasin detecte", parsed.store_name || "")
@@ -237,6 +246,9 @@ export async function runSmartScan(file: File, options: ScanEngineOptions = {}) 
       expected_items_source: ocr.metrics?.expectedItemsSource || "not_found",
       declared_items_count: ocr.metrics?.declaredItemsCount ?? null,
       items_count_status: ocr.metrics?.itemsCountStatus || "unknown",
+      budget_status: budgetStatus,
+      items_quality_status: itemsQualityStatus,
+      smart_shopping_safe: smartShoppingSafe,
       scan_status: parsed.scan_status,
       provider: ocr.provider,
       items: parsed.items,
@@ -297,6 +309,23 @@ export async function runSmartScan(file: File, options: ScanEngineOptions = {}) 
         articleCandidateLinesCount: probableProductLines,
         articleExtractionRatio: Number(extractionRatio.toFixed(2)),
         rejectedOcrLinesCount: (parsed as any).parser_debug?.rejected_lines_count ?? null,
+        trustedItemsCount: ocr.metrics?.trustedItemsCount ?? parserDebug.trusted_items_count ?? null,
+        needsReviewItemsCount: ocr.metrics?.needsReviewItemsCount ?? parserDebug.needs_review_items_count ?? null,
+        rejectedItemsCount: ocr.metrics?.rejectedItemsCount ?? parserDebug.rejected_items_count ?? null,
+        trustedItemsRatio: ocr.metrics?.trustedItemsRatio ?? parserDebug.trusted_items_ratio ?? null,
+        itemsQualityStatus,
+        itemsSentToSmartShoppingCount: ocr.metrics?.itemsSentToSmartShoppingCount ?? parserDebug.items_sent_to_smart_shopping_count ?? null,
+        itemsExcludedFromSmartShoppingCount: ocr.metrics?.itemsExcludedFromSmartShoppingCount ?? parserDebug.items_excluded_from_smart_shopping_count ?? null,
+        itemsExcludedReasonsSummary: ocr.metrics?.itemsExcludedReasonsSummary ?? parserDebug.items_excluded_reasons_summary ?? null,
+        sectionSubtotalsRejectedCount: ocr.metrics?.sectionSubtotalsRejectedCount ?? parserDebug.section_subtotals_rejected_count ?? null,
+        sectionSubtotalsRejectedLines: ocr.metrics?.sectionSubtotalsRejectedLines ?? parserDebug.section_subtotals_rejected_lines ?? null,
+        itemsKeptLines: ocr.metrics?.itemsKeptLines ?? parserDebug.items_kept_lines ?? null,
+        itemsRejectedLines: ocr.metrics?.itemsRejectedLines ?? parserDebug.items_rejected_lines ?? null,
+        itemQualitySummary: ocr.metrics?.itemQualitySummary ?? parserDebug.item_quality_summary ?? null,
+        budgetReliable: ocr.metrics?.budgetReliable ?? parserDebug.budget_reliable ?? (budgetStatus === "reliable"),
+        smartShoppingSafe,
+        budgetStatus,
+        finalScanStatus: parsed.scan_status,
         ocrDurationMs: ocr.metrics?.ocrDurationMs ?? ocrDurationMs,
         openaiDurationMs: ocr.metrics?.openaiDurationMs ?? null,
         parsingDurationMs,

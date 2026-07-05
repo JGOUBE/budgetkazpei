@@ -1,6 +1,7 @@
 import { upsertReceiptTransaction, validateReceipt } from "../../features/receipts/services/receiptService"
 import { syncShoppingItemsFromReceipt } from "../../features/shopping/services/shoppingEngine"
 import { enrichProductDictionary } from "./productKnowledgeService"
+import { isItemEligibleForSmartShopping } from "./receiptRules"
 
 function scannerLog(step: string, status: "START" | "OK" | "ERREUR", payload?: unknown) {
   if (typeof console === "undefined") return
@@ -15,6 +16,7 @@ function stageError(step: string, error: unknown) {
 }
 
 function isTrustedItemForLearning(item: any, draft: any) {
+  if (!isItemEligibleForSmartShopping(item)) return false
   const scanStatus = String(draft?.scan_status || "")
   if (scanStatus.includes("partial_low_items") || scanStatus.includes("long_manual_review") || scanStatus.includes("long_usable_review")) return false
   if (draft?.total_needs_review === true) return false
@@ -99,10 +101,12 @@ export async function importValidatedReceipt({
   }
 
   let shoppingRows: any[] = []
+  const smartShoppingEligibleItems = cleanItems.filter(item => isTrustedItemForLearning(item, draft))
   if (draft.is_food_ticket && canFeedShoppingIntelligence(draft)) {
     try {
       scannerLog("Creation shopping_items", "START", {
-        count: cleanItems.length,
+        count: smartShoppingEligibleItems.length,
+        excluded: cleanItems.length - smartShoppingEligibleItems.length,
         transactionId: txResult?.transaction?.id,
       })
       shoppingRows = await syncShoppingItemsFromReceipt({
@@ -114,7 +118,7 @@ export async function importValidatedReceipt({
           purchase_date: draft.purchase_date,
           scan_status: draft.scan_status,
         },
-        items: cleanItems,
+        items: smartShoppingEligibleItems,
       })
       scannerLog("Creation shopping_items", "OK", { count: shoppingRows.length })
     } catch (error) {
@@ -123,7 +127,7 @@ export async function importValidatedReceipt({
   }
 
   try {
-    const trustedItems = cleanItems.filter(item => isTrustedItemForLearning(item, draft))
+    const trustedItems = smartShoppingEligibleItems
     scannerLog("Knowledge Engine", "START", { count: trustedItems.length })
     await enrichProductDictionary({
       userId,
@@ -142,6 +146,8 @@ export async function importValidatedReceipt({
     transactionSkipReason: txResult?.skipReason || "",
     receiptItemsCreated: cleanItems.length,
     shoppingItemsCreated: shoppingRows.length,
+    smartShoppingEligibleItems: smartShoppingEligibleItems.length,
+    smartShoppingExcludedItems: cleanItems.length - smartShoppingEligibleItems.length,
     diagnostics: transactionDiagnostics,
   }
 }

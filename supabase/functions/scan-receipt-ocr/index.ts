@@ -1,10 +1,13 @@
 import {
+  classifyLineRejectionReason,
   extractDeclaredItemsCount,
   extractDeclaredItemsEvidence,
   extractReliableDateCandidates,
   extractTrustedTotal,
+  isItemEligibleForSmartShopping,
   isPhoneLine,
   isSectionSubtotalLine,
+  normalizeItemQualityStatus,
   normalizeReceiptRuleDate,
   normalizeStoreName as normalizeStoreFromRules,
   shouldRejectLineAsProduct,
@@ -654,6 +657,121 @@ function sectionSubtotalDiagnostics(text = "") {
   }
 }
 
+const SECTION_SUBTOTAL_KEYWORDS = [
+  "surgeles",
+  "surgele",
+  "epicerie sucree",
+  "epicerie salee",
+  "cremerie",
+  "charcuterie",
+  "charcuterie ls",
+  "boissons sans alcool",
+  "ultra frais",
+  "fleurs plantes fruits legumes",
+  "fruits legumes",
+]
+
+function containsSectionSubtotalKeyword(value = "") {
+  const clean = normalizeText(value)
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+  return SECTION_SUBTOTAL_KEYWORDS.some((keyword) => clean.includes(keyword))
+}
+
+function hasKnownLocalProductSignal(value = "") {
+  const clean = normalizeText(value)
+  return [
+    "huile",
+    "nugget",
+    "crevette",
+    "brocoli",
+    "barre",
+    "cereale",
+    "choco",
+    "cocciole",
+    "riscossa",
+    "emmental",
+    "pomme de terre",
+    "salade",
+    "champignon",
+    "echalote",
+    "dolce",
+    "mousse",
+    "fido",
+    "pedigree",
+    "kinder",
+    "joker",
+    "saucisse",
+  ].some((keyword) => clean.includes(keyword))
+}
+
+function hasDominantOcrNoise(value = "") {
+  const clean = normalizeText(value)
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+  const letters = clean.replace(/[^a-z]/g, "")
+  if (!letters) return true
+  if (/([a-z])\1{5,}/.test(letters)) return true
+  if (/\b(e{4,}|h{4,}|o{4,}|r{4,})\b/.test(clean)) return true
+  if (/\b(ecooree|eters|heeeee|sungeles)\b/.test(clean)) return true
+  if (letters.length >= 10) {
+    const uniqueLetters = new Set(letters.split("")).size
+    if (uniqueLetters <= 4) return true
+  }
+  return false
+}
+
+function smartShoppingBlockReasons({
+  totalDelta,
+  lostPossibleProductLines,
+  sectionSubtotal,
+  text,
+  items,
+}: {
+  totalDelta: number | null
+  lostPossibleProductLines: string[]
+  sectionSubtotal: ReturnType<typeof sectionSubtotalDiagnostics>
+  text: string
+  items: Record<string, unknown>[]
+}) {
+  const reasons = new Set<string>()
+  if (Number(totalDelta || 0) > 0.05) reasons.add("items_total_mismatch")
+  if (lostPossibleProductLines.length > 0) reasons.add("lost_possible_product_lines")
+  if (items.some((item) => isSectionSubtotalLine(String(item.source_line || item.raw_text || item.ocr_name || item.name || "")))) {
+    reasons.add("section_subtotal_kept_as_item")
+  }
+  if (items.some((item) => containsSectionSubtotalKeyword(String(item.ocr_name || item.name || "")) && !hasKnownLocalProductSignal(String(item.ocr_name || item.name || "")))) {
+    reasons.add("section_heading_kept_as_item")
+  }
+  if (items.some((item) => hasDominantOcrNoise(String(item.raw_text || item.ocr_name || item.name || "")))) {
+    reasons.add("dominant_ocr_noise")
+  }
+  if (Number(totalDelta || 0) > 0.05 && sectionSubtotal.rejectedCount === 0 && String(text || "").split(/\r?\n/).some((line) => containsSectionSubtotalKeyword(line))) {
+    reasons.add("section_subtotals_present_but_not_rejected")
+  }
+  if (items.some((item) => Number(item.item_quality_score || item.confidence_score || 0) < 70 && normalizeItemQualityStatus(item) === "trusted")) {
+    reasons.add("low_quality_item_marked_trusted")
+  }
+  return Array.from(reasons)
+}
+
+function applySmartShoppingGuard(items: Record<string, unknown>[], blockedReasons: string[]) {
+  if (blockedReasons.length === 0) return items
+  const reason = blockedReasons[0] || "smart_shopping_quality_guard"
+  return items.map((item) => ({
+    ...item,
+    item_status: "needs_review",
+    status: "needs_review",
+    review_status: "needs_review",
+    needs_review: true,
+    item_quality_score: Math.min(Number(item.item_quality_score || item.confidence_score || 55), 55),
+    confidence_score: Math.min(Number(item.confidence_score || item.item_quality_score || 55), 55),
+    item_rejection_reason: String(item.item_rejection_reason || reason),
+  }))
+}
+
 function localOcrTextPresenceDiagnostics(text = "", total = 0, declaredCount = 0) {
   const lines = String(text || "")
     .split(/\r?\n/)
@@ -672,7 +790,7 @@ function localOcrTextPresenceDiagnostics(text = "", total = 0, declaredCount = 0
       : "bottom_total_not_present_in_ocr_text"
 
   return {
-    ocr_text_has_total: Boolean(totalLikeLine),
+    ocr_text_has_total: Boolean(totalLikeLine || (total > 0 && paymentLine)),
     ocr_text_has_payment: Boolean(paymentLine),
     ocr_text_has_declared_items_count: hasDeclaredLine,
     ocr_text_last_lines: lines.slice(-8),
@@ -684,6 +802,7 @@ function buildFastLocalExtraction(text = "") {
   const total = extractTotalFromText(text)
   const trustedTotal = extractTrustedTotal(text)
   const storeName = detectLocalMerchant(text)
+  const purchaseDate = detectLocalDate(text)
   const declaredEvidence = getDeclaredItemsEvidence(text)
   const expectedItemsCount = declaredEvidence.count
   const rawItems = parseFallbackItemsFromText(text)
@@ -691,25 +810,55 @@ function buildFastLocalExtraction(text = "") {
     ? rawItems.slice(0, expectedItemsCount)
     : rawItems
   const exactDeclaredCount = expectedItemsCount > 0 && finalItems.length === expectedItemsCount
-  const items = finalItems.map((item) => ({
+  const initialItems = finalItems.map((item) => ({
     ...item,
     price: numericTotal(item.price) || numericTotal(item.total_price) || numericTotal(item.unit_price),
-    status: exactDeclaredCount ? "detected" : "a_verifier",
-    item_status: exactDeclaredCount ? "detected" : "a_verifier",
+    status: exactDeclaredCount ? "trusted" : "needs_review",
+    item_status: exactDeclaredCount ? "trusted" : "needs_review",
     review_status: exactDeclaredCount ? "trusted" : "needs_review",
+    needs_review: !exactDeclaredCount,
+    item_quality_score: exactDeclaredCount ? 88 : Number(item.confidence_score || 62),
+    item_rejection_reason: "",
+    raw_text: String(item.raw_text || item.source_line || item.ocr_name || item.name || ""),
+    source_line: String(item.source_line || item.raw_text || item.ocr_name || item.name || ""),
     confidence_score: exactDeclaredCount ? 88 : Number(item.confidence_score || 62),
-    source: "ocr_fallback",
+    source: "local_ocr",
   }))
   const sectionSubtotal = sectionSubtotalDiagnostics(text)
+  const rejectedBeforeItemLimitLines = sectionSubtotal.rejected.map((row) => ({
+    line: row.line,
+    reason: "section_subtotal",
+  }))
+  const textPresence = localOcrTextPresenceDiagnostics(text, total, expectedItemsCount)
+  const itemLimitAppliedAfterFiltering = expectedItemsCount > 0 && rawItems.length > expectedItemsCount
+  const lostPossibleProductLines = itemLimitAppliedAfterFiltering
+    ? rawItems.slice(expectedItemsCount).map((item) => String(item.raw_text || item.source_line || item.ocr_name || item.name || ""))
+    : []
+  const initialCalculatedItemsSum = Number(initialItems.reduce((sum, item) => sum + Number(item.total_price || item.price || item.unit_price || 0), 0).toFixed(2))
+  const itemsTotalVsReceiptTotalDelta = total ? Number(Math.abs(initialCalculatedItemsSum - total).toFixed(2)) : null
+  const smartShoppingBlockedReasons = smartShoppingBlockReasons({
+    totalDelta: itemsTotalVsReceiptTotalDelta,
+    lostPossibleProductLines,
+    sectionSubtotal,
+    text,
+    items: initialItems,
+  })
+  const items = applySmartShoppingGuard(initialItems, smartShoppingBlockedReasons)
   const calculatedItemsSum = Number(items.reduce((sum, item) => sum + Number(item.total_price || item.price || item.unit_price || 0), 0).toFixed(2))
   const calculatedItemsSumBeforeFilter = Number((calculatedItemsSum + sectionSubtotal.rejectedAmount).toFixed(2))
-  const textPresence = localOcrTextPresenceDiagnostics(text, total, expectedItemsCount)
+  const qualitySummary = summarizeItemQuality(items, rejectedBeforeItemLimitLines)
+  const budgetReliable = Boolean(storeName && purchaseDate && total)
+  const smartShoppingSafe = Boolean(
+    budgetReliable
+      && smartShoppingBlockedReasons.length === 0
+      && qualitySummary.items_sent_to_smart_shopping_count > 0
+  )
 
   return {
     store_name: storeName,
     normalized_store_name: normalizeLocalMerchantName(storeName),
     store_location: detectLocalStoreLocation(text, storeName),
-    purchase_date: detectLocalDate(text),
+    purchase_date: purchaseDate,
     total_amount: total,
     total_needs_review: !total,
     total_source: trustedTotal.source || (total ? "explicit_total_line" : "missing_or_unreliable"),
@@ -727,12 +876,25 @@ function buildFastLocalExtraction(text = "") {
     items_count_status: expectedItemsCount ? "declared" : "unknown",
     calculated_items_sum_before_section_filter: calculatedItemsSumBeforeFilter,
     calculated_items_sum_after_section_filter: calculatedItemsSum,
+    candidate_items_before_rejection: rawItems.length + sectionSubtotal.rejectedCount,
+    rejected_before_item_limit_count: rejectedBeforeItemLimitLines.length,
+    rejected_before_item_limit_lines: rejectedBeforeItemLimitLines,
+    final_items_after_rejection: items.length,
+    item_limit_applied_after_filtering: itemLimitAppliedAfterFiltering,
+    lost_possible_product_lines: lostPossibleProductLines,
     section_subtotals_rejected_count: sectionSubtotal.rejectedCount,
     section_subtotals_rejected_amount: sectionSubtotal.rejectedAmount,
     section_subtotals_rejected: sectionSubtotal.rejected,
     section_subtotals_rejected_lines: sectionSubtotal.rejected.map((row) => row.line),
     items_kept_lines: items.map((item) => String(item.ocr_name || item.name || "")),
-    items_total_vs_receipt_total_delta: total ? Number(Math.abs(calculatedItemsSum - total).toFixed(2)) : null,
+    items_rejected_lines: rejectedBeforeItemLimitLines,
+    items_total_vs_receipt_total_delta: itemsTotalVsReceiptTotalDelta,
+    ...qualitySummary,
+    budget_reliable: budgetReliable,
+    budget_status: budgetReliable ? "reliable" : "needs_review",
+    smart_shopping_safe: smartShoppingSafe,
+    smart_shopping_blocked_reasons: smartShoppingBlockedReasons,
+    final_scan_status: exactDeclaredCount && storeName && total && purchaseDate ? "trusted" : "usable_review",
     ...textPresence,
     items,
   }
@@ -2068,24 +2230,76 @@ function normalizeItems(rawItems: unknown[] = []) {
 
     const key = normalizeText(finalName).replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim()
     if (!key) continue
+    const incomingStatus = normalizeItemQualityStatus(item)
+    const itemStatus = incomingStatus === "trusted" || incomingStatus === "user_validated"
+      ? incomingStatus
+      : incomingStatus === "rejected"
+        ? "rejected"
+        : "needs_review"
+    const confidenceScore = Number(item.confidence_score || 65)
 
     byName.set(key, {
       name: finalName,
       ocr_name: ocrName || finalName,
       corrected_name: finalName,
+      raw_text: String(item.raw_text || item.source_line || ocrName || finalName),
+      source_line: String(item.source_line || item.raw_text || ocrName || finalName),
       quantity: Number(item.quantity || 1) || 1,
       unit: String(item.unit || "piece"),
       unit_price: numericTotal(item.unit_price) || price,
       total_price: price,
       category: String(item.category || "alimentaire"),
-      confidence_score: Number(item.confidence_score || 65),
-      item_status: String(item.item_status || "a_verifier"),
+      confidence_score: confidenceScore,
+      item_status: itemStatus,
+      status: itemStatus,
+      review_status: itemStatus,
+      needs_review: itemStatus === "needs_review",
+      item_quality_score: confidenceScore,
+      item_rejection_reason: itemStatus === "rejected" ? String(item.item_rejection_reason || "rejected") : "",
       line_type: "product",
       source: String(item.source || "ocr_fallback"),
     })
   }
 
   return Array.from(byName.values())
+}
+
+function summarizeItemQuality(items: Record<string, unknown>[] = [], rejectedLines: Array<{ line: string; reason?: string }> = []) {
+  const trustedItems = items.filter((item) => normalizeItemQualityStatus(item) === "trusted")
+  const reviewItems = items.filter((item) => normalizeItemQualityStatus(item) === "needs_review")
+  const rejectedReasonCounts = rejectedLines.reduce((acc, row) => {
+    const reason = row.reason || classifyLineRejectionReason(row.line) || "unknown"
+    acc[reason] = (acc[reason] || 0) + 1
+    return acc
+  }, {} as Record<string, number>)
+  const smartShoppingItems = items.filter((item) => isItemEligibleForSmartShopping(item))
+  const trustedRatio = items.length ? trustedItems.length / items.length : 0
+
+  return {
+    trusted_items_count: trustedItems.length,
+    needs_review_items_count: reviewItems.length,
+    rejected_items_count: rejectedLines.length,
+    trusted_items_ratio: Number(trustedRatio.toFixed(2)),
+    items_quality_status: items.length === 0
+      ? "no_items"
+      : trustedRatio >= 0.8
+        ? "trusted_enough"
+        : "needs_review",
+    items_sent_to_smart_shopping_count: smartShoppingItems.length,
+    items_excluded_from_smart_shopping_count: Math.max(0, items.length - smartShoppingItems.length),
+    items_excluded_reasons_summary: {
+      ...rejectedReasonCounts,
+      needs_review: reviewItems.length,
+    },
+    item_quality_summary: items.map((item) => ({
+      name: item.name,
+      raw_text: item.raw_text || item.ocr_name || item.name,
+      item_status: item.item_status,
+      review_status: item.review_status,
+      item_quality_score: item.item_quality_score || item.confidence_score,
+      smart_shopping_allowed: isItemEligibleForSmartShopping(item),
+    })),
+  }
 }
 
 Deno.serve(async (req) => {

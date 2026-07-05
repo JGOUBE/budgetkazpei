@@ -19,6 +19,7 @@ import { useReceiptQuota } from "../hooks/useReceiptQuota"
 import { clearLastScanDraft, getLastScanDraft, runSmartScan } from "../../../services/scan/scanEngine"
 import { findDuplicateReceipt, getConfidenceColor, getConfidenceIcon } from "../../../services/scan/receiptValidator"
 import { importValidatedReceipt } from "../../../services/scan/receiptImporter"
+import { isItemEligibleForSmartShopping, normalizeItemQualityStatus } from "../../../services/scan/receiptRules"
 import { getScanErrorDetails, ScanError } from "../../../services/scan/scanErrors"
 import { createScanMetric, incrementScanUsage } from "../../../services/scan/scanUsageService"
 import { syncShoppingItemsFromReceipt } from "../../shopping/services/shoppingEngine"
@@ -186,14 +187,23 @@ function getValidDraftItems(draft = {}) {
   const partialLowItems = scanStatus.includes("partial_low_items") || scanStatus.includes("long_manual_review") || scanStatus.includes("long_usable_review")
   return (draft.items || [])
     .filter(item => !isBlockedReceiptItem(item))
-    .map(item => ({
-      ...item,
-      name: String(item.name || item.ocr_name || "Produit a verifier").trim(),
-      total_price: item.total_price ?? item.price ?? item.unit_price ?? "",
-      item_status: partialLowItems || item.needs_review || item.review_status === "needs_review" || /produit.*v.*rifier/.test(normalizeLabel(item.name)) || Number(item.confidence_score || 0) < 70 ? "a_verifier" : "detected",
-      review_status: partialLowItems || item.needs_review || item.review_status === "needs_review" ? "needs_review" : (item.review_status || "trusted"),
-      needs_review: partialLowItems || Boolean(item.needs_review),
-    }))
+    .map(item => {
+      const placeholder = /produit.*v.*rifier/.test(normalizeLabel(item.name))
+      const forceReview = partialLowItems || item.needs_review || placeholder || Number(item.confidence_score || 0) < 70
+      const qualityStatus = forceReview ? "needs_review" : normalizeItemQualityStatus(item)
+      const finalStatus = qualityStatus === "needs_review" ? "a_verifier" : qualityStatus
+
+      return {
+        ...item,
+        name: String(item.name || item.ocr_name || "Produit a verifier").trim(),
+        total_price: item.total_price ?? item.price ?? item.unit_price ?? "",
+        item_status: finalStatus,
+        status: finalStatus,
+        review_status: qualityStatus,
+        needs_review: qualityStatus === "needs_review",
+        item_quality_score: item.item_quality_score ?? item.confidence_score ?? (qualityStatus === "needs_review" ? 55 : 88),
+      }
+    })
 }
 
 function getDraftValidationError(draft = {}) {
@@ -299,7 +309,7 @@ function getScanResultMessage({ parsed = {}, detectedItemsCount = 0, issues = []
 }
 
 function buildScannerSummary({ parsed = {}, items = [], metrics = {}, importResult = {}, duplicateDetected = false, duplicateConfirmed = false }) {
-  const trustedItems = items.filter(item => !item.needs_review && item.review_status !== "needs_review" && item.item_status !== "a_verifier" && item.status !== "a_verifier")
+  const trustedItems = items.filter(item => isItemEligibleForSmartShopping(item))
   const needsReviewItems = items.filter(item => !trustedItems.includes(item))
   const rejectedLines = parsed.parser_debug?.rejected_lines || parsed.rejected_lines || metrics?.rejectedLines || []
   const rejectedReasons = Array.isArray(rejectedLines)
@@ -314,10 +324,23 @@ function buildScannerSummary({ parsed = {}, items = [], metrics = {}, importResu
     inputTokens: Number(metrics?.inputTokens || metrics?.input_tokens || 0),
     expected_items_count: Number(parsed.expected_items_count || parsed.expected_items_min || 0),
     items_detected: items.length,
-    trusted_items: trustedItems.length,
-    needs_review_items: needsReviewItems.length,
-    rejected_items: Number(parsed.parser_debug?.rejected_lines_count || metrics?.rejectedLinesCount || rejectedReasons.length || 0),
+    trusted_items: Number(metrics?.trustedItemsCount ?? parsed.parser_debug?.trusted_items_count ?? trustedItems.length),
+    needs_review_items: Number(metrics?.needsReviewItemsCount ?? parsed.parser_debug?.needs_review_items_count ?? needsReviewItems.length),
+    rejected_items: Number(metrics?.rejectedItemsCount ?? parsed.parser_debug?.rejected_items_count ?? parsed.parser_debug?.rejected_lines_count ?? metrics?.rejectedLinesCount ?? rejectedReasons.length ?? 0),
     rejected_reasons: [...new Set(rejectedReasons)].slice(0, 8),
+    trusted_items_ratio: metrics?.trustedItemsRatio ?? parsed.parser_debug?.trusted_items_ratio ?? null,
+    items_quality_status: metrics?.itemsQualityStatus || parsed.parser_debug?.items_quality_status || "",
+    items_sent_to_smart_shopping_count: Number(importResult?.smartShoppingEligibleItems ?? metrics?.itemsSentToSmartShoppingCount ?? parsed.parser_debug?.items_sent_to_smart_shopping_count ?? trustedItems.length),
+    items_excluded_from_smart_shopping_count: Number(importResult?.smartShoppingExcludedItems ?? metrics?.itemsExcludedFromSmartShoppingCount ?? parsed.parser_debug?.items_excluded_from_smart_shopping_count ?? needsReviewItems.length),
+    items_excluded_reasons_summary: metrics?.itemsExcludedReasonsSummary || parsed.parser_debug?.items_excluded_reasons_summary || {},
+    section_subtotals_rejected_count: Number(metrics?.sectionSubtotalsRejectedCount ?? parsed.parser_debug?.section_subtotals_rejected_count ?? 0),
+    section_subtotals_rejected_lines: metrics?.sectionSubtotalsRejectedLines || parsed.parser_debug?.section_subtotals_rejected_lines || [],
+    items_kept_lines: metrics?.itemsKeptLines || parsed.parser_debug?.items_kept_lines || [],
+    items_rejected_lines: metrics?.itemsRejectedLines || parsed.parser_debug?.items_rejected_lines || rejectedLines,
+    item_quality_summary: metrics?.itemQualitySummary || parsed.parser_debug?.item_quality_summary || {},
+    budget_reliable: metrics?.budgetReliable ?? parsed.parser_debug?.budget_reliable ?? null,
+    smart_shopping_safe: metrics?.smartShoppingSafe ?? parsed.parser_debug?.smart_shopping_safe ?? null,
+    budget_status: metrics?.budgetStatus || parsed.parser_debug?.budget_status || "",
     ticket_date: dateDiagnostic.ticket_date,
     current_month: dateDiagnostic.current_month,
     date_in_current_month: dateDiagnostic.date_in_current_month,
@@ -354,7 +377,7 @@ function buildScannerSummary({ parsed = {}, items = [], metrics = {}, importResu
     recovery_ratio_denominator_source: metrics?.recoveryRatioDenominatorSource || "",
     recovery_ratio_blocked_reason: metrics?.recoveryRatioBlockedReason || "",
     image_quality_warning: metrics?.imageQualityWarning ?? false,
-    final_scan_status: parsed.scan_status || "",
+    final_scan_status: metrics?.finalScanStatus || parsed.parser_debug?.final_scan_status || parsed.scan_status || "",
     receipt_saved: Boolean(importResult?.receiptSaved || importResult?.receipt_id),
     receipt_id: importResult?.receipt_id || null,
     receipt_items_saved_count: Number(importResult?.receiptItemsCreated || 0),

@@ -1,7 +1,7 @@
 export type TrustedTotal = {
   amount: number
   raw: string
-  source: "explicit_total_line" | "explicit_total_line_ocr_fuzzy" | "total_line" | "due_line" | "missing"
+  source: "explicit_total_line" | "explicit_total_line_ocr_fuzzy" | "payment_final_line_when_total_label_fuzzy_or_missing" | "total_line" | "due_line" | "missing"
   confidence: number
   paymentAmount?: number
   paymentRaw?: string
@@ -13,6 +13,8 @@ export type DeclaredItemsEvidence = {
   raw: string
   source: "declared_total_articles" | "declared_total_articles_ocr_fuzzy" | "missing"
 }
+
+export type ItemQualityStatus = "trusted" | "needs_review" | "rejected" | "user_validated"
 
 export function normalizeScannerText(value = "") {
   return String(value || "")
@@ -53,10 +55,16 @@ function totalLabelKind(line = ""): "" | "exact" | "fuzzy" | "due" {
   return ""
 }
 
+function declaredItemsSearchLine(line = "") {
+  return compactLine(line)
+    .replace(/\b([a-z])(?:\s+(?=[a-z]\b)[a-z])+\b/g, (match) => match.replace(/\s+/g, ""))
+    .replace(/\bart1cles?\b/g, "articles")
+    .replace(/\bartlcles?\b/g, "articles")
+}
+
 function isDeclaredItemsLine(line = "") {
-  const clean = compactLine(line)
-  const joinedLetters = clean.replace(/\b([a-z])(?:\s+(?=[a-z]\b)[a-z])+\b/g, (match) => match.replace(/\s+/g, ""))
-  return /\b(?:nombre|nb|nbr)\s+articles?\s*[:=]?\s*\d{1,3}\b|\b(?:total|nombre)\s+\d{1,3}\s+articles?\b|\bgre\s+articles?\s*[:=]?\s*\d{1,3}\b/.test(joinedLetters)
+  const joinedLetters = declaredItemsSearchLine(line)
+  return /\b(?:total|nombre|n0mbre|hombre|hohe|nb|nbr|gre)\s+articles?\s*[:=]?\s*\d{1,3}\b|\b(?:total|nombre|n0mbre|hombre|hohe|gre)\s+\d{1,3}\s+articles?\b/.test(joinedLetters)
 }
 
 const SECTION_SUBTOTAL_HEADINGS = [
@@ -182,6 +190,14 @@ export function isMarketingLine(line = "") {
   return /\b(merci|visite|publicite|beneficiez|catalogue|notifications?)\b/.test(compactLine(line))
 }
 
+function isNoiseAmountLine(line = "") {
+  if (moneyFromLine(line) <= 0) return false
+  const clean = compactLine(line)
+  if (/\bx\b/.test(clean) || /\bkg\b/.test(clean) || /\beur\s*\/\s*kg\b/.test(clean)) return false
+  const label = stripMoneyAndCurrency(line).replace(/[^a-z]/g, "")
+  return label.length > 0 && label.length <= 2
+}
+
 export function isReceiptMetaLine(line = "") {
   const clean = compactLine(line)
   if (!clean) return true
@@ -199,6 +215,7 @@ export function isNonProductLine(line = "") {
     || isVatOrPaymentLine(line)
     || isLoyaltyLine(line)
     || isMarketingLine(line)
+    || isNoiseAmountLine(line)
     || isReceiptMetaLine(line)
 }
 
@@ -206,25 +223,69 @@ export function shouldRejectLineAsProduct(line = "") {
   return isNonProductLine(line)
 }
 
+export function classifyLineRejectionReason(line = "") {
+  const clean = compactLine(line)
+  if (!clean) return "empty"
+  if (isPhoneLine(line)) return "phone"
+  if (isSectionSubtotalLine(line)) return "section_subtotal"
+  if (isVatOrPaymentLine(line)) {
+    if (/\b(especes|espece|cash|carte bleue|cb|visa|mastercard|american express|ticket restaurant)\b/.test(clean)) return "payment"
+    return "vat"
+  }
+  if (isLoyaltyLine(line)) return "loyalty"
+  if (isMarketingLine(line)) return "marketing"
+  if (isNoiseAmountLine(line)) return "ocr_noise_amount"
+  if (totalLabelKind(line) || /\b(total|sous total|net a payer|reste a payer|a payer)\b/.test(clean)) return "total"
+  if (isDeclaredItemsLine(line)) return "declared_items_count"
+  if (isReceiptMetaLine(line)) return "receipt_meta"
+  return ""
+}
+
+export function normalizeItemQualityStatus(item: Record<string, unknown> = {}): ItemQualityStatus {
+  const status = compactLine(String(item.item_status || item.status || item.review_status || ""))
+  if (status === "user_validated" || status === "user validated") return "user_validated"
+  if (item.needs_review === true) return "needs_review"
+  if (status === "trusted") return "trusted"
+  if (status === "rejected") return "rejected"
+  if (status === "needs_review" || status === "needs review" || status === "a verifier" || status === "a_verifier") return "needs_review"
+  if (status === "detected" && item.review_status === "trusted") return "trusted"
+  if (status === "detected") return "needs_review"
+  return "needs_review"
+}
+
+export function isItemEligibleForSmartShopping(item: Record<string, unknown> = {}) {
+  const status = normalizeItemQualityStatus(item)
+  if (status !== "trusted" && status !== "user_validated") return false
+  if (String(item.line_type || "product") !== "product") return false
+  const sourceText = [
+    item.raw_text,
+    item.source_line,
+    item.ocr_name,
+    item.corrected_name,
+    item.name,
+  ].map(value => String(value || "")).find(Boolean) || ""
+  if (!sourceText.trim()) return false
+  if (classifyLineRejectionReason(sourceText) || classifyLineRejectionReason(String(item.name || ""))) return false
+  return true
+}
+
 export function extractDeclaredItemsCount(text = "") {
   return extractDeclaredItemsEvidence(text).count
 }
 
 export function extractDeclaredItemsEvidence(text = ""): DeclaredItemsEvidence {
-  const compact = compactLine(text)
-  const joinedLetters = compact.replace(/\b([a-z])(?:\s+(?=[a-z]\b)[a-z])+\b/g, (match) => match.replace(/\s+/g, ""))
-  const match = joinedLetters.match(/\b(?:total|nombre)\s+articles?\s*[:=]?\s*(\d{1,3})\b|\b(?:total|nombre)\s+(\d{1,3})\s+articles?\b|\b(?:nb|nbr|gre)\s+articles?\s*[:=]?\s*(\d{1,3})\b/)
+  const joinedLetters = declaredItemsSearchLine(text)
+  const match = joinedLetters.match(/\b(?:total|nombre|n0mbre|hombre|hohe|nb|nbr|gre)\s+articles?\s*[:=]?\s*(\d{1,3})\b|\b(?:total|nombre|n0mbre|hombre|hohe|gre)\s+(\d{1,3})\s+articles?\b/)
   const count = Number(match?.[1] || match?.[2] || match?.[3] || 0) || 0
   const raw = String(text || "").split(/\r?\n/).find((line) => {
-    const clean = compactLine(line)
-    const joined = clean.replace(/\b([a-z])(?:\s+(?=[a-z]\b)[a-z])+\b/g, (value) => value.replace(/\s+/g, ""))
-    return /\b(?:total|nombre)\s+articles?\s*[:=]?\s*\d{1,3}\b|\b(?:total|nombre)\s+\d{1,3}\s+articles?\b|\b(?:nb|nbr|gre)\s+articles?\s*[:=]?\s*\d{1,3}\b/.test(joined)
+    const joined = declaredItemsSearchLine(line)
+    return /\b(?:total|nombre|n0mbre|hombre|hohe|nb|nbr|gre)\s+articles?\s*[:=]?\s*\d{1,3}\b|\b(?:total|nombre|n0mbre|hombre|hohe|gre)\s+\d{1,3}\s+articles?\b/.test(joined)
   }) || ""
   const fallbackCount = Number(raw.match(/\b(\d{1,3})\b(?!.*\b\d{1,3}\b)/)?.[1] || 0) || 0
   const finalCount = count || fallbackCount
   if (!finalCount) return { count: 0, raw: "", source: "missing" }
   const rawClean = compactLine(raw)
-  const source = /\b(nombre|total)\b/.test(rawClean) && !/\b(nb|nbr|gre)\b/.test(rawClean)
+  const source = /\b(nombre|total)\b/.test(rawClean) && !/\b(nb|nbr|gre|hohe|hombre|n0mbre|art1cles|artlcles)\b/.test(rawClean)
     ? "declared_total_articles"
     : "declared_total_articles_ocr_fuzzy"
   return { count: finalCount, raw: raw.trim(), source }
@@ -239,6 +300,42 @@ export function extractReliableDateCandidates(text = "") {
     candidates.push({ raw: line.trim(), normalized, source: "ticket_date" })
   }
   return candidates
+}
+
+function isPaymentLine(line = "") {
+  return /\b(especes|espece|cash|carte bleue|cb|carte|visa|mastercard)\b/.test(compactLine(line))
+}
+
+function findFinalPaymentTotal(lines: string[]): TrustedTotal | null {
+  const lateTicketStart = Math.floor(lines.length * 0.6)
+  const relaxedFooterStart = Math.max(0, lines.length - 18)
+
+  for (let index = lines.length - 1; index >= 0; index -= 1) {
+    const line = lines[index]
+    const amount = moneyFromLine(line)
+    if (!amount || !isPaymentLine(line)) continue
+    if (index < lateTicketStart && index < relaxedFooterStart) continue
+
+    const trailingProductLike = lines.slice(index + 1).some((candidate) => {
+      if (!moneyFromLine(candidate)) return false
+      if (isDeclaredItemsLine(candidate)) return false
+      return !isNonProductLine(candidate)
+    })
+    if (trailingProductLike) continue
+
+    const previousAmount = moneyFromLine(lines[index - 1] || "")
+    return {
+      amount,
+      raw: line,
+      source: "payment_final_line_when_total_label_fuzzy_or_missing",
+      confidence: previousAmount && Math.abs(previousAmount - amount) <= 0.01 ? 0.99 : 0.96,
+      paymentAmount: amount,
+      paymentRaw: line,
+      paymentConsistent: true,
+    }
+  }
+
+  return null
 }
 
 export function extractTrustedTotal(text = ""): TrustedTotal {
@@ -272,6 +369,8 @@ export function extractTrustedTotal(text = ""): TrustedTotal {
       }
     }
   }
+  const finalPaymentTotal = findFinalPaymentTotal(lines)
+  if (finalPaymentTotal) return finalPaymentTotal
   return { amount: 0, raw: "", source: "missing", confidence: 0 }
 }
 

@@ -1,4 +1,5 @@
 import { supabase } from "../supabase"
+import { isItemEligibleForSmartShopping } from "./receiptRules"
 
 function normalize(value = "") {
   return String(value || "")
@@ -35,6 +36,11 @@ export async function enrichProductDictionary({
   let skipped = 0
 
   for (const item of items) {
+    if (!isItemEligibleForSmartShopping(item)) {
+      skipped += 1
+      continue
+    }
+
     const ocrLabel = String(item.ocr_name || item.name || "").trim()
     const canonicalName = String(item.corrected_name || item.name || ocrLabel).trim()
     const normalized = normalize(canonicalName || ocrLabel)

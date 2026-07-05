@@ -5,6 +5,7 @@ import {
   extractDeclaredItemsEvidence,
   extractReliableDateCandidates,
   extractTrustedTotal,
+  isItemEligibleForSmartShopping,
   isPhoneLine,
   isSectionSubtotalLine,
   shouldRejectLineAsProduct,
@@ -135,6 +136,43 @@ export const LEADER_PRICE_SMALL_FUZZY_CB_REFERENCE = {
     "CARTE BLEUE 14.53 EUR",
     "GRE ARTICLES : 6",
     "CARTE FIDELITE",
+  ].join("\n"),
+}
+
+export const LEADER_PRICE_SMALL_PAYMENT_ONLY_TOTAL_REFERENCE = {
+  ...LEADER_PRICE_SMALL_FUZZY_CB_REFERENCE,
+  id: "leader_price_2026_07_03_small_total_payment_only_hohe",
+  expectedDeclaredItemsRawText: "HOHE ARTICLES : 6",
+  expectedTotalSource: "payment_final_line_when_total_label_fuzzy_or_missing",
+  text: LEADER_PRICE_SMALL_FUZZY_CB_REFERENCE.text
+    .replace("Ry TUIAL : 14.53 EUR", "Oo 14.53 EUR")
+    .replace("GRE ARTICLES : 6", "HOHE ARTICLES : 6"),
+}
+
+export const LEADER_PRICE_SMALL_UNSAFE_SMART_SHOPPING_REFERENCE = {
+  ...LEADER_PRICE_SMALL_PAYMENT_ONLY_TOTAL_REFERENCE,
+  id: "leader_price_2026_07_03_small_total_unsafe_smart_shopping_guard",
+  text: [
+    "LEADER PRICE SAINT LEU",
+    "150, Rue du General Lambert",
+    "97436 SAINT-LEU",
+    "Tel : 02.62.34.78.73",
+    "BIENVENUE",
+    "03/07/2026 - 18:36:21",
+    "OPERATION : VENTE",
+    "(1)3701004823141 PT HEEEEEEEEE SUNGELES ecooreeeseatat 8.80 EUR",
+    "(9)3503040014008 Q.CREVETTE TROP 8/12 280G 3.99 EUR",
+    "(9)5413406121317 BROCOLI 20/40 450G 2.40 EUR",
+    "(1)3700311866469 TLJ BARRE CEREALE CHOCO B 1.70 EUR",
+    "(1)8011780009406 COCUIOLE",
+    "(9)8436039437142 EPP eters, EPICERIE SUCREE : 61.70 EUR",
+    "Oo 14.53 EUR",
+    "CARTE BLEUE 14.53 EUR",
+    "HOHE ARTICLES : 6",
+    "CARTE FIDELITE",
+    "ENMENTAL",
+    "CREMERIE",
+    "EPICERIE SALEE",
   ].join("\n"),
 }
 
@@ -428,6 +466,17 @@ function assertLeaderPriceSmallFuzzyCbFixture(fixture = LEADER_PRICE_SMALL_FUZZY
   const debug = (parsed.parser_debug || {}) as Record<string, any>
   const itemTotalSum = Number(parsed.items.reduce((sum, item) => sum + Number(item.total_price ?? item.price ?? 0), 0).toFixed(2))
   const forbiddenSectionNames = /(surgeles|epicerie sucree|epicerie salee|cremerie)/i
+  const eligibleSmartShoppingItems = parsed.items.filter(item => isItemEligibleForSmartShopping(item as Record<string, unknown>))
+  const sectionSubtotalEligible = isItemEligibleForSmartShopping({
+    name: "SURGELES",
+    ocr_name: "SURGELES",
+    raw_text: "SURGELES 8.80 EUR",
+    source_line: "SURGELES 8.80 EUR",
+    total_price: 8.8,
+    item_status: "trusted",
+    review_status: "trusted",
+    line_type: "product",
+  })
 
   return {
     id: fixture.id,
@@ -453,6 +502,17 @@ function assertLeaderPriceSmallFuzzyCbFixture(fixture = LEADER_PRICE_SMALL_FUZZY
       && Math.abs(Number(debug.calculated_items_sum_after_section_filter || 0) - fixture.expectedTotal) <= 0.01
       && Math.abs(itemTotalSum - fixture.expectedTotal) <= 0.01
       && Math.abs(Number(debug.items_total_vs_receipt_total_delta || 0)) <= 0.01
+      && Number(debug.rejected_before_item_limit_count || 0) >= fixture.expectedSectionSubtotalsRejectedCount
+      && debug.item_limit_applied_after_filtering === false
+      && Array.isArray(debug.lost_possible_product_lines)
+      && debug.lost_possible_product_lines.length === 0
+      && Number(debug.items_sent_to_smart_shopping_count || 0) === fixture.expectedItemsCount
+      && Number(debug.items_excluded_from_smart_shopping_count || 0) === 0
+      && debug.items_quality_status === "trusted_enough"
+      && debug.budget_status === "reliable"
+      && debug.smart_shopping_safe === true
+      && eligibleSmartShoppingItems.length === fixture.expectedItemsCount
+      && !sectionSubtotalEligible
       && debug.ocr_text_has_total === true
       && debug.ocr_text_has_payment === true
       && debug.ocr_text_has_declared_items_count === true
@@ -497,6 +557,14 @@ function assertLeaderPriceSmallFuzzyCbFixture(fixture = LEADER_PRICE_SMALL_FUZZY
       items: parsed.items.length,
       itemTotalSum,
       sectionSubtotalsRejected: debug.section_subtotals_rejected_count,
+      rejectedBeforeItemLimit: debug.rejected_before_item_limit_count,
+      itemLimitAppliedAfterFiltering: debug.item_limit_applied_after_filtering,
+      lostPossibleProductLines: debug.lost_possible_product_lines,
+      smartShoppingEligibleItems: eligibleSmartShoppingItems.length,
+      smartShoppingExcludedItems: debug.items_excluded_from_smart_shopping_count,
+      itemsQualityStatus: debug.items_quality_status,
+      budgetStatus: debug.budget_status,
+      smartShoppingSafe: debug.smart_shopping_safe,
       sectionSubtotalsRejectedAmount: debug.section_subtotals_rejected_amount,
       calculatedItemsSumBeforeSectionFilter: debug.calculated_items_sum_before_section_filter,
       calculatedItemsSumAfterSectionFilter: debug.calculated_items_sum_after_section_filter,
@@ -506,6 +574,63 @@ function assertLeaderPriceSmallFuzzyCbFixture(fixture = LEADER_PRICE_SMALL_FUZZY
       ocrTextHasDeclaredItemsCount: debug.ocr_text_has_declared_items_count,
       localTotalMissingReason: debug.local_total_missing_reason,
       itemNames,
+    },
+  }
+}
+
+function assertLeaderPriceSmallUnsafeSmartShoppingFixture(fixture = LEADER_PRICE_SMALL_UNSAFE_SMART_SHOPPING_REFERENCE) {
+  const parsed = parseReceipt({ text: fixture.text, ocrStatus: "success", ocrConfidence: 70 })
+  const debug = (parsed.parser_debug || {}) as Record<string, any>
+  const itemTotalSum = Number(parsed.items.reduce((sum, item) => sum + Number(item.total_price ?? item.price ?? 0), 0).toFixed(2))
+  const eligibleSmartShoppingItems = parsed.items.filter(item => isItemEligibleForSmartShopping(item as Record<string, unknown>))
+  const statuses = parsed.items.map(item => String(item.item_status || item.review_status || item.status || ""))
+
+  return {
+    id: fixture.id,
+    passed: parsed.store_name === fixture.expectedStore
+      && parsed.purchase_date === fixture.expectedDate
+      && Math.abs(Number(parsed.total_amount || 0) - fixture.expectedTotal) <= 0.01
+      && (parsed as any).total_needs_review === false
+      && (parsed as any).total_payment_consistent === true
+      && Math.abs(Number((parsed as any).payment_total_value || 0) - fixture.expectedTotal) <= 0.01
+      && (parsed as any).declared_items_count === fixture.expectedItemsCount
+      && debug.budget_status === "reliable"
+      && Number(debug.items_total_vs_receipt_total_delta || 0) > 0.05
+      && debug.smart_shopping_safe === false
+      && Number(debug.items_sent_to_smart_shopping_count || 0) === 0
+      && Number(debug.items_excluded_from_smart_shopping_count || 0) === parsed.items.length
+      && Array.isArray(debug.smart_shopping_blocked_reasons)
+      && debug.smart_shopping_blocked_reasons.includes("items_total_mismatch")
+      && statuses.every(status => status === "needs_review")
+      && eligibleSmartShoppingItems.length === 0,
+    expected: {
+      store: fixture.expectedStore,
+      date: fixture.expectedDate,
+      total: fixture.expectedTotal,
+      declaredItemsCount: fixture.expectedItemsCount,
+      budgetStatus: "reliable",
+      smartShoppingSafe: false,
+      smartShoppingEligibleItems: 0,
+      requiredBlockReason: "items_total_mismatch",
+    },
+    actual: {
+      store: parsed.store_name,
+      date: parsed.purchase_date,
+      total: parsed.total_amount,
+      totalNeedsReview: (parsed as any).total_needs_review,
+      paymentTotalValue: (parsed as any).payment_total_value,
+      declaredItemsCount: (parsed as any).declared_items_count,
+      items: parsed.items.length,
+      itemTotalSum,
+      itemsTotalVsReceiptTotalDelta: debug.items_total_vs_receipt_total_delta,
+      budgetStatus: debug.budget_status,
+      smartShoppingSafe: debug.smart_shopping_safe,
+      smartShoppingEligibleItems: eligibleSmartShoppingItems.length,
+      smartShoppingSent: debug.items_sent_to_smart_shopping_count,
+      smartShoppingExcluded: debug.items_excluded_from_smart_shopping_count,
+      smartShoppingBlockedReasons: debug.smart_shopping_blocked_reasons,
+      statuses,
+      itemNames: parsed.items.map(item => item.ocr_name || item.name),
     },
   }
 }
@@ -599,6 +724,8 @@ export function runScannerRegressionFixtures() {
   const leaderShortNoPm = assertLeaderPriceShortFixture(LEADER_PRICE_SHORT_NO_PM_REFERENCE)
   const leaderShortNoisy = assertLeaderPriceShortFixture(LEADER_PRICE_SHORT_NOISY_REFERENCE)
   const leaderSmallFuzzyCb = assertLeaderPriceSmallFuzzyCbFixture(LEADER_PRICE_SMALL_FUZZY_CB_REFERENCE)
+  const leaderSmallPaymentOnlyTotal = assertLeaderPriceSmallFuzzyCbFixture(LEADER_PRICE_SMALL_PAYMENT_ONLY_TOTAL_REFERENCE)
+  const leaderSmallUnsafeSmartShopping = assertLeaderPriceSmallUnsafeSmartShoppingFixture(LEADER_PRICE_SMALL_UNSAFE_SMART_SHOPPING_REFERENCE)
   const leaderMediumTotalCash = assertLeaderPriceMediumTotalCashFixture(LEADER_PRICE_MEDIUM_TOTAL_CASH_REFERENCE)
 
   const existing = [LEADER_PRICE_SAINT_LEU_REFERENCE, LECLERC_HORIZONTAL_REFERENCE].map((fixture) => {
@@ -728,6 +855,8 @@ export function runScannerRegressionFixtures() {
     leaderShortNoPm,
     leaderShortNoisy,
     leaderSmallFuzzyCb,
+    leaderSmallPaymentOnlyTotal,
+    leaderSmallUnsafeSmartShopping,
     leaderMediumTotalCash,
     ...existing,
     eLeclercReal,

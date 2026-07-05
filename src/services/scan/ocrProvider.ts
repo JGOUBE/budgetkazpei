@@ -1,6 +1,7 @@
 import { supabase } from "../supabase"
 import { classifyLocalOcrError, isTechnicalLocalOcrFailure } from "./ocrDiagnostics"
 import { extractReceiptDueTotal, extractReceiptTotal, mergeReceiptItems, parseReceipt } from "./receiptParser"
+import { normalizeItemQualityStatus } from "./receiptRules"
 import { ScanError, type ScanErrorCode } from "./scanErrors"
 
 const OCR_TIMEOUT_MS = 60000
@@ -188,6 +189,8 @@ function normalizeFunctionItems(items: any[] = []) {
     .map(item => {
       const price = money(item.total_price) || money(item.price) || money(item.unit_price)
       const name = firstText(item.name, item.corrected_name, item.ocr_name, "Produit a verifier")
+      const qualityStatus = normalizeItemQualityStatus(item)
+      const needsReview = qualityStatus === "needs_review"
 
       return {
         ...item,
@@ -199,10 +202,12 @@ function normalizeFunctionItems(items: any[] = []) {
         unit_price: money(item.unit_price) || price,
         quantity: Number(item.quantity || 1) || 1,
         source: item.source || item.item_source || "ocr_fallback",
-        item_status: item.item_status || item.status || "a_verifier",
-        status: item.status || item.item_status || "a_verifier",
-        review_status: item.review_status || (item.item_status === "detected" ? "trusted" : "needs_review"),
-        needs_review: Boolean(item.needs_review || item.review_status === "needs_review" || item.item_status === "a_verifier" || item.status === "a_verifier"),
+        item_status: qualityStatus === "needs_review" ? "a_verifier" : qualityStatus,
+        status: qualityStatus === "needs_review" ? "a_verifier" : qualityStatus,
+        review_status: qualityStatus,
+        needs_review: needsReview,
+        item_quality_score: item.item_quality_score ?? item.confidence_score ?? (needsReview ? 55 : 88),
+        item_rejection_reason: item.item_rejection_reason || "",
         raw_text: firstText(item.raw_text, item.source_line),
         source_line: firstText(item.source_line, item.raw_text),
         confidence_score: item.confidence_score == null ? 65 : Number(item.confidence_score),
@@ -703,6 +708,23 @@ export class SupabaseReceiptOCRProvider implements OCRProvider {
         declaredItemsCount: data.declared_items_count ?? null,
         declaredItemsRawText: data.declared_items_raw_text || "",
         itemsCountStatus: data.items_count_status || null,
+        trustedItemsCount: data.trusted_items_count ?? data.diagnostics?.trusted_items_count ?? null,
+        needsReviewItemsCount: data.needs_review_items_count ?? data.diagnostics?.needs_review_items_count ?? null,
+        rejectedItemsCount: data.rejected_items_count ?? data.diagnostics?.rejected_items_count ?? null,
+        trustedItemsRatio: data.trusted_items_ratio ?? data.diagnostics?.trusted_items_ratio ?? null,
+        itemsQualityStatus: data.items_quality_status || data.diagnostics?.items_quality_status || null,
+        itemsSentToSmartShoppingCount: data.items_sent_to_smart_shopping_count ?? data.diagnostics?.items_sent_to_smart_shopping_count ?? null,
+        itemsExcludedFromSmartShoppingCount: data.items_excluded_from_smart_shopping_count ?? data.diagnostics?.items_excluded_from_smart_shopping_count ?? null,
+        itemsExcludedReasonsSummary: data.items_excluded_reasons_summary || data.diagnostics?.items_excluded_reasons_summary || null,
+        sectionSubtotalsRejectedCount: data.section_subtotals_rejected_count ?? data.diagnostics?.section_subtotals_rejected_count ?? null,
+        sectionSubtotalsRejectedLines: data.section_subtotals_rejected_lines || data.diagnostics?.section_subtotals_rejected_lines || null,
+        itemsKeptLines: data.items_kept_lines || data.diagnostics?.items_kept_lines || null,
+        itemsRejectedLines: data.items_rejected_lines || data.diagnostics?.items_rejected_lines || null,
+        itemQualitySummary: data.item_quality_summary || data.diagnostics?.item_quality_summary || null,
+        budgetReliable: data.budget_reliable ?? data.diagnostics?.budget_reliable ?? null,
+        smartShoppingSafe: data.smart_shopping_safe ?? data.diagnostics?.smart_shopping_safe ?? null,
+        budgetStatus: data.budget_status || data.diagnostics?.budget_status || null,
+        finalScanStatus: data.final_scan_status || data.diagnostics?.final_scan_status || null,
         openaiPrompt: data.openai_prompt || null,
         openaiRawContent: data.openai_raw_content || null,
         openaiRawResponseBody: data.openai_raw_response_body || null,
