@@ -183,6 +183,53 @@ function firstText(...values: unknown[]) {
   return String(values.find(value => String(value ?? "").trim()) ?? "").trim()
 }
 
+
+function normalizeProviderItemText(value = "") {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[€£$]/g, " ")
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
+const PROVIDER_PRODUCT_WORDS = [
+  "chips", "rosette", "fuet", "tlj", "barre", "cereal", "cereale", "choco",
+  "mimolette", "wimolette", "gouda", "camembert", "panenbert", "gouverneur",
+  "crevette", "brocoli", "nugget", "nuggets", "huile", "lesieur", "kinder",
+  "bueno", "joker", "salade", "pomme", "terre", "champignon", "echalote",
+]
+
+function hasProviderProductSignal(raw = "") {
+  const clean = normalizeProviderItemText(raw)
+  if (/\b\d{8,14}\b/.test(clean)) return true
+  if (/\b\d+(?:[,.]\d+)?\s*(g|gr|kg|ml|cl|l)\b/.test(clean)) return true
+  if (/\b\d+\s*(tranches?|tr|x)\b/.test(clean)) return true
+  return PROVIDER_PRODUCT_WORDS.some(word => clean.includes(word))
+}
+
+function isBlockedProviderItem(item: any = {}) {
+  const raw = normalizeProviderItemText(firstText(item.name, item.corrected_name, item.ocr_name, item.raw_text, item.source_line))
+  if (!raw) return true
+
+  if (/\b(carte|corte)\s+bleue\b/.test(raw)) return true
+  if (/\b(cb|especes|cash|paiement|monnaie|rendu)\b/.test(raw)) return true
+  if (/\b(total|reste a payer|net a payer|a payer|tva|ttc|ht|operation|vente|bienvenue|fidelite|client|points?)\b/.test(raw)) return true
+
+  const sectionWord = /\b(charcuter(?:ie|te)?|epicer(?:ie|te)|cremerie|crererie|surgeles|sungeles|surgele|boissons|ultra frais|volaille|ppi)\b/.test(raw)
+  const sectionOnly = /^(charcuter(?:ie|te)?|epicer(?:ie|te)(?: sucree| salee)?|cremerie|crererie|surgeles|sungeles|surgele|boissons(?: sans alcool)?|ultra frais|volaille|ppi)(?:\s+(?:1s|ls|l5|is))?$/.test(raw)
+  if (sectionWord && sectionOnly && !hasProviderProductSignal(raw)) return true
+
+  const tokens = raw.split(" ").filter(Boolean)
+  const letters = raw.replace(/[^a-z]/g, "")
+  if (!hasProviderProductSignal(raw) && tokens.length <= 3 && letters.length <= 8) return true
+  if (!hasProviderProductSignal(raw) && tokens.every(token => token.length <= 3)) return true
+
+  return false
+}
+
 function normalizeFunctionItems(items: any[] = []) {
   return (items || [])
     .filter(item => String(item?.name || item?.ocr_name || "").trim())
@@ -215,7 +262,7 @@ function normalizeFunctionItems(items: any[] = []) {
         category: item.category || "alimentaire",
       }
     })
-    .filter(item => item.total_price > 0)
+    .filter(item => item.total_price > 0 && !isBlockedProviderItem(item))
 }
 
 function isUiStoreName(value = "") {

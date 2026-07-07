@@ -7,6 +7,7 @@ import {
 } from "./receiptDictionaries"
 import {
   classifyLineRejectionReason,
+  classifySectionSubtotalLine,
   extractDeclaredItemsEvidence,
   extractReliableDateCandidates,
   extractTrustedTotal,
@@ -312,14 +313,77 @@ function detectPaymentMethod(line = "") {
 }
 
 function sectionSubtotalDiagnostics(lines: string[]) {
-  const rejected = lines
-    .filter(line => isSectionSubtotalLine(line))
-    .map(line => ({ line, amount: lastMoney(line) }))
+  const classified = lines
+    .map(line => ({
+      line,
+      amount: lastMoney(line) || 0,
+      classification: classifySectionSubtotalLine(line),
+    }))
+    .filter(row => row.classification.kind !== "none")
+
+  const rejected = classified
+    .filter(row => row.classification.kind === "confirmed")
+    .map(row => ({
+      line: row.line,
+      amount: row.amount,
+      reason: row.classification.reason,
+      matched_heading: row.classification.matchedHeading,
+    }))
+
+  const probable = classified
+    .filter(row => row.classification.kind === "probable")
+    .map(row => ({
+      line: row.line,
+      amount: row.amount,
+      reason: row.classification.reason,
+      matched_heading: row.classification.matchedHeading,
+    }))
+
   const amount = rejected.reduce((sum, item) => sum + Number(item.amount || 0), 0)
+
   return {
     rejected,
+    probable,
     rejectedCount: rejected.length,
+    probableCount: probable.length,
     rejectedAmount: Number(amount.toFixed(2)),
+  }
+}
+
+function classifySectionSubtotalWithContext(
+  line: string,
+  items: ParsedReceiptItem[],
+  sectionStartIndex: number,
+) {
+  const base = classifySectionSubtotalLine(line)
+  if (base.kind === "none") return base
+
+  const amount = base.amount || lastMoney(line) || 0
+  const sectionItems = items.slice(Math.max(0, sectionStartIndex))
+  const sectionSum = Number(sectionItems.reduce((sum, item) => {
+    return sum + Number(item.total_price ?? item.price ?? item.unit_price ?? 0)
+  }, 0).toFixed(2))
+
+  const amountMatchesSection = amount > 0
+    && sectionSum > 0
+    && Math.abs(sectionSum - amount) <= 0.05
+
+  if (base.kind === "confirmed" || amountMatchesSection) {
+    return {
+      ...base,
+      kind: "confirmed" as const,
+      reason: "section_subtotal_confirmed" as const,
+      sectionSum,
+      amountMatchesSection,
+    }
+  }
+
+  return {
+    ...base,
+    kind: "probable" as const,
+    reason: "section_subtotal_probable" as const,
+    sectionSum,
+    amountMatchesSection,
   }
 }
 
@@ -923,14 +987,25 @@ function smartShoppingBlockReasons({
   if (items.some(item => isSectionSubtotalLine(String(item.source_line || item.raw_text || item.ocr_name || item.name || "")))) {
     reasons.add("section_subtotal_kept_as_item")
   }
+  if (items.some(item => classifySectionSubtotalLine(String(item.source_line || item.raw_text || item.ocr_name || item.name || "")).kind === "probable")) {
+    reasons.add("section_subtotal_probable_kept_as_item")
+  }
   if (items.some(item => containsSectionSubtotalKeyword(String(item.ocr_name || item.name || "")) && !hasKnownProductSignal(String(item.ocr_name || item.name || "")))) {
     reasons.add("section_heading_kept_as_item")
   }
   if (items.some(item => hasDominantOcrNoise(String(item.raw_text || item.ocr_name || item.name || "")))) {
     reasons.add("dominant_ocr_noise")
   }
-  if (Number(totalDelta || 0) > 0.05 && sectionSubtotal.rejectedCount === 0 && lines.some(line => containsSectionSubtotalKeyword(line))) {
+  if (
+    Number(totalDelta || 0) > 0.05
+    && sectionSubtotal.rejectedCount === 0
+    && sectionSubtotal.probableCount === 0
+    && lines.some(line => containsSectionSubtotalKeyword(line))
+  ) {
     reasons.add("section_subtotals_present_but_not_rejected")
+  }
+  if (sectionSubtotal.probableCount > 0) {
+    reasons.add("section_subtotals_probable_present")
   }
   if (items.some(item => Number(item.item_quality_score ?? item.confidence_score ?? 0) < 70 && normalizeItemQualityStatus(item as unknown as Record<string, unknown>) === "trusted")) {
     reasons.add("low_quality_item_marked_trusted")
@@ -984,6 +1059,23 @@ function parseItems(lines: string[], ocrConfidence: number, debug = createParser
       pendingPromotion = false
       rejectParserLine(debug, line, "discount")
       continue
+    }
+
+    if (Number.isFinite(price) && price > 0) {
+      const sectionSubtotal = classifySectionSubtotalWithContext(line, items, sectionStartIndex)
+
+      if (sectionSubtotal.kind !== "none") {
+        rejectParserLine(debug, line, sectionSubtotal.reason)
+
+        if (sectionSubtotal.kind === "confirmed") {
+          sectionStartIndex = items.length
+          currentDepartment = null
+        }
+
+        pendingName = ""
+        pendingPromotion = false
+        continue
+      }
     }
 
     if (Number.isFinite(price) && price > 0 && isHardIgnoredPricedLine(line)) {
@@ -1177,6 +1269,8 @@ export function parseReceipt({ text = "", ocrStatus = "manual", ocrConfidence = 
     section_subtotals_rejected_count: sectionSubtotal.rejectedCount,
     section_subtotals_rejected_amount: sectionSubtotal.rejectedAmount,
     section_subtotals_rejected_lines: sectionSubtotal.rejected.map(item => item.line),
+    section_subtotals_probable_count: sectionSubtotal.probableCount,
+    section_subtotals_probable_lines: sectionSubtotal.probable.map(item => item.line),
     rejected_section_subtotal_examples: sectionSubtotal.rejected.map(item => item.line).slice(0, 8),
     items_total_vs_receipt_total_delta: totalDelta,
     ...qualitySummary,
@@ -1256,6 +1350,9 @@ export function parseReceipt({ text = "", ocrStatus = "manual", ocrConfidence = 
       section_subtotals_rejected_amount: sectionSubtotal.rejectedAmount,
       section_subtotals_rejected: sectionSubtotal.rejected,
       section_subtotals_rejected_lines: sectionSubtotal.rejected.map(item => item.line),
+      section_subtotals_probable_count: sectionSubtotal.probableCount,
+      section_subtotals_probable: sectionSubtotal.probable,
+      section_subtotals_probable_lines: sectionSubtotal.probable.map(item => item.line),
       rejected_section_subtotal_examples: sectionSubtotal.rejected.map(item => item.line).slice(0, 8),
       items_kept_lines: items.map(item => item.ocr_name || item.name),
       items_rejected_lines: rejectedBeforeItemLimitLines,

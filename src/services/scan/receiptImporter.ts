@@ -15,24 +15,41 @@ function stageError(step: string, error: unknown) {
   return new Error(`${step} echouee: ${message}`)
 }
 
-function isTrustedItemForLearning(item: any, draft: any) {
-  if (!isItemEligibleForSmartShopping(item)) return false
+function isBudgetRejectedOrNeedsReview(draft: any) {
   const scanStatus = String(draft?.scan_status || "")
-  if (
-    scanStatus.includes("partial_low_items")
-    || scanStatus.includes("long_manual_review")
-    || scanStatus.includes("long_usable_review")
-    || scanStatus.includes("budget_ok_articles_blocked")
+  return draft?.total_needs_review === true
     || scanStatus.includes("budget_needs_review")
     || scanStatus.includes("rejected")
-  ) return false
-  if (draft?.smart_shopping_safe === false) return false
-  if (draft?.items_quality_status === "blocked" || draft?.items_quality_status === "needs_review") return false
-  if (draft?.total_needs_review === true) return false
-  if (Number(draft?.recovery_ratio || draft?.metrics?.recoveryRatio || 1) < 0.85) return false
+    || scanStatus.includes("manual_review_required")
+    || scanStatus.includes("long_manual_review")
+}
+
+function canFeedShoppingIntelligence(draft: any, trustedItemsCount = 0) {
+  if (isBudgetRejectedOrNeedsReview(draft)) return false
+  if (Number(draft?.total_amount || 0) <= 0) return false
+  if (trustedItemsCount <= 0) return false
+
+  const scanStatus = String(draft?.scan_status || "")
+  const itemsQualityStatus = String(draft?.items_quality_status || "")
+
+  // On bloque seulement les tickets vraiment non exploitables pour le budget.
+  // Pour les articles, la securite est faite ligne par ligne par isTrustedItemForLearning.
+  if (scanStatus.includes("partial_low_items") || scanStatus.includes("long_manual_review")) return false
+  if (itemsQualityStatus === "needs_review") return false
+
+  // Cas attendu : budget fiable + articles partiels. Meme si l'ancien moteur a
+  // garde smart_shopping_safe=false ou budget_ok_articles_blocked, on accepte les
+  // seules lignes individuellement trusted / user_validated.
+  return true
+}
+
+function isTrustedItemForLearning(item: any, draft: any) {
+  if (isBudgetRejectedOrNeedsReview(draft)) return false
+  if (!isItemEligibleForSmartShopping(item)) return false
   if (item?.needs_review === true) return false
-  if (item?.review_status === "needs_review") return false
+  if (item?.review_status === "needs_review" || item?.review_status === "rejected") return false
   if (item?.item_status === "a_verifier" || item?.status === "a_verifier") return false
+  if (item?.item_status === "rejected" || item?.status === "rejected") return false
   return true
 }
 
@@ -44,23 +61,6 @@ function buildTransactionDiagnostics(result: any, duplicateConfirmed = false) {
     transaction_id: result?.transaction?.id || null,
     duplicate_confirmed: Boolean(duplicateConfirmed),
   }
-}
-
-function canFeedShoppingIntelligence(draft: any) {
-  const scanStatus = String(draft?.scan_status || "")
-  if (
-    scanStatus.includes("long_manual_review")
-    || scanStatus.includes("long_usable_review")
-    || scanStatus.includes("partial_low_items")
-    || scanStatus.includes("budget_ok_articles_blocked")
-    || scanStatus.includes("budget_needs_review")
-    || scanStatus.includes("rejected")
-  ) return false
-  if (draft?.smart_shopping_safe === false) return false
-  if (draft?.items_quality_status === "blocked" || draft?.items_quality_status === "needs_review") return false
-  if (draft?.total_needs_review === true) return false
-  if (Number(draft?.recovery_ratio || draft?.metrics?.recoveryRatio || 1) < 0.85) return false
-  return true
 }
 
 export async function importValidatedReceipt({
@@ -120,12 +120,16 @@ export async function importValidatedReceipt({
 
   let shoppingRows: any[] = []
   const smartShoppingEligibleItems = cleanItems.filter(item => isTrustedItemForLearning(item, draft))
-  if (draft.is_food_ticket && canFeedShoppingIntelligence(draft)) {
+  const canFeedShopping = Boolean(draft.is_food_ticket) && canFeedShoppingIntelligence(draft, smartShoppingEligibleItems.length)
+
+  if (canFeedShopping) {
     try {
       scannerLog("Creation shopping_items", "START", {
         count: smartShoppingEligibleItems.length,
         excluded: cleanItems.length - smartShoppingEligibleItems.length,
         transactionId: txResult?.transaction?.id,
+        scan_status: draft?.scan_status || "",
+        items_quality_status: draft?.items_quality_status || "",
       })
       shoppingRows = await syncShoppingItemsFromReceipt({
         userId,
@@ -142,6 +146,13 @@ export async function importValidatedReceipt({
     } catch (error) {
       throw stageError("Creation shopping_items", error)
     }
+  } else {
+    scannerLog("Creation shopping_items", "OK", {
+      count: 0,
+      skipped: true,
+      excluded: cleanItems.length,
+      reason: draft?.is_food_ticket ? "no_trusted_items_or_ticket_not_safe" : "not_food_ticket",
+    })
   }
 
   try {

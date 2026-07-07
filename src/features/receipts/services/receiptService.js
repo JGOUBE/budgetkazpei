@@ -259,72 +259,127 @@ function isMissingColumnError(error) {
   return error?.code === "PGRST204" || message.includes("Could not find") || message.includes("column")
 }
 
-export async function upsertReceiptTransaction({ userId, receipt, draft, transactionId }) {
-  const receiptId = receipt?.id
-  const amount = Math.abs(Number(draft?.total_amount || receipt?.total_amount || 0))
+function normalizeComparableText(value = "") {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+}
 
-  if (!userId || !receiptId) {
-    return { transaction: null, created: false, updated: false, skipReason: "missing_user_or_receipt" }
-  }
+function receiptTransactionStoreKey(value = "") {
+  return normalizeComparableText(value)
+    .replace(/^courses?\s+/i, "")
+    .replace(/^(ticket|scan)\s+/i, "")
+    .replace(/\b(saint leu|saint denis|saint pierre|le portail|reunion|la reunion)\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+}
 
-  if (amount <= 0 || draft?.total_needs_review) {
-    return { transaction: null, created: false, updated: false, skipReason: "total_missing_or_needs_review" }
-  }
+function receiptTransactionLabelsMatch(a = "", b = "") {
+  const left = receiptTransactionStoreKey(a)
+  const right = receiptTransactionStoreKey(b)
+  if (!left || !right) return false
+  return left === right || left.includes(right) || right.includes(left)
+}
 
-  const payload = {
-    label: `Courses - ${draft?.store_name || receipt?.store_name || "Enseigne non reconnue"}`,
+function buildReceiptTransactionPayload({ receiptId, receipt, draft, amount }) {
+  const storeName = draft?.store_name || receipt?.store_name || "Enseigne non reconnue"
+  return {
+    label: `Courses - ${storeName}`,
     category: "alimentaire",
-    amount: -amount,
+    amount: -Math.abs(Number(amount || 0)),
     date: draft?.purchase_date || receipt?.purchase_date || new Date().toISOString().split("T")[0],
     icon: "ticket",
     source: "receipt_scan",
     receipt_id: receiptId,
   }
+}
 
-  const lookup = transactionId
-    ? await supabase
-        .from("transactions")
-        .select("*")
-        .eq("id", transactionId)
-        .eq("user_id", userId)
-        .maybeSingle()
-    : await supabase
-        .from("transactions")
-        .select("*")
-        .eq("user_id", userId)
-        .eq("receipt_id", receiptId)
-        .maybeSingle()
+async function findTransactionById({ userId, transactionId }) {
+  if (!userId || !transactionId) return null
 
-  if (lookup.error && !isMissingColumnError(lookup.error)) {
-    throw lookup.error
-  }
+  const { data, error } = await supabase
+    .from("transactions")
+    .select("*")
+    .eq("id", transactionId)
+    .eq("user_id", userId)
+    .maybeSingle()
 
-  if (lookup.data?.id) {
-    let { data, error } = await supabase
+  if (error && !isMissingColumnError(error)) throw error
+  return data || null
+}
+
+async function findTransactionByReceiptId({ userId, receiptId }) {
+  if (!userId || !receiptId) return null
+
+  const { data, error } = await supabase
+    .from("transactions")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("receipt_id", receiptId)
+    .maybeSingle()
+
+  if (error && !isMissingColumnError(error)) throw error
+  return data || null
+}
+
+async function findExistingReceiptScanTransaction({ userId, receiptId, payload, duplicateConfirmed = false }) {
+  if (!userId || duplicateConfirmed) return null
+
+  const amount = Number(payload.amount || 0)
+  const lowerAmount = Number((amount - 0.01).toFixed(2))
+  const upperAmount = Number((amount + 0.01).toFixed(2))
+
+  const { data, error } = await supabase
+    .from("transactions")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("date", payload.date)
+    .gte("amount", lowerAmount)
+    .lte("amount", upperAmount)
+    .order("created_at", { ascending: false })
+    .limit(20)
+
+  if (error && !isMissingColumnError(error)) throw error
+  const rows = Array.isArray(data) ? data : []
+
+  return rows.find(row => {
+    if (String(row.receipt_id || "") === String(receiptId || "")) return true
+    if (String(row.source || "") === "receipt_scan") return true
+    return receiptTransactionLabelsMatch(row.label, payload.label)
+  }) || null
+}
+
+async function saveReceiptTransactionPayload({ userId, transactionId, payload }) {
+  let { data, error } = await supabase
+    .from("transactions")
+    .update(payload)
+    .eq("id", transactionId)
+    .eq("user_id", userId)
+    .select()
+    .single()
+
+  if (error && isMissingColumnError(error)) {
+    const { source, receipt_id, ...legacyPayload } = payload
+    const retry = await supabase
       .from("transactions")
-      .update(payload)
-      .eq("id", lookup.data.id)
+      .update(legacyPayload)
+      .eq("id", transactionId)
       .eq("user_id", userId)
       .select()
       .single()
-
-    if (error && isMissingColumnError(error)) {
-      const { source, receipt_id, ...legacyPayload } = payload
-      const retry = await supabase
-        .from("transactions")
-        .update(legacyPayload)
-        .eq("id", lookup.data.id)
-        .eq("user_id", userId)
-        .select()
-        .single()
-      data = retry.data
-      error = retry.error
-    }
-
-    if (error) throw error
-    return { transaction: data, created: false, updated: true, skipReason: "" }
+    data = retry.data
+    error = retry.error
   }
 
+  if (error) throw error
+  return data
+}
+
+async function insertReceiptTransactionPayload({ userId, payload }) {
   const insertPayload = { ...payload, user_id: userId }
   let { data, error } = await supabase
     .from("transactions")
@@ -344,7 +399,57 @@ export async function upsertReceiptTransaction({ userId, receipt, draft, transac
   }
 
   if (error) throw error
-  return { transaction: data, created: true, updated: false, skipReason: "" }
+  return data
+}
+
+export async function upsertReceiptTransaction({ userId, receipt, draft, transactionId }) {
+  const receiptId = receipt?.id
+  const amount = Math.abs(Number(draft?.total_amount || receipt?.total_amount || 0))
+
+  if (!userId || !receiptId) {
+    return { transaction: null, created: false, updated: false, skipReason: "missing_user_or_receipt" }
+  }
+
+  if (amount <= 0 || draft?.total_needs_review) {
+    return { transaction: null, created: false, updated: false, skipReason: "total_missing_or_needs_review" }
+  }
+
+  const payload = buildReceiptTransactionPayload({ receiptId, receipt, draft, amount })
+  const duplicateConfirmed = Boolean(draft?.duplicate_confirmed)
+  const existingTransaction = await findTransactionById({
+    userId,
+    transactionId: transactionId || receipt?.transaction_id,
+  }) || await findTransactionByReceiptId({
+    userId,
+    receiptId,
+  }) || await findExistingReceiptScanTransaction({
+    userId,
+    receiptId,
+    payload,
+    duplicateConfirmed,
+  })
+
+  if (existingTransaction?.id) {
+    const updated = await saveReceiptTransactionPayload({
+      userId,
+      transactionId: existingTransaction.id,
+      payload,
+    })
+
+    const duplicatePrevented = !transactionId
+      && String(existingTransaction.receipt_id || "") !== String(receiptId || "")
+
+    return {
+      transaction: updated,
+      created: false,
+      updated: true,
+      skipReason: duplicatePrevented ? "existing_receipt_transaction_reused" : "",
+      duplicatePrevented,
+    }
+  }
+
+  const inserted = await insertReceiptTransactionPayload({ userId, payload })
+  return { transaction: inserted, created: true, updated: false, skipReason: "" }
 }
 
 export async function validateReceipt({ receiptId, userId, draft, items, transactionId }) {
@@ -556,11 +661,97 @@ export async function getReceiptDetail({ receiptId, userId }) {
   return data
 }
 
-export async function removeReceiptFromHistory({ receipt, userId }) {
+async function safeDeleteRows(tableName, buildQuery, context = {}) {
+  try {
+    const { error } = await buildQuery(supabase.from(tableName).delete())
+    if (error && !isMissingColumnError(error)) {
+      console.warn(`[scanner] Suppression ${tableName} indisponible`, { error, ...context })
+    }
+  } catch (error) {
+    console.warn(`[scanner] Suppression ${tableName} indisponible`, { error, ...context })
+  }
+}
+
+async function findReceiptTransactionForRemoval({ receipt, userId }) {
+  const receiptId = receipt?.id
+  const transactionById = await findTransactionById({ userId, transactionId: receipt?.transaction_id })
+  if (transactionById?.id) return transactionById
+
+  const transactionByReceipt = await findTransactionByReceiptId({ userId, receiptId })
+  if (transactionByReceipt?.id) return transactionByReceipt
+
+  const amount = Math.abs(Number(receipt?.total_amount || 0))
+  if (amount <= 0) return null
+
+  const payload = buildReceiptTransactionPayload({
+    receiptId,
+    receipt,
+    draft: receipt,
+    amount,
+  })
+
+  return findExistingReceiptScanTransaction({
+    userId,
+    receiptId,
+    payload,
+    duplicateConfirmed: false,
+  })
+}
+
+async function removeShoppingItemsLinkedToReceipt({ receipt, userId, transaction, reason = "receipt_removed" }) {
+  if (!userId || !receipt?.id) return
+
+  if (transaction?.id) {
+    await safeDeleteRows(
+      "shopping_items",
+      query => query.eq("user_id", userId).eq("transaction_id", transaction.id),
+      { receipt_id: receipt.id, transaction_id: transaction.id, reason },
+    )
+  }
+
+  await safeDeleteRows(
+    "shopping_items",
+    query => query.eq("user_id", userId).eq("receipt_id", receipt.id),
+    { receipt_id: receipt.id, reason },
+  )
+}
+
+async function removeTransactionLinkedToReceipt({ receipt, userId, removeLearning = true, reason = "receipt_removed" }) {
+  const transaction = await findReceiptTransactionForRemoval({ receipt, userId })
+
+  if (removeLearning) {
+    await removeShoppingItemsLinkedToReceipt({ receipt, userId, transaction, reason })
+  }
+
+  if (!transaction?.id) {
+    return { removed: false, transaction: null, reason: "no_linked_transaction_found" }
+  }
+
+  let { error } = await supabase
+    .from("transactions")
+    .delete()
+    .eq("id", transaction.id)
+    .eq("user_id", userId)
+
+  if (error && !isMissingColumnError(error)) throw error
+
+  return { removed: !error, transaction, reason: error ? "transaction_delete_skipped_missing_column" : "" }
+}
+
+export async function removeReceiptFromHistory({
+  receipt,
+  userId,
+  removeBudget = false,
+  removeLearning = false,
+  reason = "automatic_history_expiry",
+} = {}) {
   if (!receipt?.id || !userId) return
 
   const now = new Date().toISOString()
   const imagePath = receipt?.image_path || receipt?.storage_path || null
+  const linkedCleanup = removeBudget
+    ? await removeTransactionLinkedToReceipt({ receipt, userId, removeLearning, reason })
+    : { removed: false, transaction: null, reason: "budget_preserved" }
 
   if (imagePath) {
     const { error: storageError } = await supabase.storage.from(RECEIPT_BUCKET).remove([imagePath])
@@ -573,11 +764,12 @@ export async function removeReceiptFromHistory({ receipt, userId }) {
     image_path: null,
     image_url: null,
     storage_path: null,
+    transaction_id: removeBudget ? null : receipt?.transaction_id || null,
     hidden_at: now,
     image_deleted_at: imagePath ? now : null,
     removed_from_history_at: now,
-    removal_type: "hidden_keep_analytics",
-    image_deleted_reason: imagePath ? "removed_from_history" : null,
+    removal_type: removeBudget ? "hidden_remove_budget" : "hidden_keep_analytics",
+    image_deleted_reason: imagePath ? reason : null,
     updated_at: now,
   }
 
@@ -591,6 +783,7 @@ export async function removeReceiptFromHistory({ receipt, userId }) {
     const {
       image_url,
       storage_path,
+      transaction_id,
       hidden_at,
       image_deleted_at,
       removed_from_history_at,
@@ -609,10 +802,29 @@ export async function removeReceiptFromHistory({ receipt, userId }) {
   }
 
   if (error) throw error
+
+  console.info("[scanner] Ticket retire de l'historique", {
+    receipt_id: receipt.id,
+    removal_type: payload.removal_type,
+    budget_preserved: !removeBudget,
+    transaction_removed: Boolean(linkedCleanup.removed),
+    transaction_id: linkedCleanup.transaction?.id || receipt?.transaction_id || null,
+    cleanup_reason: linkedCleanup.reason || reason || "",
+  })
 }
 
 export async function deleteReceipt(args) {
   return removeReceiptFromHistory(args)
+}
+
+export async function expireReceiptFromHistory({ receipt, userId } = {}) {
+  return removeReceiptFromHistory({
+    receipt,
+    userId,
+    removeBudget: false,
+    removeLearning: false,
+    reason: "automatic_7_days_expiry",
+  })
 }
 
 export async function hardDeleteReceipt({ receipt, userId }) {

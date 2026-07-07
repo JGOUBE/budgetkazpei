@@ -1,9 +1,3 @@
-export type ReliableDateCandidate = {
-  raw: string
-  normalized: string
-  source: "ticket_date"
-}
-
 export type TrustedTotal = {
   amount: number
   raw: string
@@ -73,6 +67,16 @@ function isDeclaredItemsLine(line = "") {
   return /\b(?:total|nombre|n0mbre|hombre|hohe|nb|nbr|gre)\s+articles?\s*[:=]?\s*\d{1,3}\b|\b(?:total|nombre|n0mbre|hombre|hohe|gre)\s+\d{1,3}\s+articles?\b/.test(joinedLetters)
 }
 
+export type SectionSubtotalKind = "none" | "confirmed" | "probable"
+
+export type SectionSubtotalClassification = {
+  kind: SectionSubtotalKind
+  reason: "" | "section_subtotal_confirmed" | "section_subtotal_probable"
+  label: string
+  matchedHeading: string
+  amount: number
+}
+
 const SECTION_SUBTOTAL_HEADINGS = [
   "epicerie salee",
   "epicerie sale",
@@ -84,7 +88,6 @@ const SECTION_SUBTOTAL_HEADINGS = [
   "cremerie",
   "fleurs plantes fruits legumes",
   "fleurs plantes fruits-legumes",
-  "fleurs plantes fruits legumes",
   "fruits legumes",
   "fruits et legumes",
   "ultra frais",
@@ -102,10 +105,42 @@ const SECTION_SUBTOTAL_HEADINGS = [
   "ppi",
 ]
 
+const SECTION_SUBTOTAL_PRODUCT_PROTECT_WORDS = [
+  "plateau",
+  "creme dessert",
+  "dessert",
+  "vanille",
+  "pizza",
+  "surgelee",
+  "barre",
+  "cereale",
+  "choco",
+  "chocolat",
+  "rosette",
+  "fuet",
+  "mimolette",
+  "gouda",
+  "camembert",
+  "brocoli",
+  "crevette",
+  "nugget",
+  "nuggets",
+  "huile",
+  "lesieur",
+  "pomme de terre",
+  "pomme",
+  "terre",
+  "riz",
+  "pates",
+  "thon",
+  "jambon",
+  "saucisson",
+]
+
 function normalizeSectionSubtotalLabel(line = "") {
   return compactLine(line)
     .replace(/\b\d+(?:\s?\d{3})*[,.]\d{2}\b/g, " ")
-    .replace(/\beur\b/g, " ")
+    .replace(/\beur(?:os?)?\b/g, " ")
     .replace(/[^a-z0-9 ]/g, " ")
     .replace(/\bcharcuter(?:ie|1e|te)\b/g, "charcuterie")
     .replace(/\bepicer(?:ie|1e|te)\b/g, "epicerie")
@@ -114,6 +149,7 @@ function normalizeSectionSubtotalLabel(line = "") {
     .replace(/\bcrererie\b/g, "cremerie")
     .replace(/\bsungeles\b/g, "surgeles")
     .replace(/\bvola1lle\b/g, "volaille")
+    .replace(/\balcogl\b/g, "alcool")
     .replace(/\s+/g, " ")
     .trim()
 }
@@ -125,26 +161,95 @@ function removeOcrDepartmentSuffix(label = "") {
     .trim()
 }
 
-export function isSectionSubtotalLine(line = "") {
-  const amount = moneyFromLine(line)
-  if (amount <= 0) return false
-  const clean = normalizeSectionSubtotalLabel(line)
-  if (!clean) return false
+function hasStrongProductSignalForSectionSubtotal(rawLine = "", normalizedLabel = "") {
+  const raw = compactLine(rawLine)
+  const label = compactLine(normalizedLabel)
 
+  if (/\b\d{8,14}\b/.test(raw)) return true
+  if (/\b\d+(?:[,.]\d+)?\s*(g|gr|kg|ml|cl|l)\b/.test(raw)) return true
+  if (/\b\d+\s*(tranches?|tr|x)\b/.test(raw)) return true
+
+  return SECTION_SUBTOTAL_PRODUCT_PROTECT_WORDS.some((word) => {
+    const cleanWord = compactLine(word)
+    return label.includes(cleanWord) || raw.includes(cleanWord)
+  })
+}
+
+function findMatchedSectionHeading(label = "") {
+  const normalized = normalizeSectionSubtotalLabel(label)
   const candidates = [
-    clean,
-    removeOcrDepartmentSuffix(clean),
-    clean.replace(/\bfruits legumes\b/g, "fruits plantes fruits legumes"),
+    normalized,
+    removeOcrDepartmentSuffix(normalized),
+    normalized.replace(/\bfruits legumes\b/g, "fleurs plantes fruits legumes"),
   ].filter(Boolean)
 
-  if (candidates.some((candidate) => SECTION_SUBTOTAL_HEADINGS.includes(candidate))) return true
-  if (/^charcuterie(?:\s+(?:1s|ls|l5|is))?$/.test(clean)) return true
-  if (/^epicerie\s+(?:sucree|salee)(?:\s+(?:1s|ls|l5|is))?$/.test(clean)) return true
-  if (/^boissons\s+sans\s+alcool(?:\s+(?:1s|ls|l5|is))?$/.test(clean)) return true
-  if (/^fleurs\s+plantes\s+fruits\s+legumes(?:\s+(?:1s|ls|l5|is))?$/.test(clean)) return true
-  if (/^(?:cremerie|surgeles|surgele|ultra frais|volaille|ppi)(?:\s+(?:1s|ls|l5|is))?$/.test(clean)) return true
+  const exact = candidates.find((candidate) => SECTION_SUBTOTAL_HEADINGS.includes(candidate))
+  if (exact) return exact
 
-  return false
+  const sortedHeadings = [...SECTION_SUBTOTAL_HEADINGS].sort((a, b) => b.length - a.length)
+  return sortedHeadings.find((heading) => new RegExp(`\\b${heading.replace(/\s+/g, "\\s+")}\\b`).test(normalized)) || ""
+}
+
+export function classifySectionSubtotalLine(line = ""): SectionSubtotalClassification {
+  const amount = moneyFromLine(line)
+  if (amount <= 0) {
+    return { kind: "none", reason: "", label: "", matchedHeading: "", amount: 0 }
+  }
+
+  const label = normalizeSectionSubtotalLabel(line)
+  if (!label) {
+    return { kind: "none", reason: "", label: "", matchedHeading: "", amount }
+  }
+
+  const labelWithoutSuffix = removeOcrDepartmentSuffix(label)
+  const matchedHeading = findMatchedSectionHeading(label)
+
+  if (!matchedHeading) {
+    return { kind: "none", reason: "", label, matchedHeading: "", amount }
+  }
+
+  const exactCandidate =
+    SECTION_SUBTOTAL_HEADINGS.includes(label)
+    || SECTION_SUBTOTAL_HEADINGS.includes(labelWithoutSuffix)
+    || /^charcuterie(?:\s+(?:1s|ls|l5|is))?$/.test(label)
+    || /^epicerie\s+(?:sucree|salee)(?:\s+(?:1s|ls|l5|is))?$/.test(label)
+    || /^boissons\s+sans\s+alcool(?:\s+(?:1s|ls|l5|is))?$/.test(label)
+    || /^fleurs\s+plantes\s+fruits\s+legumes(?:\s+(?:1s|ls|l5|is))?$/.test(label)
+    || /^(?:cremerie|surgeles|surgele|ultra frais|volaille|ppi)(?:\s+(?:1s|ls|l5|is))?$/.test(label)
+
+  if (exactCandidate) {
+    return {
+      kind: "confirmed",
+      reason: "section_subtotal_confirmed",
+      label,
+      matchedHeading,
+      amount,
+    }
+  }
+
+  if (hasStrongProductSignalForSectionSubtotal(line, label)) {
+    return { kind: "none", reason: "", label, matchedHeading, amount }
+  }
+
+  const tokenCount = label.split(/\s+/).filter(Boolean).length
+  const headingTokenCount = matchedHeading.split(/\s+/).filter(Boolean).length
+  const shortEnough = tokenCount <= headingTokenCount + 3
+
+  if (shortEnough) {
+    return {
+      kind: "probable",
+      reason: "section_subtotal_probable",
+      label,
+      matchedHeading,
+      amount,
+    }
+  }
+
+  return { kind: "none", reason: "", label, matchedHeading, amount }
+}
+
+export function isSectionSubtotalLine(line = "") {
+  return classifySectionSubtotalLine(line).kind === "confirmed"
 }
 
 function isValidDateParts(year: number, month: number, day: number) {
@@ -165,7 +270,6 @@ export function normalizeReceiptRuleDate(value = "") {
     const day = Number(iso[3])
     return isValidDateParts(year, month, day) ? `${iso[1]}-${iso[2]}-${iso[3]}` : ""
   }
-
   const match = raw.match(/\b(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})\b/)
   if (!match) {
     const clean = normalizeScannerText(raw)
@@ -268,7 +372,9 @@ export function classifyLineRejectionReason(line = "") {
   const clean = compactLine(line)
   if (!clean) return "empty"
   if (isPhoneLine(line)) return "phone"
-  if (isSectionSubtotalLine(line)) return "section_subtotal"
+  const sectionSubtotal = classifySectionSubtotalLine(line)
+  if (sectionSubtotal.kind === "confirmed") return "section_subtotal_confirmed"
+  if (sectionSubtotal.kind === "probable") return "section_subtotal_probable"
   if (isVatOrPaymentLine(line)) {
     if (/\b(especes|espece|cash|carte bleue|cb|visa|mastercard|american express|ticket restaurant)\b/.test(clean)) return "payment"
     return "vat"
@@ -284,14 +390,21 @@ export function classifyLineRejectionReason(line = "") {
 
 export function normalizeItemQualityStatus(item: Record<string, unknown> = {}): ItemQualityStatus {
   const status = compactLine(String(item.item_status || item.status || item.review_status || ""))
+  const reviewStatus = compactLine(String(item.review_status || ""))
+  const confidence = Number(item.confidence_score ?? item.item_quality_score ?? item.confidence ?? 0)
+
   if (status === "user_validated" || status === "user validated") return "user_validated"
-  if (item.needs_review === true) return "needs_review"
-  if (status === "trusted") return "trusted"
   if (status === "rejected") return "rejected"
+  if (item.needs_review === true) return "needs_review"
   if (status === "needs_review" || status === "needs review" || status === "a verifier" || status === "a_verifier") return "needs_review"
-  if (status === "detected" && item.review_status === "trusted") return "trusted"
+  if (status === "trusted" || reviewStatus === "trusted") return "trusted"
+
+  // Important pour les tickets partiels : une ligne detectee avec une forte
+  // confiance OCR reste exploitable individuellement, meme si le ticket entier
+  // n'atteint pas le seuil global des 85 %.
+  if (status === "detected" && confidence >= 85) return "trusted"
   if (status === "detected") return "needs_review"
-  return "needs_review"
+  return confidence >= 85 ? "trusted" : "needs_review"
 }
 
 export function isItemEligibleForSmartShopping(item: Record<string, unknown> = {}) {
@@ -332,8 +445,8 @@ export function extractDeclaredItemsEvidence(text = ""): DeclaredItemsEvidence {
   return { count: finalCount, raw: raw.trim(), source }
 }
 
-export function extractReliableDateCandidates(text = ""): ReliableDateCandidate[] {
-  const candidates: ReliableDateCandidate[] = []
+export function extractReliableDateCandidates(text = "") {
+  const candidates = []
   for (const line of String(text || "").split(/\r?\n/)) {
     const normalized = normalizeReceiptRuleDate(line)
     if (!normalized) continue
@@ -380,7 +493,7 @@ function findFinalPaymentTotal(lines: string[]): TrustedTotal | null {
 }
 
 export function extractTrustedTotal(text = ""): TrustedTotal {
-  const lines = String(text || "").split(/\r?\n/).map(line => line.trim()).filter(Boolean)
+  const lines = String(text || "").split(/\r?\n/).map((line) => line.trim()).filter(Boolean)
   for (let index = lines.length - 1; index >= 0; index -= 1) {
     const line = lines[index]
     const clean = compactLine(line)

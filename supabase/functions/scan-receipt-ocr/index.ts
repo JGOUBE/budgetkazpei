@@ -1,5 +1,6 @@
 import {
   classifyLineRejectionReason,
+  classifySectionSubtotalLine,
   extractDeclaredItemsCount,
   extractDeclaredItemsEvidence,
   extractReliableDateCandidates,
@@ -203,7 +204,7 @@ function isArticleCountTotalLine(value = "") {
 
 function extractDueTotalFromText(text = "") {
   const lines = String(text || "")
-    .split(/\r?\n/)
+    .split("\n")
     .map((line) => line.trim())
     .filter(Boolean)
 
@@ -231,7 +232,7 @@ function extractTotalFromText(text = "") {
   if (dueTotal) return dueTotal
 
   const lines = String(text || "")
-    .split(/\r?\n/)
+    .split("\n")
     .map((line) => line.trim())
     .filter(Boolean)
 
@@ -264,7 +265,7 @@ function isTrustedTotalLabel(line = "") {
 
 function extractTrustedTotalEvidence(text = "", expectedAmount = 0) {
   const lines = String(text || "")
-    .split(/\r?\n/)
+    .split("\n")
     .map((line) => line.trim())
     .filter(Boolean)
 
@@ -313,7 +314,7 @@ function totalRawTextVerifiedAgainstOcr(rawText = "", amount = 0, fallbackText =
   if (!isTrustedTotalLabel(rawText) || isArticleCountTotalLine(rawText)) return false
 
   const lines = String(fallbackText || "")
-    .split(/\r?\n/)
+    .split("\n")
     .map((line) => line.trim())
     .filter(Boolean)
 
@@ -465,7 +466,7 @@ function makeFallbackItem({
 function parseFallbackItemsFromText(text = "") {
   const lines = String(text || "")
     .replace(/\\n/g, "\n")
-    .split(/\r?\n/)
+    .split("\n")
     .map((line) => line.trim())
     .filter(Boolean)
 
@@ -643,19 +644,281 @@ function detectPaymentMethod(line = "") {
 }
 
 function sectionSubtotalDiagnostics(text = "") {
-  const rejected = String(text || "")
-    .split(/\r?\n/)
+  const classified = String(text || "")
+    .split("\n")
     .map((line) => line.trim())
     .filter(Boolean)
-    .filter((line) => isSectionSubtotalLine(line))
-    .map((line) => ({ line, amount: lastMoney(line) }))
+    .map((line) => ({
+      line,
+      amount: lastMoney(line),
+      classification: classifySectionSubtotalLine(line),
+    }))
+    .filter((row) => row.classification.kind !== "none")
+
+  const rejected = classified
+    .filter((row) => row.classification.kind === "confirmed")
+    .map((row) => ({
+      line: row.line,
+      amount: row.amount,
+      reason: row.classification.reason,
+      matched_heading: row.classification.matchedHeading,
+    }))
+
+  const probable = classified
+    .filter((row) => row.classification.kind === "probable")
+    .map((row) => ({
+      line: row.line,
+      amount: row.amount,
+      reason: row.classification.reason,
+      matched_heading: row.classification.matchedHeading,
+    }))
+
   const rejectedAmount = rejected.reduce((sum, row) => sum + Number(row.amount || 0), 0)
+  const probableAmount = probable.reduce((sum, row) => sum + Number(row.amount || 0), 0)
   return {
     rejected,
+    probable,
     rejectedCount: rejected.length,
+    probableCount: probable.length,
     rejectedAmount: Number(rejectedAmount.toFixed(2)),
+    probableAmount: Number(probableAmount.toFixed(2)),
   }
 }
+
+
+const LOCAL_PRODUCT_PRICE_WORDS = [
+  "chips",
+  "rosette",
+  "fuet",
+  "olot",
+  "jambon",
+  "saucisson",
+  "charcut",
+  "tlj",
+  "barre",
+  "cereal",
+  "cereale",
+  "choco",
+  "mimolette",
+  "wimolette",
+  "gouda",
+  "camembert",
+  "panenbert",
+  "gouverneur",
+  "nugget",
+  "crevette",
+  "crevetti",
+  "brocoli",
+  "emmental",
+  "cocciole",
+  "riscossa",
+  "pistache",
+]
+
+const PRODUCT_MATCH_STOP_WORDS = new Set([
+  "prix",
+  "promotion",
+  "eur",
+  "euro",
+  "euros",
+  "cur",
+  "bur",
+  "piece",
+  "unite",
+  "barcode",
+  "article",
+  "produit",
+  "avec",
+  "sans",
+  "les",
+  "des",
+  "une",
+  "pour",
+  "150",
+  "150g",
+  "150gr",
+  "160",
+  "160g",
+  "80g",
+  "808",
+  "1508r",
+])
+
+function localPriceEvidenceTokens(value = "") {
+  const clean = normalizeText(value)
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+
+  return clean
+    .split(" ")
+    .map((token) => token.trim())
+    .filter(Boolean)
+    .filter((token) => token.length >= 3)
+    .filter((token) => !/^\d{5,}$/.test(token))
+    .filter((token) => !/^\d+(g|gr|kg|ml|cl|l|tr|x)?$/.test(token))
+    .filter((token) => !PRODUCT_MATCH_STOP_WORDS.has(token))
+}
+
+function localPriceEvidenceScore(a = "", b = "") {
+  const aTokens = localPriceEvidenceTokens(a)
+  const bTokens = localPriceEvidenceTokens(b)
+  if (!aTokens.length || !bTokens.length) return 0
+
+  const bSet = new Set(bTokens)
+  const overlap = aTokens.filter((token) => bSet.has(token)).length
+  const directKnownProductMatch = LOCAL_PRODUCT_PRICE_WORDS.some((word) => {
+    return aTokens.some((token) => token.includes(word) || word.includes(token))
+      && bTokens.some((token) => token.includes(word) || word.includes(token))
+  })
+
+  return overlap / Math.max(1, Math.min(aTokens.length, bTokens.length)) + (directKnownProductMatch ? 0.35 : 0)
+}
+
+function isLocalProductPriceLine(value = "") {
+  const clean = normalizeText(value)
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+
+  if (!clean) return false
+  if (clean.includes("prix promotion")) return false
+  if (isTrustedPaymentTotalLabel(value)) return false
+  if (classifySectionSubtotalLine(value).kind !== "none") return false
+  if (/\b(total|tva|ttc|fidelite|client|operation|vente|bienvenue|telephone|tel)\b/.test(clean)) return false
+  if (/\b\d{8,14}\b/.test(clean)) return true
+  return LOCAL_PRODUCT_PRICE_WORDS.some((word) => clean.includes(word))
+}
+
+function repairLocalPriceEvidenceAmount(amount = 0, receiptTotal = 0) {
+  if (!Number.isFinite(amount) || amount <= 0) return 0
+  if (receiptTotal > 0 && amount > receiptTotal) {
+    const moduloTen = Number((amount % 10).toFixed(2))
+    if (moduloTen >= 0.1 && moduloTen <= receiptTotal && moduloTen < amount) {
+      return moduloTen
+    }
+  }
+  return Number(amount.toFixed(2))
+}
+
+function extractLocalProductPriceEvidence(text = "", receiptTotal = 0) {
+  const lines = String(text || "")
+    .replace(/\\n/g, "\n")
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+
+  const evidence: Array<Record<string, unknown>> = []
+  let lastProductEvidenceIndex = -1
+  let lastProductLineIndex = -99
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index]
+    const clean = normalizeText(line)
+    const amount = repairLocalPriceEvidenceAmount(lastMoney(line), receiptTotal)
+    const isPromotionPriceLine = clean.includes("prix promotion") || clean.includes("prix pronotion") || clean.includes("prix prowotion")
+
+    if (isPromotionPriceLine && amount > 0 && lastProductEvidenceIndex >= 0 && index - lastProductLineIndex <= 3) {
+      const current = evidence[lastProductEvidenceIndex]
+      current.price = amount
+      current.total_price = amount
+      current.promotion_price = amount
+      current.price_source = "local_promotion_line"
+      current.raw_line = [String(current.raw_line || ""), line].filter(Boolean).join(" | ")
+      continue
+    }
+
+    if (!isLocalProductPriceLine(line)) continue
+
+    const name = cleanItemName(line)
+    if (!name || isIgnoredItemLine(name)) continue
+
+    evidence.push({
+      raw_line: line,
+      name,
+      price: amount || null,
+      total_price: amount || null,
+      price_source: amount > 0 ? "local_product_line" : "local_product_pending_price",
+      line_index: index,
+    })
+    lastProductEvidenceIndex = evidence.length - 1
+    lastProductLineIndex = index
+  }
+
+  return evidence.filter((row) => Number(row.price || row.total_price || 0) > 0)
+}
+
+function correctVisionItemsWithLocalPriceEvidence(
+  items: Record<string, unknown>[] = [],
+  hintText = "",
+  receiptTotal = 0,
+) {
+  const evidence = extractLocalProductPriceEvidence(hintText, receiptTotal)
+  if (!items.length || !evidence.length) return items
+
+  return items.map((item) => {
+    const itemText = [item.name, item.ocr_name, item.raw_text, item.source_line]
+      .filter(Boolean)
+      .join(" ")
+    const currentAmount = numericTotal(item.total_price) || numericTotal(item.price) || numericTotal(item.unit_price)
+    let bestEvidence: Record<string, unknown> | null = null
+    let bestScore = 0
+
+    for (const row of evidence) {
+      const rowText = [row.name, row.raw_line].filter(Boolean).join(" ")
+      const score = localPriceEvidenceScore(itemText, rowText)
+      if (score > bestScore) {
+        bestScore = score
+        bestEvidence = row
+      }
+    }
+
+    if (!bestEvidence || bestScore < 0.35) {
+      const repaired = repairLocalPriceEvidenceAmount(currentAmount, receiptTotal)
+      if (repaired > 0 && Math.abs(repaired - currentAmount) > 0.05) {
+        return {
+          ...item,
+          total_price: repaired,
+          price: repaired,
+          unit_price: Number(item.quantity || 1) === 1 ? repaired : item.unit_price,
+          price_correction_source: "oversized_ocr_amount_repaired",
+          price_correction_raw_text: String(item.raw_text || item.source_line || item.ocr_name || item.name || ""),
+          needs_review: true,
+          review_status: "needs_review",
+          item_status: "needs_review",
+          confidence_score: Math.min(Number(item.confidence_score || 65), 65),
+        }
+      }
+      return item
+    }
+
+    const evidenceAmount = Number(bestEvidence.price || bestEvidence.total_price || 0)
+    if (evidenceAmount <= 0) return item
+
+    const priceSource = String(bestEvidence.price_source || "")
+    const shouldCorrect = Math.abs(evidenceAmount - currentAmount) > 0.05
+      && (
+        priceSource === "local_promotion_line"
+        || currentAmount <= 0
+        || (receiptTotal > 0 && currentAmount > receiptTotal)
+        || evidenceAmount < currentAmount
+      )
+
+    if (!shouldCorrect) return item
+
+    return {
+      ...item,
+      total_price: evidenceAmount,
+      price: evidenceAmount,
+      unit_price: Number(item.quantity || 1) === 1 ? evidenceAmount : item.unit_price,
+      price_correction_source: priceSource || "local_price_evidence",
+      price_correction_raw_text: String(bestEvidence.raw_line || ""),
+      price_correction_previous_amount: currentAmount || null,
+      confidence_score: Math.max(Number(item.confidence_score || 0), priceSource === "local_promotion_line" ? 98 : 88),
+    }
+  })
+}
+
 
 const SECTION_SUBTOTAL_KEYWORDS = [
   "surgeles",
@@ -750,8 +1013,11 @@ function smartShoppingBlockReasons({
   const reasons = new Set<string>()
   if (Number(totalDelta || 0) > 0.05) reasons.add("items_total_mismatch")
   if (lostPossibleProductLines.length > 0) reasons.add("lost_possible_product_lines")
-  if (items.some((item) => isSectionSubtotalLine(String(item.source_line || item.raw_text || item.ocr_name || item.name || "")))) {
+  if (items.some((item) => classifySectionSubtotalLine(String(item.source_line || item.raw_text || item.ocr_name || item.name || "")).kind === "confirmed")) {
     reasons.add("section_subtotal_kept_as_item")
+  }
+  if (items.some((item) => classifySectionSubtotalLine(String(item.source_line || item.raw_text || item.ocr_name || item.name || "")).kind === "probable")) {
+    reasons.add("section_subtotal_probable_kept_as_item")
   }
   if (items.some((item) => containsSectionSubtotalKeyword(String(item.ocr_name || item.name || "")) && !hasKnownLocalProductSignal(String(item.ocr_name || item.name || "")))) {
     reasons.add("section_heading_kept_as_item")
@@ -759,7 +1025,7 @@ function smartShoppingBlockReasons({
   if (items.some((item) => hasDominantOcrNoise(String(item.raw_text || item.ocr_name || item.name || "")))) {
     reasons.add("dominant_ocr_noise")
   }
-  if (Number(totalDelta || 0) > 0.05 && sectionSubtotal.rejectedCount === 0 && String(text || "").split(/\r?\n/).some((line) => containsSectionSubtotalKeyword(line))) {
+  if (Number(totalDelta || 0) > 0.05 && sectionSubtotal.rejectedCount === 0 && String(text || "").split("\n").some((line) => containsSectionSubtotalKeyword(line))) {
     reasons.add("section_subtotals_present_but_not_rejected")
   }
   if (items.some((item) => Number(item.item_quality_score || item.confidence_score || 0) < 70 && normalizeItemQualityStatus(item) === "trusted")) {
@@ -785,7 +1051,7 @@ function applySmartShoppingGuard(items: Record<string, unknown>[], blockedReason
 
 function localOcrTextPresenceDiagnostics(text = "", total = 0, declaredCount = 0) {
   const lines = String(text || "")
-    .split(/\r?\n/)
+    .split("\n")
     .map((line) => line.trim())
     .filter(Boolean)
   const totalLikeLine = lines.find((line) => {
@@ -836,10 +1102,16 @@ function buildFastLocalExtraction(text = "") {
     source: "local_ocr",
   }))
   const sectionSubtotal = sectionSubtotalDiagnostics(text)
-  const rejectedBeforeItemLimitLines = sectionSubtotal.rejected.map((row) => ({
-    line: row.line,
-    reason: "section_subtotal",
-  }))
+  const rejectedBeforeItemLimitLines = [
+    ...sectionSubtotal.rejected.map((row) => ({
+      line: row.line,
+      reason: row.reason || "section_subtotal_confirmed",
+    })),
+    ...sectionSubtotal.probable.map((row) => ({
+      line: row.line,
+      reason: row.reason || "section_subtotal_probable",
+    })),
+  ]
   const textPresence = localOcrTextPresenceDiagnostics(text, total, expectedItemsCount)
   const itemLimitAppliedAfterFiltering = expectedItemsCount > 0 && rawItems.length > expectedItemsCount
   const lostPossibleProductLines = itemLimitAppliedAfterFiltering
@@ -922,7 +1194,14 @@ function buildFastLocalExtraction(text = "") {
     section_subtotals_rejected_amount: sectionSubtotal.rejectedAmount,
     section_subtotals_rejected: sectionSubtotal.rejected,
     section_subtotals_rejected_lines: sectionSubtotal.rejected.map((row) => row.line),
-    rejected_section_subtotal_examples: sectionSubtotal.rejected.map((row) => row.line).slice(0, 8),
+    section_subtotals_probable_count: sectionSubtotal.probableCount,
+    section_subtotals_probable_amount: sectionSubtotal.probableAmount,
+    section_subtotals_probable: sectionSubtotal.probable,
+    section_subtotals_probable_lines: sectionSubtotal.probable.map((row) => row.line),
+    rejected_section_subtotal_examples: [
+      ...sectionSubtotal.rejected.map((row) => row.line),
+      ...sectionSubtotal.probable.map((row) => row.line),
+    ].slice(0, 8),
     items_kept_lines: items.map((item) => String(item.ocr_name || item.name || "")),
     items_rejected_lines: rejectedBeforeItemLimitLines,
     items_total_vs_receipt_total_delta: itemsTotalVsReceiptTotalDelta,
@@ -1036,11 +1315,16 @@ async function runOpenAiTextFallback(text: string, imageSize: Record<string, unk
 
   let receipt
   try {
+    const textFallbackTotal = extractFinalTotalFromStructured(parsed, text)
     receipt = {
       store_name: String(parsed.merchant || parsed.store_name || detectLocalMerchant(text) || "").trim(),
       purchase_date: detectLocalDate(String(parsed.date || "")) || detectLocalDate(text),
-      total_amount: extractFinalTotalFromStructured(parsed, text),
-      items: normalizeOpenAiItems(Array.isArray(parsed.items) ? parsed.items : []),
+      total_amount: textFallbackTotal,
+      items: correctVisionItemsWithLocalPriceEvidence(
+        normalizeOpenAiItems(Array.isArray(parsed.items) ? parsed.items : []),
+        text,
+        textFallbackTotal,
+      ),
     }
   } catch (mappingError) {
     return {
@@ -1221,7 +1505,11 @@ async function runOpenAiVisionFallback({
       total_confidence: totalEvidence.confidence,
       total_needs_review: totalEvidence.amount <= 0,
       total_source: totalEvidence.source,
-      items: normalizeOpenAiItems(Array.isArray(parsed.items) ? parsed.items : []),
+      items: correctVisionItemsWithLocalPriceEvidence(
+        normalizeOpenAiItems(Array.isArray(parsed.items) ? parsed.items : []),
+        hintText,
+        totalEvidence.amount,
+      ),
       needs_review: Boolean(parsed.needs_review),
       warnings: Array.isArray(parsed.warnings) ? parsed.warnings : [],
     }
@@ -1280,7 +1568,7 @@ function isLikelyFoodTicket(receipt: { store_name?: string; items?: Record<strin
 }
 
 function countOcrLines(text = "") {
-  return String(text || "").split(/\r?\n/).map((line) => line.trim()).filter(Boolean).length
+  return String(text || "").split("\n").map((line) => line.trim()).filter(Boolean).length
 }
 
 function expectedItemsForFoodTicket(text = "") {
@@ -1392,13 +1680,15 @@ function buildSegmentPrompt(segment = "") {
     return [
       "Tu analyses uniquement la zone basse d'un ticket de caisse.",
       "Objectif: derniers articles, nombre d'articles, total final fiable, reste a payer, net a payer, paiement.",
-      '{"segment":"bottom","items":[],"printed_items_count":null,"total":null,"total_raw_text":"","total_confidence":0,"total_source":"","warnings":[]}',
+      '{"segment":"bottom","items":[],"printed_items_count":null,"total":null,"total_raw_text":"","total_confidence":0,"total_source":"","payment_method":"","payment_total":null,"payment_raw_text":"","payment_confidence":0,"warnings":[]}',
       commonRules,
       "Le total final doit etre extrait uniquement si une ligne claire est visible.",
-      "Priorite total: RESTE A PAYER, RESTE A PAYER, NET A PAYER, NET A PAYER, A PAYER, A PAYER, TOTAL.",
+      "Priorite total: RESTE A PAYER, NET A PAYER, A PAYER, TOTAL.",
       "Ne jamais utiliser Total X articles comme montant.",
-      "Ne jamais utiliser CB ou carte bleue comme preuve de total.",
-      'Si la ligne total n est pas claire: total:null, total_confidence:0, total_source:"missing_or_unreliable".',
+      "Si aucune ligne TOTAL/RESTE A PAYER lisible n'est visible, la ligne paiement final CARTE BLEUE/CB/ESPECES peut confirmer le total uniquement si elle est claire, en bas du ticket, et si le montant est lisible.",
+      "Si tu utilises la ligne paiement final comme preuve, renseigne aussi payment_total, payment_raw_text et total_source:\"payment_total_line\".",
+      "Ne jamais utiliser une ligne CB/carte bleue illisible, tronquee ou sans montant complet comme preuve de total.",
+      'Si aucune preuve de total ou paiement final clair n est visible: total:null, total_confidence:0, total_source:"missing_or_unreliable".',
     ].join("\n")
   }
 
@@ -1431,44 +1721,95 @@ function isDueTotalLabel(line = "") {
     || clean.includes("solde a payer")
 }
 
+function isTrustedPaymentTotalLabel(line = "") {
+  const clean = normalizeText(line)
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+
+  return clean.includes("carte bleue")
+    || clean.includes("corte bleue")
+    || clean.includes("carte bancaire")
+    || /\bcb\b/.test(clean)
+    || clean.includes("visa")
+    || clean.includes("mastercard")
+    || clean.includes("especes")
+    || clean.includes("espece")
+    || clean.includes("cash")
+}
+
 function resolveSegmentTotal(parsed: Record<string, unknown>) {
   const amount = numericTotal(parsed.total) || numericTotal(parsed.total_amount)
   const rawText = String(parsed.total_raw_text || parsed.total_source_line || "").trim()
   const confidence = confidence01(parsed.total_confidence)
+  const paymentAmount = numericTotal(parsed.payment_total) || numericTotal(parsed.payment_amount)
+  const paymentRawText = String(parsed.payment_raw_text || parsed.payment_source_line || "").trim()
+  const paymentConfidence = confidence01(parsed.payment_confidence ?? parsed.total_confidence ?? 0)
   const dueLine = isDueTotalLabel(rawText)
-  const bareTotalLine = /\btotal\b/i.test(normalizeText(rawText)) && !dueLine
+  const totalLine = /\btotal\b/i.test(normalizeText(rawText)) && !isArticleCountTotalLine(rawText)
+  const paymentLine = isTrustedPaymentTotalLabel(rawText)
 
-  if (amount > 0 && rawText && isTrustedTotalLabel(rawText) && !isArticleCountTotalLine(rawText) && confidence >= 0.7) {
-    if (bareTotalLine) {
+  if (amount > 0 && rawText && isTrustedTotalLabel(rawText) && !isArticleCountTotalLine(rawText)) {
+    if (dueLine && confidence >= 0.7) {
       return {
-        amount: 0,
+        amount,
         rawText,
         confidence,
-        source: "missing_or_unreliable",
-        rejectedReason: "total_line_not_proven",
+        source: "split_bottom_due_total_line",
+        rejectedReason: "",
+      }
+    }
+
+    if (totalLine && confidence >= 0.85) {
+      return {
+        amount,
+        rawText,
+        confidence,
+        source: "split_bottom_total_line",
+        rejectedReason: "",
       }
     }
 
     return {
+      amount: 0,
+      rawText,
+      confidence,
+      source: "missing_or_unreliable",
+      rejectedReason: "total_line_not_proven",
+    }
+  }
+
+  if (amount > 0 && rawText && paymentLine && confidence >= 0.85) {
+    return {
       amount,
       rawText,
       confidence,
-      source: "split_bottom_total_line",
+      source: "split_bottom_payment_total_line",
+      rejectedReason: "",
+    }
+  }
+
+  if (paymentAmount > 0 && paymentRawText && isTrustedPaymentTotalLabel(paymentRawText) && paymentConfidence >= 0.85) {
+    return {
+      amount: paymentAmount,
+      rawText: paymentRawText,
+      confidence: paymentConfidence,
+      source: "split_bottom_payment_total_line",
       rejectedReason: "",
     }
   }
 
   return {
     amount: 0,
-    rawText,
-    confidence,
+    rawText: rawText || paymentRawText,
+    confidence: Math.max(confidence, paymentConfidence),
     source: "missing_or_unreliable",
-    rejectedReason: rawText ? "total_line_not_proven" : "total_missing",
+    rejectedReason: rawText || paymentRawText ? "total_line_not_proven" : "total_missing",
   }
 }
 
 function segmentOcrHint(text = "", segment = "") {
-  const lines = String(text || "").split(/\r?\n/).map((line) => line.trim()).filter(Boolean)
+  const lines = String(text || "").split("\n").map((line) => line.trim()).filter(Boolean)
   if (lines.length === 0) return ""
   const maxLines = 18
   if (segment === "top") return lines.slice(0, maxLines).join("\n").slice(0, 1200)
@@ -1639,6 +1980,93 @@ function itemDedupKey(item: Record<string, unknown>) {
     .trim()
 }
 
+
+function extractMoneyCandidates(value = "") {
+  return Array.from(String(value || "").matchAll(/(-?\d+(?:\s?\d{3})*[,.]\d{2})/g))
+    .map((match) => Number(String(match[1] || "").replace(/\s/g, "").replace(",", ".")))
+    .filter((amount) => Number.isFinite(amount) && amount > 0)
+}
+
+function isPrimaryOpenAiAmountOnlyTotal(rawText = "", amount = 0) {
+  const compact = String(rawText || "").trim()
+  if (!compact || amount <= 0) return false
+  if (isArticleCountTotalLine(compact)) return false
+
+  const values = extractMoneyCandidates(compact)
+  const hasSameAmount = values.some((value) => Math.abs(value - amount) <= 0.05)
+  if (!hasSameAmount) return false
+
+  const normalized = normalizeText(compact)
+    .replace(/[^a-z0-9., ]/g, " ")
+    .replace(/\b(eur|euro|euros)\b/g, " ")
+    .replace(/\b(cur|bur)\b/g, " ")
+    .replace(/[0-9]+[,.][0-9]{2}/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+
+  return normalized.length === 0
+}
+
+function isReliablePrimaryOpenAiTotal(receipt: Record<string, unknown>) {
+  const openAiAmount = numericTotal(receipt.openai_total_value)
+  const amount = openAiAmount || numericTotal(receipt.total_amount)
+  if (amount <= 0) return false
+
+  const confidence = confidence01(receipt.openai_total_confidence ?? receipt.total_confidence ?? 0)
+  const rawText = String(receipt.openai_total_raw_text || receipt.total_raw_text || "").trim()
+  if (confidence < 0.85) return false
+  if (!rawText || isArticleCountTotalLine(rawText)) return false
+
+  // IMPORTANT: openai_total_value is already an explicit structured field from the
+  // primary Vision pass. Sometimes OpenAI returns raw text as only "18.39 EUR"
+  // instead of "TOTAL 18.39 EUR". The split retry must not erase that reliable
+  // primary total just because the label word is absent from raw_text.
+  if (openAiAmount > 0 && isPrimaryOpenAiAmountOnlyTotal(rawText, openAiAmount)) {
+    return true
+  }
+
+  return isTrustedTotalLabel(rawText)
+}
+
+function primaryOpenAiTotalEvidence(receipt: Record<string, unknown>) {
+  if (!isReliablePrimaryOpenAiTotal(receipt)) {
+    return { amount: 0, rawText: "", confidence: 0, source: "" }
+  }
+
+  return {
+    amount: numericTotal(receipt.openai_total_value) || numericTotal(receipt.total_amount),
+    rawText: String(receipt.openai_total_raw_text || receipt.total_raw_text || "").trim(),
+    confidence: confidence01(receipt.openai_total_confidence ?? receipt.total_confidence ?? 0),
+    source: "openai_primary_total_preserved",
+  }
+}
+
+function primaryVisionCanStopBeforeSplit({
+  receipt,
+  visionItemsCount,
+  reliableItemsCount,
+  expectedItemsMin,
+}: {
+  receipt: Record<string, unknown>
+  visionItemsCount: number
+  reliableItemsCount: number
+  expectedItemsMin: number
+}) {
+  const totalEvidence = primaryOpenAiTotalEvidence(receipt)
+  if (totalEvidence.amount <= 0) return false
+  if (!String(receipt.store_name || "").trim()) return false
+  if (!String(receipt.purchase_date || "").trim()) return false
+
+  // Split is expensive and can reintroduce duplicated/noisy lines on short tickets.
+  // For long tickets, keep split because item coverage matters more.
+  if (expectedItemsMin >= 15) return false
+
+  // Short grocery ticket: a reliable primary total + several reliable items is enough
+  // for budget registration. Articles may still remain review-only for smart shopping.
+  return reliableItemsCount >= 5 || visionItemsCount >= 5
+}
+
+
 function mergeSplitReceiptResults(
   splitResults: Record<string, unknown>[],
   baseReceipt: Record<string, unknown> & { items?: Record<string, unknown>[]; warnings?: unknown[] },
@@ -1679,11 +2107,31 @@ function mergeSplitReceiptResults(
   const effectiveExpectedItemsMin = bestDeclaredEvidence.count || Number(expectedItemsMin || 0)
   const bottomReceipt = receipts.find((receipt) => Number(receipt.total_amount || 0) > 0 && String(receipt.total_source || "").includes("split_bottom"))
   const detectedTotalAmount = Number(bottomReceipt?.total_amount || 0)
+  const primaryTotal = primaryOpenAiTotalEvidence(baseReceipt)
+  const splitTotalContradictsPrimary = detectedTotalAmount > 0
+    && primaryTotal.amount > 0
+    && Math.abs(detectedTotalAmount - primaryTotal.amount) > 0.05
+  const preservedPrimaryTotalAmount = detectedTotalAmount <= 0 && !splitTotalContradictsPrimary ? primaryTotal.amount : 0
   const rawItemsCount = items.length
   const reliableCount = reliableItemsCount(items)
   const improved = rawItemsCount > (Array.isArray(baseReceipt.items) ? baseReceipt.items.length : 0)
-  const totalBlockedByQuality = Boolean(options.imageQualityWarning && effectiveExpectedItemsMin >= 20 && detectedTotalAmount > 0)
-  const totalAmount = totalBlockedByQuality ? 0 : detectedTotalAmount
+  const totalBlockedByQuality = Boolean(options.imageQualityWarning && effectiveExpectedItemsMin >= 20 && (detectedTotalAmount > 0 || preservedPrimaryTotalAmount > 0))
+  const totalAmount = totalBlockedByQuality ? 0 : (detectedTotalAmount || preservedPrimaryTotalAmount)
+  const totalSource = totalAmount
+    ? detectedTotalAmount > 0
+      ? "split_bottom_total_line"
+      : "openai_primary_total_preserved"
+    : "missing_or_unreliable"
+  const totalRawText = totalAmount
+    ? detectedTotalAmount > 0
+      ? String(bottomReceipt?.total_raw_text || "")
+      : primaryTotal.rawText
+    : ""
+  const totalConfidence = totalAmount
+    ? detectedTotalAmount > 0
+      ? Number(bottomReceipt?.total_confidence || 0)
+      : primaryTotal.confidence
+    : 0
   const scanStatus = classifyLongTicketScanStatus({
     totalAmount,
     reliableCount,
@@ -1708,13 +2156,14 @@ function mergeSplitReceiptResults(
       store_location: finalStoreLocation,
       purchase_date: String(receipts.find((receipt) => receipt.purchase_date)?.purchase_date || baseReceipt.purchase_date || ""),
       total_amount: totalAmount || null,
-      total_raw_text: totalAmount ? String(bottomReceipt?.total_raw_text || "") : "",
-      total_confidence: totalAmount ? Number(bottomReceipt?.total_confidence || 0) : 0,
+      total_raw_text: totalRawText,
+      total_confidence: totalConfidence,
       total_needs_review: totalAmount <= 0,
-      total_source: totalAmount ? "split_bottom_total_line" : "missing_or_unreliable",
+      total_source: totalSource,
       total_rejected_reason: totalAmount ? "" : (totalBlockedByQuality ? "low_image_quality_total_not_auto_trusted" : "split_total_missing_or_unreliable"),
       total_raw_text_verified_against_ocr: false,
-      total_verified_against_segment_text: totalAmount > 0,
+      total_verified_against_segment_text: detectedTotalAmount > 0,
+      total_preserved_from_openai_primary: preservedPrimaryTotalAmount > 0,
       expected_items_count: bestDeclaredEvidence.count || baseReceipt.expected_items_count || null,
       expected_items_min: effectiveExpectedItemsMin || null,
       expected_items_source: bestDeclaredEvidence.count ? bestDeclaredEvidence.source : "not_found",
@@ -1733,9 +2182,12 @@ function mergeSplitReceiptResults(
     declaredItemsCount: bestDeclaredEvidence.count || null,
     declaredItemsRawText: bestDeclaredEvidence.raw || "",
     expectedItemsSource: bestDeclaredEvidence.count ? bestDeclaredEvidence.source : "not_found",
-    splitTotalValue: totalAmount || null,
-    splitTotalRawText: totalAmount ? String(bottomReceipt?.total_raw_text || "") : "",
-    splitTotalConfidence: totalAmount ? Number(bottomReceipt?.total_confidence || 0) : 0,
+    splitTotalValue: detectedTotalAmount || null,
+    splitTotalRawText: detectedTotalAmount ? String(bottomReceipt?.total_raw_text || "") : "",
+    splitTotalConfidence: detectedTotalAmount ? Number(bottomReceipt?.total_confidence || 0) : 0,
+    preservedPrimaryTotalValue: preservedPrimaryTotalAmount || null,
+    preservedPrimaryTotalRawText: preservedPrimaryTotalAmount ? primaryTotal.rawText : "",
+    preservedPrimaryTotalConfidence: preservedPrimaryTotalAmount ? primaryTotal.confidence : 0,
     improved,
   }
 }
@@ -2261,6 +2713,9 @@ function normalizeItems(rawItems: unknown[] = []) {
     const ocrName = String(item.ocr_name || sourceLine || name).trim()
     const finalName = cleanItemName(name || ocrName)
 
+    const sectionSubtotal = classifySectionSubtotalLine(String(item.raw_text || item.source_line || ocrName || finalName))
+    if (sectionSubtotal.kind !== "none") continue
+
     const ocrLooksIgnored = isIgnoredItemLine(ocrName)
     const ocrCleanName = cleanItemName(ocrName)
     if (isPhoneOrContactLine(sourceLine) || isPhoneOrContactLine(finalName)) continue
@@ -2624,6 +3079,9 @@ Deno.serve(async (req) => {
       section_subtotals_rejected_count: localReceipt.section_subtotals_rejected_count,
       section_subtotals_rejected_amount: localReceipt.section_subtotals_rejected_amount,
       section_subtotals_rejected_lines: localReceipt.section_subtotals_rejected_lines,
+      section_subtotals_probable_count: localReceipt.section_subtotals_probable_count,
+      section_subtotals_probable_amount: localReceipt.section_subtotals_probable_amount,
+      section_subtotals_probable_lines: localReceipt.section_subtotals_probable_lines,
       items_kept_lines: localReceipt.items_kept_lines,
       items_total_vs_receipt_total_delta: localReceipt.items_total_vs_receipt_total_delta,
       ocr_text_has_total: localReceipt.ocr_text_has_total,
@@ -2748,6 +3206,10 @@ Deno.serve(async (req) => {
             : imageQualityWarning && splitDiagnostics.recovery_ratio !== null && Number(splitDiagnostics.recovery_ratio) < 0.4
               ? "low_image_quality_and_low_recovery"
               : ""
+          const primaryTimeoutTotalUnavailable = primaryStage === "openai_vision_primary_exception" && /timeout/i.test(String(primaryError || ""))
+          const splitBottomSegment = splitSegmentsResults.find((segment: Record<string, unknown>) => String(segment.segment_name || segment.segment || "") === "bottom")
+          const splitBottomSegmentTotalMissing = Boolean(splitBottomSegment && splitBottomSegment.total_found !== true)
+          const totalMissingAfterPrimaryTimeout = Boolean(primaryTimeoutTotalUnavailable && splitBottomSegmentTotalMissing && splitReceipt.total_needs_review)
 
           return {
             response: jsonResponse({
@@ -2808,6 +3270,9 @@ Deno.serve(async (req) => {
               total_verified_against_local_ocr: splitReceipt.total_raw_text_verified_against_ocr === true && localOcrAvailable,
               total_verified_against_segment_text: splitReceipt.total_verified_against_segment_text === true,
               scan_reliability_blocked_reason: scanReliabilityBlockedReason,
+              primary_timeout_total_unavailable: primaryTimeoutTotalUnavailable,
+              split_bottom_segment_total_missing: splitBottomSegmentTotalMissing,
+              total_missing_after_primary_timeout: totalMissingAfterPrimaryTimeout,
               scan_strategy_used_detail: "primary_failed_then_mini_split_3",
               primary_stage: primaryStage,
               primary_error: primaryError,
@@ -2831,6 +3296,9 @@ Deno.serve(async (req) => {
               split_total_value: merged.splitTotalValue,
               split_total_raw_text: merged.splitTotalRawText,
               split_total_confidence: merged.splitTotalConfidence,
+              preserved_primary_total_value: merged.preservedPrimaryTotalValue || null,
+              preserved_primary_total_raw_text: merged.preservedPrimaryTotalRawText || "",
+              preserved_primary_total_confidence: merged.preservedPrimaryTotalConfidence || 0,
               total_raw_text_verified_against_ocr: splitReceipt.total_raw_text_verified_against_ocr === true,
               total_rejected_reason: splitReceipt.total_rejected_reason || "",
               total_raw_text: splitReceipt.total_raw_text || "",
@@ -2876,6 +3344,9 @@ Deno.serve(async (req) => {
                 total_verified_against_local_ocr: splitReceipt.total_raw_text_verified_against_ocr === true && localOcrAvailable,
                 total_verified_against_segment_text: splitReceipt.total_verified_against_segment_text === true,
                 scan_reliability_blocked_reason: scanReliabilityBlockedReason,
+              primary_timeout_total_unavailable: primaryTimeoutTotalUnavailable,
+              split_bottom_segment_total_missing: splitBottomSegmentTotalMissing,
+              total_missing_after_primary_timeout: totalMissingAfterPrimaryTimeout,
                 primary_stage: primaryStage,
                 primary_error: primaryError,
                 fallback_stage: "openai_vision_split_retry",
@@ -3077,7 +3548,12 @@ Deno.serve(async (req) => {
           })
         }
         const validatedVisionReceipt = visionValidation.receipt
-        const mergedItems = pickBestItems(validatedVisionReceipt.items || [], localReceipt.items)
+        const primaryVisionItems = Array.isArray(validatedVisionReceipt.items) ? validatedVisionReceipt.items : []
+        const shouldPreferPrimaryVisionItems = primaryVisionItems.length >= 5 && visionValidation.reliableItemsCount >= 5
+        const sourceItems = shouldPreferPrimaryVisionItems
+          ? primaryVisionItems
+          : pickBestItems(primaryVisionItems, localReceipt.items)
+        const mergedItems = sourceItems
           .map((item) => visionValidation.scanStatus === "partial_low_items"
             ? {
                 ...item,
@@ -3087,9 +3563,7 @@ Deno.serve(async (req) => {
                 confidence_score: Math.min(Number(item.confidence_score || 45), 45),
               }
             : item)
-        const visionTotal = Number(validatedVisionReceipt.total_amount || 0)
-        const canUseEstimatedTotal = visionValidation.scanStatus !== "partial_low_items" && visionTotal <= 0 && mergedItems.length >= 3
-        const provisionalTotal = visionTotal || (canUseEstimatedTotal ? sumReceiptItems(mergedItems) : 0)
+        let visionTotal = Number(validatedVisionReceipt.total_amount || 0)
         const visionReceipt = {
           ...localReceipt,
           ...validatedVisionReceipt,
@@ -3105,22 +3579,51 @@ Deno.serve(async (req) => {
           items: mergedItems,
           warnings: visionValidation.warnings,
         }
+        const primaryVisionTotalEvidence = primaryOpenAiTotalEvidence(visionReceipt)
+        if (!visionTotal && primaryVisionTotalEvidence.amount > 0) {
+          visionTotal = primaryVisionTotalEvidence.amount
+          Object.assign(visionReceipt, {
+            total_amount: primaryVisionTotalEvidence.amount,
+            total_status: "detected",
+            total_needs_review: false,
+            total_source: primaryVisionTotalEvidence.source,
+            total_raw_text: primaryVisionTotalEvidence.rawText,
+            total_confidence: primaryVisionTotalEvidence.confidence,
+            total_rejected_reason: "",
+            total_preserved_from_openai_primary: true,
+            estimated_items_sum: null,
+          })
+        }
         const visionItemsCount = mergedItems.length
         const visionFoodTicket = isLikelyFoodTicket(visionReceipt, browserText)
         const visionExpectedMin = visionFoodTicket ? expectedItemsForFoodTicket(browserText) : 0
+        const primaryVisionEnoughWithoutSplit = primaryVisionCanStopBeforeSplit({
+          receipt: visionReceipt,
+          visionItemsCount,
+          reliableItemsCount: visionValidation.reliableItemsCount,
+          expectedItemsMin: visionExpectedMin,
+        })
+        const canUseEstimatedTotal = visionValidation.scanStatus !== "partial_low_items" && visionTotal <= 0 && mergedItems.length >= 3
+        const provisionalTotal = visionTotal || (canUseEstimatedTotal ? sumReceiptItems(mergedItems) : 0)
         const needsReview = !visionTotal
           || Boolean(visionReceipt.needs_review)
           || (visionExpectedMin > 0 && visionItemsCount < Math.ceil(visionExpectedMin * 0.6))
-        const visionScanStatus = visionValidation.scanStatus === "partial_low_items" || needsReview ? "partial_low_items" : "partial"
-        const shouldSplit = shouldRunSplitRetry({
-          isPremiumPlus,
-          scanStatus: visionScanStatus,
-          totalNeedsReview: !visionTotal,
-          expectedItemsMin: visionExpectedMin,
-          reliableItemsDetected: visionValidation.reliableItemsCount,
-          confidence: visionScanStatus === "partial_low_items" ? 45 : 88,
-          imageSize: requestImageSize,
-        })
+        const visionScanStatus = primaryVisionEnoughWithoutSplit
+          ? "usable_review"
+          : visionValidation.scanStatus === "partial_low_items" || needsReview
+            ? "partial_low_items"
+            : "partial"
+        const shouldSplit = primaryVisionEnoughWithoutSplit
+          ? false
+          : shouldRunSplitRetry({
+              isPremiumPlus,
+              scanStatus: visionScanStatus,
+              totalNeedsReview: !visionTotal,
+              expectedItemsMin: visionExpectedMin,
+              reliableItemsDetected: visionValidation.reliableItemsCount,
+              confidence: visionScanStatus === "partial_low_items" ? 45 : 88,
+              imageSize: requestImageSize,
+            })
 
         if (shouldSplit) {
           console.info("[scan-receipt-ocr] premium_plus_split_retry", {
@@ -3154,6 +3657,10 @@ Deno.serve(async (req) => {
               : imageQualityWarning && splitDiagnostics.recovery_ratio !== null && Number(splitDiagnostics.recovery_ratio) < 0.4
                 ? "low_image_quality_and_low_recovery"
                 : ""
+            const primaryTimeoutTotalUnavailable = false
+            const splitBottomSegment = splitSegmentsResults.find((segment: Record<string, unknown>) => String(segment.segment_name || segment.segment || "") === "bottom")
+            const splitBottomSegmentTotalMissing = Boolean(splitBottomSegment && splitBottomSegment.total_found !== true)
+            const totalMissingAfterPrimaryTimeout = false
 
             return jsonResponse({
               ok: true,
@@ -3206,6 +3713,9 @@ Deno.serve(async (req) => {
               split_total_value: merged.splitTotalValue,
               split_total_raw_text: merged.splitTotalRawText,
               split_total_confidence: merged.splitTotalConfidence,
+              preserved_primary_total_value: merged.preservedPrimaryTotalValue || null,
+              preserved_primary_total_raw_text: merged.preservedPrimaryTotalRawText || "",
+              preserved_primary_total_confidence: merged.preservedPrimaryTotalConfidence || 0,
               total_raw_text_verified_against_ocr: splitReceipt.total_raw_text_verified_against_ocr === true,
               total_rejected_reason: splitReceipt.total_rejected_reason || "",
               total_raw_text: splitReceipt.total_raw_text || "",
@@ -3249,6 +3759,9 @@ Deno.serve(async (req) => {
               total_verified_against_local_ocr: splitReceipt.total_raw_text_verified_against_ocr === true && localOcrAvailable,
               total_verified_against_segment_text: splitReceipt.total_verified_against_segment_text === true,
               scan_reliability_blocked_reason: scanReliabilityBlockedReason,
+              primary_timeout_total_unavailable: primaryTimeoutTotalUnavailable,
+              split_bottom_segment_total_missing: splitBottomSegmentTotalMissing,
+              total_missing_after_primary_timeout: totalMissingAfterPrimaryTimeout,
               diagnostics: {
                 split_retry_eligible: true,
                 split_retry_used: true,
@@ -3284,6 +3797,9 @@ Deno.serve(async (req) => {
                 total_verified_against_local_ocr: splitReceipt.total_raw_text_verified_against_ocr === true && localOcrAvailable,
                 total_verified_against_segment_text: splitReceipt.total_verified_against_segment_text === true,
                 scan_reliability_blocked_reason: scanReliabilityBlockedReason,
+              primary_timeout_total_unavailable: primaryTimeoutTotalUnavailable,
+              split_bottom_segment_total_missing: splitBottomSegmentTotalMissing,
+              total_missing_after_primary_timeout: totalMissingAfterPrimaryTimeout,
                 primary_stage: "openai_vision_primary",
                 primary_error: "",
                 fallback_stage: "openai_vision_split_retry",
@@ -3325,6 +3841,8 @@ Deno.serve(async (req) => {
             vision_used: true,
             scan_ai_calls_count: 1,
             split_retry_used: false,
+            split_retry_skipped_reason: primaryVisionEnoughWithoutSplit ? "primary_vision_sufficient_short_ticket" : "not_needed",
+            primary_vision_sufficient_without_split: primaryVisionEnoughWithoutSplit,
             strong_fallback_used: false,
             items_detected_before_openai: itemsDetectedBeforeOpenAi,
             total_detected_before_openai: totalDetectedBeforeOpenAi,
@@ -3337,6 +3855,9 @@ Deno.serve(async (req) => {
             total_detected_by_vision: visionTotal > 0,
             total_estimated_from_items: false,
             total_needs_review: !visionTotal,
+            preserved_primary_total_value: primaryVisionTotalEvidence.amount || null,
+            preserved_primary_total_raw_text: primaryVisionTotalEvidence.rawText || "",
+            preserved_primary_total_confidence: primaryVisionTotalEvidence.confidence || 0,
             openai_total_value: visionReceipt.openai_total_value ?? null,
             openai_total_raw_text: visionReceipt.openai_total_raw_text || "",
             openai_total_confidence: visionReceipt.openai_total_confidence ?? 0,

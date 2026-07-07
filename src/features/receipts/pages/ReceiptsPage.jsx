@@ -71,7 +71,7 @@ const TEXT = {
     status: "Statut",
     open: "Ouvrir",
     deleteTicket: "Retirer le ticket",
-    confirmDelete: "Le ticket ne sera plus affiche dans votre historique. L'image du ticket sera supprimee si elle existe. Les donnees de courses resteront utilisees pour vos statistiques et vos Courses intelligentes.",
+    confirmDelete: "Le ticket sera retire de votre historique et la depense liee sera retiree du budget. Les suppressions automatiques apres 7 jours, elles, conservent les transactions et les statistiques.",
     duplicateTitle: "Ticket deja enregistre ?",
     duplicateMessage: "Ce ticket semble deja enregistre. Voulez-vous quand meme l'ajouter ?",
     duplicateAddAnyway: "Ajouter quand meme",
@@ -86,6 +86,8 @@ const TEXT = {
     itemNeedsReview: "A verifier",
     itemNotUsedForSmartShopping: "Non utilise pour Courses intelligentes",
     articlesToReview: "Articles a verifier",
+    partialArticlesLabel: "Budget valide — certains articles a verifier",
+    correctArticles: "Corriger les articles",
     unreliableDetectedLines: "Lignes detectees non fiables",
     viewDetails: "Voir le detail",
     saved: "Course enregistree.",
@@ -128,7 +130,7 @@ const TEXT = {
     status: "Leta",
     open: "Ouvrir",
     deleteTicket: "Tir tike-la",
-    confirmDelete: "Tike-la va disparet dann listwar ou. Zimaz tike-la va etre supprime si li existe. Me bann done kours-la va kontinye servi pou statistik ek Kours intelligentes.",
+    confirmDelete: "Tike-la va sorti dann listwar ou ek depans-la va sorti dann bidze. Bann suppression otomatik apre 7 zour, zot i gard tranzaksyon ek statistik.",
     duplicateTitle: "Tike-la deja anrezistre ?",
     duplicateMessage: "Sa tike-la i semble deja anrezistre. Ou veu azout ali kan meme ?",
     duplicateAddAnyway: "Azout kan meme",
@@ -143,6 +145,8 @@ const TEXT = {
     itemNeedsReview: "Pou verifie",
     itemNotUsedForSmartShopping: "Pa servi pou Courses intelligentes",
     articlesToReview: "Bann lartik pou verifie",
+    partialArticlesLabel: "Bidze valide — nana lartik pou verifie",
+    correctArticles: "Korize bann lartik",
     unreliableDetectedLines: "Bann lign trouve pa ase sir",
     viewDetails: "War detay",
     saved: "Course anrezistree.",
@@ -190,6 +194,37 @@ function isIsoDate(value = "") {
   return /^\d{4}-\d{2}-\d{2}$/.test(String(value || ""))
 }
 
+
+function isClearlyNonProductReceiptLine(value = "") {
+  const raw = normalizeLabel(value)
+  if (!raw) return true
+
+  if (/\b(carte|corte)\s+bleue\b/.test(raw)) return true
+  if (/\b(cb|especes|cash|paiement|monnaie|rendu)\b/.test(raw)) return true
+  if (/\b(total|reste a payer|net a payer|a payer|tva|ttc|ht|operation|vente|bienvenue|duplicata|fidelite|client|points?)\b/.test(raw)) return true
+
+  const productWords = [
+    "chips", "rosette", "fuet", "tlj", "barre", "cereal", "cereale", "choco",
+    "mimolette", "wimolette", "gouda", "camembert", "panenbert", "gouverneur",
+    "crevette", "brocoli", "nugget", "nuggets", "huile", "kinder", "bueno",
+    "salade", "pomme", "terre", "champignon", "echalote",
+  ]
+  const hasProductSignal = productWords.some(word => raw.includes(word))
+    || /\b\d{8,14}\b/.test(raw)
+    || /\b\d+(?:[,.]\d+)?\s*(g|gr|kg|ml|cl|l)\b/.test(raw)
+    || /\b\d+\s*(tranches?|tr|x)\b/.test(raw)
+
+  const sectionOnly = /^(charcuter(?:ie|te)?|epicer(?:ie|te)(?: sucree| salee)?|cremerie|crererie|surgeles|sungeles|surgele|boissons(?: sans alcool)?|ultra frais|volaille|ppi)(?:\s+(?:1s|ls|l5|is))?$/.test(raw)
+  if (sectionOnly && !hasProductSignal) return true
+
+  const tokens = raw.split(" ").filter(Boolean)
+  const letters = raw.replace(/[^a-z]/g, "")
+  if (!hasProductSignal && tokens.length <= 3 && letters.length <= 8) return true
+  if (!hasProductSignal && tokens.every(token => token.length <= 3)) return true
+
+  return false
+}
+
 function isBlockedReceiptItem(item = {}) {
   const name = normalizeLabel(item.name)
   const ocrName = normalizeLabel(item.ocr_name)
@@ -202,19 +237,21 @@ function isBlockedReceiptItem(item = {}) {
   if (raw.includes("prix promotion") || raw.includes("total") || raw.includes("carte bleue")) return true
   if (raw.includes("duplicata") || raw.includes("operation") || raw.includes("bienvenue")) return true
   if (raw.includes("ventilation") || raw.includes("tva") || raw.includes("ttc") || raw.includes(" ht ")) return true
+  if (isClearlyNonProductReceiptLine(item.name || item.ocr_name || item.raw_text || item.source_line || "")) return true
 
   return false
 }
 
 function getValidDraftItems(draft = {}) {
   const scanStatus = String(draft.scan_status || "")
-  const partialLowItems = scanStatus.includes("partial_low_items") || scanStatus.includes("long_manual_review") || scanStatus.includes("long_usable_review")
+  const trustedAutoScan = isTrustedAutoScanPayload(draft)
+  const partialLowItems = !trustedAutoScan && (scanStatus.includes("partial_low_items") || scanStatus.includes("long_manual_review") || scanStatus.includes("long_usable_review"))
   return (draft.items || [])
     .filter(item => !isBlockedReceiptItem(item))
     .map(item => {
       const placeholder = /produit.*v.*rifier/.test(normalizeLabel(item.name))
       const forceReview = partialLowItems || item.needs_review || placeholder || Number(item.confidence_score || 0) < 70
-      const qualityStatus = forceReview ? "needs_review" : normalizeItemQualityStatus(item)
+      const qualityStatus = forceReview ? "needs_review" : (trustedAutoScan ? "trusted" : normalizeItemQualityStatus(item))
       const finalStatus = qualityStatus === "needs_review" ? "a_verifier" : qualityStatus
 
       return {
@@ -298,17 +335,84 @@ function isBudgetOkArticlesBlocked(parsed = {}) {
     || (budgetStatus === "reliable" && itemsQualityStatus === "blocked")
 }
 
+function isBudgetOkArticlesPartial(receipt = {}) {
+  const scanStatus = String(receipt.scan_status || receipt.final_scan_status || receipt.parser_debug?.final_scan_status || "")
+  const itemsQualityStatus = String(receipt.items_quality_status || receipt.parser_debug?.items_quality_status || "")
+  const smartShoppingSafe = receipt.smart_shopping_safe ?? receipt.parser_debug?.smart_shopping_safe
+  const total = Number(receipt.total_amount || 0)
+
+  return total > 0
+    && receipt.total_needs_review !== true
+    && (scanStatus.includes("budget_ok_articles_partial") || (smartShoppingSafe === true && itemsQualityStatus === "partial"))
+}
+
+function isBudgetReliableScannedReceipt(receipt = {}) {
+  const total = Number(receipt.total_amount || 0)
+  const scanStatus = String(receipt.scan_status || receipt.final_scan_status || receipt.parser_debug?.final_scan_status || "")
+  const budgetStatus = String(receipt.budget_status || receipt.parser_debug?.budget_status || "")
+  return total > 0
+    && receipt.total_needs_review !== true
+    && String(receipt.ocr_status || "").toLowerCase() !== "manual"
+    && (budgetStatus === "reliable" || scanStatus.includes("budget_ok_articles_"))
+}
+
+function getReceiptLearningCounts(receipt = {}) {
+  const items = Array.isArray(receipt.receipt_items) ? receipt.receipt_items : Array.isArray(receipt.items) ? receipt.items : []
+  const usableItems = items.filter(item => !isBlockedReceiptItem(item))
+  const trustedItems = usableItems.filter(item => isItemEligibleForSmartShopping(item))
+  const storedTrusted = Number(receipt.trusted_items_count || receipt.parser_debug?.trusted_items_count || 0)
+  const storedNeedsReview = Number(receipt.needs_review_items_count || receipt.parser_debug?.needs_review_items_count || 0)
+  const storedReference = Number(receipt.real_items_count_if_known || receipt.parser_debug?.real_items_count_if_known || receipt.parser_debug?.raw_items_detected_by_vision || receipt.parser_debug?.reliable_items_detected_by_vision || 0)
+
+  const trusted = trustedItems.length || storedTrusted
+  const total = storedReference || usableItems.length || trusted + storedNeedsReview
+  const needsReview = Math.max(0, total - trusted) || storedNeedsReview
+
+  return { trusted, total, needsReview }
+}
+
+function getPartialArticleLabel(receipt = {}, txt) {
+  const counts = getReceiptLearningCounts(receipt)
+  if (counts.trusted > 0 && counts.total > counts.trusted) {
+    return `${counts.trusted} article(s) exploitables / ${counts.total}`
+  }
+  if (counts.trusted > 0) return `${counts.trusted} article(s) exploitables`
+  return txt.partialArticlesLabel
+}
+
+function isTrustedAutoScanPayload(receipt = {}) {
+  const scanStatus = String(receipt.scan_status || receipt.final_scan_status || receipt.parser_debug?.final_scan_status || "")
+  const itemsQualityStatus = String(receipt.items_quality_status || receipt.parser_debug?.items_quality_status || "")
+  const smartShoppingSafe = receipt.smart_shopping_safe ?? receipt.parser_debug?.smart_shopping_safe
+  const total = Number(receipt.total_amount || 0)
+
+  if (total <= 0 || receipt.total_needs_review === true) return false
+  if (scanStatus.includes("budget_ok_articles_ok") || scanStatus.includes("trusted")) return true
+  if (smartShoppingSafe === true && itemsQualityStatus === "trusted") return true
+  if (receipt.primary_vision_trusted_for_smart_shopping === true || receipt.parser_debug?.primary_vision_trusted_for_smart_shopping === true) return true
+
+  return false
+}
+
+function isLockedScannedReceipt(receipt = {}) {
+  if (!isTrustedAutoScanPayload(receipt)) return false
+  return String(receipt.ocr_status || "").toLowerCase() !== "manual"
+}
+
 function canFeedSmartShoppingFromDraft(draft = {}) {
   const scanStatus = String(draft.scan_status || "")
+  if (draft.total_needs_review === true) return false
+  if (isTrustedAutoScanPayload(draft)) return true
   if (isBudgetOkArticlesBlocked(draft)) return false
   if (draft.smart_shopping_safe === false || draft.parser_debug?.smart_shopping_safe === false) return false
   if (String(draft.items_quality_status || draft.parser_debug?.items_quality_status || "") === "blocked") return false
   if (scanStatus.includes("budget_needs_review") || scanStatus.includes("rejected")) return false
-  if (draft.total_needs_review === true) return false
   return true
 }
 
 function receiptHasUnreliableArticleCount(receipt = {}) {
+  if (isTrustedAutoScanPayload(receipt) || isBudgetOkArticlesPartial(receipt)) return false
+
   const scanStatus = String(receipt.scan_status || receipt.final_scan_status || receipt.parser_debug?.final_scan_status || "")
   const itemsQualityStatus = String(receipt.items_quality_status || receipt.parser_debug?.items_quality_status || "")
   const smartShoppingSafe = receipt.smart_shopping_safe ?? receipt.parser_debug?.smart_shopping_safe
@@ -324,21 +428,64 @@ function receiptHasUnreliableArticleCount(receipt = {}) {
 }
 
 function getReceiptArticleCountLabel(receipt = {}, txt) {
+  const items = Array.isArray(receipt.receipt_items) ? receipt.receipt_items : []
+  const reliableItems = items.filter(item => !isBlockedReceiptItem(item))
+  const computedCount = reliableItems.length
+  const storedCount = Number(
+    receipt.displayed_items_count
+    || receipt.trusted_items_count
+    || receipt.items_detected
+    || receipt.receipt_items_count
+    || receipt.parser_debug?.displayed_items_count
+    || receipt.parser_debug?.trusted_items_count
+    || 0
+  )
+  const count = computedCount || storedCount
+
+  if (isTrustedAutoScanPayload(receipt)) {
+    return count > 0 ? `${count} article(s)` : "Articles reconnus"
+  }
+
+  if (isBudgetOkArticlesPartial(receipt)) {
+    return getPartialArticleLabel(receipt, txt)
+  }
+
+  const explicitLabel = receipt.item_count_display_label || receipt.parser_debug?.item_count_display_label
+  if (explicitLabel && (String(explicitLabel).includes("exploitable") || !/^\d+\s+article/i.test(String(explicitLabel)))) return explicitLabel
   if (receiptHasUnreliableArticleCount(receipt)) return txt.articlesToReview
-  const count = Array.isArray(receipt.receipt_items) ? receipt.receipt_items.length : 0
+
   return count > 0 ? `${count} article(s)` : txt.unreliableDetectedLines
 }
 
 function getArticleCountDisplayInfo({ parsed = {}, items = [], trustedItems = [], needsReviewItems = [] }) {
+  if (isTrustedAutoScanPayload(parsed)) {
+    const trustedCount = trustedItems.length || items.filter(item => !isBlockedReceiptItem(item)).length
+    return {
+      displayed_items_count: trustedCount || null,
+      displayed_items_count_source: "trusted_auto_scan",
+      real_items_count_if_known: null,
+      item_count_display_label: trustedCount > 0 ? `${trustedCount} article(s)` : "Articles reconnus",
+    }
+  }
+
   const expectedCount = Number(parsed.expected_items_count || parsed.expected_items_min || parsed.declared_items_count || 0)
   const declaredCountKnown = expectedCount > 0 && String(parsed.expected_items_source || parsed.items_count_status || "").includes("declared")
   const itemsQualityStatus = String(parsed.items_quality_status || parsed.parser_debug?.items_quality_status || "")
   const smartShoppingSafe = parsed.smart_shopping_safe ?? parsed.parser_debug?.smart_shopping_safe
+  if (smartShoppingSafe === true && trustedItems.length > 0 && (itemsQualityStatus === "partial" || needsReviewItems.length > 0)) {
+    const referenceCount = expectedCount || items.length || trustedItems.length + needsReviewItems.length
+    return {
+      displayed_items_count: trustedItems.length,
+      displayed_items_count_source: "partial_trusted_items_count",
+      real_items_count_if_known: referenceCount || null,
+      item_count_display_label: `${trustedItems.length} article(s) exploitables / ${referenceCount || items.length}`,
+    }
+  }
+
   const blocked = isBudgetOkArticlesBlocked(parsed)
     || smartShoppingSafe === false
     || itemsQualityStatus === "blocked"
     || itemsQualityStatus === "needs_review"
-    || needsReviewItems.length > 0
 
   if (blocked) {
     return {
@@ -388,6 +535,13 @@ function getScanResultMessage({ parsed = {}, detectedItemsCount = 0, issues = []
     return isKreol
       ? `Tike-la le bien lir - ${detectedItemsCount} lartik trouve.`
       : `Ticket lu avec succes - ${detectedItemsCount} articles detectes.`
+  }
+
+  if (isBudgetOkArticlesPartial(parsed)) {
+    const counts = getReceiptLearningCounts(parsed)
+    return isKreol
+      ? `Bidze valide - ${counts.trusted || detectedItemsCount} lartik eksplwatab, ${counts.needsReview} pou verifie.`
+      : `Budget valide - ${counts.trusted || detectedItemsCount} article(s) exploitables, ${counts.needsReview} a verifier.`
   }
 
   if (scanStatus.includes("usable_review")) {
@@ -811,12 +965,54 @@ export default function ReceiptsPage({
     })
 
     const validItems = getValidDraftItems(parsed)
-    const currentReceipt = await createReceipt({ userId: user?.id, draft: parsed, imagePath })
+    const trustedValidItems = validItems.filter(item => isItemEligibleForSmartShopping(item))
+    const needsReviewValidItems = validItems.filter(item => !isItemEligibleForSmartShopping(item))
+    const partialLabel = `${trustedValidItems.length} article(s) exploitables / ${validItems.length || trustedValidItems.length}`
+    const draftToPersist = isTrustedAutoScanPayload(parsed)
+      ? {
+          ...parsed,
+          items: validItems,
+          smart_shopping_safe: true,
+          items_quality_status: "trusted",
+          item_count_display_label: `${validItems.length} article(s)`,
+          scan_status: parsed.scan_status || "budget_ok_articles_ok",
+          parser_debug: {
+            ...(parsed.parser_debug || {}),
+            smart_shopping_safe: true,
+            items_quality_status: "trusted",
+            trusted_items_count: validItems.length,
+            needs_review_items_count: 0,
+            displayed_items_count: validItems.length,
+            displayed_items_count_source: "trusted_auto_scan",
+            item_count_display_label: `${validItems.length} article(s)`,
+          },
+        }
+      : isBudgetOkArticlesPartial(parsed)
+        ? {
+            ...parsed,
+            items: validItems,
+            smart_shopping_safe: true,
+            items_quality_status: "partial",
+            item_count_display_label: partialLabel,
+            scan_status: "budget_ok_articles_partial",
+            parser_debug: {
+              ...(parsed.parser_debug || {}),
+              smart_shopping_safe: true,
+              items_quality_status: "partial",
+              trusted_items_count: trustedValidItems.length,
+              needs_review_items_count: needsReviewValidItems.length,
+              displayed_items_count: trustedValidItems.length,
+              displayed_items_count_source: "partial_trusted_items_count",
+              item_count_display_label: partialLabel,
+            },
+          }
+        : parsed
+    const currentReceipt = await createReceipt({ userId: user?.id, draft: draftToPersist, imagePath })
     const importStartedAt = performance.now()
     const importResult = await importValidatedReceipt({
       userId: user?.id,
       receipt: currentReceipt,
-      draft: parsed,
+      draft: draftToPersist,
       items: validItems,
     })
     const importDurationMs = Math.round(performance.now() - importStartedAt)
@@ -866,7 +1062,7 @@ export default function ReceiptsPage({
     await refreshReceipts()
     window.dispatchEvent(new CustomEvent("budgetkazpei:transactions-updated"))
     console.info("SCANNER_SUMMARY", buildScannerSummary({
-      parsed,
+      parsed: draftToPersist,
       items: validItems,
       metrics,
       importResult: {
@@ -906,41 +1102,36 @@ export default function ReceiptsPage({
     setBusy(true)
 
     try {
-      console.info("[scanner] Articles valides", validItems.length)
+      console.info("[scanner] Enregistrement centralise", { items: validItems.length })
       const currentReceipt = receipt || await createReceipt({ userId: user?.id, draft, imagePath: pendingImagePath })
-      const amount = Math.abs(Number(draft.total_amount || 0))
-      const transactionPayload = {
-        label: `Courses - ${draft.store_name}`,
-        category: globalCategory || "alimentaire",
-        amount: -amount,
-        date: draft.purchase_date || new Date().toISOString().split("T")[0],
-        icon: "",
-        source: "receipt_scan",
-        receipt_id: currentReceipt.id,
-      }
-
-      const txResult = await onAddTransaction?.(transactionPayload)
-      if (txResult.error) throw txResult.error
-
-      await validateReceipt({
-        receiptId: currentReceipt.id,
+      const importStartedAt = performance.now()
+      const importResult = await importValidatedReceipt({
         userId: user?.id,
+        receipt: currentReceipt,
         draft,
         items: validItems,
-        transactionId: txResult.data.id,
       })
+      const importDurationMs = Math.round(performance.now() - importStartedAt)
 
-      if (draft.is_food_ticket && canFeedSmartShoppingFromDraft(draft)) {
-        await syncShoppingItemsFromReceipt({
+      try {
+        await createScanMetric({
           userId: user?.id,
-          transactionId: txResult.data.id,
-          receipt: {
-            id: currentReceipt.id,
-            store_name: draft.store_name,
-            purchase_date: draft.purchase_date,
+          receiptId: currentReceipt.id,
+          metrics: {
+            manualSave: draft.ocr_status === "manual",
+            importDurationMs,
+            itemsDetected: validItems.length,
+            receiptItemsCreated: importResult.receiptItemsCreated || 0,
+            shoppingItemsCreated: importResult.shoppingItemsCreated || 0,
+            transactionCreated: importResult.transactionCreated === true,
+            transactionUpdated: importResult.transactionUpdated === true,
+            transactionSkipReason: importResult.transactionSkipReason || "",
+            success: true,
           },
-          items: validItems.filter(item => isItemEligibleForSmartShopping(item)),
+          status: "success",
         })
+      } catch (metricError) {
+        console.warn("[scanner] scan_metrics manuel indisponible", metricError)
       }
 
       setMessage(txt.saved)
@@ -1106,7 +1297,7 @@ export default function ReceiptsPage({
     setBusy(true)
 
     try {
-      await deleteReceipt({ receipt: detail, userId: user?.id })
+      await deleteReceipt({ receipt: detail, userId: user?.id, removeBudget: true, removeLearning: true, reason: "user_removed_receipt" })
       setDetail(null)
       setDetailImageUrl("")
       setMode("history")
@@ -1125,7 +1316,7 @@ export default function ReceiptsPage({
 
     setBusy(true)
     try {
-      await deleteReceipt({ receipt: row, userId: user?.id })
+      await deleteReceipt({ receipt: row, userId: user?.id, removeBudget: true, removeLearning: true, reason: "user_removed_receipt" })
       setReceipts(prev => prev.filter(receiptRow => receiptRow.id !== row.id))
       setMessage(txt.deleted)
       await refreshReceipts()
@@ -1139,6 +1330,10 @@ export default function ReceiptsPage({
 
   async function handleUpdateReceipt(updates) {
     if (!detail || !user?.id) return
+    if (isLockedScannedReceipt(detail)) {
+      setMessage("Ce ticket est issu d'un scan fiable. Il est verrouille pour proteger vos Courses intelligentes.")
+      return
+    }
 
     setBusy(true)
     try {
@@ -1175,14 +1370,35 @@ export default function ReceiptsPage({
 
   async function handleUpdateReceiptItem(itemId, updates) {
     if (!detail || !user?.id) return
+    if (isLockedScannedReceipt(detail)) {
+      setMessage("Ce ticket est issu d'un scan fiable. Ses articles ne sont plus modifiables.")
+      return
+    }
 
     setBusy(true)
     try {
       const next = await updateReceiptItem({ itemId, userId: user?.id, updates })
+      const updatedItem = { ...next, ...updates }
       setDetail(prev => ({
         ...prev,
-        receipt_items: (prev.receipt_items || []).map(item => item.id === itemId ? { ...item, ...next } : item),
+        receipt_items: (prev.receipt_items || []).map(item => item.id === itemId ? { ...item, ...updatedItem } : item),
       }))
+
+      if (detail.is_food_ticket && detail.transaction_id && isItemEligibleForSmartShopping(updatedItem)) {
+        await syncShoppingItemsFromReceipt({
+          userId: user?.id,
+          transactionId: detail.transaction_id,
+          receipt: {
+            id: detail.id,
+            store_name: detail.store_name,
+            purchase_date: detail.purchase_date,
+            scan_status: detail.scan_status,
+          },
+          items: [updatedItem],
+        })
+        window.dispatchEvent(new CustomEvent("budgetkazpei:transactions-updated"))
+      }
+
       setMessage("Ligne mise a jour.")
     } catch (error) {
       console.error("Erreur modification ligne ticket:", error)
@@ -1194,6 +1410,10 @@ export default function ReceiptsPage({
 
   async function handleDeleteReceiptItem(itemId) {
     if (!detail || !user?.id) return
+    if (isLockedScannedReceipt(detail)) {
+      setMessage("Ce ticket est issu d'un scan fiable. Ses articles ne sont plus modifiables.")
+      return
+    }
 
     setBusy(true)
     try {
@@ -1464,6 +1684,9 @@ function ValidationForm({
   const articlesBlocked = isBudgetOkArticlesBlocked(draft)
   const partialLowItems = String(draft?.scan_status || "").includes("partial_low_items") || articlesBlocked
   const displayDetectedLines = !articlesBlocked || showBlockedDetectedLines
+  const visibleDraftItems = (draft.items || [])
+    .map((item, index) => ({ item, index }))
+    .filter(row => !isBlockedReceiptItem(row.item))
 
   return (
     <div style={cardStyle()}>
@@ -1594,7 +1817,7 @@ function ValidationForm({
       )}
 
       <div style={{ display: displayDetectedLines ? "grid" : "none", gap: 12 }}>
-        {(draft.items || []).map((item, index) => {
+        {visibleDraftItems.map(({ item, index }) => {
           const itemAllowed = isItemEligibleForSmartShopping(item)
           const itemNeedsReview = normalizeItemQualityStatus(item) !== "trusted" || articlesBlocked || item.needs_review === true
           return (
@@ -1725,7 +1948,7 @@ function HistoryList({ txt, rows, busy, onOpen, onDelete }) {
               </span>
               <span style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: 8 }}>
                 <button type="button" disabled={busy} onClick={() => onOpen(row)} style={{ minHeight: 40, borderRadius: 12, border: "none", background: COLORS.accent, color: "#fff", fontWeight: 950, padding: "0 12px" }}>
-                  {receiptHasUnreliableArticleCount(row) ? txt.viewDetails : "Modifier"}
+                  {isBudgetOkArticlesPartial(row) ? txt.correctArticles : isLockedScannedReceipt(row) || receiptHasUnreliableArticleCount(row) ? txt.viewDetails : "Modifier"}
                 </button>
                 <button type="button" disabled={busy} onClick={() => onDelete(row)} style={{ minHeight: 40, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "transparent", color: COLORS.muted, fontWeight: 950, padding: "0 12px" }}>
                   {txt.deleteTicket}
@@ -1788,6 +2011,10 @@ function ReceiptDetail({
     setItemDrafts(entries)
   }, [receipt])
 
+  const lockedReceipt = isLockedScannedReceipt(receipt)
+  const partialReceipt = isBudgetOkArticlesPartial(receipt)
+  const headerLocked = lockedReceipt || isBudgetReliableScannedReceipt(receipt)
+
   return (
     <div style={cardStyle()}>
       <button type="button" onClick={onBack} style={{ minHeight: 44, background: "transparent", border: "none", color: COLORS.cyan, fontWeight: 900, cursor: "pointer" }}>
@@ -1799,6 +2026,16 @@ function ReceiptDetail({
       {receipt.scan_status === "partial" && (
         <div style={{ marginTop: 8, color: COLORS.yellow, fontSize: 13, fontWeight: 900, lineHeight: 1.45 }}>
           L'analyse complete n'a pas pu etre terminee. Les donnees disponibles ont ete sauvegardees.
+        </div>
+      )}
+      {lockedReceipt && (
+        <div style={{ marginTop: 8, color: COLORS.cyan, fontSize: 13, fontWeight: 900, lineHeight: 1.45 }}>
+          Ticket verrouille : le scan est assez fiable pour le budget et les Courses intelligentes. Vous pouvez le consulter ou le retirer, mais pas modifier ses lignes.
+        </div>
+      )}
+      {partialReceipt && (
+        <div style={{ marginTop: 8, color: COLORS.yellow, fontSize: 13, fontWeight: 900, lineHeight: 1.45 }}>
+          Budget valide : le total est verrouille. Vous pouvez corriger ou valider uniquement les articles a verifier. Les articles fiables alimentent deja Courses intelligentes.
         </div>
       )}
       <h2 style={{ color: COLORS.text, margin: "10px 0 6px" }}>{receipt.store_name || txt.scanTitle}</h2>
@@ -1814,18 +2051,20 @@ function ReceiptDetail({
         {receipt.is_food_ticket && <ActionButton label="Voir mes Courses intelligentes" icon="" onClick={onOpenShoppingList} disabled={busy} muted />}
       </div>
       <div style={{ display: "grid", gap: 10 }}>
-        <input style={inputStyle()} value={receiptDraft.store_name} onChange={event => setReceiptDraft(prev => ({ ...prev, store_name: event.target.value }))} />
-        <input style={inputStyle()} type="date" value={receiptDraft.purchase_date || ""} onChange={event => setReceiptDraft(prev => ({ ...prev, purchase_date: event.target.value, date_status: "detected" }))} />
-        <input style={inputStyle()} type="number" min="0" step="0.01" value={receiptDraft.total_amount} onChange={event => setReceiptDraft(prev => ({ ...prev, total_amount: event.target.value }))} />
-        <button type="button" disabled={busy || Number(receiptDraft.total_amount || 0) <= 0} onClick={() => onUpdateReceipt({
-          store_name: receiptDraft.store_name || "Enseigne non reconnue",
-          merchant_name: receiptDraft.store_name || "Enseigne non reconnue",
-          purchase_date: receiptDraft.purchase_date || new Date().toISOString().slice(0, 10),
-          date_status: receiptDraft.date_status || "detected",
-          total_amount: Number(receiptDraft.total_amount || 0),
-        })} style={{ minHeight: 44, borderRadius: 12, border: "none", background: COLORS.cyan, color: "#06101F", fontWeight: 950 }}>
-          Mettre a jour le ticket
-        </button>
+        <input style={inputStyle()} value={receiptDraft.store_name} readOnly={headerLocked} onChange={event => !headerLocked && setReceiptDraft(prev => ({ ...prev, store_name: event.target.value }))} />
+        <input style={inputStyle()} type="date" value={receiptDraft.purchase_date || ""} readOnly={headerLocked} onChange={event => !headerLocked && setReceiptDraft(prev => ({ ...prev, purchase_date: event.target.value, date_status: "detected" }))} />
+        <input style={inputStyle()} type="number" min="0" step="0.01" value={receiptDraft.total_amount} readOnly={headerLocked} onChange={event => !headerLocked && setReceiptDraft(prev => ({ ...prev, total_amount: event.target.value }))} />
+        {!headerLocked && (
+          <button type="button" disabled={busy || Number(receiptDraft.total_amount || 0) <= 0} onClick={() => onUpdateReceipt({
+            store_name: receiptDraft.store_name || "Enseigne non reconnue",
+            merchant_name: receiptDraft.store_name || "Enseigne non reconnue",
+            purchase_date: receiptDraft.purchase_date || new Date().toISOString().slice(0, 10),
+            date_status: receiptDraft.date_status || "detected",
+            total_amount: Number(receiptDraft.total_amount || 0),
+          })} style={{ minHeight: 44, borderRadius: 12, border: "none", background: COLORS.cyan, color: "#06101F", fontWeight: 950 }}>
+            Mettre a jour le ticket
+          </button>
+        )}
       </div>
       {imageUrl && (
         <div style={{ marginTop: 14 }}>
@@ -1839,15 +2078,21 @@ function ReceiptDetail({
         Lignes d'articles
       </div>
       <div style={{ display: "grid", gap: 8, marginTop: 10 }}>
-        {(receipt.receipt_items || []).map(item => (
+        {(receipt.receipt_items || []).filter(item => !isBlockedReceiptItem(item)).map(item => (
           <div key={item.id} style={{ display: "grid", gap: 8, color: COLORS.text, borderBottom: "1px solid rgba(255,255,255,.08)", paddingBottom: 10 }}>
             {item.ocr_name && item.ocr_name !== item.name && (
               <div style={{ color: COLORS.muted, fontSize: 12 }}>OCR : {item.ocr_name}</div>
             )}
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {isItemEligibleForSmartShopping(item)
+                ? <MetaChip label="Utilise pour Courses intelligentes" strong />
+                : <MetaChip label="A verifier avant Courses intelligentes" />}
+            </div>
             <input
               style={inputStyle()}
                     value={itemDrafts[item.id]?.name ?? item.name ?? ""}
-              onChange={event => setItemDrafts(prev => ({ ...prev, [item.id]: { ...(prev[item.id] || {}), name: event.target.value } }))}
+              readOnly={lockedReceipt}
+              onChange={event => !lockedReceipt && setItemDrafts(prev => ({ ...prev, [item.id]: { ...(prev[item.id] || {}), name: event.target.value } }))}
             />
             <div style={{ display: "grid", gridTemplateColumns: "1fr auto auto", gap: 8 }}>
               <input
@@ -1856,25 +2101,33 @@ function ReceiptDetail({
                 min="0"
                 step="0.01"
                     value={itemDrafts[item.id]?.total_price ?? item.total_price ?? ""}
-                onChange={event => setItemDrafts(prev => ({ ...prev, [item.id]: { ...(prev[item.id] || {}), total_price: event.target.value } }))}
+                readOnly={lockedReceipt}
+                onChange={event => !lockedReceipt && setItemDrafts(prev => ({ ...prev, [item.id]: { ...(prev[item.id] || {}), total_price: event.target.value } }))}
               />
-              <button type="button" disabled={busy} onClick={() => onUpdateItem(item.id, {
-                name: itemDrafts[item.id].name || item.name,
-                corrected_name: itemDrafts[item.id].name || item.name,
-                      total_price: Number(itemDrafts[item.id]?.total_price ?? item.total_price ?? 0),
-                category: itemDrafts[item.id].category || item.category || "alimentaire",
-                item_status: "detected",
-              })} style={{ minHeight: 44, borderRadius: 12, border: "none", background: COLORS.green, color: "#06101F", fontWeight: 950, padding: "0 12px" }}>
-                Valider
-              </button>
-              <button type="button" disabled={busy} onClick={() => onDeleteItem(item.id)} style={{ minHeight: 44, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "transparent", color: COLORS.muted, fontWeight: 950, padding: "0 12px" }}>
-                {txt.remove}
-              </button>
+              {!lockedReceipt && (
+                <button type="button" disabled={busy} onClick={() => onUpdateItem(item.id, {
+                  name: itemDrafts[item.id].name || item.name,
+                  corrected_name: itemDrafts[item.id].name || item.name,
+                  total_price: Number(itemDrafts[item.id]?.total_price ?? item.total_price ?? 0),
+                  category: itemDrafts[item.id].category || item.category || "alimentaire",
+                  item_status: "user_validated",
+                  review_status: "trusted",
+                  needs_review: false,
+                })} style={{ minHeight: 44, borderRadius: 12, border: "none", background: COLORS.green, color: "#06101F", fontWeight: 950, padding: "0 12px" }}>
+                  Valider
+                </button>
+              )}
+              {!lockedReceipt && (
+                <button type="button" disabled={busy} onClick={() => onDeleteItem(item.id)} style={{ minHeight: 44, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "transparent", color: COLORS.muted, fontWeight: 950, padding: "0 12px" }}>
+                  {txt.remove}
+                </button>
+              )}
             </div>
             <select
               style={inputStyle()}
-              value={itemDrafts[item.id].category || item.category || "alimentaire"}
-              onChange={event => setItemDrafts(prev => ({ ...prev, [item.id]: { ...(prev[item.id] || {}), category: event.target.value } }))}
+              value={itemDrafts[item.id]?.category || item.category || "alimentaire"}
+              disabled={lockedReceipt}
+              onChange={event => !lockedReceipt && setItemDrafts(prev => ({ ...prev, [item.id]: { ...(prev[item.id] || {}), category: event.target.value } }))}
             >
               {CATEGORIES.map(category => (
                 <option key={category.id} value={category.id}>{category.id}</option>

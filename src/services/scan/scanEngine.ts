@@ -88,6 +88,365 @@ function resolveFinalScanStatus({
   return "budget_ok_articles_blocked"
 }
 
+
+function normalizeFinalItemText(value = "") {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[€£$]/g, " ")
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
+function roundMoney(value: unknown) {
+  return Math.round((Number(value) || 0) * 100) / 100
+}
+
+function finalItemAmount(item: any = {}, receiptTotal = 0) {
+  const total = Number(receiptTotal || 0)
+  const values = [item?.total_price, item?.price, item?.unit_price]
+    .map(value => Number(value))
+    .filter(value => Number.isFinite(value) && value > 0)
+
+  const plausibleDirect = values.find(value => {
+    if (value <= 0) return false
+    if (total > 0) return value <= Math.max(30, total * 1.15)
+    return value <= 100
+  })
+  if (plausibleDirect) return roundMoney(plausibleDirect)
+
+  const raw = finalItemRawText(item)
+  const first = values[0] || 0
+  if (first > 0 && hasFinalProductSignal(raw)) {
+    const candidates = [
+      first % 10,
+      first % 100,
+      first / 10,
+      first / 100,
+    ]
+      .map(roundMoney)
+      .filter(value => value >= 0.20 && value <= 30 && (!total || value <= total))
+
+    if (candidates.length > 0) return candidates[0]
+  }
+
+  return roundMoney(first)
+}
+
+function finalItemRawText(item: any = {}) {
+  return String(item?.name || item?.corrected_name || item?.ocr_name || item?.raw_text || item?.source_line || "").trim()
+}
+
+const FINAL_ITEM_PRODUCT_WORDS = [
+  "chips",
+  "rosette",
+  "fuet",
+  "jambon",
+  "saucisson",
+  "saucisses",
+  "tlj",
+  "barre",
+  "cereal",
+  "cereale",
+  "choco",
+  "mimolette",
+  "wimolette",
+  "gouda",
+  "camembert",
+  "panenbert",
+  "gouverneur",
+  "crevette",
+  "crevetti",
+  "brocoli",
+  "nugget",
+  "nuggets",
+  "veggie",
+  "huile",
+  "lesieur",
+  "tournesol",
+  "pomme",
+  "terre",
+  "salade",
+  "echalote",
+  "champignon",
+  "dolce",
+  "mousse",
+  "kinder",
+  "bueno",
+  "joker",
+  "jus",
+  "riz",
+  "pates",
+  "thon",
+  "oeuf",
+  "oeufs",
+  "matines",
+]
+
+const FINAL_SECTION_WORDS = [
+  "charcuterie",
+  "charcuterte",
+  "charcuter",
+  "epicerie",
+  "epicerte",
+  "cremerie",
+  "crererie",
+  "surgeles",
+  "sungeles",
+  "surgele",
+  "ultra frais",
+  "boissons",
+  "boisson",
+  "alcool",
+  "volaille",
+  "fleurs",
+  "plantes",
+  "fruits",
+  "legumes",
+  "ppi",
+]
+
+function hasFinalProductSignal(raw = "") {
+  const clean = normalizeFinalItemText(raw)
+  if (!clean) return false
+  if (/\b\d{8,14}\b/.test(clean)) return true
+  if (/\b\d+(?:[,.]\d+)?\s*(g|gr|kg|ml|cl|l)\b/.test(clean)) return true
+  if (/\b\d+\s*(tranches?|tr|x)\b/.test(clean)) return true
+  return FINAL_ITEM_PRODUCT_WORDS.some(word => clean.includes(word))
+}
+
+function isFinalSectionSubtotal(raw = "") {
+  const clean = normalizeFinalItemText(raw)
+  if (!clean) return false
+  if (hasFinalProductSignal(clean)) return false
+
+  const hasSectionWord = FINAL_SECTION_WORDS.some(word => clean.includes(word))
+  if (!hasSectionWord) return false
+
+  const tokens = clean.split(" ").filter(Boolean)
+  const shortLine = tokens.length <= 5
+  const departmentSuffix = /\b(1s|ls|l5|is)\b/.test(clean)
+  const sectionOnly = /^(charcuter(?:ie|te)?|epicer(?:ie|te)(?: sucree| salee)?|cremerie|crererie|surgeles|sungeles|ultra frais|boissons(?: sans alcool)?|volaille|ppi)(?:\s+(?:1s|ls|l5|is))?$/.test(clean)
+
+  return sectionOnly || departmentSuffix || shortLine
+}
+
+function isFinalNonProductLine(raw = "") {
+  const clean = normalizeFinalItemText(raw)
+  if (!clean) return true
+
+  if (/\b(carte|corte)\s+bleue\b/.test(clean)) return true
+  if (/\b(cb|especes|cash|monnaie|rendu|paiement)\b/.test(clean)) return true
+  if (/\b(total|tui?al|reste a payer|net a payer|a payer)\b/.test(clean)) return true
+  if (/\b(tva|ttc|ht|ventilation|duplicata|operation|vente|bienvenue|merci|ticket|caisse|caissier|tel|telephone|client|fidelite|points?)\b/.test(clean)) return true
+  if (isFinalSectionSubtotal(clean)) return true
+
+  const tokens = clean.split(" ").filter(Boolean)
+  const letters = clean.replace(/[^a-z]/g, "")
+  const hasProductSignal = hasFinalProductSignal(clean)
+
+  if (!hasProductSignal && tokens.length <= 3 && letters.length <= 8) return true
+  if (!hasProductSignal && tokens.every(token => token.length <= 3)) return true
+  if (!hasProductSignal && letters.length < 5) return true
+
+  return false
+}
+
+function cleanFinalItemName(raw = "") {
+  return String(raw || "")
+    .replace(/\bPRIX\s+PROMOTION\b/gi, " ")
+    .replace(/\bEUR\b/gi, " ")
+    .replace(/[=;:]+$/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
+function canonicalFinalProductKey(raw = "") {
+  const clean = normalizeFinalItemText(cleanFinalItemName(raw))
+  const known = FINAL_ITEM_PRODUCT_WORDS.find(word => clean.includes(word))
+  if (known) return known
+
+  return clean
+    .split(" ")
+    .filter(token => token.length >= 4)
+    .filter(token => !/^\d+$/.test(token))
+    .filter(token => !["prix", "promotion", "eur", "euro", "euros", "150g", "150gr", "160g", "80g"].includes(token))
+    .slice(0, 3)
+    .join(" ")
+}
+
+function sanitizeFinalReceiptItems(items: any[] = [], receiptTotal = 0) {
+  const rejected: any[] = []
+  const kept: any[] = []
+  const seen = new Set<string>()
+
+  for (const item of items || []) {
+    const raw = finalItemRawText(item)
+    const price = finalItemAmount(item, receiptTotal)
+    const cleanName = cleanFinalItemName(raw)
+    const normalizedName = normalizeFinalItemText(cleanName)
+
+    let reason = ""
+    if (!cleanName || price <= 0) reason = "empty_or_priceless_item"
+    else if (isFinalNonProductLine(cleanName)) reason = isFinalSectionSubtotal(cleanName) ? "section_subtotal_final_filter" : "non_product_final_filter"
+
+    const canonicalProductKey = canonicalFinalProductKey(cleanName)
+    const key = `${canonicalProductKey || normalizedName}|${price.toFixed(2)}`
+    if (!reason && seen.has(key)) reason = "duplicate_final_item"
+
+    if (reason) {
+      rejected.push({
+        line: raw,
+        name: cleanName,
+        amount: price,
+        reason,
+        item_status: "rejected",
+      })
+      continue
+    }
+
+    seen.add(key)
+
+    const confidence = Number(item?.confidence_score ?? item?.item_quality_score ?? 0)
+    const keepNeedsReview = Boolean(item?.needs_review)
+      || confidence < 70
+      || String(item?.item_status || item?.status || "").includes("review")
+      || String(item?.item_status || item?.status || "").includes("verifier")
+
+    kept.push({
+      ...item,
+      name: cleanName,
+      corrected_name: String(item?.corrected_name || cleanName).trim() || cleanName,
+      ocr_name: String(item?.ocr_name || raw || cleanName).trim(),
+      total_price: price,
+      price,
+      unit_price: Number(item?.unit_price || price) || price,
+      quantity: Number(item?.quantity || 1) || 1,
+      item_status: keepNeedsReview ? "a_verifier" : (item?.item_status || item?.status || "detected"),
+      status: keepNeedsReview ? "a_verifier" : (item?.status || item?.item_status || "detected"),
+      review_status: keepNeedsReview ? "needs_review" : (item?.review_status || "trusted"),
+      needs_review: keepNeedsReview,
+      item_quality_score: item?.item_quality_score ?? item?.confidence_score ?? (keepNeedsReview ? 55 : 88),
+    })
+  }
+
+  const suspiciousRatio = items.length > 0 ? rejected.length / items.length : 0
+  const blocksSmartShopping = rejected.length > 0 || suspiciousRatio > 0.15
+
+  return {
+    items: kept,
+    rejected,
+    rejected_count: rejected.length,
+    rejected_lines: rejected.map(item => item.line),
+    rejected_reasons: rejected.reduce<Record<string, number>>((acc, item) => {
+      acc[item.reason] = (acc[item.reason] || 0) + 1
+      return acc
+    }, {}),
+    blocksSmartShopping,
+  }
+}
+
+function totalsAlmostEqual(a: unknown, b: unknown, tolerance = 0.03) {
+  const left = Number(a || 0)
+  const right = Number(b || 0)
+  if (left <= 0 || right <= 0) return false
+  return Math.abs(left - right) <= tolerance
+}
+
+
+function amountCandidatesFromText(value = "") {
+  return Array.from(String(value || "").matchAll(/(\d+(?:[,.]\d{2}))/g))
+    .map(match => roundMoney(String(match[1]).replace(",", ".")))
+    .filter(value => Number.isFinite(value) && value > 0)
+}
+
+function hasVisiblePriceMismatch(item: any = {}, finalPrice = 0, receiptTotal = 0) {
+  const evidence = [item?.raw_text, item?.source_line].map(value => String(value || "")).find(Boolean) || ""
+  if (!evidence.trim()) return false
+  const candidates = amountCandidatesFromText(evidence)
+    .filter(value => value >= 0.2 && (!receiptTotal || value <= Math.max(receiptTotal, 40)))
+  if (candidates.length === 0) return false
+  return !candidates.some(value => totalsAlmostEqual(value, finalPrice, 0.03))
+}
+
+function markReceiptItemsForPartialLearning(items: any[] = [], receiptTotal = 0) {
+  return (items || []).map(item => {
+    const price = finalItemAmount(item, receiptTotal)
+    const confidence = Number(item?.confidence_score ?? item?.item_quality_score ?? item?.confidence ?? 0)
+    const status = normalizeFinalItemText(String(item?.item_status || item?.status || item?.review_status || ""))
+    const alreadyValidated = status.includes("user validated") || status.includes("user_validated")
+    const alreadyRejected = status.includes("rejected")
+    const alreadyReview = Boolean(item?.needs_review) || status.includes("review") || status.includes("verifier")
+    const visibleMismatch = hasVisiblePriceMismatch(item, price, receiptTotal)
+    const missingEvidence = !String(item?.raw_text || item?.source_line || item?.ocr_name || item?.name || "").trim()
+    const mustReview = alreadyRejected || alreadyReview || visibleMismatch || missingEvidence || (confidence > 0 && confidence < 70)
+
+    if (alreadyRejected) {
+      return {
+        ...item,
+        total_price: price,
+        price,
+        item_status: "rejected",
+        status: "rejected",
+        review_status: "rejected",
+        needs_review: true,
+        item_quality_score: item?.item_quality_score ?? confidence ?? 40,
+      }
+    }
+
+    if (mustReview) {
+      return {
+        ...item,
+        total_price: price,
+        price,
+        item_status: "a_verifier",
+        status: "a_verifier",
+        review_status: "needs_review",
+        needs_review: true,
+        item_quality_score: item?.item_quality_score ?? (confidence || 55),
+        smart_shopping_excluded_reason: visibleMismatch ? "visible_price_mismatch" : "needs_review",
+      }
+    }
+
+    return {
+      ...item,
+      total_price: price,
+      price,
+      item_status: alreadyValidated ? "user_validated" : "trusted",
+      status: alreadyValidated ? "user_validated" : "trusted",
+      review_status: "trusted",
+      needs_review: false,
+      item_quality_score: item?.item_quality_score ?? (confidence || 88),
+    }
+  })
+}
+
+function countTrustedLearningItems(items: any[] = []) {
+  return (items || []).filter(item => {
+    const status = normalizeFinalItemText(String(item?.item_status || item?.status || item?.review_status || ""))
+    if (item?.needs_review === true) return false
+    return status.includes("trusted") || status.includes("user validated") || status.includes("user_validated")
+  }).length
+}
+
+function forceTrustedVisionItems(items: any[] = []) {
+  return (items || []).map(item => {
+    const confidence = Math.max(88, Number(item?.confidence_score ?? item?.item_quality_score ?? 0) || 88)
+    return {
+      ...item,
+      item_status: "trusted",
+      status: "trusted",
+      review_status: "trusted",
+      needs_review: false,
+      confidence_score: confidence,
+      item_quality_score: Math.max(confidence, Number(item?.item_quality_score || 0) || confidence),
+      line_type: item?.line_type || "product",
+    }
+  })
+}
+
 export async function runSmartScan(file: File, options: ScanEngineOptions = {}) {
   const provider = options.provider || getDefaultOCRProvider()
   const scanStartedAt = performance.now()
@@ -159,11 +518,25 @@ export async function runSmartScan(file: File, options: ScanEngineOptions = {}) 
       const structuredItems = Array.isArray(structured.items) ? structured.items : []
       const parserItems = parsed.items.length ? mergeReceiptItems(parsed.items, []) : []
       const normalizedStructuredItems = structuredItems.length ? mergeReceiptItems(structuredItems, []) : []
-      parsed.items = bestItemList(
-        mergeReceiptItems(normalizedStructuredItems, parserItems),
-        normalizedStructuredItems,
-        parserItems,
-      )
+      const primaryVisionStructuredOnly = normalizedStructuredItems.length > 0
+        && String(ocr.provider || "") === "openai_vision_primary"
+        && (
+          Boolean(ocr.metrics?.primaryVisionSufficientWithoutSplit || (ocr.metrics as any)?.primary_vision_sufficient_without_split)
+          || String(ocr.metrics?.splitRetrySkippedReason || (ocr.metrics as any)?.split_retry_skipped_reason || "") === "primary_vision_sufficient_short_ticket"
+          || ocr.metrics?.splitRetryUsed === false
+        )
+
+      // Quand l'Edge Function indique que la Vision primaire suffit, on ne mélange plus
+      // les lignes OCR locales avec les articles Vision. Le mélange était la cause des
+      // doublons et des lignes à 55 % affichées après les articles propres à 98 %.
+      parsed.items = primaryVisionStructuredOnly
+        ? normalizedStructuredItems
+        : bestItemList(
+            mergeReceiptItems(normalizedStructuredItems, parserItems),
+            normalizedStructuredItems,
+            parserItems,
+          )
+      ;(parsed as any).primary_vision_structured_only = primaryVisionStructuredOnly
       parsed.ai_used = Boolean(ocr.metrics?.aiUsed || ocr.metrics?.openaiCalled || ocr.provider.includes("openai"))
     }
     parsed.total_amount = serverTotalNeedsReview ? 0 : repairReceiptTotal(parsed.total_amount, ocr.text)
@@ -196,6 +569,100 @@ export async function runSmartScan(file: File, options: ScanEngineOptions = {}) 
       date_status: parsed.date_status,
       date_fallback_used: dateFallbackUsed,
       fallback_scan_date: null,
+    })
+    const finalItemSanitization = sanitizeFinalReceiptItems(parsed.items, Number(parsed.total_amount || 0))
+    const originalFinalItemsCount = parsed.items.length
+    parsed.items = finalItemSanitization.items
+    ;(parsed as any).parser_debug = {
+      ...((parsed as any).parser_debug || {}),
+      final_items_before_sanitization_count: originalFinalItemsCount,
+      final_items_after_sanitization_count: finalItemSanitization.items.length,
+      final_items_rejected_count: finalItemSanitization.rejected_count,
+      final_items_rejected_lines: finalItemSanitization.rejected_lines,
+      final_items_rejected_reasons: finalItemSanitization.rejected_reasons,
+      items_rejected_lines: [
+        ...(((parsed as any).parser_debug || {}).items_rejected_lines || []),
+        ...finalItemSanitization.rejected,
+      ],
+      rejected_lines: [
+        ...(((parsed as any).parser_debug || {}).rejected_lines || []),
+        ...finalItemSanitization.rejected,
+      ],
+    }
+    const visionReferenceCount = Number(
+      ocr.metrics?.reliableItemsDetectedByVision
+      ?? ocr.metrics?.rawItemsDetectedByVision
+      ?? (structured?.items?.length || 0)
+      ?? 0
+    )
+    const finalItemsSum = estimateTotalFromItems(parsed.items)
+    const finalItemsRecoveryRatio = visionReferenceCount > 0 ? parsed.items.length / visionReferenceCount : 1
+    const primaryVisionBudgetReliable = Boolean((parsed as any).primary_vision_structured_only)
+      && Number(parsed.total_amount || 0) > 0
+      && (parsed as any).total_needs_review !== true
+      && parsed.items.length >= 3
+
+    if (primaryVisionBudgetReliable) {
+      parsed.items = markReceiptItemsForPartialLearning(parsed.items, Number(parsed.total_amount || 0))
+    }
+
+    const learningTrustedItemsCount = countTrustedLearningItems(parsed.items)
+    const learningNeedsReviewItemsCount = Math.max(0, parsed.items.length - learningTrustedItemsCount)
+    const learningReferenceCount = visionReferenceCount || parsed.items.length || 0
+    const learningTrustedRatio = learningReferenceCount > 0 ? learningTrustedItemsCount / learningReferenceCount : 0
+    const primaryVisionTrustedForSmartShopping = primaryVisionBudgetReliable
+      && learningTrustedItemsCount > 0
+      && learningNeedsReviewItemsCount === 0
+      && learningTrustedRatio >= 0.85
+      && totalsAlmostEqual(finalItemsSum, parsed.total_amount)
+    const primaryVisionPartialForSmartShopping = primaryVisionBudgetReliable
+      && learningTrustedItemsCount > 0
+      && !primaryVisionTrustedForSmartShopping
+
+    ;(parsed as any).primary_vision_trusted_for_smart_shopping = primaryVisionTrustedForSmartShopping
+    ;(parsed as any).primary_vision_partial_for_smart_shopping = primaryVisionPartialForSmartShopping
+    ;(parsed as any).vision_items_recovery_ratio = Number(finalItemsRecoveryRatio.toFixed(2))
+    ;(parsed as any).trusted_items_ratio = Number(learningTrustedRatio.toFixed(2))
+    ;(parsed as any).items_sum_after_sanitization = finalItemsSum
+
+    if (primaryVisionTrustedForSmartShopping || primaryVisionPartialForSmartShopping) {
+      const itemCountLabel = primaryVisionTrustedForSmartShopping
+        ? `${learningTrustedItemsCount} article(s)`
+        : `${learningTrustedItemsCount} article(s) exploitables / ${learningReferenceCount || parsed.items.length}`
+      ;(parsed as any).smart_shopping_safe = true
+      ;(parsed as any).items_quality_status = primaryVisionTrustedForSmartShopping ? "trusted" : "partial"
+      ;(parsed as any).item_count_display_label = itemCountLabel
+      ;(parsed as any).parser_debug = {
+        ...((parsed as any).parser_debug || {}),
+        smart_shopping_safe: true,
+        items_quality_status: primaryVisionTrustedForSmartShopping ? "trusted" : "partial",
+        trusted_items_count: learningTrustedItemsCount,
+        needs_review_items_count: learningNeedsReviewItemsCount,
+        items_sent_to_smart_shopping_count: learningTrustedItemsCount,
+        items_excluded_from_smart_shopping_count: learningNeedsReviewItemsCount,
+        displayed_items_count: learningTrustedItemsCount,
+        displayed_items_count_source: primaryVisionTrustedForSmartShopping ? "primary_vision_trusted_items" : "primary_vision_partial_items",
+        item_count_display_label: itemCountLabel,
+        primary_vision_trusted_for_smart_shopping: primaryVisionTrustedForSmartShopping,
+        primary_vision_partial_for_smart_shopping: primaryVisionPartialForSmartShopping,
+        vision_items_recovery_ratio: Number(finalItemsRecoveryRatio.toFixed(2)),
+        trusted_items_ratio: Number(learningTrustedRatio.toFixed(2)),
+        items_sum_after_sanitization: finalItemsSum,
+      }
+    } else if (finalItemSanitization.blocksSmartShopping) {
+      ;(parsed as any).smart_shopping_safe = false
+      ;(parsed as any).items_quality_status = "blocked"
+      ;(parsed as any).smart_shopping_blocked_reasons = [
+        ...(((parsed as any).smart_shopping_blocked_reasons || [])),
+        "final_item_sanitization_rejected_non_products",
+      ]
+    }
+    console.info("[scanner] final_item_sanitization", {
+      before: originalFinalItemsCount,
+      after: finalItemSanitization.items.length,
+      rejected: finalItemSanitization.rejected_count,
+      rejected_lines: finalItemSanitization.rejected_lines.slice(0, 12),
+      blocksSmartShopping: finalItemSanitization.blocksSmartShopping,
     })
     const classification = classifyReceipt(parsed)
     parsed.ticket_type = classification.ticket_type
@@ -232,15 +699,29 @@ export async function runSmartScan(file: File, options: ScanEngineOptions = {}) 
     }
     const parserDebug = ((parsed as any).parser_debug || {}) as Record<string, any>
     const budgetStatus = ocr.metrics?.budgetStatus || parserDebug.budget_status || (Number(parsed.total_amount || 0) > 0 && !(parsed as any).total_needs_review ? "reliable" : "needs_review")
-    const itemsQualityStatus = ocr.metrics?.itemsQualityStatus || parserDebug.items_quality_status || (parsed.items.length >= 3 ? "partial" : "blocked")
-    const smartShoppingSafe = ocr.metrics?.smartShoppingSafe ?? parserDebug.smart_shopping_safe ?? false
+    let itemsQualityStatus = ocr.metrics?.itemsQualityStatus || parserDebug.items_quality_status || (parsed.items.length >= 3 ? "partial" : "blocked")
+    let smartShoppingSafe = ocr.metrics?.smartShoppingSafe ?? parserDebug.smart_shopping_safe ?? false
+    if (primaryVisionTrustedForSmartShopping) {
+      itemsQualityStatus = "trusted"
+      smartShoppingSafe = true
+    } else if ((parsed as any).primary_vision_partial_for_smart_shopping) {
+      itemsQualityStatus = "partial"
+      smartShoppingSafe = true
+    } else if (finalItemSanitization.blocksSmartShopping) {
+      itemsQualityStatus = "blocked"
+      smartShoppingSafe = false
+    }
     const scanStatusLegacy = ocr.metrics?.scanStatusLegacy || parserDebug.scan_status_legacy || parsed.scan_status
     let finalScanStatus = ocr.metrics?.finalScanStatus || parserDebug.final_scan_status || resolveFinalScanStatus({
       budgetStatus,
       itemsQualityStatus,
       smartShoppingSafe,
     })
-    if (
+    if (primaryVisionTrustedForSmartShopping && budgetStatus === "reliable") {
+      finalScanStatus = "budget_ok_articles_ok"
+    } else if ((parsed as any).primary_vision_partial_for_smart_shopping && budgetStatus === "reliable") {
+      finalScanStatus = "budget_ok_articles_partial"
+    } else if (
       (budgetStatus === "reliable" && smartShoppingSafe === false)
       || (budgetStatus === "reliable" && itemsQualityStatus === "blocked")
     ) {
@@ -277,6 +758,9 @@ export async function runSmartScan(file: File, options: ScanEngineOptions = {}) 
       budget_status: budgetStatus,
       items_quality_status: itemsQualityStatus,
       smart_shopping_safe: smartShoppingSafe,
+      item_count_display_label: (parsed as any).item_count_display_label || (parsed as any).parser_debug?.item_count_display_label || null,
+      primary_vision_trusted_for_smart_shopping: primaryVisionTrustedForSmartShopping,
+      primary_vision_partial_for_smart_shopping: (parsed as any).primary_vision_partial_for_smart_shopping || false,
       scan_status: parsed.scan_status,
       scan_status_legacy: scanStatusLegacy,
       provider: ocr.provider,
@@ -355,9 +839,16 @@ export async function runSmartScan(file: File, options: ScanEngineOptions = {}) 
         rejectedSectionSubtotalExamples: ocr.metrics?.rejectedSectionSubtotalExamples ?? parserDebug.rejected_section_subtotal_examples ?? null,
         itemsKeptLines: ocr.metrics?.itemsKeptLines ?? parserDebug.items_kept_lines ?? null,
         itemsRejectedLines: ocr.metrics?.itemsRejectedLines ?? parserDebug.items_rejected_lines ?? null,
+        finalItemsBeforeSanitizationCount: parserDebug.final_items_before_sanitization_count ?? null,
+        finalItemsAfterSanitizationCount: parserDebug.final_items_after_sanitization_count ?? null,
+        finalItemsRejectedCount: parserDebug.final_items_rejected_count ?? null,
+        finalItemsRejectedLines: parserDebug.final_items_rejected_lines ?? null,
+        finalItemsRejectedReasons: parserDebug.final_items_rejected_reasons ?? null,
         itemQualitySummary: ocr.metrics?.itemQualitySummary ?? parserDebug.item_quality_summary ?? null,
         budgetReliable: ocr.metrics?.budgetReliable ?? parserDebug.budget_reliable ?? (budgetStatus === "reliable"),
         smartShoppingSafe,
+        primaryVisionTrustedForSmartShopping,
+        primaryVisionPartialForSmartShopping: (parsed as any).primary_vision_partial_for_smart_shopping || false,
         budgetStatus,
         finalScanStatus: parsed.scan_status,
         ocrDurationMs: ocr.metrics?.ocrDurationMs ?? ocrDurationMs,
