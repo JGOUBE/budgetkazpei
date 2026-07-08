@@ -104,6 +104,37 @@ function roundMoney(value: unknown) {
   return Math.round((Number(value) || 0) * 100) / 100
 }
 
+function normalizeScanReceiptDate(value: unknown) {
+  const raw = String(value || "").trim()
+  if (!raw) return ""
+
+  const direct = normalizeReceiptDate(raw)
+  if (direct) return direct
+
+  const iso = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/)
+  if (iso) {
+    const year = iso[1]
+    const month = String(Number(iso[2])).padStart(2, "0")
+    const day = String(Number(iso[3])).padStart(2, "0")
+    return `${year}-${month}-${day}`
+  }
+
+  const fr = raw.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})/)
+  if (fr) {
+    const dayNumber = Number(fr[1])
+    const monthNumber = Number(fr[2])
+    if (dayNumber < 1 || dayNumber > 31 || monthNumber < 1 || monthNumber > 12) return ""
+
+    const day = String(dayNumber).padStart(2, "0")
+    const month = String(monthNumber).padStart(2, "0")
+    const year = fr[3].length === 2 ? `20${fr[3]}` : fr[3]
+
+    return `${year}-${month}-${day}`
+  }
+
+  return ""
+}
+
 function finalItemAmount(item: any = {}, receiptTotal = 0) {
   const total = Number(receiptTotal || 0)
   const values = [item?.total_price, item?.price, item?.unit_price]
@@ -600,12 +631,14 @@ export async function runSmartScan(file: File, options: ScanEngineOptions = {}) 
       parsed.store_name = structured.store_name || parsed.store_name || "Enseigne non reconnue"
       parsed.merchant_name = parsed.store_name
       parsed.merchant_confidence = structured.store_name ? 90 : parsed.merchant_confidence || 0
-      const structuredDate = normalizeReceiptDate(structured.purchase_date || "")
+      const structuredRawDate = structured.purchase_date || structured.date || ""
+      const structuredDate = normalizeScanReceiptDate(structuredRawDate)
+
       if (structuredDate) {
         parsed.purchase_date = structuredDate
         parsed.date_status = "detected"
-      } else if (structured.purchase_date) {
-        console.warn("[scanner] invalid_ocr_date", structured.purchase_date)
+      } else if (structuredRawDate) {
+        console.warn("[scanner] invalid_ocr_date", structuredRawDate)
       }
       parsed.total_amount = serverTotalNeedsReview ? 0 : repairReceiptTotal(structured.total_amount || parsed.total_amount || 0, ocr.text)
       ;(parsed as any).total_raw_text = structured.total_raw_text || ""
@@ -684,15 +717,22 @@ export async function runSmartScan(file: File, options: ScanEngineOptions = {}) 
       ;(parsed as any).estimated_items_sum = estimateTotalFromItems(parsed.items)
       parsed.escalation_reason = [parsed.escalation_reason, "total_a_verifier"].filter(Boolean).join(",")
     }
-    const rawDateDetected = String(structured?.purchase_date || parsed.purchase_date || "")
-    const normalizedDate = normalizeReceiptDate(parsed.purchase_date || "")
+    const rawDateDetected = String(
+      structured?.purchase_date
+      || structured?.date
+      || parsed.purchase_date
+      || ""
+    )
+
+    const normalizedDate = normalizeScanReceiptDate(rawDateDetected || parsed.purchase_date || "")
     const dateFallbackUsed = !normalizedDate
+
     if (dateFallbackUsed) {
       parsed.purchase_date = null
       parsed.date_status = "needs_review"
     } else {
       parsed.purchase_date = normalizedDate
-      parsed.date_status = parsed.date_status || "detected"
+      parsed.date_status = "detected"
     }
     console.info("[scanner] date_normalization", {
       raw_date_detected: rawDateDetected || null,

@@ -183,6 +183,58 @@ function firstText(...values: unknown[]) {
   return String(values.find(value => String(value ?? "").trim()) ?? "").trim()
 }
 
+function normalizeProviderReceiptDate(value: unknown) {
+  const raw = String(value || "").trim()
+  if (!raw) return ""
+
+  const iso = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/)
+  if (iso) {
+    const year = iso[1]
+    const month = String(Number(iso[2])).padStart(2, "0")
+    const day = String(Number(iso[3])).padStart(2, "0")
+    return `${year}-${month}-${day}`
+  }
+
+  const fr = raw.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{2,4})/)
+  if (fr) {
+    const dayNumber = Number(fr[1])
+    const monthNumber = Number(fr[2])
+    if (dayNumber < 1 || dayNumber > 31 || monthNumber < 1 || monthNumber > 12) return ""
+
+    const day = String(dayNumber).padStart(2, "0")
+    const month = String(monthNumber).padStart(2, "0")
+    const year = fr[3].length === 2 ? `20${fr[3]}` : fr[3]
+
+    return `${year}-${month}-${day}`
+  }
+
+  return ""
+}
+
+function extractOpenAiRawDate(data: any = {}) {
+  const raw = firstText(
+    data.openai_raw_content,
+    data.openaiRawContent,
+    data.openai_raw_response_body,
+    data.openaiRawResponseBody,
+  )
+
+  if (!raw) return ""
+
+  try {
+    const cleaned = raw
+      .replace(/^```(?:json)?\s*/i, "")
+      .replace(/\s*```$/i, "")
+      .trim()
+
+    const parsed = JSON.parse(cleaned)
+    return firstText(parsed.purchase_date, parsed.date)
+  } catch {
+    const match = raw.match(/"date"\s*:\s*"([^"]+)"/i) || raw.match(/"purchase_date"\s*:\s*"([^"]+)"/i)
+    return match ? match[1] : ""
+  }
+}
+
 
 function normalizeProviderItemText(value = "") {
   return String(value || "")
@@ -311,7 +363,15 @@ function normalizeFunctionReceiptPayload(data: any = {}) {
   const totalAmount = totalNeedsReview ? explicitTotal : (explicitTotal || (items.length >= 3 ? itemsTotalAmount(items) : 0))
   const rawStoreName = firstText(receipt.store_name, receipt.merchant_name, receipt.merchant, data.store_name, data.merchant_name, data.merchant)
   const storeName = isUiStoreName(rawStoreName) ? "Enseigne à vérifier" : rawStoreName
-  const purchaseDate = firstText(receipt.purchase_date, receipt.date, data.purchase_date, data.date)
+  const rawPurchaseDate = firstText(
+    receipt.purchase_date,
+    receipt.date,
+    data.purchase_date,
+    data.date,
+    extractOpenAiRawDate(data),
+  )
+
+  const purchaseDate = normalizeProviderReceiptDate(rawPurchaseDate) || rawPurchaseDate
 
   return {
     ...receipt,
