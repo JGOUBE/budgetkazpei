@@ -124,8 +124,6 @@ export default function ShoppingInsightsPage({ user, t, isMobile = false }) {
             setSelectedProduct={setSelectedProduct}
             isKreol={isKreol}
           />
-
-          {selectedStats && <ProductHistoryCard stats={selectedStats} isKreol={isKreol} />}
         </>
       )}
     </div>

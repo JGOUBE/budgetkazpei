@@ -380,6 +380,76 @@ function getPartialArticleLabel(receipt = {}, txt) {
   return txt.partialArticlesLabel
 }
 
+function getSmartShoppingUsedCount(receipt = {}) {
+  const items = Array.isArray(receipt.receipt_items) ? receipt.receipt_items : Array.isArray(receipt.items) ? receipt.items : []
+  const eligibleItemsCount = items.filter(item => !isBlockedReceiptItem(item) && isItemEligibleForSmartShopping(item)).length
+  const parserDebug = receipt.parser_debug || {}
+  const storedValues = [
+    receipt.items_sent_to_smart_shopping_count,
+    receipt.shopping_items_count,
+    receipt.trusted_items_count,
+    receipt.displayed_items_count,
+    parserDebug.items_sent_to_smart_shopping_count,
+    parserDebug.trusted_items_count,
+    parserDebug.displayed_items_count,
+  ]
+    .map(value => Number(value || 0))
+    .filter(value => Number.isFinite(value) && value > 0)
+
+  return eligibleItemsCount || storedValues[0] || 0
+}
+
+function getDetectedReceiptItemsCount(receipt = {}) {
+  const items = Array.isArray(receipt.receipt_items) ? receipt.receipt_items : Array.isArray(receipt.items) ? receipt.items : []
+  const parserDebug = receipt.parser_debug || {}
+  const storedValues = [
+    receipt.real_items_count_if_known,
+    receipt.items_detected,
+    receipt.receipt_items_count,
+    receipt.displayed_items_count,
+    receipt.trusted_items_count,
+    parserDebug.real_items_count_if_known,
+    parserDebug.raw_items_detected_by_vision,
+    parserDebug.reliable_items_detected_by_vision,
+    parserDebug.displayed_items_count,
+    parserDebug.trusted_items_count,
+  ]
+    .map(value => Number(value || 0))
+    .filter(value => Number.isFinite(value) && value > 0)
+
+  return items.filter(item => !isBlockedReceiptItem(item)).length || storedValues[0] || getSmartShoppingUsedCount(receipt)
+}
+
+function hasReliableBudgetForReceipt(receipt = {}) {
+  const total = Number(receipt.total_amount || 0)
+  const budgetStatus = String(receipt.budget_status || receipt.parser_debug?.budget_status || "")
+  const scanStatus = String(receipt.scan_status || receipt.final_scan_status || receipt.parser_debug?.final_scan_status || "")
+  const category = normalizeLabel(receipt.budget_category || receipt.category || "")
+
+  return total > 0
+    && receipt.total_needs_review !== true
+    && (
+      budgetStatus === "reliable"
+      || scanStatus.includes("budget_ok_articles_")
+      || Boolean(receipt.transaction_id)
+      || category.includes("course")
+      || receipt.is_food_ticket === true
+    )
+}
+
+function formatBudgetCategoryLabel(receipt = {}) {
+  const raw = String(receipt.budget_category || receipt.category || "").trim()
+  const normalized = normalizeLabel(raw)
+  const isFood = receipt.is_food_ticket === true
+    || ["alimentaire", "food", "courses", "course", "groceries", "grocery"].some(value => normalized.includes(value))
+    || (normalized.includes("other") || normalized.includes("divers"))
+
+  if (isFood) return "Courses - alimentaire"
+  if (!raw) return ""
+  const category = CATEGORIES.find(item => item.id === raw)
+  return category?.label || raw
+}
+
 function isTrustedAutoScanPayload(receipt = {}) {
   const scanStatus = String(receipt.scan_status || receipt.final_scan_status || receipt.parser_debug?.final_scan_status || "")
   const itemsQualityStatus = String(receipt.items_quality_status || receipt.parser_debug?.items_quality_status || "")
@@ -428,22 +498,37 @@ function receiptHasUnreliableArticleCount(receipt = {}) {
 }
 
 function getReceiptArticleCountLabel(receipt = {}, txt) {
-  const items = Array.isArray(receipt.receipt_items) ? receipt.receipt_items : []
-  const reliableItems = items.filter(item => !isBlockedReceiptItem(item))
-  const computedCount = reliableItems.length
-  const storedCount = Number(
-    receipt.displayed_items_count
-    || receipt.trusted_items_count
-    || receipt.items_detected
-    || receipt.receipt_items_count
-    || receipt.parser_debug?.displayed_items_count
-    || receipt.parser_debug?.trusted_items_count
-    || 0
-  )
-  const count = computedCount || storedCount
+  const usedCount = getSmartShoppingUsedCount(receipt)
+  const detectedCount = getDetectedReceiptItemsCount(receipt)
+
+  if (hasReliableBudgetForReceipt(receipt) && usedCount > 0) {
+    if (detectedCount > usedCount) {
+      return `Budget valide — ${usedCount} article(s) utilises / ${detectedCount} detectes`
+    }
+    return `Budget valide — ${usedCount} article(s) utilises`
+  }
+
+  if (hasReliableBudgetForReceipt(receipt)) {
+    const scanStatus = String(receipt.scan_status || receipt.final_scan_status || receipt.parser_debug?.final_scan_status || "")
+    const itemsQualityStatus = String(receipt.items_quality_status || receipt.parser_debug?.items_quality_status || "")
+    const smartShoppingSafe = receipt.smart_shopping_safe ?? receipt.parser_debug?.smart_shopping_safe
+    const explicitLabel = receipt.item_count_display_label || receipt.parser_debug?.item_count_display_label
+
+    if (explicitLabel && !String(explicitLabel).toLowerCase().includes("non fiable")) {
+      return String(explicitLabel).startsWith("Budget")
+        ? String(explicitLabel)
+        : `Budget valide — ${explicitLabel}`
+    }
+
+    if (scanStatus.includes("budget_ok_articles_partial") || itemsQualityStatus === "partial" || smartShoppingSafe === true) {
+      return "Budget valide — articles partiellement exploitables"
+    }
+
+    return "Budget valide — detail des articles disponible"
+  }
 
   if (isTrustedAutoScanPayload(receipt)) {
-    return count > 0 ? `${count} article(s)` : "Articles reconnus"
+    return detectedCount > 0 ? `Budget valide — ${detectedCount} article(s) utilises` : "Budget valide — articles reconnus"
   }
 
   if (isBudgetOkArticlesPartial(receipt)) {
@@ -454,7 +539,7 @@ function getReceiptArticleCountLabel(receipt = {}, txt) {
   if (explicitLabel && (String(explicitLabel).includes("exploitable") || !/^\d+\s+article/i.test(String(explicitLabel)))) return explicitLabel
   if (receiptHasUnreliableArticleCount(receipt)) return txt.articlesToReview
 
-  return count > 0 ? `${count} article(s)` : txt.unreliableDetectedLines
+  return detectedCount > 0 ? `${detectedCount} article(s)` : txt.unreliableDetectedLines
 }
 
 function getArticleCountDisplayInfo({ parsed = {}, items = [], trustedItems = [], needsReviewItems = [] }) {
@@ -1948,7 +2033,11 @@ function HistoryList({ txt, rows, busy, onOpen, onDelete }) {
               </span>
               <span style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: 8 }}>
                 <button type="button" disabled={busy} onClick={() => onOpen(row)} style={{ minHeight: 40, borderRadius: 12, border: "none", background: COLORS.accent, color: "#fff", fontWeight: 950, padding: "0 12px" }}>
-                  {isBudgetOkArticlesPartial(row) ? txt.correctArticles : isLockedScannedReceipt(row) || receiptHasUnreliableArticleCount(row) ? txt.viewDetails : "Modifier"}
+                  {isBudgetOkArticlesPartial(row) || (hasReliableBudgetForReceipt(row) && !isLockedScannedReceipt(row))
+                    ? txt.correctArticles
+                    : isLockedScannedReceipt(row) || receiptHasUnreliableArticleCount(row)
+                      ? txt.viewDetails
+                      : "Modifier"}
                 </button>
                 <button type="button" disabled={busy} onClick={() => onDelete(row)} style={{ minHeight: 40, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "transparent", color: COLORS.muted, fontWeight: 950, padding: "0 12px" }}>
                   {txt.deleteTicket}
@@ -2043,7 +2132,7 @@ function ReceiptDetail({
         {receipt.purchase_date} - {formatMontant(Number(receipt.total_amount || 0))}
         {receipt.date_status === "estimated" ? " - date estimee" : ""}
         {receipt.ticket_type ? ` - ${receipt.ticket_type}` : ""}
-        {receipt.budget_category ? ` - ${receipt.budget_category}` : ""}
+        {formatBudgetCategoryLabel(receipt) ? ` - ${formatBudgetCategoryLabel(receipt)}` : ""}
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 10, marginBottom: 14 }}>
         <ActionButton label="Scanner un autre ticket" icon="" onClick={onScanAnother} disabled={busy} />
@@ -2078,7 +2167,11 @@ function ReceiptDetail({
         Lignes d'articles
       </div>
       <div style={{ display: "grid", gap: 8, marginTop: 10 }}>
-        {(receipt.receipt_items || []).filter(item => !isBlockedReceiptItem(item)).map(item => (
+        {(receipt.receipt_items || []).filter(item => !isBlockedReceiptItem(item)).map(item => {
+          const itemUsedForSmartShopping = isItemEligibleForSmartShopping(item)
+          const itemEditable = !lockedReceipt && !itemUsedForSmartShopping
+
+          return (
           <div key={item.id} style={{ display: "grid", gap: 8, color: COLORS.text, borderBottom: "1px solid rgba(255,255,255,.08)", paddingBottom: 10 }}>
             {item.ocr_name && item.ocr_name !== item.name && (
               <div style={{ color: COLORS.muted, fontSize: 12 }}>OCR : {item.ocr_name}</div>
@@ -2091,8 +2184,8 @@ function ReceiptDetail({
             <input
               style={inputStyle()}
                     value={itemDrafts[item.id]?.name ?? item.name ?? ""}
-              readOnly={lockedReceipt}
-              onChange={event => !lockedReceipt && setItemDrafts(prev => ({ ...prev, [item.id]: { ...(prev[item.id] || {}), name: event.target.value } }))}
+              readOnly={!itemEditable}
+              onChange={event => itemEditable && setItemDrafts(prev => ({ ...prev, [item.id]: { ...(prev[item.id] || {}), name: event.target.value } }))}
             />
             <div style={{ display: "grid", gridTemplateColumns: "1fr auto auto", gap: 8 }}>
               <input
@@ -2101,10 +2194,10 @@ function ReceiptDetail({
                 min="0"
                 step="0.01"
                     value={itemDrafts[item.id]?.total_price ?? item.total_price ?? ""}
-                readOnly={lockedReceipt}
-                onChange={event => !lockedReceipt && setItemDrafts(prev => ({ ...prev, [item.id]: { ...(prev[item.id] || {}), total_price: event.target.value } }))}
+                readOnly={!itemEditable}
+                onChange={event => itemEditable && setItemDrafts(prev => ({ ...prev, [item.id]: { ...(prev[item.id] || {}), total_price: event.target.value } }))}
               />
-              {!lockedReceipt && (
+              {itemEditable && (
                 <button type="button" disabled={busy} onClick={() => onUpdateItem(item.id, {
                   name: itemDrafts[item.id].name || item.name,
                   corrected_name: itemDrafts[item.id].name || item.name,
@@ -2117,7 +2210,7 @@ function ReceiptDetail({
                   Valider
                 </button>
               )}
-              {!lockedReceipt && (
+              {itemEditable && (
                 <button type="button" disabled={busy} onClick={() => onDeleteItem(item.id)} style={{ minHeight: 44, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "transparent", color: COLORS.muted, fontWeight: 950, padding: "0 12px" }}>
                   {txt.remove}
                 </button>
@@ -2126,8 +2219,8 @@ function ReceiptDetail({
             <select
               style={inputStyle()}
               value={itemDrafts[item.id]?.category || item.category || "alimentaire"}
-              disabled={lockedReceipt}
-              onChange={event => !lockedReceipt && setItemDrafts(prev => ({ ...prev, [item.id]: { ...(prev[item.id] || {}), category: event.target.value } }))}
+              disabled={!itemEditable}
+              onChange={event => itemEditable && setItemDrafts(prev => ({ ...prev, [item.id]: { ...(prev[item.id] || {}), category: event.target.value } }))}
             >
               {CATEGORIES.map(category => (
                 <option key={category.id} value={category.id}>{category.id}</option>
@@ -2137,7 +2230,8 @@ function ReceiptDetail({
               {formatMontant(Number(item.total_price || 0))} - {item.item_status || "detected"} - {Math.round(Number(item.confidence_score || 0))} %
             </div>
           </div>
-        ))}
+          )
+        })}
       </div>
       <button type="button" disabled={busy} onClick={onDelete} style={{ marginTop: 18, minHeight: 48, borderRadius: 14, border: "none", background: COLORS.red, color: "#fff", fontWeight: 950, width: "100%" }}>
         {txt.deleteTicket}

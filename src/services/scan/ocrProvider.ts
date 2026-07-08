@@ -403,6 +403,78 @@ function localOcrIsGoodEnough(text: string, total: number, itemCount: number) {
   return true
 }
 
+
+function countSectionSubtotalLines(text = "") {
+  const lines = String(text || "").split(/\r?\n/)
+  return lines.filter(line => {
+    const clean = normalizeProviderItemText(line)
+    if (!clean) return false
+    const hasSection = /\b(charcuter(?:ie|te)?|epicer(?:ie|te)(?: sucree| salee)?|cremerie|crererie|surgeles|sungeles|surgele|boissons(?: sans alcool)?|ultra frais|volaille|ppi)\b/.test(clean)
+    const hasAmount = /\b\d{1,3}[,.]\d{2}\b/.test(clean)
+    return hasSection && hasAmount && !hasProviderProductSignal(clean)
+  }).length
+}
+
+function itemNameLooksTooNoisyForLocalLearning(item: any = {}) {
+  const raw = firstText(item.name, item.corrected_name, item.ocr_name, item.raw_text, item.source_line)
+  const clean = normalizeProviderItemText(raw)
+  if (!clean) return true
+
+  const barcodeMatch = clean.match(/\b\d{8,14}\b/)
+  if (barcodeMatch?.index != null) {
+    const beforeBarcodeLetters = clean.slice(0, barcodeMatch.index).replace(/[^a-z]/g, "")
+    if (beforeBarcodeLetters.length >= 6) return true
+  }
+
+  if (/(.)\1{3,}/.test(clean)) return true
+
+  const tokens = clean.split(" ").filter(Boolean)
+  const suspiciousTokens = tokens.filter(token => {
+    if (token.length < 8) return false
+    if (/^\d+$/.test(token)) return false
+    if (PROVIDER_PRODUCT_WORDS.some(word => token.includes(word) || word.includes(token))) return false
+    const vowels = (token.match(/[aeiouy]/g) || []).length
+    return vowels === 0 || /(.)\1{2,}/.test(token) || token.length >= 13
+  })
+  if (suspiciousTokens.length >= 1 && clean.length > 35) return true
+  if (suspiciousTokens.length >= 2) return true
+
+  return false
+}
+
+function getLocalOcrVisionEscalation(text: string, total: number, items: any[] = [], confidence = 0) {
+  const reasons: string[] = []
+  const grocery = isGroceryText(text)
+  const declaredCount = declaredReceiptItemCount(text)
+  const sectionSubtotalLines = countSectionSubtotalLines(text)
+  const noisyItems = items.filter(item => itemNameLooksTooNoisyForLocalLearning(item)).length
+  const noisyRatio = items.length > 0 ? noisyItems / items.length : 0
+  const itemSum = itemsTotalAmount(items)
+  const totalGap = total > 0 && itemSum > 0 ? Math.abs(total - itemSum) : 0
+
+  if (!grocery || total <= 0 || items.length < 3) {
+    return { required: false, reasons, noisyItems, noisyRatio, sectionSubtotalLines, itemSum, totalGap }
+  }
+
+  // Le local/Tesseract peut valider le budget, mais il ne doit pas court-circuiter
+  // OpenAI Vision quand les articles semblent trop bruités pour Courses intelligentes.
+  if (Number(confidence || 0) > 0 && Number(confidence || 0) < 75) reasons.push("local_confidence_below_learning_threshold")
+  if (noisyItems >= 2 || noisyRatio >= 0.34) reasons.push("local_item_names_too_noisy")
+  if (sectionSubtotalLines >= 2 && noisyItems >= 1) reasons.push("section_subtotals_with_noisy_items")
+  if (declaredCount > 0 && items.length >= declaredCount && sectionSubtotalLines >= 2 && Number(confidence || 0) < 82) reasons.push("declared_count_found_but_learning_quality_uncertain")
+  if (totalGap > 0.08 && declaredCount > 0) reasons.push("local_items_sum_mismatch")
+
+  return {
+    required: reasons.length > 0,
+    reasons,
+    noisyItems,
+    noisyRatio,
+    sectionSubtotalLines,
+    itemSum,
+    totalGap,
+  }
+}
+
 type RotationCandidate = 0 | 90 | 180 | 270
 
 async function createRotatedImageVariant(file: File, rotation: RotationCandidate) {
@@ -865,8 +937,16 @@ export class HybridOCRProvider implements OCRProvider {
     const localItems = Array.isArray(localParsed?.items) ? localParsed.items : []
     const localTotal = Number(localParsed?.total_amount || extractReceiptTotal(localText) || browserTotal || 0)
 
-    if (localOcrIsGoodEnough(localText, localTotal, localItems.length)) {
-      const items = mergeReceiptItems(localItems, browserItems)
+    const mergedLocalItems = mergeReceiptItems(localItems, browserItems)
+    const localLearningEscalation = getLocalOcrVisionEscalation(
+      localText,
+      localTotal,
+      mergedLocalItems,
+      Math.max(Number(localOcr.confidence || 0), Number(browser.confidence || 0)),
+    )
+
+    if (localOcrIsGoodEnough(localText, localTotal, localItems.length) && !localLearningEscalation.required) {
+      const items = mergedLocalItems
       const scanStatus = localScanStatus(localText, localTotal, items.length)
 
       console.info("[scanner] OCR local suffisant", {
@@ -903,9 +983,21 @@ export class HybridOCRProvider implements OCRProvider {
           localOcrItemsDetected: items.length,
           itemsDetectedBeforeOpenAi: items.length,
           totalDetectedBeforeOpenAi: true,
+          localOcrQualityEscalationRequired: false,
+          localOcrQualityEscalationReasons: [],
         },
         error: "",
       }
+    }
+
+    if (localLearningEscalation.required) {
+      console.info("[scanner] OCR local budget OK mais articles trop incertains, appel Vision requis", {
+        total: localTotal,
+        items: mergedLocalItems.length,
+        reasons: localLearningEscalation.reasons,
+        noisyItems: localLearningEscalation.noisyItems,
+        sectionSubtotalLines: localLearningEscalation.sectionSubtotalLines,
+      })
     }
 
     let fallback: OCRResult
@@ -913,6 +1005,13 @@ export class HybridOCRProvider implements OCRProvider {
       fallback = await new SupabaseReceiptOCRProvider().extractText(file, localText || browser.text, {
         ...imageMeta,
         ...localOcrPayloadDiagnostics,
+        local_ocr_quality_escalation_required: localLearningEscalation.required,
+        local_ocr_quality_escalation_reasons: localLearningEscalation.reasons,
+        local_ocr_noisy_items_count: localLearningEscalation.noisyItems,
+        local_ocr_noisy_items_ratio: Number(localLearningEscalation.noisyRatio.toFixed(2)),
+        local_ocr_section_subtotal_lines_count: localLearningEscalation.sectionSubtotalLines,
+        local_ocr_items_sum: localLearningEscalation.itemSum,
+        local_ocr_total_gap: Number(localLearningEscalation.totalGap.toFixed(2)),
       })
     } catch (error) {
       const preservedItems = mergeReceiptItems(localItems, browserItems)
@@ -939,6 +1038,8 @@ export class HybridOCRProvider implements OCRProvider {
             fallbackUsed: true,
             scanStatus: localTotal > 0 ? localScanStatus(localText, localTotal, preservedItems.length) : "partial_low_items",
             timeoutReason: error instanceof Error ? error.message : "server_ocr_fallback_failed",
+            localOcrQualityEscalationRequired: localLearningEscalation.required,
+            localOcrQualityEscalationReasons: localLearningEscalation.reasons,
             browserItemsDetected: browserItems.length,
             localOcrItemsDetected: preservedItems.length,
             itemsDetectedBeforeOpenAi: preservedItems.length,
