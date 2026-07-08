@@ -348,6 +348,28 @@ function sanitizeFinalReceiptItems(items: any[] = [], receiptTotal = 0) {
   }
 }
 
+
+function readOcrMetric(ocr: any, ...keys: string[]) {
+  for (const key of keys) {
+    const fromMetrics = ocr?.metrics?.[key]
+    if (fromMetrics !== undefined && fromMetrics !== null && fromMetrics !== "") return fromMetrics
+    const fromRoot = ocr?.[key]
+    if (fromRoot !== undefined && fromRoot !== null && fromRoot !== "") return fromRoot
+  }
+  return null
+}
+
+function readOcrNumber(ocr: any, ...keys: string[]) {
+  const value = readOcrMetric(ocr, ...keys)
+  const number = Number(value)
+  return Number.isFinite(number) ? number : 0
+}
+
+function readOcrBoolean(ocr: any, ...keys: string[]) {
+  const value = readOcrMetric(ocr, ...keys)
+  return value === true || value === "true"
+}
+
 function totalsAlmostEqual(a: unknown, b: unknown, tolerance = 0.03) {
   const left = Number(a || 0)
   const right = Number(b || 0)
@@ -447,6 +469,85 @@ function forceTrustedVisionItems(items: any[] = []) {
   })
 }
 
+function normalizeVisionStructuredItemsForTrust(items: any[] = [], receiptTotal = 0) {
+  return (items || [])
+    .map(item => {
+      const name = cleanFinalItemName(String(item?.name || item?.corrected_name || item?.ocr_name || item?.raw_text || item?.source_line || "").trim())
+      const rawText = String(item?.raw_text || item?.source_line || item?.ocr_name || name || "").trim()
+      const directPrice = roundMoney(Number(item?.total_price ?? item?.price ?? item?.unit_price ?? 0))
+      const price = directPrice > 0 ? directPrice : finalItemAmount(item, receiptTotal)
+      const rawConfidence = Number(item?.confidence_score ?? item?.confidence ?? item?.item_quality_score ?? 0)
+      const confidenceScore = rawConfidence > 0 && rawConfidence <= 1 ? Math.round(rawConfidence * 100) : Math.round(rawConfidence || 88)
+
+      if (!name || price <= 0) return null
+
+      return {
+        ...item,
+        name,
+        corrected_name: String(item?.corrected_name || name).trim() || name,
+        ocr_name: String(item?.ocr_name || rawText || name).trim() || name,
+        raw_text: rawText || name,
+        source_line: String(item?.source_line || rawText || name).trim() || rawText || name,
+        quantity: Number(item?.quantity || 1) || 1,
+        unit: String(item?.unit || "piece"),
+        unit_price: Number(item?.unit_price || price) || price,
+        total_price: price,
+        price,
+        category: String(item?.category || "alimentaire"),
+        confidence_score: Math.max(88, confidenceScore),
+        item_quality_score: Math.max(88, confidenceScore),
+        line_type: "product",
+        source: item?.source || "openai_vision",
+      }
+    })
+    .filter(Boolean) as any[]
+}
+
+function parseJsonObjectFromText(value: unknown) {
+  const raw = String(value || "").trim()
+  if (!raw) return null
+
+  const withoutFence = raw
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim()
+
+  try {
+    return JSON.parse(withoutFence)
+  } catch {
+    const firstBrace = withoutFence.indexOf("{")
+    const lastBrace = withoutFence.lastIndexOf("}")
+    if (firstBrace >= 0 && lastBrace > firstBrace) {
+      try {
+        return JSON.parse(withoutFence.slice(firstBrace, lastBrace + 1))
+      } catch {
+        return null
+      }
+    }
+    return null
+  }
+}
+
+function extractPrimaryVisionRawItemsForTrust(ocr: any, receiptTotal = 0) {
+  const rawContent = readOcrMetric(
+    ocr,
+    "openaiRawContent",
+    "openai_raw_content",
+    "openaiRawResponseContent",
+    "openai_raw_response_content",
+    "openai_raw_response_body",
+  )
+
+  const parsedRaw = parseJsonObjectFromText(rawContent)
+  const rawItems = Array.isArray(parsedRaw?.items) ? parsedRaw.items : []
+
+  if (!rawItems.length) return []
+
+  return normalizeVisionStructuredItemsForTrust(rawItems, receiptTotal)
+}
+
+
+
 export async function runSmartScan(file: File, options: ScanEngineOptions = {}) {
   const provider = options.provider || getDefaultOCRProvider()
   const scanStartedAt = performance.now()
@@ -493,6 +594,8 @@ export async function runSmartScan(file: File, options: ScanEngineOptions = {}) 
     const structured = ocr.structured || {}
     const serverTotalNeedsReview = Boolean(structured?.total_needs_review || ocr.metrics?.totalNeedsReview)
     const serverScanStatus = String(ocr.metrics?.scanStatus || "")
+    let primaryVisionItemsBeforeFinalSanitization: any[] = []
+    let rawVisionStructuredItemsBeforeFinalSanitization: any[] = []
     if (structured && typeof structured === "object") {
       parsed.store_name = structured.store_name || parsed.store_name || "Enseigne non reconnue"
       parsed.merchant_name = parsed.store_name
@@ -516,21 +619,49 @@ export async function runSmartScan(file: File, options: ScanEngineOptions = {}) 
       ;(parsed as any).openai_total_confidence = structured.openai_total_confidence ?? null
       ;(parsed as any).estimated_items_sum = structured.estimated_items_sum || null
       const structuredItems = Array.isArray(structured.items) ? structured.items : []
+
+      // V4.3 — Source de vérité Vision primary.
+      // L'Edge Function peut exposer 6 articles dans openai_raw_content alors que
+      // ocr.structured.items a déjà été réduit à 3 par une couche intermédiaire.
+      // Pour un primary fiable, on repart donc du JSON brut OpenAI quand il existe.
+      const primaryVisionRawItems = String(ocr.provider || "") === "openai_vision_primary"
+        ? extractPrimaryVisionRawItemsForTrust(ocr, Number(structured.total_amount || parsed.total_amount || 0))
+        : []
+
+      const visionSourceItems = primaryVisionRawItems.length
+        ? primaryVisionRawItems
+        : structuredItems
+
+      const rawVisionStructuredItems = visionSourceItems.length
+        ? normalizeVisionStructuredItemsForTrust(visionSourceItems, Number(structured.total_amount || parsed.total_amount || 0))
+        : []
       const parserItems = parsed.items.length ? mergeReceiptItems(parsed.items, []) : []
-      const normalizedStructuredItems = structuredItems.length ? mergeReceiptItems(structuredItems, []) : []
-      const primaryVisionStructuredOnly = normalizedStructuredItems.length > 0
+      const normalizedStructuredItems = visionSourceItems.length ? mergeReceiptItems(visionSourceItems, []) : []
+      if (rawVisionStructuredItems.length) {
+        rawVisionStructuredItemsBeforeFinalSanitization = rawVisionStructuredItems
+      }
+      const primaryVisionStructuredOnly = (rawVisionStructuredItems.length > 0 || normalizedStructuredItems.length > 0)
         && String(ocr.provider || "") === "openai_vision_primary"
         && (
-          Boolean(ocr.metrics?.primaryVisionSufficientWithoutSplit || (ocr.metrics as any)?.primary_vision_sufficient_without_split)
-          || String(ocr.metrics?.splitRetrySkippedReason || (ocr.metrics as any)?.split_retry_skipped_reason || "") === "primary_vision_sufficient_short_ticket"
-          || ocr.metrics?.splitRetryUsed === false
+          readOcrBoolean(ocr, "primaryVisionSufficientWithoutSplit", "primary_vision_sufficient_without_split")
+          || String(readOcrMetric(ocr, "splitRetrySkippedReason", "split_retry_skipped_reason") || "") === "primary_vision_sufficient_short_ticket"
+          || readOcrMetric(ocr, "splitRetryUsed", "split_retry_used") === false
         )
+
+      if (primaryVisionStructuredOnly) {
+        primaryVisionItemsBeforeFinalSanitization = rawVisionStructuredItems.length
+          ? rawVisionStructuredItems
+          : normalizedStructuredItems
+      }
+
+      ;(parsed as any).primary_vision_raw_items_count = primaryVisionRawItems.length
+      ;(parsed as any).primary_vision_source_items_count = visionSourceItems.length
 
       // Quand l'Edge Function indique que la Vision primaire suffit, on ne mélange plus
       // les lignes OCR locales avec les articles Vision. Le mélange était la cause des
       // doublons et des lignes à 55 % affichées après les articles propres à 98 %.
       parsed.items = primaryVisionStructuredOnly
-        ? normalizedStructuredItems
+        ? (rawVisionStructuredItems.length ? rawVisionStructuredItems : normalizedStructuredItems)
         : bestItemList(
             mergeReceiptItems(normalizedStructuredItems, parserItems),
             normalizedStructuredItems,
@@ -590,21 +721,124 @@ export async function runSmartScan(file: File, options: ScanEngineOptions = {}) 
       ],
     }
     const visionReferenceCount = Number(
-      ocr.metrics?.reliableItemsDetectedByVision
-      ?? ocr.metrics?.rawItemsDetectedByVision
+      readOcrMetric(ocr, "reliableItemsDetectedByVision", "reliable_items_detected_by_vision")
+      ?? readOcrMetric(ocr, "rawItemsDetectedByVision", "raw_items_detected_by_vision", "itemsDetectedByVision", "items_detected_by_vision")
       ?? (structured?.items?.length || 0)
       ?? 0
     )
-    const finalItemsSum = estimateTotalFromItems(parsed.items)
-    const finalItemsRecoveryRatio = visionReferenceCount > 0 ? parsed.items.length / visionReferenceCount : 1
-    const primaryVisionBudgetReliable = Boolean((parsed as any).primary_vision_structured_only)
+    let finalItemsSum = estimateTotalFromItems(parsed.items)
+    let finalItemsRecoveryRatio = visionReferenceCount > 0 ? parsed.items.length / visionReferenceCount : 1
+    const primaryVisionProviderReliable = String(ocr.provider || "") === "openai_vision_primary"
       && Number(parsed.total_amount || 0) > 0
       && (parsed as any).total_needs_review !== true
-      && parsed.items.length >= 3
+      && (parsed.items.length >= 3 || primaryVisionItemsBeforeFinalSanitization.length >= 3 || rawVisionStructuredItemsBeforeFinalSanitization.length >= 3)
 
-    if (primaryVisionBudgetReliable) {
+    const primaryVisionBudgetReliable = primaryVisionProviderReliable
+      && (
+        Boolean((parsed as any).primary_vision_structured_only)
+        || readOcrBoolean(ocr, "primaryVisionSufficientWithoutSplit", "primary_vision_sufficient_without_split")
+        || String(readOcrMetric(ocr, "splitRetrySkippedReason", "split_retry_skipped_reason") || "") === "primary_vision_sufficient_short_ticket"
+      )
+
+    const declaredItemsCountForVisionTrust = Number(
+      readOcrMetric(ocr, "declaredItemsCount", "declared_items_count")
+      ?? (structured as any)?.declared_items_count
+      ?? (parsed as any).declared_items_count
+      ?? 0
+    )
+    const rawVisionItemsCount = Number(
+      readOcrMetric(ocr, "rawItemsDetectedByVision", "raw_items_detected_by_vision", "itemsDetectedByVision", "items_detected_by_vision")
+      ?? (structured as any)?.items?.length
+      ?? rawVisionStructuredItemsBeforeFinalSanitization.length
+      ?? 0
+    )
+    const reliableVisionItemsCount = Number(
+      readOcrMetric(ocr, "reliableItemsDetectedByVision", "reliable_items_detected_by_vision")
+      ?? rawVisionItemsCount
+      ?? 0
+    )
+    const visionStructuredTrustItems = rawVisionStructuredItemsBeforeFinalSanitization.length
+      ? rawVisionStructuredItemsBeforeFinalSanitization
+      : primaryVisionItemsBeforeFinalSanitization
+    const visionStructuredItemsSum = estimateTotalFromItems(visionStructuredTrustItems)
+    const visionCalculatedItemsSum = Number(
+      readOcrMetric(ocr, "calculatedItemsSum", "calculated_items_sum")
+      ?? visionStructuredItemsSum
+      ?? finalItemsSum
+      ?? 0
+    )
+    const primaryVisionShortTicketReady = primaryVisionProviderReliable
+      && (
+        readOcrBoolean(ocr, "primaryVisionSufficientWithoutSplit", "primary_vision_sufficient_without_split")
+        || String(readOcrMetric(ocr, "splitRetrySkippedReason", "split_retry_skipped_reason") || "") === "primary_vision_sufficient_short_ticket"
+        || String(readOcrMetric(ocr, "scanStrategyUsed", "scan_strategy_used") || "") === "mini_single"
+      )
+    const visionCountsConsistent = rawVisionItemsCount <= 0
+      || visionStructuredTrustItems.length === rawVisionItemsCount
+      || reliableVisionItemsCount >= rawVisionItemsCount
+    const declaredCountConsistent = declaredItemsCountForVisionTrust <= 0
+      || rawVisionItemsCount === declaredItemsCountForVisionTrust
+      || visionStructuredTrustItems.length === declaredItemsCountForVisionTrust
+    const visionSumExact = totalsAlmostEqual(visionCalculatedItemsSum, parsed.total_amount, 0.05)
+      || totalsAlmostEqual(visionStructuredItemsSum, parsed.total_amount, 0.05)
+
+    // V3.8: règle forte et placée APRÈS la sanitation finale, mais basée sur les items Vision originaux.
+    // Si Vision primary a lu un ticket court avec total fiable + somme articles exacte,
+    // on restaure les items Vision complets au lieu de conserver seulement les 3 items survivants
+    // des filtres front trop prudents.
+    const primaryVisionExactShortTicket = primaryVisionShortTicketReady
+      && visionStructuredTrustItems.length >= 3
+      && reliableVisionItemsCount >= Math.max(visionStructuredTrustItems.length, rawVisionItemsCount || 0)
+      && visionCountsConsistent
+      && declaredCountConsistent
+      && visionSumExact
+
+    if (primaryVisionExactShortTicket) {
+      parsed.items = forceTrustedVisionItems(visionStructuredTrustItems)
+      finalItemsSum = estimateTotalFromItems(parsed.items)
+      finalItemsRecoveryRatio = visionReferenceCount > 0 ? parsed.items.length / visionReferenceCount : 1
+      ;(parsed as any).primary_vision_exact_short_ticket_trusted = true
+      ;(parsed as any).smart_shopping_safe = true
+      ;(parsed as any).items_quality_status = "trusted"
+      ;(parsed as any).item_count_display_label = `${parsed.items.length} article(s)`
+      ;(parsed as any).parser_debug = {
+        ...((parsed as any).parser_debug || {}),
+        primary_vision_exact_short_ticket_trusted: true,
+        primary_vision_raw_items_count: (parsed as any).primary_vision_raw_items_count || null,
+        primary_vision_source_items_count: (parsed as any).primary_vision_source_items_count || null,
+        raw_vision_items_count: rawVisionItemsCount,
+        reliable_vision_items_count: reliableVisionItemsCount,
+        declared_items_count_for_vision_trust: declaredItemsCountForVisionTrust || null,
+        vision_calculated_items_sum: visionCalculatedItemsSum || finalItemsSum,
+        vision_structured_items_sum: visionStructuredItemsSum,
+        restored_primary_vision_items_after_sanitization: true,
+        restored_primary_vision_items_count: parsed.items.length,
+        final_sanitization_survivors_before_restore: finalItemSanitization.items.length,
+        final_sanitization_rejected_before_restore: finalItemSanitization.rejected_count,
+        vision_trust_rule: "v4_3_raw_openai_primary_items_when_count_and_sum_exact",
+      }
+    } else if (primaryVisionBudgetReliable) {
       parsed.items = markReceiptItemsForPartialLearning(parsed.items, Number(parsed.total_amount || 0))
+      ;(parsed as any).primary_vision_exact_short_ticket_trusted = false
+      ;(parsed as any).parser_debug = {
+        ...((parsed as any).parser_debug || {}),
+        primary_vision_exact_short_ticket_trusted: false,
+        primary_vision_trust_blocked_reason: [
+          primaryVisionShortTicketReady ? "" : "primary_vision_not_marked_sufficient",
+          visionStructuredTrustItems.length >= 3 ? "" : "not_enough_vision_structured_items",
+          reliableVisionItemsCount >= Math.max(visionStructuredTrustItems.length, rawVisionItemsCount || 0) ? "" : "reliable_vision_count_too_low",
+          visionCountsConsistent ? "" : "vision_count_inconsistent",
+          declaredCountConsistent ? "" : "declared_count_inconsistent",
+          visionSumExact ? "" : "vision_items_sum_not_equal_total",
+        ].filter(Boolean).join(","),
+        raw_vision_items_count: rawVisionItemsCount,
+        reliable_vision_items_count: reliableVisionItemsCount,
+        vision_structured_items_count: visionStructuredTrustItems.length,
+        vision_calculated_items_sum: visionCalculatedItemsSum || finalItemsSum,
+        vision_structured_items_sum: visionStructuredItemsSum,
+      }
     }
+
 
     const learningTrustedItemsCount = countTrustedLearningItems(parsed.items)
     const learningNeedsReviewItemsCount = Math.max(0, parsed.items.length - learningTrustedItemsCount)
@@ -684,12 +918,12 @@ export async function runSmartScan(file: File, options: ScanEngineOptions = {}) 
       parsed.scan_status = "partial_low_items"
       parsed.escalation_reason = [parsed.escalation_reason, "moins_de_60_pourcent_articles_probables"].filter(Boolean).join(",")
     }
-    const expectedItemsMin = Number(ocr.metrics?.expectedItemsMin || 0)
+    const expectedItemsMin = Number(readOcrMetric(ocr, "expectedItemsMin", "expected_items_min") || 0)
     ;(parsed as any).expected_items_min = expectedItemsMin || null
-    ;(parsed as any).expected_items_source = ocr.metrics?.expectedItemsSource || "not_found"
-    ;(parsed as any).declared_items_count = ocr.metrics?.declaredItemsCount ?? null
-    ;(parsed as any).declared_items_raw_text = ocr.metrics?.declaredItemsRawText ?? ""
-    ;(parsed as any).items_count_status = ocr.metrics?.itemsCountStatus || "unknown"
+    ;(parsed as any).expected_items_source = String(readOcrMetric(ocr, "expectedItemsSource", "expected_items_source") || "not_found")
+    ;(parsed as any).declared_items_count = readOcrMetric(ocr, "declaredItemsCount", "declared_items_count") ?? null
+    ;(parsed as any).declared_items_raw_text = String(readOcrMetric(ocr, "declaredItemsRawText", "declared_items_raw_text") ?? "")
+    ;(parsed as any).items_count_status = String(readOcrMetric(ocr, "itemsCountStatus", "items_count_status") || "unknown")
     ;(parsed as any).recovery_ratio = ocr.metrics?.recoveryRatio ?? null
     ;(parsed as any).recovery_ratio_status = ocr.metrics?.recoveryRatioStatus ?? null
     ;(parsed as any).split_cost_warning = ocr.metrics?.splitCostWarning ?? null
@@ -698,9 +932,13 @@ export async function runSmartScan(file: File, options: ScanEngineOptions = {}) 
       parsed.escalation_reason = [parsed.escalation_reason, "articles_alimentaires_insuffisants"].filter(Boolean).join(",")
     }
     const parserDebug = ((parsed as any).parser_debug || {}) as Record<string, any>
-    const budgetStatus = ocr.metrics?.budgetStatus || parserDebug.budget_status || (Number(parsed.total_amount || 0) > 0 && !(parsed as any).total_needs_review ? "reliable" : "needs_review")
-    let itemsQualityStatus = ocr.metrics?.itemsQualityStatus || parserDebug.items_quality_status || (parsed.items.length >= 3 ? "partial" : "blocked")
-    let smartShoppingSafe = ocr.metrics?.smartShoppingSafe ?? parserDebug.smart_shopping_safe ?? false
+    const budgetStatus = String(readOcrMetric(ocr, "budgetStatus", "budget_status") || parserDebug.budget_status || (Number(parsed.total_amount || 0) > 0 && !(parsed as any).total_needs_review ? "reliable" : "needs_review"))
+    let itemsQualityStatus = primaryVisionTrustedForSmartShopping
+      ? "trusted"
+      : String(readOcrMetric(ocr, "itemsQualityStatus", "items_quality_status") || parserDebug.items_quality_status || (parsed.items.length >= 3 ? "partial" : "blocked"))
+    let smartShoppingSafe = primaryVisionTrustedForSmartShopping
+      ? true
+      : (readOcrMetric(ocr, "smartShoppingSafe", "smart_shopping_safe") ?? parserDebug.smart_shopping_safe ?? false)
     if (primaryVisionTrustedForSmartShopping) {
       itemsQualityStatus = "trusted"
       smartShoppingSafe = true
@@ -711,12 +949,14 @@ export async function runSmartScan(file: File, options: ScanEngineOptions = {}) 
       itemsQualityStatus = "blocked"
       smartShoppingSafe = false
     }
-    const scanStatusLegacy = ocr.metrics?.scanStatusLegacy || parserDebug.scan_status_legacy || parsed.scan_status
-    let finalScanStatus = ocr.metrics?.finalScanStatus || parserDebug.final_scan_status || resolveFinalScanStatus({
+    const scanStatusLegacy = readOcrMetric(ocr, "scanStatusLegacy", "scan_status_legacy") || parserDebug.scan_status_legacy || parsed.scan_status
+    let finalScanStatus = primaryVisionTrustedForSmartShopping
+      ? "budget_ok_articles_ok"
+      : (readOcrMetric(ocr, "finalScanStatus", "final_scan_status") || parserDebug.final_scan_status || resolveFinalScanStatus({
       budgetStatus,
       itemsQualityStatus,
       smartShoppingSafe,
-    })
+    }))
     if (primaryVisionTrustedForSmartShopping && budgetStatus === "reliable") {
       finalScanStatus = "budget_ok_articles_ok"
     } else if ((parsed as any).primary_vision_partial_for_smart_shopping && budgetStatus === "reliable") {
@@ -752,9 +992,9 @@ export async function runSmartScan(file: File, options: ScanEngineOptions = {}) 
       probable_product_lines: probableProductLines,
       extraction_ratio: Number(extractionRatio.toFixed(2)),
       expected_items_min: expectedItemsMin || null,
-      expected_items_source: ocr.metrics?.expectedItemsSource || "not_found",
-      declared_items_count: ocr.metrics?.declaredItemsCount ?? null,
-      items_count_status: ocr.metrics?.itemsCountStatus || "unknown",
+      expected_items_source: readOcrMetric(ocr, "expectedItemsSource", "expected_items_source") || "not_found",
+      declared_items_count: readOcrMetric(ocr, "declaredItemsCount", "declared_items_count") ?? null,
+      items_count_status: readOcrMetric(ocr, "itemsCountStatus", "items_count_status") || "unknown",
       budget_status: budgetStatus,
       items_quality_status: itemsQualityStatus,
       smart_shopping_safe: smartShoppingSafe,
