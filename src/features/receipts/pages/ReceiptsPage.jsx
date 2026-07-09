@@ -46,6 +46,20 @@ const TEXT = {
     camera: "Prendre une photo",
     gallery: "Importer une image",
     manual: "Remplir manuellement",
+    longTicket: "Ticket long (2 photos)",
+    longTicketTitle: "Scanner un ticket long",
+    longTicketHint: "Photo 1 : haut ou milieu du ticket. Photo 2 : bas du ticket avec total et paiement.",
+    longTicketTop: "Photo 1 : haut du ticket",
+    longTicketBottom: "Photo 2 : bas avec total",
+    longTicketGallery: "Importer 2 images",
+    longTicketAnalyze: "Analyser les 2 photos",
+    longTicketReset: "Recommencer",
+    longTicketTopReady: "Photo 1 prête",
+    longTicketBottomReady: "Photo 2 prête",
+    longTicketMissing: "Ajoutez les 2 photos du ticket.",
+    longTicketNeedTwo: "Sélectionnez 2 images : le haut puis le bas du ticket.",
+    longTicketModeOpened: "Ajoutez le haut puis le bas du ticket.",
+    longTicketMerging: "Fusion des deux photos du ticket...",
     quota: quota => quota.plan === "premium_plus"
       ? `Analyses IA : ${quota.used} / illimité`
       : `Analyses IA : ${quota.used} / ${quota.limit}`,
@@ -105,6 +119,20 @@ const TEXT = {
     camera: "Pran in foto",
     gallery: "Import in zimaz",
     manual: "Ranpli amain",
+    longTicket: "Tiké long (2 foto)",
+    longTicketTitle: "Scanner in tiké long",
+    longTicketHint: "Foto 1 : lao ou milié tiké-la. Foto 2 : anba tiké-la ek total ek paiement.",
+    longTicketTop: "Foto 1 : lao tiké-la",
+    longTicketBottom: "Foto 2 : anba ek total",
+    longTicketGallery: "Import 2 zimaz",
+    longTicketAnalyze: "Analiz 2 foto-la",
+    longTicketReset: "Recommansé",
+    longTicketTopReady: "Foto 1 lé paré",
+    longTicketBottomReady: "Foto 2 lé paré",
+    longTicketMissing: "Azout 2 foto tiké-la.",
+    longTicketNeedTwo: "Swazi 2 zimaz : lao tiké-la, apre anba tiké-la.",
+    longTicketModeOpened: "Azout lao tiké-la, apre anba tiké-la.",
+    longTicketMerging: "Nou pe kol 2 foto tiké-la...",
     quota: quota => quota.plan === "premium_plus"
       ? `Analiz IA : ${quota.used} / san limit`
       : `Analiz IA : ${quota.used} / ${quota.limit}`,
@@ -786,6 +814,103 @@ function cardStyle(extra = {}) {
   }
 }
 
+function loadImageFromFile(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file)
+    const image = new Image()
+
+    image.onload = () => {
+      URL.revokeObjectURL(url)
+      resolve(image)
+    }
+
+    image.onerror = () => {
+      URL.revokeObjectURL(url)
+      reject(new Error("Image illisible."))
+    }
+
+    image.src = url
+  })
+}
+
+async function mergeReceiptImagesVertically(files = []) {
+  const validFiles = files.filter(Boolean)
+
+  if (validFiles.length < 2) {
+    throw new Error("Deux photos sont nécessaires.")
+  }
+
+  const images = await Promise.all(validFiles.map(loadImageFromFile))
+
+  const naturalWidths = images
+    .map(image => image.naturalWidth || image.width || 0)
+    .filter(width => width > 0)
+
+  const targetWidthInitial = Math.min(1280, Math.max(...naturalWidths, 900))
+  const gap = 16
+
+  function computeLayout(targetWidth) {
+    const parts = images.map(image => {
+      const width = image.naturalWidth || image.width || targetWidth
+      const height = image.naturalHeight || image.height || targetWidth
+      const scale = targetWidth / width
+
+      return {
+        image,
+        width: Math.round(width * scale),
+        height: Math.round(height * scale),
+      }
+    })
+
+    const totalHeight = parts.reduce((sum, part) => sum + part.height, 0) + gap * (parts.length - 1)
+
+    return { parts, totalHeight }
+  }
+
+  let targetWidth = targetWidthInitial
+  let layout = computeLayout(targetWidth)
+
+  const maxTotalHeight = 5200
+  if (layout.totalHeight > maxTotalHeight) {
+    targetWidth = Math.max(900, Math.round(targetWidth * (maxTotalHeight / layout.totalHeight)))
+    layout = computeLayout(targetWidth)
+  }
+
+  const canvas = document.createElement("canvas")
+  canvas.width = targetWidth
+  canvas.height = layout.totalHeight
+
+  const context = canvas.getContext("2d")
+  if (!context) {
+    throw new Error("Fusion image impossible.")
+  }
+
+  context.fillStyle = "#FFFFFF"
+  context.fillRect(0, 0, canvas.width, canvas.height)
+  context.imageSmoothingEnabled = true
+  context.imageSmoothingQuality = "high"
+
+  let y = 0
+  for (const part of layout.parts) {
+    const x = Math.round((targetWidth - part.width) / 2)
+    context.drawImage(part.image, x, y, part.width, part.height)
+    y += part.height + gap
+  }
+
+  const blob = await new Promise(resolve => {
+    canvas.toBlob(resolve, "image/jpeg", 0.86)
+  })
+
+  if (!blob) {
+    throw new Error("Fusion image impossible.")
+  }
+
+  return new File([blob], `ticket-long-2-photos-${Date.now()}.jpg`, {
+    type: "image/jpeg",
+    lastModified: Date.now(),
+  })
+}
+
 export default function ReceiptsPage({
   user,
   t,
@@ -801,6 +926,9 @@ export default function ReceiptsPage({
   const quota = useReceiptQuota(user?.id, isPremium, isPremiumPlus)
   const cameraRef = useRef(null)
   const galleryRef = useRef(null)
+  const longTopCameraRef = useRef(null)
+  const longBottomCameraRef = useRef(null)
+  const longGalleryRef = useRef(null)
 
   const [mode, setMode] = useState("history")
   const [draft, setDraft] = useState(null)
@@ -818,6 +946,11 @@ export default function ReceiptsPage({
   const [resumeDraft, setResumeDraft] = useState(null)
   const [pendingImagePath, setPendingImagePath] = useState(null)
   const [showBlockedDetectedLines, setShowBlockedDetectedLines] = useState(false)
+  const [longTicketMode, setLongTicketMode] = useState(false)
+  const [longTicketFiles, setLongTicketFiles] = useState({
+    top: null,
+    bottom: null,
+  })
 
   const globalCategory = draft?.items?.[0]?.category || "alimentaire"
   const receiptRows = useMemo(() => Array.isArray(receipts) ? receipts : [], [receipts])
@@ -861,6 +994,77 @@ export default function ReceiptsPage({
       setReceipts(rows)
     } catch (error) {
       console.error("Erreur chargement tickets:", error)
+    }
+  }
+
+  function openLongTicketMode() {
+    const nextMode = !longTicketMode
+    setLongTicketMode(nextMode)
+    setMessage(nextMode ? txt.longTicketModeOpened : "")
+  }
+
+  function resetLongTicketScan() {
+    setLongTicketFiles({
+      top: null,
+      bottom: null,
+    })
+    setLongTicketMode(false)
+
+    if (longTopCameraRef.current) longTopCameraRef.current.value = ""
+    if (longBottomCameraRef.current) longBottomCameraRef.current.value = ""
+    if (longGalleryRef.current) longGalleryRef.current.value = ""
+  }
+
+  function handleLongTicketPart(part, file) {
+    if (!file) return
+
+    setLongTicketFiles(prev => ({
+      ...prev,
+      [part]: file,
+    }))
+
+    setMessage(part === "top" ? txt.longTicketTopReady : txt.longTicketBottomReady)
+  }
+
+  function handleLongTicketGallery(files) {
+    const images = Array.from(files || []).filter(file => file?.type?.startsWith("image/"))
+
+    if (images.length < 2) {
+      setMessage(txt.longTicketNeedTwo)
+      return
+    }
+
+    setLongTicketFiles({
+      top: images[0],
+      bottom: images[1],
+    })
+
+    setMessage(`${txt.longTicketTopReady}. ${txt.longTicketBottomReady}.`)
+  }
+
+  async function handleLongTicketScan() {
+    if (!longTicketFiles.top || !longTicketFiles.bottom) {
+      setMessage(txt.longTicketMissing)
+      return
+    }
+
+    setBusy(true)
+    setMessage(txt.longTicketMerging)
+    setScanError(null)
+
+    try {
+      const mergedFile = await mergeReceiptImagesVertically([
+        longTicketFiles.top,
+        longTicketFiles.bottom,
+      ])
+
+      await handleFile(mergedFile)
+      resetLongTicketScan()
+    } catch (error) {
+      console.error("[scanner] Fusion ticket long impossible:", error)
+      setMessage(error.message || txt.error)
+    } finally {
+      setBusy(false)
     }
   }
 
@@ -1583,14 +1787,124 @@ export default function ReceiptsPage({
         </div>
       )}
 
-      <div style={{ display: showMethodActions ? "grid" : "none", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 12 }}>
+      <div style={{ display: showMethodActions ? "grid" : "none", gridTemplateColumns: isMobile ? "1fr" : "repeat(4, 1fr)", gap: 12 }}>
         <ActionButton label={txt.camera} Icon={BkIcons.scan} disabled={busy} onClick={() => cameraRef.current.click()} />
         <ActionButton label={txt.gallery} Icon={BkIcons.receipts} disabled={busy} onClick={() => galleryRef.current.click()} />
+        <ActionButton label={txt.longTicket} Icon={BkIcons.receipts} disabled={busy} onClick={openLongTicketMode} muted />
         <ActionButton label={txt.manual} Icon={BkIcons.add} disabled={busy} onClick={startManual} muted />
       </div>
 
+      {showMethodActions && longTicketMode && (
+        <div style={cardStyle({ display: "grid", gap: 14 })}>
+          <div>
+            <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 950 }}>
+              {txt.longTicketTitle}
+            </div>
+            <div style={{ color: COLORS.muted, fontSize: 13, lineHeight: 1.5, marginTop: 4 }}>
+              {txt.longTicketHint}
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: 12 }}>
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => longTopCameraRef.current?.click()}
+              style={{
+                minHeight: 54,
+                borderRadius: 16,
+                border: `1px solid ${longTicketFiles.top ? COLORS.green : COLORS.border}`,
+                background: "rgba(255,255,255,.06)",
+                color: COLORS.text,
+                fontWeight: 950,
+                fontFamily: "inherit",
+                cursor: busy ? "wait" : "pointer",
+              }}
+            >
+              {longTicketFiles.top ? txt.longTicketTopReady : txt.longTicketTop}
+            </button>
+
+            <button
+              type="button"
+              disabled={busy}
+              onClick={() => longBottomCameraRef.current?.click()}
+              style={{
+                minHeight: 54,
+                borderRadius: 16,
+                border: `1px solid ${longTicketFiles.bottom ? COLORS.green : COLORS.border}`,
+                background: "rgba(255,255,255,.06)",
+                color: COLORS.text,
+                fontWeight: 950,
+                fontFamily: "inherit",
+                cursor: busy ? "wait" : "pointer",
+              }}
+            >
+              {longTicketFiles.bottom ? txt.longTicketBottomReady : txt.longTicketBottom}
+            </button>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: 10 }}>
+            <ActionButton
+              label={txt.longTicketGallery}
+              Icon={BkIcons.receipts}
+              disabled={busy}
+              onClick={() => longGalleryRef.current?.click()}
+              muted
+            />
+
+            <ActionButton
+              label={txt.longTicketAnalyze}
+              Icon={BkIcons.scan}
+              disabled={busy || !longTicketFiles.top || !longTicketFiles.bottom}
+              onClick={handleLongTicketScan}
+            />
+
+            <ActionButton
+              label={txt.longTicketReset}
+              Icon={null}
+              disabled={busy}
+              onClick={resetLongTicketScan}
+              muted
+            />
+          </div>
+        </div>
+      )}
+
       <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={event => handleFile(event.target.files?.[0])} />
       <input ref={galleryRef} type="file" accept="image/*" hidden onChange={event => handleFile(event.target.files?.[0])} />
+      <input
+        ref={longTopCameraRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        hidden
+        onChange={event => {
+          handleLongTicketPart("top", event.target.files?.[0])
+          event.target.value = ""
+        }}
+      />
+      <input
+        ref={longBottomCameraRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        hidden
+        onChange={event => {
+          handleLongTicketPart("bottom", event.target.files?.[0])
+          event.target.value = ""
+        }}
+      />
+      <input
+        ref={longGalleryRef}
+        type="file"
+        accept="image/*"
+        multiple
+        hidden
+        onChange={event => {
+          handleLongTicketGallery(event.target.files)
+          event.target.value = ""
+        }}
+      />
 
       {mode === "analysis" && (
         <AnalysisScreen progress={scanProgress} txt={txt} />
