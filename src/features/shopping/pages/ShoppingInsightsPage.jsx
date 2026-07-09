@@ -35,6 +35,73 @@ function cardStyle(extra = {}) {
   }
 }
 
+function formatPurchaseCount(count, isKreol = false) {
+  const safeCount = Number(count || 0)
+  if (isKreol) return `${safeCount} ${safeCount > 1 ? "achats" : "achat"}`
+  return `${safeCount} ${safeCount > 1 ? "achats" : "achat"}`
+}
+
+function normalizeLabel(value = "") {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
+const DEPARTMENT_PRODUCT_PATTERNS = [
+  "boucherie coupe",
+  "charcuterie ls",
+  "cremerie",
+  "epicerie sucree",
+  "epicerie salee",
+  "boissons sans alcool",
+  "ultra frais",
+  "fleurs plantes fruits legumes",
+  "fruits legumes",
+  "sous traitance",
+  "ppi",
+]
+
+function isDepartmentLikeProduct(product = {}) {
+  const label = normalizeLabel(product.label || product.name || product.normalizedName)
+  if (!label) return false
+  return DEPARTMENT_PRODUCT_PATTERNS.some(pattern => label === pattern || label.includes(pattern))
+}
+
+function splitProductRows(products = []) {
+  return products.reduce(
+    (acc, product) => {
+      if (isDepartmentLikeProduct(product)) acc.departments.push(product)
+      else acc.products.push(product)
+      return acc
+    },
+    { products: [], departments: [] },
+  )
+}
+
+function getHistoryDate(item = {}) {
+  const raw = item.created_at || item.purchase_date || item.date || item.scanned_at || ""
+  const date = raw ? new Date(raw) : null
+  return date && !Number.isNaN(date.getTime()) ? date : null
+}
+
+function getHistoryDaysSpan(history = []) {
+  const dates = history.map(getHistoryDate).filter(Boolean).map(date => date.getTime())
+  if (dates.length < 2) return 0
+  const min = Math.min(...dates)
+  const max = Math.max(...dates)
+  return Math.ceil((max - min) / 86400000)
+}
+
+function shouldShowAnnualProjection(stats = {}) {
+  const purchaseCount = Number(stats.purchaseCount || stats.history?.length || 0)
+  const daysSpan = getHistoryDaysSpan(stats.history || [])
+  return purchaseCount >= 5 && daysSpan >= 30
+}
+
 export default function ShoppingInsightsPage({ user, t, isMobile = false }) {
   const isKreol = getIsKreol(t)
   const [items, setItems] = useState([])
@@ -72,17 +139,19 @@ export default function ShoppingInsightsPage({ user, t, isMobile = false }) {
   }, [user?.id])
 
   const storeHabits = useMemo(() => buildStoreHabits(items).slice(0, 6), [items])
-  const topProducts = useMemo(() => buildTopProducts(items, 20), [items])
+  const topProducts = useMemo(() => buildTopProducts(items, 30), [items])
+  const productRows = useMemo(() => splitProductRows(topProducts), [topProducts])
   const selectedStats = useMemo(() => {
-    const name = selectedProduct || topProducts[0]?.normalizedName || ""
+    const firstProduct = productRows.products[0]?.normalizedName || productRows.departments[0]?.normalizedName || ""
+    const name = selectedProduct || firstProduct
     return name ? buildProductStats(items, name) : null
-  }, [items, selectedProduct, topProducts])
+  }, [items, selectedProduct, productRows])
 
   useEffect(() => {
-    if (!selectedProduct && topProducts[0]?.normalizedName) {
-      setSelectedProduct(topProducts[0]?.normalizedName)
+    if (!selectedProduct && productRows.products[0]?.normalizedName) {
+      setSelectedProduct(productRows.products[0]?.normalizedName)
     }
-  }, [selectedProduct, topProducts])
+  }, [selectedProduct, productRows])
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
@@ -94,8 +163,8 @@ export default function ShoppingInsightsPage({ user, t, isMobile = false }) {
           {isKreol ? "Courses intelligentes" : "Courses intelligentes"}
         </h1>
         <p style={{ color: COLORS.muted, margin: "10px 0 0", lineHeight: 1.55 }}>
-          {isKreol ? "BudgetKazPei i analiz bann tike valide pou montre out magazin ek produits prefere."
-            : "BudgetKazPei analyse les tickets valides pour suivre vos magasins et produits recurrents."}
+          {isKreol ? "BudgetKazPei i analiz bann tiké validé pou montre out magazin ek bann produits ou achète souvent."
+            : "BudgetKazPei analyse les tickets validés pour suivre vos magasins et produits récurrents."}
         </p>
       </div>
 
@@ -104,11 +173,11 @@ export default function ShoppingInsightsPage({ user, t, isMobile = false }) {
       ) : items.length === 0 ? (
         <div style={cardStyle()}>
           <div style={{ color: COLORS.text, fontWeight: 950 }}>
-            {isKreol ? "Nana poin donnees courses pou linstan." : "Aucune donnee courses pour le moment."}
+            {isKreol ? "Nana poin donné courses pou linstan." : "Aucune donnée courses pour le moment."}
           </div>
           <div style={{ color: COLORS.muted, marginTop: 8, lineHeight: 1.5 }}>
-            {isKreol ? "Eskane ek valide in tike pou komans voir out labitid."
-              : "Scannez puis validez un ticket pour commencer a voir vos habitudes."}
+            {isKreol ? "Eskane ek valide in tiké pou komans vwar out labitid."
+              : "Scannez puis validez un ticket pour commencer à voir vos habitudes."}
           </div>
         </div>
       ) : (
@@ -119,7 +188,8 @@ export default function ShoppingInsightsPage({ user, t, isMobile = false }) {
           </div>
 
           <TopProductsCard
-            products={topProducts}
+            products={productRows.products}
+            departments={productRows.departments}
             selectedProduct={selectedProduct}
             setSelectedProduct={setSelectedProduct}
             isKreol={isKreol}
@@ -134,7 +204,7 @@ function StoreHabitsCard({ data, isKreol }) {
   return (
     <div style={cardStyle()}>
       <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 950, marginBottom: 12 }}>
-        {isKreol ? "Ousa ou achete le plis " : "Ou j'achete le plus "}
+        {isKreol ? "Ousa ou achète le plis" : "Où j’achète le plus"}
       </div>
       <div style={{ height: 220 }}>
         <ResponsiveContainer width="100%" height="100%">
@@ -174,12 +244,26 @@ function ProductStatsCard({ stats, isKreol }) {
         <Metric label={isKreol ? "Plus haut" : "Plus haut"} value={formatMontant(stats.highestPrice)} color={COLORS.accent} />
       </div>
       <div style={{ marginTop: 14, color: COLORS.text, fontWeight: 950, lineHeight: 1.45 }}>
-        {isKreol ? `Ou achete produit-la ${stats.yearlyFrequency} fois par an.`
-          : `Vous achetez ce produit ${stats.yearlyFrequency} fois par an.`}
-        <br />
-        <span style={{ color: COLORS.accent }}>
-          {isKreol ? "Depans estimee" : "Depense estimee"} : {formatMontant(stats.yearlySpend)}/an
-        </span>
+        {shouldShowAnnualProjection(stats) ? (
+          <>
+            {isKreol ? `Ou achète produit-la ${stats.yearlyFrequency} fois par an.`
+              : `Vous achetez ce produit ${stats.yearlyFrequency} fois par an.`}
+            <br />
+            <span style={{ color: COLORS.accent }}>
+              {isKreol ? "Dépans estimée" : "Dépense estimée"} : {formatMontant(stats.yearlySpend)}/an
+            </span>
+          </>
+        ) : (
+          <>
+            {isKreol ? "Produit-la i revient souvent dann out premiers tickets."
+              : "Ce produit revient souvent dans vos premiers tickets."}
+            <br />
+            <span style={{ color: COLORS.muted }}>
+              {isKreol ? "Tendance à confirmer avec plus de tickets."
+                : "Tendance à confirmer avec plus de tickets."}
+            </span>
+          </>
+        )}
       </div>
     </div>
   )
@@ -194,14 +278,14 @@ function Metric({ label, value, color }) {
   )
 }
 
-function TopProductsCard({ products, selectedProduct, setSelectedProduct, isKreol }) {
+function TopProductsCard({ products, departments = [], selectedProduct, setSelectedProduct, isKreol }) {
   return (
     <div style={cardStyle()}>
       <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 950, marginBottom: 12 }}>
         {isKreol ? "Top 20 produits" : "Top 20 produits"}
       </div>
       <div style={{ display: "grid", gap: 9 }}>
-        {products.map(product => {
+        {products.slice(0, 20).map(product => {
           const active = selectedProduct === product.normalizedName
           return (
             <button key={product.normalizedName} type="button" onClick={() => setSelectedProduct(product.normalizedName)} style={{
@@ -221,7 +305,7 @@ function TopProductsCard({ products, selectedProduct, setSelectedProduct, isKreo
               <span>
                 <strong>{product.label}</strong>
                 <span style={{ display: "block", color: COLORS.muted, fontSize: 12, marginTop: 3 }}>
-                  {product.purchaseCount} achat(s)
+                  {formatPurchaseCount(product.purchaseCount, isKreol)}
                 </span>
               </span>
               <strong style={{ color: COLORS.cyan }}>{formatMontant(product.averagePrice)}</strong>
@@ -229,6 +313,36 @@ function TopProductsCard({ products, selectedProduct, setSelectedProduct, isKreo
           )
         })}
       </div>
+
+      {departments.length > 0 && (
+        <div style={{ marginTop: 18 }}>
+          <div style={{ color: COLORS.yellow, fontSize: 14, fontWeight: 950, marginBottom: 10 }}>
+            {isKreol ? "Rayons i revient souvent" : "Rayons fréquents"}
+          </div>
+          <div style={{ display: "grid", gap: 8 }}>
+            {departments.slice(0, 8).map(product => (
+              <div key={product.normalizedName} style={{
+                display: "grid",
+                gridTemplateColumns: "1fr auto",
+                gap: 12,
+                border: "1px solid rgba(252,211,77,.18)",
+                borderRadius: 14,
+                background: "rgba(252,211,77,.06)",
+                color: COLORS.text,
+                padding: "10px 12px",
+              }}>
+                <span>
+                  <strong>{product.label}</strong>
+                  <span style={{ display: "block", color: COLORS.muted, fontSize: 12, marginTop: 3 }}>
+                    {isKreol ? "Labitid rayon" : "Habitude de rayon"}
+                  </span>
+                </span>
+                <strong style={{ color: COLORS.yellow }}>{formatPurchaseCount(product.purchaseCount, isKreol)}</strong>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -272,4 +386,3 @@ function SkeletonGrid() {
     </div>
   )
 }
-

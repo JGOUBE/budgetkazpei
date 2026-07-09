@@ -8,18 +8,18 @@ const card = extra => ({ background: `linear-gradient(135deg, ${COLORS.card}, ${
 
 const COPY = {
   fr: {
-    eyebrow: "Mes economies",
+    eyebrow: "Mes économies",
     title: "Cette semaine",
-    potential: "Tu aurais pu economiser",
+    potential: "Tu aurais pu économiser",
     suggestions: "Suggestions",
-    empty: "Scanne quelques tickets pour recevoir des pistes concretes.",
+    empty: "Scanne quelques tickets pour recevoir des pistes concrètes.",
   },
   kreol: {
     eyebrow: "Mes lekonomi",
     title: "Semen-la",
-    potential: "Ou te kapab economize",
+    potential: "Ou te kapab économizé",
     suggestions: "Bann suggestions",
-    empty: "Eskane quelques tike pou recevoir bann pistes concretes.",
+    empty: "Eskane quelques tiké pou recevoir bann pistes concrètes.",
   },
 }
 

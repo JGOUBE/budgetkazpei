@@ -83,7 +83,7 @@ export function estimateShoppingList(items: any[] = [], shoppingItems: any[] = [
       lowestPrice: money(match?.lowestPrice),
       highestPrice: money(match?.highestPrice),
       priceSource: estimatedPrice ? "known" : "missing",
-      priceLabel: estimatedPrice ? (Number(match?.purchaseCount || 0) > 1 ? "prix estime" : "dernier prix connu") : "prix a estimer",
+      priceLabel: estimatedPrice ? (Number(match?.purchaseCount || 0) > 1 ? "prix estimé" : "dernier prix connu") : "prix à estimer",
       knownStore: match?.history?.[0]?.store || "",
       purchaseCount: match?.purchaseCount || 0,
     }
@@ -106,7 +106,7 @@ export function buildShoppingListShareText({ title = "Liste de courses BudgetKaz
   const rows = Array.isArray(estimate?.items) ? estimate.items : []
   const lines = rows.map((item: any, index: number) => {
     const price = money(item.estimatedPrice)
-    const priceText = price > 0 ? `${price.toFixed(2).replace(".", ",")} EUR` : "prix a estimer"
+    const priceText = price > 0 ? `${price.toFixed(2).replace(".", ",")} EUR` : "prix à estimer"
     return `${index + 1}. ${item.name} - ${priceText}`
   })
 
@@ -118,11 +118,11 @@ export function buildShoppingListShareText({ title = "Liste de courses BudgetKaz
     "",
     ...lines,
     "",
-    `Total estime : ${total.toFixed(2).replace(".", ",")} EUR`,
+    `Total estimé : ${total.toFixed(2).replace(".", ",")} EUR`,
     `Produits : ${rows.length}`,
     `Prix manquants : ${missing}`,
     "",
-    "Prix bases sur mes tickets BudgetKazPei deja scannes.",
+    "Prix basés sur mes tickets BudgetKazPei déjà scannés.",
   ].join("\n")
 }
 
@@ -132,12 +132,12 @@ export function getPairingSuggestion(items: any[] = [], shoppingItems: any[] = [
   const hasRice = names.some(name => name.includes("riz"))
 
   if (hasChicken && !hasRice) {
-    return "Tu achetes souvent du riz avec le poulet. L'ajouter ?"
+    return "Tu achètes souvent du riz avec le poulet. L'ajouter ?"
   }
 
   const frequent = buildTopProducts(shoppingItems, 1)[0]
   if (frequent && !names.includes(frequent.normalizedName)) {
-    return `Tu achetes souvent ${frequent.label}. L'ajouter ?`
+    return `Tu achètes souvent ${frequent.label}. L'ajouter ?`
   }
 
   return ""

@@ -47,56 +47,56 @@ const TEXT = {
     gallery: "Importer une image",
     manual: "Remplir manuellement",
     quota: quota => quota.plan === "premium_plus"
-      ? `Analyses IA : ${quota.used} / illimite`
+      ? `Analyses IA : ${quota.used} / illimité`
       : `Analyses IA : ${quota.used} / ${quota.limit}`,
-    methodTitle: "Choisissez une methode",
-    privacy: "Vos tickets restent prives. Ils servent uniquement a mettre a jour votre budget.",
+    methodTitle: "Choisissez une méthode",
+    privacy: "Vos tickets restent privés. Ils servent uniquement à mettre à jour votre budget.",
     foodHint: "Ajoutez vos courses automatiquement ou manuellement. L'analyse automatique sert surtout aux tickets alimentaires, pour comprendre vos habitudes et recevoir des conseils utiles.",
-    loaded: "Image chargee. Verifiez les informations detectees.",
+    loaded: "Image chargée. Vérifiez les informations détectées.",
     manualReady: "OCR indisponible : vous pouvez remplir le ticket manuellement.",
     store: "Magasin",
     date: "Date",
     total: "Montant total",
-    totalReview: "Total a verifier",
-    totalReviewMessage: "BudgetKazPei n'a pas pu lire le total avec certitude. Verifiez ou saisissez le montant avant d'enregistrer.",
-    estimatedLinesSum: "Somme estimee des lignes detectees :",
-    category: "Categorie globale",
+    totalReview: "Total à vérifier",
+    totalReviewMessage: "BudgetKazPei n'a pas pu lire le total avec certitude. Vérifiez ou saisissez le montant avant d'enregistrer.",
+    estimatedLinesSum: "Somme estimée des lignes détectées :",
+    category: "Catégorie globale",
     items: "Articles",
     addLine: "Ajouter une ligne",
     remove: "Supprimer",
     save: "Enregistrer la course",
-    saveAnyway: "Enregistrer quand meme",
+    saveAnyway: "Enregistrer quand même",
     cancel: "Annuler",
-    empty: "Aucun ticket enregistre pour le moment.",
+    empty: "Aucun ticket enregistré pour le moment.",
     status: "Statut",
     open: "Ouvrir",
     deleteTicket: "Retirer le ticket",
-    confirmDelete: "Le ticket sera retire de votre historique et la depense liee sera retiree du budget. Les suppressions automatiques apres 7 jours, elles, conservent les transactions et les statistiques.",
-    duplicateTitle: "Ticket deja enregistre ?",
-    duplicateMessage: "Ce ticket semble deja enregistre. Voulez-vous quand meme l'ajouter ?",
-    duplicateAddAnyway: "Ajouter quand meme",
+    confirmDelete: "Le ticket sera retiré de votre historique et la dépense liée sera retirée du budget. Les suppressions automatiques après 7 jours conservent les transactions et les statistiques.",
+    duplicateTitle: "Ticket déjà enregistré ?",
+    duplicateMessage: "Ce ticket semble déjà enregistré. Voulez-vous quand même l'ajouter ?",
+    duplicateAddAnyway: "Ajouter quand même",
     duplicateCancel: "Annuler",
     budgetArticlesBlockedTitle: "Ticket reconnu pour le budget.",
-    budgetArticlesBlockedMessage: "Les articles detectes ne sont pas assez fiables pour vos Courses intelligentes.",
+    budgetArticlesBlockedMessage: "Les articles détectés ne sont pas assez fiables pour vos Courses intelligentes.",
     budgetTransactionPossible: "Transaction possible : oui",
-    smartShoppingNotFed: "Courses intelligentes : non alimentees",
-    blockedSaveNotice: "Ce ticket sera enregistre pour votre budget, mais ses articles ne seront pas utilises pour vos Courses intelligentes.",
-    showDetectedLines: "Voir les lignes detectees",
-    hideDetectedLines: "Masquer les lignes detectees",
-    itemNeedsReview: "A verifier",
-    itemNotUsedForSmartShopping: "Non utilise pour Courses intelligentes",
-    articlesToReview: "Articles a verifier",
-    partialArticlesLabel: "Budget valide — certains articles a verifier",
+    smartShoppingNotFed: "Courses intelligentes : non alimentées",
+    blockedSaveNotice: "Ce ticket sera enregistré pour votre budget, mais ses articles ne seront pas utilisés pour vos Courses intelligentes.",
+    showDetectedLines: "Voir les lignes détectées",
+    hideDetectedLines: "Masquer les lignes détectées",
+    itemNeedsReview: "À vérifier",
+    itemNotUsedForSmartShopping: "Non utilisé pour Courses intelligentes",
+    articlesToReview: "Articles à vérifier",
+    partialArticlesLabel: "Budget valide — certains articles à vérifier",
     correctArticles: "Corriger les articles",
-    unreliableDetectedLines: "Lignes detectees non fiables",
-    viewDetails: "Voir le detail",
-    saved: "Course enregistree.",
-    deleted: "Ticket retire de l'historique.",
-    error: "Analyse impossible. Vous pouvez reessayer ou remplir manuellement.",
-    quotaReached: "Quota atteint. Vous pouvez quand meme remplir manuellement.",
-    intensiveUsage: "Vous utilisez BudgetKazPei de maniere intensive. Contactez-nous afin que nous trouvions la formule la plus adaptee.",
-    expenseCreated: "Depense creee",
-    noUser: "Utilisateur non connecte.",
+    unreliableDetectedLines: "Lignes détectées non fiables",
+    viewDetails: "Voir le détail",
+    saved: "Course enregistrée.",
+    deleted: "Ticket retiré de l'historique.",
+    error: "Analyse impossible. Vous pouvez réessayer ou remplir manuellement.",
+    quotaReached: "Quota atteint. Vous pouvez quand même remplir manuellement.",
+    intensiveUsage: "Vous utilisez BudgetKazPei de manière intensive. Contactez-nous afin que nous trouvions la formule la plus adaptée.",
+    expenseCreated: "Dépense créée",
+    noUser: "Utilisateur non connecté.",
   },
   kr: {
     title: "Mon bann tike",
@@ -109,53 +109,53 @@ const TEXT = {
       ? `Analiz IA : ${quota.used} / san limit`
       : `Analiz IA : ${quota.used} / ${quota.limit}`,
     methodTitle: "Swazi in fason",
-    privacy: "Bann tike a ou i reste prive. Nou i servi azot zis pou met azour out bidze.",
-    foodHint: "Azout out courses otomatikman ou amain. Analiz otomatik-la le surtout pou bann tike manze, pou konprann out labitid ek gagn bann konsey itil.",
-    loaded: "Zimaz la charge. Verifie bann zinformasyon.",
-    manualReady: "OCR le pa disponib : ou pe ranpli tike-la amain.",
+    privacy: "Bann tiké a ou i reste privé. Nou i servi azot zis pou met out bidzé à jour.",
+    foodHint: "Azout out courses otomatikman ou amain. Analiz otomatik-la lé surtout pou bann tiké manzé, pou konprann out labitid ek gagn bann konsey itil.",
+    loaded: "Zimaz-la la chargé. Vérifié bann zinformasyon.",
+    manualReady: "OCR lé pa disponib : ou pé ranpli tiké-la amain.",
     store: "Magazin",
     date: "Dat",
     total: "Montan total",
-    totalReview: "Total pou verifie",
-    totalReviewMessage: "BudgetKazPei la pa reisi lir total-la bien. Verifie ousa rant montan-la avan anrezistre.",
-    estimatedLinesSum: "Som bann lign detecte an estimasyon :",
+    totalReview: "Total pou vérifié",
+    totalReviewMessage: "BudgetKazPei la pa réussi lir total-la bien. Vérifié ousa rant montan-la avan anrezistré.",
+    estimatedLinesSum: "Som bann lign détecté an estimasyon :",
     category: "Kategori",
     items: "Bann lartik",
     addLine: "Azout in lign",
     remove: "Suprim",
-    save: "Anrezistre course-la",
-    saveAnyway: "Anrezistre kan meme",
-    cancel: "Anile",
-    empty: "Nana poin tike anrezistre pou linstan.",
+    save: "Anrezistré course-la",
+    saveAnyway: "Anrezistré kan même",
+    cancel: "Anilé",
+    empty: "Nana poin tiké anrezistré pou linstan.",
     status: "Leta",
     open: "Ouvrir",
     deleteTicket: "Tir tike-la",
     confirmDelete: "Tike-la va sorti dann listwar ou ek depans-la va sorti dann bidze. Bann suppression otomatik apre 7 zour, zot i gard tranzaksyon ek statistik.",
-    duplicateTitle: "Tike-la deja anrezistre ?",
-    duplicateMessage: "Sa tike-la i semble deja anrezistre. Ou veu azout ali kan meme ?",
-    duplicateAddAnyway: "Azout kan meme",
-    duplicateCancel: "Anile",
-    budgetArticlesBlockedTitle: "Tike-la rekonu pou bidze.",
-    budgetArticlesBlockedMessage: "Bann lartik trouve pa ase sir pou out Courses intelligentes.",
+    duplicateTitle: "Tiké-la déjà anrezistré ?",
+    duplicateMessage: "Sa tiké-la i semble déjà anrezistré. Ou veu azout ali kan même ?",
+    duplicateAddAnyway: "Azout kan même",
+    duplicateCancel: "Anilé",
+    budgetArticlesBlockedTitle: "Tiké-la rekonu pou bidzé.",
+    budgetArticlesBlockedMessage: "Bann lartik trouvé pa ase sir pou out Courses intelligentes.",
     budgetTransactionPossible: "Tranzaksyon posib : wi",
     smartShoppingNotFed: "Courses intelligentes : pa alimante",
-    blockedSaveNotice: "Tike-la va anrezistre pou out bidze, me bann lartik-la pa va servi pou out Courses intelligentes.",
-    showDetectedLines: "War bann lign trouve",
-    hideDetectedLines: "Kasiet bann lign trouve",
-    itemNeedsReview: "Pou verifie",
+    blockedSaveNotice: "Tiké-la va anrezistré pou out bidzé, mé bann lartik-la pa va servi pou out Courses intelligentes.",
+    showDetectedLines: "War bann lign trouvé",
+    hideDetectedLines: "Kasiet bann lign trouvé",
+    itemNeedsReview: "Pou vérifié",
     itemNotUsedForSmartShopping: "Pa servi pou Courses intelligentes",
-    articlesToReview: "Bann lartik pou verifie",
-    partialArticlesLabel: "Bidze valide — nana lartik pou verifie",
+    articlesToReview: "Bann lartik pou vérifié",
+    partialArticlesLabel: "Bidzé validé — nana lartik pou vérifié",
     correctArticles: "Korize bann lartik",
-    unreliableDetectedLines: "Bann lign trouve pa ase sir",
+    unreliableDetectedLines: "Bann lign trouvé pa ase sir",
     viewDetails: "War detay",
-    saved: "Course anrezistree.",
-    deleted: "Tike retire dann listwar.",
-    error: "Analiz la pa marche. Ou pe reessaye ou ranpli amain.",
-    quotaReached: "Quota atteint. Ou pe kan meme ranpli amain.",
-    intensiveUsage: "Vous utilisez BudgetKazPei de maniere intensive. Contactez-nous afin que nous trouvions la formule la plus adaptee.",
-    expenseCreated: "Depans creee",
-    noUser: "Utilisateur pa konekte.",
+    saved: "Course anrezistrée.",
+    deleted: "Tiké retiré dann listwar.",
+    error: "Analiz-la pa marche. Ou pé réessayé ou ranpli amain.",
+    quotaReached: "Quota atteint. Ou pé kan même ranpli amain.",
+    intensiveUsage: "Ou pe servi BudgetKazPei souvan. Contacte a nou pou trouv formule pli adapté.",
+    expenseCreated: "Dépans créée",
+    noUser: "Utilisateur pa connecté.",
   },
 }
 
@@ -256,7 +256,7 @@ function getValidDraftItems(draft = {}) {
 
       return {
         ...item,
-        name: String(item.name || item.ocr_name || "Produit a verifier").trim(),
+        name: String(item.name || item.ocr_name || "Produit à vérifier").trim(),
         total_price: item.total_price ?? item.price ?? item.unit_price ?? "",
         item_status: finalStatus,
         status: finalStatus,
@@ -270,8 +270,8 @@ function getValidDraftItems(draft = {}) {
 function getDraftValidationError(draft = {}) {
   if (Number(draft.total_amount || 0) <= 0) {
     return draft.total_needs_review
-      ? "BudgetKazPei n'a pas pu lire le total avec certitude. Verifiez ou saisissez le montant avant d'enregistrer."
-      : "Montant total non detecte. Veuillez reprendre ou importer une image plus lisible du ticket."
+      ? "BudgetKazPei n'a pas pu lire le total avec certitude. Vérifiez ou saisissez le montant avant d'enregistrer."
+      : "Montant total non détecté. Veuillez reprendre ou importer une image plus lisible du ticket."
   }
 
   return ""
@@ -301,7 +301,7 @@ function isScannedReceiptDraft(draft = {}, scanMetrics = null) {
 function getTicketOutsideCurrentMonthMessage(isKreol = false) {
   return isKreol
     ? "Tike-la le pa dann mwa-la. Nou pa pe azout ali dann depans mwa-la."
-    : "Ce ticket n'appartient pas au mois en cours. Il ne peut pas etre ajoute aux depenses de ce mois."
+    : "Ce ticket n'appartient pas au mois en cours. Il ne peut pas être ajouté aux dépenses de ce mois."
 }
 
 function isTrustedScanResult(parsed = {}, validItems = []) {
@@ -503,9 +503,9 @@ function getReceiptArticleCountLabel(receipt = {}, txt) {
 
   if (hasReliableBudgetForReceipt(receipt) && usedCount > 0) {
     if (detectedCount > usedCount) {
-      return `Budget valide — ${usedCount} article(s) utilises / ${detectedCount} detectes`
+      return `Budget valide — ${usedCount} article(s) utilisés / ${detectedCount} détectés`
     }
-    return `Budget valide — ${usedCount} article(s) utilises`
+    return `Budget valide — ${usedCount} article(s) utilisés`
   }
 
   if (hasReliableBudgetForReceipt(receipt)) {
@@ -524,11 +524,11 @@ function getReceiptArticleCountLabel(receipt = {}, txt) {
       return "Budget valide — articles partiellement exploitables"
     }
 
-    return "Budget valide — detail des articles disponible"
+    return "Budget valide — détail des articles disponible"
   }
 
   if (isTrustedAutoScanPayload(receipt)) {
-    return detectedCount > 0 ? `Budget valide — ${detectedCount} article(s) utilises` : "Budget valide — articles reconnus"
+    return detectedCount > 0 ? `Budget valide — ${detectedCount} article(s) utilisés` : "Budget valide — articles reconnus"
   }
 
   if (isBudgetOkArticlesPartial(receipt)) {
@@ -577,7 +577,7 @@ function getArticleCountDisplayInfo({ parsed = {}, items = [], trustedItems = []
       displayed_items_count: null,
       displayed_items_count_source: "blocked_unreliable",
       real_items_count_if_known: declaredCountKnown ? expectedCount : null,
-      item_count_display_label: "Articles a verifier",
+      item_count_display_label: "Articles à vérifier",
     }
   }
 
@@ -603,7 +603,7 @@ function getArticleCountDisplayInfo({ parsed = {}, items = [], trustedItems = []
     displayed_items_count: null,
     displayed_items_count_source: "unknown_or_unreliable",
     real_items_count_if_known: declaredCountKnown ? expectedCount : null,
-    item_count_display_label: "Articles a verifier",
+    item_count_display_label: "Articles à vérifier",
   }
 }
 
@@ -612,63 +612,63 @@ function getScanResultMessage({ parsed = {}, detectedItemsCount = 0, issues = []
 
   if (isBudgetOkArticlesBlocked(parsed)) {
     return isKreol
-      ? "Tike-la rekonu pou bidze. Bann lartik trouve pa ase sir pou out Courses intelligentes."
-      : "Ticket reconnu pour le budget. Les articles detectes ne sont pas assez fiables pour vos Courses intelligentes."
+      ? "Tiké-la rekonu pou bidzé. Bann lartik trouvé pa ase sir pou out Courses intelligentes."
+      : "Ticket reconnu pour le budget. Les articles détectés ne sont pas assez fiables pour vos Courses intelligentes."
   }
 
   if (isTrustedScanResult(parsed, Array(detectedItemsCount).fill(true))) {
     return isKreol
-      ? `Tike-la le bien lir - ${detectedItemsCount} lartik trouve.`
-      : `Ticket lu avec succes - ${detectedItemsCount} articles detectes.`
+      ? `Tiké-la lé bien lir - ${detectedItemsCount} lartik trouvé.`
+      : `Ticket lu avec succès - ${detectedItemsCount} articles détectés.`
   }
 
   if (isBudgetOkArticlesPartial(parsed)) {
     const counts = getReceiptLearningCounts(parsed)
     return isKreol
-      ? `Bidze valide - ${counts.trusted || detectedItemsCount} lartik eksplwatab, ${counts.needsReview} pou verifie.`
-      : `Budget valide - ${counts.trusted || detectedItemsCount} article(s) exploitables, ${counts.needsReview} a verifier.`
+      ? `Bidzé validé - ${counts.trusted || detectedItemsCount} lartik eksplwatab, ${counts.needsReview} pou vérifié.`
+      : `Budget valide - ${counts.trusted || detectedItemsCount} article(s) exploitables, ${counts.needsReview} à vérifier.`
   }
 
   if (scanStatus.includes("usable_review")) {
     if (scanStatus.includes("long_usable_review")) {
       return isKreol
         ? "Tike long-la le lir an parti. Verifie bann lalinn avan anrezistre."
-        : "Ticket long lu partiellement. Verifiez les lignes avant d'enregistrer."
+        : "Ticket long lu partiellement. Vérifiez les lignes avant d'enregistrer."
     }
 
     return isKreol
-      ? "Tike-la le lir, verifie vitman bann zinfo avan anrezistre."
-      : "Ticket lu, verifiez rapidement les informations avant d'enregistrer."
+      ? "Tiké-la lé lir, vérifié vitman bann zinfo avan anrezistré."
+      : "Ticket lu, vérifiez rapidement les informations avant d'enregistrer."
   }
 
   if (scanStatus.includes("long_manual_review")) {
     return isKreol
       ? "Tike-la ankor difisil pou lir. Korize bann zinformasyon avan anrezistre."
-      : "Le ticket reste difficile a lire. Corrigez les informations avant d'enregistrer."
+      : "Le ticket reste difficile à lire. Corrigez les informations avant d'enregistrer."
   }
 
   const partialScan = scanStatus.includes("partial") || issues.includes("items_total_mismatch")
   if (partialScan) {
     return isKreol
-      ? `Tike-la lir an parti - verifie bann lign trouve (${detectedItemsCount} lartik).`
-      : `Ticket lu partiellement - verifiez les lignes detectees (${detectedItemsCount} article(s)).`
+      ? `Tiké-la lir an parti - vérifié bann lign trouvé (${detectedItemsCount} lartik).`
+      : `Ticket lu partiellement - vérifiez les lignes détectées (${detectedItemsCount} article(s)).`
   }
 
   if (detectedItemsCount >= 3) {
     return isKreol
-      ? `Tike anrezistre - ${detectedItemsCount} lartik trouve.`
-      : `Ticket enregistre avec succes - ${detectedItemsCount} articles detectes.`
+      ? `Tiké anrezistré - ${detectedItemsCount} lartik trouvé.`
+      : `Ticket enregistré avec succès - ${detectedItemsCount} articles détectés.`
   }
 
   if (detectedItemsCount === 0) {
     return isKreol
       ? "Tike anrezistre, me okenn lartik trouve. Ou pe azout bann lign amain."
-      : "Ticket enregistre, mais aucun article detecte. Vous pouvez ajouter les lignes manuellement."
+      : "Ticket enregistré, mais aucun article détecté. Vous pouvez ajouter les lignes manuellement."
   }
 
   return isKreol
-    ? `Tike-la lir an parti - verifie bann lign trouve (${detectedItemsCount} lartik).`
-    : `Ticket lu partiellement - verifiez les lignes detectees (${detectedItemsCount} article(s)).`
+    ? `Tiké-la lir an parti - vérifié bann lign trouvé (${detectedItemsCount} lartik).`
+    : `Ticket lu partiellement - vérifiez les lignes détectées (${detectedItemsCount} article(s)).`
 }
 
 function buildScannerSummary({ parsed = {}, items = [], metrics = {}, importResult = {}, duplicateDetected = false, duplicateConfirmed = false }) {
@@ -941,17 +941,17 @@ export default function ReceiptsPage({
             : longUsableReview
               ? "Tike long-la le lir an parti. Verifie bann lalinn avan anrezistre."
             : requiresQuickReview
-              ? "Tike-la le lir, verifie vitman bann zinfo avan anrezistre."
+              ? "Tiké-la lé lir, vérifié vitman bann zinfo avan anrezistré."
               : "BudgetKazPei la pa reisi lir total-la bien. Verifie ousa rant montan-la avan anrezistre."
           : splitStillNeedsReview
-            ? "Le ticket reste difficile a lire. Corrigez les informations avant d'enregistrer."
+            ? "Le ticket reste difficile à lire. Corrigez les informations avant d'enregistrer."
             : splitRetryUsed
-              ? "Lecture renforcee Premium+ terminee. Verifiez les informations avant d'enregistrer."
+              ? "Lecture renforcée Premium+ terminée. Vérifiez les informations avant d'enregistrer."
             : longUsableReview
-              ? "Ticket long lu partiellement. Verifiez les lignes avant d'enregistrer."
+              ? "Ticket long lu partiellement. Vérifiez les lignes avant d'enregistrer."
             : requiresQuickReview
-              ? "Ticket lu, verifiez rapidement les informations avant d'enregistrer."
-              : "BudgetKazPei n'a pas pu lire le total avec certitude. Verifiez ou saisissez le montant avant d'enregistrer.")
+              ? "Ticket lu, vérifiez rapidement les informations avant d'enregistrer."
+              : "BudgetKazPei n'a pas pu lire le total avec certitude. Vérifiez ou saisissez le montant avant d'enregistrer.")
         return
       }
 
@@ -970,8 +970,8 @@ export default function ReceiptsPage({
         setAllowDuplicateImport(false)
         setMode("validate")
         setMessage(isKreol
-          ? "Sa tike-la i semble deja anrezistre. Ou pe anile ou azout ali kan meme."
-          : "Ce ticket semble deja enregistre. Vous pouvez annuler ou l'ajouter quand meme.")
+          ? "Sa tiké-la i semble déjà anrezistré. Ou pé anilé ou azout ali kan même."
+          : "Ce ticket semble déjà enregistré. Vous pouvez annuler ou l'ajouter quand même.")
         return
       }
 
@@ -1002,7 +1002,7 @@ export default function ReceiptsPage({
       const isDateError = /date\/time field value out of range|invalid_ocr_date|date invalide/i.test(technicalMessage)
       setScanError(details)
       setMessage(isDateError
-        ? "Ticket lu, mais la date a ete estimee automatiquement. Reessayez l'enregistrement."
+        ? "Ticket lu, mais la date a été estimée automatiquement. Réessayez l'enregistrement."
         : details.userMessage || txt.error)
       try {
         await createScanMetric({
@@ -1442,7 +1442,7 @@ export default function ReceiptsPage({
         transaction_skip_reason: transactionResult?.skipReason || "",
         transaction_id: transactionResult?.transaction?.id || null,
       })
-      setMessage("Ticket mis a jour.")
+      setMessage("Ticket mis à jour.")
       await refreshReceipts()
       window.dispatchEvent(new CustomEvent("budgetkazpei:transactions-updated"))
     } catch (error) {
@@ -1484,7 +1484,7 @@ export default function ReceiptsPage({
         window.dispatchEvent(new CustomEvent("budgetkazpei:transactions-updated"))
       }
 
-      setMessage("Ligne mise a jour.")
+      setMessage("Ligne mise à jour.")
     } catch (error) {
       console.error("Erreur modification ligne ticket:", error)
       setMessage(txt.error)
@@ -1565,7 +1565,7 @@ export default function ReceiptsPage({
               Scan en cours retrouve
             </div>
             <div style={{ color: COLORS.muted, fontSize: 13, marginTop: 3 }}>
-              Vous pouvez reprendre le dernier ticket detecte ou l'ignorer.
+              Vous pouvez reprendre le dernier ticket détecté ou l'ignorer.
             </div>
           </div>
           <button type="button" disabled={busy} onClick={resumeLastScan} style={{ minHeight: 42, borderRadius: 12, border: "none", background: COLORS.accent, color: "#fff", fontWeight: 950, padding: "0 14px" }}>
@@ -1743,7 +1743,7 @@ function AnalysisScreen({ progress, txt }) {
           })}
         </div>
         <div style={{ color: COLORS.muted, fontSize: 13, marginTop: 8, lineHeight: 1.5 }}>
-          Optimisation, OCR, magasin, produits, total et verification.
+          Optimisation, OCR, magasin, produits, total et vérification.
         </div>
       </div>
     </div>
@@ -1925,9 +1925,9 @@ function ValidationForm({
                   Texte OCR : {item.ocr_name}
                 </div>
               )}
-              {(item.name === "Produit a verifier" || Number(item.confidence_score || 0) < 70) && (
+              {(item.name === "Produit à vérifier" || Number(item.confidence_score || 0) < 70) && (
                 <div style={{ color: COLORS.yellow, fontSize: 12, fontWeight: 900 }}>
-                  Produit a verifier avant enregistrement.
+                  Produit à vérifier avant enregistrement.
                 </div>
               )}
               <input
@@ -1944,7 +1944,7 @@ function ValidationForm({
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                   {item.department && <MetaChip label={`Rayon : ${item.department}`} />}
                   {item.subcategory && <MetaChip label={`Sous-categorie : ${item.subcategory}`} />}
-                  {item.promotion && <MetaChip label="Promotion detectee" strong />}
+                  {item.promotion && <MetaChip label="Promotion détectée" strong />}
                 </div>
               )}
               <select style={inputStyle()} value={item.category || "alimentaire"} onChange={e => updateItem(index, { category: e.target.value })}>
@@ -2124,7 +2124,7 @@ function ReceiptDetail({
       )}
       {partialReceipt && (
         <div style={{ marginTop: 8, color: COLORS.yellow, fontSize: 13, fontWeight: 900, lineHeight: 1.45 }}>
-          Budget valide : le total est verrouille. Vous pouvez corriger ou valider uniquement les articles a verifier. Les articles fiables alimentent deja Courses intelligentes.
+          Budget valide : le total est verrouillé. Vous pouvez corriger ou valider uniquement les articles à vérifier. Les articles fiables alimentent déjà Courses intelligentes.
         </div>
       )}
       <h2 style={{ color: COLORS.text, margin: "10px 0 6px" }}>{receipt.store_name || txt.scanTitle}</h2>
@@ -2136,7 +2136,7 @@ function ReceiptDetail({
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 10, marginBottom: 14 }}>
         <ActionButton label="Scanner un autre ticket" icon="" onClick={onScanAnother} disabled={busy} />
-        <ActionButton label="Retour a Mes tickets" icon="" onClick={onBackToTickets || onBack} disabled={busy} muted />
+        <ActionButton label="Retour à Mes tickets" icon="" onClick={onBackToTickets || onBack} disabled={busy} muted />
         {receipt.is_food_ticket && <ActionButton label="Voir mes Courses intelligentes" icon="" onClick={onOpenShoppingList} disabled={busy} muted />}
       </div>
       <div style={{ display: "grid", gap: 10 }}>
@@ -2151,7 +2151,7 @@ function ReceiptDetail({
             date_status: receiptDraft.date_status || "detected",
             total_amount: Number(receiptDraft.total_amount || 0),
           })} style={{ minHeight: 44, borderRadius: 12, border: "none", background: COLORS.cyan, color: "#06101F", fontWeight: 950 }}>
-            Mettre a jour le ticket
+            Mettre à jour le ticket
           </button>
         )}
       </div>
@@ -2179,7 +2179,7 @@ function ReceiptDetail({
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {isItemEligibleForSmartShopping(item)
                 ? <MetaChip label="Utilise pour Courses intelligentes" strong />
-                : <MetaChip label="A verifier avant Courses intelligentes" />}
+                : <MetaChip label="À vérifier avant Courses intelligentes" />}
             </div>
             <input
               style={inputStyle()}

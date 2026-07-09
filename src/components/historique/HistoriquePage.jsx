@@ -80,7 +80,7 @@ export default function HistoriquePage({
       await generateMonthlyBudgetPDF(item, pdfLanguage)
     } catch (error) {
       console.error("Erreur génération PDF:", error)
-      alert("Export PDF inclus dans Premium et Premium+, mais le fichier n'a pas pu etre genere pour le moment.")
+      alert("Export PDF inclus dans Premium et Premium+, mais le fichier n'a pas pu être généré pour le moment.")
     } finally {
       setGeneratingPdfId(null)
     }

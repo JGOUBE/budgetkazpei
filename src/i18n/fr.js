@@ -9,10 +9,10 @@ const fr = {
     receipts: "Mes tickets",
     shopping: "Mes courses",
     statistics: "Mes stats",
-    savings: "Mes economies",
-    shoppingList: "Liste courses",
+    savings: "Mes économies",
+    shoppingList: "Liste de courses",
     financeAssistant: "Mon assistant",
-    rewards: "Defis",
+    rewards: "Défis",
     profil: "Mon Profil",
     premium: "Passer Premium",
     signOut: "Se déconnecter",
@@ -95,7 +95,7 @@ const fr = {
   },
   receipts: {
     title: "Mes tickets",
-    scanCta: "Scanner ticket",
+    scanCta: "Scanner un ticket",
   },
   transactions: {
     addTitle: "Nouvelle transaction",

@@ -31,60 +31,61 @@ const CHART_COLORS = ["#22C55E", "#F97316", "#38BDF8", "#FCD34D", "#A78BFA", "#F
 const TEXT = {
   fr: {
     title: "Mes statistiques",
-    subtitle: "Comprends tes habitudes et repere les economies possibles.",
+    subtitle: "Comprends tes habitudes et repère les économies possibles.",
     periods: {
       month: "Ce mois-ci",
       lastMonth: "Mois dernier",
       "3months": "3 derniers mois",
       "6months": "6 derniers mois",
     },
-    expenses: "Depenses",
+    expenses: "Dépenses",
     income: "Revenus",
-    remaining: "Reste estime",
-    budgetUse: "Budget utilise",
-    categories: "Categories",
-    noCategories: "Ajoute des depenses pour voir la repartition.",
-    evolution: "Evolution",
+    remaining: "Reste estimé",
+    budgetUse: "Budget utilisé",
+    categories: "Catégories",
+    noCategories: "Ajoute des dépenses pour voir la répartition.",
+    evolution: "Évolution",
     courses: "Courses",
     tickets: "tickets",
     products: "produits",
     basketAverage: "Panier moyen",
-    topProduct: "Produit frequent",
-    notEnoughData: "Pas encore assez de donnees",
+    topProduct: "Produit fréquent",
+    notEnoughData: "Pas encore assez de données",
     stores: "Magasins",
     noStores: "Scanne un ticket pour voir tes magasins.",
-    frequentProducts: "Produits frequents",
-    noProducts: "Les produits frequents apparaitront apres quelques courses analysees.",
+    frequentProducts: "Produits fréquents",
+    noProducts: "Les produits fréquents apparaîtront après quelques courses analysées.",
     purchases: "achats",
     advice: "Conseils automatiques V1",
-    categoryFallback: "Categorie",
+    categoryFallback: "Catégorie",
   },
   kreol: {
     title: "Mes stats",
-    subtitle: "Comprann out labitid ek trouve kot ou pe fer lekonomi.",
+    subtitle: "Comprann out labitid ek trouvé kot ou pé fé lékonomi.",
     periods: {
       month: "Mwa-la",
       lastMonth: "Mwa dernier",
       "3months": "3 derniers mwa",
       "6months": "6 derniers mwa",
     },
-    expenses: "Depans",
+    expenses: "Dépans",
     income: "Revenus",
     remaining: "Larzan i reste",
-    budgetUse: "Bidze itilize",
+    budgetUse: "Bidzé utilisé",
     categories: "Kategori",
-    noCategories: "Azout depans pou voir repartition.",
-    evolution: "Evolution",
+    noCategories: "Azout dépans pou vwar répartition.",
+    evolution: "Évolisyon",
     courses: "Courses",
     tickets: "tike",
     products: "produits",
     basketAverage: "Panier moyen",
-    topProduct: "Produit frequent",
-    notEnoughData: "Pas encore assez donnees",
+    topProduct: "Produit i revient souvent",
+    notEnoughData: "Pankor assez donné",
     stores: "Magasins",
-    noStores: "Scanne in tike pou voir out magasins.",
-    frequentProducts: "Produits frequents",
-    noProducts: "Bann produits frequents va apparaitre apres quelques courses analysees.",
+    noStores: "Scanne in tiké pou vwar out magasins.",
+    frequentProducts: "Produits i revient souvent",
+    frequentDepartments: "Rayons i revient souvent",
+    noProducts: "Bann produits i revient souvent va apparèt apré quelques courses analysées.",
     purchases: "achats",
     advice: "Konsey otomatik V1",
     categoryFallback: "Kategori",
@@ -95,19 +96,19 @@ const CATEGORY_LABELS = {
   fr: {
     alimentaire: "Alimentaire",
     logement: "Logement",
-    energie: "Energie",
+    energie: "Énergie",
     loisirs: "Loisirs",
     transport: "Transport",
     divers: "Divers",
-    sante: "Sante",
+    sante: "Santé",
   },
   kreol: {
-    alimentaire: "Manze",
+    alimentaire: "Manzé",
     logement: "Kaz",
     energie: "Kouran / Dilo",
     loisirs: "Amizman",
     transport: "Transport",
-    divers: "Lot depans",
+    divers: "Lot dépans",
     sante: "Lasante",
   },
 }
@@ -150,6 +151,51 @@ function card(extra = {}) {
     padding: 18,
     ...extra,
   }
+}
+
+function pluralize(count, singular, plural) {
+  return `${Number(count || 0)} ${Number(count || 0) > 1 ? plural : singular}`
+}
+
+function normalizeLabel(value = "") {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
+const DEPARTMENT_PRODUCT_PATTERNS = [
+  "boucherie coupe",
+  "charcuterie ls",
+  "cremerie",
+  "epicerie sucree",
+  "epicerie salee",
+  "boissons sans alcool",
+  "ultra frais",
+  "fleurs plantes fruits legumes",
+  "fruits legumes",
+  "sous traitance",
+  "ppi",
+]
+
+function isDepartmentLikeProduct(product = {}) {
+  const label = normalizeLabel(product.label || product.name || product.normalizedName)
+  if (!label) return false
+  return DEPARTMENT_PRODUCT_PATTERNS.some(pattern => label === pattern || label.includes(pattern))
+}
+
+function splitProductRows(products = []) {
+  return products.reduce(
+    (acc, product) => {
+      if (isDepartmentLikeProduct(product)) acc.departments.push(product)
+      else acc.products.push(product)
+      return acc
+    },
+    { products: [], departments: [] },
+  )
 }
 
 export default function StatisticsPage({
@@ -316,8 +362,8 @@ function CoursesCard({ courses, txt }) {
     <div style={card()}>
       <h2 style={{ color: COLORS.text, fontSize: 18, margin: "0 0 12px" }}>{txt.courses}</h2>
       <div style={{ display: "grid", gap: 10, color: COLORS.text, fontWeight: 900 }}>
-        <span>{courses.receiptsCount} {txt.tickets}</span>
-        <span>{courses.productsCount} {txt.products}</span>
+        <span>{pluralize(courses.receiptsCount, "ticket", "tickets")}</span>
+        <span>{pluralize(courses.productsCount, "produit", "produits")}</span>
         <span>{txt.basketAverage} : {formatMontant(courses.basketAverage)}</span>
         <span>{txt.topProduct} : {courses.topProduct?.label || txt.notEnoughData}</span>
       </div>
@@ -351,19 +397,35 @@ function StoresCard({ stores, txt }) {
 }
 
 function ProductsCard({ products, txt }) {
+  const { products: preciseProducts, departments } = splitProductRows(products)
+
   return (
     <div style={card()}>
       <h2 style={{ color: COLORS.text, fontSize: 18, margin: "0 0 12px" }}>{txt.frequentProducts}</h2>
-      {products.length === 0 ? (
+      {preciseProducts.length === 0 ? (
         <div style={{ color: COLORS.muted }}>{txt.noProducts}</div>
       ) : (
         <div style={{ display: "grid", gap: 9 }}>
-          {products.map(product => (
+          {preciseProducts.map(product => (
             <div key={product.normalizedName} style={{ display: "flex", justifyContent: "space-between", color: COLORS.text, borderBottom: "1px solid rgba(255,255,255,.08)", paddingBottom: 8 }}>
               <strong>{product.label}</strong>
-              <span>{product.purchaseCount} {txt.purchases}</span>
+              <span>{pluralize(product.purchaseCount, "achat", "achats")}</span>
             </div>
           ))}
+        </div>
+      )}
+
+      {departments.length > 0 && (
+        <div style={{ marginTop: 18 }}>
+          <h3 style={{ color: COLORS.yellow, fontSize: 16, margin: "0 0 10px" }}>{txt.frequentDepartments || "Rayons fréquents"}</h3>
+          <div style={{ display: "grid", gap: 9 }}>
+            {departments.map(product => (
+              <div key={product.normalizedName} style={{ display: "flex", justifyContent: "space-between", color: COLORS.text, borderBottom: "1px solid rgba(255,255,255,.08)", paddingBottom: 8 }}>
+                <strong>{product.label}</strong>
+                <span>{pluralize(product.purchaseCount, "achat", "achats")}</span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>

@@ -9,20 +9,20 @@ function categoryLabel(category = "", isKreol = false) {
   const fr: Record<string, string> = {
     alimentaire: "alimentaire",
     logement: "logement",
-    energie: "energie",
+    energie: "énergie",
     transport: "transport",
     loisirs: "loisirs",
-    sante: "sante",
+    sante: "santé",
     divers: "divers",
   }
   const kreol: Record<string, string> = {
-    alimentaire: "manze",
+    alimentaire: "manzé",
     logement: "kaz",
     energie: "kouran / dilo",
     transport: "transport",
     loisirs: "amizman",
     sante: "lasante",
-    divers: "lot depans",
+    divers: "lot dépans",
   }
   return (isKreol ? kreol : fr)[key] || category || (isKreol ? "kategori" : "categorie")
 }
@@ -34,15 +34,15 @@ export function buildStatisticsAdvice(insights: any = {}, language = "fr") {
 
   if (food?.percent > 40) {
     advice.push(isKreol
-      ? "Out depans manze i pran in gran part out bidze mwa-la."
-      : "Ton alimentation represente une grande part de ton budget ce mois-ci.")
+      ? "Out dépans manzé i pran in gran part out bidzé mwa-la."
+      : "Ton alimentation représente une grande part de ton budget ce mois-ci.")
   }
 
   const lastWeeks = insights.weeklyEvolution || []
   if (lastWeeks.length >= 2 && moneyValue(lastWeeks.at(-1)?.amount) > moneyValue(lastWeeks.at(-2)?.amount)) {
     advice.push(isKreol
-      ? "Out depans i semble augmente su derniere semaine."
-      : "Tes depenses semblent augmenter sur la derniere semaine.")
+      ? "Out dépans i semble augmenté su la dernière semaine."
+      : "Tes dépenses semblent augmenter sur la dernière semaine.")
   }
 
   const almostReached = (insights.categories || []).find((cat: any) => {
@@ -50,20 +50,20 @@ export function buildStatisticsAdvice(insights: any = {}, language = "fr") {
   })
   if (almostReached) {
     advice.push(isKreol
-      ? `Out bidze ${categoryLabel(almostReached.id || almostReached.label, true)} le presque atteint.`
+      ? `Out bidzé ${categoryLabel(almostReached.id || almostReached.label, true)} lé presque atteint.`
       : `Ton budget ${categoryLabel(almostReached.id || almostReached.label, false)} est presque atteint.`)
   }
 
   if ((insights.courses?.basketAverage || 0) > 0 && (insights.courses?.receiptsCount || 0) >= 3) {
     advice.push(isKreol
-      ? "Surveille out panier moyen : le in bon indicateur pou trouve lekonomi."
-      : "Surveille ton panier moyen : c'est un bon indicateur pour reperer les economies.")
+      ? "Surveille out panier moyen : lé in bon indicateur pou trouv lékonomi."
+      : "Surveille ton panier moyen : c'est un bon indicateur pour repérer les économies.")
   }
 
   if (advice.length === 0) {
     advice.push(isKreol
-      ? "Continue ajoute out depans : plus nana donnees, plus konsey i devient utile."
-      : "Continue a saisir tes depenses : plus il y a de donnees, plus les conseils deviennent utiles.")
+      ? "Continue azout out dépans : plus nana donné, plus konsey i devient utile."
+      : "Continue à saisir tes dépenses : plus il y a de données, plus les conseils deviennent utiles.")
   }
 
   return advice.slice(0, 4)

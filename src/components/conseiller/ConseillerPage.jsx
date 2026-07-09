@@ -53,8 +53,8 @@ export default function ConseillerPage({
       color: COLORS.green,
       title: isKreol ? "Scan mon profil" : "Scanner mon profil",
       text: isKreol
-        ? "Analyse out profil gratuitement pou trouve bann aides ek demarches les plus utiles."
-        : "Analyse gratuitement votre profil pour identifier les aides et demarches les plus pertinentes.",
+        ? "Analyse out profil gratuitement pou trouv bann aides ek démarches les plus utiles."
+        : "Analyse gratuitement votre profil pour identifier les aides et démarches les plus pertinentes.",
       prompt: isKreol
         ? "Analyse mon profil BudgetKazPei. Donne a moin bann aides, droits ek demarches les plus utiles selon ma situation. Repond en creole reunionnais simple. Pose une seule question seulement si in information essentielle i manque."
         : "Analyse mon profil BudgetKazPei. Indique les aides, droits et demarches les plus pertinents selon ma situation. Pose une seule question uniquement si une information essentielle manque.",
@@ -80,8 +80,8 @@ export default function ConseillerPage({
         ? "Colle in courrier CAF, CCAS, France Travail ou autre. Le konseye n'invente rien."
         : "Collez un courrier CAF, CCAS, France Travail ou autre. Le conseiller n'invente rien.",
       prompt: isKreol
-        ? "Mi sava colle in courrier administratif. Aide a moin comprendre seulement sak le ecrit, sak i manque, sak faut verifier, ek prochaine action."
-        : "Je vais coller un courrier administratif. Aide-moi a comprendre uniquement ce qui est ecrit, ce qui manque, ce qu'il faut verifier, et la prochaine action.",
+        ? "Mi sava colle in courrier administratif. Aide à moin comprendre seulement sak lé écrit, sak i manque, sak faut vérifier, ek prochaine action."
+        : "Je vais coller un courrier administratif. Aide-moi à comprendre uniquement ce qui est écrit, ce qui manque, ce qu'il faut vérifier, et la prochaine action.",
     },
     {
       mode: "preparer_dossier",
@@ -99,13 +99,13 @@ export default function ConseillerPage({
       mode: "generer_email",
       icon: Mail,
       color: COLORS.purple,
-      title: isKreol ? "Prepar in email" : "Generer un email",
+      title: isKreol ? "Prépar in email" : "Générer un email",
       text: isKreol
-        ? "Email simple, poli, pret pou copier, sans donnee inventee."
-        : "Email simple, poli, pret a copier, sans donnee inventee.",
+        ? "Email simple, poli, prêt pou copier, sans donnée inventée."
+        : "Email simple, poli, prêt à copier, sans donnée inventée.",
       prompt: isKreol
-        ? "Aide a moin rediz in email administratif simple ek poli. Pa mette aucun nom ni prenom automatiquement. Utilise [A completer] si in info i manque."
-        : "Aide-moi a rediger un email administratif simple et poli. Ne mets aucun nom ni prenom automatiquement. Utilise [A completer] si une information manque.",
+        ? "Aide à moin rediz in email administratif simple ek poli. Pa mette aucun nom ni prénom automatiquement. Utilise [À compléter] si in info i manque."
+        : "Aide-moi à rédiger un email administratif simple et poli. Ne mets aucun nom ni prénom automatiquement. Utilise [À compléter] si une information manque.",
     },
     {
       mode: "preparer_recours",
@@ -189,8 +189,8 @@ export default function ConseillerPage({
             }}
           >
             {isKreol
-              ? "In konseye numerique reunionnais pou aide aou comprendre, preparer, decider ek avancer sans repetition inutile."
-              : "Un conseiller numerique reunionnais pour vous aider a comprendre, preparer, decider et avancer sans repetition inutile."}
+              ? "In konseye numérique réunionnais pou aide aou comprendre, préparer, décider ek avancer sans répétition inutile."
+              : "Un conseiller numérique réunionnais pour vous aider à comprendre, préparer, décider et avancer sans répétition inutile."}
           </p>
         </div>
       </section>

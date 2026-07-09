@@ -6,13 +6,13 @@ const kreol = {
     opportunites: "Bon Plan",
     monthlyHistory: "Istorik chak mwa",
     abonnements: "Sarz fix",
-    receipts: "Mon bann tike",
+    receipts: "Mon bann tiké",
     shopping: "Mes courses",
     statistics: "Mes stats",
     savings: "Mes ekonomi",
     shoppingList: "Lis courses",
     financeAssistant: "Mon assistant",
-    rewards: "Defis",
+    rewards: "Défis",
     profil: "Mon Profil",
     premium: "Pas an Premium",
     signOut: "Dékonekté",
@@ -169,8 +169,8 @@ const kreol = {
     revenus: "Larzan rantre",
   },
   receipts: {
-    title: "Mon bann tike",
-    scanCta: "Scanner tike",
+    title: "Mon bann tiké",
+    scanCta: "Scanner tiké",
   },
 
   transactions: {

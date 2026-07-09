@@ -697,7 +697,7 @@ export default function AssistantConseiller({
       setErrorMessage(
         isKreol
           ? "Le konseye le indisponib pou linstan. Reessay in pe plus tar."
-          : "Le conseiller est indisponible pour le moment. Reessayez dans quelques instants."
+          : "Le conseiller est indisponible pour le moment. Réessayez dans quelques instants."
       )
       return
     }
@@ -724,7 +724,7 @@ export default function AssistantConseiller({
       result.answer ||
       (isKreol
         ? "Mi na pas reussi generer in repons pou linstan."
-        : "Je n'ai pas reussi a generer une reponse pour le moment.")
+        : "Je n'ai pas réussi à générer une réponse pour le moment.")
 
     setHistory(prev =>
       [
@@ -771,8 +771,8 @@ export default function AssistantConseiller({
 
       <p style={{ color: COLORS.muted, lineHeight: 1.6, marginTop: 0 }}>
         {isKreol
-          ? "Choisis in bouton, complete si besoin, puis koz ek mon konseye. Ici, pas de liste doublon : seulement la reponse utile."
-          : "Choisissez un bouton, completez si besoin, puis discutez avec votre conseiller. Ici, pas de doublon : seulement la reponse utile."}
+          ? "Choisis in bouton, complète si besoin, puis koz ek mon konseye. Ici, pas de liste doublon : seulement la réponse utile."
+          : "Choisissez un bouton, complétez si besoin, puis discutez avec votre conseiller. Ici, pas de doublon : seulement la réponse utile."}
       </p>
 
       <div
@@ -855,8 +855,8 @@ export default function AssistantConseiller({
         }}
         placeholder={
           isKreol
-            ? "Ecris out kestion ou colle out courrier ici..."
-            : "Ecrivez votre question ou collez votre courrier ici..."
+            ? "Écris out kestion ou colle out courrier ici..."
+            : "Écrivez votre question ou collez votre courrier ici..."
         }
         style={{
           width: "100%",
@@ -946,8 +946,8 @@ export default function AssistantConseiller({
         <div style={{ marginTop: 18, display: "grid", gap: 12 }}>
           <div style={{ color: COLORS.muted, fontSize: 12, fontWeight: 800 }}>
             {isKreol
-              ? "Dernieres reponses : 6 maximum."
-              : "Dernieres reponses : 6 maximum."}
+              ? "Dernières réponses : 6 maximum."
+              : "Dernières réponses : 6 maximum."}
           </div>
 
           {history.map(item => (
@@ -973,7 +973,7 @@ export default function AssistantConseiller({
                 }}
               >
                 <MessageCircle size={16} />
-                {isKreol ? "Repons" : "Reponse"} - {getModeLabel(item.mode, isKreol)}
+                {isKreol ? "Répons" : "Réponse"} - {getModeLabel(item.mode, isKreol)}
               </div>
 
               <div
@@ -1013,8 +1013,8 @@ export default function AssistantConseiller({
           }}
         >
           {isKreol
-            ? "Choisis in bouton anler, puis complete out demande. Le konseye va repondre selon le mode choisi."
-            : "Choisissez un bouton au-dessus, puis completez votre demande. Le conseiller repondra selon le mode choisi."}
+            ? "Choisis in bouton anlèr, puis complète out demande. Le konseye va répondre selon le mode choisi."
+            : "Choisissez un bouton au-dessus, puis complétez votre demande. Le conseiller répondra selon le mode choisi."}
         </div>
       )}
     </section>

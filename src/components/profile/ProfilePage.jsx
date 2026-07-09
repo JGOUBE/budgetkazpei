@@ -532,7 +532,7 @@ export default function ProfilePage({ user, t }) {
             <p style={{ fontSize: 12, color: COLORS.muted, margin: "8px 0 0", lineHeight: 1.5 }}>
               {tr(
                 isKreol,
-                "Votre position n'est jamais suivie. Seule votre commune est enregistree.",
+                "Votre position n'est jamais suivie. Seule votre commune est enregistrée.",
                 "Nou pa suiv out pozisyon. Selman out kominn lé anrezistrée.",
               )}
             </p>
@@ -788,7 +788,7 @@ export default function ProfilePage({ user, t }) {
           </button>
 
           <p style={{ margin: 0, color: COLORS.muted, fontSize: 11.5, lineHeight: 1.45 }}>
-            {tr(isKreol, "Le message sera enregistré dans Supabase, dans la table support_messages. Support :", "Lo message sera enregistré dann Supabase, dann table support_messages. Support :")} {CONTACT_EMAIL}.
+            {tr(isKreol, "Le message sera enregistré dans Supabase, dans la table support_messages. Support :", "Lo message lé enregistré dann Supabase, dann table support_messages. Support :")} {CONTACT_EMAIL}.
           </p>
         </form>
       </div>
