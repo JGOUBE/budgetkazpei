@@ -1685,40 +1685,6 @@ function TopCategoriesV2Card({ categories = [], t, isKreol }) {
   )
 }
 
-function RecentReceiptsCard({ receipts = [], isKreol, onOpenReceipts }) {
-  return (
-    <TropicalCard variant="lagoon" emoji={BkIcons.receipts} style={{ padding: 18, borderRadius: 22 }} innerStyle={{ paddingLeft: 62 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 12 }}>
-        <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 950 }}>
-          {isKreol ? "Dèrnyé courses" : "Dernières courses analysées"}
-        </div>
-        {onOpenReceipts && (
-          <button type="button" onClick={onOpenReceipts} style={{ minHeight: 40, borderRadius: 999, border: "1px solid rgba(255,255,255,.14)", background: "rgba(255,255,255,.07)", color: COLORS.cyan, fontWeight: 950, padding: "0 12px", cursor: "pointer" }}>
-            {isKreol ? "Voir" : "Voir mes courses"}
-          </button>
-        )}
-      </div>
-      {receipts.length === 0 ? (
-        <div style={{ color: COLORS.muted, lineHeight: 1.5 }}>
-          {isKreol ? "Analiz out première course pou voir out labitid." : "Analyse ta première course pour voir tes habitudes."}
-        </div>
-      ) : (
-        <div style={{ display: "grid", gap: 9 }}>
-          {receipts.slice(0, 3).map(row => (
-            <div key={row.id} style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 10, color: COLORS.text, borderBottom: "1px solid rgba(255,255,255,.08)", paddingBottom: 8 }}>
-              <span>
-                <strong>{row.store_name || "Ticket"}</strong>
-                <span style={{ display: "block", color: COLORS.muted, fontSize: 12, marginTop: 3 }}>{row.purchase_date || ""}</span>
-              </span>
-              <strong style={{ color: COLORS.green }}>{formatMontant(Number(row.total_amount || 0))}</strong>
-            </div>
-          ))}
-        </div>
-      )}
-    </TropicalCard>
-  )
-}
-
 function SavingsOpportunitiesCard({ hints = [], isKreol, onOpenConseiller }) {
   return (
     <TropicalCard variant="gold" emoji={BkIcons.savings} style={{ padding: 18, borderRadius: 22 }} innerStyle={{ paddingLeft: 62 }}>
@@ -2316,12 +2282,6 @@ export default function Dashboard({
         isKreol={isKreol}
         isMobile={isMobile}
         onOpenShopping={() => navigateTo("shopping", onOpenShopping)}
-      />
-
-      <RecentReceiptsCard
-        receipts={dashboardInsights.recentReceipts}
-        isKreol={isKreol}
-        onOpenReceipts={() => navigateTo("receipts", onOpenReceipts)}
       />
 
       <SavingsOpportunitiesCard

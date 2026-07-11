@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { brandLogo } from "../../assets/brand"
+import AppLogo from "../AppLogo"
 
 const COLORS = {
   bg: "#0A1628",
@@ -199,17 +199,7 @@ export default function LoginPage({
               zIndex: 2,
             }}
           >
-            <img
-              src={brandLogo}
-              alt="BudgetKazPei"
-              style={{
-                width: 72,
-                height: 72,
-                objectFit: "contain",
-                display: "block",
-                filter: "drop-shadow(0 10px 22px rgba(0,0,0,.35))",
-              }}
-            />
+            <AppLogo size={72} style={{ filter: "drop-shadow(0 10px 22px rgba(0,0,0,.35))" }} />
             <span
               style={{
                 color: COLORS.cream,

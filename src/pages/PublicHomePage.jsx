@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { brandLogo } from "../assets/brand"
+import AppLogo from "../components/AppLogo"
 
 const COLORS = {
   bg: "#081426",
@@ -207,7 +207,7 @@ export default function PublicHomePage() {
       <header style={{ position: "absolute", zIndex: 5, inset: "0 0 auto 0", padding: "20px 18px" }}>
         <div style={{ maxWidth: 1160, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
           <a href="/" aria-label="BudgetKazPei accueil" style={{ display: "inline-flex", alignItems: "center", gap: 9, textDecoration: "none" }}>
-            <img src={brandLogo} alt="BudgetKazPei" style={{ width: 38, height: 38, objectFit: "contain", display: "block" }} />
+            <AppLogo size={38} />
             <span style={{ color: COLORS.text, fontWeight: 950, fontSize: 19, lineHeight: 1 }}>BudgetKazPei</span>
           </a>
           <nav style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>

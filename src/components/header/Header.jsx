@@ -1,7 +1,7 @@
 import LanguageSwitcher from "../LanguageSwitcher"
 import { BkIcons } from "../icons-budgetkazpei"
 import { ds, buttonStyle } from "../../styles/designSystem"
-import { brandLogo } from "../../assets/brand"
+import AppLogo from "../AppLogo"
 
 export default function Header({ activeNav, onAdd, lang, onToggleLang, t, commune }) {
   const LocationIcon = BkIcons.location
@@ -24,7 +24,7 @@ export default function Header({ activeNav, onAdd, lang, onToggleLang, t, commun
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28, gap: 16, flexWrap: "wrap" }}>
       <div>
         <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 10, minHeight: 38 }}>
-          <img src={brandLogo} alt="BudgetKazPei" style={{ width: 36, height: 36, objectFit: "contain", flexShrink: 0, display: "block" }} />
+          <AppLogo size={36} />
           <span style={{ color: ds.textPrimary, fontWeight: 950, fontSize: 20, letterSpacing: 0, lineHeight: 1 }}>BudgetKazPei</span>
         </div>
         <h1 style={{ margin: 0, fontSize: 24, fontFamily: "'DM Serif Display', serif", fontWeight: 400, color: ds.textPrimary }}>

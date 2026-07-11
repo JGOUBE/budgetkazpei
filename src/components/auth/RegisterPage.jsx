@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { brandLogo } from "../../assets/brand"
+import AppLogo from "../AppLogo"
 
 const COLORS = {
   bg: "#0A1628",
@@ -103,14 +103,9 @@ export default function RegisterPage({ onRegister, onGoLogin }) {
               margin: "0 auto 10px",
             }}
           >
-            <img
-              src={brandLogo}
-              alt="BudgetKazPei"
+            <AppLogo
+              size={64}
               style={{
-                width: 64,
-                height: 64,
-                objectFit: "contain",
-                display: "block",
                 pointerEvents: "none",
                 filter: "drop-shadow(0 10px 20px rgba(0,0,0,.32))",
               }}

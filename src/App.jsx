@@ -46,7 +46,7 @@ import SuppressionComptePage from "./pages/SuppressionComptePage"
 import ResetPasswordPage from "./pages/ResetPasswordPage"
 import { BkIcons } from "./components/icons-budgetkazpei"
 import { ds } from "./styles/designSystem"
-import { brandLogo } from "./assets/brand"
+import AppLogo from "./components/AppLogo"
 
 const COLORS = {
   bg: ds.background,
@@ -438,7 +438,7 @@ function BudgetKazPeiApp({ initialAuthPage = "login" }) {
               pointerEvents: "none",
             }}
           >
-            <img src={brandLogo} alt="BudgetKazPei" style={{ width: 36, height: 36, objectFit: "contain", display: "block", flexShrink: 0 }} />
+            <AppLogo size={36} />
             <span style={{ fontSize: 17, fontWeight: 950, color: COLORS.text, lineHeight: 1, whiteSpace: "nowrap" }}>BudgetKazPei</span>
           </div>
 

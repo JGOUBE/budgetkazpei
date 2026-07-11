@@ -1,6 +1,6 @@
 ﻿import { BkIcons } from "../icons-budgetkazpei"
 import { ds } from "../../styles/designSystem"
-import { brandLogo } from "../../assets/brand"
+import AppLogo from "../AppLogo"
 
 const NAV_ITEMS = [
   { id: "dashboard", icon: BkIcons.dashboard, section: "nav", key: "dashboard" },
@@ -73,7 +73,7 @@ export default function Sidebar({
     >
       <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden", paddingRight: 2, paddingBottom: 10 }}>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, margin: "12px 0 18px" }}>
-          <img src={brandLogo} alt="BudgetKazPei" style={{ width: 68, height: 68, objectFit: "contain", display: "block" }} />
+          <AppLogo size={68} />
           <div style={{ color: ds.textPrimary, fontWeight: 950, fontSize: 19, letterSpacing: 0, lineHeight: 1 }}>
             BudgetKazPei
           </div>
