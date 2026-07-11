@@ -44,9 +44,14 @@ const TEXT = {
     scanTitle: "Scanner ticket",
     scanCta: "Scanner ticket",
     camera: "Prendre une photo",
+    cameraHint: "Idéal pour un ticket simple",
     gallery: "Importer une image",
+    galleryHint: "Depuis votre galerie",
     manual: "Remplir manuellement",
+    manualHint: "Option de secours",
     longTicket: "Ticket long (2 photos)",
+    longTicketShortHint: "Haut + bas du ticket",
+    longTicketBadge: "Nouveau",
     longTicketTitle: "Scanner un ticket long",
     longTicketHint: "Photo 1 : haut ou milieu du ticket. Photo 2 : bas du ticket avec total et paiement.",
     longTicketTop: "Photo 1 : haut du ticket",
@@ -117,9 +122,14 @@ const TEXT = {
     scanTitle: "Scanner tike",
     scanCta: "Scanner tike",
     camera: "Pran in foto",
+    cameraHint: "Idéal pou in tiké simple",
     gallery: "Import in zimaz",
+    galleryHint: "Depuis out galerie",
     manual: "Ranpli amain",
+    manualHint: "Si scan-la i marche pa",
     longTicket: "Tiké long (2 foto)",
+    longTicketShortHint: "Lao + anba tiké-la",
+    longTicketBadge: "Nouveau",
     longTicketTitle: "Scanner in tiké long",
     longTicketHint: "Foto 1 : lao ou milié tiké-la. Foto 2 : anba tiké-la ek total ek paiement.",
     longTicketTop: "Foto 1 : lao tiké-la",
@@ -1946,11 +1956,45 @@ export default function ReceiptsPage({
         </div>
       )}
 
-      <div style={{ display: showMethodActions ? "grid" : "none", gridTemplateColumns: isMobile ? "1fr" : "repeat(4, 1fr)", gap: 12 }}>
-        <ActionButton label={txt.camera} Icon={BkIcons.scan} disabled={busy} onClick={() => cameraRef.current.click()} />
-        <ActionButton label={txt.gallery} Icon={BkIcons.receipts} disabled={busy} onClick={() => galleryRef.current.click()} />
-        <ActionButton label={txt.longTicket} Icon={BkIcons.receipts} disabled={busy} onClick={openLongTicketMode} muted />
-        <ActionButton label={txt.manual} Icon={BkIcons.add} disabled={busy} onClick={startManual} muted />
+      <div style={{
+        display: showMethodActions ? "grid" : "none",
+        gridTemplateColumns: isMobile ? "1fr" : "repeat(2, minmax(0, 1fr))",
+        gap: 12,
+      }}>
+        <ScannerActionButton
+          title={txt.camera}
+          description={txt.cameraHint}
+          Icon={BkIcons.scan}
+          variant="primary"
+          disabled={busy}
+          onClick={() => cameraRef.current.click()}
+        />
+        <ScannerActionButton
+          title={txt.gallery}
+          description={txt.galleryHint}
+          Icon={BkIcons.receipts}
+          variant="secondary"
+          disabled={busy}
+          onClick={() => galleryRef.current.click()}
+        />
+        <ScannerActionButton
+          title={txt.longTicket}
+          description={txt.longTicketShortHint}
+          badge={txt.longTicketBadge}
+          Icon={BkIcons.receipts}
+          variant="special"
+          active={longTicketMode}
+          disabled={busy}
+          onClick={openLongTicketMode}
+        />
+        <ScannerActionButton
+          title={txt.manual}
+          description={txt.manualHint}
+          Icon={BkIcons.add}
+          variant="neutral"
+          disabled={busy}
+          onClick={startManual}
+        />
       </div>
 
       {showMethodActions && longTicketMode && (
@@ -2152,6 +2196,130 @@ function triggerButtonFeedback() {
   } catch {
     // Retour haptique facultatif.
   }
+}
+
+function ScannerActionButton({ title, description, badge = "", Icon, onClick, disabled, variant = "neutral", active = false }) {
+  const [pressed, setPressed] = useState(false)
+  const isDisabled = Boolean(disabled)
+
+  const variants = {
+    primary: {
+      background: `linear-gradient(135deg, ${COLORS.accent}, #FB923C)`,
+      border: "1px solid rgba(255,255,255,.18)",
+      color: "#FFFFFF",
+      descriptionColor: "rgba(255,255,255,.82)",
+      iconBackground: "rgba(255,255,255,.18)",
+      shadow: "0 18px 34px rgba(249,115,22,.30)",
+      activeShadow: "0 8px 18px rgba(249,115,22,.22)",
+    },
+    secondary: {
+      background: "linear-gradient(135deg, rgba(35,211,214,.20), rgba(21,36,68,.92))",
+      border: "1px solid rgba(35,211,214,.38)",
+      color: COLORS.text,
+      descriptionColor: COLORS.muted,
+      iconBackground: "rgba(35,211,214,.16)",
+      shadow: "0 14px 28px rgba(35,211,214,.10)",
+      activeShadow: "0 7px 16px rgba(35,211,214,.12)",
+    },
+    special: {
+      background: active
+        ? "linear-gradient(135deg, rgba(168,85,247,.34), rgba(35,211,214,.20))"
+        : "linear-gradient(135deg, rgba(124,58,237,.26), rgba(21,36,68,.95))",
+      border: active ? "1px solid rgba(168,85,247,.75)" : "1px solid rgba(168,85,247,.42)",
+      color: COLORS.text,
+      descriptionColor: "#C4B5FD",
+      iconBackground: "rgba(168,85,247,.18)",
+      shadow: "0 16px 32px rgba(124,58,237,.16)",
+      activeShadow: "0 8px 18px rgba(124,58,237,.18)",
+    },
+    neutral: {
+      background: "linear-gradient(135deg, rgba(255,255,255,.07), rgba(21,36,68,.84))",
+      border: `1px solid ${COLORS.border}`,
+      color: COLORS.text,
+      descriptionColor: COLORS.muted,
+      iconBackground: "rgba(255,255,255,.08)",
+      shadow: "0 10px 22px rgba(0,0,0,.16)",
+      activeShadow: "0 5px 14px rgba(0,0,0,.18)",
+    },
+  }
+
+  const style = variants[variant] || variants.neutral
+
+  return (
+    <button
+      type="button"
+      disabled={isDisabled}
+      aria-pressed={active ? "true" : undefined}
+      onClick={event => {
+        if (isDisabled) return
+        triggerButtonFeedback()
+        onClick?.(event)
+      }}
+      onPointerDown={() => !isDisabled && setPressed(true)}
+      onPointerUp={() => setPressed(false)}
+      onPointerLeave={() => setPressed(false)}
+      onPointerCancel={() => setPressed(false)}
+      style={{
+        width: "100%",
+        minHeight: 82,
+        borderRadius: 20,
+        border: style.border,
+        background: style.background,
+        color: style.color,
+        padding: "14px 16px",
+        display: "grid",
+        gridTemplateColumns: "auto 1fr",
+        alignItems: "center",
+        gap: 12,
+        textAlign: "left",
+        fontFamily: "inherit",
+        cursor: isDisabled ? "wait" : "pointer",
+        transform: pressed ? "translateY(2px) scale(.975)" : "translateY(0) scale(1)",
+        transition: "transform .12s cubic-bezier(.2,.8,.2,1), filter .12s ease, box-shadow .12s ease, border-color .12s ease",
+        boxShadow: pressed ? style.activeShadow : style.shadow,
+        filter: isDisabled ? "grayscale(.2) opacity(.65)" : pressed ? "brightness(1.08)" : "none",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      <span style={{
+        width: 44,
+        height: 44,
+        borderRadius: 16,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: style.iconBackground,
+        border: "1px solid rgba(255,255,255,.10)",
+        flexShrink: 0,
+      }}>
+        {Icon && typeof Icon === "function" ? <Icon size={22} /> : null}
+      </span>
+
+      <span style={{ display: "grid", gap: 4, minWidth: 0 }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 15, fontWeight: 950, lineHeight: 1.15 }}>{title}</span>
+          {badge && (
+            <span style={{
+              borderRadius: 999,
+              padding: "3px 7px",
+              fontSize: 10,
+              fontWeight: 950,
+              letterSpacing: ".01em",
+              color: variant === "special" ? "#F5F3FF" : COLORS.yellow,
+              background: variant === "special" ? "rgba(168,85,247,.35)" : "rgba(252,211,77,.16)",
+              border: variant === "special" ? "1px solid rgba(216,180,254,.45)" : "1px solid rgba(252,211,77,.32)",
+            }}>
+              {badge}
+            </span>
+          )}
+        </span>
+        <span style={{ fontSize: 12.5, fontWeight: 800, color: style.descriptionColor, lineHeight: 1.25 }}>
+          {description}
+        </span>
+      </span>
+    </button>
+  )
 }
 
 function ActionButton({ label, Icon, icon, onClick, disabled, muted, danger, success, loading }) {
