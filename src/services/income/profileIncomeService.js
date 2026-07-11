@@ -22,23 +22,41 @@ function getCurrentMonthRange(now = new Date()) {
   }
 }
 
+function safeObject(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : {}
+}
+
+function isMissingColumnError(error) {
+  const message = String(error?.message || error?.details || "")
+  return error?.code === "PGRST204"
+    || message.includes("Could not find")
+    || message.includes("column")
+    || message.includes("schema cache")
+}
+
 function cleanAidRows(aides = []) {
   return (Array.isArray(aides) ? aides : [])
-    .map((aide, index) => ({
-      id: aide.id || `aide-${index + 1}`,
-      label: String(aide.label || aide.designation || "").trim(),
-      amount: money(aide.amount),
-    }))
+    .map((aide, index) => {
+      const safeAide = safeObject(aide)
+
+      return {
+        id: safeAide.id || `aide-${index + 1}`,
+        label: String(safeAide.label || safeAide.designation || "").trim(),
+        amount: money(safeAide.amount),
+      }
+    })
     .filter(row => row.label || row.amount > 0)
 }
 
 export function normalizeIncomeDetails(details = {}, revenusFoyer = 0) {
+  const safeDetails = safeObject(details)
+
   const normalized = {
-    salaire_parent_1: money(details.salaire_parent_1 ?? details.salary_parent_1),
-    salaire_parent_2: money(details.salaire_parent_2 ?? details.salary_parent_2),
-    france_travail: money(details.france_travail),
-    autres_revenus: money(details.autres_revenus),
-    aides: cleanAidRows(details.aides),
+    salaire_parent_1: money(safeDetails.salaire_parent_1 ?? safeDetails.salary_parent_1),
+    salaire_parent_2: money(safeDetails.salaire_parent_2 ?? safeDetails.salary_parent_2),
+    france_travail: money(safeDetails.france_travail),
+    autres_revenus: money(safeDetails.autres_revenus),
+    aides: cleanAidRows(safeDetails.aides),
   }
 
   const total = getIncomeDetailsTotal(normalized)
@@ -54,12 +72,14 @@ export function normalizeIncomeDetails(details = {}, revenusFoyer = 0) {
 }
 
 export function getIncomeDetailsTotal(details = {}) {
+  const safeDetails = safeObject(details)
+
   return (
-    money(details.salaire_parent_1) +
-    money(details.salaire_parent_2) +
-    money(details.france_travail) +
-    money(details.autres_revenus) +
-    cleanAidRows(details.aides).reduce((sum, aide) => sum + money(aide.amount), 0)
+    money(safeDetails.salaire_parent_1) +
+    money(safeDetails.salaire_parent_2) +
+    money(safeDetails.france_travail) +
+    money(safeDetails.autres_revenus) +
+    cleanAidRows(safeDetails.aides).reduce((sum, aide) => sum + money(aide.amount), 0)
   )
 }
 
@@ -86,14 +106,18 @@ export function buildIncomeRows(details = {}, revenusFoyer = 0) {
   })
 
   if (money(normalized.autres_revenus) > 0) {
-    rows.push({ label: rows.length > 0 ? "Autres revenus" : PROFILE_INCOME_LABEL, amount: money(normalized.autres_revenus), icon: "💰" })
+    rows.push({
+      label: rows.length > 0 ? "Autres revenus" : PROFILE_INCOME_LABEL,
+      amount: money(normalized.autres_revenus),
+      icon: "💰",
+    })
   }
 
   return rows
 }
 
 async function listProfileIncomeRows({ userId, firstDay, lastDay }) {
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("transactions")
     .select("id, label, amount, date, source, created_at")
     .eq("user_id", userId)
@@ -101,6 +125,20 @@ async function listProfileIncomeRows({ userId, firstDay, lastDay }) {
     .lte("date", lastDay)
     .or(`source.eq.${PROFILE_INCOME_SOURCE},label.eq.${PROFILE_INCOME_LABEL}`)
     .order("created_at", { ascending: false })
+
+  if (error && isMissingColumnError(error)) {
+    const retry = await supabase
+      .from("transactions")
+      .select("id, label, amount, date, created_at")
+      .eq("user_id", userId)
+      .gte("date", firstDay)
+      .lte("date", lastDay)
+      .eq("label", PROFILE_INCOME_LABEL)
+      .order("created_at", { ascending: false })
+
+    data = retry.data
+    error = retry.error
+  }
 
   if (error) throw error
   return data || []
@@ -131,10 +169,21 @@ async function insertRows({ userId, rows, date }) {
     source: PROFILE_INCOME_SOURCE,
   }))
 
-  const { data, error } = await supabase
+  let { data, error } = await supabase
     .from("transactions")
     .insert(payload)
     .select("*")
+
+  if (error && isMissingColumnError(error)) {
+    const legacyPayload = payload.map(({ source, ...row }) => row)
+    const retry = await supabase
+      .from("transactions")
+      .insert(legacyPayload)
+      .select("*")
+
+    data = retry.data
+    error = retry.error
+  }
 
   if (error) throw error
   return data || []
@@ -157,6 +206,7 @@ export async function syncProfileIncomeForCurrentMonth({
       await deleteRows(userId, existingRows)
       return { status: "deleted", count: existingRows.length }
     }
+
     return { status: "skipped", reason: "no_profile_income" }
   }
 

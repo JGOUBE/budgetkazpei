@@ -135,21 +135,161 @@ function normalizeScanReceiptDate(value: unknown) {
   return ""
 }
 
+function positiveMoney(value: unknown) {
+  const number = Number(value)
+  return Number.isFinite(number) && number > 0 ? roundMoney(number) : 0
+}
+
+function rawForItemMath(item: any = {}) {
+  return String(item?.raw_text || item?.source_line || item?.ocr_name || item?.name || "").trim()
+}
+
+function moneyTokenPattern(amount = 0) {
+  return amount.toFixed(2).replace(".", "[,.]")
+}
+
+function quantityTokenPattern(quantity = 1) {
+  return String(quantity).replace(".", "[,.]")
+}
+
+function rawShowsExplicitQuantity(raw = "", unitPrice = 0, quantity = 1) {
+  if (unitPrice <= 0 || quantity <= 1) return false
+
+  const text = String(raw || "")
+    .replace(/[€£$]/g, "€")
+    .replace(/×/g, "x")
+    .replace(/\s+/g, " ")
+    .trim()
+
+  if (!text) return false
+
+  const unitPattern = moneyTokenPattern(unitPrice)
+  const quantityPattern = quantityTokenPattern(quantity)
+
+  // Seules les formes explicites prouvent une quantité.
+  // Sur les tickets E.Leclerc, la colonne après le prix est souvent le code TVA,
+  // pas une quantité. Exemple : "POULET LE JAUNE 7.69 2" = 7,69 € / TVA 2.
+  return [
+    new RegExp(`(?:^|\\s)${quantityPattern}\\s*(?:kg|g|gr|l|cl|ml)?\\s*[x*]\\s*${unitPattern}(?:\\s*€|\\s*/\\s*(?:kg|g|gr|l|cl|ml))?`, "i"),
+    new RegExp(`(?:^|\\s)${unitPattern}\\s*(?:€)?\\s*[x*]\\s*${quantityPattern}(?:\\s|$)`, "i"),
+    new RegExp(`\\b(qte|quantite|quantité|lot)\\s*[:=]?\\s*${quantityPattern}\\b.*\\b${unitPattern}\\b`, "i"),
+  ].some(pattern => pattern.test(text))
+}
+
+function extractTrailingVatCodePrice(raw = "") {
+  const text = String(raw || "")
+    .replace(/[€£$]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+
+  const match = text.match(/(\d+(?:[,.]\d{2}))\s+([123])\s*$/)
+  if (!match) return { price: 0, vatCode: 0 }
+
+  return {
+    price: roundMoney(String(match[1]).replace(",", ".")),
+    vatCode: Number(match[2]) || 0,
+  }
+}
+
+function rawLooksLikeTrailingVatCode(raw = "", unitPrice = 0, quantity = 1) {
+  const qty = Number(quantity)
+  if (![1, 2, 3].includes(qty)) return false
+  if (rawShowsExplicitQuantity(raw, unitPrice, qty)) return false
+
+  const evidence = extractTrailingVatCodePrice(raw)
+  if (!evidence.price || evidence.vatCode !== qty) return false
+
+  if (unitPrice > 0 && !totalsAlmostEqual(evidence.price, unitPrice, 0.03)) {
+    return false
+  }
+
+  return true
+}
+
+function normalizedItemQuantity(item: any = {}) {
+  const quantity = Number(item?.quantity ?? 1)
+  const safeQuantity = Number.isFinite(quantity) && quantity > 0 ? quantity : 1
+  const unitPrice = positiveMoney(item?.unit_price)
+  const raw = rawForItemMath(item)
+
+  if (rawLooksLikeTrailingVatCode(raw, unitPrice, safeQuantity)) {
+    return 1
+  }
+
+  return safeQuantity
+}
+
+function rawShowsUnitPriceAndQuantity(raw = "", unitPrice = 0, quantity = 1) {
+  return rawShowsExplicitQuantity(raw, unitPrice, quantity)
+}
+
+function finalItemQuantity(item: any = {}) {
+  return normalizedItemQuantity(item)
+}
+
+function resolveQuantityAwareItemPrice(item: any = {}) {
+  const raw = rawForItemMath(item)
+  const rawQuantity = Number(item?.quantity ?? 1) || 1
+  const unitPrice = positiveMoney(item?.unit_price)
+  const explicitTotal = positiveMoney(item?.total_price)
+  const explicitPrice = positiveMoney(item?.price)
+  const trailingVat = extractTrailingVatCodePrice(raw)
+
+  // Cas clé E.Leclerc : "prix + 1/2/3" = prix TTC + code TVA.
+  // On garde le prix visible et on annule la multiplication inventée par Vision.
+  if (rawLooksLikeTrailingVatCode(raw, unitPrice, rawQuantity)) {
+    return trailingVat.price || unitPrice || explicitPrice || explicitTotal
+  }
+
+  const quantity = normalizedItemQuantity(item)
+  const computedTotal = quantity > 1 && unitPrice > 0
+    ? roundMoney(quantity * unitPrice)
+    : 0
+
+  if (computedTotal > 0 && rawShowsExplicitQuantity(raw, unitPrice, quantity)) {
+    return computedTotal
+  }
+
+  if (explicitTotal > 0) return explicitTotal
+  if (explicitPrice > 0) return explicitPrice
+  return unitPrice || trailingVat.price || 0
+}
+
+function finalItemUnitPrice(item: any = {}, finalPrice = 0) {
+  const raw = rawForItemMath(item)
+  const rawQuantity = Number(item?.quantity ?? 1) || 1
+  const unitPrice = positiveMoney(item?.unit_price)
+  const trailingVat = extractTrailingVatCodePrice(raw)
+
+  if (rawLooksLikeTrailingVatCode(raw, unitPrice, rawQuantity)) {
+    return trailingVat.price || unitPrice || finalPrice
+  }
+
+  const quantity = finalItemQuantity(item)
+  if (quantity > 1 && unitPrice > 0 && rawShowsExplicitQuantity(raw, unitPrice, quantity)) {
+    return unitPrice
+  }
+
+  return unitPrice || (quantity > 1 ? roundMoney(finalPrice / quantity) : finalPrice)
+}
+
+function isPlausibleItemAmount(value = 0, receiptTotal = 0) {
+  if (value <= 0) return false
+  if (receiptTotal > 0) return value <= Math.max(30, receiptTotal * 1.15)
+  return value <= 100
+}
+
 function finalItemAmount(item: any = {}, receiptTotal = 0) {
   const total = Number(receiptTotal || 0)
-  const values = [item?.total_price, item?.price, item?.unit_price]
-    .map(value => Number(value))
-    .filter(value => Number.isFinite(value) && value > 0)
+  const resolved = resolveQuantityAwareItemPrice(item)
 
-  const plausibleDirect = values.find(value => {
-    if (value <= 0) return false
-    if (total > 0) return value <= Math.max(30, total * 1.15)
-    return value <= 100
-  })
-  if (plausibleDirect) return roundMoney(plausibleDirect)
+  if (isPlausibleItemAmount(resolved, total)) {
+    return roundMoney(resolved)
+  }
 
   const raw = finalItemRawText(item)
-  const first = values[0] || 0
+  const first = resolved || 0
+
   if (first > 0 && hasFinalProductSignal(raw)) {
     const candidates = [
       first % 10,
@@ -353,8 +493,8 @@ function sanitizeFinalReceiptItems(items: any[] = [], receiptTotal = 0) {
       ocr_name: String(item?.ocr_name || raw || cleanName).trim(),
       total_price: price,
       price,
-      unit_price: Number(item?.unit_price || price) || price,
-      quantity: Number(item?.quantity || 1) || 1,
+      unit_price: finalItemUnitPrice(item, price),
+      quantity: finalItemQuantity(item),
       item_status: keepNeedsReview ? "a_verifier" : (item?.item_status || item?.status || "detected"),
       status: keepNeedsReview ? "a_verifier" : (item?.status || item?.item_status || "detected"),
       review_status: keepNeedsReview ? "needs_review" : (item?.review_status || "trusted"),
@@ -416,17 +556,43 @@ function amountCandidatesFromText(value = "") {
 }
 
 function hasVisiblePriceMismatch(item: any = {}, finalPrice = 0, receiptTotal = 0) {
-  const evidence = [item?.raw_text, item?.source_line].map(value => String(value || "")).find(Boolean) || ""
+  const evidence = [item?.raw_text, item?.source_line]
+    .map(value => String(value || ""))
+    .find(Boolean) || ""
+
   if (!evidence.trim()) return false
+
   const candidates = amountCandidatesFromText(evidence)
     .filter(value => value >= 0.2 && (!receiptTotal || value <= Math.max(receiptTotal, 40)))
+
   if (candidates.length === 0) return false
-  return !candidates.some(value => totalsAlmostEqual(value, finalPrice, 0.03))
+
+  if (candidates.some(value => totalsAlmostEqual(value, finalPrice, 0.03))) {
+    return false
+  }
+
+  const quantity = normalizedItemQuantity(item)
+  const unitPrice = positiveMoney(item?.unit_price)
+  const computedTotal = quantity > 1 && unitPrice > 0
+    ? roundMoney(quantity * unitPrice)
+    : 0
+
+  if (
+    computedTotal > 0 &&
+    totalsAlmostEqual(computedTotal, finalPrice, 0.03) &&
+    rawShowsUnitPriceAndQuantity(evidence, unitPrice, quantity)
+  ) {
+    return false
+  }
+
+  return true
 }
 
 function markReceiptItemsForPartialLearning(items: any[] = [], receiptTotal = 0) {
   return (items || []).map(item => {
     const price = finalItemAmount(item, receiptTotal)
+    const finalQuantity = finalItemQuantity(item)
+    const finalUnitPrice = finalItemUnitPrice(item, price)
     const confidence = Number(item?.confidence_score ?? item?.item_quality_score ?? item?.confidence ?? 0)
     const status = normalizeFinalItemText(String(item?.item_status || item?.status || item?.review_status || ""))
     const alreadyValidated = status.includes("user validated") || status.includes("user_validated")
@@ -441,6 +607,8 @@ function markReceiptItemsForPartialLearning(items: any[] = [], receiptTotal = 0)
         ...item,
         total_price: price,
         price,
+        unit_price: finalUnitPrice,
+        quantity: finalQuantity,
         item_status: "rejected",
         status: "rejected",
         review_status: "rejected",
@@ -454,6 +622,8 @@ function markReceiptItemsForPartialLearning(items: any[] = [], receiptTotal = 0)
         ...item,
         total_price: price,
         price,
+        unit_price: finalUnitPrice,
+        quantity: finalQuantity,
         item_status: "a_verifier",
         status: "a_verifier",
         review_status: "needs_review",
@@ -467,6 +637,8 @@ function markReceiptItemsForPartialLearning(items: any[] = [], receiptTotal = 0)
       ...item,
       total_price: price,
       price,
+      unit_price: finalUnitPrice,
+      quantity: finalQuantity,
       item_status: alreadyValidated ? "user_validated" : "trusted",
       status: alreadyValidated ? "user_validated" : "trusted",
       review_status: "trusted",
@@ -505,8 +677,15 @@ function normalizeVisionStructuredItemsForTrust(items: any[] = [], receiptTotal 
     .map(item => {
       const name = cleanFinalItemName(String(item?.name || item?.corrected_name || item?.ocr_name || item?.raw_text || item?.source_line || "").trim())
       const rawText = String(item?.raw_text || item?.source_line || item?.ocr_name || name || "").trim()
-      const directPrice = roundMoney(Number(item?.total_price ?? item?.price ?? item?.unit_price ?? 0))
-      const price = directPrice > 0 ? directPrice : finalItemAmount(item, receiptTotal)
+      const itemForMath = {
+        ...item,
+        name,
+        raw_text: rawText || name,
+        source_line: String(item?.source_line || rawText || name).trim() || rawText || name,
+      }
+      const price = finalItemAmount(itemForMath, receiptTotal)
+      const quantity = finalItemQuantity(itemForMath)
+      const unitPrice = finalItemUnitPrice(itemForMath, price)
       const rawConfidence = Number(item?.confidence_score ?? item?.confidence ?? item?.item_quality_score ?? 0)
       const confidenceScore = rawConfidence > 0 && rawConfidence <= 1 ? Math.round(rawConfidence * 100) : Math.round(rawConfidence || 88)
 
@@ -519,9 +698,9 @@ function normalizeVisionStructuredItemsForTrust(items: any[] = [], receiptTotal 
         ocr_name: String(item?.ocr_name || rawText || name).trim() || name,
         raw_text: rawText || name,
         source_line: String(item?.source_line || rawText || name).trim() || rawText || name,
-        quantity: Number(item?.quantity || 1) || 1,
+        quantity,
         unit: String(item?.unit || "piece"),
-        unit_price: Number(item?.unit_price || price) || price,
+        unit_price: unitPrice,
         total_price: price,
         price,
         category: String(item?.category || "alimentaire"),

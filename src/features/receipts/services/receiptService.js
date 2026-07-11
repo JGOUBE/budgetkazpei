@@ -402,6 +402,32 @@ async function insertReceiptTransactionPayload({ userId, payload }) {
   return data
 }
 
+async function linkReceiptToTransaction({ userId, receiptId, transactionId }) {
+  if (!userId || !receiptId || !transactionId) return
+
+  const payload = {
+    transaction_id: transactionId,
+    updated_at: new Date().toISOString(),
+  }
+
+  let { error } = await supabase
+    .from("receipts")
+    .update(payload)
+    .eq("id", receiptId)
+    .eq("user_id", userId)
+
+  if (error && isMissingColumnError(error)) {
+    const retry = await supabase
+      .from("receipts")
+      .update({ transaction_id: transactionId })
+      .eq("id", receiptId)
+      .eq("user_id", userId)
+    error = retry.error
+  }
+
+  if (error && !isMissingColumnError(error)) throw error
+}
+
 export async function upsertReceiptTransaction({ userId, receipt, draft, transactionId }) {
   const receiptId = receipt?.id
   const amount = Math.abs(Number(draft?.total_amount || receipt?.total_amount || 0))
@@ -439,6 +465,12 @@ export async function upsertReceiptTransaction({ userId, receipt, draft, transac
     const duplicatePrevented = !transactionId
       && String(existingTransaction.receipt_id || "") !== String(receiptId || "")
 
+    await linkReceiptToTransaction({
+      userId,
+      receiptId,
+      transactionId: updated.id,
+    })
+
     return {
       transaction: updated,
       created: false,
@@ -449,6 +481,11 @@ export async function upsertReceiptTransaction({ userId, receipt, draft, transac
   }
 
   const inserted = await insertReceiptTransactionPayload({ userId, payload })
+  await linkReceiptToTransaction({
+    userId,
+    receiptId,
+    transactionId: inserted.id,
+  })
   return { transaction: inserted, created: true, updated: false, skipReason: "" }
 }
 
@@ -585,16 +622,42 @@ export async function updateReceipt({ receiptId, userId, updates }) {
 }
 
 export async function updateReceiptItem({ itemId, userId, updates }) {
+  const cleanUpdates = {
+    name: String(updates.name || "").trim(),
+    corrected_name: String(updates.corrected_name || updates.name || "").trim(),
+    total_price: updates.total_price === "" || updates.total_price == null ? null : Number(updates.total_price),
+    category: updates.category || "alimentaire",
+    item_status: updates.item_status || "user_validated",
+    review_status: updates.review_status || "trusted",
+  }
+
+  if (updates.quantity !== undefined) cleanUpdates.quantity = Number(updates.quantity || 1)
+  if (updates.unit_price !== undefined) cleanUpdates.unit_price = updates.unit_price === "" || updates.unit_price == null ? null : Number(updates.unit_price)
+  if (updates.unit !== undefined) cleanUpdates.unit = updates.unit || null
+  cleanUpdates.normalized_name = normalizeProductLabel(updates.normalized_name || cleanUpdates.corrected_name || cleanUpdates.name)
+  if (updates.brand !== undefined) cleanUpdates.brand = updates.brand || null
+  if (updates.subcategory !== undefined) cleanUpdates.subcategory = updates.subcategory || null
+  if (updates.department !== undefined) cleanUpdates.department = updates.department || null
+  if (updates.ticket_section !== undefined) cleanUpdates.ticket_section = updates.ticket_section || null
+  if (updates.promotion !== undefined) cleanUpdates.promotion = Boolean(updates.promotion)
+
+  // Ne pas envoyer au hasard status / needs_review / updated_at si ces colonnes
+  // n'existent pas dans receipt_items. item_status + review_status suffisent.
   let { data, error } = await supabase
     .from("receipt_items")
-    .update(updates)
+    .update(cleanUpdates)
     .eq("id", itemId)
     .eq("user_id", userId)
     .select()
     .single()
 
   if (error && isMissingColumnError(error)) {
-    const { item_status, review_status, line_type, item_source, ...legacyUpdates } = updates
+    const legacyUpdates = {
+      name: cleanUpdates.name,
+      total_price: cleanUpdates.total_price,
+      category: cleanUpdates.category,
+    }
+
     const retry = await supabase
       .from("receipt_items")
       .update(legacyUpdates)

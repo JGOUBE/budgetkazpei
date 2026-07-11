@@ -3,40 +3,6 @@ import { isItemEligibleForSmartShopping } from "../../../services/scan/receiptRu
 import { guessBrand, normalizeProductName } from "./normalizer"
 import { computeUnitPrice, inferUnitFromName } from "./unitPrice"
 
-type Receipt = {
-  id?: string
-  store_name?: string
-  purchase_date?: string
-  scan_status?: string
-}
-
-type ReceiptItem = {
-  name?: string
-  ocr_name?: string
-  corrected_name?: string
-  normalized_name?: string
-  brand?: string | null
-  quantity?: number | string | null
-  unit?: string | null
-  unit_price?: number | string | null
-  price?: number | string | null
-  total_price?: number | string | null
-  category?: string
-  subcategory?: string | null
-  department?: string | null
-  ticket_section?: string | null
-  promotion?: boolean
-  confidence_score?: number | string | null
-  barcode?: string | null
-  item_status?: string | null
-  status?: string | null
-  review_status?: string | null
-  needs_review?: boolean
-  raw_text?: string | null
-  source_line?: string | null
-  line_type?: string | null
-}
-
 function money(value: number | string | null | undefined) {
   return Number(String(value ?? 0).replace(",", ".")) || 0
 }
@@ -51,13 +17,25 @@ function normalizeForGuard(value = "") {
     .trim()
 }
 
-function isReviewItem(item: ReceiptItem, receipt?: Receipt) {
-  if (!isItemEligibleForSmartShopping(item as Record<string, unknown>)) return true
+function isMissingColumnError(error: any) {
+  const message = String(error?.message || error?.details || "")
+  return error?.code === "PGRST204" || message.includes("Could not find") || message.includes("column")
+}
+
+function isReviewItem(item: Record<string, any> = {}, receipt: Record<string, any> = {}) {
+  if (!isItemEligibleForSmartShopping(item)) return true
+
+  const status = normalizeForGuard(
+    [item.item_status, item.status, item.review_status].filter(Boolean).join(" "),
+  )
+
   return String(receipt?.scan_status || "").includes("partial_low_items")
     || item.needs_review === true
-    || item.review_status === "needs_review"
-    || item.item_status === "a_verifier"
-    || item.status === "a_verifier"
+    || status.includes("needs review")
+    || status.includes("needs_review")
+    || status.includes("a verifier")
+    || status.includes("a_verifier")
+    || status.includes("rejected")
 }
 
 function isParasiteProductName(value = "") {
@@ -73,34 +51,38 @@ function isParasiteProductName(value = "") {
   return false
 }
 
-export async function listShoppingItems({ userId }: { userId?: string }) {
-  if (!userId) return []
+async function safeDeleteShoppingItems({ userId, receiptId, transactionId }: { userId?: string, receiptId?: string, transactionId?: string }) {
+  const deletions = []
 
-  const { data, error } = await supabase
-    .from("shopping_items")
-    .select("*")
-    .eq("user_id", userId)
-    .order("created_at", { ascending: false })
+  if (receiptId) {
+    deletions.push(
+      supabase
+        .from("shopping_items")
+        .delete()
+        .eq("user_id", userId)
+        .eq("receipt_id", receiptId),
+    )
+  }
 
-  if (error) throw error
-  return data || []
+  if (transactionId) {
+    deletions.push(
+      supabase
+        .from("shopping_items")
+        .delete()
+        .eq("user_id", userId)
+        .eq("transaction_id", transactionId),
+    )
+  }
+
+  for (const deletion of deletions) {
+    const { error } = await deletion
+    if (error && !isMissingColumnError(error)) throw error
+  }
 }
 
-export async function syncShoppingItemsFromReceipt({
-  userId,
-  transactionId,
-  receipt,
-  items,
-}: {
-  userId?: string
-  transactionId?: string
-  receipt?: Receipt
-  items?: ReceiptItem[]
-}) {
-  if (!userId || !transactionId || !receipt?.id) return []
-
-  const rows = (items || [])
-    .filter(item => String(item.name || "").trim())
+function buildShoppingRows({ userId, transactionId, receipt, items }: { userId: string, transactionId: string, receipt: Record<string, any>, items?: Record<string, any>[] }) {
+  return (items || [])
+    .filter(item => String(item.name || item.corrected_name || item.ocr_name || "").trim())
     .filter(item => !isReviewItem(item, receipt))
     .map(item => {
       const originalName = String(item.ocr_name || item.name || "").trim()
@@ -138,14 +120,52 @@ export async function syncShoppingItemsFromReceipt({
       }
     })
     .filter(row => row.normalized_name && row.price > 0 && !isParasiteProductName(row.product_name))
+}
+
+export async function listShoppingItems({ userId }: { userId?: string }) {
+  if (!userId) return []
+
+  const { data, error } = await supabase
+    .from("shopping_items")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+
+  if (error) throw error
+  return data || []
+}
+
+export async function syncShoppingItemsFromReceipt({
+  userId,
+  transactionId,
+  receipt,
+  items,
+}: {
+  userId?: string
+  transactionId?: string
+  receipt?: Record<string, any>
+  items?: Record<string, any>[]
+}) {
+  if (!userId || !receipt?.id) return []
+
+  await safeDeleteShoppingItems({
+    userId,
+    receiptId: receipt.id,
+    transactionId,
+  })
+
+  if (!transactionId) {
+    console.warn("[shopping] sync skipped", {
+      reason: "missing_transaction_id",
+      receipt_id: receipt.id,
+      store: receipt.store_name || null,
+    })
+    return []
+  }
+
+  const rows = buildShoppingRows({ userId, transactionId, receipt, items })
 
   if (rows.length === 0) return []
-
-  await supabase
-    .from("shopping_items")
-    .delete()
-    .eq("user_id", userId)
-    .eq("transaction_id", transactionId)
 
   let { data, error } = await supabase
     .from("shopping_items")
@@ -182,9 +202,4 @@ export async function syncShoppingItemsFromReceipt({
 
   if (error) throw error
   return data || []
-}
-
-function isMissingColumnError(error: any) {
-  const message = String(error?.message || error?.details || "")
-  return error?.code === "PGRST204" || message.includes("Could not find") || message.includes("column")
 }

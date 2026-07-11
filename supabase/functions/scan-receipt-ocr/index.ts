@@ -123,6 +123,131 @@ function numericTotal(value: unknown) {
   return match ? Number(match[1].replace(/\s/g, "").replace(",", ".")) || 0 : 0;
 }
 
+function roundMoney(value: unknown) {
+  return Math.round((Number(value) || 0) * 100) / 100;
+}
+
+function positiveMoney(value: unknown) {
+  const number = Number(value);
+  return Number.isFinite(number) && number > 0 ? roundMoney(number) : 0;
+}
+
+function amountsAlmostEqual(a: unknown, b: unknown, tolerance = 0.03) {
+  const left = Number(a || 0);
+  const right = Number(b || 0);
+  if (left <= 0 || right <= 0) return false;
+  return Math.abs(left - right) <= tolerance;
+}
+
+function itemRawTextForMath(item: Record<string, unknown> = {}) {
+  return String(
+    item.raw_text || item.source_line || item.ocr_name || item.name || "",
+  ).trim();
+}
+
+function moneyTokenPattern(amount = 0) {
+  return amount.toFixed(2).replace(".", "[,.]");
+}
+
+function quantityTokenPattern(quantity = 1) {
+  return String(quantity).replace(".", "[,.]");
+}
+
+function rawShowsExplicitQuantity(raw = "", unitPrice = 0, quantity = 1) {
+  if (unitPrice <= 0 || quantity <= 1) return false;
+
+  const text = String(raw || "")
+    .replace(/[€£$]/g, "€")
+    .replace(/×/g, "x")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!text) return false;
+
+  const unitPattern = moneyTokenPattern(unitPrice);
+  const quantityPattern = quantityTokenPattern(quantity);
+
+  return [
+    new RegExp(`(?:^|\\s)${quantityPattern}\\s*(?:kg|g|gr|l|cl|ml)?\\s*[x*]\\s*${unitPattern}(?:\\s*€|\\s*/\\s*(?:kg|g|gr|l|cl|ml))?`, "i"),
+    new RegExp(`(?:^|\\s)${unitPattern}\\s*(?:€)?\\s*[x*]\\s*${quantityPattern}(?:\\s|$)`, "i"),
+    new RegExp(`\\b(qte|quantite|quantité|lot)\\s*[:=]?\\s*${quantityPattern}\\b.*\\b${unitPattern}\\b`, "i"),
+  ].some((pattern) => pattern.test(text));
+}
+
+function extractTrailingVatCodePrice(raw = "") {
+  const text = String(raw || "")
+    .replace(/[€£$]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const match = text.match(/(\d+(?:[,.]\d{2}))\s+([123])\s*$/);
+  if (!match) return { price: 0, vatCode: 0 };
+
+  return {
+    price: roundMoney(String(match[1]).replace(",", ".")),
+    vatCode: Number(match[2]) || 0,
+  };
+}
+
+function rawLooksLikeTrailingVatCode(
+  raw = "",
+  unitPrice = 0,
+  quantity = 1,
+) {
+  const qty = Number(quantity);
+  if (![1, 2, 3].includes(qty)) return false;
+  if (rawShowsExplicitQuantity(raw, unitPrice, qty)) return false;
+
+  const evidence = extractTrailingVatCodePrice(raw);
+  if (!evidence.price || evidence.vatCode !== qty) return false;
+
+  if (unitPrice > 0 && !amountsAlmostEqual(evidence.price, unitPrice, 0.03)) {
+    return false;
+  }
+
+  return true;
+}
+
+function normalizeLineItemQuantityAndPrices(item: Record<string, unknown>) {
+  const rawText = itemRawTextForMath(item);
+  const rawQuantity = Number(item.quantity || 1) || 1;
+  const unitPrice = numericTotal(item.unit_price) || positiveMoney(item.unit_price);
+  const explicitTotal = numericTotal(item.total_price) || positiveMoney(item.total_price);
+  const explicitPrice = numericTotal(item.price) || positiveMoney(item.price);
+  const trailingVat = extractTrailingVatCodePrice(rawText);
+
+  if (rawLooksLikeTrailingVatCode(rawText, unitPrice, rawQuantity)) {
+    const price = trailingVat.price || unitPrice || explicitPrice || explicitTotal;
+    return {
+      quantity: 1,
+      unitPrice: price,
+      totalPrice: price,
+      priceSource: "trailing_tva_code_price",
+    };
+  }
+
+  const computedTotal = rawQuantity > 1 && unitPrice > 0
+    ? roundMoney(rawQuantity * unitPrice)
+    : 0;
+
+  if (computedTotal > 0 && rawShowsExplicitQuantity(rawText, unitPrice, rawQuantity)) {
+    return {
+      quantity: rawQuantity,
+      unitPrice,
+      totalPrice: computedTotal,
+      priceSource: "explicit_quantity_multiplication",
+    };
+  }
+
+  const price = explicitTotal || explicitPrice || unitPrice || trailingVat.price || 0;
+  return {
+    quantity: rawQuantity > 0 ? rawQuantity : 1,
+    unitPrice: unitPrice || price,
+    totalPrice: price,
+    priceSource: "visible_price",
+  };
+}
+
 function normalizeText(value = "") {
   return String(value || "")
     .normalize("NFD")
@@ -165,13 +290,15 @@ function normalizeOpenAiItems(rawItems: unknown[] = []) {
   return normalizeItems(
     (rawItems || []).map((raw) => {
       const item = (raw || {}) as Record<string, unknown>;
-      const price =
-        numericTotal(item.total_price) ||
-        numericTotal(item.price) ||
-        numericTotal(item.unit_price);
       const rawText = String(
-        item.raw_text || item.source_line || item.ocr_name || "",
+        item.raw_text || item.source_line || item.ocr_name || item.name || "",
       ).trim();
+      const normalizedPrice = normalizeLineItemQuantityAndPrices({
+        ...item,
+        raw_text: rawText,
+        source_line: rawText,
+      });
+      const price = normalizedPrice.totalPrice;
       const confidence = Math.round(
         Number(item.confidence_score ?? item.confidence ?? 0.68) *
           (Number(item.confidence_score ?? item.confidence ?? 0.68) <= 1
@@ -183,16 +310,18 @@ function normalizeOpenAiItems(rawItems: unknown[] = []) {
         ocr_name: String(item.ocr_name || item.name || item.label || "").trim(),
         raw_text: rawText,
         source_line: rawText,
-        quantity: Number(item.quantity || 1) || 1,
+        quantity: normalizedPrice.quantity,
         unit: String(item.unit || "piece"),
-        unit_price: numericTotal(item.unit_price) || price,
+        unit_price: normalizedPrice.unitPrice || price,
         total_price: price,
+        price,
         category: String(item.category || "alimentaire"),
         confidence_score: rawText ? confidence : Math.min(confidence, 45),
         item_status:
           item.needs_review === false && rawText ? "detected" : "a_verifier",
         review_status:
           item.needs_review === false && rawText ? "trusted" : "needs_review",
+        price_source: normalizedPrice.priceSource,
         source: "openai_vision",
       };
     }),
@@ -1624,6 +1753,9 @@ async function runOpenAiTextFallback(
     "Accepte les tickets horizontaux, Leclerc, Leader Price, Carrefour, Hyper U, Super U, Lidl, Run Market, Jumbo, Score, Casino, Spar, Vival, Auchan.",
     "Retourne un JSON strict avec: merchant, date JJ/MM/AAAA ou YYYY-MM-DD, time, total, items.",
     "Chaque item doit avoir name, quantity, unit_price si visible, total_price.",
+    "- Attention tickets E.Leclerc : le chiffre final 1/2/3 après un prix peut être un code TVA/rayon, pas une quantité.",
+    "- Ne transforme pas automatiquement une ligne de type prix + 1/2/3 en multiplication. Utilise quantity > 1 uniquement si un x, 2 x, 3 x, lot, ou un total de ligne clairement lisible prouve la quantité.",
+    "- Pour les articles au poids ou au prix/kg (volaille, boucherie, poissonnerie, fruits et légumes), ne multiplie jamais le prix/kg par le chiffre final 1/2/3. Si le poids ou le total de ligne n'est pas lisible, mets needs_review:true.",
     "Ne devine pas un prix absent. Ignore remises, totaux de rayon, TVA, carte bleue.",
     "Si le ticket affiche Reste a payer, utilise ce montant comme total final.",
     "Si le ticket affiche Total 32 articles, extrais environ 32 lignes produits visibles.",
@@ -1805,6 +1937,9 @@ async function runOpenAiVisionFallback({
     "- Ne jamais remplacer des lignes illisibles par des produits generiques comme pomme, pain, tomate, salade, carotte.",
     '- Si une ligne article est illisible, retourne un item avec name:"Article illisible", raw_text:"...", total_price:0 ou null si le prix n est pas visible, confidence faible et needs_review:true.',
     "- Pour chaque item, raw_text doit contenir la ligne visible du ticket qui justifie l'article.",
+    "- Attention tickets E.Leclerc : le chiffre final 1/2/3 après un prix peut être un code TVA/rayon, pas une quantité.",
+    "- Ne transforme pas automatiquement une ligne de type prix + 1/2/3 en multiplication. Utilise quantity > 1 uniquement si un x, 2 x, 3 x, lot, ou un total de ligne clairement lisible prouve la quantité.",
+    "- Pour les articles au poids ou au prix/kg (volaille, boucherie, poissonnerie, fruits et légumes), ne multiplie jamais le prix/kg par le chiffre final 1/2/3. Si le poids ou le total de ligne n'est pas lisible, mets needs_review:true.",
     "- Si raw_text est vide, l'article doit etre needs_review:true.",
     "- Si le ticket affiche un nombre d'articles, par exemple Total 32 articles, ce nombre sert seulement a evaluer si l'extraction est complete.",
     "- Ne prends jamais Total X articles comme montant.",
@@ -1813,6 +1948,10 @@ async function runOpenAiVisionFallback({
     "- Si tu ne peux lire que quelques articles alors que le ticket en contient beaucoup, retourne needs_review:true et ajoute un warning.",
     "- Ne donne jamais une confidence elevee si moins de la moitie des articles sont lisibles.",
     "- Ignore TVA, sous-totaux, remises generales, carte bleue, fidelite, caisse, merci, telephone, adresse, SIRET, horaires.",
+    "- Attention E.Leclerc : les colonnes de droite sont souvent TTC puis TVA. Le dernier chiffre 1, 2 ou 3 apres le prix est un code TVA, pas une quantite.",
+    "- Exemple : POULET LE JAUNE 7.69 2 signifie prix 7.69, quantite 1, total_price 7.69, code TVA 2 ignore.",
+    "- Exemple : PAIN CHOCOLAT X10 4.90 2 signifie prix 4.90, quantite 1, total_price 4.90, code TVA 2 ignore.",
+    "- Multiplie seulement si la quantite est explicitement ecrite sous forme 2 x 3.80, 2 X 3.80, qte 2, ou poids x prix/kg.",
     "- La date doit etre extraite uniquement si elle est visible. Sinon retourne une chaine vide.",
     "- Les montants doivent etre des nombres decimaux avec un point.",
     "- Texte OCR local incomplet a utiliser seulement comme indice secondaire, jamais comme source principale si incoherent.",
@@ -2138,6 +2277,9 @@ function buildSegmentPrompt(segment = "") {
     "Retourne uniquement du JSON strict.",
     "Ne devine rien.",
     "Chaque article doit avoir name, raw_text, quantity, unit_price, total_price, category, confidence, needs_review.",
+    "- Attention tickets E.Leclerc : le chiffre final 1/2/3 après un prix peut être un code TVA/rayon, pas une quantité.",
+    "- Ne transforme pas automatiquement une ligne de type prix + 1/2/3 en multiplication. Utilise quantity > 1 uniquement si un x, 2 x, 3 x, lot, ou un total de ligne clairement lisible prouve la quantité.",
+    "- Pour les articles au poids ou au prix/kg (volaille, boucherie, poissonnerie, fruits et légumes), ne multiplie jamais le prix/kg par le chiffre final 1/2/3. Si le poids ou le total de ligne n'est pas lisible, mets needs_review:true.",
     "raw_text doit contenir la ligne visible qui justifie l'article.",
     "Si raw_text est vide ou si le prix est incertain, mets needs_review:true.",
     "N'invente jamais pomme, pain, tomate, salade, carotte ou autre produit generique.",
@@ -3568,10 +3710,12 @@ function normalizeItems(rawItems: unknown[] = []) {
     const sourceLine = String(
       item.ocr_name || item.name || item.corrected_name || "",
     ).trim();
-    const price =
-      numericTotal(item.total_price) ||
-      numericTotal(item.unit_price) ||
-      numericTotal(sourceLine);
+    const normalizedPrice = normalizeLineItemQuantityAndPrices({
+      ...item,
+      raw_text: String(item.raw_text || item.source_line || sourceLine || ""),
+      source_line: String(item.source_line || item.raw_text || sourceLine || ""),
+    });
+    const price = normalizedPrice.totalPrice || numericTotal(sourceLine);
     const name = cleanItemName(
       String(item.name || item.corrected_name || item.ocr_name || ""),
     );
@@ -3618,10 +3762,11 @@ function normalizeItems(rawItems: unknown[] = []) {
       source_line: String(
         item.source_line || item.raw_text || ocrName || finalName,
       ),
-      quantity: Number(item.quantity || 1) || 1,
+      quantity: normalizedPrice.quantity || Number(item.quantity || 1) || 1,
       unit: String(item.unit || "piece"),
-      unit_price: numericTotal(item.unit_price) || price,
+      unit_price: normalizedPrice.unitPrice || numericTotal(item.unit_price) || price,
       total_price: price,
+      price,
       category: String(item.category || "alimentaire"),
       confidence_score: confidenceScore,
       item_status: itemStatus,

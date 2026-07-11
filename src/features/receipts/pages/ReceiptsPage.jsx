@@ -273,13 +273,31 @@ function isBlockedReceiptItem(item = {}) {
 function getValidDraftItems(draft = {}) {
   const scanStatus = String(draft.scan_status || "")
   const trustedAutoScan = isTrustedAutoScanPayload(draft)
-  const partialLowItems = !trustedAutoScan && (scanStatus.includes("partial_low_items") || scanStatus.includes("long_manual_review") || scanStatus.includes("long_usable_review"))
+
+  const hardReviewScan = !trustedAutoScan && (
+    scanStatus.includes("partial_low_items") ||
+    scanStatus.includes("long_manual_review")
+  )
+
   return (draft.items || [])
     .filter(item => !isBlockedReceiptItem(item))
     .map(item => {
       const placeholder = /produit.*v.*rifier/.test(normalizeLabel(item.name))
-      const forceReview = partialLowItems || item.needs_review || placeholder || Number(item.confidence_score || 0) < 70
-      const qualityStatus = forceReview ? "needs_review" : (trustedAutoScan ? "trusted" : normalizeItemQualityStatus(item))
+      const confidence = Number(item.confidence_score ?? item.item_quality_score ?? 0)
+      const lowConfidence = confidence > 0 && confidence < 70
+
+      const forceReview =
+        hardReviewScan ||
+        item.needs_review ||
+        placeholder ||
+        lowConfidence
+
+      const qualityStatus = forceReview
+        ? "needs_review"
+        : trustedAutoScan
+          ? "trusted"
+          : normalizeItemQualityStatus(item)
+
       const finalStatus = qualityStatus === "needs_review" ? "a_verifier" : qualityStatus
 
       return {
@@ -1305,6 +1323,15 @@ export default function ReceiptsPage({
       items: validItems,
     })
     const importDurationMs = Math.round(performance.now() - importStartedAt)
+    const analyticsResult = await ensureReceiptAnalytics({
+      receipt: currentReceipt,
+      draft: draftToPersist,
+      items: validItems,
+    })
+    if (analyticsResult.transactionId) {
+      currentReceipt.transaction_id = analyticsResult.transactionId
+      currentReceipt.is_food_ticket = true
+    }
     console.info("[scanner] scan_persisted", {
       receipt_created: Boolean(currentReceipt.id),
       receipt_items_inserted: importResult.receiptItemsCreated || 0,
@@ -1401,6 +1428,15 @@ export default function ReceiptsPage({
         items: validItems,
       })
       const importDurationMs = Math.round(performance.now() - importStartedAt)
+      const analyticsResult = await ensureReceiptAnalytics({
+        receipt: currentReceipt,
+        draft,
+        items: validItems,
+      })
+      if (analyticsResult.transactionId) {
+        currentReceipt.transaction_id = analyticsResult.transactionId
+        currentReceipt.is_food_ticket = true
+      }
 
       try {
         await createScanMetric({
@@ -1492,6 +1528,15 @@ export default function ReceiptsPage({
         items: validItems,
       })
       const importDurationMs = Math.round(performance.now() - importStartedAt)
+      const analyticsResult = await ensureReceiptAnalytics({
+        receipt: currentReceipt,
+        draft: draftToSave,
+        items: validItems,
+      })
+      if (analyticsResult.transactionId) {
+        currentReceipt.transaction_id = analyticsResult.transactionId
+        currentReceipt.is_food_ticket = true
+      }
 
       try {
         const scanWasProcessed = draft.ocr_status !== "manual" || Boolean(scanMetrics?.provider)
@@ -1617,6 +1662,69 @@ export default function ReceiptsPage({
     }
   }
 
+  async function ensureReceiptAnalytics({ receipt: sourceReceipt, draft: sourceDraft = {}, items = [] } = {}) {
+    if (!user?.id || !sourceReceipt?.id) {
+      return { transaction: null, transactionId: sourceReceipt?.transaction_id || null, shoppingItems: [] }
+    }
+
+    const analyticsReceipt = {
+      ...sourceReceipt,
+      store_name: sourceReceipt.store_name || sourceDraft.store_name || "Enseigne non reconnue",
+      purchase_date: sourceReceipt.purchase_date || sourceDraft.purchase_date || new Date().toISOString().slice(0, 10),
+      scan_status: sourceReceipt.scan_status || sourceDraft.scan_status || "success",
+      is_food_ticket: sourceReceipt.is_food_ticket ?? sourceDraft.is_food_ticket ?? true,
+    }
+
+    const analyticsDraft = {
+      ...sourceDraft,
+      ...analyticsReceipt,
+      total_needs_review: false,
+      is_food_ticket: true,
+      budget_category: sourceDraft.budget_category || sourceReceipt.budget_category || "alimentaire",
+    }
+
+    const transactionResult = await upsertReceiptTransaction({
+      userId: user.id,
+      receipt: analyticsReceipt,
+      draft: analyticsDraft,
+      transactionId: analyticsReceipt.transaction_id,
+    })
+
+    const transactionId = transactionResult?.transaction?.id || analyticsReceipt.transaction_id || null
+
+    if (transactionId) {
+      try {
+        await updateReceipt({
+          receiptId: analyticsReceipt.id,
+          userId: user.id,
+          updates: {
+            transaction_id: transactionId,
+            is_food_ticket: true,
+            budget_category: "alimentaire",
+          },
+        })
+      } catch (error) {
+        console.warn("[scanner] liaison receipt transaction indisponible", error)
+      }
+
+      const shoppingItems = await syncShoppingItemsFromReceipt({
+        userId: user.id,
+        transactionId,
+        receipt: {
+          id: analyticsReceipt.id,
+          store_name: analyticsReceipt.store_name,
+          purchase_date: analyticsReceipt.purchase_date,
+          scan_status: analyticsReceipt.scan_status,
+        },
+        items,
+      })
+
+      return { ...transactionResult, transactionId, shoppingItems }
+    }
+
+    return { ...transactionResult, transactionId: null, shoppingItems: [] }
+  }
+
   async function handleUpdateReceipt(updates) {
     if (!detail || !user?.id) return
     if (isLockedScannedReceipt(detail)) {
@@ -1658,40 +1766,79 @@ export default function ReceiptsPage({
   }
 
   async function handleUpdateReceiptItem(itemId, updates) {
-    if (!detail || !user?.id) return
-    if (isLockedScannedReceipt(detail)) {
-      setMessage("Ce ticket est issu d'un scan fiable. Ses articles ne sont plus modifiables.")
-      return
-    }
+    if (!detail || !user?.id) return null
 
     setBusy(true)
     try {
-      const next = await updateReceiptItem({ itemId, userId: user?.id, updates })
-      const updatedItem = { ...next, ...updates }
-      setDetail(prev => ({
-        ...prev,
-        receipt_items: (prev.receipt_items || []).map(item => item.id === itemId ? { ...item, ...updatedItem } : item),
-      }))
-
-      if (detail.is_food_ticket && detail.transaction_id && isItemEligibleForSmartShopping(updatedItem)) {
-        await syncShoppingItemsFromReceipt({
-          userId: user?.id,
-          transactionId: detail.transaction_id,
-          receipt: {
-            id: detail.id,
-            store_name: detail.store_name,
-            purchase_date: detail.purchase_date,
-            scan_status: detail.scan_status,
-          },
-          items: [updatedItem],
-        })
-        window.dispatchEvent(new CustomEvent("budgetkazpei:transactions-updated"))
+      const currentItems = Array.isArray(detail.receipt_items) ? detail.receipt_items : []
+      const previousItem = currentItems.find(item => item.id === itemId) || {}
+      const updatePayload = {
+        name: String(updates.name || previousItem.name || "").trim(),
+        corrected_name: String(updates.corrected_name || updates.name || previousItem.corrected_name || previousItem.name || "").trim(),
+        total_price: Number(updates.total_price ?? previousItem.total_price ?? 0),
+        category: updates.category || previousItem.category || "alimentaire",
+        item_status: updates.item_status || "user_validated",
+        status: updates.status || updates.item_status || "user_validated",
+        review_status: updates.review_status || "trusted",
+        needs_review: updates.needs_review === true ? true : false,
       }
 
-      setMessage("Ligne mise à jour.")
+      if (!updatePayload.name || updatePayload.total_price <= 0) {
+        throw new Error("Nom ou prix article invalide.")
+      }
+
+      await updateReceiptItem({ itemId, userId: user?.id, updates: updatePayload })
+
+      // Lecture immédiate depuis Supabase : on ne montre plus un succès basé seulement
+      // sur l'état local React. Si Supabase n'a pas réellement gardé la modification,
+      // on bloque et on affiche une erreur.
+      const persistedAfterItemUpdate = await getReceiptDetail({
+        receiptId: detail.id,
+        userId: user?.id,
+      })
+      const persistedItem = (persistedAfterItemUpdate.receipt_items || []).find(item => item.id === itemId)
+
+      const persistedName = String(persistedItem?.name || "").trim()
+      const persistedPrice = Number(persistedItem?.total_price || 0)
+      if (
+        !persistedItem ||
+        persistedName !== updatePayload.name ||
+        Math.abs(persistedPrice - updatePayload.total_price) > 0.001
+      ) {
+        console.warn("[scanner] correction_non_persistée", {
+          expected: updatePayload,
+          persisted: persistedItem || null,
+        })
+        throw new Error("La correction n'a pas été confirmée par la base. Réessayez.")
+      }
+
+      // Stats + Courses intelligentes : on repart des lignes réellement relues depuis Supabase.
+      const analyticsResult = await ensureReceiptAnalytics({
+        receipt: persistedAfterItemUpdate,
+        draft: persistedAfterItemUpdate,
+        items: persistedAfterItemUpdate.receipt_items || [],
+      })
+
+      let finalDetail = persistedAfterItemUpdate
+      if (analyticsResult.transactionId) {
+        // Deuxième relecture pour récupérer transaction_id/is_food_ticket/budget_category après liaison.
+        finalDetail = await getReceiptDetail({
+          receiptId: detail.id,
+          userId: user?.id,
+        })
+      }
+
+      setDetail(finalDetail)
+      window.dispatchEvent(new CustomEvent("budgetkazpei:transactions-updated"))
+      window.dispatchEvent(new CustomEvent("budgetkazpei:shopping-updated"))
+
+      setMessage("Correction enregistrée et synchronisée.")
+      await refreshReceipts()
+      return persistedItem
     } catch (error) {
       console.error("Erreur modification ligne ticket:", error)
-      setMessage(txt.error)
+      setMessage(`Correction impossible : ${error.message || txt.error}`)
+      throw error
     } finally {
       setBusy(false)
     }
@@ -1699,22 +1846,34 @@ export default function ReceiptsPage({
 
   async function handleDeleteReceiptItem(itemId) {
     if (!detail || !user?.id) return
-    if (isLockedScannedReceipt(detail)) {
-      setMessage("Ce ticket est issu d'un scan fiable. Ses articles ne sont plus modifiables.")
-      return
-    }
 
     setBusy(true)
     try {
+      const remainingItems = (detail.receipt_items || []).filter(item => item.id !== itemId)
       await deleteReceiptItem({ itemId, userId: user?.id })
       setDetail(prev => ({
         ...prev,
-        receipt_items: (prev.receipt_items || []).filter(item => item.id !== itemId),
+        receipt_items: remainingItems,
       }))
-      setMessage("Ligne supprimee.")
+
+      const analyticsResult = await ensureReceiptAnalytics({
+        receipt: { ...detail, receipt_items: remainingItems },
+        draft: { ...detail },
+        items: remainingItems,
+      })
+      setDetail(prev => ({
+        ...prev,
+        transaction_id: analyticsResult.transactionId || prev?.transaction_id,
+        is_food_ticket: true,
+        receipt_items: remainingItems,
+      }))
+      window.dispatchEvent(new CustomEvent("budgetkazpei:transactions-updated"))
+
+      setMessage("Ligne supprimée et Courses intelligentes mises à jour.")
+      await refreshReceipts()
     } catch (error) {
       console.error("Erreur suppression ligne ticket:", error)
-      setMessage(txt.error)
+      setMessage(`Suppression impossible : ${error.message || txt.error}`)
     } finally {
       setBusy(false)
     }
@@ -1984,25 +2143,85 @@ function ScanErrorMessage({ details }) {
   )
 }
 
-function ActionButton({ label, Icon, onClick, disabled, muted }) {
+
+function triggerButtonFeedback() {
+  try {
+    if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
+      navigator.vibrate(8)
+    }
+  } catch {
+    // Retour haptique facultatif.
+  }
+}
+
+function ActionButton({ label, Icon, icon, onClick, disabled, muted, danger, success, loading }) {
+  const [pressed, setPressed] = useState(false)
+  const ButtonIcon = Icon || icon
+  const isDisabled = disabled || loading
+  const background = danger
+    ? COLORS.red
+    : success
+      ? COLORS.green
+      : muted
+        ? "rgba(255,255,255,.06)"
+        : COLORS.accent
+  const color = success ? "#06101F" : muted ? COLORS.text : "#fff"
+  const border = muted ? `1px solid ${COLORS.border}` : "1px solid rgba(255,255,255,.08)"
+  const shadow = danger
+    ? "0 12px 26px rgba(239,68,68,.24)"
+    : success
+      ? "0 12px 26px rgba(34,197,94,.22)"
+      : muted
+        ? "0 8px 18px rgba(0,0,0,.14), inset 0 1px 0 rgba(255,255,255,.05)"
+        : "0 12px 26px rgba(249,115,22,.26)"
+
   return (
     <button
       type="button"
-      onClick={onClick}
-      disabled={disabled}
+      onClick={event => {
+        if (isDisabled) return
+        triggerButtonFeedback()
+        onClick?.(event)
+      }}
+      onPointerDown={() => !isDisabled && setPressed(true)}
+      onPointerUp={() => setPressed(false)}
+      onPointerLeave={() => setPressed(false)}
+      onPointerCancel={() => setPressed(false)}
+      disabled={isDisabled}
       style={{
         minHeight: 58,
-        border: muted ? `1px solid ${COLORS.border}` : "none",
+        border,
         borderRadius: 16,
-        background: muted ? "rgba(255,255,255,.06)" : COLORS.accent,
-        color: muted ? COLORS.text : "#fff",
+        background,
+        color,
         fontWeight: 950,
-        cursor: disabled ? "wait" : "pointer",
+        cursor: isDisabled ? "wait" : "pointer",
         fontFamily: "inherit",
         fontSize: 15,
+        transform: pressed ? "translateY(1px) scale(.975)" : "translateY(0) scale(1)",
+        transition: "transform .12s cubic-bezier(.2,.8,.2,1), filter .12s ease, box-shadow .12s ease, background .12s ease",
+        boxShadow: pressed ? "0 4px 12px rgba(0,0,0,.20)" : shadow,
+        filter: isDisabled ? "grayscale(.15) opacity(.72)" : pressed ? "brightness(1.08)" : "none",
+        outline: "none",
+        padding: "0 14px",
+        position: "relative",
+        overflow: "hidden",
       }}
     >
-      {Icon && <Icon size={18} style={{ marginRight: 8, verticalAlign: "text-bottom" }} />}
+      {loading && (
+        <span style={{
+          display: "inline-block",
+          width: 14,
+          height: 14,
+          borderRadius: 999,
+          border: "2px solid rgba(255,255,255,.45)",
+          borderTopColor: color,
+          marginRight: 8,
+          verticalAlign: "-2px",
+          animation: "bk-spin .7s linear infinite",
+        }} />
+      )}
+      {!loading && ButtonIcon && typeof ButtonIcon === "function" && <ButtonIcon size={18} style={{ marginRight: 8, verticalAlign: "text-bottom" }} />}
       {label}
     </button>
   )
@@ -2365,6 +2584,53 @@ function HistoryList({ txt, rows, busy, onOpen, onDelete }) {
   )
 }
 
+function normalizeReceiptDraftText(value = "") {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
+function receiptItemDraftValue(itemDrafts, item, key, fallback = "") {
+  return itemDrafts[item.id]?.[key] ?? item[key] ?? fallback
+}
+
+function buildReceiptItemCorrectionPayload(itemDrafts, item) {
+  const name = String(receiptItemDraftValue(itemDrafts, item, "name", item.name || "")).trim()
+  const totalPrice = Number(String(receiptItemDraftValue(itemDrafts, item, "total_price", item.total_price ?? "0")).replace(",", ".")) || 0
+  const category = String(receiptItemDraftValue(itemDrafts, item, "category", item.category || "alimentaire") || "alimentaire")
+  const normalizedName = normalizeReceiptDraftText(name)
+
+  return {
+    name,
+    corrected_name: name,
+    normalized_name: normalizedName,
+    total_price: totalPrice,
+    category,
+    item_status: "user_validated",
+    review_status: "trusted",
+    needs_review: false,
+    confidence_score: Math.max(95, Number(item.confidence_score || 0) || 95),
+  }
+}
+
+function isReceiptItemDraftDirty(itemDrafts, item) {
+  const draft = itemDrafts[item.id] || {}
+  const currentName = String(item.name || "").trim()
+  const draftName = String(draft.name ?? currentName).trim()
+  const currentPrice = Number(item.total_price ?? 0)
+  const draftPrice = Number(String(draft.total_price ?? currentPrice).replace(",", ".")) || 0
+  const currentCategory = String(item.category || "alimentaire")
+  const draftCategory = String(draft.category ?? currentCategory)
+
+  return draftName !== currentName
+    || Math.abs(draftPrice - currentPrice) > 0.001
+    || draftCategory !== currentCategory
+}
+
 function ReceiptDetail({
   txt,
   receipt,
@@ -2380,6 +2646,9 @@ function ReceiptDetail({
   onOpenShoppingList,
 }) {
   const [showOriginal, setShowOriginal] = useState(false)
+  const [savingItemIds, setSavingItemIds] = useState(() => new Set())
+  const [savedItemIds, setSavedItemIds] = useState(() => new Set())
+  const [batchSaving, setBatchSaving] = useState(false)
   const [receiptDraft, setReceiptDraft] = useState({
     store_name: receipt.store_name || "",
     purchase_date: receipt.purchase_date || "",
@@ -2417,88 +2686,174 @@ function ReceiptDetail({
   const lockedReceipt = isLockedScannedReceipt(receipt)
   const partialReceipt = isBudgetOkArticlesPartial(receipt)
   const headerLocked = lockedReceipt || isBudgetReliableScannedReceipt(receipt)
+  const visibleItems = (receipt.receipt_items || []).filter(item => !isBlockedReceiptItem(item))
+  const dirtyItems = visibleItems.filter(item => isReceiptItemDraftDirty(itemDrafts, item))
+
+  async function saveOneItem(item) {
+    const payload = buildReceiptItemCorrectionPayload(itemDrafts, item)
+    if (!payload.name || payload.total_price <= 0) return
+
+    setSavingItemIds(prev => new Set([...prev, item.id]))
+    setSavedItemIds(prev => {
+      const next = new Set(prev)
+      next.delete(item.id)
+      return next
+    })
+
+    try {
+      const updated = await onUpdateItem(item.id, payload)
+      setSavedItemIds(prev => new Set([...prev, item.id]))
+      setTimeout(() => {
+        setSavedItemIds(prev => {
+          const next = new Set(prev)
+          next.delete(item.id)
+          return next
+        })
+      }, 1600)
+      return updated
+    } finally {
+      setSavingItemIds(prev => {
+        const next = new Set(prev)
+        next.delete(item.id)
+        return next
+      })
+    }
+  }
+
+  async function saveAllCorrections() {
+    if (dirtyItems.length === 0 || batchSaving || busy) return
+    setBatchSaving(true)
+    try {
+      for (const item of dirtyItems) {
+        await saveOneItem(item)
+      }
+    } finally {
+      setBatchSaving(false)
+    }
+  }
 
   return (
     <div style={cardStyle()}>
-      <button type="button" onClick={onBack} style={{ minHeight: 44, background: "transparent", border: "none", color: COLORS.cyan, fontWeight: 900, cursor: "pointer" }}>
-        ← {txt.title}
-      </button>
-      <div style={{ marginTop: 6, color: COLORS.green, fontSize: 13, fontWeight: 950 }}>
+      <ActionButton label={`← ${txt.title}`} onClick={onBack} disabled={busy || batchSaving} muted />
+      <div style={{ marginTop: 12, color: COLORS.green, fontSize: 13, fontWeight: 950 }}>
         Ticket enregistré avec succès
       </div>
       {receipt.scan_status === "partial" && (
         <div style={{ marginTop: 8, color: COLORS.yellow, fontSize: 13, fontWeight: 900, lineHeight: 1.45 }}>
-          L'analyse complete n'a pas pu etre terminee. Les donnees disponibles ont ete sauvegardees.
+          L'analyse complète n'a pas pu être terminée. Les données disponibles ont été sauvegardées.
         </div>
       )}
       {lockedReceipt && (
         <div style={{ marginTop: 8, color: COLORS.cyan, fontSize: 13, fontWeight: 900, lineHeight: 1.45 }}>
-          Ticket verrouille : le scan est assez fiable pour le budget et les Courses intelligentes. Vous pouvez le consulter ou le retirer, mais pas modifier ses lignes.
+          Budget verrouillé : le total, la date et le magasin restent protégés. Les articles peuvent être corrigés manuellement si une désignation ou un prix est à ajuster.
         </div>
       )}
       {partialReceipt && (
         <div style={{ marginTop: 8, color: COLORS.yellow, fontSize: 13, fontWeight: 900, lineHeight: 1.45 }}>
-          Budget valide : le total est verrouillé. Vous pouvez corriger ou valider uniquement les articles à vérifier. Les articles fiables alimentent déjà Courses intelligentes.
+          Budget valide : le total est verrouillé. Vous pouvez corriger ou valider les articles. Les articles fiables alimentent Courses intelligentes.
         </div>
       )}
-      <h2 style={{ color: COLORS.text, margin: "10px 0 6px" }}>{receipt.store_name || txt.scanTitle}</h2>
+      <h2 style={{ color: COLORS.text, margin: "14px 0 6px" }}>{receipt.store_name || txt.scanTitle}</h2>
       <div style={{ color: COLORS.muted, fontSize: 13, marginBottom: 12 }}>
         {receipt.purchase_date} - {formatMontant(Number(receipt.total_amount || 0))}
-        {receipt.date_status === "estimated" ? " - date estimee" : ""}
+        {receipt.date_status === "estimated" ? " - date estimée" : ""}
         {receipt.ticket_type ? ` - ${receipt.ticket_type}` : ""}
         {formatBudgetCategoryLabel(receipt) ? ` - ${formatBudgetCategoryLabel(receipt)}` : ""}
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 10, marginBottom: 14 }}>
-        <ActionButton label="Scanner un autre ticket" icon="" onClick={onScanAnother} disabled={busy} />
-        <ActionButton label="Retour à Mes tickets" icon="" onClick={onBackToTickets || onBack} disabled={busy} muted />
-        {receipt.is_food_ticket && <ActionButton label="Voir mes Courses intelligentes" icon="" onClick={onOpenShoppingList} disabled={busy} muted />}
+        <ActionButton label="Scanner un autre ticket" onClick={onScanAnother} disabled={busy || batchSaving} />
+        <ActionButton label="Retour à Mes tickets" onClick={onBackToTickets || onBack} disabled={busy || batchSaving} muted />
+        {receipt.is_food_ticket && <ActionButton label="Voir mes Courses intelligentes" onClick={onOpenShoppingList} disabled={busy || batchSaving} muted />}
       </div>
-      <div style={{ display: "grid", gap: 10 }}>
-        <input style={inputStyle()} value={receiptDraft.store_name} readOnly={headerLocked} onChange={event => !headerLocked && setReceiptDraft(prev => ({ ...prev, store_name: event.target.value }))} />
-        <input style={inputStyle()} type="date" value={receiptDraft.purchase_date || ""} readOnly={headerLocked} onChange={event => !headerLocked && setReceiptDraft(prev => ({ ...prev, purchase_date: event.target.value, date_status: "detected" }))} />
-        <input style={inputStyle()} type="number" min="0" step="0.01" value={receiptDraft.total_amount} readOnly={headerLocked} onChange={event => !headerLocked && setReceiptDraft(prev => ({ ...prev, total_amount: event.target.value }))} />
-        {!headerLocked && (
-          <button type="button" disabled={busy || Number(receiptDraft.total_amount || 0) <= 0} onClick={() => onUpdateReceipt({
-            store_name: receiptDraft.store_name || "Enseigne non reconnue",
-            merchant_name: receiptDraft.store_name || "Enseigne non reconnue",
-            purchase_date: receiptDraft.purchase_date || new Date().toISOString().slice(0, 10),
-            date_status: receiptDraft.date_status || "detected",
-            total_amount: Number(receiptDraft.total_amount || 0),
-          })} style={{ minHeight: 44, borderRadius: 12, border: "none", background: COLORS.cyan, color: "#06101F", fontWeight: 950 }}>
-            Mettre à jour le ticket
-          </button>
-        )}
+      <div style={{
+        display: "grid",
+        gap: 8,
+        padding: 12,
+        borderRadius: 16,
+        border: "1px solid rgba(255,255,255,.08)",
+        background: "rgba(255,255,255,.04)",
+        color: COLORS.muted,
+        fontSize: 13,
+        lineHeight: 1.45,
+      }}>
+        <strong style={{ color: COLORS.text }}>Informations du ticket verrouillées</strong>
+        <span>Magasin : {receiptDraft.store_name || "Enseigne non reconnue"}</span>
+        <span>Date : {receiptDraft.purchase_date || "Non renseignée"}</span>
+        <span>Total budget : {formatMontant(Number(receiptDraft.total_amount || 0))}</span>
+        <span style={{ color: COLORS.cyan, fontWeight: 900 }}>
+          Ici, vous corrigez uniquement les articles. Le bouton “Mettre à jour le ticket” est retiré pour éviter d'écraser les corrections.
+        </span>
       </div>
       {imageUrl && (
         <div style={{ marginTop: 14 }}>
-          <button type="button" onClick={() => setShowOriginal(prev => !prev)} style={{ minHeight: 44, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "rgba(255,255,255,.05)", color: COLORS.text, fontWeight: 950, width: "100%" }}>
-            {showOriginal ? "Masquer le ticket original" : "Voir le ticket original"}
-          </button>
+          <ActionButton
+            label={showOriginal ? "Masquer le ticket original" : "Voir le ticket original"}
+            onClick={() => setShowOriginal(prev => !prev)}
+            disabled={busy || batchSaving}
+            muted
+          />
           {showOriginal && <img src={imageUrl} alt="" style={{ width: "100%", maxHeight: 420, objectFit: "contain", borderRadius: 16, marginTop: 10, border: "1px solid rgba(255,255,255,.12)" }} />}
         </div>
       )}
       <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 950, marginTop: 18 }}>
         Lignes d'articles
       </div>
-      <div style={{ display: "grid", gap: 8, marginTop: 10 }}>
-        {(receipt.receipt_items || []).filter(item => !isBlockedReceiptItem(item)).map(item => {
+      {dirtyItems.length > 0 && (
+        <div style={{
+          position: "sticky",
+          top: 8,
+          zIndex: 3,
+          display: "grid",
+          gridTemplateColumns: "1fr auto",
+          gap: 10,
+          alignItems: "center",
+          marginTop: 12,
+          padding: 12,
+          borderRadius: 16,
+          border: "1px solid rgba(35,211,214,.28)",
+          background: "rgba(10,22,40,.94)",
+          boxShadow: "0 14px 30px rgba(0,0,0,.25)",
+        }}>
+          <div style={{ color: COLORS.text, fontSize: 13, fontWeight: 900 }}>
+            {dirtyItems.length} correction{dirtyItems.length > 1 ? "s" : ""} en attente
+          </div>
+          <ActionButton
+            label={batchSaving ? "Enregistrement…" : `Enregistrer les corrections`}
+            success
+            loading={batchSaving}
+            disabled={busy || batchSaving}
+            onClick={saveAllCorrections}
+          />
+        </div>
+      )}
+      <div style={{ display: "grid", gap: 10, marginTop: 10 }}>
+        {visibleItems.map(item => {
           const itemUsedForSmartShopping = isItemEligibleForSmartShopping(item)
-          const itemEditable = !lockedReceipt && !itemUsedForSmartShopping
+          const itemEditable = true
+          const itemDirty = isReceiptItemDraftDirty(itemDrafts, item)
+          const itemSaving = savingItemIds.has(item.id)
+          const itemSaved = savedItemIds.has(item.id)
+          const draftName = itemDrafts[item.id]?.name ?? item.name ?? ""
+          const draftPrice = itemDrafts[item.id]?.total_price ?? item.total_price ?? ""
+          const draftCategory = itemDrafts[item.id]?.category || item.category || "alimentaire"
 
           return (
-          <div key={item.id} style={{ display: "grid", gap: 8, color: COLORS.text, borderBottom: "1px solid rgba(255,255,255,.08)", paddingBottom: 10 }}>
+          <div key={item.id} style={{ display: "grid", gap: 8, color: COLORS.text, borderBottom: "1px solid rgba(255,255,255,.08)", paddingBottom: 12 }}>
             {item.ocr_name && item.ocr_name !== item.name && (
               <div style={{ color: COLORS.muted, fontSize: 12 }}>OCR : {item.ocr_name}</div>
             )}
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {isItemEligibleForSmartShopping(item)
-                ? <MetaChip label="Utilise pour Courses intelligentes" strong />
+              {itemUsedForSmartShopping
+                ? <MetaChip label="Utilisé pour Courses intelligentes" strong />
                 : <MetaChip label="À vérifier avant Courses intelligentes" />}
+              {itemEditable && <MetaChip label="Modifiable" />}
+              {itemDirty && <MetaChip label="Modifié" strong />}
+              {itemSaved && <MetaChip label="✓ Enregistré" strong />}
             </div>
             <input
               style={inputStyle()}
-                    value={itemDrafts[item.id]?.name ?? item.name ?? ""}
-              readOnly={!itemEditable}
+              value={draftName}
+              readOnly={!itemEditable || itemSaving || batchSaving}
               onChange={event => itemEditable && setItemDrafts(prev => ({ ...prev, [item.id]: { ...(prev[item.id] || {}), name: event.target.value } }))}
             />
             <div style={{ display: "grid", gridTemplateColumns: "1fr auto auto", gap: 8 }}>
@@ -2507,33 +2862,33 @@ function ReceiptDetail({
                 type="number"
                 min="0"
                 step="0.01"
-                    value={itemDrafts[item.id]?.total_price ?? item.total_price ?? ""}
-                readOnly={!itemEditable}
+                value={draftPrice}
+                readOnly={!itemEditable || itemSaving || batchSaving}
                 onChange={event => itemEditable && setItemDrafts(prev => ({ ...prev, [item.id]: { ...(prev[item.id] || {}), total_price: event.target.value } }))}
               />
               {itemEditable && (
-                <button type="button" disabled={busy} onClick={() => onUpdateItem(item.id, {
-                  name: itemDrafts[item.id].name || item.name,
-                  corrected_name: itemDrafts[item.id].name || item.name,
-                  total_price: Number(itemDrafts[item.id]?.total_price ?? item.total_price ?? 0),
-                  category: itemDrafts[item.id].category || item.category || "alimentaire",
-                  item_status: "user_validated",
-                  review_status: "trusted",
-                  needs_review: false,
-                })} style={{ minHeight: 44, borderRadius: 12, border: "none", background: COLORS.green, color: "#06101F", fontWeight: 950, padding: "0 12px" }}>
-                  Valider
-                </button>
+                <ActionButton
+                  label={itemSaving ? "Enregistrement…" : itemSaved ? "✓ OK" : "Enregistrer"}
+                  success
+                  loading={itemSaving}
+                  disabled={busy || batchSaving || itemSaving || !itemDirty}
+                  onClick={() => saveOneItem(item)}
+                />
               )}
               {itemEditable && (
-                <button type="button" disabled={busy} onClick={() => onDeleteItem(item.id)} style={{ minHeight: 44, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "transparent", color: COLORS.muted, fontWeight: 950, padding: "0 12px" }}>
-                  {txt.remove}
-                </button>
+                <ActionButton
+                  label={txt.remove}
+                  danger
+                  muted={false}
+                  disabled={busy || batchSaving || itemSaving}
+                  onClick={() => onDeleteItem(item.id)}
+                />
               )}
             </div>
             <select
               style={inputStyle()}
-              value={itemDrafts[item.id]?.category || item.category || "alimentaire"}
-              disabled={!itemEditable}
+              value={draftCategory}
+              disabled={!itemEditable || itemSaving || batchSaving}
               onChange={event => itemEditable && setItemDrafts(prev => ({ ...prev, [item.id]: { ...(prev[item.id] || {}), category: event.target.value } }))}
             >
               {CATEGORIES.map(category => (
@@ -2547,11 +2902,10 @@ function ReceiptDetail({
           )
         })}
       </div>
-      <button type="button" disabled={busy} onClick={onDelete} style={{ marginTop: 18, minHeight: 48, borderRadius: 14, border: "none", background: COLORS.red, color: "#fff", fontWeight: 950, width: "100%" }}>
-        {txt.deleteTicket}
-      </button>
+      <div style={{ marginTop: 18 }}>
+        <ActionButton label={txt.deleteTicket} onClick={onDelete} disabled={busy || batchSaving} danger />
+      </div>
     </div>
   )
 }
-
 
