@@ -1,9 +1,18 @@
 // utils/format.js
+function safeAmount(value) {
+  const number = Number(String(value ?? 0).replace(",", "."))
+  return Number.isFinite(number) ? number : 0
+}
+
 export function formatAmount(amount) {
-  const sign = amount >= 0 ? "+" : "";
-  return sign + amount.toFixed(2).replace(".", ",") + " €";
+  const number = safeAmount(amount)
+  const sign = number >= 0 ? "+" : ""
+  return `${sign}${formatMontant(number)}`
 }
 
 export function formatMontant(montant) {
-  return montant.toFixed(2).replace(".", ",") + " €";
+  return `${safeAmount(montant).toLocaleString("fr-FR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })} €`
 }

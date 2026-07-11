@@ -1,62 +1,162 @@
-import { buildSavingsInsights } from "../savings/savingsEngine"
+import { supabase } from "../supabase"
+import { buildAssistantAiSummary } from "./assistantInsightsService.js"
+import {
+  ASSISTANT_INTENTS,
+  answerAssistantQuestion,
+  buildUnknownAssistantFallback,
+} from "./assistantIntentEngine.js"
+import { isAssistantKreol, normalizeAssistantLanguage } from "./assistantLanguage.js"
 
-function money(value: unknown) {
-  return Number(String(value ?? 0).replace(",", ".")) || 0
-}
-
-function isKreolLanguage(language = "fr") {
-  return ["cr", "kreol", "kr"].includes(String(language || "").toLowerCase())
+type AssistantAnswer = {
+  fr: string
+  kr: string
+  intent: string
+  confidence: number
+  dataUsed: Record<string, number>
+  transparency: {
+    fr: string
+    kr: string
+  }
+  actions: Array<Record<string, string>>
+  source: string
 }
 
 export type FinanceAssistantProvider = {
   name: string
-  answer(input: { question: string; context: any }): Promise<string>
+  answer(input: { question: string; context: any }): Promise<AssistantAnswer>
+}
+
+function parseJsonAnswer(value: unknown) {
+  if (!value) return null
+  if (typeof value === "object") return value as Record<string, unknown>
+
+  const raw = String(value).trim()
+  const withoutFence = raw
+    .replace(/^```json\s*/i, "")
+    .replace(/^```\s*/i, "")
+    .replace(/```$/i, "")
+    .trim()
+
+  const start = withoutFence.indexOf("{")
+  const end = withoutFence.lastIndexOf("}")
+  const candidate = start >= 0 && end > start ? withoutFence.slice(start, end + 1) : withoutFence
+
+  try {
+    return JSON.parse(candidate)
+  } catch (_) {
+    return null
+  }
+}
+
+function buildAiPrompt({ question, summary, language }: { question: string; summary: any; language: string }) {
+  return [
+    "Tu réponds pour la rubrique Mon assistant de BudgetKazPei.",
+    "Retourne uniquement un JSON strict, sans Markdown et sans texte autour.",
+    "Schéma obligatoire :",
+    '{"fr":"...","kr":"...","actions":[{"type":"open_page","target":"statistics","label_fr":"Voir mes stats","label_kr":"War mes stats"}]}',
+    "",
+    "Règles :",
+    "- réponse courte ;",
+    "- chiffres uniquement issus du contexte ;",
+    "- aucune invention ;",
+    "- aucune garantie d'économie ;",
+    "- aucune recommandation financière risquée ;",
+    "- kr doit être en kréol réunionnais simple ;",
+    "- fr doit être en français correctement accentué ;",
+    "- deux ou trois recommandations maximum.",
+    "",
+    `Langue active : ${language}`,
+    `Question : ${question}`,
+    "Contexte agrégé :",
+    JSON.stringify(summary, null, 2),
+  ].join("\n")
+}
+
+function normalizeAiAnswer(parsed: Record<string, unknown> | null, fallback: AssistantAnswer, language: string, rawText = ""): AssistantAnswer {
+  const activeIsKreol = isAssistantKreol(language)
+
+  if (parsed && typeof parsed.fr === "string" && typeof parsed.kr === "string") {
+    const actions = Array.isArray(parsed.actions) ? parsed.actions as Array<Record<string, string>> : []
+
+    return {
+      ...fallback,
+      fr: parsed.fr.slice(0, 900),
+      kr: parsed.kr.slice(0, 900),
+      actions,
+      source: "ai",
+      confidence: 0.72,
+    }
+  }
+
+  const cleanRaw = String(rawText || "").trim()
+  if (cleanRaw) {
+    return {
+      ...fallback,
+      fr: activeIsKreol ? fallback.fr : cleanRaw.slice(0, 900),
+      kr: activeIsKreol ? cleanRaw.slice(0, 900) : fallback.kr,
+      source: "ai",
+      confidence: 0.55,
+    }
+  }
+
+  return fallback
+}
+
+async function answerWithSecureAi({ question, context, fallback }: { question: string; context: any; fallback: AssistantAnswer }) {
+  if (!context?.user?.id) return fallback
+
+  const language = normalizeAssistantLanguage(context.language)
+  const summary = buildAssistantAiSummary(context.insights)
+  const prompt = buildAiPrompt({
+    question,
+    summary,
+    language: language === "kr" ? "kreol" : "fr",
+  })
+
+  const { data, error } = await supabase.functions.invoke("assistant-aisupabase", {
+    body: {
+      action: "finance_assistant_v2",
+      question: prompt,
+      originalQuestion: question,
+      language: language === "kr" ? "kreol" : "fr",
+      isKreol: language === "kr",
+      isQuickPreset: false,
+      profile: context.profile || {},
+      subscription_plan: context.profile?.plan || context.profile?.subscription_plan || "free",
+      localContext: summary,
+    },
+  })
+
+  if (error || !data?.success) {
+    return fallback
+  }
+
+  const parsed = parseJsonAnswer(data.financeAnswer || data.answer)
+  return normalizeAiAnswer(parsed, fallback, language, data.answer)
 }
 
 export class LocalFinanceAssistantProvider implements FinanceAssistantProvider {
-  name = "local-rules"
+  name = "local-first-finance-assistant"
 
   async answer({ question, context }: { question: string; context: any }) {
-    const language = context.language || "fr"
-    const isKreol = isKreolLanguage(language)
-    const q = question.toLowerCase()
-    const stats = context.stats || {}
-    const savings = buildSavingsInsights({
-      shoppingItems: context.shoppingItems || [],
-      transactions: context.transactions || [],
-      language,
+    const fallback = answerAssistantQuestion({
+      question,
+      insights: context.insights,
+    }) as AssistantAnswer
+
+    if (fallback.intent !== ASSISTANT_INTENTS.UNKNOWN) {
+      return fallback
+    }
+
+    const unknownFallback = buildUnknownAssistantFallback({
+      insights: context.insights,
+    }) as AssistantAnswer
+
+    return answerWithSecureAi({
+      question,
+      context,
+      fallback: unknownFallback,
     })
-
-    if (q.includes("100")) {
-      const weekly = Math.ceil(100 / 4)
-      const suggestions = savings.suggestions.slice(0, 3).map((item: any) => item.title).join(" ")
-      return isKreol
-        ? `Pou economise 100 EUR, commence vise ${weekly} EUR par semaine. Premye pistes trouvees : ${suggestions}`
-        : `Pour economiser 100 EUR, commence par viser ${weekly} EUR par semaine. Les premieres pistes detectees : ${suggestions}`
-    }
-
-    if (q.includes("magasin")) {
-      return isKreol
-        ? "Regarde page Mes courses : li montre kot ou achete le plus ek ki magasins i revient souvent dan out tike."
-        : "Regarde la page Mes courses : elle montre ou tu achetes le plus et quels magasins reviennent souvent dans tes tickets."
-    }
-
-    if (q.includes("alimentation") || q.includes("manze") || q.includes("courses")) {
-      const amount = money(stats.depenses).toFixed(0)
-      return isKreol
-        ? `Out depans mwa-la le a ${amount} EUR. Pou manze, compare bann produits frequents ek surveille panier moyen.`
-        : `Tes depenses du mois sont a ${amount} EUR. Pour l'alimentation, compare les produits frequents et surveille le panier moyen.`
-    }
-
-    if (q.includes("plus") || q.includes("depens") || q.includes("depense")) {
-      return isKreol
-        ? "La hausse i vient souvent de trois zafer : grosse depans ponctuelle, petits achats repetes, ou panier courses pli eleve. Va dan Mes stats pou voir evolution par semaine."
-        : "La hausse vient souvent de trois choses : grosses depenses ponctuelles, petits achats repetes, ou panier courses plus eleve. Va dans Mes statistiques pour voir l'evolution par semaine."
-    }
-
-    return isKreol
-      ? "Mi peux aide aou comprendre out depans, magasins, produits frequents ek lekonomi possible. Pose in kestion comme : koman economise 100 EUR ?"
-      : "Je peux t'aider a comprendre tes depenses, tes magasins, tes produits frequents et les economies possibles. Pose une question comme : comment economiser 100 EUR ?"
   }
 }
 
