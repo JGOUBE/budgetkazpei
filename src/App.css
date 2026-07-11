@@ -182,3 +182,138 @@
     border-right-color: var(--border);
   }
 }
+
+/* Note : le feedback global des boutons est aussi présent dans index.css.
+   Il est conservé ici pour couvrir les anciennes pages qui chargent App.css. */
+
+/* =========================================================
+   BudgetKazPei — feedback global boutons
+   Pression visible + effet mobile
+   ========================================================= */
+
+button,
+[role="button"],
+input[type="button"],
+input[type="submit"] {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  position: relative;
+  overflow: hidden;
+  transform: translateY(0) scale(1);
+  transition:
+    transform 120ms ease,
+    filter 120ms ease,
+    box-shadow 120ms ease,
+    opacity 120ms ease,
+    border-color 120ms ease,
+    background-color 120ms ease !important;
+}
+
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+input[type="button"]:not(:disabled),
+input[type="submit"]:not(:disabled) {
+  cursor: pointer;
+}
+
+button:not(:disabled):hover,
+[role="button"]:not([aria-disabled="true"]):hover,
+input[type="button"]:not(:disabled):hover,
+input[type="submit"]:not(:disabled):hover {
+  filter: brightness(1.08) saturate(1.05);
+}
+
+button:not(:disabled):active,
+[role="button"]:not([aria-disabled="true"]):active,
+input[type="button"]:not(:disabled):active,
+input[type="submit"]:not(:disabled):active {
+  transform: translateY(2px) scale(0.965) !important;
+  filter: brightness(0.96) saturate(1.1);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.22) !important;
+}
+
+button:not(:disabled)::after,
+[role="button"]:not([aria-disabled="true"])::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(circle at center, rgba(255,255,255,.32), transparent 58%);
+  transform: scale(0.65);
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+
+button:not(:disabled):active::after,
+[role="button"]:not([aria-disabled="true"]):active::after {
+  opacity: 1;
+  transform: scale(1.25);
+}
+
+button:focus-visible,
+[role="button"]:focus-visible,
+input[type="button"]:focus-visible,
+input[type="submit"]:focus-visible {
+  outline: 2px solid #23D3D6;
+  outline-offset: 3px;
+}
+
+button:disabled,
+input[type="button"]:disabled,
+input[type="submit"]:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed !important;
+  opacity: 0.55 !important;
+  filter: grayscale(0.15);
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+button:not(:disabled)[style*="249,115,22"],
+button:not(:disabled)[style*="#F97316"],
+button:not(:disabled)[style*="#f97316"] {
+  box-shadow:
+    0 10px 22px rgba(249, 115, 22, 0.22),
+    inset 0 1px 0 rgba(255,255,255,.18);
+}
+
+button:not(:disabled)[style*="249,115,22"]:active,
+button:not(:disabled)[style*="#F97316"]:active,
+button:not(:disabled)[style*="#f97316"]:active {
+  box-shadow:
+    0 4px 10px rgba(249, 115, 22, 0.18),
+    inset 0 2px 8px rgba(0,0,0,.18) !important;
+}
+
+button:not(:disabled)[style*="239,68,68"],
+button:not(:disabled)[style*="#EF4444"],
+button:not(:disabled)[style*="#ef4444"] {
+  box-shadow:
+    0 10px 22px rgba(239, 68, 68, 0.18),
+    inset 0 1px 0 rgba(255,255,255,.15);
+}
+
+button:not(:disabled)[style*="239,68,68"]:active,
+button:not(:disabled)[style*="#EF4444"]:active,
+button:not(:disabled)[style*="#ef4444"]:active {
+  box-shadow:
+    0 4px 10px rgba(239, 68, 68, 0.16),
+    inset 0 2px 8px rgba(0,0,0,.2) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button,
+  [role="button"],
+  input[type="button"],
+  input[type="submit"] {
+    transition: none !important;
+  }
+
+  button:not(:disabled):active,
+  [role="button"]:not([aria-disabled="true"]):active {
+    transform: none !important;
+  }
+}
