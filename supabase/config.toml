@@ -20,3 +20,15 @@ entrypoint = "./functions/send-support-email/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/send-support-email/*.html" ]
+
+[functions.market-resolve-products]
+enabled = true
+verify_jwt = false
+import_map = "./functions/market-resolve-products/deno.json"
+entrypoint = "./functions/market-resolve-products/index.ts"
+
+[functions.market-record-observations]
+enabled = true
+verify_jwt = false
+import_map = "./functions/market-record-observations/deno.json"
+entrypoint = "./functions/market-record-observations/index.ts"

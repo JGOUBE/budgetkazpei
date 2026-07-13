@@ -1,6 +1,7 @@
 import { optimizeReceiptImage } from "./imageOptimizer"
 import { getDefaultOCRProvider, type OCRProvider } from "./ocrProvider"
 import { classifyReceipt } from "./receiptClassifier"
+import { resolveMarketProducts } from "./marketProductResolver"
 import { extractReceiptDueTotal, extractReceiptTotal, mergeReceiptItems, normalizeReceiptDate, parseReceipt } from "./receiptParser"
 import { validateParsedReceipt } from "./receiptValidator"
 import { ScanError } from "./scanErrors"
@@ -448,7 +449,7 @@ function canonicalFinalProductKey(raw = "") {
     .join(" ")
 }
 
-function sanitizeFinalReceiptItems(items: any[] = [], receiptTotal = 0) {
+export function sanitizeFinalReceiptItems(items: any[] = [], receiptTotal = 0) {
   const rejected: any[] = []
   const kept: any[] = []
   const seen = new Set<string>()
@@ -1232,6 +1233,12 @@ export async function runSmartScan(file: File, options: ScanEngineOptions = {}) 
     parsed.scan_duration_ms = Math.round(performance.now() - scanStartedAt)
 
     emit(options.onProgress, "products", "Extraction des produits...", 66)
+    const marketResolution = await resolveMarketProducts(parsed.items)
+    parsed.items = marketResolution.items
+    ;(parsed as any).parser_debug = {
+      ...((parsed as any).parser_debug || {}),
+      market_resolution: marketResolution.diagnostics,
+    }
     await Promise.resolve()
 
     emit(options.onProgress, "total", "Calcul du total...", 82)

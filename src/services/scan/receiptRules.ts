@@ -539,6 +539,9 @@ export function normalizeStoreName(text = "") {
   if ((clean.includes("leclerc") || clean.includes("lecierc")) && clean.includes("le portail")) {
     return { store_name: "E.Leclerc Le Portail", normalized_store_name: "e.leclerc", store_location: "Le Portail" }
   }
+  if ((clean.includes("leclerc") || clean.includes("lecierc")) && clean.includes("casernes") && (clean.includes("saint pierre") || clean.includes("saint-pierre"))) {
+    return { store_name: "E.Leclerc Les Casernes", normalized_store_name: "e.leclerc", store_location: "Saint-Pierre" }
+  }
   if (clean.includes("leclerc") || clean.includes("lecierc")) {
     return { store_name: "E.Leclerc", normalized_store_name: "e.leclerc", store_location: "" }
   }

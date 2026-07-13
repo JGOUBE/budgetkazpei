@@ -213,6 +213,15 @@ export async function saveReceiptItems({ receiptId, userId, items }) {
       line_type: item.line_type || "product",
       item_source: item.item_source || item.source || "parser",
       confidence_score: item.confidence_score == null ? null : Number(item.confidence_score),
+      market_product_id: item.market_product_id || null,
+      market_matched: item.market_matched === true,
+      market_match_type: item.market_match_type || null,
+      market_match_confidence: item.market_match_confidence == null ? null : Number(item.market_match_confidence),
+      market_canonical_name: item.market_canonical_name || null,
+      market_brand: item.market_brand || null,
+      market_category: item.market_category || null,
+      market_subcategory: item.market_subcategory || null,
+      market_package_format: item.market_package_format || null,
     }))
 
   if (cleanItems.length === 0) {

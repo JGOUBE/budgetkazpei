@@ -1,5 +1,6 @@
 import { upsertReceiptTransaction, validateReceipt } from "../../features/receipts/services/receiptService"
 import { syncShoppingItemsFromReceipt } from "../../features/shopping/services/shoppingEngine"
+import { syncAnonymizedMarketReceipt } from "./marketObservationService"
 import { enrichProductDictionary } from "./productKnowledgeService"
 import { isItemEligibleForSmartShopping } from "./receiptRules"
 
@@ -116,6 +117,14 @@ export async function importValidatedReceipt({
     scannerLog("Creation receipt_items", "OK", { count: cleanItems.length })
   } catch (error) {
     throw stageError("Creation receipt_items", error)
+  }
+
+  try {
+    scannerLog("Synchronisation market anonymisee", "START", { receiptId: receipt.id })
+    const marketResult = await syncAnonymizedMarketReceipt(receipt.id)
+    scannerLog("Synchronisation market anonymisee", "OK", marketResult)
+  } catch (error) {
+    console.warn("[scanner] Synchronisation market anonymisee indisponible", error)
   }
 
   let shoppingRows: any[] = []

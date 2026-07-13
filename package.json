@@ -8,6 +8,8 @@
     "build": "vite build",
     "test": "node scripts/run-assistant-tests.mjs",
     "test:scanner": "node scripts/run-scanner-regression.mjs",
+    "test:market": "node scripts/run-market-regression.mjs",
+    "test:market:integration": "node scripts/run-market-integration.mjs",
     "lint": "eslint .",
     "preview": "vite preview"
   },

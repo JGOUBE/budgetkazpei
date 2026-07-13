@@ -19,6 +19,8 @@ import { useReceiptQuota } from "../hooks/useReceiptQuota"
 import { clearLastScanDraft, getLastScanDraft, runSmartScan } from "../../../services/scan/scanEngine"
 import { findDuplicateReceipt, getConfidenceColor, getConfidenceIcon } from "../../../services/scan/receiptValidator"
 import { importValidatedReceipt } from "../../../services/scan/receiptImporter"
+import { resolveMarketDisplayName } from "../../../services/scan/marketDisplay"
+import { deleteAnonymizedMarketReceipt, syncAnonymizedMarketReceipt } from "../../../services/scan/marketObservationService"
 import { isItemEligibleForSmartShopping, normalizeItemQualityStatus } from "../../../services/scan/receiptRules"
 import { getScanErrorDetails, ScanError } from "../../../services/scan/scanErrors"
 import { createScanMetric, incrementScanUsage } from "../../../services/scan/scanUsageService"
@@ -1635,12 +1637,31 @@ export default function ReceiptsPage({
     }
   }
 
+  async function syncMarketReceiptSafely(receiptId, context = "sync") {
+    try {
+      return await syncAnonymizedMarketReceipt(receiptId)
+    } catch (error) {
+      console.warn(`[market-sync] ${context} indisponible`, error)
+      return { ok: false, skipped: true, reason: "market_unavailable" }
+    }
+  }
+
+  async function deleteMarketReceiptSafely(receiptId, context = "delete") {
+    try {
+      return await deleteAnonymizedMarketReceipt(receiptId)
+    } catch (error) {
+      console.warn(`[market-delete] ${context} indisponible`, error)
+      return { ok: false, skipped: true, reason: "market_unavailable" }
+    }
+  }
+
   async function handleDelete() {
     if (!detail || !window.confirm(txt.confirmDelete)) return
 
     setBusy(true)
 
     try {
+      await deleteMarketReceiptSafely(detail.id, "detail_delete")
       await deleteReceipt({ receipt: detail, userId: user?.id, removeBudget: true, removeLearning: true, reason: "user_removed_receipt" })
       setDetail(null)
       setDetailImageUrl("")
@@ -1660,6 +1681,7 @@ export default function ReceiptsPage({
 
     setBusy(true)
     try {
+      await deleteMarketReceiptSafely(row.id, "row_delete")
       await deleteReceipt({ receipt: row, userId: user?.id, removeBudget: true, removeLearning: true, reason: "user_removed_receipt" })
       setReceipts(prev => prev.filter(receiptRow => receiptRow.id !== row.id))
       setMessage(txt.deleted)
@@ -1823,6 +1845,8 @@ export default function ReceiptsPage({
       }
 
       // Stats + Courses intelligentes : on repart des lignes réellement relues depuis Supabase.
+      await syncMarketReceiptSafely(detail.id, "item_update")
+
       const analyticsResult = await ensureReceiptAnalytics({
         receipt: persistedAfterItemUpdate,
         draft: persistedAfterItemUpdate,
@@ -1861,6 +1885,7 @@ export default function ReceiptsPage({
     try {
       const remainingItems = (detail.receipt_items || []).filter(item => item.id !== itemId)
       await deleteReceiptItem({ itemId, userId: user?.id })
+      await syncMarketReceiptSafely(detail.id, "item_delete")
       setDetail(prev => ({
         ...prev,
         receipt_items: remainingItems,
@@ -2606,13 +2631,15 @@ function ValidationForm({
         {visibleDraftItems.map(({ item, index }) => {
           const itemAllowed = isItemEligibleForSmartShopping(item)
           const itemNeedsReview = normalizeItemQualityStatus(item) !== "trusted" || articlesBlocked || item.needs_review === true
+          const marketDisplay = resolveMarketDisplayName(item)
           return (
           <div key={index} style={{ background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.09)", borderRadius: 16, padding: 12 }}>
             <div style={{ display: "grid", gap: 10 }}>
-              {(itemNeedsReview || !itemAllowed) && (
+              {(itemNeedsReview || !itemAllowed || marketDisplay.marketRecognized) && (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                   {itemNeedsReview && <MetaChip label={txt.itemNeedsReview} strong />}
                   {!itemAllowed && <MetaChip label={txt.itemNotUsedForSmartShopping} />}
+                  {marketDisplay.marketRecognized && <MetaChip label="Produit reconnu" strong />}
                 </div>
               )}
               <div style={{ display: "flex", justifyContent: "space-between", gap: 10, color: COLORS.muted, fontSize: 12, fontWeight: 900 }}>
@@ -2634,7 +2661,7 @@ function ValidationForm({
               <input
                 style={inputStyle()}
                 placeholder={txt.items}
-                value={item.name}
+                value={marketDisplay.label || item.name}
                 onChange={e => updateItem(index, { name: e.target.value, corrected_name: e.target.value, normalized_name: "" })}
               />
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
@@ -3001,7 +3028,8 @@ function ReceiptDetail({
           const itemDirty = isReceiptItemDraftDirty(itemDrafts, item)
           const itemSaving = savingItemIds.has(item.id)
           const itemSaved = savedItemIds.has(item.id)
-          const draftName = itemDrafts[item.id]?.name ?? item.name ?? ""
+          const marketDisplay = resolveMarketDisplayName(item)
+          const draftName = itemDrafts[item.id]?.name ?? marketDisplay.label ?? item.name ?? ""
           const draftPrice = itemDrafts[item.id]?.total_price ?? item.total_price ?? ""
           const draftCategory = itemDrafts[item.id]?.category || item.category || "alimentaire"
 
@@ -3014,6 +3042,7 @@ function ReceiptDetail({
               {itemUsedForSmartShopping
                 ? <MetaChip label="Utilisé pour Courses intelligentes" strong />
                 : <MetaChip label="À vérifier avant Courses intelligentes" />}
+              {marketDisplay.marketRecognized && <MetaChip label="Produit reconnu" strong />}
               {itemEditable && <MetaChip label="Modifiable" />}
               {itemDirty && <MetaChip label="Modifié" strong />}
               {itemSaved && <MetaChip label="✓ Enregistré" strong />}
