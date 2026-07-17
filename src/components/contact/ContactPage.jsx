@@ -1,18 +1,8 @@
 import { useState } from "react"
 import { supabase } from "../../services/supabase"
+import { createColorAliases } from "../../styles/designSystem"
 
-const COLORS = {
-  bg: "#0A1628",
-  card: "#0F1E38",
-  cardLight: "#152444",
-  border: "#1E3A5F",
-  accent: "#F97316",
-  green: "#22C55E",
-  red: "#EF4444",
-  muted: "#64748B",
-  text: "#F1F5F9",
-  cyan: "#23D3D6",
-}
+const COLORS = createColorAliases()
 
 const CONTACT_EMAIL = "contact.budgetkazpei@gmail.com"
 
@@ -23,18 +13,18 @@ const REQUEST_TYPES = [
   { value: "premium", fr: "Question Premium / Premium+", kr: "Question Premium / Premium+" },
 ]
 
-const inputStyle = {
-  background: "#152444",
-  border: "1px solid #1E3A5F",
+const inputStyle = () => ({
+  background: COLORS.cardLight,
+  border: `1px solid ${COLORS.border}`,
   borderRadius: 10,
   padding: "11px 14px",
-  color: "#F1F5F9",
+  color: COLORS.text,
   fontSize: 14,
   width: "100%",
   outline: "none",
   fontFamily: "inherit",
   boxSizing: "border-box",
-}
+})
 
 function isKreolLang(t) {
   return typeof t === "function" && t("nav", "dashboard") === "Tablo débor"
@@ -210,7 +200,7 @@ export default function ContactPage({ user, t }) {
               name="nom"
               defaultValue={user?.user_metadata?.name || user?.user_metadata?.full_name || ""}
               placeholder={tr(isKreol, "Votre nom", "Out nom")}
-              style={inputStyle}
+              style={inputStyle()}
             />
           </Field>
 
@@ -221,12 +211,12 @@ export default function ContactPage({ user, t }) {
               defaultValue={user?.email || ""}
               placeholder="votre@email.com"
               required
-              style={inputStyle}
+              style={inputStyle()}
             />
           </Field>
 
           <Field label={tr(isKreol, "Type de demande", "Kalité demande")}>
-            <select name="type_demande" defaultValue="question" style={inputStyle}>
+            <select name="type_demande" defaultValue="question" style={inputStyle()}>
               {REQUEST_TYPES.map(option => (
                 <option key={option.value} value={option.value}>
                   {isKreol ? option.kr : option.fr}
@@ -241,7 +231,7 @@ export default function ContactPage({ user, t }) {
               required
               placeholder={tr(isKreol, "Écrivez votre message ici...", "Écris out message ici...")}
               rows={6}
-              style={{ ...inputStyle, resize: "vertical", minHeight: 130 }}
+              style={{ ...inputStyle(), resize: "vertical", minHeight: 130 }}
             />
           </Field>
 

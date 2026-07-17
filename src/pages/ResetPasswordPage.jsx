@@ -1,5 +1,8 @@
 import { useState } from "react"
 import { supabase } from "../services/supabase"
+import { createColorAliases, ds } from "../styles/designSystem"
+
+const COLORS = createColorAliases()
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("")
@@ -42,8 +45,8 @@ export default function ResetPasswordPage() {
   return (
     <div style={{
       minHeight: "100vh",
-      background: "#0A1628",
-      color: "#F8ECD0",
+      background: ds.appBackground,
+      color: COLORS.text,
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
@@ -55,11 +58,11 @@ export default function ResetPasswordPage() {
         style={{
           width: "100%",
           maxWidth: 380,
-          background: "#0F1E38",
-          border: "3px solid #05080C",
+          background: COLORS.card,
+          border: `1px solid ${COLORS.border}`,
           borderRadius: 24,
           padding: 28,
-          boxShadow: "8px 8px 0 #05080C",
+          boxShadow: COLORS.shadow,
         }}
       >
         <h1 style={{ textAlign: "center", marginBottom: 24 }}>
@@ -84,8 +87,8 @@ export default function ResetPasswordPage() {
           style={inputStyle}
         />
 
-        {error && <p style={{ color: "#FCA5A5", fontWeight: 800 }}>{error}</p>}
-        {message && <p style={{ color: "#86EFAC", fontWeight: 800 }}>{message}</p>}
+        {error && <p style={{ color: COLORS.red, fontWeight: 800 }}>{error}</p>}
+        {message && <p style={{ color: COLORS.green, fontWeight: 800 }}>{message}</p>}
 
         <button
           type="submit"
@@ -94,8 +97,8 @@ export default function ResetPasswordPage() {
             width: "100%",
             padding: 14,
             borderRadius: 14,
-            border: "3px solid #05080C",
-            background: "#F97316",
+            border: "none",
+            background: COLORS.accent,
             color: "#fff",
             fontWeight: 900,
             fontSize: 16,
@@ -114,7 +117,7 @@ export default function ResetPasswordPage() {
             width: "100%",
             background: "none",
             border: "none",
-            color: "#23D3D6",
+            color: COLORS.cyan,
             fontWeight: 900,
             cursor: "pointer",
           }}
@@ -131,7 +134,9 @@ const inputStyle = {
   padding: 14,
   marginBottom: 14,
   borderRadius: 12,
-  border: "3px solid #05080C",
+  border: `1px solid ${COLORS.border}`,
+  background: COLORS.input,
+  color: COLORS.inputText,
   fontSize: 16,
   fontWeight: 800,
 }

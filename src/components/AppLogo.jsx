@@ -1,5 +1,6 @@
-import { useState } from "react"
-import { brandLogo } from "../assets/brand"
+import { useEffect, useState } from "react"
+import { brandLogoDark, brandLogoLight } from "../assets/brand"
+import { useTheme } from "../styles/ThemeProvider"
 
 export default function AppLogo({
   size = 36,
@@ -8,7 +9,13 @@ export default function AppLogo({
   fallbackText = "BKP",
 }) {
   const [failed, setFailed] = useState(false)
+  const { themeName } = useTheme()
   const dimension = typeof size === "number" ? `${size}px` : size
+  const logoSrc = themeName === "light" && brandLogoLight ? brandLogoLight : brandLogoDark
+
+  useEffect(() => {
+    setFailed(false)
+  }, [logoSrc])
 
   const baseStyle = {
     width: dimension,
@@ -28,8 +35,12 @@ export default function AppLogo({
         style={{
           ...baseStyle,
           borderRadius: 8,
-          background: "linear-gradient(135deg, #F97316, #23D3D6)",
-          color: "#0F1E38",
+          background:
+            themeName === "light"
+              ? "linear-gradient(135deg, #FFF4D9, #DCEEFE)"
+              : "linear-gradient(135deg, #F97316, #23D3D6)",
+          color: themeName === "light" ? "#142033" : "#0F1E38",
+          border: themeName === "light" ? "1px solid #E6EAF0" : "none",
           fontSize: Math.max(10, Math.round(Number.parseFloat(dimension) * 0.26) || 12),
           fontWeight: 950,
           lineHeight: dimension,
@@ -45,7 +56,7 @@ export default function AppLogo({
 
   return (
     <img
-      src={brandLogo}
+      src={logoSrc}
       alt={alt}
       onError={() => setFailed(true)}
       draggable="false"

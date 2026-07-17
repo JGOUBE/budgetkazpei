@@ -10,20 +10,10 @@ import {
 
 import { supabase } from "../../services/supabase"
 import { REUNION_ORIENTATION } from "../../data/reunionOrientation"
+import { createColorAliases } from "../../styles/designSystem"
+import { useTheme } from "../../styles/ThemeProvider"
 
-const COLORS = {
-  card: "#0F1E38",
-  cardLight: "#152444",
-  border: "#1E3A5F",
-  accent: "#F97316",
-  yellow: "#FCD34D",
-  cyan: "#23D3D6",
-  green: "#22C55E",
-  text: "#F1F5F9",
-  muted: "#8EA4C5",
-  red: "#FB7185",
-  purple: "#A78BFA",
-}
+const COLORS = createColorAliases({ red: () => "#FB7185" })
 
 const AI_USAGE_LIMITS = {
   free: 5,
@@ -412,7 +402,9 @@ export default function AssistantConseiller({
   t,
   user,
 }) {
+  const { themeName } = useTheme()
   const isKreol = isKreolLanguage(t)
+  const isLightTheme = themeName === "light"
 
   const [question, setQuestion] = useState("")
   const [assistantMode, setAssistantMode] = useState("general")
@@ -756,10 +748,13 @@ export default function AssistantConseiller({
     <section
       id="budgetkazpei-assistant-zone"
       style={{
-        background: `linear-gradient(135deg, rgba(35,211,214,.12), ${COLORS.card})`,
-        border: "1px solid rgba(35,211,214,.28)",
+        background: isLightTheme
+          ? "linear-gradient(135deg, #DCEEFE 0%, #FFFFFF 72%)"
+          : `linear-gradient(135deg, rgba(35,211,214,.12), ${COLORS.card})`,
+        border: isLightTheme ? "1px solid #B7DDF7" : "1px solid rgba(35,211,214,.28)",
         borderRadius: 22,
         padding: isMobile ? 18 : 24,
+        boxShadow: isLightTheme ? "0 14px 32px rgba(20,32,51,.07)" : "none",
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
@@ -769,7 +764,7 @@ export default function AssistantConseiller({
         </h3>
       </div>
 
-      <p style={{ color: COLORS.muted, lineHeight: 1.6, marginTop: 0 }}>
+      <p style={{ color: isLightTheme ? "#526074" : COLORS.muted, lineHeight: 1.6, marginTop: 0, fontWeight: 720 }}>
         {isKreol
           ? "Choisis in bouton, complète si besoin, puis koz ek mon konseye. Ici, pas de liste doublon : seulement la réponse utile."
           : "Choisissez un bouton, complétez si besoin, puis discutez avec votre conseiller. Ici, pas de doublon : seulement la réponse utile."}
@@ -777,10 +772,12 @@ export default function AssistantConseiller({
 
       <div
         style={{
-          background: aiQuotaReached ? "rgba(251,113,133,.10)" : "rgba(34,197,94,.08)",
+          background: aiQuotaReached
+            ? (isLightTheme ? "#FBE4EA" : "rgba(251,113,133,.10)")
+            : (isLightTheme ? "#E2F1E7" : "rgba(34,197,94,.08)"),
           border: aiQuotaReached
-            ? "1px solid rgba(251,113,133,.35)"
-            : "1px solid rgba(34,197,94,.25)",
+            ? (isLightTheme ? "1px solid #F0BBCB" : "1px solid rgba(251,113,133,.35)")
+            : (isLightTheme ? "1px solid #B9DDC6" : "1px solid rgba(34,197,94,.25)"),
           borderRadius: 14,
           padding: 12,
           color: COLORS.text,
@@ -813,7 +810,7 @@ export default function AssistantConseiller({
         <div
           style={{
             height: 8,
-            background: "rgba(255,255,255,.08)",
+            background: isLightTheme ? "#FFFFFF" : "rgba(255,255,255,.08)",
             borderRadius: 999,
             overflow: "hidden",
           }}
@@ -833,9 +830,9 @@ export default function AssistantConseiller({
           display: "inline-flex",
           alignItems: "center",
           gap: 7,
-          background: "rgba(167,139,250,.12)",
-          border: "1px solid rgba(167,139,250,.28)",
-          color: "#DDD6FE",
+          background: isLightTheme ? "#EEE7FB" : "rgba(167,139,250,.12)",
+          border: isLightTheme ? "1px solid #D8CBF6" : "1px solid rgba(167,139,250,.28)",
+          color: isLightTheme ? "#142033" : "#DDD6FE",
           borderRadius: 999,
           padding: "6px 10px",
           fontSize: 12,
@@ -861,8 +858,8 @@ export default function AssistantConseiller({
         style={{
           width: "100%",
           minHeight: 130,
-          background: COLORS.cardLight,
-          border: `1px solid ${COLORS.border}`,
+          background: isLightTheme ? "#FFFFFF" : COLORS.cardLight,
+          border: `1px solid ${isLightTheme ? "#E6EAF0" : COLORS.border}`,
           borderRadius: 14,
           padding: 14,
           color: COLORS.text,
@@ -924,9 +921,9 @@ export default function AssistantConseiller({
           type="button"
           onClick={resetConversation}
           style={{
-            background: "rgba(255,255,255,.06)",
+            background: isLightTheme ? "#FFFFFF" : "rgba(255,255,255,.06)",
             color: COLORS.text,
-            border: "1px solid rgba(255,255,255,.14)",
+            border: isLightTheme ? "1px solid #E6EAF0" : "1px solid rgba(255,255,255,.14)",
             borderRadius: 12,
             padding: "11px 16px",
             fontWeight: 900,
@@ -954,8 +951,8 @@ export default function AssistantConseiller({
             <div
               key={item.id}
               style={{
-                background: "rgba(35,211,214,.08)",
-                border: "1px solid rgba(35,211,214,.22)",
+                background: isLightTheme ? "#DCEEFE" : "rgba(35,211,214,.08)",
+                border: isLightTheme ? "1px solid #B7DDF7" : "1px solid rgba(35,211,214,.22)",
                 borderRadius: 16,
                 padding: 16,
                 color: COLORS.text,
@@ -978,8 +975,8 @@ export default function AssistantConseiller({
 
               <div
                 style={{
-                  background: "rgba(255,255,255,.04)",
-                  border: "1px solid rgba(255,255,255,.08)",
+                  background: isLightTheme ? "#FFFFFF" : "rgba(255,255,255,.04)",
+                  border: isLightTheme ? "1px solid #E6EAF0" : "1px solid rgba(255,255,255,.08)",
                   borderRadius: 12,
                   padding: 10,
                   color: COLORS.muted,
@@ -1003,11 +1000,11 @@ export default function AssistantConseiller({
         <div
           style={{
             marginTop: 14,
-            background: "rgba(255,255,255,.04)",
-            border: "1px solid rgba(255,255,255,.08)",
+            background: isLightTheme ? "#FFF4D9" : "rgba(255,255,255,.04)",
+            border: isLightTheme ? "1px solid #F4D88A" : "1px solid rgba(255,255,255,.08)",
             borderRadius: 14,
             padding: 13,
-            color: COLORS.muted,
+            color: isLightTheme ? "#526074" : COLORS.muted,
             fontSize: 13,
             lineHeight: 1.55,
           }}

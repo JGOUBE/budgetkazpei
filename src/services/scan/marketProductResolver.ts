@@ -1,8 +1,10 @@
 import { supabase } from "../supabase"
 
-const MARKET_RESOLVE_TIMEOUT_MS = 1800
+const MARKET_RESOLVE_EXACT_TIMEOUT_MS = 1800
+const MARKET_RESOLVE_CONTEXT_TIMEOUT_MS = 4500
 const MARKET_RESOLVE_MAX_ITEMS = 120
-const MARKET_RESOLVE_DEBUG = Boolean(import.meta.env.DEV || import.meta.env.VITE_MARKET_DEBUG === "true")
+const MARKET_RESOLVE_MAX_ALTERNATE_NAMES = 4
+const MARKET_RESOLVE_DEBUG = Boolean(import.meta.env?.DEV || import.meta.env?.VITE_MARKET_DEBUG === "true")
 
 const MARKET_ENRICHMENT_FIELDS = [
   "market_product_id",
@@ -14,12 +16,19 @@ const MARKET_ENRICHMENT_FIELDS = [
   "market_category",
   "market_subcategory",
   "market_package_format",
+  "market_match_input_source",
 ] as const
 
 type MarketResolution = {
   index: number
   market_matched?: boolean
   [key: string]: unknown
+}
+
+export type MarketResolveContext = {
+  store_name?: string | null
+  store_city?: string | null
+  observed_date?: string | null
 }
 
 type MarketResolveDependencies = {
@@ -30,6 +39,15 @@ type MarketResolveDependencies = {
   createAbortController?: () => AbortController
   functionUrlImpl?: (functionName: string) => string
   anonKeyImpl?: () => string
+  context?: MarketResolveContext
+  localOcrText?: string
+}
+
+type LocalCandidateLine = {
+  index: number
+  name: string
+  normalized: string
+  amounts: number[]
 }
 
 function functionUrl(functionName: string) {
@@ -49,6 +67,265 @@ function cleanBarcode(value: unknown) {
   return barcode.length >= 8 && barcode.length <= 14 ? barcode : null
 }
 
+function cleanText(value: unknown, maxLength: number) {
+  return String(value || "").trim().slice(0, maxLength)
+}
+
+function cleanPositivePrice(value: unknown) {
+  const price = Number(value)
+  return Number.isFinite(price) && price > 0 && price <= 100_000
+    ? Number(price.toFixed(2))
+    : null
+}
+
+function cleanObservedDate(value: unknown) {
+  const raw = String(value || "").trim()
+  return /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw : null
+}
+
+function cleanContext(context: MarketResolveContext = {}) {
+  return {
+    store_name: cleanText(context.store_name, 120),
+    store_city: cleanText(context.store_city, 80),
+    observed_date: cleanObservedDate(context.observed_date),
+  }
+}
+
+function normalizeCandidateText(value: unknown) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/0/g, "o")
+    .replace(/1/g, "i")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
+function normalizeCandidateForSimilarity(value: unknown) {
+  return normalizeCandidateText(value)
+    .replace(/\b\d+(?:g|gr|kg|ml|cl|l|x)?\b/g, " ")
+    .replace(/\b(prix|promotion|eur|euro|euros|tva|ttc)\b/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
+function candidateBigrams(value: string) {
+  const compact = value.replace(/\s+/g, " ").trim()
+  if (compact.length < 2) return compact ? [compact] : []
+  const grams: string[] = []
+  for (let index = 0; index < compact.length - 1; index += 1) {
+    grams.push(compact.slice(index, index + 2))
+  }
+  return grams
+}
+
+function diceSimilarity(leftValue: unknown, rightValue: unknown) {
+  const left = normalizeCandidateForSimilarity(leftValue)
+  const right = normalizeCandidateForSimilarity(rightValue)
+  if (!left || !right) return 0
+  if (left === right) return 1
+
+  const leftBigrams = candidateBigrams(left)
+  const rightBigrams = candidateBigrams(right)
+  if (!leftBigrams.length || !rightBigrams.length) return 0
+
+  const rightCounts = new Map<string, number>()
+  for (const gram of rightBigrams) {
+    rightCounts.set(gram, (rightCounts.get(gram) || 0) + 1)
+  }
+
+  let intersection = 0
+  for (const gram of leftBigrams) {
+    const count = rightCounts.get(gram) || 0
+    if (count > 0) {
+      intersection += 1
+      rightCounts.set(gram, count - 1)
+    }
+  }
+
+  return (2 * intersection) / (leftBigrams.length + rightBigrams.length)
+}
+
+function tokenSimilarity(leftValue: unknown, rightValue: unknown) {
+  const left = normalizeCandidateForSimilarity(leftValue)
+    .split(" ")
+    .filter(token => token.length >= 2)
+  const right = normalizeCandidateForSimilarity(rightValue)
+    .split(" ")
+    .filter(token => token.length >= 2)
+
+  if (!left.length || !right.length) return 0
+  const rightSet = new Set(right)
+  const overlap = left.filter(token => rightSet.has(token)).length
+  return overlap / Math.max(1, Math.min(left.length, right.length))
+}
+
+function lexicalSimilarity(leftValue: unknown, rightValue: unknown) {
+  return Math.max(
+    diceSimilarity(leftValue, rightValue),
+    0.65 * diceSimilarity(leftValue, rightValue) + 0.35 * tokenSimilarity(leftValue, rightValue),
+  )
+}
+
+function extractLineAmounts(value: unknown) {
+  return Array.from(String(value || "").matchAll(/(-?\d+(?:\s?\d{3})*[,.]\d{2})/g))
+    .map(match => Number(String(match[1] || "").replace(/\s/g, "").replace(",", ".")))
+    .filter(amount => Number.isFinite(amount) && amount > 0 && amount <= 100_000)
+}
+
+function isNonProductCandidateLine(value: unknown) {
+  const normalized = normalizeCandidateText(value)
+  if (!normalized) return true
+  if (/\b(total|reste a payer|net a payer|a payer|carte bleue|cb|especes|tva|ttc|ticket|caisse|telephone|merci|fidelite|articles?)\b/.test(normalized)) {
+    return true
+  }
+  if (/^(epicerie|cremerie|charcuterie|surgeles|volaille|fruits legumes|boulangerie patisserie|traiteur)\b/.test(normalized)) {
+    return true
+  }
+  return false
+}
+
+function cleanLocalCandidateName(value: unknown) {
+  const raw = String(value || "")
+    .replace(/[>|»]+/g, " ")
+    .replace(/\b\d{8,14}\b/g, " ")
+    .replace(/-?\d+(?:\s?\d{3})*[,.]\d{2}\s*(?:€|eur|euro|euros)?/gi, " ")
+    .replace(/\s+[123]\s*$/g, " ")
+    .replace(/^[^\p{L}\p{N}]+/u, "")
+    .replace(/\s+/g, " ")
+    .trim()
+
+  if (!raw || isNonProductCandidateLine(raw)) return ""
+  const letters = raw.replace(/[^\p{L}]/gu, "")
+  return letters.length >= 4 ? raw.slice(0, 180) : ""
+}
+
+function simplifyLocalCandidateName(value: unknown) {
+  const tokens = String(value || "")
+    .split(/\s+/)
+    .map(token => token.trim())
+    .filter(Boolean)
+    .filter(token => {
+      if (/^\d+[x×]\d+(?:g|gr|kg|ml|cl|l)?$/i.test(token)) return true
+      if (/^\d+(?:g|gr|kg|ml|cl|l)$/i.test(token)) return true
+      if (/\d/.test(token)) return false
+      return token.length >= 3
+    })
+
+  return tokens.join(" ").trim().slice(0, 180)
+}
+
+function buildLocalCandidateLines(localOcrText = "") {
+  return String(localOcrText || "")
+    .split(/\r?\n/)
+    .map((line, index): LocalCandidateLine | null => {
+      const name = cleanLocalCandidateName(line)
+      if (!name) return null
+      return {
+        index,
+        name,
+        normalized: normalizeCandidateText(name),
+        amounts: extractLineAmounts(line),
+      }
+    })
+    .filter(Boolean) as LocalCandidateLine[]
+}
+
+export function buildLocalOcrNameCandidates(items: any[] = [], localOcrText = "") {
+  const candidateLines = buildLocalCandidateLines(localOcrText)
+  if (!candidateLines.length || !items.length) {
+    return (items || []).map(() => [] as string[])
+  }
+
+  const maxLineIndex = Math.max(1, ...candidateLines.map(line => line.index))
+  const maxItemIndex = Math.max(1, items.length - 1)
+
+  return (items || []).map((item, itemIndex) => {
+    const primaryName = cleanText(
+      item?.corrected_name || item?.name || item?.ocr_name || item?.raw_text,
+      180,
+    )
+    const primaryNormalized = normalizeCandidateText(primaryName)
+    const observedPrice = cleanPositivePrice(
+      item?.total_price ?? item?.price ?? item?.unit_price,
+    )
+    const expectedPosition = itemIndex / maxItemIndex
+
+    return candidateLines
+      .map(line => {
+        const lexical = lexicalSimilarity(primaryName, line.name)
+        const tokenOverlap = tokenSimilarity(primaryName, line.name)
+        const exactPrice = observedPrice !== null && line.amounts.some(
+          amount => Math.abs(amount - observedPrice) <= 0.03,
+        )
+        const conflictingPrice = observedPrice !== null
+          && line.amounts.length > 0
+          && !exactPrice
+        const linePosition = line.index / maxLineIndex
+        const positionScore = 1 - Math.min(1, Math.abs(linePosition - expectedPosition))
+        const score = (
+          lexical * 0.72
+          + (exactPrice ? 0.30 : 0)
+          + positionScore * 0.08
+          - (conflictingPrice ? 0.42 : 0)
+        )
+
+        return {
+          ...line,
+          lexical,
+          tokenOverlap,
+          exactPrice,
+          conflictingPrice,
+          score,
+        }
+      })
+      .filter(candidate => {
+        if (!candidate.name || candidate.normalized === primaryNormalized) return false
+        if (candidate.conflictingPrice && candidate.lexical < 0.78) return false
+        if (candidate.exactPrice) return candidate.lexical >= 0.16 && candidate.score >= 0.40
+        if (
+          candidate.lexical >= 0.32
+          && candidate.tokenOverlap >= 0.25
+          && (1 - Math.min(1, Math.abs(candidate.index / maxLineIndex - expectedPosition))) >= 0.85
+        ) {
+          return candidate.score >= 0.32
+        }
+        return candidate.lexical >= 0.42 && candidate.score >= 0.46
+      })
+      .sort((left, right) => right.score - left.score)
+      .filter((candidate, index, all) => {
+        return all.findIndex(other => other.normalized === candidate.normalized) === index
+      })
+      .slice(0, MARKET_RESOLVE_MAX_ALTERNATE_NAMES)
+      .flatMap(candidate => [candidate.name, simplifyLocalCandidateName(candidate.name)])
+      .filter(Boolean)
+      .filter((name, index, all) => {
+        const normalized = normalizeCandidateText(name)
+        return all.findIndex(other => normalizeCandidateText(other) === normalized) === index
+      })
+      .slice(0, MARKET_RESOLVE_MAX_ALTERNATE_NAMES)
+  })
+}
+
+function cleanAlternateNames(value: unknown) {
+  if (!Array.isArray(value)) return []
+  const seen = new Set<string>()
+  const names: string[] = []
+
+  for (const rawName of value) {
+    const name = cleanText(rawName, 180)
+    const normalized = normalizeCandidateText(name)
+    if (!name || !normalized || seen.has(normalized)) continue
+    seen.add(normalized)
+    names.push(name)
+    if (names.length >= MARKET_RESOLVE_MAX_ALTERNATE_NAMES) break
+  }
+
+  return names
+}
+
 function abortError() {
   const error = new Error("market_resolve_timeout")
   error.name = "AbortError"
@@ -59,15 +336,53 @@ function nowMs() {
   return typeof performance !== "undefined" ? performance.now() : Date.now()
 }
 
-export function buildMarketResolvePayload(items: any[] = []) {
-  return (items || []).slice(0, MARKET_RESOLVE_MAX_ITEMS).map((item, index) => ({
-    index,
-    raw_name: String(item?.corrected_name || item?.name || item?.ocr_name || "").trim().slice(0, 180),
-    barcode: cleanBarcode(item?.barcode),
-  }))
+export function buildMarketResolvePayload(
+  items: any[] = [],
+  context?: MarketResolveContext,
+  localOcrText = "",
+) {
+  const includeContextualSignals = Boolean(context)
+  const localCandidates = includeContextualSignals
+    ? buildLocalOcrNameCandidates(items, localOcrText)
+    : (items || []).map(() => [] as string[])
+
+  return (items || []).slice(0, MARKET_RESOLVE_MAX_ITEMS).map((item, index) => {
+    const primaryName = cleanText(
+      item?.corrected_name || item?.name || item?.ocr_name,
+      180,
+    )
+    const explicitAlternateNames = cleanAlternateNames(item?.market_alternate_names)
+    const alternateNames = cleanAlternateNames([
+      ...explicitAlternateNames,
+      ...(localCandidates[index] || []),
+    ]).filter(name => normalizeCandidateText(name) !== normalizeCandidateText(primaryName))
+
+    const payload: Record<string, unknown> = {
+      index,
+      raw_name: primaryName,
+      barcode: cleanBarcode(item?.barcode),
+    }
+
+    if (includeContextualSignals) {
+      payload.observed_price = cleanPositivePrice(
+        item?.total_price ?? item?.price ?? item?.unit_price,
+      )
+      payload.brand = cleanText(item?.brand, 80)
+      payload.package_format = cleanText(
+        item?.package_format || item?.market_package_format,
+        80,
+      )
+      payload.alternate_names = alternateNames
+    }
+
+    return payload
+  })
 }
 
-export function applyMarketResolutions(items: any[] = [], resolutions: MarketResolution[] = []) {
+export function applyMarketResolutions(
+  items: any[] = [],
+  resolutions: MarketResolution[] = [],
+) {
   const byIndex = new Map<number, MarketResolution>()
   for (const resolution of resolutions || []) {
     byIndex.set(Number(resolution.index), resolution)
@@ -84,6 +399,19 @@ export function applyMarketResolutions(items: any[] = [], resolutions: MarketRes
         next[field] = resolution[field]
       }
     }
+
+    const canonicalName = cleanText(resolution.market_canonical_name, 180)
+    if (canonicalName) {
+      const originalOcrName = cleanText(
+        item?.ocr_name || item?.name || item?.corrected_name,
+        180,
+      )
+      next.ocr_name = originalOcrName || canonicalName
+      next.name = canonicalName
+      next.corrected_name = canonicalName
+      next.normalized_name = normalizeCandidateText(canonicalName)
+    }
+
     if (!Object.prototype.hasOwnProperty.call(next, "market_matched")) {
       next.market_matched = false
     }
@@ -93,7 +421,7 @@ export function applyMarketResolutions(items: any[] = [], resolutions: MarketRes
 
 async function postMarketResolve(
   payload: Record<string, unknown>,
-  timeoutMs = MARKET_RESOLVE_TIMEOUT_MS,
+  timeoutMs = MARKET_RESOLVE_EXACT_TIMEOUT_MS,
   dependencies: MarketResolveDependencies = {},
 ) {
   const getSession = dependencies.getSession || (() => supabase.auth.getSession())
@@ -157,8 +485,15 @@ export async function resolveMarketProducts(
   items: any[] = [],
   dependencies: MarketResolveDependencies = {},
 ) {
-  const payloadItems = buildMarketResolvePayload(items)
-    .filter(item => item.raw_name || item.barcode)
+  const context = dependencies.context
+  const timeoutMs = context
+    ? MARKET_RESOLVE_CONTEXT_TIMEOUT_MS
+    : MARKET_RESOLVE_EXACT_TIMEOUT_MS
+  const payloadItems = buildMarketResolvePayload(
+    items,
+    context,
+    dependencies.localOcrText || "",
+  ).filter(item => item.raw_name || item.barcode)
 
   if (payloadItems.length === 0) {
     return {
@@ -168,30 +503,39 @@ export async function resolveMarketProducts(
   }
 
   try {
-    const data = await postMarketResolve({ items: payloadItems }, MARKET_RESOLVE_TIMEOUT_MS, dependencies)
+    const data = await postMarketResolve({
+      items: payloadItems,
+      ...(context ? { context: cleanContext(context) } : {}),
+    }, timeoutMs, dependencies)
+
     const resolutions = Array.isArray(data?.items) ? data.items : []
     const timing = data?.__market_timing || null
     const diagnostics = {
       requested: payloadItems.length,
       resolved: Number(data?.resolved || 0),
       unresolved: Number(data?.unresolved || 0),
+      exact: Number(data?.exact || 0),
+      contextual: Number(data?.contextual || 0),
+      alternate: Number(data?.alternate || 0),
       ...(timing || {}),
     }
+
     if (MARKET_RESOLVE_DEBUG) {
       console.info("[market-resolver] result", {
         items: payloadItems.length,
         matched: diagnostics.resolved,
+        exact: diagnostics.exact,
+        contextual: diagnostics.contextual,
+        alternate: diagnostics.alternate,
         unmatched: diagnostics.unresolved,
         session_ms: diagnostics.session_ms ?? null,
         request_ms: diagnostics.request_ms ?? null,
         total_ms: diagnostics.total_ms ?? null,
-        timeout_budget_ms: diagnostics.timeout_budget_ms ?? MARKET_RESOLVE_TIMEOUT_MS,
+        timeout_budget_ms: diagnostics.timeout_budget_ms ?? timeoutMs,
         timeout: false,
       })
-      console.info(
-        `[market-resolver] session_ms=${diagnostics.session_ms ?? "n/a"} request_ms=${diagnostics.request_ms ?? "n/a"} total_ms=${diagnostics.total_ms ?? "n/a"} timeout_budget_ms=${diagnostics.timeout_budget_ms ?? MARKET_RESOLVE_TIMEOUT_MS}`,
-      )
     }
+
     return {
       items: applyMarketResolutions(items, resolutions),
       diagnostics,
@@ -200,7 +544,7 @@ export async function resolveMarketProducts(
     const timeout = error instanceof Error && error.name === "AbortError"
     console.warn("[market-resolve] fallback without enrichment", {
       reason: error instanceof Error ? timeout ? "timeout" : error.message : "unknown",
-      timeout_budget_ms: MARKET_RESOLVE_TIMEOUT_MS,
+      timeout_budget_ms: timeoutMs,
     })
     return {
       items,
@@ -210,7 +554,7 @@ export async function resolveMarketProducts(
         unresolved: payloadItems.length,
         failed: true,
         timeout,
-        timeout_budget_ms: MARKET_RESOLVE_TIMEOUT_MS,
+        timeout_budget_ms: timeoutMs,
       },
     }
   }
@@ -218,6 +562,7 @@ export async function resolveMarketProducts(
 
 export const __marketProductResolverTestUtils = {
   applyMarketResolutions,
+  buildLocalOcrNameCandidates,
   buildMarketResolvePayload,
   postMarketResolve,
 }

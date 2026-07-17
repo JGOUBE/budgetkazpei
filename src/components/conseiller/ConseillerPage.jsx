@@ -9,16 +9,37 @@ import {
 } from "lucide-react"
 
 import AssistantConseiller from "./AssistantConseiller"
+import { createColorAliases } from "../../styles/designSystem"
+import { useTheme } from "../../styles/ThemeProvider"
 
-const COLORS = {
-  text: "#F1F5F9",
-  muted: "#8EA4C5",
-  accent: "#F97316",
-  yellow: "#FCD34D",
-  cyan: "#23D3D6",
-  green: "#22C55E",
-  red: "#FB7185",
-  purple: "#A78BFA",
+const COLORS = createColorAliases({ red: () => "#FB7185" })
+
+const LIGHT_ACTION_COLORS = {
+  scan_profil: { bg: "#E2F1E7", hover: "#D4EBDD", border: "#B9DDC6", accent: "#15803D" },
+  trouver_aide: { bg: "#DCEEFE", hover: "#C8E4FA", border: "#B7DDF7", accent: "#0284C7" },
+  comprendre_courrier: { bg: "#FCE7DA", hover: "#F8D6C4", border: "#F6C7AD", accent: "#EA580C" },
+  preparer_dossier: { bg: "#E2F1E7", hover: "#D4EBDD", border: "#B9DDC6", accent: "#15803D" },
+  generer_email: { bg: "#EEE7FB", hover: "#E2D7F8", border: "#D8CBF6", accent: "#7C3AED" },
+  preparer_recours: { bg: "#FBE4EA", hover: "#F7D3DD", border: "#F0BBCB", accent: "#BE123C" },
+  preparer_rdv: { bg: "#FCE7DA", hover: "#F8D6C4", border: "#F6C7AD", accent: "#EA580C" },
+}
+
+function getActionPalette(mode, fallbackColor, isLightTheme) {
+  if (!isLightTheme) {
+    return {
+      bg: `linear-gradient(135deg, ${fallbackColor}22, ${COLORS.card})`,
+      hover: COLORS.hover,
+      border: `${fallbackColor}44`,
+      accent: fallbackColor,
+      iconBg: `${fallbackColor}22`,
+    }
+  }
+
+  const light = LIGHT_ACTION_COLORS[mode] || LIGHT_ACTION_COLORS.trouver_aide
+  return {
+    ...light,
+    iconBg: "rgba(255,255,255,.52)",
+  }
 }
 
 function isKreolLang(t) {
@@ -44,6 +65,7 @@ export default function ConseillerPage({
   isPremium,
   isPremiumPlus,
 }) {
+  const { themeName } = useTheme()
   const isKreol = isKreolLang(t)
 
   const modes = [
@@ -133,18 +155,21 @@ export default function ConseillerPage({
     },
   ]
 
+  const isLightTheme = themeName === "light"
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
       <section
         style={{
           position: "relative",
           overflow: "hidden",
-          background:
-            "linear-gradient(135deg, rgba(167,139,250,.24), rgba(35,211,214,.16), rgba(15,30,56,.96))",
-          border: "1px solid rgba(167,139,250,.32)",
+          background: isLightTheme
+            ? "linear-gradient(135deg, #FFFDF8 0%, #DCEEFE 48%, #EEE7FB 100%)"
+            : "linear-gradient(135deg, rgba(167,139,250,.24), rgba(35,211,214,.16), rgba(15,30,56,.96))",
+          border: isLightTheme ? "1px solid #E6EAF0" : "1px solid rgba(167,139,250,.32)",
           borderRadius: 24,
           padding: isMobile ? 20 : 30,
-          boxShadow: "0 18px 40px rgba(0,0,0,.22)",
+          boxShadow: isLightTheme ? "0 16px 36px rgba(20,32,51,.08)" : "0 18px 40px rgba(0,0,0,.22)",
         }}
       >
         <div style={{ position: "relative", zIndex: 1 }}>
@@ -153,11 +178,11 @@ export default function ConseillerPage({
               display: "inline-flex",
               alignItems: "center",
               gap: 8,
-              background: "rgba(167,139,250,.16)",
-              border: "1px solid rgba(167,139,250,.34)",
+              background: isLightTheme ? "#EEE7FB" : "rgba(167,139,250,.16)",
+              border: isLightTheme ? "1px solid #D8CBF6" : "1px solid rgba(167,139,250,.34)",
               borderRadius: 999,
               padding: "7px 13px",
-              color: "#DDD6FE",
+              color: isLightTheme ? "#142033" : "#DDD6FE",
               fontSize: 12,
               fontWeight: 900,
               marginBottom: 14,
@@ -171,7 +196,7 @@ export default function ConseillerPage({
             style={{
               margin: "0 0 8px",
               fontSize: isMobile ? 26 : 34,
-              color: COLORS.text,
+              color: isLightTheme ? "#142033" : COLORS.text,
               fontFamily: "'DM Serif Display', Georgia, serif",
               fontWeight: 900,
             }}
@@ -182,7 +207,7 @@ export default function ConseillerPage({
           <p
             style={{
               margin: 0,
-              color: COLORS.muted,
+              color: isLightTheme ? "#526074" : COLORS.muted,
               fontSize: 14,
               lineHeight: 1.7,
               maxWidth: 820,
@@ -197,13 +222,14 @@ export default function ConseillerPage({
 
       <section
         style={{
-          background: "rgba(255,255,255,.04)",
-          border: "1px solid rgba(255,255,255,.08)",
+          background: isLightTheme ? "#FFFFFF" : "rgba(255,255,255,.04)",
+          border: isLightTheme ? "1px solid #E6EAF0" : "1px solid rgba(255,255,255,.08)",
           borderRadius: 22,
           padding: isMobile ? 16 : 20,
+          boxShadow: isLightTheme ? "0 12px 28px rgba(20,32,51,.06)" : "none",
         }}
       >
-        <div style={{ color: COLORS.text, fontSize: 17, fontWeight: 900, marginBottom: 12 }}>
+        <div style={{ color: isLightTheme ? "#142033" : COLORS.text, fontSize: 17, fontWeight: 900, marginBottom: 12 }}>
           {isKreol ? "Kosa ou veux fe ?" : "Que souhaitez-vous faire ?"}
         </div>
 
@@ -216,22 +242,35 @@ export default function ConseillerPage({
         >
           {modes.map(mode => {
             const Icon = mode.icon
+            const palette = getActionPalette(mode.mode, mode.color, isLightTheme)
 
             return (
               <button
                 key={mode.mode}
                 type="button"
                 onClick={() => sendAssistantPrompt(mode.prompt, mode.mode)}
+                onMouseEnter={event => {
+                  event.currentTarget.style.background = palette.hover
+                  event.currentTarget.style.transform = "translateY(-2px)"
+                  event.currentTarget.style.borderColor = palette.accent
+                }}
+                onMouseLeave={event => {
+                  event.currentTarget.style.background = palette.bg
+                  event.currentTarget.style.transform = "translateY(0)"
+                  event.currentTarget.style.borderColor = palette.border
+                }}
                 style={{
                   textAlign: "left",
-                  background: `linear-gradient(135deg, ${mode.color}22, rgba(15,30,56,.96))`,
-                  border: `1px solid ${mode.color}44`,
+                  background: palette.bg,
+                  border: `1px solid ${palette.border}`,
                   borderRadius: 18,
                   padding: 15,
                   cursor: "pointer",
-                  color: COLORS.text,
+                  color: isLightTheme ? "#142033" : COLORS.text,
                   fontFamily: "inherit",
                   minHeight: 120,
+                  boxShadow: isLightTheme ? "0 10px 22px rgba(20,32,51,.05)" : "none",
+                  transition: "background .18s ease, border-color .18s ease, transform .18s ease, box-shadow .18s ease",
                 }}
               >
                 <div
@@ -241,9 +280,9 @@ export default function ConseillerPage({
                     borderRadius: 14,
                     display: "grid",
                     placeItems: "center",
-                    background: `${mode.color}22`,
-                    border: `1px solid ${mode.color}44`,
-                    color: mode.color,
+                    background: palette.iconBg,
+                    border: `1px solid ${palette.border}`,
+                    color: palette.accent,
                     marginBottom: 10,
                   }}
                 >
@@ -254,7 +293,7 @@ export default function ConseillerPage({
                   {mode.title}
                 </div>
 
-                <div style={{ color: COLORS.muted, fontSize: 12, lineHeight: 1.45 }}>
+                <div style={{ color: isLightTheme ? "#526074" : COLORS.muted, fontSize: 12.5, lineHeight: 1.5, fontWeight: 760 }}>
                   {mode.text}
                 </div>
               </button>

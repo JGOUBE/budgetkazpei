@@ -1,18 +1,9 @@
 import { formatMontant } from "../../utils/format"
 import { BkIcons } from "../icons-budgetkazpei"
+import { createColorAliases } from "../../styles/designSystem"
+import { useTheme } from "../../styles/ThemeProvider"
 
-const COLORS = {
-  card: "#0F1E38",
-  cardLight: "#152444",
-  border: "#1E3A5F",
-  green: "#22C55E",
-  red: "#EF4444",
-  blue: "#38BDF8",
-  cyan: "#23D3D6",
-  yellow: "#FCD34D",
-  muted: "#8EA4C5",
-  text: "#F8FAFC",
-}
+const COLORS = createColorAliases()
 
 function getIsKreol(t) {
   const lang = String(t?.lang || "").toLowerCase()
@@ -31,6 +22,7 @@ export default function SoldePage({
   onGoPremium,
   t,
 }) {
+  useTheme()
   const isKreol = getIsKreol(t)
 
   const revenus = moneyValue(stats.revenus)

@@ -1,31 +1,21 @@
 import { useEffect, useState } from "react"
 import { formatMontant } from "../../utils/format"
 import { CATEGORIES } from "../../data/categories"
+import { createColorAliases } from "../../styles/designSystem"
 
-const COLORS = {
-  bg: "#0A1628",
-  card: "#0F1E38",
-  cardLight: "#152444",
-  border: "#1E3A5F",
-  accent: "#F97316",
-  red: "#EF4444",
-  muted: "#64748B",
-  text: "#F1F5F9",
-  cyan: "#38BDF8",
-  green: "#22C55E",
-}
+const COLORS = createColorAliases()
 
-const inputStyle = {
+const inputStyle = () => ({
   width: "100%",
-  background: COLORS.bg,
-  border: `1px solid ${COLORS.border}`,
+  background: COLORS.input,
+  border: `1px solid ${COLORS.inputBorder}`,
   borderRadius: 10,
   color: COLORS.text,
   padding: "10px 12px",
   fontSize: 13,
   fontFamily: "inherit",
   outline: "none",
-}
+})
 
 const CATEGORY_META = {
   alimentaire: { emoji: "🛒", color: "#F97316" },
@@ -189,8 +179,8 @@ export default function AbonnementsPage({
     return (
       <div
         style={{
-          background: `linear-gradient(135deg, ${COLORS.card} 0%, ${COLORS.cardLight} 100%)`,
-          border: `1px solid ${COLORS.border}`,
+          background: `linear-gradient(135deg, ${COLORS.creamSoft} 0%, ${COLORS.card} 78%)`,
+          border: `1px solid ${COLORS.yellow}33`,
           borderRadius: 16,
           padding: 24,
           color: COLORS.muted,
@@ -205,7 +195,7 @@ export default function AbonnementsPage({
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <div
         style={{
-          background: `linear-gradient(135deg, ${COLORS.card} 0%, ${COLORS.cardLight} 100%)`,
+          background: COLORS.card,
           border: `1px solid ${COLORS.border}`,
           borderRadius: 16,
           padding: isMobile ? 16 : 20,
@@ -234,7 +224,7 @@ export default function AbonnementsPage({
                   height: 22,
                   borderRadius: 999,
                   border: `1px solid ${COLORS.cyan}55`,
-                  background: "rgba(56,189,248,.10)",
+                  background: COLORS.blueSoft,
                   color: COLORS.cyan,
                   cursor: "pointer",
                   fontWeight: 900,
@@ -280,8 +270,8 @@ export default function AbonnementsPage({
           <div
             style={{
               marginTop: 14,
-              background: "rgba(56,189,248,.10)",
-              border: "1px solid rgba(56,189,248,.22)",
+              background: COLORS.blueSoft,
+              border: `1px solid ${COLORS.cyan}33`,
               borderRadius: 14,
               padding: "12px 14px",
               color: COLORS.text,
@@ -303,7 +293,7 @@ export default function AbonnementsPage({
 
       <div
         style={{
-          background: `linear-gradient(135deg, ${COLORS.card} 0%, ${COLORS.cardLight} 100%)`,
+          background: COLORS.card,
           border: `1px solid ${COLORS.border}`,
           borderRadius: 16,
           padding: 16,
@@ -335,7 +325,7 @@ export default function AbonnementsPage({
               type="button"
               onClick={resetForm}
               style={{
-                background: "rgba(255,255,255,.06)",
+                background: COLORS.surface,
                 border: `1px solid ${COLORS.border}`,
                 borderRadius: 10,
                 color: COLORS.muted,
@@ -373,7 +363,7 @@ export default function AbonnementsPage({
               value={form.nom}
               onChange={e => updateForm({ nom: e.target.value })}
               placeholder="Ex: Loyer, EDF, Internet, Crédit voiture"
-              style={inputStyle}
+              style={inputStyle()}
             />
           </div>
 
@@ -393,7 +383,7 @@ export default function AbonnementsPage({
               value={form.categorie}
               onChange={e => handleCategoryChange(e.target.value)}
               style={{
-                ...inputStyle,
+                ...inputStyle(),
                 cursor: "pointer",
               }}
             >
@@ -423,7 +413,7 @@ export default function AbonnementsPage({
               value={form.montant}
               onChange={e => updateForm({ montant: e.target.value })}
               placeholder="Ex: 29,99"
-              style={inputStyle}
+              style={inputStyle()}
             />
           </div>
         </div>
@@ -453,7 +443,7 @@ export default function AbonnementsPage({
               type="color"
               value={form.color || getCategoryMeta(form.categorie).color}
               onChange={e => updateForm({ color: e.target.value })}
-              style={{ ...inputStyle, height: 42, padding: 5 }}
+              style={{ ...inputStyle(), height: 42, padding: 5 }}
             />
           </div>
 
@@ -512,7 +502,7 @@ export default function AbonnementsPage({
 
       <div
         style={{
-          background: `linear-gradient(135deg, ${COLORS.card} 0%, ${COLORS.cardLight} 100%)`,
+          background: COLORS.card,
           border: `1px solid ${COLORS.border}`,
           borderRadius: 16,
           padding: 16,
@@ -527,8 +517,8 @@ export default function AbonnementsPage({
             style={{
               color: COLORS.muted,
               fontSize: 13,
-              background: "rgba(255,255,255,.035)",
-              border: "1px solid rgba(255,255,255,.07)",
+              background: COLORS.surface,
+              border: `1px solid ${COLORS.border}`,
               borderRadius: 12,
               padding: 14,
             }}
@@ -548,17 +538,18 @@ export default function AbonnementsPage({
                   key={abonnement.id}
                   style={{
                     display: "grid",
-                    gridTemplateColumns: isMobile ? "1fr" : "1fr auto",
-                    gap: 10,
+                    gridTemplateColumns: isMobile ? "1fr" : "minmax(0, 1fr) auto",
+                    gap: isMobile ? 12 : 18,
                     alignItems: "center",
                     background: isCurrent
                       ? "rgba(249,115,22,.12)"
-                      : "rgba(10,22,40,.42)",
+                      : COLORS.row,
                     border: isCurrent
                       ? `1px solid ${COLORS.accent}66`
-                      : "1px solid rgba(255,255,255,.07)",
-                    borderRadius: 14,
-                    padding: "12px 13px",
+                      : `1px solid ${COLORS.border}`,
+                    borderRadius: 16,
+                    padding: isMobile ? 14 : "14px 16px",
+                    boxShadow: isCurrent ? "0 12px 26px rgba(249,115,22,.12)" : "0 8px 22px rgba(15,23,42,.04)",
                   }}
                 >
                   <div style={{ display: "flex", gap: 11, alignItems: "center", minWidth: 0 }}>
@@ -568,9 +559,9 @@ export default function AbonnementsPage({
                         height: 40,
                         flexShrink: 0,
                         background: `${color}22`,
-                        border: `1px solid ${color}`,
+                        border: `1px solid ${color}55`,
                         borderRadius: 12,
-                        color: COLORS.text,
+                        color,
                         fontSize: 19,
                         display: "flex",
                         alignItems: "center",
@@ -602,10 +593,7 @@ export default function AbonnementsPage({
                           lineHeight: 1.4,
                         }}
                       >
-                        {meta.emoji} {t("categories", currentCategory)} ·{" "}
-                        <strong style={{ color: COLORS.accent }}>
-                          {formatMontant(Number(String(abonnement.montant).replace(",", ".")) || 0)}
-                        </strong>
+                        {meta.emoji} {t("categories", currentCategory)}
                         {savingId === abonnement.id && (
                           <span> · {t("abonnements", "saving")}</span>
                         )}
@@ -616,23 +604,37 @@ export default function AbonnementsPage({
                   <div
                     style={{
                       display: "flex",
+                      alignItems: isMobile ? "stretch" : "center",
                       gap: 8,
                       justifyContent: isMobile ? "flex-start" : "flex-end",
                       flexWrap: "wrap",
+                      flexDirection: isMobile ? "column" : "row",
                     }}
                   >
+                    <div
+                      style={{
+                        color: COLORS.text,
+                        fontSize: 18,
+                        fontWeight: 950,
+                        minWidth: isMobile ? 0 : 104,
+                        textAlign: isMobile ? "left" : "right",
+                      }}
+                    >
+                      {formatMontant(Number(String(abonnement.montant).replace(",", ".")) || 0)}
+                    </div>
+
                     <button
                       type="button"
                       onClick={() => handleEdit(abonnement)}
                       style={{
-                        background: "rgba(56,189,248,.10)",
-                        border: "1px solid rgba(56,189,248,.28)",
+                        background: COLORS.card,
+                        border: `1px solid ${COLORS.borderStrong}`,
                         borderRadius: 10,
-                        color: COLORS.cyan,
+                        color: COLORS.secondary,
                         cursor: "pointer",
-                        padding: "8px 11px",
+                        padding: "8px 12px",
                         fontSize: 12,
-                        fontWeight: 800,
+                        fontWeight: 900,
                         fontFamily: "inherit",
                       }}
                     >
@@ -643,14 +645,14 @@ export default function AbonnementsPage({
                       type="button"
                       onClick={() => handleDelete(abonnement)}
                       style={{
-                        background: "rgba(239,68,68,.08)",
+                        background: COLORS.redSoft,
                         border: `1px solid ${COLORS.red}55`,
-                        borderRadius: 10,
+                        borderRadius: 12,
                         color: COLORS.red,
                         cursor: "pointer",
-                        padding: "8px 11px",
+                        padding: "8px 12px",
                         fontSize: 12,
-                        fontWeight: 800,
+                        fontWeight: 900,
                         fontFamily: "inherit",
                       }}
                     >

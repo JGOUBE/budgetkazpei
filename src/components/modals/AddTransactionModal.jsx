@@ -1,16 +1,8 @@
 import { useState } from "react";
 import { CATEGORIES } from "../../data/categories";
+import { createColorAliases } from "../../styles/designSystem";
 
-const COLORS = {
-  card: "#0F1E38",
-  cardLight: "#152444",
-  border: "#1E3A5F",
-  accent: "#F97316",
-  muted: "#64748B",
-  text: "#F1F5F9",
-  cyan: "#23D3D6",
-  green: "#22C55E",
-};
+const COLORS = createColorAliases();
 
 export default function AddTransactionModal({ onAdd, onClose, onOpenReceipts, t }) {
   const [form, setForm] = useState({
@@ -179,6 +171,9 @@ export default function AddTransactionModal({ onAdd, onClose, onOpenReceipts, t 
         )}
 
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <span style={{ color: COLORS.muted, fontSize: 12, fontWeight: 900 }}>
+            {isIncome ? "Libellé de l'entrée" : "Libellé de la dépense"}
+          </span>
           <input
             style={inputStyle}
             placeholder={
@@ -188,8 +183,12 @@ export default function AddTransactionModal({ onAdd, onClose, onOpenReceipts, t 
             }
             value={form.label}
             onChange={e => setForm(f => ({ ...f, label: e.target.value }))}
+            autoComplete="off"
           />
 
+          <span style={{ color: COLORS.muted, fontSize: 12, fontWeight: 900 }}>
+            {isIncome ? "Montant reçu" : "Montant dépensé"}
+          </span>
           <input
             style={inputStyle}
             placeholder={
@@ -201,21 +200,27 @@ export default function AddTransactionModal({ onAdd, onClose, onOpenReceipts, t 
             type="number"
             min="0"
             step="0.01"
+            inputMode="decimal"
             onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
           />
 
           {form.type === "depense" && (
-            <select
-              style={inputStyle}
-              value={form.category}
-              onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
-            >
-              {CATEGORIES.map(c => (
-                <option key={c.id} value={c.id}>
-                  {c.emoji} {tx("categories", c.id, c.id)}
-                </option>
-              ))}
-            </select>
+            <>
+              <span style={{ color: COLORS.muted, fontSize: 12, fontWeight: 900 }}>
+                Catégorie
+              </span>
+              <select
+                style={inputStyle}
+                value={form.category}
+                onChange={e => setForm(f => ({ ...f, category: e.target.value }))}
+              >
+                {CATEGORIES.map(c => (
+                  <option key={c.id} value={c.id}>
+                    {c.emoji} {tx("categories", c.id, c.id)}
+                  </option>
+                ))}
+              </select>
+            </>
           )}
         </div>
 

@@ -1,0 +1,17 @@
+.venv/
+.venv-onnx/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+output/
+input/
+expected/
+*.log
+*.jpg
+*.jpeg
+*.png
+*.webp
+.env
+.env.*

@@ -1,19 +1,10 @@
 import { useState } from "react"
 import AppLogo from "../components/AppLogo"
+import { createColorAliases, ds } from "../styles/designSystem"
 
-const COLORS = {
-  bg: "#081426",
-  band: "#0C1B32",
-  card: "#10213D",
-  border: "#1F3D63",
-  accent: "#F97316",
-  yellow: "#FCD34D",
-  green: "#22C55E",
-  cyan: "#23D3D6",
-  purple: "#A78BFA",
-  muted: "#9BB0D0",
-  text: "#F8FAFC",
-}
+const COLORS = createColorAliases({
+  band: () => ds.elevated,
+})
 
 const HERO_BG = "/icons-creole/fond-principal.png"
 

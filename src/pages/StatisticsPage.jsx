@@ -2,19 +2,10 @@ import { useState } from "react"
 import { Bar, BarChart, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts"
 import { useStatisticsInsights } from "../hooks/useStatisticsInsights"
 import { formatMontant } from "../utils/format"
+import { createColorAliases } from "../styles/designSystem"
+import { useTheme } from "../styles/ThemeProvider"
 
-const COLORS = {
-  card: "#0F1E38",
-  cardLight: "#152444",
-  border: "#1E3A5F",
-  accent: "#F97316",
-  green: "#22C55E",
-  cyan: "#23D3D6",
-  yellow: "#FCD34D",
-  purple: "#A78BFA",
-  muted: "#8EA4C5",
-  text: "#F8FAFC",
-}
+const COLORS = createColorAliases()
 
 const CATEGORY_COLORS = {
   logement: "#F97316",
@@ -145,10 +136,11 @@ function getCategoryLabel(category = "", isKreol = false) {
 
 function card(extra = {}) {
   return {
-    background: `linear-gradient(135deg, ${COLORS.card}, ${COLORS.cardLight})`,
+    background: COLORS.card,
     border: `1px solid ${COLORS.border}`,
     borderRadius: 22,
     padding: 18,
+    boxShadow: COLORS.shadow,
     ...extra,
   }
 }
@@ -206,6 +198,7 @@ export default function StatisticsPage({
   isMobile = false,
   language = "fr",
 }) {
+  useTheme()
   const isKreol = isKreolLanguage(language)
   const txt = isKreol ? TEXT.kreol : TEXT.fr
   const [period, setPeriod] = useState("month")
@@ -222,7 +215,7 @@ export default function StatisticsPage({
     return (
       <div style={{ display: "grid", gap: 14 }}>
         {[0, 1, 2, 3].map(item => (
-          <div key={item} style={{ height: 120, borderRadius: 22, background: "rgba(255,255,255,.07)" }} />
+          <div key={item} style={{ height: 120, borderRadius: 22, background: COLORS.surface, border: `1px solid ${COLORS.border}` }} />
         ))}
       </div>
     )
@@ -230,7 +223,7 @@ export default function StatisticsPage({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-      <div style={card({ padding: isMobile ? 18 : 24 })}>
+      <div style={card({ padding: isMobile ? 18 : 24, background: `linear-gradient(135deg, ${COLORS.pastelBlue} 0%, ${COLORS.card} 78%)`, borderColor: `${COLORS.cyan}33` })}>
         <div style={{ color: COLORS.cyan, fontSize: 13, fontWeight: 950, marginBottom: 8 }}>Stats</div>
         <h1 style={{ color: COLORS.text, margin: 0, fontFamily: "'DM Serif Display', serif", fontSize: isMobile ? 32 : 40 }}>
           {txt.title}
@@ -250,7 +243,7 @@ export default function StatisticsPage({
               minHeight: 44,
               border: period === id ? `1px solid ${COLORS.accent}` : `1px solid ${COLORS.border}`,
               borderRadius: 999,
-              background: period === id ? "rgba(249,115,22,.18)" : "rgba(255,255,255,.05)",
+              background: period === id ? COLORS.selected : COLORS.card,
               color: COLORS.text,
               padding: "0 14px",
               fontWeight: 900,
@@ -263,10 +256,10 @@ export default function StatisticsPage({
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(4, 1fr)", gap: 14 }}>
-        <Metric title={txt.expenses} value={formatMontant(insights.monthly.totalExpenses)} color={COLORS.accent} />
-        <Metric title={txt.income} value={formatMontant(insights.monthly.revenus)} color={COLORS.green} />
-        <Metric title={txt.remaining} value={formatMontant(insights.monthly.remaining)} color={COLORS.cyan} />
-        <Metric title={txt.budgetUse} value={`${insights.monthly.budgetUse} %`} color={COLORS.yellow} />
+        <Metric title={txt.expenses} value={formatMontant(insights.monthly.totalExpenses)} color={COLORS.accent} background={COLORS.peachSoft} />
+        <Metric title={txt.income} value={formatMontant(insights.monthly.revenus)} color={COLORS.green} background={COLORS.sageSoft} />
+        <Metric title={txt.remaining} value={formatMontant(insights.monthly.remaining)} color={COLORS.cyan} background={COLORS.pastelBlue} />
+        <Metric title={txt.budgetUse} value={`${insights.monthly.budgetUse} %`} color={COLORS.yellow} background={COLORS.creamSoft} />
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
@@ -285,9 +278,9 @@ export default function StatisticsPage({
   )
 }
 
-function Metric({ title, value, color }) {
+function Metric({ title, value, color, background = COLORS.card }) {
   return (
-    <div style={card()}>
+    <div style={card({ background, borderColor: `${color}33` })}>
       <div style={{ color: COLORS.muted, fontSize: 12, fontWeight: 900 }}>{title}</div>
       <div style={{ color, fontSize: 24, fontWeight: 950, marginTop: 7, fontFamily: "'DM Serif Display', serif" }}>{value}</div>
     </div>
@@ -385,7 +378,7 @@ function StoresCard({ stores, txt }) {
                 <span>{row.store}</span>
                 <span>{row.percent} %</span>
               </div>
-              <div style={{ height: 8, background: "rgba(255,255,255,.12)", borderRadius: 99, marginTop: 6, overflow: "hidden" }}>
+              <div style={{ height: 8, background: COLORS.progressTrack, borderRadius: 99, marginTop: 6, overflow: "hidden" }}>
                 <div style={{ width: `${row.percent}%`, height: "100%", background: COLORS.cyan, borderRadius: 99 }} />
               </div>
             </div>
@@ -407,7 +400,7 @@ function ProductsCard({ products, txt }) {
       ) : (
         <div style={{ display: "grid", gap: 9 }}>
           {preciseProducts.map(product => (
-            <div key={product.normalizedName} style={{ display: "flex", justifyContent: "space-between", color: COLORS.text, borderBottom: "1px solid rgba(255,255,255,.08)", paddingBottom: 8 }}>
+            <div key={product.normalizedName} style={{ display: "flex", justifyContent: "space-between", color: COLORS.text, borderBottom: `1px solid ${COLORS.borderSubtle}`, paddingBottom: 8 }}>
               <strong>{product.label}</strong>
               <span>{pluralize(product.purchaseCount, "achat", "achats")}</span>
             </div>
@@ -420,7 +413,7 @@ function ProductsCard({ products, txt }) {
           <h3 style={{ color: COLORS.yellow, fontSize: 16, margin: "0 0 10px" }}>{txt.frequentDepartments || "Rayons fréquents"}</h3>
           <div style={{ display: "grid", gap: 9 }}>
             {departments.map(product => (
-              <div key={product.normalizedName} style={{ display: "flex", justifyContent: "space-between", color: COLORS.text, borderBottom: "1px solid rgba(255,255,255,.08)", paddingBottom: 8 }}>
+              <div key={product.normalizedName} style={{ display: "flex", justifyContent: "space-between", color: COLORS.text, borderBottom: `1px solid ${COLORS.borderSubtle}`, paddingBottom: 8 }}>
                 <strong>{product.label}</strong>
                 <span>{pluralize(product.purchaseCount, "achat", "achats")}</span>
               </div>

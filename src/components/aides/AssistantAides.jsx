@@ -6,21 +6,22 @@ import {
 } from "lucide-react"
 import { supabase } from "../../services/supabase"
 import { REUNION_ORIENTATION } from "../../data/reunionOrientation"
+import { createColorAliases } from "../../styles/designSystem"
+import { useTheme } from "../../styles/ThemeProvider"
 
 // AssistantAides V108 - Branchement IA + base locale Réunion BudgetKazPei
 
-const COLORS = {
-  card: "#0F1E38",
-  cardLight: "#152444",
-  border: "#1E3A5F",
-  accent: "#F97316",
-  yellow: "#FCD34D",
-  cyan: "#23D3D6",
-  green: "#22C55E",
-  text: "#F1F5F9",
-  muted: "#8EA4C5",
-  red: "#FB7185",
-  purple: "#A78BFA",
+const COLORS = createColorAliases({ red: () => "#FB7185" })
+
+function getReadableAccent(color, themeName = COLORS.themeName) {
+  if (themeName !== "light") return color
+  if (color === COLORS.yellow) return "#B45309"
+  if (color === COLORS.green) return "#15803D"
+  if (color === COLORS.cyan) return "#0284C7"
+  if (color === COLORS.purple) return "#6D28D9"
+  if (color === COLORS.accent) return "#EA580C"
+  if (color === COLORS.red) return "#BE123C"
+  return color
 }
 
 
@@ -1960,6 +1961,7 @@ function buildQuestionWithModeInstruction(question = "", mode = "general", isKre
 
 
 export default function AssistantAides({ isPremium, isMobile, t, user }) {
+  const { themeName } = useTheme()
   const [question, setQuestion] = useState("")
   const [assistantMode, setAssistantMode] = useState("general")
   const [quickQuestionSelected, setQuickQuestionSelected] = useState(false)
@@ -2007,6 +2009,7 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
 
   const txt = (key, fallback) => safeT(t, "aides", key, fallback)
   const isKreol = isKreolLanguage(t)
+  const isLightTheme = themeName === "light"
   const aiPlan = getAiPlan(profile, isPremium)
   const aiLimit = getAiLimit(profile, isPremium)
   const aiUsed = Number(aiUsage?.messages_used || 0)
@@ -2971,7 +2974,18 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
 
   return (
     <>
-    <section id="budgetkazpei-assistant-zone" style={{ background: `linear-gradient(135deg, rgba(35,211,214,.16), ${COLORS.card})`, border: `1px solid rgba(35,211,214,.32)`, borderRadius: 22, padding: isMobile ? 18 : 24 }}>
+    <section
+      id="budgetkazpei-assistant-zone"
+      style={{
+        background: isLightTheme
+          ? "linear-gradient(135deg, #DCEEFE 0%, #EEE7FB 66%, #FFFFFF 100%)"
+          : `linear-gradient(135deg, rgba(35,211,214,.16), ${COLORS.card})`,
+        border: isLightTheme ? "1px solid #D4E4F2" : "1px solid rgba(35,211,214,.32)",
+        borderRadius: 22,
+        padding: isMobile ? 18 : 24,
+        boxShadow: isLightTheme ? "0 14px 30px rgba(20,32,51,.07)" : "none",
+      }}
+    >
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <Star size={26} color={COLORS.cyan} />
         <h3 style={{ color: COLORS.text, margin: 0 }}>
@@ -2985,16 +2999,16 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
           : "Posez votre question. Votre conseiller analyse votre profil, vous répond, classe les aides et vous permet d’ajouter les aides à vos démarches."}
       </p>
 
-      <div style={{ background: "rgba(255,255,255,.05)", border: `1px solid ${COLORS.border}`, borderRadius: 18, padding: 16, display: "grid", gap: 12 }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8, color: COLORS.cyan, fontWeight: 900 }}>
+      <div style={{ background: isLightTheme ? "#FFFFFF" : "rgba(255,255,255,.05)", border: `1px solid ${isLightTheme ? "#E6EAF0" : COLORS.border}`, borderRadius: 18, padding: 16, display: "grid", gap: 12, boxShadow: isLightTheme ? "0 10px 22px rgba(20,32,51,.05)" : "none" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, color: getReadableAccent(COLORS.cyan), fontWeight: 900 }}>
           <MessageCircle size={17} />
           {isKreol ? "Koz ek mon konseyé" : "Discuter avec mon conseiller"}
         </div>
 
-        <div style={{ background: aiQuotaReached ? "rgba(251,113,133,.10)" : "rgba(34,197,94,.08)", border: aiQuotaReached ? "1px solid rgba(251,113,133,.35)" : "1px solid rgba(34,197,94,.25)", borderRadius: 14, padding: 12, color: COLORS.text, display: "grid", gap: 8 }}>
+        <div style={{ background: aiQuotaReached ? (isLightTheme ? "#FBE4EA" : "rgba(251,113,133,.10)") : (isLightTheme ? "#E2F1E7" : "rgba(34,197,94,.08)"), border: aiQuotaReached ? (isLightTheme ? "1px solid #F0BBCB" : "1px solid rgba(251,113,133,.35)") : (isLightTheme ? "1px solid #B9DDC6" : "1px solid rgba(34,197,94,.25)"), borderRadius: 14, padding: 12, color: COLORS.text, display: "grid", gap: 8 }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", fontWeight: 900 }}>
             <span>{isKreol ? "Konseye" : "Conseiller"} {getAiPlanLabel(aiPlan)}</span>
-            <span style={{ color: aiQuotaReached ? COLORS.red : COLORS.green }}>
+            <span style={{ color: aiQuotaReached ? getReadableAccent(COLORS.red) : getReadableAccent(COLORS.green) }}>
               {loadingAiUsage
                 ? "..."
                 : isKreol
@@ -3002,7 +3016,7 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
                   : `${aiRemaining} échanges disponibles ce mois-ci`}
             </span>
           </div>
-          <div style={{ height: 8, background: "rgba(255,255,255,.08)", borderRadius: 999, overflow: "hidden" }}>
+          <div style={{ height: 8, background: isLightTheme ? "#E6EAF0" : "rgba(255,255,255,.08)", borderRadius: 999, overflow: "hidden" }}>
             <div style={{ width: `${Math.min(100, Math.max(0, (aiRemaining / aiLimit) * 100))}%`, height: "100%", background: aiQuotaReached ? COLORS.red : COLORS.green }} />
           </div>
           {aiQuotaReached && (
@@ -3037,7 +3051,7 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
               setQuestion(example)
               setAssistantMode("trouver_aide")
               setQuickQuestionSelected(true)
-            }} style={{ background: "rgba(35,211,214,.08)", border: "1px solid rgba(35,211,214,.25)", borderRadius: 999, padding: "7px 11px", color: COLORS.cyan, fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 800 }}>
+            }} style={{ background: isLightTheme ? "#DCEEFE" : "rgba(35,211,214,.08)", border: isLightTheme ? "1px solid #B7DDF7" : "1px solid rgba(35,211,214,.25)", borderRadius: 999, padding: "7px 11px", color: getReadableAccent(COLORS.cyan), fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 800 }}>
               {example}
             </button>
           ))}
@@ -3054,7 +3068,7 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
             {isKreol ? "Scanner mon profil" : "Scanner mon profil"}
           </button>
 
-          <button type="button" onClick={resetConsultation} style={{ background: "rgba(255,255,255,.06)", color: COLORS.text, border: "1px solid rgba(255,255,255,.14)", borderRadius: 12, padding: "11px 16px", fontWeight: 900, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 8 }}>
+          <button type="button" onClick={resetConsultation} style={{ background: isLightTheme ? "#FFFFFF" : "rgba(255,255,255,.06)", color: COLORS.text, border: isLightTheme ? "1px solid #E6EAF0" : "1px solid rgba(255,255,255,.14)", borderRadius: 12, padding: "11px 16px", fontWeight: 900, cursor: "pointer", fontFamily: "inherit", display: "flex", alignItems: "center", gap: 8 }}>
             <Trash2 size={16} />
             {isKreol ? "Nouvo kestion" : "Nouvelle consultation"}
           </button>
@@ -3078,8 +3092,8 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
               const historyRecommendedAides = getHistoryRecommendedAides(item)
 
               return (
-                <div key={`${item.type}-${index}-${item.question || "scan"}`} style={{ background: "rgba(35,211,214,.08)", border: "1px solid rgba(35,211,214,.22)", borderRadius: 16, padding: 16, color: COLORS.text, lineHeight: 1.6 }}>
-                  <div style={{ color: COLORS.cyan, fontWeight: 900, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+                <div key={`${item.type}-${index}-${item.question || "scan"}`} style={{ background: isLightTheme ? "#DCEEFE" : "rgba(35,211,214,.08)", border: isLightTheme ? "1px solid #B7DDF7" : "1px solid rgba(35,211,214,.22)", borderRadius: 16, padding: 16, color: COLORS.text, lineHeight: 1.6 }}>
+                  <div style={{ color: getReadableAccent(COLORS.cyan), fontWeight: 900, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
                     <Sparkles size={16} />
                     {item.type === "scan"
                       ? (isKreol ? "Analyse de out profil" : "Analyse de votre profil")
@@ -3090,8 +3104,8 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
                     {buildSmartAnswer(item, isKreol, historyRecommendedAides)}
                   </p>
 
-                  <details style={{ marginTop: 12, background: "rgba(255,255,255,.04)", border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: 12 }}>
-                    <summary style={{ cursor: "pointer", color: COLORS.green, fontWeight: 900 }}>
+                  <details style={{ marginTop: 12, background: isLightTheme ? "#FFFFFF" : "rgba(255,255,255,.04)", border: `1px solid ${isLightTheme ? "#E6EAF0" : COLORS.border}`, borderRadius: 12, padding: 12 }}>
+                    <summary style={{ cursor: "pointer", color: getReadableAccent(COLORS.green), fontWeight: 900 }}>
                       {isKreol ? "Voir profil analizé" : "Voir le profil analysé"}
                     </summary>
                     <div style={{ marginTop: 10, whiteSpace: "pre-line", color: COLORS.text }}>
@@ -3121,8 +3135,8 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
             </div>
           )}
 
-          <div style={{ background: "linear-gradient(135deg, rgba(34,197,94,.14), rgba(35,211,214,.08), rgba(255,255,255,.03))", border: "1px solid rgba(34,197,94,.25)", borderRadius: 18, padding: 16 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, color: COLORS.green, fontWeight: 900, marginBottom: 12 }}>
+          <div style={{ background: isLightTheme ? "linear-gradient(135deg, #E2F1E7 0%, #DCEEFE 76%, #FFFFFF 100%)" : "linear-gradient(135deg, rgba(34,197,94,.14), rgba(35,211,214,.08), rgba(255,255,255,.03))", border: isLightTheme ? "1px solid #B9DDC6" : "1px solid rgba(34,197,94,.25)", borderRadius: 18, padding: 16 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, color: getReadableAccent(COLORS.green), fontWeight: 900, marginBottom: 12 }}>
               <TrendingUp size={18} />
               {isKreol ? "Tablo bann zéd" : "Tableau de bord des aides"}
             </div>
@@ -3138,14 +3152,14 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
                 { label: isKreol ? "Relans" : "Relances", value: dashboardStats.relances, color: dashboardStats.relances > 0 ? COLORS.accent : COLORS.muted },
                 { label: isKreol ? "Akseptées" : "Acceptées", value: dashboardStats.accepted, color: COLORS.green },
               ].map(item => (
-                <div key={item.label} style={{ background: item.highlight ? `${item.color}12` : "rgba(255,255,255,.055)", border: item.highlight ? `1px solid ${item.color}55` : "1px solid rgba(255,255,255,.09)", borderRadius: 14, padding: 12 }}>
-                  <div style={{ color: item.color, fontWeight: 900, fontSize: item.highlight ? 24 : 22 }}>{item.value}</div>
+                <div key={item.label} style={{ background: item.highlight ? `${item.color}12` : (isLightTheme ? "#FFFFFF" : "rgba(255,255,255,.055)"), border: item.highlight ? `1px solid ${item.color}55` : (isLightTheme ? "1px solid #E6EAF0" : "1px solid rgba(255,255,255,.09)"), borderRadius: 14, padding: 12 }}>
+                  <div style={{ color: getReadableAccent(item.color), fontWeight: 900, fontSize: item.highlight ? 24 : 22 }}>{item.value}</div>
                   <div style={{ color: item.highlight ? COLORS.text : COLORS.muted, fontSize: 12, fontWeight: 900 }}>{item.label}</div>
                 </div>
               ))}
             </div>
 
-            <div style={{ marginTop: 12, background: "rgba(255,255,255,.045)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 14, padding: 12, color: COLORS.text, lineHeight: 1.55 }}>
+            <div style={{ marginTop: 12, background: isLightTheme ? "#FFFFFF" : "rgba(255,255,255,.045)", border: isLightTheme ? "1px solid #E6EAF0" : "1px solid rgba(255,255,255,.08)", borderRadius: 14, padding: 12, color: COLORS.text, lineHeight: 1.55 }}>
               <Bell size={16} style={{ verticalAlign: "middle", marginRight: 6 }} />
               {dashboardStats.potentialLevel === "high"
                 ? (isKreol ? "Na plizèr zéd intérésan pou vérifié rapidman." : "Potentiel d’aides : élevé. Plusieurs dispositifs méritent d’être vérifiés rapidement.")
@@ -3157,24 +3171,24 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
             <div style={{ marginTop: 12, background: "rgba(34,197,94,.08)", border: "1px solid rgba(34,197,94,.22)", borderRadius: 14, padding: 12, color: COLORS.text, lineHeight: 1.55 }}>
               <DollarSign size={16} style={{ verticalAlign: "middle", marginRight: 6 }} />
               {isKreol ? "Larzan gagné grâce à BudgetKazPei" : "Gains obtenus grâce à BudgetKazPei"} :{" "}
-              <strong style={{ color: COLORS.green }}>{gainsTotal.toFixed(0)} €</strong>
+              <strong style={{ color: getReadableAccent(COLORS.green) }}>{gainsTotal.toFixed(0)} €</strong>
               {dashboardStats.potentialAmount > 0 && (
                 <span style={{ color: COLORS.muted }}>
                   {" "}· {isKreol ? "Potansyèl détecté" : "Potentiel détecté"} :{" "}
-                  <strong style={{ color: COLORS.cyan }}>{dashboardStats.potentialAmount.toFixed(0)} €</strong>
+                  <strong style={{ color: getReadableAccent(COLORS.cyan) }}>{dashboardStats.potentialAmount.toFixed(0)} €</strong>
                 </span>
               )}
             </div>
 
             {gainsCumulesList.length > 0 && (
-              <div style={{ marginTop: 12, background: "rgba(34,197,94,.10)", border: "1px solid rgba(34,197,94,.28)", borderRadius: 14, padding: 12, color: COLORS.text }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, color: COLORS.green, fontWeight: 900, marginBottom: 8 }}>
+              <div style={{ marginTop: 12, background: isLightTheme ? "#E2F1E7" : "rgba(34,197,94,.10)", border: isLightTheme ? "1px solid #B9DDC6" : "1px solid rgba(34,197,94,.28)", borderRadius: 14, padding: 12, color: COLORS.text }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, color: getReadableAccent(COLORS.green), fontWeight: 900, marginBottom: 8 }}>
                   <CheckCircle2 size={16} />
                   {isKreol ? "Gains cumulés" : "Gains cumulés"} : {gainsTotal.toFixed(0)} €
                 </div>
                 <div style={{ display: "grid", gap: 6 }}>
                   {gainsCumulesList.map(item => (
-                    <div key={item.id || item.aide_id} style={{ display: "flex", justifyContent: "space-between", gap: 10, borderTop: "1px solid rgba(255,255,255,.08)", paddingTop: 6, color: COLORS.muted, fontSize: 13 }}>
+                    <div key={item.id || item.aide_id} style={{ display: "flex", justifyContent: "space-between", gap: 10, borderTop: isLightTheme ? "1px solid #B9DDC6" : "1px solid rgba(255,255,255,.08)", paddingTop: 6, color: COLORS.muted, fontSize: 13 }}>
                       <span style={{ color: COLORS.text }}>{item.aide_nom || (isKreol ? "Zéd" : "Aide")}</span>
                       <strong style={{ color: COLORS.green }}>{Number(item.montant_obtenu || 0).toFixed(0)} €</strong>
                     </div>
@@ -3184,8 +3198,8 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
             )}
           </div>
 
-          <div style={{ background: "rgba(255,255,255,.045)", border: `1px solid ${COLORS.border}`, borderRadius: 18, padding: 16 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 8, color: COLORS.yellow, fontWeight: 900, marginBottom: 12 }}>
+          <div style={{ background: isLightTheme ? "#FFFFFF" : "rgba(255,255,255,.045)", border: `1px solid ${isLightTheme ? "#E6EAF0" : COLORS.border}`, borderRadius: 18, padding: 16, boxShadow: isLightTheme ? "0 10px 22px rgba(20,32,51,.05)" : "none" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, color: getReadableAccent(COLORS.yellow), fontWeight: 900, marginBottom: 12 }}>
               <ClipboardCheck size={18} />
               {isKreol ? "Mes démars" : "Mes démarches"}
             </div>
@@ -3204,11 +3218,11 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
                   const actionAlert = getDemarcheActionAlert(item, progress)
 
                   return (
-                    <div key={item.id || item.aide_id} style={{ background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.09)", borderRadius: 14, padding: 12 }}>
+                    <div key={item.id || item.aide_id} style={{ background: isLightTheme ? "linear-gradient(135deg, #FFFFFF 0%, #F8FBFF 100%)" : "rgba(255,255,255,.04)", border: isLightTheme ? "1px solid #E6EAF0" : "1px solid rgba(255,255,255,.09)", borderRadius: 14, padding: 12 }}>
                       <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
                         <div>
                           <div style={{ color: COLORS.text, fontWeight: 900 }}>{item.aide_nom}</div>
-                          <div style={{ color: status.color, fontWeight: 900, marginTop: 4 }}>
+                          <div style={{ color: getReadableAccent(status.color), fontWeight: 900, marginTop: 4 }}>
                             {status.emoji} {isKreol ? status.kreol : status.fr}
                           </div>
                           <div style={{ color: COLORS.muted, fontSize: 12, marginTop: 6, lineHeight: 1.5 }}>
@@ -3230,7 +3244,7 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
 
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
                         {STATUS_OPTIONS.map(option => (
-                          <button key={option.key} type="button" onClick={() => updateAideStatus(item, option.key)} style={{ background: normalizeStatusKey(item.status) === option.key ? `${option.color}33` : "rgba(255,255,255,.04)", border: normalizeStatusKey(item.status) === option.key ? `1px solid ${option.color}` : "1px solid rgba(255,255,255,.10)", borderRadius: 999, padding: "7px 10px", color: normalizeStatusKey(item.status) === option.key ? option.color : COLORS.muted, fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 900 }}>
+                          <button key={option.key} type="button" onClick={() => updateAideStatus(item, option.key)} style={{ background: normalizeStatusKey(item.status) === option.key ? `${option.color}33` : (isLightTheme ? "#FFFFFF" : "rgba(255,255,255,.04)"), border: normalizeStatusKey(item.status) === option.key ? `1px solid ${option.color}` : (isLightTheme ? "1px solid #E6EAF0" : "1px solid rgba(255,255,255,.10)"), borderRadius: 999, padding: "7px 10px", color: normalizeStatusKey(item.status) === option.key ? getReadableAccent(option.color) : COLORS.muted, fontSize: 12, cursor: "pointer", fontFamily: "inherit", fontWeight: 900 }}>
                             {option.emoji} {isKreol ? option.kreol : option.fr}
                           </button>
                         ))}
@@ -3251,8 +3265,8 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
                         const dossierReady = progress.total > 0 && progress.checked === progress.total
 
                         return (
-                          <div style={{ marginTop: 12, background: "rgba(252,211,77,.07)", border: "1px solid rgba(252,211,77,.22)", borderRadius: 14, padding: 12 }}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 8, color: COLORS.yellow, fontWeight: 900, marginBottom: 8 }}>
+                          <div style={{ marginTop: 12, background: isLightTheme ? "#FFF4D9" : "rgba(252,211,77,.07)", border: isLightTheme ? "1px solid #F3DCA2" : "1px solid rgba(252,211,77,.22)", borderRadius: 14, padding: 12 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, color: getReadableAccent(COLORS.yellow), fontWeight: 900, marginBottom: 8 }}>
                               <FileText size={16} />
                               {isKreol ? "Bann dokiman pou préparé" : "Documents à préparer"}
                             </div>
@@ -3264,7 +3278,7 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
                               </strong>
                             </div>
 
-                            <div style={{ height: 10, borderRadius: 999, background: "rgba(255,255,255,.08)", overflow: "hidden", marginBottom: 12 }}>
+                            <div style={{ height: 10, borderRadius: 999, background: isLightTheme ? "#E6EAF0" : "rgba(255,255,255,.08)", overflow: "hidden", marginBottom: 12 }}>
                               <div
                                 style={{
                                   width: `${progress.percent}%`,
@@ -3293,8 +3307,8 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
                                       alignItems: "flex-start",
                                       gap: 10,
                                       textAlign: "left",
-                                      background: checked ? "rgba(34,197,94,.10)" : "rgba(255,255,255,.04)",
-                                      border: checked ? "1px solid rgba(34,197,94,.28)" : "1px solid rgba(255,255,255,.08)",
+                                      background: checked ? (isLightTheme ? "#E2F1E7" : "rgba(34,197,94,.10)") : (isLightTheme ? "#FFFFFF" : "rgba(255,255,255,.04)"),
+                                      border: checked ? (isLightTheme ? "1px solid #B9DDC6" : "1px solid rgba(34,197,94,.28)") : (isLightTheme ? "1px solid #E6EAF0" : "1px solid rgba(255,255,255,.08)"),
                                       borderRadius: 12,
                                       padding: 10,
                                       color: COLORS.text,
@@ -3414,7 +3428,7 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
             </p>
 
             {visibleRecommendedAides.length === 0 ? (
-              <div style={{ background: "rgba(255,255,255,.05)", border: `1px solid ${COLORS.border}`, borderRadius: 16, padding: 16, color: COLORS.muted }}>
+              <div style={{ background: isLightTheme ? "#FFFFFF" : "rgba(255,255,255,.05)", border: `1px solid ${isLightTheme ? "#E6EAF0" : COLORS.border}`, borderRadius: 16, padding: 16, color: COLORS.muted }}>
                 Aucune aide suffisamment probable pour le moment.
               </div>
             ) : (
@@ -3444,10 +3458,10 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
                   ].join("\n")
 
                   return (
-                    <article key={aideKey} style={{ background: "linear-gradient(135deg, rgba(255,255,255,.065), rgba(255,255,255,.025))", border: `1px solid ${level.color}55`, borderRadius: 18, padding: 16 }}>
+                    <article key={aideKey} style={{ background: isLightTheme ? "linear-gradient(135deg, #FFFFFF 0%, #F8FBFF 100%)" : "linear-gradient(135deg, rgba(255,255,255,.065), rgba(255,255,255,.025))", border: `1px solid ${level.color}55`, borderRadius: 18, padding: 16, boxShadow: isLightTheme ? "0 10px 22px rgba(20,32,51,.05)" : "none" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginBottom: 10 }}>
                         <div>
-                          <div style={{ color: level.color, fontWeight: 900, fontSize: 13 }}>
+                          <div style={{ color: getReadableAccent(level.color), fontWeight: 900, fontSize: 13 }}>
                             {level.emoji} {level.label} · {aide.score}%
                           </div>
                           <h5 style={{ margin: "6px 0 0", color: COLORS.text, fontSize: 18 }}>
@@ -3455,7 +3469,7 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
                           </h5>
                         </div>
 
-                        <span style={{ background: `${level.color}22`, color: level.color, border: `1px solid ${level.color}55`, borderRadius: 999, padding: "6px 10px", fontSize: 12, fontWeight: 900, whiteSpace: "nowrap" }}>
+                        <span style={{ background: `${level.color}22`, color: getReadableAccent(level.color), border: `1px solid ${level.color}55`, borderRadius: 999, padding: "6px 10px", fontSize: 12, fontWeight: 900, whiteSpace: "nowrap" }}>
                           {formatAideAmount(aide, isKreol)}
                         </span>
                       </div>
@@ -3465,23 +3479,23 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
                       </p>
 
                       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
-                        <div style={{ background: "rgba(34,197,94,.07)", border: "1px solid rgba(34,197,94,.18)", borderRadius: 14, padding: 12 }}>
-                          <strong style={{ color: COLORS.green }}>{isKreol ? "Poukoi ?" : "Pourquoi cette aide ?"}</strong>
+                        <div style={{ background: isLightTheme ? "#E2F1E7" : "rgba(34,197,94,.07)", border: isLightTheme ? "1px solid #B9DDC6" : "1px solid rgba(34,197,94,.18)", borderRadius: 14, padding: 12 }}>
+                          <strong style={{ color: getReadableAccent(COLORS.green) }}>{isKreol ? "Poukoi ?" : "Pourquoi cette aide ?"}</strong>
                           <ul style={{ margin: "8px 0 0", paddingLeft: 18, color: COLORS.text }}>
                             {aide.reasons.slice(0, 4).map((reason, index) => <li key={index}>{reason}</li>)}
                           </ul>
                         </div>
 
-                        <div style={{ background: "rgba(35,211,214,.07)", border: "1px solid rgba(35,211,214,.18)", borderRadius: 14, padding: 12 }}>
-                          <strong style={{ color: COLORS.cyan }}>{isKreol ? "Bann démars" : "Démarches"}</strong>
+                        <div style={{ background: isLightTheme ? "#DCEEFE" : "rgba(35,211,214,.07)", border: isLightTheme ? "1px solid #B7DDF7" : "1px solid rgba(35,211,214,.18)", borderRadius: 14, padding: 12 }}>
+                          <strong style={{ color: getReadableAccent(COLORS.cyan) }}>{isKreol ? "Bann démars" : "Démarches"}</strong>
                           <p style={{ margin: "8px 0 0", color: COLORS.text, lineHeight: 1.55 }}>
                             {getAideDemarches(aide, isKreol) || "Vérifiez les conditions sur le site officiel."}
                           </p>
                         </div>
                       </div>
 
-                      <div style={{ marginTop: 12, background: "rgba(249,115,22,.07)", border: "1px solid rgba(249,115,22,.22)", borderRadius: 14, padding: 12 }}>
-                        <strong style={{ color: COLORS.accent }}>
+                      <div style={{ marginTop: 12, background: isLightTheme ? "#FCE7DA" : "rgba(249,115,22,.07)", border: isLightTheme ? "1px solid #F4C1A5" : "1px solid rgba(249,115,22,.22)", borderRadius: 14, padding: 12 }}>
+                        <strong style={{ color: getReadableAccent(COLORS.accent) }}>
                           🚀 {isKreol ? "Action immédiate" : "Action immédiate"}
                         </strong>
                         <ol style={{ margin: "8px 0 0", paddingLeft: 18, color: COLORS.text, lineHeight: 1.6 }}>
@@ -3490,15 +3504,15 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
                       </div>
 
                       <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 12 }}>
-                        <div style={{ background: "rgba(167,139,250,.07)", border: "1px solid rgba(167,139,250,.20)", borderRadius: 14, padding: 12 }}>
-                          <strong style={{ color: COLORS.purple }}>🏢 {isKreol ? "Koté i fo kontakte ?" : "Organismes à contacter"}</strong>
+                        <div style={{ background: isLightTheme ? "#EEE7FB" : "rgba(167,139,250,.07)", border: isLightTheme ? "1px solid #D8CBF6" : "1px solid rgba(167,139,250,.20)", borderRadius: 14, padding: 12 }}>
+                          <strong style={{ color: getReadableAccent(COLORS.purple) }}>🏢 {isKreol ? "Koté i fo kontakte ?" : "Organismes à contacter"}</strong>
                           <ul style={{ margin: "8px 0 0", paddingLeft: 18, color: COLORS.text, lineHeight: 1.55 }}>
                             {actionContacts.slice(0, 4).map((contact, index) => <li key={index}>{contact}</li>)}
                           </ul>
                         </div>
 
-                        <div style={{ background: "rgba(252,211,77,.07)", border: "1px solid rgba(252,211,77,.22)", borderRadius: 14, padding: 12 }}>
-                          <strong style={{ color: COLORS.yellow }}>📄 {isKreol ? "Bann dokiman pou préparé" : "Documents à préparer"}</strong>
+                        <div style={{ background: isLightTheme ? "#FFF4D9" : "rgba(252,211,77,.07)", border: isLightTheme ? "1px solid #F3DCA2" : "1px solid rgba(252,211,77,.22)", borderRadius: 14, padding: 12 }}>
+                          <strong style={{ color: getReadableAccent(COLORS.yellow) }}>📄 {isKreol ? "Bann dokiman pou préparé" : "Documents à préparer"}</strong>
                           <ul style={{ margin: "8px 0 0", paddingLeft: 18, color: COLORS.text, lineHeight: 1.55 }}>
                             {aideDocs.map((doc, index) => (
                               <li key={index}>
@@ -3533,14 +3547,14 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
                               aideDocs,
                             })
                           }
-                          style={{ background: "rgba(255,255,255,.06)", color: COLORS.text, border: "1px solid rgba(255,255,255,.14)", borderRadius: 12, padding: "10px 14px", fontWeight: 900, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 8 }}
+                          style={{ background: isLightTheme ? "#FFFFFF" : "rgba(255,255,255,.06)", color: COLORS.text, border: isLightTheme ? "1px solid #E6EAF0" : "1px solid rgba(255,255,255,.14)", borderRadius: 12, padding: "10px 14px", fontWeight: 900, cursor: "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 8 }}
                         >
                           <FileText size={15} />
                           {isKreol ? "📄 Prépar mon dosyé" : "📄 Préparer mon dossier"}
                         </button>
                       </div>
 
-                      <div style={{ marginTop: 14, background: tracked ? "rgba(255,255,255,.045)" : "rgba(35,211,214,.06)", border: tracked ? "1px solid rgba(255,255,255,.08)" : "1px solid rgba(35,211,214,.20)", borderRadius: 14, padding: 12 }}>
+                      <div style={{ marginTop: 14, background: tracked ? (isLightTheme ? "#FFFFFF" : "rgba(255,255,255,.045)") : (isLightTheme ? "#DCEEFE" : "rgba(35,211,214,.06)"), border: tracked ? (isLightTheme ? "1px solid #E6EAF0" : "1px solid rgba(255,255,255,.08)") : (isLightTheme ? "1px solid #B7DDF7" : "1px solid rgba(35,211,214,.20)"), borderRadius: 14, padding: 12 }}>
                         {!tracked ? (
                           <button type="button" onClick={() => addToDemarches(aide)} disabled={isSaving} style={{ background: isSaving ? COLORS.muted : COLORS.cyan, color: "#0A1628", border: "none", borderRadius: 12, padding: "10px 13px", fontWeight: 900, cursor: isSaving ? "not-allowed" : "pointer", fontFamily: "inherit", display: "inline-flex", alignItems: "center", gap: 8 }}>
                             <PlusCircle size={16} />
@@ -3548,14 +3562,14 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
                           </button>
                         ) : (
                           <>
-                            <div style={{ display: "flex", alignItems: "center", gap: 8, color: currentStatus.color, fontWeight: 900, marginBottom: 10 }}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 8, color: getReadableAccent(currentStatus.color), fontWeight: 900, marginBottom: 10 }}>
                               <ClipboardCheck size={16} />
                               {isKreol ? "Suivi démars" : "Suivi de la démarche"} : {currentStatus.emoji} {isKreol ? currentStatus.kreol : currentStatus.fr}
                             </div>
 
                             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                               {STATUS_OPTIONS.map(status => (
-                                <button key={status.key} type="button" onClick={() => updateAideStatus(aide, status.key)} disabled={isSaving} style={{ background: currentStatusKey === status.key ? `${status.color}33` : "rgba(255,255,255,.04)", border: currentStatusKey === status.key ? `1px solid ${status.color}` : "1px solid rgba(255,255,255,.10)", borderRadius: 999, padding: "7px 10px", color: currentStatusKey === status.key ? status.color : COLORS.muted, fontSize: 12, cursor: isSaving ? "not-allowed" : "pointer", fontFamily: "inherit", fontWeight: 900 }}>
+                                <button key={status.key} type="button" onClick={() => updateAideStatus(aide, status.key)} disabled={isSaving} style={{ background: currentStatusKey === status.key ? `${status.color}33` : (isLightTheme ? "#FFFFFF" : "rgba(255,255,255,.04)"), border: currentStatusKey === status.key ? `1px solid ${status.color}` : (isLightTheme ? "1px solid #E6EAF0" : "1px solid rgba(255,255,255,.10)"), borderRadius: 999, padding: "7px 10px", color: currentStatusKey === status.key ? getReadableAccent(status.color) : COLORS.muted, fontSize: 12, cursor: isSaving ? "not-allowed" : "pointer", fontFamily: "inherit", fontWeight: 900 }}>
                                   {status.emoji} {isKreol ? status.kreol : status.fr}
                                 </button>
                               ))}

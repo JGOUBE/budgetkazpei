@@ -2,21 +2,9 @@
 import { useProfile } from "../../hooks/useProfile"
 import { supabase } from "../../services/supabase"
 import { syncProfileIncomeForCurrentMonth } from "../../services/income/profileIncomeService"
+import { createColorAliases } from "../../styles/designSystem"
 
-const COLORS = {
-  bg: "#0A1628",
-  card: "#0F1E38",
-  cardLight: "#152444",
-  border: "#1E3A5F",
-  accent: "#F97316",
-  green: "#22C55E",
-  red: "#EF4444",
-  muted: "#64748B",
-  text: "#F1F5F9",
-  yellow: "#FCD34D",
-  cyan: "#23D3D6",
-  purple: "#A78BFA",
-}
+const COLORS = createColorAliases()
 
 const CONTACT_EMAIL = "contact.budgetkazpei@gmail.com"
 
@@ -66,18 +54,18 @@ const REQUEST_TYPES = [
   { value: "premium", fr: "Question Premium / Premium+", kr: "Question Premium / Premium+" },
 ]
 
-const inputStyle = {
-  background: "#152444",
-  border: "1px solid #1E3A5F",
+const inputStyle = () => ({
+  background: COLORS.cardLight,
+  border: `1px solid ${COLORS.border}`,
   borderRadius: 10,
   padding: "11px 14px",
-  color: "#F1F5F9",
+  color: COLORS.text,
   fontSize: 14,
   width: "100%",
   outline: "none",
   fontFamily: "inherit",
   boxSizing: "border-box",
-}
+})
 
 export default function ProfilePage({ user, t }) {
   const isKreol = isKreolLang(t)
@@ -496,16 +484,16 @@ export default function ProfilePage({ user, t }) {
 
         <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <Field label={t("profil", "prenom")}>
-            <input type="text" value={form.nom} onChange={e => updateField("nom", e.target.value)} style={inputStyle} />
+            <input type="text" value={form.nom} onChange={e => updateField("nom", e.target.value)} style={inputStyle()} />
           </Field>
 
           <Field label={t("profil", "email")}>
-            <input type="email" value={user?.email || ""} disabled style={{ ...inputStyle, opacity: 0.5, cursor: "not-allowed" }} />
+            <input type="email" value={user?.email || ""} disabled style={{ ...inputStyle(), opacity: 0.5, cursor: "not-allowed" }} />
             <p style={{ fontSize: 11, color: COLORS.muted, margin: "4px 0 0" }}>{t("profil", "emailNote")}</p>
           </Field>
 
           <Field label={t("profil", "commune")}>
-            <select value={form.commune} onChange={e => updateField("commune", e.target.value)} style={inputStyle}>
+            <select value={form.commune} onChange={e => updateField("commune", e.target.value)} style={inputStyle()}>
               <option value="">Choisir une commune</option>
               {COMMUNES.map(c => (
                 <option key={c} value={c}>{c}</option>
@@ -553,7 +541,7 @@ export default function ProfilePage({ user, t }) {
           )}
 
           <Field label={t("profil", "telephone")}>
-            <input type="tel" value={form.telephone} onChange={e => updateField("telephone", e.target.value)} placeholder="0692 XX XX XX" style={inputStyle} />
+            <input type="tel" value={form.telephone} onChange={e => updateField("telephone", e.target.value)} placeholder="0692 XX XX XX" style={inputStyle()} />
           </Field>
 
           <div
@@ -575,11 +563,11 @@ export default function ProfilePage({ user, t }) {
 
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
               <Field label={tr(isKreol, "Âge", "Laz")}>
-                <input type="number" min="0" value={form.age} onChange={e => updateField("age", e.target.value)} placeholder={tr(isKreol, "Ex : 34", "Ex : 34")} style={inputStyle} />
+                <input type="number" min="0" value={form.age} onChange={e => updateField("age", e.target.value)} placeholder={tr(isKreol, "Ex : 34", "Ex : 34")} style={inputStyle()} />
               </Field>
 
               <Field label={tr(isKreol, "Situation familiale", "Situation famiyal")}>
-                <select value={form.situation_familiale} onChange={e => updateField("situation_familiale", e.target.value)} style={inputStyle}>
+                <select value={form.situation_familiale} onChange={e => updateField("situation_familiale", e.target.value)} style={inputStyle()}>
                   {FAMILY_OPTIONS.map(option => (
                     <option key={option.value} value={option.value}>{isKreol ? option.kr : option.fr}</option>
                   ))}
@@ -587,11 +575,11 @@ export default function ProfilePage({ user, t }) {
               </Field>
 
               <Field label={tr(isKreol, "Nombre d’enfants", "Kantité marmay")}>
-                <input type="number" min="0" value={form.nombre_enfants} onChange={e => updateField("nombre_enfants", e.target.value)} placeholder={tr(isKreol, "Ex : 2", "Ex : 2")} style={inputStyle} />
+                <input type="number" min="0" value={form.nombre_enfants} onChange={e => updateField("nombre_enfants", e.target.value)} placeholder={tr(isKreol, "Ex : 2", "Ex : 2")} style={inputStyle()} />
               </Field>
 
               <Field label={tr(isKreol, "Situation logement", "Situation lozman")}>
-                <select value={form.logement} onChange={e => updateField("logement", e.target.value)} style={inputStyle}>
+                <select value={form.logement} onChange={e => updateField("logement", e.target.value)} style={inputStyle()}>
                   {HOUSING_OPTIONS.map(option => (
                     <option key={option.value} value={option.value}>{isKreol ? option.kr : option.fr}</option>
                   ))}
@@ -605,7 +593,7 @@ export default function ProfilePage({ user, t }) {
                   value={form.revenus_foyer}
                   onChange={e => updateField("revenus_foyer", e.target.value)}
                   placeholder={tr(isKreol, "Ex : 2200", "Ex : 2200")}
-                  style={inputStyle}
+                  style={inputStyle()}
                 />
                 <div
                   style={{
@@ -632,7 +620,7 @@ export default function ProfilePage({ user, t }) {
                 <select
                   value={form.situation_professionnelle}
                   onChange={e => updateField("situation_professionnelle", e.target.value)}
-                  style={inputStyle}
+                  style={inputStyle()}
                 >
                   {JOB_OPTIONS.map(option => (
                     <option key={option.value} value={option.value}>{isKreol ? option.kr : option.fr}</option>
@@ -724,7 +712,7 @@ export default function ProfilePage({ user, t }) {
               name="nom"
               defaultValue={form.nom || ""}
               placeholder={tr(isKreol, "Votre nom", "Out nom")}
-              style={inputStyle}
+              style={inputStyle()}
             />
           </Field>
 
@@ -735,12 +723,12 @@ export default function ProfilePage({ user, t }) {
               defaultValue={user?.email || ""}
               placeholder="votre@email.com"
               required
-              style={inputStyle}
+              style={inputStyle()}
             />
           </Field>
 
           <Field label={tr(isKreol, "Type de demande", "Kalité demande")}>
-            <select name="type_demande" defaultValue="question" style={inputStyle}>
+            <select name="type_demande" defaultValue="question" style={inputStyle()}>
               {REQUEST_TYPES.map(option => (
                 <option key={option.value} value={option.value}>{isKreol ? option.kr : option.fr}</option>
               ))}
@@ -753,7 +741,7 @@ export default function ProfilePage({ user, t }) {
               required
               placeholder={tr(isKreol, "Écrivez votre message ici...", "Écris out message ici...")}
               rows={5}
-              style={{ ...inputStyle, resize: "vertical", minHeight: 120 }}
+              style={{ ...inputStyle(), resize: "vertical", minHeight: 120 }}
             />
           </Field>
 

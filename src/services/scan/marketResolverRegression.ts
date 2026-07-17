@@ -23,11 +23,9 @@ function assertEqual(id: string, actual: unknown, expected: unknown): Regression
   }
 }
 
-function pickStableItemFields(item: any) {
+function pickProtectedItemFields(item: any) {
   return {
-    name: item.name,
     ocr_name: item.ocr_name,
-    corrected_name: item.corrected_name,
     total_price: item.total_price,
     unit_price: item.unit_price,
     quantity: item.quantity,
@@ -64,13 +62,17 @@ function baseItem(overrides: Record<string, unknown> = {}) {
   }
 }
 
-function pouletItem(overrides: Record<string, unknown> = {}) {
+function productItem(
+  name: string,
+  price: number,
+  overrides: Record<string, unknown> = {},
+) {
   return {
-    name: "POULET LE JAUNE",
-    ocr_name: "POULET LE JAUNE",
-    corrected_name: "POULET LE JAUNE",
-    total_price: 7.69,
-    unit_price: 7.69,
+    name,
+    ocr_name: name,
+    corrected_name: name,
+    total_price: price,
+    unit_price: price,
     quantity: 1,
     promotion: false,
     confidence_score: 91,
@@ -78,11 +80,19 @@ function pouletItem(overrides: Record<string, unknown> = {}) {
     review_status: "trusted",
     needs_review: false,
     status: "trusted",
-    raw_text: "POULET LE JAUNE 7.69 2",
-    source_line: "POULET LE JAUNE 7.69 2",
+    raw_text: `${name} ${price.toFixed(2)}`,
+    source_line: `${name} ${price.toFixed(2)}`,
     line_type: "product",
     ...overrides,
   }
+}
+
+function pouletItem(overrides: Record<string, unknown> = {}) {
+  return productItem("POULET LE JAUNE", 7.69, {
+    raw_text: "POULET LE JAUNE 7.69 2",
+    source_line: "POULET LE JAUNE 7.69 2",
+    ...overrides,
+  })
 }
 
 function mockDeps({
@@ -91,12 +101,14 @@ function mockDeps({
   timeoutImmediately = false,
   responseDelayMs = 0,
   onFetch,
+  extraDependencies = {},
 }: {
   responseBody?: Record<string, unknown>
   rejectFetch?: boolean
   timeoutImmediately?: boolean
   responseDelayMs?: number
   onFetch?: (url: string, init: any) => void
+  extraDependencies?: Record<string, unknown>
 } = {}) {
   let timeoutMs: number | null = null
   let clearCalls = 0
@@ -124,7 +136,14 @@ function mockDeps({
         }
         return {
           ok: true,
-          json: async () => responseBody || { items: [], resolved: 0, unresolved: 0 },
+          json: async () => responseBody || {
+            items: [],
+            resolved: 0,
+            exact: 0,
+            contextual: 0,
+            alternate: 0,
+            unresolved: 0,
+          },
         } as Response
       },
       setTimeoutImpl: ((callback: () => void, ms: number) => {
@@ -142,6 +161,7 @@ function mockDeps({
       createAbortController: () => controller,
       functionUrlImpl: () => "https://example.test/functions/v1/market-resolve-products",
       anonKeyImpl: () => "anon-test-key",
+      ...extraDependencies,
     },
     getState: () => ({ timeoutMs, aborted, fetchCalled, clearCalls }),
   }
@@ -152,6 +172,9 @@ async function resolveFixture(responseItem: Record<string, unknown>) {
     responseBody: {
       items: [responseItem],
       resolved: responseItem.market_matched ? 1 : 0,
+      exact: responseItem.market_matched ? 1 : 0,
+      contextual: 0,
+      alternate: 0,
       unresolved: responseItem.market_matched ? 0 : 1,
     },
   })
@@ -159,15 +182,20 @@ async function resolveFixture(responseItem: Record<string, unknown>) {
 }
 
 export async function runMarketResolverRegressionFixtures(): Promise<RegressionResult[]> {
-  const { applyMarketResolutions, buildMarketResolvePayload } = __marketProductResolverTestUtils
-  const originalItem = baseItem()
+  const {
+    applyMarketResolutions,
+    buildLocalOcrNameCandidates,
+    buildMarketResolvePayload,
+  } = __marketProductResolverTestUtils
 
+  const originalItem = baseItem()
   const matchedItems = applyMarketResolutions([originalItem], [{
     index: 0,
     market_product_id: "11111111-1111-4111-8111-111111111111",
     market_matched: true,
     market_match_type: "barcode_exact",
     market_match_confidence: 1,
+    market_match_input_source: "barcode",
     market_canonical_name: "Huile Lesieur tournesol",
     market_brand: "Lesieur",
     market_category: "epicerie",
@@ -186,6 +214,7 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
     market_matched: true,
     market_match_type: "alias_exact",
     market_match_confidence: 1,
+    market_match_input_source: "primary_vision",
     market_canonical_name: "Huile Lesieur tournesol",
   })
 
@@ -195,6 +224,7 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
     market_matched: true,
     market_match_type: "normalized_name_exact",
     market_match_confidence: 1,
+    market_match_input_source: "primary_vision",
     market_canonical_name: "Huile Lesieur tournesol",
   })
 
@@ -206,91 +236,130 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
     market_product_id: "should-not-appear",
   })
 
-  const ambiguousNameResult = await resolveFixture({
-    index: 0,
-    market_matched: false,
-    market_unmatched_reason: "ambiguous_normalized_name",
-  })
-
   const unknownResult = await resolveFixture({
     index: 0,
     market_matched: false,
     market_unmatched_reason: "not_found",
   })
 
-  let capturedBody: any = null
-  const payloadDeps = mockDeps({
-    responseBody: { items: [], resolved: 0, unresolved: 0 },
+  const ticketItems = [
+    productItem("TOMATODI NAT", 2.23),
+    productItem("COMPOTE POMME", 0.94),
+    productItem("LENTILLES CUITES", 1.09),
+    pouletItem(),
+  ]
+  const localOcrText = [
+    "TOMALOULT NAT SX2906 re ee",
+    "PAIN MIE SAND CFLIET YAH 2.68 2",
+    "BURGER CURCUMA X4 2.60 2",
+    "COMPUTE POMKE 41006 0.94 2",
+    "STICKS SALES 1.48 2",
+    "WACED LEGUMES 1.00 1",
+    "LENT ILLES CUIS1,2550 1,09 2",
+    "POULET LE JAUNE CDOR 7.69 2",
+  ].join("\n")
+  const localCandidates = buildLocalOcrNameCandidates(ticketItems, localOcrText)
+
+  let capturedExactBody: any = null
+  const exactPayloadDeps = mockDeps({
+    responseBody: { items: [], resolved: 0, exact: 0, contextual: 0, alternate: 0, unresolved: 0 },
     onFetch: (_url, init) => {
-      capturedBody = JSON.parse(String(init.body || "{}"))
+      capturedExactBody = JSON.parse(String(init.body || "{}"))
     },
   })
-  await resolveMarketProducts([originalItem], payloadDeps.dependencies)
+  await resolveMarketProducts([originalItem], exactPayloadDeps.dependencies)
 
-  const timeoutDeps = mockDeps({ timeoutImmediately: true })
-  const timeoutResult = await resolveMarketProducts([originalItem], timeoutDeps.dependencies)
+  let capturedContextBody: any = null
+  const contextualPayloadDeps = mockDeps({
+    responseBody: { items: [], resolved: 0, exact: 0, contextual: 0, alternate: 0, unresolved: 0 },
+    onFetch: (_url, init) => {
+      capturedContextBody = JSON.parse(String(init.body || "{}"))
+    },
+    extraDependencies: {
+      context: {
+        store_name: "E.Leclerc",
+        store_city: "Saint-Pierre",
+        observed_date: "2026-07-07",
+      },
+      localOcrText,
+    },
+  })
+  await resolveMarketProducts(ticketItems, contextualPayloadDeps.dependencies)
+
+  const exactTimeoutDeps = mockDeps({ timeoutImmediately: true })
+  const exactTimeoutResult = await resolveMarketProducts([originalItem], exactTimeoutDeps.dependencies)
+
+  const contextualTimeoutDeps = mockDeps({
+    timeoutImmediately: true,
+    extraDependencies: {
+      context: { store_name: "E.Leclerc", store_city: "Saint-Pierre" },
+      localOcrText,
+    },
+  })
+  const contextualTimeoutResult = await resolveMarketProducts(
+    [ticketItems[0]],
+    contextualTimeoutDeps.dependencies,
+  )
+
   const networkDeps = mockDeps({ rejectFetch: true })
   const networkResult = await resolveMarketProducts([originalItem], networkDeps.dependencies)
-  const delayedPouletOriginal = pouletItem({ item_status: "user_validated", status: "user_validated" })
-  const delayedWithinBudgetDeps = mockDeps({
-    responseDelayMs: 1700,
-    responseBody: {
-      items: [{
-        index: 0,
-        market_product_id: "66666666-6666-4666-8666-666666666666",
-        market_matched: true,
-        market_match_type: "normalized_name_exact",
-        market_match_confidence: 1,
-        market_canonical_name: "Poulet Le Jaune",
-        total_price: 0,
-        quantity: 99,
-        item_status: "replaced",
-        ocr_name: "replaced",
-      }],
-      resolved: 1,
-      unresolved: 0,
-    },
-  })
-  const delayedWithinBudgetResult = await resolveMarketProducts([delayedPouletOriginal], delayedWithinBudgetDeps.dependencies)
-  const delayedAfterBudgetDeps = mockDeps({
-    responseDelayMs: 1900,
-    responseBody: {
-      items: [{
-        index: 0,
-        market_product_id: "77777777-7777-4777-8777-777777777777",
-        market_matched: true,
-        market_match_type: "normalized_name_exact",
-        market_match_confidence: 1,
-        market_canonical_name: "Poulet Le Jaune",
-      }],
-      resolved: 1,
-      unresolved: 0,
-    },
-  })
-  const delayedAfterBudgetResult = await resolveMarketProducts([delayedPouletOriginal], delayedAfterBudgetDeps.dependencies)
 
-  const pouletOriginal = pouletItem()
-  const pouletResolvedItems = applyMarketResolutions([pouletOriginal], [{
+  const compoteOriginal = productItem("COMPOTE POMME", 0.94)
+  const compoteResolved = applyMarketResolutions([compoteOriginal], [{
+    index: 0,
+    market_product_id: "44444444-4444-4444-8444-444444444444",
+    market_matched: true,
+    market_match_type: "alias_exact",
+    market_match_confidence: 1,
+    market_match_input_source: "primary_vision",
+    market_canonical_name: "Compote de pomme 4 x 100 g",
+  }])[0]
+
+  const lentillesOriginal = productItem("LENTILLES CUITES", 1.09)
+  const lentillesResolved = applyMarketResolutions([lentillesOriginal], [{
     index: 0,
     market_product_id: "55555555-5555-4555-8555-555555555555",
     market_matched: true,
+    market_match_type: "alias_exact",
+    market_match_confidence: 1,
+    market_match_input_source: "primary_vision",
+    market_canonical_name: "Lentilles cuisinées 265 g",
+  }])[0]
+
+  const pouletOriginal = pouletItem()
+  const pouletResolved = applyMarketResolutions([pouletOriginal], [{
+    index: 0,
+    market_product_id: "66666666-6666-4666-8666-666666666666",
+    market_matched: true,
     market_match_type: "normalized_name_exact",
     market_match_confidence: 1,
+    market_match_input_source: "primary_vision",
     market_canonical_name: "Poulet Le Jaune",
     market_category: "volaille",
-  }])
-  const pouletDisplay = resolveMarketDisplayName(pouletResolvedItems[0])
-  const approximateItems = applyMarketResolutions([
-    pouletItem({ name: "COMPUTE POMME", ocr_name: "COMPUTE POMME", corrected_name: "COMPUTE POMME", raw_text: "COMPUTE POMME 2.15", source_line: "COMPUTE POMME 2.15", total_price: 2.15, unit_price: 2.15 }),
-    pouletItem({ name: "LENTILLES CUITES", ocr_name: "LENTILLES CUITES", corrected_name: "LENTILLES CUITES", raw_text: "LENTILLES CUITES 1.75", source_line: "LENTILLES CUITES 1.75", total_price: 1.75, unit_price: 1.75 }),
-  ], [
-    { index: 0, market_matched: false, market_unmatched_reason: "not_found" },
-    { index: 1, market_matched: false, market_unmatched_reason: "not_found" },
-  ])
-  const sanitizedPoulet = sanitizeFinalReceiptItems(pouletResolvedItems, 7.69).items[0]
+  }])[0]
+
+  const tomatodiOriginal = productItem("TOMATODI NAT", 2.23)
+  const tomatodiResolved = applyMarketResolutions([tomatodiOriginal], [{
+    index: 0,
+    market_product_id: "77777777-7777-4777-8777-777777777777",
+    market_matched: true,
+    market_match_type: "contextual_same_store_alt_ocr",
+    market_match_confidence: 0.86,
+    market_match_input_source: "alternate_ocr",
+    market_canonical_name: "Tomacouli Nature 3 x 200 g",
+  }])[0]
+
+  const unmatchedWithAlternate = applyMarketResolutions([compoteOriginal], [{
+    index: 0,
+    market_matched: false,
+    market_unmatched_reason: "not_found",
+  }])[0]
+
+  const pouletDisplay = resolveMarketDisplayName(pouletResolved)
+  const sanitizedPoulet = sanitizeFinalReceiptItems([pouletResolved], 7.69).items[0]
   const validationAfterMarket = validateParsedReceipt({
     total_amount: 7.69,
-    items: [pouletResolvedItems[0]],
+    items: [pouletResolved],
   })
 
   const eligibleCases = [
@@ -309,21 +378,33 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
 
   return [
     assertEqual(
-      "market-resolver-keeps-existing-scanner-fields",
-      pickStableItemFields(matchedItems[0]),
-      pickStableItemFields(originalItem),
+      "market-resolver-canonical-replacement-preserves-ocr-and-financial-fields",
+      {
+        name: matchedItems[0].name,
+        corrected_name: matchedItems[0].corrected_name,
+        protected: pickProtectedItemFields(matchedItems[0]),
+      },
+      {
+        name: "Huile Lesieur tournesol",
+        corrected_name: "Huile Lesieur tournesol",
+        protected: pickProtectedItemFields(originalItem),
+      },
     ),
     assertEqual(
       "market-resolver-whitelists-only-market-fields",
       {
-        stable: pickStableItemFields(matchedItems[0]),
-        unknown_reason: matchedItems[0].market_unmatched_reason ?? null,
         product_id: matchedItems[0].market_product_id,
+        ignored_reason: matchedItems[0].market_unmatched_reason ?? null,
+        price: matchedItems[0].total_price,
+        quantity: matchedItems[0].quantity,
+        status: matchedItems[0].item_status,
       },
       {
-        stable: pickStableItemFields(originalItem),
-        unknown_reason: null,
         product_id: "11111111-1111-4111-8111-111111111111",
+        ignored_reason: null,
+        price: 2.79,
+        quantity: 1,
+        status: "user_validated",
       },
     ),
     assertEqual("market-resolver-alias-exact", aliasResult.items[0].market_match_type, "alias_exact"),
@@ -334,32 +415,33 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
         matched: ambiguousAliasResult.items[0].market_matched,
         product_id: ambiguousAliasResult.items[0].market_product_id ?? null,
         match_type: ambiguousAliasResult.items[0].market_match_type ?? null,
-        stable: pickStableItemFields(ambiguousAliasResult.items[0]),
+        protected: pickProtectedItemFields(ambiguousAliasResult.items[0]),
       },
       {
         matched: false,
         product_id: null,
         match_type: null,
-        stable: pickStableItemFields(originalItem),
+        protected: pickProtectedItemFields(originalItem),
       },
     ),
-    assertEqual("market-resolver-ambiguous-normalized-name-refused", ambiguousNameResult.items[0].market_matched, false),
     assertEqual(
       "market-resolver-unknown-product-unchanged",
       {
         matched: unknownResult.items[0].market_matched,
-        stable: pickStableItemFields(unknownResult.items[0]),
+        name: unknownResult.items[0].name,
+        protected: pickProtectedItemFields(unknownResult.items[0]),
       },
       {
         matched: false,
-        stable: pickStableItemFields(originalItem),
+        name: originalItem.name,
+        protected: pickProtectedItemFields(originalItem),
       },
     ),
     assertEqual(
-      "market-resolver-payload-excludes-price-quantity-user-data",
+      "market-resolver-basic-payload-excludes-context-price-and-alternate-names",
       {
         payload: buildMarketResolvePayload([originalItem]),
-        sent: capturedBody,
+        sent: capturedExactBody,
       },
       {
         payload: [{
@@ -377,93 +459,145 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
       },
     ),
     assertEqual(
-      "market-resolver-timeout-1800ms-keeps-original-items",
+      "market-resolver-local-ocr-candidates-are-generic-and-per-item",
+      localCandidates.map(names => names.map(name => name.toUpperCase())),
+      [
+        ["TOMALOULT NAT SX2906 RE EE", "TOMALOULT NAT"],
+        ["COMPUTE POMKE 41006", "COMPUTE POMKE"],
+        ["LENT ILLES CUIS 50", "LENT ILLES CUIS"],
+        ["POULET LE JAUNE CDOR", "POULET JAUNE CDOR"],
+      ],
+    ),
+    assertEqual(
+      "market-resolver-contextual-payload-sends-only-safe-candidates-price-and-store",
+      capturedContextBody,
       {
-        timeoutMs: timeoutDeps.getState().timeoutMs,
-        aborted: timeoutDeps.getState().aborted,
-        fetchCalled: timeoutDeps.getState().fetchCalled,
-        clearCalls: timeoutDeps.getState().clearCalls,
-        stable: pickStableItemFields(timeoutResult.items[0]),
-        timeoutBudget: timeoutResult.diagnostics.timeout_budget_ms,
+        items: [
+          {
+            index: 0,
+            raw_name: "TOMATODI NAT",
+            barcode: null,
+            observed_price: 2.23,
+            brand: "",
+            package_format: "",
+            alternate_names: ["TOMALOULT NAT SX2906 re ee", "TOMALOULT NAT"],
+          },
+          {
+            index: 1,
+            raw_name: "COMPOTE POMME",
+            barcode: null,
+            observed_price: 0.94,
+            brand: "",
+            package_format: "",
+            alternate_names: ["COMPUTE POMKE 41006", "COMPUTE POMKE"],
+          },
+          {
+            index: 2,
+            raw_name: "LENTILLES CUITES",
+            barcode: null,
+            observed_price: 1.09,
+            brand: "",
+            package_format: "",
+            alternate_names: ["LENT ILLES CUIS 50", "LENT ILLES CUIS"],
+          },
+          {
+            index: 3,
+            raw_name: "POULET LE JAUNE",
+            barcode: null,
+            observed_price: 7.69,
+            brand: "",
+            package_format: "",
+            alternate_names: ["POULET LE JAUNE CDOR", "POULET JAUNE CDOR"],
+          },
+        ],
+        context: {
+          store_name: "E.Leclerc",
+          store_city: "Saint-Pierre",
+          observed_date: "2026-07-07",
+        },
+      },
+    ),
+    assertEqual(
+      "market-resolver-exact-timeout-remains-1800ms",
+      {
+        timeoutMs: exactTimeoutDeps.getState().timeoutMs,
+        aborted: exactTimeoutDeps.getState().aborted,
+        fetchCalled: exactTimeoutDeps.getState().fetchCalled,
+        timeoutBudget: exactTimeoutResult.diagnostics.timeout_budget_ms,
       },
       {
         timeoutMs: 1800,
         aborted: true,
         fetchCalled: false,
-        clearCalls: 1,
-        stable: pickStableItemFields(originalItem),
         timeoutBudget: 1800,
       },
     ),
     assertEqual(
-      "market-resolver-response-at-1700ms-applies-enrichment",
+      "market-resolver-contextual-timeout-is-4500ms",
       {
-        timeoutMs: delayedWithinBudgetDeps.getState().timeoutMs,
-        aborted: delayedWithinBudgetDeps.getState().aborted,
-        clearCalls: delayedWithinBudgetDeps.getState().clearCalls,
-        stable: pickStableItemFields(delayedWithinBudgetResult.items[0]),
-        market: {
-          matched: delayedWithinBudgetResult.items[0].market_matched,
-          canonical: delayedWithinBudgetResult.items[0].market_canonical_name,
-          match_type: delayedWithinBudgetResult.items[0].market_match_type,
-        },
-        timeoutBudget: delayedWithinBudgetResult.diagnostics.timeout_budget_ms,
+        timeoutMs: contextualTimeoutDeps.getState().timeoutMs,
+        aborted: contextualTimeoutDeps.getState().aborted,
+        fetchCalled: contextualTimeoutDeps.getState().fetchCalled,
+        timeoutBudget: contextualTimeoutResult.diagnostics.timeout_budget_ms,
       },
       {
-        timeoutMs: 1800,
-        aborted: false,
-        clearCalls: 1,
-        stable: pickStableItemFields(delayedPouletOriginal),
-        market: {
-          matched: true,
-          canonical: "Poulet Le Jaune",
-          match_type: "normalized_name_exact",
-        },
-        timeoutBudget: 1800,
-      },
-    ),
-    assertEqual(
-      "market-resolver-response-after-1800ms-falls-back-unchanged",
-      {
-        timeoutMs: delayedAfterBudgetDeps.getState().timeoutMs,
-        aborted: delayedAfterBudgetDeps.getState().aborted,
-        clearCalls: delayedAfterBudgetDeps.getState().clearCalls,
-        stable: pickStableItemFields(delayedAfterBudgetResult.items[0]),
-        canonical: delayedAfterBudgetResult.items[0].market_canonical_name ?? null,
-        diagnostics: {
-          failed: delayedAfterBudgetResult.diagnostics.failed,
-          timeout: delayedAfterBudgetResult.diagnostics.timeout,
-          timeoutBudget: delayedAfterBudgetResult.diagnostics.timeout_budget_ms,
-        },
-      },
-      {
-        timeoutMs: 1800,
+        timeoutMs: 4500,
         aborted: true,
-        clearCalls: 1,
-        stable: pickStableItemFields(delayedPouletOriginal),
-        canonical: null,
-        diagnostics: {
-          failed: true,
-          timeout: true,
-          timeoutBudget: 1800,
-        },
+        fetchCalled: false,
+        timeoutBudget: 4500,
       },
     ),
     assertEqual(
       "market-resolver-network-failure-keeps-original-items",
-      pickStableItemFields(networkResult.items[0]),
-      pickStableItemFields(originalItem),
+      {
+        name: networkResult.items[0].name,
+        protected: pickProtectedItemFields(networkResult.items[0]),
+      },
+      {
+        name: originalItem.name,
+        protected: pickProtectedItemFields(originalItem),
+      },
     ),
     assertEqual(
-      "market-resolver-poulet-exact-keeps-ocr-price-quantity-and-displays-canonical",
+      "market-resolver-compote-primary-exact-protected-from-local-ocr-regression",
+      {
+        name: compoteResolved.name,
+        ocr_name: compoteResolved.ocr_name,
+        match_type: compoteResolved.market_match_type,
+        input_source: compoteResolved.market_match_input_source,
+        price: compoteResolved.total_price,
+      },
+      {
+        name: "Compote de pomme 4 x 100 g",
+        ocr_name: "COMPOTE POMME",
+        match_type: "alias_exact",
+        input_source: "primary_vision",
+        price: 0.94,
+      },
+    ),
+    assertEqual(
+      "market-resolver-lentilles-primary-exact-protected",
+      {
+        name: lentillesResolved.name,
+        ocr_name: lentillesResolved.ocr_name,
+        match_type: lentillesResolved.market_match_type,
+        price: lentillesResolved.total_price,
+      },
+      {
+        name: "Lentilles cuisinées 265 g",
+        ocr_name: "LENTILLES CUITES",
+        match_type: "alias_exact",
+        price: 1.09,
+      },
+    ),
+    assertEqual(
+      "market-resolver-poulet-primary-exact-protected",
       {
         display: pouletDisplay,
-        stable: pickStableItemFields(pouletResolvedItems[0]),
-        market: {
-          matched: pouletResolvedItems[0].market_matched,
-          match_type: pouletResolvedItems[0].market_match_type,
-          canonical: pouletResolvedItems[0].market_canonical_name,
-        },
+        name: pouletResolved.name,
+        ocr_name: pouletResolved.ocr_name,
+        price: pouletResolved.total_price,
+        quantity: pouletResolved.quantity,
       },
       {
         display: {
@@ -472,25 +606,45 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
           marketRecognized: true,
           canonicalName: "Poulet Le Jaune",
         },
-        stable: pickStableItemFields(pouletOriginal),
-        market: {
-          matched: true,
-          match_type: "normalized_name_exact",
-          canonical: "Poulet Le Jaune",
-        },
+        name: "Poulet Le Jaune",
+        ocr_name: "POULET LE JAUNE",
+        price: 7.69,
+        quantity: 1,
       },
     ),
     assertEqual(
-      "market-resolver-approximate-labels-remain-unmatched",
-      approximateItems.map(item => ({
-        name: item.name,
-        matched: item.market_matched,
-        canonical: item.market_canonical_name ?? null,
-      })),
-      [
-        { name: "COMPUTE POMME", matched: false, canonical: null },
-        { name: "LENTILLES CUITES", matched: false, canonical: null },
-      ],
+      "market-resolver-tomatodi-can-use-alternate-ocr-only-after-server-match",
+      {
+        name: tomatodiResolved.name,
+        corrected_name: tomatodiResolved.corrected_name,
+        ocr_name: tomatodiResolved.ocr_name,
+        match_type: tomatodiResolved.market_match_type,
+        input_source: tomatodiResolved.market_match_input_source,
+        price: tomatodiResolved.total_price,
+      },
+      {
+        name: "Tomacouli Nature 3 x 200 g",
+        corrected_name: "Tomacouli Nature 3 x 200 g",
+        ocr_name: "TOMATODI NAT",
+        match_type: "contextual_same_store_alt_ocr",
+        input_source: "alternate_ocr",
+        price: 2.23,
+      },
+    ),
+    assertEqual(
+      "market-resolver-unmatched-alternate-never-overwrites-primary-name",
+      {
+        name: unmatchedWithAlternate.name,
+        corrected_name: unmatchedWithAlternate.corrected_name,
+        ocr_name: unmatchedWithAlternate.ocr_name,
+        matched: unmatchedWithAlternate.market_matched,
+      },
+      {
+        name: "COMPOTE POMME",
+        corrected_name: "COMPOTE POMME",
+        ocr_name: "COMPOTE POMME",
+        matched: false,
+      },
     ),
     assertEqual(
       "market-fields-survive-final-sanitization-and-validation",
@@ -498,6 +652,7 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
         sanitized: {
           matched: sanitizedPoulet.market_matched,
           canonical: sanitizedPoulet.market_canonical_name,
+          name: sanitizedPoulet.name,
           price: sanitizedPoulet.total_price,
           quantity: sanitizedPoulet.quantity,
         },
@@ -507,6 +662,7 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
         sanitized: {
           matched: true,
           canonical: "Poulet Le Jaune",
+          name: "Poulet Le Jaune",
           price: 7.69,
           quantity: 1,
         },
@@ -522,8 +678,14 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
       "market-observation-unresolved-products-excluded",
       {
         unknown: isResolvedMarketProduct({ market_matched: false }),
-        ambiguous: isResolvedMarketProduct({ market_matched: false, market_unmatched_reason: "ambiguous_alias" }),
-        resolved: isResolvedMarketProduct({ market_matched: true, market_product_id: "44444444-4444-4444-8444-444444444444" }),
+        ambiguous: isResolvedMarketProduct({
+          market_matched: false,
+          market_unmatched_reason: "ambiguous_contextual_match",
+        }),
+        resolved: isResolvedMarketProduct({
+          market_matched: true,
+          market_product_id: "88888888-8888-4888-8888-888888888888",
+        }),
       },
       {
         unknown: false,

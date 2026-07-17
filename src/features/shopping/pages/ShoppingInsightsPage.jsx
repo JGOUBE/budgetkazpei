@@ -3,19 +3,9 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts"
 import { formatMontant } from "../../../utils/format"
 import { buildProductStats, buildStoreHabits, buildTopProducts } from "../services/priceHistory"
 import { listShoppingItems } from "../services/shoppingEngine"
+import { createColorAliases } from "../../../styles/designSystem"
 
-const COLORS = {
-  card: "#0F1E38",
-  cardLight: "#152444",
-  border: "#1E3A5F",
-  accent: "#F97316",
-  green: "#22C55E",
-  cyan: "#23D3D6",
-  yellow: "#FCD34D",
-  purple: "#A78BFA",
-  muted: "#8EA4C5",
-  text: "#F8FAFC",
-}
+const COLORS = createColorAliases()
 
 const CHART_COLORS = ["#F97316", "#22C55E", "#38BDF8", "#FCD34D", "#A78BFA", "#FB7185"]
 
@@ -27,10 +17,11 @@ function getIsKreol(t) {
 
 function cardStyle(extra = {}) {
   return {
-    background: `linear-gradient(135deg, ${COLORS.card}, ${COLORS.cardLight})`,
+    background: COLORS.card,
     border: `1px solid ${COLORS.border}`,
     borderRadius: 22,
     padding: 18,
+    boxShadow: COLORS.shadow,
     ...extra,
   }
 }
@@ -271,7 +262,7 @@ function ProductStatsCard({ stats, isKreol }) {
 
 function Metric({ label, value, color }) {
   return (
-    <div style={{ background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.09)", borderRadius: 14, padding: 12 }}>
+    <div style={{ background: COLORS.surface, border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: 12 }}>
       <div style={{ color: COLORS.muted, fontSize: 12, fontWeight: 900 }}>{label}</div>
       <div style={{ color, fontSize: 20, fontWeight: 950, marginTop: 5 }}>{value}</div>
     </div>
@@ -293,9 +284,9 @@ function TopProductsCard({ products, departments = [], selectedProduct, setSelec
               gridTemplateColumns: "1fr auto",
               gap: 12,
               minHeight: 56,
-              border: active ? `1px solid ${COLORS.accent}` : "1px solid rgba(255,255,255,.09)",
+              border: active ? `1px solid ${COLORS.accent}` : `1px solid ${COLORS.border}`,
               borderRadius: 14,
-              background: active ? "rgba(249,115,22,.12)" : "rgba(255,255,255,.045)",
+              background: active ? COLORS.selected : COLORS.row,
               color: COLORS.text,
               padding: "10px 12px",
               textAlign: "left",
@@ -360,7 +351,7 @@ function ProductHistoryCard({ stats, isKreol }) {
             gridTemplateColumns: "1fr auto",
             gap: 12,
             color: COLORS.text,
-            borderBottom: "1px solid rgba(255,255,255,.08)",
+            borderBottom: `1px solid ${COLORS.borderSubtle}`,
             paddingBottom: 9,
           }}>
             <span>
@@ -381,7 +372,7 @@ function SkeletonGrid() {
   return (
     <div style={{ display: "grid", gap: 14 }}>
       {[0, 1, 2].map(index => (
-        <div key={index} style={{ height: 112, borderRadius: 22, background: "linear-gradient(90deg, rgba(255,255,255,.05), rgba(255,255,255,.10), rgba(255,255,255,.05))" }} />
+        <div key={index} style={{ height: 112, borderRadius: 22, background: `linear-gradient(90deg, ${COLORS.surface}, ${COLORS.card}, ${COLORS.surface})`, border: `1px solid ${COLORS.border}` }} />
       ))}
     </div>
   )

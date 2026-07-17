@@ -24,19 +24,19 @@ import {
 import { supabase } from "../../services/supabase"
 import { AIDES } from "../../data/categories"
 import { AUTRES_AIDES } from "../../data/aides"
+import { createColorAliases } from "../../styles/designSystem"
+import { useTheme } from "../../styles/ThemeProvider"
 
-const COLORS = {
-  text: "#F1F5F9",
-  muted: "#8EA4C5",
-  card: "#0F1E38",
-  cardLight: "#152444",
-  border: "#1E3A5F",
-  accent: "#F97316",
-  yellow: "#FCD34D",
-  cyan: "#23D3D6",
-  green: "#22C55E",
-  red: "#FB7185",
-  purple: "#A78BFA",
+const COLORS = createColorAliases({ red: () => "#FB7185" })
+
+function getReadableAccent(color, themeName = COLORS.themeName) {
+  if (themeName !== "light") return color
+  if (color === COLORS.yellow) return "#B45309"
+  if (color === COLORS.green) return "#15803D"
+  if (color === COLORS.cyan) return "#0284C7"
+  if (color === COLORS.purple) return "#6D28D9"
+  if (color === COLORS.accent) return "#EA580C"
+  return color
 }
 
 const CARD_VARIANTS = [
@@ -44,24 +44,36 @@ const CARD_VARIANTS = [
     bg: "linear-gradient(135deg, rgba(34,197,94,.30), rgba(15,30,56,.96))",
     border: "rgba(34,197,94,.40)",
     glow: "rgba(34,197,94,.16)",
+    lightBg: "#E2F1E7",
+    lightBorder: "#B9DDC6",
+    lightGlow: "rgba(21,128,61,.10)",
     Icon: Wallet,
   },
   {
     bg: "linear-gradient(135deg, rgba(14,165,233,.30), rgba(15,30,56,.96))",
     border: "rgba(14,165,233,.40)",
     glow: "rgba(14,165,233,.16)",
+    lightBg: "#DCEEFE",
+    lightBorder: "#B7DDF7",
+    lightGlow: "rgba(2,132,199,.10)",
     Icon: Home,
   },
   {
     bg: "linear-gradient(135deg, rgba(250,204,21,.28), rgba(15,30,56,.96))",
     border: "rgba(250,204,21,.40)",
     glow: "rgba(250,204,21,.14)",
+    lightBg: "#FFF4D9",
+    lightBorder: "#F3DCA2",
+    lightGlow: "rgba(180,83,9,.10)",
     Icon: Sun,
   },
   {
     bg: "linear-gradient(135deg, rgba(249,115,22,.30), rgba(15,30,56,.96))",
     border: "rgba(249,115,22,.40)",
     glow: "rgba(249,115,22,.16)",
+    lightBg: "#FCE7DA",
+    lightBorder: "#F4C1A5",
+    lightGlow: "rgba(234,88,12,.10)",
     Icon: Zap,
   },
 ]
@@ -509,8 +521,10 @@ function normalizeDemarche(row = {}) {
 }
 
 export default function AidesPage({ isMobile, t, isPremium, user }) {
+  const { themeName } = useTheme()
   const languageKey = getLanguageKey(t)
   const isKreol = isKreolLang(t)
+  const isLightTheme = themeName === "light"
 
   const [profile, setProfile] = useState(null)
   const [dbAides, setDbAides] = useState([])
@@ -823,12 +837,13 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
         style={{
           position: "relative",
           overflow: "hidden",
-          background:
-            "linear-gradient(135deg, rgba(249,115,22,.32), rgba(14,165,233,.20), rgba(15,30,56,.96))",
-          border: "1px solid rgba(249,115,22,.35)",
+          background: isLightTheme
+            ? "linear-gradient(135deg, #FCE7DA 0%, #DCEEFE 56%, #FFFFFF 100%)"
+            : "linear-gradient(135deg, rgba(249,115,22,.32), rgba(14,165,233,.20), rgba(15,30,56,.96))",
+          border: isLightTheme ? "1px solid #E6EAF0" : "1px solid rgba(249,115,22,.35)",
           borderRadius: 24,
           padding: isMobile ? 20 : 30,
-          boxShadow: "0 18px 40px rgba(0,0,0,.22)",
+          boxShadow: isLightTheme ? "0 16px 34px rgba(20,32,51,.08)" : "0 18px 40px rgba(0,0,0,.22)",
         }}
       >
         <div
@@ -851,11 +866,11 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
               display: "inline-flex",
               alignItems: "center",
               gap: 8,
-              background: "rgba(249,115,22,.15)",
-              border: "1px solid rgba(249,115,22,.35)",
+              background: isLightTheme ? "#FFF4D9" : "rgba(249,115,22,.15)",
+              border: isLightTheme ? "1px solid #F3DCA2" : "1px solid rgba(249,115,22,.35)",
               borderRadius: 999,
               padding: "7px 13px",
-              color: "#FDBA74",
+              color: isLightTheme ? "#EA580C" : "#FDBA74",
               fontSize: 12,
               fontWeight: 800,
               marginBottom: 14,
@@ -900,12 +915,13 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
 
       <section
         style={{
-          background:
-            "linear-gradient(135deg, rgba(35,211,214,.16), rgba(15,30,56,.96))",
-          border: "1px solid rgba(35,211,214,.28)",
+          background: isLightTheme
+            ? "linear-gradient(135deg, #E2F1E7 0%, #DCEEFE 70%, #FFFFFF 100%)"
+            : "linear-gradient(135deg, rgba(35,211,214,.16), rgba(15,30,56,.96))",
+          border: isLightTheme ? "1px solid #C8DEE5" : "1px solid rgba(35,211,214,.28)",
           borderRadius: 22,
           padding: isMobile ? 18 : 22,
-          boxShadow: "0 14px 32px rgba(0,0,0,.16)",
+          boxShadow: isLightTheme ? "0 14px 30px rgba(20,32,51,.07)" : "0 14px 32px rgba(0,0,0,.16)",
         }}
       >
         <h3
@@ -927,11 +943,12 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
         {demarches.length > 0 && (
           <div
             style={{
-              background: "rgba(255,255,255,.04)",
-              border: "1px solid rgba(255,255,255,.08)",
+              background: isLightTheme ? "#FFFFFF" : "rgba(255,255,255,.04)",
+              border: isLightTheme ? "1px solid #E6EAF0" : "1px solid rgba(255,255,255,.08)",
               borderRadius: 16,
               padding: 16,
               marginBottom: 14,
+              boxShadow: isLightTheme ? "0 10px 22px rgba(20,32,51,.05)" : "none",
             }}
           >
             <div
@@ -952,7 +969,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
             <div
               style={{
                 height: 10,
-                background: "rgba(255,255,255,.08)",
+                background: isLightTheme ? "#E6EAF0" : "rgba(255,255,255,.08)",
                 borderRadius: 999,
                 overflow: "hidden",
                 marginBottom: 12,
@@ -993,8 +1010,8 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
         ) : demarches.length === 0 ? (
           <div
             style={{
-              background: "rgba(255,255,255,.045)",
-              border: "1px solid rgba(255,255,255,.08)",
+              background: isLightTheme ? "#FFFFFF" : "rgba(255,255,255,.045)",
+              border: isLightTheme ? "1px solid #E6EAF0" : "1px solid rgba(255,255,255,.08)",
               borderRadius: 16,
               padding: 16,
               color: COLORS.muted,
@@ -1018,10 +1035,13 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                 <div
                   key={demarche.id}
                   style={{
-                    background: "rgba(255,255,255,.045)",
-                    border: "1px solid rgba(255,255,255,.08)",
+                    background: isLightTheme
+                      ? "linear-gradient(135deg, #FFFFFF 0%, #F8FBFF 100%)"
+                      : "rgba(255,255,255,.045)",
+                    border: isLightTheme ? "1px solid #E6EAF0" : "1px solid rgba(255,255,255,.08)",
                     borderRadius: 16,
                     padding: 16,
+                    boxShadow: isLightTheme ? "0 10px 22px rgba(20,32,51,.05)" : "none",
                     display: "grid",
                     gridTemplateColumns: isMobile ? "1fr" : "1fr auto auto",
                     gap: 12,
@@ -1040,7 +1060,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                         gap: 6,
                         background: `${status.color}18`,
                         border: `1px solid ${status.color}44`,
-                        color: status.color,
+                        color: getReadableAccent(status.color),
                         borderRadius: 999,
                         padding: "4px 9px",
                         fontSize: 11,
@@ -1089,8 +1109,8 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                       <div
                         style={{
                           marginTop: 10,
-                          background: "rgba(35,211,214,.08)",
-                          border: "1px solid rgba(35,211,214,.18)",
+                          background: isLightTheme ? "#DCEEFE" : "rgba(35,211,214,.08)",
+                          border: isLightTheme ? "1px solid #B7DDF7" : "1px solid rgba(35,211,214,.18)",
                           borderRadius: 12,
                           padding: 10,
                           color: COLORS.muted,
@@ -1098,7 +1118,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                           lineHeight: 1.5,
                         }}
                       >
-                        <strong style={{ color: COLORS.cyan }}>
+                        <strong style={{ color: getReadableAccent(COLORS.cyan) }}>
                           {isKreol ? "Étapes :" : "Étapes :"}
                         </strong>{" "}
                         {isKreol ? demarche.demarches_kr || demarche.demarches_fr : demarche.demarches_fr}
@@ -1188,14 +1208,15 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
 
       <section
         style={{
-          background:
-            "linear-gradient(135deg, rgba(252,211,77,.14), rgba(249,115,22,.08), rgba(15,30,56,.96))",
-          border: "1px solid rgba(252,211,77,.30)",
+          background: isLightTheme
+            ? "linear-gradient(135deg, #FFF4D9 0%, #FCE7DA 72%, #FFFFFF 100%)"
+            : "linear-gradient(135deg, rgba(252,211,77,.14), rgba(249,115,22,.08), rgba(15,30,56,.96))",
+          border: isLightTheme ? "1px solid #F3DCA2" : "1px solid rgba(252,211,77,.30)",
           borderRadius: 22,
           padding: isMobile ? 18 : 22,
         }}
       >
-        <div style={{ color: COLORS.yellow, fontWeight: 900, fontSize: 16, marginBottom: 6 }}>
+        <div style={{ color: getReadableAccent(COLORS.yellow), fontWeight: 900, fontSize: 16, marginBottom: 6 }}>
           {isKreol ? "🎯 Bann aides selon out profil" : "🎯 Aides recommandées selon votre profil"}
         </div>
         <div style={{ color: COLORS.muted, fontSize: 13, lineHeight: 1.5 }}>
@@ -1239,11 +1260,13 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                 style={{
                   position: "relative",
                   overflow: "hidden",
-                  background: theme.bg,
-                  border: `1px solid ${aide.isLocalCcas ? COLORS.yellow : theme.border}`,
+                  background: isLightTheme ? theme.lightBg : theme.bg,
+                  border: `1px solid ${aide.isLocalCcas ? getReadableAccent(COLORS.yellow) : (isLightTheme ? theme.lightBorder : theme.border)}`,
                   borderRadius: 22,
                   padding: 22,
-                  boxShadow: `0 14px 32px rgba(0,0,0,.18), 0 0 28px ${theme.glow}`,
+                  boxShadow: isLightTheme
+                    ? `0 12px 26px rgba(20,32,51,.06), 0 0 22px ${theme.lightGlow}`
+                    : `0 14px 32px rgba(0,0,0,.18), 0 0 28px ${theme.glow}`,
                 }}
               >
                 <div
@@ -1254,7 +1277,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                     width: 96,
                     height: 96,
                     borderRadius: 999,
-                    background: "rgba(255,255,255,.06)",
+                    background: isLightTheme ? "rgba(255,255,255,.55)" : "rgba(255,255,255,.06)",
                     pointerEvents: "none",
                   }}
                 />
@@ -1299,7 +1322,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                         padding: "5px 10px",
                         borderRadius: 999,
                         background: `${aide.color}22`,
-                        color: aide.color,
+                        color: getReadableAccent(aide.color),
                         fontWeight: 900,
                         textTransform: "uppercase",
                         whiteSpace: "nowrap",
@@ -1313,7 +1336,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                     style={{
                       fontSize: 30,
                       fontWeight: 900,
-                      color: aide.color,
+                      color: getReadableAccent(aide.color),
                       fontFamily: "'Baloo 2', 'DM Serif Display', cursive",
                       lineHeight: 1,
                     }}
@@ -1325,7 +1348,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                     style={{
                       margin: "8px 0 0",
                       fontSize: 13,
-                      color: "rgba(248,250,252,.68)",
+                      color: isLightTheme ? "#526074" : "rgba(248,250,252,.68)",
                       fontWeight: 600,
                     }}
                   >
@@ -1336,7 +1359,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                     style={{
                       margin: "10px 0 0",
                       fontSize: 13,
-                      color: "rgba(248,250,252,.72)",
+                      color: isLightTheme ? "#526074" : "rgba(248,250,252,.72)",
                       fontWeight: 500,
                       lineHeight: 1.5,
                       maxWidth: 620,
@@ -1349,16 +1372,16 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                     <div
                       style={{
                         marginTop: 10,
-                        background: "rgba(255,255,255,.045)",
-                        border: "1px solid rgba(255,255,255,.08)",
+                        background: isLightTheme ? "#FFFFFF" : "rgba(255,255,255,.045)",
+                        border: isLightTheme ? "1px solid #E6EAF0" : "1px solid rgba(255,255,255,.08)",
                         borderRadius: 12,
                         padding: 10,
-                        color: "rgba(248,250,252,.78)",
+                        color: isLightTheme ? "#526074" : "rgba(248,250,252,.78)",
                         fontSize: 12,
                         lineHeight: 1.5,
                       }}
                     >
-                      <strong style={{ color: COLORS.cyan }}>
+                      <strong style={{ color: getReadableAccent(COLORS.cyan) }}>
                         {isKreol ? "Démarche :" : "Démarche :"}
                       </strong>{" "}
                       {demarchesLabel}
@@ -1374,7 +1397,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
                         gap: 6,
                         background: "rgba(35,211,214,.10)",
                         border: "1px solid rgba(35,211,214,.24)",
-                        color: COLORS.cyan,
+                        color: getReadableAccent(COLORS.cyan),
                         borderRadius: 999,
                         padding: "5px 9px",
                         fontSize: 11,
@@ -1604,11 +1627,15 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
 }
 
 function MiniInfoBox({ label, value, color, icon }) {
+  const { themeName } = useTheme()
+  const isLightTheme = themeName === "light"
+  const valueColor = getReadableAccent(color, themeName)
+
   return (
     <div
       style={{
-        background: "rgba(10,22,40,.40)",
-        border: "1px solid rgba(255,255,255,.08)",
+        background: isLightTheme ? "#FFF4D9" : "rgba(10,22,40,.40)",
+        border: isLightTheme ? "1px solid #F3DCA2" : "1px solid rgba(255,255,255,.08)",
         borderRadius: 12,
         padding: "9px 10px",
       }}
@@ -1616,7 +1643,7 @@ function MiniInfoBox({ label, value, color, icon }) {
       <div style={{ color: COLORS.muted, fontSize: 10.5, fontWeight: 900, marginBottom: 4 }}>
         {icon} {label}
       </div>
-      <div style={{ color, fontSize: 13, fontWeight: 900 }}>
+      <div style={{ color: valueColor, fontSize: 13, fontWeight: 900 }}>
         {value}
       </div>
     </div>
@@ -1624,11 +1651,14 @@ function MiniInfoBox({ label, value, color, icon }) {
 }
 
 function InfoPanel({ title, text }) {
+  const { themeName } = useTheme()
+  const isLightTheme = themeName === "light"
+
   return (
     <div
       style={{
-        background: "rgba(10,22,40,.34)",
-        border: "1px solid rgba(255,255,255,.07)",
+        background: isLightTheme ? "#FFFFFF" : "rgba(10,22,40,.34)",
+        border: isLightTheme ? "1px solid #E6EAF0" : "1px solid rgba(255,255,255,.07)",
         borderRadius: 12,
         padding: "9px 10px",
         minHeight: 58,
@@ -1645,6 +1675,8 @@ function InfoPanel({ title, text }) {
 }
 
 function DemarchePremiumTools({ isKreol, isPremiumPlus }) {
+  const { themeName } = useTheme()
+  const isLightTheme = themeName === "light"
   const tools = [
     {
       icon: <FolderCheck size={14} />,
@@ -1673,12 +1705,12 @@ function DemarchePremiumTools({ isKreol, isPremiumPlus }) {
       style={{
         marginTop: 12,
         paddingTop: 12,
-        borderTop: "1px solid rgba(255,255,255,.08)",
+        borderTop: isLightTheme ? "1px solid #E6EAF0" : "1px solid rgba(255,255,255,.08)",
       }}
     >
       <div
         style={{
-          color: isPremiumPlus ? COLORS.purple : COLORS.yellow,
+          color: isPremiumPlus ? getReadableAccent(COLORS.purple, themeName) : getReadableAccent(COLORS.yellow, themeName),
           fontSize: 12,
           fontWeight: 900,
           marginBottom: 8,
@@ -1697,9 +1729,13 @@ function DemarchePremiumTools({ isKreol, isPremiumPlus }) {
               display: "flex",
               alignItems: "center",
               gap: 5,
-              background: isPremiumPlus ? "rgba(167,139,250,.12)" : "rgba(252,211,77,.08)",
-              border: isPremiumPlus ? "1px solid rgba(167,139,250,.25)" : "1px solid rgba(252,211,77,.22)",
-              color: isPremiumPlus ? "#DDD6FE" : COLORS.yellow,
+              background: isPremiumPlus
+                ? (isLightTheme ? "#EEE7FB" : "rgba(167,139,250,.12)")
+                : (isLightTheme ? "#FFF4D9" : "rgba(252,211,77,.08)"),
+              border: isPremiumPlus
+                ? (isLightTheme ? "1px solid #D8CBF6" : "1px solid rgba(167,139,250,.25)")
+                : (isLightTheme ? "1px solid #F3DCA2" : "1px solid rgba(252,211,77,.22)"),
+              color: isPremiumPlus ? getReadableAccent(COLORS.purple, themeName) : getReadableAccent(COLORS.yellow, themeName),
               borderRadius: 999,
               padding: "7px 9px",
               cursor: "default",

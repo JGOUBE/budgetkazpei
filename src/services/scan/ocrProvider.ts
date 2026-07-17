@@ -4,7 +4,7 @@ import { extractReceiptDueTotal, extractReceiptTotal, mergeReceiptItems, parseRe
 import { normalizeItemQualityStatus } from "./receiptRules"
 import { ScanError, type ScanErrorCode } from "./scanErrors"
 
-const OCR_TIMEOUT_MS = 60000
+const OCR_TIMEOUT_MS = 120000
 const MIN_FAST_BROWSER_ITEMS = 8
 const MIN_LOCAL_OCR_TEXT_LENGTH = 20
 
@@ -282,14 +282,62 @@ function isBlockedProviderItem(item: any = {}) {
   return false
 }
 
+function lastVisibleMoney(value = "") {
+  const matches = Array.from(
+    String(value || "").matchAll(/(-?\d+(?:\s?\d{3})*[,.]\d{2})/g),
+  )
+  if (!matches.length) return 0
+  return Number(
+    String(matches[matches.length - 1][1] || "")
+      .replace(/\s/g, "")
+      .replace(",", "."),
+  ) || 0
+}
+
+function providerSameLineGuard(item: any = {}) {
+  const rawSameLine = firstText(
+    item.local_ocr_raw_text,
+    item.price_correction_raw_text,
+    item.source_line,
+    item.raw_text,
+  )
+  const sameLineAmount = lastVisibleMoney(rawSameLine)
+  const currentAmount = money(item.total_price) || money(item.price) || money(item.unit_price)
+  const serverMismatch = item.line_price_mismatch === true
+  const serverVerified = item.line_price_verified === true
+  const explicitUnverified = item.line_price_verified === false
+  const rawMismatch = Boolean(
+    sameLineAmount > 0 &&
+    currentAmount > 0 &&
+    Math.abs(sameLineAmount - currentAmount) > 0.05,
+  )
+  const mustReview = serverMismatch || explicitUnverified || rawMismatch
+  const finalAmount = serverVerified && sameLineAmount > 0
+    ? sameLineAmount
+    : currentAmount
+
+  return {
+    amount: finalAmount,
+    mustReview,
+    sameLineAmount: sameLineAmount || null,
+    rawSameLine,
+    linePriceVerified: serverVerified,
+    linePriceMismatch: serverMismatch || rawMismatch,
+  }
+}
+
 function normalizeFunctionItems(items: any[] = []) {
   return (items || [])
     .filter(item => String(item?.name || item?.ocr_name || "").trim())
     .map(item => {
-      const price = money(item.total_price) || money(item.price) || money(item.unit_price)
+      const lineGuard = providerSameLineGuard(item)
+      const price = lineGuard.amount
       const name = firstText(item.name, item.corrected_name, item.ocr_name, "Produit a verifier")
       const qualityStatus = normalizeItemQualityStatus(item)
-      const needsReview = qualityStatus === "needs_review"
+      const needsReview = qualityStatus === "needs_review" || lineGuard.mustReview
+      const finalQualityStatus = needsReview ? "needs_review" : qualityStatus
+      const baseConfidence = item.confidence_score == null ? 65 : Number(item.confidence_score)
+      const confidenceScore = needsReview ? Math.min(baseConfidence, 72) : baseConfidence
 
       return {
         ...item,
@@ -298,18 +346,25 @@ function normalizeFunctionItems(items: any[] = []) {
         corrected_name: firstText(item.corrected_name, name),
         price,
         total_price: price,
-        unit_price: money(item.unit_price) || price,
+        unit_price: Number(item.quantity || 1) === 1
+          ? price
+          : money(item.unit_price) || price,
         quantity: Number(item.quantity || 1) || 1,
         source: item.source || item.item_source || "ocr_fallback",
-        item_status: qualityStatus === "needs_review" ? "a_verifier" : qualityStatus,
-        status: qualityStatus === "needs_review" ? "a_verifier" : qualityStatus,
-        review_status: qualityStatus,
+        item_status: finalQualityStatus === "needs_review" ? "a_verifier" : finalQualityStatus,
+        status: finalQualityStatus === "needs_review" ? "a_verifier" : finalQualityStatus,
+        review_status: finalQualityStatus,
         needs_review: needsReview,
-        item_quality_score: item.item_quality_score ?? item.confidence_score ?? (needsReview ? 55 : 88),
-        item_rejection_reason: item.item_rejection_reason || "",
-        raw_text: firstText(item.raw_text, item.source_line),
-        source_line: firstText(item.source_line, item.raw_text),
-        confidence_score: item.confidence_score == null ? 65 : Number(item.confidence_score),
+        item_quality_score: needsReview
+          ? Math.min(Number(item.item_quality_score ?? item.confidence_score ?? 55), 72)
+          : item.item_quality_score ?? item.confidence_score ?? 88,
+        item_rejection_reason: item.item_rejection_reason || (lineGuard.mustReview ? "same_line_price_guard" : ""),
+        raw_text: firstText(item.raw_text, item.source_line, lineGuard.rawSameLine),
+        source_line: firstText(item.source_line, item.raw_text, lineGuard.rawSameLine),
+        confidence_score: confidenceScore,
+        line_price_verified: lineGuard.linePriceVerified,
+        line_price_mismatch: lineGuard.linePriceMismatch,
+        same_line_visible_amount: lineGuard.sameLineAmount,
         line_type: item.line_type || "product",
         category: item.category || "alimentaire",
       }
@@ -629,7 +684,7 @@ async function runTesseractLocalOCR(file: File): Promise<OCRResult> {
         break
       }
 
-      if (performance.now() - startedAt > 30_000) {
+      if (performance.now() - startedAt > 20_000) {
         console.info("[scanner] OCR local rotations interrompues", { elapsedMs: Math.round(performance.now() - startedAt), candidates: candidates.length })
         break
       }
@@ -926,6 +981,18 @@ export class SupabaseReceiptOCRProvider implements OCRProvider {
         calculatedItemsSum: data.calculated_items_sum ?? null,
         totalDifference: data.total_difference ?? null,
         discardedHallucinatedItemsCount: data.discarded_hallucinated_items_count ?? null,
+        sameLinePriceVerifiedCount: data.same_line_price_verified_count
+          ?? structured.same_line_price_verified_count
+          ?? structured.items.filter((item: any) => item.line_price_verified === true).length,
+        sameLinePriceUnverifiedCount: data.same_line_price_unverified_count
+          ?? structured.same_line_price_unverified_count
+          ?? structured.items.filter((item: any) => item.line_price_verified === false).length,
+        sameLinePriceMismatchCount: data.same_line_price_mismatch_count
+          ?? structured.same_line_price_mismatch_count
+          ?? structured.items.filter((item: any) => item.line_price_mismatch === true).length,
+        sameLineNameRepairedCount: data.same_line_name_repaired_count
+          ?? structured.same_line_name_repaired_count
+          ?? structured.items.filter((item: any) => item.line_name_repaired === true).length,
       },
       error: "",
     }
@@ -936,6 +1003,28 @@ export class HybridOCRProvider implements OCRProvider {
   name = "hybrid-browser-edge"
 
   async extractText(file: File, _browserText = "", imageMeta: Record<string, any> = {}): Promise<OCRResult> {
+    if (imageMeta.skip_local_ocr === true) {
+      console.info("[scanner] OCR local ignoré pour photo de ticket long séparée", {
+        scanMode: imageMeta.scan_mode || "long_ticket_part",
+      })
+
+      return new SupabaseReceiptOCRProvider().extractText(file, "", {
+        ...imageMeta,
+        local_ocr_attempted: false,
+        local_ocr_status: "skipped",
+        local_ocr_engine: "none",
+        local_ocr_import_status: "skipped",
+        local_ocr_worker_status: "skipped",
+        local_ocr_duration_ms: 0,
+        local_ocr_error: "",
+        local_ocr_error_type: "none",
+        local_ocr_skipped_reason: "two_photo_direct_vision",
+        browserTextLength_before_payload: 0,
+        browserTextLength_sent_to_edge: 0,
+        should_skip_ai_due_to_local_ocr_failure: false,
+      })
+    }
+
     const browser = await new BrowserTextDetectorProvider().extractText(file)
     const browserTotal = extractReceiptTotal(browser.text)
     const browserParsed = browser.status === "success" && browser.text.trim()

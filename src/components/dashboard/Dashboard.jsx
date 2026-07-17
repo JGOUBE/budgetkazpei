@@ -8,28 +8,14 @@ import { supabase } from "../../services/supabase"
 import { buildStoreHabits } from "../../features/shopping/services/priceHistory"
 import { useDashboardInsights } from "../../hooks/useDashboardInsights"
 import { BkIcons } from "../icons-budgetkazpei"
-import { ds } from "../../styles/designSystem"
+import { createColorAliases } from "../../styles/designSystem"
+import { useTheme } from "../../styles/ThemeProvider"
 
 // Dashboard V2 - Mobile First
 // Regle UX : Carte = Action
 // Le dashboard reste un resume. Les details doivent vivre dans des pages dediees.
 
-const COLORS = {
-  card: ds.card,
-  cardLight: ds.cardHover,
-  border: ds.border,
-  accent: ds.primary,
-  accentSoft: "#FB923C",
-  green: ds.success,
-  red: ds.danger,
-  blue: "#38BDF8",
-  cyan: ds.cyan,
-  yellow: ds.warning,
-  purple: ds.purple,
-  muted: ds.textSecondary,
-  text: ds.textPrimary,
-  whiteSoft: "rgba(248,250,252,.82)",
-}
+const COLORS = createColorAliases()
 
 function tr(t, section, key, fallback) {
   const value = t?.(section, key)
@@ -188,7 +174,7 @@ function buildBudgetScore({ stats = {}, byCategory = [], gainsAides = 0, nbAides
 
   score = Math.max(0, Math.min(100, Math.round(score)))
 
-  const color = score >= 80 ? COLORS.green : score >= 60 ? COLORS.accentSoft : COLORS.red
+  const color = score >= 80 ? COLORS.green : score >= 60 ? COLORS.accent : COLORS.red
   const level = score >= 80 ? "excellent" : score >= 60 ? "correct" : "attention"
 
   return {
@@ -377,8 +363,8 @@ function WelcomeActionButton({ label, icon, onClick }) {
       type="button"
       onClick={onClick}
       style={{
-        background: "rgba(255,255,255,.075)",
-        border: "1px solid rgba(255,255,255,.12)",
+        background: COLORS.surface,
+        border: `1px solid ${COLORS.border}`,
         borderRadius: 14,
         color: COLORS.text,
         padding: "12px 13px",
@@ -472,7 +458,7 @@ function BudgetScoreCard({ t, isMobile, stats = {}, byCategory = [], gainsAides 
             </span>
           </div>
 
-          <div style={{ height: 9, background: "rgba(255,255,255,.12)", borderRadius: 999, overflow: "hidden", marginTop: 12 }}>
+          <div style={{ height: 9, background: COLORS.progressTrack, borderRadius: 999, overflow: "hidden", marginTop: 12 }}>
             <div
               style={{
                 width: `${result.score}%`,
@@ -640,8 +626,8 @@ function RecoveredMoneyCard({
                       display: "flex",
                       justifyContent: "space-between",
                       gap: 10,
-                      background: "rgba(255,255,255,.055)",
-                      border: "1px solid rgba(255,255,255,.08)",
+                      background: COLORS.row,
+                      border: `1px solid ${COLORS.border}`,
                       borderRadius: 10,
                       padding: "8px 10px",
                       color: COLORS.text,
@@ -662,8 +648,8 @@ function RecoveredMoneyCard({
           <div
             style={{
               width: isMobile ? "100%" : 260,
-              background: "rgba(10,22,40,.40)",
-              border: "1px solid rgba(255,255,255,.10)",
+              background: COLORS.surface,
+              border: `1px solid ${COLORS.border}`,
               borderRadius: 16,
               padding: 14,
             }}
@@ -683,7 +669,7 @@ function RecoveredMoneyCard({
               <span style={{ color: "#BEF264" }}>{rawProgress}%</span>
             </div>
 
-            <div style={{ height: 9, background: "rgba(255,255,255,.12)", borderRadius: 999, overflow: "hidden", marginBottom: 9 }}>
+            <div style={{ height: 9, background: COLORS.progressTrack, borderRadius: 999, overflow: "hidden", marginBottom: 9 }}>
               <div
                 style={{
                   width: `${progress}%`,
@@ -773,8 +759,8 @@ function RecommendedActionsCard({
               display: "flex",
               alignItems: "flex-start",
               gap: 10,
-              background: "rgba(255,255,255,.045)",
-              border: "1px solid rgba(255,255,255,.08)",
+              background: COLORS.row,
+              border: `1px solid ${COLORS.border}`,
               borderRadius: 12,
               padding: "10px 11px",
               color: COLORS.text,
@@ -815,9 +801,9 @@ function ActionChip({ children, onClick, color }) {
       type="button"
       onClick={onClick}
       style={{
-        background: "rgba(255,255,255,.06)",
-        border: "1px solid rgba(255,255,255,.12)",
-        color,
+        background: COLORS.card,
+        border: `1px solid ${COLORS.border}`,
+        color: COLORS.text,
         borderRadius: 999,
         padding: "8px 11px",
         fontWeight: 900,
@@ -863,10 +849,10 @@ function PremiumLockedCard({ t, isMobile, hasPremiumAccess, hasPremiumPlusAccess
           onClick={onGoPremium}
           style={{
             marginTop: 14,
-            background: "linear-gradient(135deg, rgba(167,139,250,.24), rgba(249,115,22,.12))",
-            border: "1px solid rgba(167,139,250,.36)",
+            background: COLORS.selected,
+            border: `1px solid ${COLORS.accent}44`,
             borderRadius: 14,
-            color: "#DDD6FE",
+            color: COLORS.text,
             padding: "10px 13px",
             cursor: "pointer",
             fontWeight: 900,
@@ -884,8 +870,8 @@ function PremiumFeature({ locked, title, text }) {
   return (
     <div
       style={{
-        background: locked ? "rgba(10,22,40,.55)" : "rgba(34,197,94,.10)",
-        border: locked ? "1px solid rgba(255,255,255,.10)" : "1px solid rgba(34,197,94,.25)",
+        background: locked ? COLORS.surface : COLORS.greenSoft,
+        border: locked ? `1px solid ${COLORS.border}` : `1px solid ${COLORS.green}33`,
         borderRadius: 14,
         padding: "12px 13px",
         color: COLORS.text,
@@ -946,12 +932,11 @@ function BudgetCategoriesCard({
               }
             }}
             style={{
-              background: hasPremiumAccess ? "rgba(255,255,255,.09)"
-                : "linear-gradient(135deg, rgba(252,211,77,.22), rgba(245,158,11,.14))",
-              border: hasPremiumAccess ? "1px solid rgba(255,255,255,.14)"
-                : "1px solid rgba(252,211,77,.35)",
+              background: hasPremiumAccess ? COLORS.card : COLORS.yellowSoft,
+              border: hasPremiumAccess ? `1px solid ${COLORS.border}`
+                : `1px solid ${COLORS.yellow}44`,
               borderRadius: 999,
-              color: hasPremiumAccess ? COLORS.whiteSoft : "#FDE68A",
+              color: hasPremiumAccess ? COLORS.text : COLORS.text,
               cursor: "pointer",
               padding: "7px 12px",
               fontSize: 12,
@@ -990,7 +975,7 @@ function BudgetCategoriesCard({
                     {depense.toFixed(0)} / {budget} EUR
                   </span>
                 </div>
-                <div style={{ background: "rgba(255,255,255,.14)", borderRadius: 99, height: 7, overflow: "hidden" }}>
+                <div style={{ background: COLORS.progressTrack, borderRadius: 99, height: 7, overflow: "hidden" }}>
                   <div
                     style={{
                       width: `${pct}%`,
@@ -1044,8 +1029,8 @@ function PieSummaryCard({ t, isMobile, pieData = [], onOpenDepenses }) {
             type="button"
             onClick={onOpenDepenses}
             style={{
-              border: "1px solid rgba(255,255,255,.14)",
-              background: "rgba(255,255,255,.07)",
+              border: `1px solid ${COLORS.border}`,
+              background: COLORS.card,
               color: COLORS.cyan,
               borderRadius: 999,
               padding: "8px 12px",
@@ -1114,9 +1099,9 @@ function PieSummaryCard({ t, isMobile, pieData = [], onOpenDepenses }) {
                   gap: 10,
                   alignItems: "center",
                   minHeight: 48,
-                  border: active ? `1px solid ${item.color || COLORS.cyan}` : "1px solid rgba(255,255,255,.09)",
+                  border: active ? `1px solid ${item.color || COLORS.cyan}` : `1px solid ${COLORS.border}`,
                   borderRadius: 14,
-                  background: active ? "rgba(255,255,255,.10)" : "rgba(255,255,255,.045)",
+                  background: active ? COLORS.selected : COLORS.row,
                   color: COLORS.text,
                   padding: "9px 11px",
                   cursor: "pointer",
@@ -1288,8 +1273,8 @@ function DashboardRemindersCard({ t, isMobile, reminders = [], onOpenDemarches }
             <div
               key={reminder.id}
               style={{
-                background: "rgba(255,255,255,.055)",
-                border: "1px solid rgba(255,255,255,.09)",
+                background: COLORS.row,
+                border: `1px solid ${COLORS.border}`,
                 borderRadius: 13,
                 padding: "10px 11px",
               }}
@@ -1464,7 +1449,7 @@ function CopilotHero({ profile, isKreol, isMobile, profileCompletion, attentionC
       style={{
         padding: isMobile ? 20 : 30,
         borderRadius: isMobile ? 24 : 28,
-        boxShadow: "0 24px 60px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.10)",
+        boxShadow: COLORS.shadow,
       }}
     >
       <div style={{ color: COLORS.cyan, fontSize: 12, fontWeight: 900, marginBottom: 8, textTransform: "uppercase" }}>
@@ -1504,9 +1489,9 @@ function PremiumBudgetCard({ stats = {}, realTransactions = [], isKreol, isMobil
       ) : (
         <>
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 10 }}>
-            <BudgetMetric label={isKreol ? "Revenus" : "Revenus"} value={formatMontant(revenus)} color={COLORS.green} />
-            <BudgetMetric label={isKreol ? "Dépans" : "Dépenses"} value={formatMontant(depenses)} color={COLORS.accentSoft} />
-            <BudgetMetric label={isKreol ? "Reste" : "Reste disponible"} value={formatMontant(solde)} color={solde >= 0 ? COLORS.cyan : COLORS.red} />
+            <BudgetMetric label={isKreol ? "Revenus" : "Revenus"} value={formatMontant(revenus)} color={COLORS.green} background={COLORS.sageSoft} borderColor={`${COLORS.green}33`} />
+            <BudgetMetric label={isKreol ? "Dépans" : "Dépenses"} value={formatMontant(depenses)} color={COLORS.accent} background={COLORS.peachSoft} borderColor={`${COLORS.accent}33`} />
+            <BudgetMetric label={isKreol ? "Reste" : "Reste disponible"} value={formatMontant(solde)} color={solde >= 0 ? COLORS.cyan : COLORS.red} background={solde >= 0 ? COLORS.pastelBlue : COLORS.redSoft} borderColor={solde >= 0 ? `${COLORS.cyan}33` : `${COLORS.red}33`} />
           </div>
 
           <div style={{ marginTop: 16 }}>
@@ -1514,7 +1499,7 @@ function PremiumBudgetCard({ stats = {}, realTransactions = [], isKreol, isMobil
               <span>{isKreol ? "Budget utilisé" : "Budget utilisé"}</span>
               <span>{usedPercent} %</span>
             </div>
-            <div style={{ height: 12, borderRadius: 99, background: "rgba(255,255,255,.12)", overflow: "hidden", border: "1px solid rgba(255,255,255,.08)" }}>
+            <div style={{ height: 12, borderRadius: 99, background: COLORS.progressTrack, overflow: "hidden", border: `1px solid ${COLORS.borderSubtle}` }}>
               <div
                 style={{
                   width: `${usedPercent}%`,
@@ -1534,17 +1519,17 @@ function PremiumBudgetCard({ stats = {}, realTransactions = [], isKreol, isMobil
   )
 }
 
-function BudgetMetric({ label, value, color }) {
+function BudgetMetric({ label, value, color, background = COLORS.surface, borderColor = COLORS.border }) {
   return (
     <div style={{
-      background: "rgba(255,255,255,.07)",
-      border: "1px solid rgba(255,255,255,.10)",
+      background,
+      border: `1px solid ${borderColor}`,
       borderRadius: 16,
       padding: "12px 13px",
       minHeight: 76,
     }}>
-      <div style={{ color: COLORS.muted, fontSize: 12, fontWeight: 800, marginBottom: 6 }}>{label}</div>
-      <div style={{ color, fontSize: 18, fontWeight: 950, lineHeight: 1.1 }}>{value}</div>
+      <div style={{ color: COLORS.muted, fontSize: 12, fontWeight: 900, marginBottom: 6 }}>{label}</div>
+      <div style={{ color, fontSize: 19, fontWeight: 950, lineHeight: 1.1 }}>{value}</div>
     </div>
   )
 }
@@ -1590,7 +1575,7 @@ function BalanceHeroCard({ insights, stats = {}, isKreol, isMobile, onOpenRevenu
       <div style={{ color: COLORS.muted, fontSize: 13, marginTop: 10 }}>
         {isKreol ? "Larzan disponible estimé" : "Solde disponible estimé"} <strong style={{ color: balance >= 0 ? COLORS.green : COLORS.red }}>{formatMontant(balance)}</strong>
       </div>
-      <button type="button" onClick={onOpenRevenus} style={{ marginTop: 16, minHeight: 44, border: `1px solid ${COLORS.green}66`, borderRadius: 14, background: "rgba(34,197,94,.14)", color: COLORS.text, cursor: "pointer", fontWeight: 950, padding: "0 16px" }}>
+      <button type="button" onClick={onOpenRevenus} style={{ marginTop: 16, minHeight: 44, border: `1px solid ${COLORS.green}66`, borderRadius: 14, background: COLORS.sageSoft, color: COLORS.text, cursor: "pointer", fontWeight: 950, padding: "0 16px" }}>
         {isKreol ? "Voir / modifier revenus" : "Voir / modifier mes revenus"}
       </button>
     </TropicalCard>
@@ -1607,13 +1592,13 @@ function ExpensesSnapshotCard({ stats, isKreol, isMobile }) {
       <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 950 }}>
         {isKreol ? "Dépans du mwa" : "Dépenses du mois"}
       </div>
-      <div style={{ color: COLORS.accentSoft, fontSize: 34, fontWeight: 950, marginTop: 8, fontFamily: "'DM Serif Display', Georgia, serif" }}>
+      <div style={{ color: COLORS.accent, fontSize: 36, fontWeight: 950, marginTop: 8, fontFamily: "'DM Serif Display', Georgia, serif" }}>
         {formatMontant(depenses)}
       </div>
-      <div style={{ color: COLORS.muted, fontSize: 13, marginTop: 5 }}>
+      <div style={{ color: COLORS.muted, fontSize: 13, marginTop: 5, fontWeight: 850 }}>
         {pct} % {isKreol ? "des revenus" : "des revenus"}
       </div>
-      <div style={{ height: 9, background: "rgba(255,255,255,.12)", borderRadius: 99, overflow: "hidden", marginTop: 12 }}>
+      <div style={{ height: 9, background: COLORS.progressTrack, borderRadius: 99, overflow: "hidden", marginTop: 12 }}>
         <div style={{ width: `${pct}%`, height: "100%", background: `linear-gradient(90deg, ${COLORS.accent}, ${COLORS.yellow})`, borderRadius: 99, transition: "width .45s ease" }} />
       </div>
     </TropicalCard>
@@ -1674,7 +1659,7 @@ function TopCategoriesV2Card({ categories = [], t, isKreol }) {
                 </span>
                 <span>{formatMontant(amount)}</span>
               </div>
-              <div style={{ height: 8, borderRadius: 99, background: "rgba(255,255,255,.12)", overflow: "hidden", marginTop: 7 }}>
+              <div style={{ height: 8, borderRadius: 99, background: COLORS.progressTrack, overflow: "hidden", marginTop: 7 }}>
                 <div style={{ width: `${pct}%`, height: "100%", borderRadius: 99, background: cat.color || COLORS.cyan }} />
               </div>
             </div>
@@ -1710,12 +1695,12 @@ function SavingsOpportunitiesCard({ hints = [], isKreol, onOpenConseiller }) {
   )
 }
 
-function QuickActionsV2({ isKreol, onAddExpense, onOpenReceipts, onOpenAides, onOpenStats }) {
+function QuickActionsV2({ isKreol, isLightTheme, onAddExpense, onOpenReceipts, onOpenAides, onOpenStats }) {
   const actions = [
-    { label: isKreol ? "Azout dépans" : "Ajouter dépense", onClick: onAddExpense, color: COLORS.accent, Icon: BkIcons.add },
-    { label: isKreol ? "Scanner tike" : "Scanner ticket", onClick: onOpenReceipts, color: COLORS.cyan, Icon: BkIcons.scan },
-    { label: isKreol ? "Voir mon bann aides" : "Voir mes aides", onClick: onOpenAides, color: COLORS.yellow, Icon: BkIcons.aides },
-    { label: isKreol ? "Voir mon bann stats" : "Voir mes stats", onClick: onOpenStats, color: COLORS.green, Icon: BkIcons.stats },
+    { label: isKreol ? "Azout dépans" : "Ajouter dépense", onClick: onAddExpense, color: COLORS.accent, background: COLORS.peachSoft, hover: isLightTheme ? "#F8D6C4" : COLORS.hover, Icon: BkIcons.add },
+    { label: isKreol ? "Scanner tike" : "Scanner ticket", onClick: onOpenReceipts, color: COLORS.cyan, background: COLORS.pastelBlue, hover: isLightTheme ? "#C8E4FA" : COLORS.hover, Icon: BkIcons.scan },
+    { label: isKreol ? "Voir mon bann aides" : "Voir mes aides", onClick: onOpenAides, color: COLORS.yellow, background: COLORS.lavenderSoft, hover: isLightTheme ? "#E2D7F8" : COLORS.hover, Icon: BkIcons.aides },
+    { label: isKreol ? "Voir mon bann stats" : "Voir mes stats", onClick: onOpenStats, color: COLORS.green, background: COLORS.sageSoft, hover: isLightTheme ? "#D3E9DA" : COLORS.hover, Icon: BkIcons.stats },
   ].filter(action => action.onClick)
 
   return (
@@ -1727,8 +1712,15 @@ function QuickActionsV2({ isKreol, onAddExpense, onOpenReceipts, onOpenAides, on
         {actions.map(action => {
           const Icon = action.Icon
           return (
-          <button key={action.label} type="button" onClick={action.onClick} style={{ minHeight: 52, border: `1px solid ${action.color}55`, borderRadius: 14, background: `${action.color}22`, color: COLORS.text, fontWeight: 950, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "inherit", padding: "0 12px" }}>
-            <Icon size={18} />
+          <button
+            key={action.label}
+            type="button"
+            onClick={action.onClick}
+            onMouseEnter={event => { event.currentTarget.style.background = action.hover }}
+            onMouseLeave={event => { event.currentTarget.style.background = action.background }}
+            style={{ minHeight: 52, border: `1px solid ${action.color}44`, borderRadius: 14, background: action.background, color: COLORS.text, fontWeight: 950, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "inherit", padding: "0 12px", boxShadow: "0 8px 18px rgba(20,32,51,.05)", transition: "background .18s ease, transform .18s ease, border-color .18s ease" }}
+          >
+            <Icon size={18} color={action.color} />
             {action.label}
           </button>
           )
@@ -1761,9 +1753,9 @@ function ShoppingHabitsDashboardCard({ items = [], isKreol, isMobile, onOpenShop
             onClick={onOpenShopping}
             style={{
               minHeight: 42,
-              border: "1px solid rgba(255,255,255,.14)",
+              border: `1px solid ${COLORS.border}`,
               borderRadius: 999,
-              background: "rgba(255,255,255,.07)",
+              background: COLORS.card,
               color: COLORS.cyan,
               cursor: "pointer",
               fontFamily: "inherit",
@@ -1818,7 +1810,8 @@ function CopilotInfoCard({ title, value, detail, buttonLabel, onClick, isMobile,
         textAlign: "left",
         border: `1px solid ${COLORS.border}`,
         borderRadius: 18,
-        background: `linear-gradient(135deg, ${COLORS.card}, ${COLORS.cardLight})`,
+        background: COLORS.card,
+        boxShadow: COLORS.shadow,
         padding: 18,
         color: COLORS.text,
         cursor: onClick ? "pointer" : "default",
@@ -1835,7 +1828,7 @@ function CopilotInfoCard({ title, value, detail, buttonLabel, onClick, isMobile,
         <div style={{ color: COLORS.muted, fontSize: 12.5, lineHeight: 1.45 }}>{detail}</div>
       </div>
       {buttonLabel && (
-        <span style={{ color: COLORS.accentSoft, fontSize: 12, fontWeight: 950 }}>
+        <span style={{ color: COLORS.accent, fontSize: 12, fontWeight: 950 }}>
           {buttonLabel} ›
         </span>
       )}
@@ -1920,7 +1913,7 @@ function CopilotCards({
         buttonLabel={isKreol ? "Koz ek li" : "Poser une question"}
         onClick={onOpenConseiller}
         isMobile={isMobile}
-        accent={COLORS.accentSoft}
+        accent={COLORS.accent}
       />
     </div>
   )
@@ -1931,7 +1924,7 @@ function NextCopilotAction({ action, isKreol, isMobile }) {
     <TropicalCard variant="ocean" texture="" style={{ padding: isMobile ? 18 : 22 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: isMobile ? "flex-start" : "center", gap: 14, flexDirection: isMobile ? "column" : "row" }}>
         <div>
-          <div style={{ color: COLORS.accentSoft, fontSize: 13, fontWeight: 950, marginBottom: 8 }}>
+          <div style={{ color: COLORS.accent, fontSize: 13, fontWeight: 950, marginBottom: 8 }}>
             {isKreol ? "Mon proshenn aksyon" : "Ma prochaine action"}
           </div>
           <div style={{ color: COLORS.text, fontSize: isMobile ? 18 : 21, fontWeight: 950, lineHeight: 1.25 }}>
@@ -1993,6 +1986,7 @@ export default function Dashboard({
   onOpenStats,
   onAddExpense,
 }) {
+  const { themeName } = useTheme()
   const safeStats = stats || {}
   const { revenus = 0, depenses = 0, solde = 0 } = safeStats
   const isKreol = getIsKreol(t)
@@ -2260,6 +2254,7 @@ export default function Dashboard({
 
       <QuickActionsV2
         isKreol={isKreol}
+        isLightTheme={themeName === "light"}
         onAddExpense={onAddExpense}
         onOpenReceipts={() => navigateTo("receipts", onOpenReceipts)}
         onOpenAides={() => navigateTo("aides", onOpenAides)}

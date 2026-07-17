@@ -322,6 +322,8 @@ function normalizeOpenAiItems(rawItems: unknown[] = []) {
         review_status:
           item.needs_review === false && rawText ? "trusted" : "needs_review",
         price_source: normalizedPrice.priceSource,
+        vision_raw_text: rawText,
+        vision_line_index: Number(item.line_index ?? item.line_number ?? 0) || null,
         source: "openai_vision",
       };
     }),
@@ -1125,7 +1127,18 @@ function isLocalProductPriceLine(value = "") {
     )
   )
     return false;
-  if (/\b\d{8,14}\b/.test(clean)) return true;
+
+  const amount = lastMoney(value);
+  const lettersCount = clean.replace(/[^a-z]/g, "").length;
+  const hasProductShape =
+    lettersCount >= 4 &&
+    !shouldRejectLineAsProduct(value) &&
+    !isPhoneOrContactLine(value);
+
+  // A same-line product candidate does not need to belong to a hard-coded word list.
+  // It only needs a readable designation and a decimal amount on the SAME OCR line.
+  if (amount > 0 && hasProductShape) return true;
+  if (/\b\d{8,14}\b/.test(clean) && hasProductShape) return true;
   return LOCAL_PRODUCT_PRICE_WORDS.some((word) => clean.includes(word));
 }
 
@@ -1138,6 +1151,121 @@ function repairLocalPriceEvidenceAmount(amount = 0, receiptTotal = 0) {
     }
   }
   return Number(amount.toFixed(2));
+}
+
+function sameLineProductName(value = "") {
+  return cleanItemName(
+    String(value || "")
+      .replace(/[€£$]/g, " ")
+      .replace(/\s+\d+(?:[,.]\d{2})\s+[123]\s*$/, " ")
+      .replace(/\s+\d+(?:[,.]\d{2})\s*$/, " ")
+      .replace(/\b-?\d+(?:[,.]\d{2})\b/g, " ")
+      .replace(/\s+[123]\s*$/, " ")
+      .replace(/\s+/g, " ")
+      .trim(),
+  );
+}
+
+function productAlignmentTokens(value = "") {
+  return normalizeText(value)
+    .replace(/\b\d+(?:[,.]\d{2})\b/g, " ")
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(" ")
+    .filter(Boolean)
+    .filter((token) => token.length >= 3)
+    .filter((token) => !PRODUCT_MATCH_STOP_WORDS.has(token));
+}
+
+function normalizedProductCompact(value = "") {
+  return productAlignmentTokens(value).join("");
+}
+
+function bigramDiceSimilarity(a = "", b = "") {
+  const left = normalizedProductCompact(a);
+  const right = normalizedProductCompact(b);
+  if (!left || !right) return 0;
+  if (left === right) return 1;
+  if (left.length < 2 || right.length < 2) return left === right ? 1 : 0;
+
+  const leftPairs = new Map<string, number>();
+  for (let index = 0; index < left.length - 1; index += 1) {
+    const pair = left.slice(index, index + 2);
+    leftPairs.set(pair, (leftPairs.get(pair) || 0) + 1);
+  }
+
+  let overlap = 0;
+  for (let index = 0; index < right.length - 1; index += 1) {
+    const pair = right.slice(index, index + 2);
+    const available = leftPairs.get(pair) || 0;
+    if (available <= 0) continue;
+    overlap += 1;
+    leftPairs.set(pair, available - 1);
+  }
+
+  return (2 * overlap) / ((left.length - 1) + (right.length - 1));
+}
+
+function productPackageSignals(value = "") {
+  const normalized = normalizeText(value).replace(/\s+/g, "");
+  return Array.from(
+    normalized.matchAll(/(?:\d+(?:[,.]\d+)?(?:kg|gr|g|ml|cl|l)|\d+x\d+(?:[,.]\d+)?(?:kg|gr|g|ml|cl|l)?|x\d+)/g),
+  ).map((match) => String(match[0] || ""));
+}
+
+function hasSharedPackageSignal(a = "", b = "") {
+  const left = new Set(productPackageSignals(a));
+  if (!left.size) return false;
+  return productPackageSignals(b).some((signal) => left.has(signal));
+}
+
+function exactCoreTokenOverlap(a = "", b = "") {
+  const coreTokens = (value: string) => productAlignmentTokens(value)
+    .filter((token) => !/^\d/.test(token))
+    .filter((token) => token.length >= 4);
+  const left = coreTokens(a);
+  const right = coreTokens(b);
+  if (!left.length || !right.length) return 0;
+  const rightSet = new Set(right);
+  const overlap = left.filter((token) => rightSet.has(token)).length;
+  return overlap / Math.max(1, Math.min(left.length, right.length));
+}
+
+function productNameEvidenceQuality(value = "") {
+  const normalized = normalizeText(value)
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const tokens = normalized.split(" ").filter(Boolean);
+  const informative = tokens.filter(
+    (token) => token.length >= 3 && !PRODUCT_MATCH_STOP_WORDS.has(token),
+  );
+  const letters = normalized.replace(/[^a-z]/g, "");
+  const packageBonus = productPackageSignals(value).length ? 1.5 : 0;
+  const repeatedPenalty = /([a-z])\1{3,}/.test(letters) ? 2 : 0;
+  const shortPenalty = informative.length <= 1 ? 1 : 0;
+  return informative.length + Math.min(2, letters.length / 12) + packageBonus - repeatedPenalty - shortPenalty;
+}
+
+function mergeAlternateNames(item: Record<string, unknown>, candidate = "") {
+  const values = [
+    ...(Array.isArray(item.alternate_names) ? item.alternate_names : []),
+    item.name,
+    item.corrected_name,
+    item.ocr_name,
+    candidate,
+  ]
+    .map((value) => String(value || "").trim())
+    .filter(Boolean);
+
+  const seen = new Set<string>();
+  return values.filter((value) => {
+    const key = normalizeText(value).replace(/[^a-z0-9]/g, "");
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).slice(0, 6);
 }
 
 function extractLocalProductPriceEvidence(text = "", receiptTotal = 0) {
@@ -1182,7 +1310,7 @@ function extractLocalProductPriceEvidence(text = "", receiptTotal = 0) {
 
     if (!isLocalProductPriceLine(line)) continue;
 
-    const name = cleanItemName(line);
+    const name = sameLineProductName(line);
     if (!name || isIgnoredItemLine(name)) continue;
 
     evidence.push({
@@ -1191,8 +1319,9 @@ function extractLocalProductPriceEvidence(text = "", receiptTotal = 0) {
       price: amount || null,
       total_price: amount || null,
       price_source:
-        amount > 0 ? "local_product_line" : "local_product_pending_price",
+        amount > 0 ? "local_same_line_product_price" : "local_product_pending_price",
       line_index: index,
+      evidence_index: evidence.length,
     });
     lastProductEvidenceIndex = evidence.length - 1;
     lastProductLineIndex = index;
@@ -1203,93 +1332,308 @@ function extractLocalProductPriceEvidence(text = "", receiptTotal = 0) {
   );
 }
 
+function itemRawPriceIsSelfConsistent(item: Record<string, unknown>) {
+  const amount =
+    numericTotal(item.total_price) ||
+    numericTotal(item.price) ||
+    numericTotal(item.unit_price);
+  const rawText = String(item.raw_text || item.source_line || "").trim();
+  if (amount <= 0 || !rawText) return false;
+  return extractMoneyCandidates(rawText).some(
+    (candidate) => Math.abs(candidate - amount) <= 0.05,
+  );
+}
+
+function sameLineAlignmentScore({
+  item,
+  row,
+  itemIndex,
+  evidenceIndex,
+  itemCount,
+  evidenceCount,
+}: {
+  item: Record<string, unknown>;
+  row: Record<string, unknown>;
+  itemIndex: number;
+  evidenceIndex: number;
+  itemCount: number;
+  evidenceCount: number;
+}) {
+  const itemText = [item.name, item.corrected_name, item.ocr_name, item.raw_text]
+    .filter(Boolean)
+    .join(" ");
+  const rowText = [row.name, row.raw_line].filter(Boolean).join(" ");
+  const lexical = Math.min(1, localPriceEvidenceScore(itemText, rowText));
+  const character = bigramDiceSimilarity(itemText, rowText);
+  const packageMatch = hasSharedPackageSignal(itemText, rowText) ? 1 : 0;
+  const expectedIndex = itemCount <= 1 || evidenceCount <= 1
+    ? 0
+    : Math.round((itemIndex * (evidenceCount - 1)) / (itemCount - 1));
+  const indexDistance = Math.abs(evidenceIndex - expectedIndex);
+  const orderBonus = indexDistance === 0
+    ? 0.22
+    : indexDistance === 1
+      ? 0.12
+      : indexDistance === 2
+        ? 0.05
+        : 0;
+  const position = evidenceCount <= 1
+    ? 1
+    : Math.max(0, 1 - indexDistance / Math.max(3, evidenceCount - 1));
+  const currentAmount =
+    numericTotal(item.total_price) ||
+    numericTotal(item.price) ||
+    numericTotal(item.unit_price);
+  const evidenceAmount = Number(row.price || row.total_price || 0);
+  const amountBonus = amountsAlmostEqual(currentAmount, evidenceAmount, 0.05)
+    ? 0.08
+    : 0;
+
+  return Number(
+    (
+      lexical * 0.45 +
+      character * 0.18 +
+      position * 0.15 +
+      packageMatch * 0.12 +
+      orderBonus +
+      amountBonus
+    ).toFixed(4),
+  );
+}
+
+function markLinePriceUnverified(
+  item: Record<string, unknown>,
+  reason: string,
+) {
+  return {
+    ...item,
+    line_price_verified: false,
+    line_alignment_status: reason,
+    needs_review: true,
+    review_status: "needs_review",
+    item_status: "needs_review",
+    status: "needs_review",
+    item_quality_score: Math.min(
+      Number(item.item_quality_score || item.confidence_score || 55),
+      55,
+    ),
+    confidence_score: Math.min(Number(item.confidence_score || 55), 55),
+    item_rejection_reason: String(item.item_rejection_reason || reason),
+  };
+}
+
 function correctVisionItemsWithLocalPriceEvidence(
   items: Record<string, unknown>[] = [],
   hintText = "",
   receiptTotal = 0,
 ) {
   const evidence = extractLocalProductPriceEvidence(hintText, receiptTotal);
-  if (!items.length || !evidence.length) return items;
+  if (!items.length) return items;
 
-  return items.map((item) => {
-    const itemText = [item.name, item.ocr_name, item.raw_text, item.source_line]
-      .filter(Boolean)
-      .join(" ");
+  const usedEvidence = new Set<number>();
+  let lastEvidenceIndex = -1;
+
+  return items.map((item, itemIndex) => {
     const currentAmount =
       numericTotal(item.total_price) ||
       numericTotal(item.price) ||
       numericTotal(item.unit_price);
-    let bestEvidence: Record<string, unknown> | null = null;
-    let bestScore = 0;
+    const rawSelfConsistent = itemRawPriceIsSelfConsistent(item);
 
-    for (const row of evidence) {
-      const rowText = [row.name, row.raw_line].filter(Boolean).join(" ");
-      const score = localPriceEvidenceScore(itemText, rowText);
-      if (score > bestScore) {
-        bestScore = score;
-        bestEvidence = row;
-      }
+    if (!evidence.length) {
+      return rawSelfConsistent
+        ? { ...item, line_price_verified: true, line_alignment_status: "vision_raw_line_only" }
+        : markLinePriceUnverified(item, "price_not_proven_on_item_line");
     }
 
-    if (!bestEvidence || bestScore < 0.35) {
-      const repaired = repairLocalPriceEvidenceAmount(
-        currentAmount,
-        receiptTotal,
-      );
-      if (repaired > 0 && Math.abs(repaired - currentAmount) > 0.05) {
-        return {
-          ...item,
-          total_price: repaired,
-          price: repaired,
-          unit_price:
-            Number(item.quantity || 1) === 1 ? repaired : item.unit_price,
-          price_correction_source: "oversized_ocr_amount_repaired",
-          price_correction_raw_text: String(
-            item.raw_text ||
-              item.source_line ||
-              item.ocr_name ||
-              item.name ||
-              "",
-          ),
-          needs_review: true,
-          review_status: "needs_review",
-          item_status: "needs_review",
-          confidence_score: Math.min(Number(item.confidence_score || 65), 65),
-        };
-      }
-      return item;
+    const expectedIndex = items.length <= 1 || evidence.length <= 1
+      ? 0
+      : Math.round((itemIndex * (evidence.length - 1)) / (items.length - 1));
+    const candidates = evidence
+      .map((row, evidenceIndex) => ({ row, evidenceIndex }))
+      .filter(({ evidenceIndex }) => !usedEvidence.has(evidenceIndex))
+      .filter(({ evidenceIndex }) => evidenceIndex >= Math.max(0, lastEvidenceIndex - 1))
+      .filter(({ evidenceIndex }) => Math.abs(evidenceIndex - expectedIndex) <= 3)
+      .map(({ row, evidenceIndex }) => ({
+        row,
+        evidenceIndex,
+        score: sameLineAlignmentScore({
+          item,
+          row,
+          itemIndex,
+          evidenceIndex,
+          itemCount: items.length,
+          evidenceCount: evidence.length,
+        }),
+      }))
+      .sort((a, b) => b.score - a.score);
+
+    const best = candidates[0] || null;
+    if (!best || best.score < 0.58) {
+      return rawSelfConsistent
+        ? { ...item, line_price_verified: true, line_alignment_status: "vision_raw_line_only" }
+        : markLinePriceUnverified(item, "same_line_ocr_evidence_not_found");
     }
+
+    usedEvidence.add(best.evidenceIndex);
+    lastEvidenceIndex = Math.max(lastEvidenceIndex, best.evidenceIndex);
 
     const evidenceAmount = Number(
-      bestEvidence.price || bestEvidence.total_price || 0,
+      best.row.price || best.row.total_price || 0,
     );
-    if (evidenceAmount <= 0) return item;
+    const localRawLine = String(best.row.raw_line || "").trim();
+    const localCandidateName = String(best.row.name || "").trim();
+    const priceMismatch =
+      evidenceAmount > 0 &&
+      currentAmount > 0 &&
+      Math.abs(evidenceAmount - currentAmount) > 0.05;
+    const localNameQuality = productNameEvidenceQuality(localCandidateName);
+    const currentName = String(item.name || item.corrected_name || item.ocr_name || "").trim();
+    const currentNameQuality = productNameEvidenceQuality(currentName);
+    const shouldRepairName = Boolean(
+      priceMismatch &&
+      localCandidateName &&
+      localPriceEvidenceScore(currentName, localCandidateName) >= 0.35 &&
+      localNameQuality >= currentNameQuality + 1.2,
+    );
+    const finalName = shouldRepairName ? localCandidateName : currentName;
+    const alternateNames = mergeAlternateNames(item, localCandidateName);
 
-    const priceSource = String(bestEvidence.price_source || "");
-    const shouldCorrect =
-      Math.abs(evidenceAmount - currentAmount) > 0.05 &&
-      (priceSource === "local_promotion_line" ||
-        currentAmount <= 0 ||
-        (receiptTotal > 0 && currentAmount > receiptTotal) ||
-        evidenceAmount < currentAmount);
+    if (evidenceAmount <= 0) {
+      return markLinePriceUnverified(
+        {
+          ...item,
+          local_ocr_raw_text: localRawLine,
+          local_ocr_candidate_name: localCandidateName,
+          alternate_names: alternateNames,
+          line_alignment_score: best.score,
+        },
+        "same_line_amount_missing",
+      );
+    }
 
-    if (!shouldCorrect) return item;
+    if (!priceMismatch) {
+      const characterAgreement = bigramDiceSimilarity(
+        localCandidateName,
+        currentName,
+      );
+      const coreTokenOverlap = exactCoreTokenOverlap(
+        localCandidateName,
+        currentName,
+      );
+      const nameDisagreement = Boolean(
+        localCandidateName &&
+        currentName &&
+        coreTokenOverlap < 0.5 &&
+        characterAgreement < 0.62,
+      );
+      const shouldRepairNameOnly = Boolean(
+        nameDisagreement &&
+        best.score >= 0.72 &&
+        localNameQuality >= currentNameQuality + 1.2,
+      );
+      const verifiedName = shouldRepairNameOnly
+        ? localCandidateName
+        : currentName;
+      return {
+        ...item,
+        name: verifiedName || item.name,
+        corrected_name:
+          verifiedName || item.corrected_name || item.name,
+        local_ocr_raw_text: localRawLine,
+        local_ocr_candidate_name: localCandidateName,
+        alternate_names: alternateNames,
+        line_alignment_score: best.score,
+        line_alignment_status: shouldRepairNameOnly
+          ? "same_line_name_repaired"
+          : nameDisagreement
+            ? "same_line_price_verified_name_disagreement"
+            : "same_line_price_verified",
+        line_price_verified: true,
+        line_name_repaired: shouldRepairNameOnly,
+        ...(nameDisagreement
+          ? {
+              needs_review: true,
+              review_status: "needs_review",
+              item_status: "needs_review",
+              status: "needs_review",
+              item_quality_score: Math.min(
+                Number(item.item_quality_score || item.confidence_score || 72),
+                72,
+              ),
+              confidence_score: Math.min(
+                Number(item.confidence_score || 72),
+                72,
+              ),
+              item_rejection_reason: String(
+                item.item_rejection_reason || "same_line_name_disagreement",
+              ),
+            }
+          : {}),
+      };
+    }
 
+    // Critical invariant: when Vision and local OCR disagree, the price is taken
+    // only from the designation+price pair visible on the SAME OCR line. The item
+    // remains review-only; a correction must never increase confidence to 100%.
     return {
       ...item,
+      name: finalName || item.name,
+      corrected_name: finalName || item.corrected_name || item.name,
+      ocr_name: String(item.ocr_name || item.name || finalName || ""),
+      vision_raw_text: String(item.raw_text || item.source_line || ""),
+      raw_text: localRawLine || String(item.raw_text || item.source_line || ""),
+      source_line: localRawLine || String(item.source_line || item.raw_text || ""),
+      local_ocr_raw_text: localRawLine,
+      local_ocr_candidate_name: localCandidateName,
+      alternate_names: alternateNames,
       total_price: evidenceAmount,
       price: evidenceAmount,
       unit_price:
         Number(item.quantity || 1) === 1 ? evidenceAmount : item.unit_price,
-      price_correction_source: priceSource || "local_price_evidence",
-      price_correction_raw_text: String(bestEvidence.raw_line || ""),
+      price_correction_source: "same_line_local_ocr",
+      price_correction_raw_text: localRawLine,
       price_correction_previous_amount: currentAmount || null,
-      confidence_score: Math.max(
-        Number(item.confidence_score || 0),
-        priceSource === "local_promotion_line" ? 98 : 88,
+      line_alignment_score: best.score,
+      line_alignment_status: shouldRepairName
+        ? "same_line_name_and_price_repaired"
+        : "same_line_price_repaired",
+      line_price_verified: true,
+      line_price_mismatch: true,
+      line_name_repaired: shouldRepairName,
+      needs_review: true,
+      review_status: "needs_review",
+      item_status: "needs_review",
+      status: "needs_review",
+      item_quality_score: Math.min(
+        Number(item.item_quality_score || item.confidence_score || 72),
+        72,
+      ),
+      confidence_score: Math.min(Number(item.confidence_score || 72), 72),
+      item_rejection_reason: String(
+        item.item_rejection_reason || "vision_local_same_line_disagreement",
       ),
     };
   });
+}
+
+function summarizeSameLineReconciliation(
+  items: Record<string, unknown>[] = [],
+) {
+  return {
+    same_line_price_verified_count: items.filter(
+      (item) => item.line_price_verified === true,
+    ).length,
+    same_line_price_unverified_count: items.filter(
+      (item) => item.line_price_verified === false,
+    ).length,
+    same_line_price_mismatch_count: items.filter(
+      (item) => item.line_price_mismatch === true,
+    ).length,
+    same_line_name_repaired_count: items.filter(
+      (item) => item.line_name_repaired === true,
+    ).length,
+  };
 }
 
 const SECTION_SUBTOTAL_KEYWORDS = [
@@ -1752,7 +2096,11 @@ async function runOpenAiTextFallback(
     "Reconstruis uniquement les donnees visibles depuis le texte OCR brut.",
     "Accepte les tickets horizontaux, Leclerc, Leader Price, Carrefour, Hyper U, Super U, Lidl, Run Market, Jumbo, Score, Casino, Spar, Vival, Auchan.",
     "Retourne un JSON strict avec: merchant, date JJ/MM/AAAA ou YYYY-MM-DD, time, total, items.",
-    "Chaque item doit avoir name, quantity, unit_price si visible, total_price.",
+    "Chaque item doit avoir name, raw_text, line_index, quantity, unit_price si visible, total_price.",
+    "line_index doit suivre l ordre vertical du ticket, de haut en bas.",
+    "Le prix d un article doit provenir uniquement de la meme ligne horizontale que sa designation. Ne prends jamais le prix de la ligne suivante ou precedente.",
+    "raw_text doit recopier toute la ligne article visible, designation + prix + eventuel code TVA final.",
+    "Si la designation et le prix ne sont pas lisibles sur la meme ligne, mets total_price:null et needs_review:true.",
     "- Attention tickets E.Leclerc : le chiffre final 1/2/3 après un prix peut être un code TVA/rayon, pas une quantité.",
     "- Ne transforme pas automatiquement une ligne de type prix + 1/2/3 en multiplication. Utilise quantity > 1 uniquement si un x, 2 x, 3 x, lot, ou un total de ligne clairement lisible prouve la quantité.",
     "- Pour les articles au poids ou au prix/kg (volaille, boucherie, poissonnerie, fruits et légumes), ne multiplie jamais le prix/kg par le chiffre final 1/2/3. Si le poids ou le total de ligne n'est pas lisible, mets needs_review:true.",
@@ -1842,6 +2190,11 @@ async function runOpenAiTextFallback(
   let receipt;
   try {
     const textFallbackTotal = extractFinalTotalFromStructured(parsed, text);
+    const reconciledItems = correctVisionItemsWithLocalPriceEvidence(
+      normalizeOpenAiItems(Array.isArray(parsed.items) ? parsed.items : []),
+      text,
+      textFallbackTotal,
+    );
     receipt = {
       store_name: String(
         parsed.merchant || parsed.store_name || detectLocalMerchant(text) || "",
@@ -1849,11 +2202,8 @@ async function runOpenAiTextFallback(
       purchase_date:
         detectLocalDate(String(parsed.date || "")) || detectLocalDate(text),
       total_amount: textFallbackTotal,
-      items: correctVisionItemsWithLocalPriceEvidence(
-        normalizeOpenAiItems(Array.isArray(parsed.items) ? parsed.items : []),
-        text,
-        textFallbackTotal,
-      ),
+      items: reconciledItems,
+      ...summarizeSameLineReconciliation(reconciledItems),
     };
   } catch (mappingError) {
     return {
@@ -1936,7 +2286,10 @@ async function runOpenAiVisionFallback({
     "- Ne jamais inventer un article absent de l'image.",
     "- Ne jamais remplacer des lignes illisibles par des produits generiques comme pomme, pain, tomate, salade, carotte.",
     '- Si une ligne article est illisible, retourne un item avec name:"Article illisible", raw_text:"...", total_price:0 ou null si le prix n est pas visible, confidence faible et needs_review:true.',
-    "- Pour chaque item, raw_text doit contenir la ligne visible du ticket qui justifie l'article.",
+    "- Pour chaque item, raw_text doit contenir la ligne horizontale COMPLETE qui justifie l'article, avec son prix visible et le code TVA final s'il existe.",
+    "- Ajoute line_index en suivant strictement l'ordre vertical du ticket, de haut en bas.",
+    "- Le prix doit provenir de la MEME ligne horizontale que la designation. N'utilise jamais le prix de la ligne precedente ou suivante.",
+    "- Si le nom et le prix ne peuvent pas etre relies sur la meme ligne, retourne total_price:null, confidence faible et needs_review:true.",
     "- Attention tickets E.Leclerc : le chiffre final 1/2/3 après un prix peut être un code TVA/rayon, pas une quantité.",
     "- Ne transforme pas automatiquement une ligne de type prix + 1/2/3 en multiplication. Utilise quantity > 1 uniquement si un x, 2 x, 3 x, lot, ou un total de ligne clairement lisible prouve la quantité.",
     "- Pour les articles au poids ou au prix/kg (volaille, boucherie, poissonnerie, fruits et légumes), ne multiplie jamais le prix/kg par le chiffre final 1/2/3. Si le poids ou le total de ligne n'est pas lisible, mets needs_review:true.",
@@ -2071,6 +2424,11 @@ ${compactReceiptOcrHint(hintText)}`
       ),
       localStore,
     );
+    const reconciledItems = correctVisionItemsWithLocalPriceEvidence(
+      normalizeOpenAiItems(Array.isArray(parsed.items) ? parsed.items : []),
+      hintText,
+      totalEvidence.amount,
+    );
     receipt = {
       store_name: storeName || "Enseigne a verifier",
       normalized_store_name: normalizeLocalMerchantName(storeName),
@@ -2088,11 +2446,8 @@ ${compactReceiptOcrHint(hintText)}`
       total_confidence: totalEvidence.confidence,
       total_needs_review: totalEvidence.amount <= 0,
       total_source: totalEvidence.source,
-      items: correctVisionItemsWithLocalPriceEvidence(
-        normalizeOpenAiItems(Array.isArray(parsed.items) ? parsed.items : []),
-        hintText,
-        totalEvidence.amount,
-      ),
+      items: reconciledItems,
+      ...summarizeSameLineReconciliation(reconciledItems),
       needs_review: Boolean(parsed.needs_review),
       warnings: Array.isArray(parsed.warnings) ? parsed.warnings : [],
     };
@@ -2276,7 +2631,10 @@ function buildSegmentPrompt(segment = "") {
   const commonRules = [
     "Retourne uniquement du JSON strict.",
     "Ne devine rien.",
-    "Chaque article doit avoir name, raw_text, quantity, unit_price, total_price, category, confidence, needs_review.",
+    "Chaque article doit avoir line_index, name, raw_text, quantity, unit_price, total_price, category, confidence, needs_review.",
+    "Conserve l'ordre vertical exact des lignes et numerote line_index de haut en bas.",
+    "Le prix doit provenir uniquement de la meme ligne horizontale que la designation.",
+    "Ne rattache jamais a un article un prix lu sur la ligne precedente ou suivante.",
     "- Attention tickets E.Leclerc : le chiffre final 1/2/3 après un prix peut être un code TVA/rayon, pas une quantité.",
     "- Ne transforme pas automatiquement une ligne de type prix + 1/2/3 en multiplication. Utilise quantity > 1 uniquement si un x, 2 x, 3 x, lot, ou un total de ligne clairement lisible prouve la quantité.",
     "- Pour les articles au poids ou au prix/kg (volaille, boucherie, poissonnerie, fruits et légumes), ne multiplie jamais le prix/kg par le chiffre final 1/2/3. Si le poids ou le total de ligne n'est pas lisible, mets needs_review:true.",
@@ -2602,8 +2960,12 @@ async function runOpenAiVisionSegment({
           source: "missing_or_unreliable",
           rejectedReason: "",
         };
-  const items = normalizeOpenAiItems(
-    Array.isArray(parsed.items) ? parsed.items : [],
+  const items = correctVisionItemsWithLocalPriceEvidence(
+    normalizeOpenAiItems(
+      Array.isArray(parsed.items) ? parsed.items : [],
+    ),
+    hintText,
+    totalEvidence.amount,
   ).map((item) => ({
     ...item,
     segment_source: segment,
@@ -2644,6 +3006,7 @@ async function runOpenAiVisionSegment({
       declared_items_count: declaredEvidence.count || null,
       declared_items_raw_text: declaredEvidence.raw,
       items,
+      ...summarizeSameLineReconciliation(items),
       warnings: Array.isArray(parsed.warnings)
         ? parsed.warnings.map(String)
         : [],
@@ -2773,12 +3136,17 @@ function primaryVisionCanStopBeforeSplit({
   if (!String(receipt.store_name || "").trim()) return false;
   if (!String(receipt.purchase_date || "").trim()) return false;
 
-  // Split is expensive and can reintroduce duplicated/noisy lines on short tickets.
-  // For long tickets, keep split because item coverage matters more.
-  if (expectedItemsMin >= 15) return false;
+  // Un ticket long ne déclenche plus automatiquement un split si la Vision
+  // primaire a déjà récupéré l'essentiel des lignes déclarées.
+  if (expectedItemsMin >= 15) {
+    const minimumCoverage = Math.ceil(expectedItemsMin * 0.85);
+    return (
+      reliableItemsCount >= minimumCoverage ||
+      visionItemsCount >= minimumCoverage
+    );
+  }
 
-  // Short grocery ticket: a reliable primary total + several reliable items is enough
-  // for budget registration. Articles may still remain review-only for smart shopping.
+  // Petit ticket : total fiable + plusieurs lignes fiables suffisent.
   return reliableItemsCount >= 5 || visionItemsCount >= 5;
 }
 
@@ -3096,49 +3464,69 @@ async function runSplitRetry({
     };
   }
 
-  const splitResults = [];
-  for (const segment of usableSegments) {
-    const segmentStartedAt = performance.now();
-    const segmentName = String(segment.segment);
-    const segmentImageSize = {
-      width: segment.width ?? null,
-      height: segment.height ?? null,
-      yStartPercent: segment.yStartPercent ?? null,
-      yEndPercent: segment.yEndPercent ?? null,
-      overlapPercent: segment.overlapPercent ?? null,
-      base64Size: String(segment.imageBase64 || "").length,
-      estimatedBytes: segment.estimatedBytes ?? null,
-    };
+  const wallStartedAt = performance.now();
 
-    try {
-      const result = await runOpenAiVisionSegment({
-        segment: segmentName,
-        imageBase64: String(segment.imageBase64),
-        mimeType: String(segment.mimeType || "image/jpeg"),
-        imageSize: segmentImageSize,
-        hintText: segmentOcrHint(browserText, segmentName),
-        expectedItemsMin,
-      });
-      if (result) splitResults.push(result as Record<string, unknown>);
-    } catch (segmentError) {
-      const message = errorMessage(segmentError);
-      splitResults.push({
-        error: true,
-        segment: segmentName,
-        segment_status: message.toLowerCase().includes("timeout")
-          ? "timeout"
-          : "technical_error",
-        message,
-        durationMs: Math.round(performance.now() - segmentStartedAt),
-        imageSize: segmentImageSize,
-        rawItemsCount: 0,
-        reliableItemsCount: 0,
-        needsReviewItemsCount: 0,
-        rejectedItemsCount: 0,
-        warnings: ["Segment non exploitable."],
-      });
-    }
-  }
+  // Les trois zones sont indépendantes. Elles sont donc analysées en parallèle :
+  // le délai maximal devient celui du segment le plus lent, pas la somme des trois.
+  const splitResults = await Promise.all(
+    usableSegments.map(async (segment) => {
+      const segmentStartedAt = performance.now();
+      const segmentName = String(segment.segment);
+      const segmentImageSize = {
+        width: segment.width ?? null,
+        height: segment.height ?? null,
+        yStartPercent: segment.yStartPercent ?? null,
+        yEndPercent: segment.yEndPercent ?? null,
+        overlapPercent: segment.overlapPercent ?? null,
+        base64Size: String(segment.imageBase64 || "").length,
+        estimatedBytes: segment.estimatedBytes ?? null,
+      };
+
+      try {
+        const result = await runOpenAiVisionSegment({
+          segment: segmentName,
+          imageBase64: String(segment.imageBase64),
+          mimeType: String(segment.mimeType || "image/jpeg"),
+          imageSize: segmentImageSize,
+          hintText: segmentOcrHint(browserText, segmentName),
+          expectedItemsMin,
+        });
+
+        return result
+          ? result as Record<string, unknown>
+          : {
+              error: true,
+              segment: segmentName,
+              segment_status: "empty",
+              message: "segment_empty_response",
+              durationMs: Math.round(performance.now() - segmentStartedAt),
+              imageSize: segmentImageSize,
+              rawItemsCount: 0,
+              reliableItemsCount: 0,
+              needsReviewItemsCount: 0,
+              rejectedItemsCount: 0,
+              warnings: ["Segment sans réponse exploitable."],
+            };
+      } catch (segmentError) {
+        const message = errorMessage(segmentError);
+        return {
+          error: true,
+          segment: segmentName,
+          segment_status: message.toLowerCase().includes("timeout")
+            ? "timeout"
+            : "technical_error",
+          message,
+          durationMs: Math.round(performance.now() - segmentStartedAt),
+          imageSize: segmentImageSize,
+          rawItemsCount: 0,
+          reliableItemsCount: 0,
+          needsReviewItemsCount: 0,
+          rejectedItemsCount: 0,
+          warnings: ["Segment non exploitable."],
+        };
+      }
+    }),
+  );
 
   const merged = mergeSplitReceiptResults(
     splitResults,
@@ -3146,10 +3534,12 @@ async function runSplitRetry({
     expectedItemsMin,
     { imageQualityWarning },
   );
+
   return {
     error: false,
     splitResults,
     merged,
+    wallDurationMs: Math.round(performance.now() - wallStartedAt),
   };
 }
 
@@ -3777,8 +4167,29 @@ function normalizeItems(rawItems: unknown[] = []) {
       item_rejection_reason:
         itemStatus === "rejected"
           ? String(item.item_rejection_reason || "rejected")
-          : "",
+          : String(item.item_rejection_reason || ""),
       line_type: "product",
+      vision_raw_text: String(item.vision_raw_text || ""),
+      vision_line_index: item.vision_line_index ?? null,
+      local_ocr_raw_text: String(item.local_ocr_raw_text || ""),
+      local_ocr_candidate_name: String(item.local_ocr_candidate_name || ""),
+      alternate_names: Array.isArray(item.alternate_names)
+        ? item.alternate_names.map(String).filter(Boolean).slice(0, 6)
+        : [],
+      line_alignment_score: Number(item.line_alignment_score || 0) || null,
+      line_alignment_status: String(item.line_alignment_status || ""),
+      line_price_verified:
+        item.line_price_verified === true
+          ? true
+          : item.line_price_verified === false
+            ? false
+            : null,
+      line_price_mismatch: item.line_price_mismatch === true,
+      line_name_repaired: item.line_name_repaired === true,
+      price_correction_source: String(item.price_correction_source || ""),
+      price_correction_raw_text: String(item.price_correction_raw_text || ""),
+      price_correction_previous_amount:
+        Number(item.price_correction_previous_amount || 0) || null,
       source: String(item.source || "ocr_fallback"),
     });
   }
@@ -3985,6 +4396,11 @@ Deno.serve(async (req) => {
     );
     const isPremiumPlus =
       userPlan === "premium_plus" || body.isPremiumPlus === true;
+    const splitRetryDisabledByClient = Boolean(
+      imageMeta.disable_split_retry ??
+        imageMeta.disableSplitRetry ??
+        false,
+    );
     const browserItems = parseFallbackItemsFromText(browserText);
     const browserTotal = extractTotalFromText(browserText);
     const requestImageSize = {
@@ -4125,6 +4541,8 @@ Deno.serve(async (req) => {
       browserTotal,
       userPlan,
       isPremiumPlus,
+      splitRetryDisabledByClient,
+      scanMode: String(imageMeta.scan_mode || "single"),
       splitSegmentsReceived: imageSegments.length,
     });
 
@@ -4482,6 +4900,26 @@ Deno.serve(async (req) => {
             },
           }),
           diagnostics: null,
+        };
+      }
+
+      if (splitRetryDisabledByClient) {
+        return {
+          response: null,
+          diagnostics: {
+            scan_strategy_used: "two_photo_primary_only",
+            split_retry_eligible: false,
+            split_retry_used: false,
+            split_retry_skipped_reason: "client_disabled_for_two_photo",
+            split_segments_count: imageSegments.length,
+            split_segments_results: [],
+            primary_stage: primaryStage,
+            primary_error: primaryError,
+            fallback_stage: "manual_review_required",
+            premium_plus_detected: isPremiumPlus,
+            segments_received_by_edge_function: imageSegments.length,
+            ...localOcrDiagnostics,
+          },
         };
       }
 
@@ -5179,7 +5617,9 @@ Deno.serve(async (req) => {
         const shortTicketSplitDisabled =
           visionExpectedMin > 0 && visionExpectedMin <= 10;
         const shouldSplit =
-          primaryVisionEnoughWithoutSplit || shortTicketSplitDisabled
+          splitRetryDisabledByClient ||
+          primaryVisionEnoughWithoutSplit ||
+          shortTicketSplitDisabled
             ? false
             : shouldRunSplitRetry({
               isPremiumPlus,

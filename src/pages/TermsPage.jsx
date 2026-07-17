@@ -1,12 +1,6 @@
-const COLORS = {
-  bg: "#0A1628",
-  card: "#0F1E38",
-  border: "#1E3A5F",
-  accent: "#F97316",
-  cyan: "#23D3D6",
-  muted: "#8EA4C5",
-  text: "#F1F5F9",
-}
+import { createColorAliases } from "../styles/designSystem"
+
+const COLORS = createColorAliases()
 
 function Section({ title, children }) {
   return (

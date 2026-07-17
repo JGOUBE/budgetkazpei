@@ -8,18 +8,9 @@ import {
   selectAssistantAnswerText,
 } from "../services/ai/assistantIntentEngine"
 import { isAssistantKreol } from "../services/ai/assistantLanguage"
+import { createColorAliases } from "../styles/designSystem"
 
-const COLORS = {
-  card: "#0F1E38",
-  cardLight: "#152444",
-  border: "#1E3A5F",
-  accent: "#F97316",
-  cyan: "#23D3D6",
-  green: "#22C55E",
-  muted: "#8EA4C5",
-  text: "#F8FAFC",
-  red: "#FB7185",
-}
+const COLORS = createColorAliases()
 
 const TEXT = {
   fr: {

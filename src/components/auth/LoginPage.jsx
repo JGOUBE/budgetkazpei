@@ -1,17 +1,14 @@
 import { useState } from "react"
 import AppLogo from "../AppLogo"
+import { createColorAliases, ds } from "../../styles/designSystem"
 
-const COLORS = {
-  bg: "#0A1628",
-  card: "#0F1E38",
-  ink: "#05080C",
-  cream: "#F8ECD0",
-  paper: "#FFF6DE",
-  accent: "#F97316",
-  red: "#EF4444",
-  muted: "#8AA0BD",
-  cyan: "#23D3D6",
-}
+const COLORS = createColorAliases({
+  bg: () => ds.background,
+  card: () => ds.card,
+  ink: () => (ds.name === "light" ? "#6B4E28" : "#05080C"),
+  cream: () => (ds.name === "light" ? ds.textPrimary : "#F8ECD0"),
+  paper: () => (ds.name === "light" ? "#FFFFFF" : "#FFF6DE"),
+})
 
 export default function LoginPage({
   onLogin,
@@ -121,8 +118,9 @@ export default function LoginPage({
     <div
       style={{
         minHeight: "100vh",
-        background:
-          "radial-gradient(circle at top, rgba(35,211,214,.20), transparent 36%), linear-gradient(180deg, #06111F 0%, #0A1628 55%, #06111F 100%)",
+        background: ds.name === "light"
+          ? "radial-gradient(circle at top, rgba(249,115,22,.13), transparent 34%), linear-gradient(180deg, #FFF8EC 0%, #F7F3EA 62%, #EEF7F6 100%)"
+          : "radial-gradient(circle at top, rgba(35,211,214,.20), transparent 36%), linear-gradient(180deg, #06111F 0%, #0A1628 55%, #06111F 100%)",
         display: "flex",
         alignItems: "flex-start",
         justifyContent: "center",

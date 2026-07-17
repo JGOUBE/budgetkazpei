@@ -1,20 +1,10 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts"
 import { formatMontant } from "../../utils/format"
 import { BkIcons } from "../icons-budgetkazpei"
-import { ds } from "../../styles/designSystem"
+import { createColorAliases } from "../../styles/designSystem"
+import { useTheme } from "../../styles/ThemeProvider"
 
-const COLORS = {
-  card: ds.card,
-  cardLight: ds.cardHover,
-  border: ds.border,
-  accent: ds.primary,
-  green: ds.success,
-  red: ds.danger,
-  cyan: ds.cyan,
-  yellow: ds.warning,
-  muted: ds.textSecondary,
-  text: ds.textPrimary,
-}
+const COLORS = createColorAliases()
 
 const CHART_COLORS = ["#22C55E", "#38BDF8", "#FCD34D", "#A78BFA", "#FB7185", "#23D3D6", "#F97316"]
 
@@ -102,6 +92,7 @@ export default function DepensesPage({
   onGoPremium,
   t,
 }) {
+  useTheme()
   const isKreol = getIsKreol(t)
   const depenses = moneyValue(stats.depenses)
   const revenus = moneyValue(stats.revenus)
@@ -129,10 +120,11 @@ export default function DepensesPage({
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
       <div
         style={{
-          background: `linear-gradient(135deg, ${COLORS.card}, ${COLORS.cardLight})`,
-          border: `1px solid ${COLORS.border}`,
+          background: `linear-gradient(135deg, ${COLORS.peachSoft} 0%, ${COLORS.card} 78%)`,
+          border: `1px solid ${COLORS.accent}33`,
           borderRadius: 22,
           padding: 24,
+          boxShadow: COLORS.shadow,
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -141,17 +133,17 @@ export default function DepensesPage({
             <div style={{ color: COLORS.text, fontSize: 30, fontWeight: 900, fontFamily: "'DM Serif Display', serif" }}>
               {isKreol ? "Depans mwa-la" : "Depenses du mois"}
             </div>
-            <div style={{ color: COLORS.muted, marginTop: 6, fontSize: 14, lineHeight: 1.5 }}>
+            <div style={{ color: COLORS.muted, marginTop: 6, fontSize: 14, lineHeight: 1.5, fontWeight: 750 }}>
               {isKreol ? "Retrouv ici koman out larzan i sorte, dernieres depans ek suivi par kategori."
                 : "Retrouvez ici la repartition, les dernieres transactions et les budgets par categorie."}
             </div>
           </div>
         </div>
 
-        <div style={{ color: COLORS.accent, marginTop: 18, fontSize: 42, fontWeight: 900, fontFamily: "'DM Serif Display', serif" }}>
+        <div style={{ color: COLORS.accent, marginTop: 18, fontSize: 44, fontWeight: 950, fontFamily: "'DM Serif Display', serif" }}>
           {formatMontant(depenses)}
         </div>
-        <div style={{ color: COLORS.muted, fontSize: 12 }}>
+        <div style={{ color: COLORS.muted, fontSize: 13, fontWeight: 850 }}>
           {ratio} % {isKreol ? "out revenus" : "des revenus"}
         </div>
       </div>
@@ -238,7 +230,16 @@ function ChartCard({ data, isKreol }) {
                     <Cell key={index} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={value => formatMontant(value)} />
+                <Tooltip
+                  formatter={value => formatMontant(value)}
+                  contentStyle={{
+                    background: COLORS.card,
+                    border: `1px solid ${COLORS.border}`,
+                    borderRadius: 12,
+                    color: COLORS.text,
+                    boxShadow: COLORS.shadow,
+                  }}
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -266,7 +267,7 @@ function ChartCard({ data, isKreol }) {
                       height: 10,
                       borderRadius: 999,
                       background: CHART_COLORS[index % CHART_COLORS.length],
-                      boxShadow: "0 0 0 3px rgba(255,255,255,.05)",
+                      boxShadow: `0 0 0 3px ${COLORS.surface}`,
                     }}
                   />
                   <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
@@ -304,10 +305,11 @@ function RecentExpensesCard({ transactions, isKreol }) {
                 display: "flex",
                 justifyContent: "space-between",
                 gap: 10,
-                background: "rgba(10,22,40,.45)",
-                border: "1px solid rgba(255,255,255,.08)",
+                background: COLORS.row,
+                border: `1px solid ${COLORS.border}`,
                 borderRadius: 14,
                 padding: "11px 12px",
+                boxShadow: "0 6px 16px rgba(15,23,42,.035)",
               }}
             >
               <div style={{ minWidth: 0 }}>
@@ -318,7 +320,7 @@ function RecentExpensesCard({ transactions, isKreol }) {
                   {tx.date || "-"}
                 </div>
               </div>
-              <strong style={{ color: COLORS.red, flexShrink: 0 }}>
+              <strong style={{ color: COLORS.red, flexShrink: 0, fontSize: 14 }}>
                 {formatMontant(Math.abs(Number(tx.amount) || 0))}
               </strong>
             </div>
@@ -361,7 +363,7 @@ function BudgetsByCategoryCard({ byCategory, isKreol }) {
                     {formatMontant(depense)} / {formatMontant(budget)}
                   </span>
                 </div>
-                <div style={{ height: 7, background: "rgba(255,255,255,.12)", borderRadius: 999, overflow: "hidden", marginTop: 7 }}>
+                <div style={{ height: 8, background: COLORS.progressTrack, borderRadius: 999, overflow: "hidden", marginTop: 7 }}>
                   <div
                     style={{
                       width: `${pct}%`,
@@ -382,7 +384,15 @@ function BudgetsByCategoryCard({ byCategory, isKreol }) {
 
 function LockedCard({ unlocked, title, text, required, onGoPremium, Icon }) {
   return (
-    <div style={{ background: "rgba(15,30,56,.75)", border: "1px solid rgba(255,255,255,.10)", borderRadius: 20, padding: 20 }}>
+    <div
+      style={{
+        background: unlocked ? COLORS.greenSoft : COLORS.card,
+        border: `1px solid ${unlocked ? `${COLORS.green}33` : COLORS.border}`,
+        borderRadius: 20,
+        padding: 20,
+        boxShadow: "0 8px 22px rgba(15,23,42,.04)",
+      }}
+    >
       <div style={{ display: "flex", alignItems: "center", gap: 10, color: unlocked ? COLORS.green : COLORS.yellow, fontSize: 17, fontWeight: 900 }}>
         {iconBubble(Icon || BkIcons.premium, unlocked ? COLORS.green : COLORS.yellow)}
         {title}
@@ -396,9 +406,9 @@ function LockedCard({ unlocked, title, text, required, onGoPremium, Icon }) {
           onClick={onGoPremium}
           style={{
             marginTop: 13,
-            background: "rgba(252,211,77,.14)",
-            border: "1px solid rgba(252,211,77,.28)",
-            color: COLORS.yellow,
+            background: COLORS.yellowSoft,
+            border: `1px solid ${COLORS.yellow}44`,
+            color: COLORS.text,
             borderRadius: 12,
             padding: "10px 13px",
             cursor: "pointer",

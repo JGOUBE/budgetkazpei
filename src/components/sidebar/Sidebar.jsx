@@ -1,5 +1,6 @@
 ﻿import { BkIcons } from "../icons-budgetkazpei"
 import { ds } from "../../styles/designSystem"
+import { useTheme } from "../../styles/ThemeProvider"
 import AppLogo from "../AppLogo"
 
 const NAV_ITEMS = [
@@ -30,6 +31,8 @@ export default function Sidebar({
   lang = "fr",
   t,
 }) {
+  useTheme()
+
   const PremiumIcon = BkIcons.premium
   const ContactIcon = BkIcons.contact
   const SignOutIcon = BkIcons.user

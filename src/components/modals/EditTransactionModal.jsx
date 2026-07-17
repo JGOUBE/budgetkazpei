@@ -1,11 +1,8 @@
 import { useState } from "react";
 import { CATEGORIES } from "../../data/categories";
+import { createColorAliases, ds } from "../../styles/designSystem";
 
-const COLORS = {
-  card: "#0F1E38", cardLight: "#152444", border: "#1E3A5F",
-  accent: "#F97316", muted: "#64748B", text: "#F1F5F9",
-  red: "#EF4444", green: "#22C55E",
-};
+const COLORS = createColorAliases();
 
 export default function EditTransactionModal({ transaction, onSave, onClose, t }) {
   const isRevenu = transaction.amount >= 0;
@@ -115,7 +112,7 @@ export default function EditTransactionModal({ transaction, onSave, onClose, t }
             <input
               type="date" value={form.date}
               onChange={e => setForm(f => ({ ...f, date: e.target.value }))}
-              style={{ ...inputStyle, colorScheme: "dark" }}
+              style={{ ...inputStyle, colorScheme: ds.colorScheme }}
               onFocus={e => e.target.style.borderColor = COLORS.accent}
               onBlur={e => e.target.style.borderColor = COLORS.border}
             />

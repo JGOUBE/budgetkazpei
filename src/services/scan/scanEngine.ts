@@ -26,6 +26,9 @@ export type ScanEngineOptions = {
   provider?: OCRProvider
   onProgress?: (progress: ScanProgress) => void
   plan?: "free" | "premium" | "premium_plus" | string
+  scanMode?: "single" | "long_ticket_top" | "long_ticket_bottom" | string
+  skipLocalOcr?: boolean
+  disableSplitRetry?: boolean
 }
 
 function emit(onProgress: ScanEngineOptions["onProgress"], step: ScanStep, label: string, progress: number) {
@@ -781,6 +784,9 @@ export async function runSmartScan(file: File, options: ScanEngineOptions = {}) 
       split_segments_overlap_percent: 8,
       imageSegments: optimized.segments,
       user_plan: options.plan || "free",
+      scan_mode: options.scanMode || "single",
+      skip_local_ocr: options.skipLocalOcr === true,
+      disable_split_retry: options.disableSplitRetry === true,
     }
     const ocr = await provider.extractText(optimized.file, "", imageMeta)
     const ocrDurationMs = Math.round(performance.now() - ocrStartedAt)
@@ -1038,11 +1044,30 @@ export async function runSmartScan(file: File, options: ScanEngineOptions = {}) 
         vision_trust_rule: "v4_3_raw_openai_primary_items_when_count_and_sum_exact",
       }
     } else if (primaryVisionBudgetReliable) {
-      parsed.items = markReceiptItemsForPartialLearning(parsed.items, Number(parsed.total_amount || 0))
+      // Vision peut avoir fourni plus d'articles fiables que la sanitation finale.
+      // On conserve alors la liste Vision complete au lieu de reduire le ticket
+      // aux seuls survivants du filtre. Chaque article reste evalue separement.
+      const partialVisionSourceItems = visionStructuredTrustItems.length > parsed.items.length
+        ? visionStructuredTrustItems
+        : parsed.items
+
+      parsed.items = markReceiptItemsForPartialLearning(
+        partialVisionSourceItems,
+        Number(parsed.total_amount || 0),
+      )
+      finalItemsSum = estimateTotalFromItems(parsed.items)
+      finalItemsRecoveryRatio = visionReferenceCount > 0
+        ? parsed.items.length / visionReferenceCount
+        : 1
+
       ;(parsed as any).primary_vision_exact_short_ticket_trusted = false
       ;(parsed as any).parser_debug = {
         ...((parsed as any).parser_debug || {}),
         primary_vision_exact_short_ticket_trusted: false,
+        restored_primary_vision_items_for_partial_review:
+          visionStructuredTrustItems.length > finalItemSanitization.items.length,
+        restored_primary_vision_items_count_for_partial_review: parsed.items.length,
+        final_sanitization_survivors_before_partial_restore: finalItemSanitization.items.length,
         primary_vision_trust_blocked_reason: [
           primaryVisionShortTicketReady ? "" : "primary_vision_not_marked_sufficient",
           visionStructuredTrustItems.length >= 3 ? "" : "not_enough_vision_structured_items",
@@ -1233,7 +1258,18 @@ export async function runSmartScan(file: File, options: ScanEngineOptions = {}) 
     parsed.scan_duration_ms = Math.round(performance.now() - scanStartedAt)
 
     emit(options.onProgress, "products", "Extraction des produits...", 66)
-    const marketResolution = await resolveMarketProducts(parsed.items)
+    const marketResolution = await resolveMarketProducts(parsed.items, {
+      context: {
+        store_name: parsed.store_name || parsed.merchant_name || "",
+        store_city: (parsed as any).store_location || structured?.store_location || "",
+        observed_date: parsed.purchase_date || "",
+      },
+      // L'OCR local reste une preuve secondaire : il fournit seulement des
+      // désignations candidates au resolver market_. Il ne remplace jamais
+      // directement name/corrected_name et ne peut donc pas casser un match
+      // exact déjà obtenu depuis la Vision primaire.
+      localOcrText: String(ocr.text || ""),
+    })
     parsed.items = marketResolution.items
     ;(parsed as any).parser_debug = {
       ...((parsed as any).parser_debug || {}),
@@ -1414,6 +1450,513 @@ export async function runSmartScan(file: File, options: ScanEngineOptions = {}) 
       throw new ScanError("SCAN_IMAGE_UNREADABLE", (error as Error).message)
     }
     throw error
+  }
+}
+
+
+export type LongTicketScanFiles = {
+  top: File
+  bottom: File
+}
+
+function longTicketItemKey(item: any = {}) {
+  const name = normalizeFinalItemText(
+    String(
+      item?.market_canonical_name
+      || item?.corrected_name
+      || item?.name
+      || item?.ocr_name
+      || "",
+    ),
+  )
+  const price = roundMoney(
+    Number(item?.total_price ?? item?.price ?? item?.unit_price ?? 0),
+  )
+  return name && price > 0 ? `${name}|${price.toFixed(2)}` : ""
+}
+
+function mergeLongTicketItems(topItems: any[] = [], bottomItems: any[] = []) {
+  const merged = [...(topItems || [])]
+  const overlapKeys = new Map<string, number>()
+
+  for (const item of merged.slice(-6)) {
+    const key = longTicketItemKey(item)
+    if (key) overlapKeys.set(key, (overlapKeys.get(key) || 0) + 1)
+  }
+
+  for (const item of bottomItems || []) {
+    const key = longTicketItemKey(item)
+    const remainingOverlap = key ? Number(overlapKeys.get(key) || 0) : 0
+
+    if (remainingOverlap > 0) {
+      if (remainingOverlap === 1) overlapKeys.delete(key)
+      else overlapKeys.set(key, remainingOverlap - 1)
+      continue
+    }
+
+    merged.push(item)
+  }
+
+  return merged
+}
+
+function longTicketItemIsTrusted(item: any = {}) {
+  if (item?.needs_review === true) return false
+  const status = normalizeFinalItemText(
+    String(item?.review_status || item?.item_status || item?.status || ""),
+  )
+  const confidence = Number(
+    item?.confidence_score ?? item?.item_quality_score ?? 0,
+  )
+
+  return (
+    status.includes("trusted")
+    || status.includes("user validated")
+    || status.includes("user_validated")
+    || (status.includes("detected") && confidence >= 70)
+  )
+}
+
+function pickLongTicketValue(...values: any[]) {
+  return values.find(value => String(value ?? "").trim()) ?? ""
+}
+
+function numericLongTicketMetric(metrics: any, key: string) {
+  const value = Number(metrics?.[key] ?? 0)
+  return Number.isFinite(value) ? value : 0
+}
+
+async function createLongTicketArchiveFile(topFile: File, bottomFile: File) {
+  try {
+    const [topBitmap, bottomBitmap] = await Promise.all([
+      createImageBitmap(topFile),
+      createImageBitmap(bottomFile),
+    ])
+    const bitmaps = [topBitmap, bottomBitmap]
+    const maxNaturalWidth = Math.max(...bitmaps.map(bitmap => bitmap.width), 1)
+    let targetWidth = Math.min(1280, maxNaturalWidth)
+    const gap = 16
+
+    const computeParts = (width: number) => bitmaps.map(bitmap => {
+      const scale = width / Math.max(1, bitmap.width)
+      return {
+        bitmap,
+        width: Math.round(bitmap.width * scale),
+        height: Math.round(bitmap.height * scale),
+      }
+    })
+
+    let parts = computeParts(targetWidth)
+    let totalHeight = parts.reduce((sum, part) => sum + part.height, 0) + gap
+
+    if (totalHeight > 5200) {
+      targetWidth = Math.max(720, Math.round(targetWidth * (5200 / totalHeight)))
+      parts = computeParts(targetWidth)
+      totalHeight = parts.reduce((sum, part) => sum + part.height, 0) + gap
+    }
+
+    const canvas = document.createElement("canvas")
+    canvas.width = targetWidth
+    canvas.height = totalHeight
+    const context = canvas.getContext("2d")
+    if (!context) return bottomFile
+
+    context.fillStyle = "#FFFFFF"
+    context.fillRect(0, 0, canvas.width, canvas.height)
+    context.imageSmoothingEnabled = true
+    context.imageSmoothingQuality = "high"
+
+    let y = 0
+    for (const part of parts) {
+      const x = Math.round((targetWidth - part.width) / 2)
+      context.drawImage(part.bitmap, x, y, part.width, part.height)
+      y += part.height + gap
+    }
+
+    const blob = await new Promise<Blob | null>(resolve => {
+      canvas.toBlob(resolve, "image/jpeg", 0.86)
+    })
+
+    bitmaps.forEach(bitmap => bitmap.close?.())
+
+    return blob
+      ? new File([blob], `ticket-long-2-photos-${Date.now()}.jpg`, {
+          type: "image/jpeg",
+          lastModified: Date.now(),
+        })
+      : bottomFile
+  } catch (error) {
+    console.warn("[scanner] archive deux photos indisponible", error)
+    return bottomFile
+  }
+}
+
+export async function runSmartScanLongTicket(
+  files: LongTicketScanFiles,
+  options: ScanEngineOptions = {},
+) {
+  if (!files?.top || !files?.bottom) {
+    throw new ScanError(
+      "SCAN_IMAGE_UNREADABLE",
+      "Deux photos sont nécessaires pour analyser un ticket long.",
+    )
+  }
+
+  const scanStartedAt = performance.now()
+  const progressByPart = { top: 0, bottom: 0 }
+
+  const partProgress = (part: "top" | "bottom") => (progress: ScanProgress) => {
+    progressByPart[part] = Math.max(progressByPart[part], Number(progress.progress || 0))
+    const average = (progressByPart.top + progressByPart.bottom) / 2
+    const label = part === "top"
+      ? `Photo haute — ${progress.label}`
+      : `Photo basse — ${progress.label}`
+    emit(options.onProgress, progress.step, label, Math.min(92, 6 + average * 0.86))
+  }
+
+  emit(options.onProgress, "optimizing", "Préparation séparée des deux photos...", 5)
+
+  const settled = await Promise.allSettled([
+    runSmartScan(files.top, {
+      ...options,
+      scanMode: "long_ticket_top",
+      skipLocalOcr: true,
+      disableSplitRetry: true,
+      onProgress: partProgress("top"),
+    }),
+    runSmartScan(files.bottom, {
+      ...options,
+      scanMode: "long_ticket_bottom",
+      skipLocalOcr: true,
+      disableSplitRetry: true,
+      onProgress: partProgress("bottom"),
+    }),
+  ])
+
+  const topScan = settled[0].status === "fulfilled" ? settled[0].value : null
+  const bottomScan = settled[1].status === "fulfilled" ? settled[1].value : null
+  const failures = settled
+    .map((result, index) => result.status === "rejected"
+      ? {
+          part: index === 0 ? "top" : "bottom",
+          message: result.reason instanceof Error
+            ? result.reason.message
+            : String(result.reason || "scan_failed"),
+        }
+      : null)
+    .filter(Boolean)
+
+  if (!topScan && !bottomScan) {
+    const firstFailure = settled.find(result => result.status === "rejected")
+    if (firstFailure?.status === "rejected") throw firstFailure.reason
+    throw new ScanError("SCAN_OCR_FAILED", "Les deux photos du ticket sont inexploitables.")
+  }
+
+  emit(options.onProgress, "checking", "Fusion des résultats haut et bas...", 94)
+
+  const topReceipt: any = topScan?.receipt || {}
+  const bottomReceipt: any = bottomScan?.receipt || {}
+  const topItems = Array.isArray(topReceipt.items) ? topReceipt.items : []
+  const bottomItems = Array.isArray(bottomReceipt.items) ? bottomReceipt.items : []
+  const items = mergeLongTicketItems(topItems, bottomItems)
+
+  const bottomTotalReliable = Number(bottomReceipt.total_amount || 0) > 0
+    && bottomReceipt.total_needs_review !== true
+  const topTotalReliable = Number(topReceipt.total_amount || 0) > 0
+    && topReceipt.total_needs_review !== true
+  const totalSourceReceipt = bottomTotalReliable
+    ? bottomReceipt
+    : topTotalReliable
+      ? topReceipt
+      : bottomReceipt.total_amount
+        ? bottomReceipt
+        : topReceipt
+
+  const totalAmount = Number(totalSourceReceipt.total_amount || 0)
+  const totalNeedsReview = totalAmount <= 0 || totalSourceReceipt.total_needs_review === true
+  const expectedItemsCount = Math.max(
+    Number(topReceipt.expected_items_count || topReceipt.expected_items_min || topReceipt.declared_items_count || 0),
+    Number(bottomReceipt.expected_items_count || bottomReceipt.expected_items_min || bottomReceipt.declared_items_count || 0),
+  )
+  const trustedItemsCount = items.filter(longTicketItemIsTrusted).length
+  const needsReviewItemsCount = Math.max(0, items.length - trustedItemsCount)
+  const coverageRatio = expectedItemsCount > 0
+    ? items.length / expectedItemsCount
+    : null
+  const completeEnough = expectedItemsCount <= 0
+    ? items.length >= 3
+    : items.length >= Math.ceil(expectedItemsCount * 0.8)
+  const budgetReliable = totalAmount > 0 && !totalNeedsReview
+  const smartShoppingSafe = budgetReliable && trustedItemsCount > 0
+  const itemsQualityStatus = trustedItemsCount === items.length && completeEnough
+    ? "trusted"
+    : trustedItemsCount > 0
+      ? "partial"
+      : "blocked"
+  const finalScanStatus = !budgetReliable
+    ? "long_manual_review"
+    : itemsQualityStatus === "trusted"
+      ? "budget_ok_articles_ok"
+      : smartShoppingSafe
+        ? "budget_ok_articles_partial"
+        : "long_usable_review"
+
+  const storeName = String(
+    pickLongTicketValue(
+      topReceipt.store_name,
+      topReceipt.merchant_name,
+      bottomReceipt.store_name,
+      bottomReceipt.merchant_name,
+      "Enseigne non reconnue",
+    ),
+  )
+  const purchaseDate = String(
+    pickLongTicketValue(
+      topReceipt.purchase_date,
+      bottomReceipt.purchase_date,
+    ),
+  )
+  const warnings = [
+    ...(Array.isArray(topReceipt.warnings) ? topReceipt.warnings : []),
+    ...(Array.isArray(bottomReceipt.warnings) ? bottomReceipt.warnings : []),
+    ...failures.map(failure => `Photo ${failure?.part || ""} non exploitable : ${failure?.message || ""}`),
+  ]
+  if (expectedItemsCount > 0 && !completeEnough) {
+    warnings.push(
+      `Détail incomplet : ${items.length} ligne(s) récupérée(s) pour ${expectedItemsCount} article(s) déclaré(s).`,
+    )
+  }
+
+  const receipt: any = {
+    ...topReceipt,
+    ...bottomReceipt,
+    store_name: storeName,
+    merchant_name: storeName,
+    normalized_store_name: pickLongTicketValue(
+      topReceipt.normalized_store_name,
+      bottomReceipt.normalized_store_name,
+    ),
+    store_location: pickLongTicketValue(
+      topReceipt.store_location,
+      bottomReceipt.store_location,
+    ),
+    purchase_date: purchaseDate || null,
+    date_status: purchaseDate ? "detected" : "needs_review",
+    total_amount: totalAmount || 0,
+    total_needs_review: totalNeedsReview,
+    total_source: totalSourceReceipt.total_source || (totalAmount ? "two_photo_bottom_priority" : "missing_or_unreliable"),
+    total_raw_text: totalSourceReceipt.total_raw_text || "",
+    total_confidence: Number(totalSourceReceipt.total_confidence || 0),
+    total_rejected_reason: totalNeedsReview
+      ? String(totalSourceReceipt.total_rejected_reason || "two_photo_total_missing_or_unreliable")
+      : "",
+    expected_items_count: expectedItemsCount || null,
+    expected_items_min: expectedItemsCount || null,
+    expected_items_source: expectedItemsCount
+      ? pickLongTicketValue(
+          bottomReceipt.expected_items_source,
+          topReceipt.expected_items_source,
+          "declared_total_articles",
+        )
+      : "not_found",
+    declared_items_count: expectedItemsCount || null,
+    declared_items_raw_text: pickLongTicketValue(
+      bottomReceipt.declared_items_raw_text,
+      topReceipt.declared_items_raw_text,
+    ),
+    items_count_status: expectedItemsCount ? "declared" : "unknown",
+    items,
+    estimated_items_sum: totalNeedsReview ? estimateTotalFromItems(items) : null,
+    budget_status: budgetReliable ? "reliable" : "needs_review",
+    items_quality_status: itemsQualityStatus,
+    smart_shopping_safe: smartShoppingSafe,
+    smart_shopping_blocked_reasons: smartShoppingSafe
+      ? []
+      : ["two_photo_items_need_review"],
+    trusted_items_count: trustedItemsCount,
+    needs_review_items_count: needsReviewItemsCount,
+    displayed_items_count: itemsQualityStatus === "trusted" ? trustedItemsCount : null,
+    displayed_items_count_source: itemsQualityStatus === "trusted"
+      ? "two_photo_trusted_items"
+      : "two_photo_partial_or_unreliable",
+    real_items_count_if_known: expectedItemsCount || null,
+    item_count_display_label: itemsQualityStatus === "trusted"
+      ? `${trustedItemsCount} article(s)`
+      : trustedItemsCount > 0
+        ? `${trustedItemsCount} article(s) exploitables / ${expectedItemsCount || items.length}`
+        : "Articles à vérifier",
+    scan_status: finalScanStatus,
+    final_scan_status: finalScanStatus,
+    scan_status_legacy: "long_ticket_two_images",
+    scan_strategy_used: "long_ticket_two_images_parallel",
+    long_ticket_two_photos: true,
+    needs_review: finalScanStatus !== "budget_ok_articles_ok",
+    warnings,
+    parser_debug: {
+      ...(topReceipt.parser_debug || {}),
+      ...(bottomReceipt.parser_debug || {}),
+      long_ticket_two_photos: true,
+      long_ticket_scan_strategy: "two_independent_images_parallel",
+      long_ticket_top_items_count: topItems.length,
+      long_ticket_bottom_items_count: bottomItems.length,
+      long_ticket_merged_items_count: items.length,
+      long_ticket_overlap_deduplicated_count: Math.max(
+        0,
+        topItems.length + bottomItems.length - items.length,
+      ),
+      long_ticket_expected_items_count: expectedItemsCount || null,
+      long_ticket_coverage_ratio: coverageRatio === null
+        ? null
+        : Number(coverageRatio.toFixed(2)),
+      long_ticket_part_failures: failures,
+      trusted_items_count: trustedItemsCount,
+      needs_review_items_count: needsReviewItemsCount,
+      items_quality_status: itemsQualityStatus,
+      smart_shopping_safe: smartShoppingSafe,
+      budget_status: budgetReliable ? "reliable" : "needs_review",
+      final_scan_status: finalScanStatus,
+      item_count_display_label: itemsQualityStatus === "trusted"
+        ? `${trustedItemsCount} article(s)`
+        : trustedItemsCount > 0
+          ? `${trustedItemsCount} article(s) exploitables / ${expectedItemsCount || items.length}`
+          : "Articles à vérifier",
+    },
+  }
+
+  const validation = validateParsedReceipt(receipt)
+  const archiveFile = await createLongTicketArchiveFile(
+    topScan?.optimizedFile || files.top,
+    bottomScan?.optimizedFile || files.bottom,
+  )
+
+  const topMetrics: any = topScan?.metrics || {}
+  const bottomMetrics: any = bottomScan?.metrics || {}
+  const aiUsed = Boolean(topMetrics.aiUsed || bottomMetrics.aiUsed)
+  const visionUsed = Boolean(topMetrics.visionUsed || bottomMetrics.visionUsed)
+  const textAiUsed = Boolean(topMetrics.textAiUsed || bottomMetrics.textAiUsed)
+  const metrics: any = {
+    ...topMetrics,
+    ...bottomMetrics,
+    provider: "long-ticket-two-images",
+    scanStrategyUsed: "long_ticket_two_images_parallel",
+    scanAiCallsCount:
+      numericLongTicketMetric(topMetrics, "scanAiCallsCount")
+      + numericLongTicketMetric(bottomMetrics, "scanAiCallsCount"),
+    aiUsed,
+    visionUsed,
+    textAiUsed,
+    openaiCalled: aiUsed,
+    inputTokens:
+      numericLongTicketMetric(topMetrics, "inputTokens")
+      + numericLongTicketMetric(bottomMetrics, "inputTokens")
+      || null,
+    outputTokens:
+      numericLongTicketMetric(topMetrics, "outputTokens")
+      + numericLongTicketMetric(bottomMetrics, "outputTokens")
+      || null,
+    estimatedCostEur:
+      numericLongTicketMetric(topMetrics, "estimatedCostEur")
+      + numericLongTicketMetric(bottomMetrics, "estimatedCostEur")
+      || null,
+    imageInitialBytes: Number(files.top.size || 0) + Number(files.bottom.size || 0),
+    imageCompressedBytes:
+      Number(topScan?.optimizedFile?.size || 0)
+      + Number(bottomScan?.optimizedFile?.size || 0),
+    imageOriginalWidth: Math.max(
+      numericLongTicketMetric(topMetrics, "imageOriginalWidth"),
+      numericLongTicketMetric(bottomMetrics, "imageOriginalWidth"),
+    ),
+    imageOriginalHeight:
+      numericLongTicketMetric(topMetrics, "imageOriginalHeight")
+      + numericLongTicketMetric(bottomMetrics, "imageOriginalHeight"),
+    imageOptimizedWidth: Math.max(
+      numericLongTicketMetric(topMetrics, "imageOptimizedWidth"),
+      numericLongTicketMetric(bottomMetrics, "imageOptimizedWidth"),
+    ),
+    imageOptimizedHeight:
+      numericLongTicketMetric(topMetrics, "imageOptimizedHeight")
+      + numericLongTicketMetric(bottomMetrics, "imageOptimizedHeight"),
+    totalNeedsReview,
+    totalSource: receipt.total_source,
+    totalRawText: receipt.total_raw_text,
+    totalConfidence: receipt.total_confidence,
+    trustedItemsCount,
+    needsReviewItemsCount,
+    itemsQualityStatus,
+    smartShoppingSafe,
+    budgetReliable,
+    budgetStatus: receipt.budget_status,
+    finalScanStatus,
+    scanStatus: finalScanStatus,
+    expectedItemsMin: expectedItemsCount || null,
+    expectedItemsSource: receipt.expected_items_source,
+    declaredItemsCount: expectedItemsCount || null,
+    declaredItemsRawText: receipt.declared_items_raw_text,
+    recoveryRatio: coverageRatio === null ? null : Number(coverageRatio.toFixed(2)),
+    recoveryRatioRaw: coverageRatio === null ? null : Number(coverageRatio.toFixed(2)),
+    recoveryRatioStatus: expectedItemsCount ? "computed" : "unknown_expected_items",
+    splitRetryUsed: Boolean(topMetrics.splitRetryUsed || bottomMetrics.splitRetryUsed),
+    splitSegmentsCount:
+      numericLongTicketMetric(topMetrics, "splitSegmentsCount")
+      + numericLongTicketMetric(bottomMetrics, "splitSegmentsCount"),
+    segmentsReceivedByEdgeFunction:
+      numericLongTicketMetric(topMetrics, "segmentsReceivedByEdgeFunction")
+      + numericLongTicketMetric(bottomMetrics, "segmentsReceivedByEdgeFunction"),
+    longTicketTwoPhotos: true,
+    longTicketTop: {
+      status: topScan ? "success" : "failed",
+      items: topItems.length,
+      provider: topMetrics.provider || topScan?.ocr?.provider || null,
+      total: Number(topReceipt.total_amount || 0) || null,
+    },
+    longTicketBottom: {
+      status: bottomScan ? "success" : "failed",
+      items: bottomItems.length,
+      provider: bottomMetrics.provider || bottomScan?.ocr?.provider || null,
+      total: Number(bottomReceipt.total_amount || 0) || null,
+    },
+    longTicketPartFailures: failures,
+    totalScanDurationMs: Math.round(performance.now() - scanStartedAt),
+  }
+
+  const ocr = {
+    text: [
+      String(topScan?.ocr?.text || ""),
+      String(bottomScan?.ocr?.text || ""),
+    ].filter(Boolean).join("\n"),
+    status: topScan?.ocr?.status === "success" || bottomScan?.ocr?.status === "success"
+      ? "success"
+      : "failed",
+    provider: "long-ticket-two-images",
+    confidence: Math.round(
+      (
+        Number(topScan?.ocr?.confidence || 0)
+        + Number(bottomScan?.ocr?.confidence || 0)
+      ) / Math.max(1, Number(Boolean(topScan)) + Number(Boolean(bottomScan))),
+    ),
+    structured: receipt,
+    metrics,
+    error: failures.length ? failures.map(failure => failure?.message).join(" | ") : "",
+  }
+
+  try {
+    sessionStorage.setItem("budgetkazpei:last-scan", JSON.stringify({
+      receipt,
+      created_at: new Date().toISOString(),
+    }))
+  } catch {
+    // Session restore is helpful, not critical.
+  }
+
+  emit(options.onProgress, "done", "Analyse des deux photos terminée.", 100)
+
+  return {
+    optimizedFile: archiveFile,
+    ocr,
+    receipt,
+    validation,
+    canResume: true,
+    metrics,
   }
 }
 

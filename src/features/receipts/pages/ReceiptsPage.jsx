@@ -16,7 +16,7 @@ import {
   validateReceipt,
 } from "../services/receiptService"
 import { useReceiptQuota } from "../hooks/useReceiptQuota"
-import { clearLastScanDraft, getLastScanDraft, runSmartScan } from "../../../services/scan/scanEngine"
+import { clearLastScanDraft, getLastScanDraft, runSmartScan, runSmartScanLongTicket } from "../../../services/scan/scanEngine"
 import { findDuplicateReceipt, getConfidenceColor, getConfidenceIcon } from "../../../services/scan/receiptValidator"
 import { importValidatedReceipt } from "../../../services/scan/receiptImporter"
 import { resolveMarketDisplayName } from "../../../services/scan/marketDisplay"
@@ -26,19 +26,9 @@ import { getScanErrorDetails, ScanError } from "../../../services/scan/scanError
 import { createScanMetric, incrementScanUsage } from "../../../services/scan/scanUsageService"
 import { syncShoppingItemsFromReceipt } from "../../shopping/services/shoppingEngine"
 import { BkIcons } from "../../../components/icons-budgetkazpei"
+import { createColorAliases } from "../../../styles/designSystem"
 
-const COLORS = {
-  card: "#0F1E38",
-  cardLight: "#152444",
-  border: "#1E3A5F",
-  accent: "#F97316",
-  green: "#22C55E",
-  red: "#EF4444",
-  cyan: "#23D3D6",
-  yellow: "#FCD34D",
-  muted: "#8EA4C5",
-  text: "#F8FAFC",
-}
+const COLORS = createColorAliases()
 
 const TEXT = {
   fr: {
@@ -66,7 +56,7 @@ const TEXT = {
     longTicketMissing: "Ajoutez les 2 photos du ticket.",
     longTicketNeedTwo: "Sélectionnez 2 images : le haut puis le bas du ticket.",
     longTicketModeOpened: "Ajoutez le haut puis le bas du ticket.",
-    longTicketMerging: "Fusion des deux photos du ticket...",
+    longTicketMerging: "Analyse séparée des deux photos du ticket...",
     quota: quota => quota.plan === "premium_plus"
       ? `Analyses IA : ${quota.used} / illimité`
       : `Analyses IA : ${quota.used} / ${quota.limit}`,
@@ -144,7 +134,7 @@ const TEXT = {
     longTicketMissing: "Azout 2 foto tiké-la.",
     longTicketNeedTwo: "Swazi 2 zimaz : lao tiké-la, apre anba tiké-la.",
     longTicketModeOpened: "Azout lao tiké-la, apre anba tiké-la.",
-    longTicketMerging: "Nou pe kol 2 foto tiké-la...",
+    longTicketMerging: "Nou pe analiz sak foto tiké-la séparéman...",
     quota: quota => quota.plan === "premium_plus"
       ? `Analiz IA : ${quota.used} / san limit`
       : `Analiz IA : ${quota.used} / ${quota.limit}`,
@@ -823,8 +813,8 @@ function inputStyle() {
   return {
     width: "100%",
     minHeight: 48,
-    border: `1px solid ${COLORS.border}`,
-    background: COLORS.cardLight,
+    border: `1px solid ${COLORS.inputBorder}`,
+    background: COLORS.input,
     borderRadius: 14,
     color: COLORS.text,
     padding: "11px 13px",
@@ -836,109 +826,13 @@ function inputStyle() {
 
 function cardStyle(extra = {}) {
   return {
-    background: `linear-gradient(135deg, ${COLORS.card}, ${COLORS.cardLight})`,
+    background: COLORS.card,
     border: `1px solid ${COLORS.border}`,
     borderRadius: 22,
     padding: 18,
+    boxShadow: COLORS.shadow,
     ...extra,
   }
-}
-
-function loadImageFromFile(file) {
-  return new Promise((resolve, reject) => {
-    const url = URL.createObjectURL(file)
-    const image = new Image()
-
-    image.onload = () => {
-      URL.revokeObjectURL(url)
-      resolve(image)
-    }
-
-    image.onerror = () => {
-      URL.revokeObjectURL(url)
-      reject(new Error("Image illisible."))
-    }
-
-    image.src = url
-  })
-}
-
-async function mergeReceiptImagesVertically(files = []) {
-  const validFiles = files.filter(Boolean)
-
-  if (validFiles.length < 2) {
-    throw new Error("Deux photos sont nécessaires.")
-  }
-
-  const images = await Promise.all(validFiles.map(loadImageFromFile))
-
-  const naturalWidths = images
-    .map(image => image.naturalWidth || image.width || 0)
-    .filter(width => width > 0)
-
-  const targetWidthInitial = Math.min(1280, Math.max(...naturalWidths, 900))
-  const gap = 16
-
-  function computeLayout(targetWidth) {
-    const parts = images.map(image => {
-      const width = image.naturalWidth || image.width || targetWidth
-      const height = image.naturalHeight || image.height || targetWidth
-      const scale = targetWidth / width
-
-      return {
-        image,
-        width: Math.round(width * scale),
-        height: Math.round(height * scale),
-      }
-    })
-
-    const totalHeight = parts.reduce((sum, part) => sum + part.height, 0) + gap * (parts.length - 1)
-
-    return { parts, totalHeight }
-  }
-
-  let targetWidth = targetWidthInitial
-  let layout = computeLayout(targetWidth)
-
-  const maxTotalHeight = 5200
-  if (layout.totalHeight > maxTotalHeight) {
-    targetWidth = Math.max(900, Math.round(targetWidth * (maxTotalHeight / layout.totalHeight)))
-    layout = computeLayout(targetWidth)
-  }
-
-  const canvas = document.createElement("canvas")
-  canvas.width = targetWidth
-  canvas.height = layout.totalHeight
-
-  const context = canvas.getContext("2d")
-  if (!context) {
-    throw new Error("Fusion image impossible.")
-  }
-
-  context.fillStyle = "#FFFFFF"
-  context.fillRect(0, 0, canvas.width, canvas.height)
-  context.imageSmoothingEnabled = true
-  context.imageSmoothingQuality = "high"
-
-  let y = 0
-  for (const part of layout.parts) {
-    const x = Math.round((targetWidth - part.width) / 2)
-    context.drawImage(part.image, x, y, part.width, part.height)
-    y += part.height + gap
-  }
-
-  const blob = await new Promise(resolve => {
-    canvas.toBlob(resolve, "image/jpeg", 0.86)
-  })
-
-  if (!blob) {
-    throw new Error("Fusion image impossible.")
-  }
-
-  return new File([blob], `ticket-long-2-photos-${Date.now()}.jpg`, {
-    type: "image/jpeg",
-    lastModified: Date.now(),
-  })
 }
 
 export default function ReceiptsPage({
@@ -1078,27 +972,18 @@ export default function ReceiptsPage({
       return
     }
 
-    setBusy(true)
     setMessage(txt.longTicketMerging)
     setScanError(null)
 
-    try {
-      const mergedFile = await mergeReceiptImagesVertically([
-        longTicketFiles.top,
-        longTicketFiles.bottom,
-      ])
-
-      await handleFile(mergedFile)
-      resetLongTicketScan()
-    } catch (error) {
-      console.error("[scanner] Fusion ticket long impossible:", error)
-      setMessage(error.message || txt.error)
-    } finally {
-      setBusy(false)
-    }
+    await handleFile(longTicketFiles.top, {
+      longTicketFiles: {
+        top: longTicketFiles.top,
+        bottom: longTicketFiles.bottom,
+      },
+    })
   }
 
-  async function handleFile(file) {
+  async function handleFile(file, scanOptions = {}) {
     if (!file) return
 
     if (!user?.id) {
@@ -1112,6 +997,10 @@ export default function ReceiptsPage({
       return
     }
 
+    const inputBytes = scanOptions.longTicketFiles
+      ? Number(scanOptions.longTicketFiles.top?.size || 0) + Number(scanOptions.longTicketFiles.bottom?.size || 0)
+      : Number(file.size || 0)
+
     setBusy(true)
     setMessage("")
     setScanError(null)
@@ -1120,10 +1009,15 @@ export default function ReceiptsPage({
       setMode("analysis")
       setScanProgress({ label: "Preparation...", progress: 5 })
 
-      const scan = await runSmartScan(file, {
-        onProgress: progress => setScanProgress(progress),
-        plan: quota.plan,
-      })
+      const scan = scanOptions.longTicketFiles
+        ? await runSmartScanLongTicket(scanOptions.longTicketFiles, {
+            onProgress: progress => setScanProgress(progress),
+            plan: quota.plan,
+          })
+        : await runSmartScan(file, {
+            onProgress: progress => setScanProgress(progress),
+            plan: quota.plan,
+          })
 
       const parsed = scan.receipt
       const dateDiagnostic = getTicketMonthDiagnostic(parsed.purchase_date)
@@ -1241,7 +1135,7 @@ export default function ReceiptsPage({
       try {
         await createScanMetric({
           userId: user?.id,
-          metrics: { imageInitialBytes: file.size },
+          metrics: { imageInitialBytes: inputBytes },
           status: "error",
           error: { code: details.code, message: details.technicalMessage },
         })
@@ -2042,7 +1936,7 @@ export default function ReceiptsPage({
                 minHeight: 54,
                 borderRadius: 16,
                 border: `1px solid ${longTicketFiles.top ? COLORS.green : COLORS.border}`,
-                background: "rgba(255,255,255,.06)",
+                background: COLORS.surface,
                 color: COLORS.text,
                 fontWeight: 950,
                 fontFamily: "inherit",
@@ -2060,7 +1954,7 @@ export default function ReceiptsPage({
                 minHeight: 54,
                 borderRadius: 16,
                 border: `1px solid ${longTicketFiles.bottom ? COLORS.green : COLORS.border}`,
-                background: "rgba(255,255,255,.06)",
+                background: COLORS.surface,
                 color: COLORS.text,
                 fontWeight: 950,
                 fontFamily: "inherit",
@@ -2238,7 +2132,7 @@ function ScannerActionButton({ title, description, badge = "", Icon, onClick, di
       activeShadow: "0 8px 18px rgba(249,115,22,.22)",
     },
     secondary: {
-      background: "linear-gradient(135deg, rgba(35,211,214,.20), rgba(21,36,68,.92))",
+      background: COLORS.blueSoft,
       border: "1px solid rgba(35,211,214,.38)",
       color: COLORS.text,
       descriptionColor: COLORS.muted,
@@ -2248,21 +2142,21 @@ function ScannerActionButton({ title, description, badge = "", Icon, onClick, di
     },
     special: {
       background: active
-        ? "linear-gradient(135deg, rgba(168,85,247,.34), rgba(35,211,214,.20))"
-        : "linear-gradient(135deg, rgba(124,58,237,.26), rgba(21,36,68,.95))",
+        ? COLORS.selected
+        : COLORS.surface,
       border: active ? "1px solid rgba(168,85,247,.75)" : "1px solid rgba(168,85,247,.42)",
       color: COLORS.text,
-      descriptionColor: "#C4B5FD",
+      descriptionColor: COLORS.muted,
       iconBackground: "rgba(168,85,247,.18)",
       shadow: "0 16px 32px rgba(124,58,237,.16)",
       activeShadow: "0 8px 18px rgba(124,58,237,.18)",
     },
     neutral: {
-      background: "linear-gradient(135deg, rgba(255,255,255,.07), rgba(21,36,68,.84))",
+      background: COLORS.surface,
       border: `1px solid ${COLORS.border}`,
       color: COLORS.text,
       descriptionColor: COLORS.muted,
-      iconBackground: "rgba(255,255,255,.08)",
+      iconBackground: COLORS.card,
       shadow: "0 10px 22px rgba(0,0,0,.16)",
       activeShadow: "0 5px 14px rgba(0,0,0,.18)",
     },
@@ -2315,7 +2209,7 @@ function ScannerActionButton({ title, description, badge = "", Icon, onClick, di
         alignItems: "center",
         justifyContent: "center",
         background: style.iconBackground,
-        border: "1px solid rgba(255,255,255,.10)",
+        border: `1px solid ${COLORS.border}`,
         flexShrink: 0,
       }}>
         {Icon && typeof Icon === "function" ? <Icon size={22} /> : null}
@@ -2356,16 +2250,16 @@ function ActionButton({ label, Icon, icon, onClick, disabled, muted, danger, suc
     : success
       ? COLORS.green
       : muted
-        ? "rgba(255,255,255,.06)"
+        ? COLORS.surface
         : COLORS.accent
   const color = success ? "#06101F" : muted ? COLORS.text : "#fff"
-  const border = muted ? `1px solid ${COLORS.border}` : "1px solid rgba(255,255,255,.08)"
+  const border = muted ? `1px solid ${COLORS.border}` : `1px solid ${COLORS.borderSubtle}`
   const shadow = danger
     ? "0 12px 26px rgba(239,68,68,.24)"
     : success
       ? "0 12px 26px rgba(34,197,94,.22)"
       : muted
-        ? "0 8px 18px rgba(0,0,0,.14), inset 0 1px 0 rgba(255,255,255,.05)"
+        ? COLORS.shadow
         : "0 12px 26px rgba(249,115,22,.26)"
 
   return (
@@ -2445,7 +2339,7 @@ function AnalysisScreen({ progress, txt }) {
         <h2 style={{ color: COLORS.text, margin: "0 0 18px", fontSize: 28 }}>
           Analyse du ticket
         </h2>
-        <div style={{ height: 12, borderRadius: 999, background: "rgba(255,255,255,.10)", overflow: "hidden", border: "1px solid rgba(255,255,255,.08)" }}>
+        <div style={{ height: 12, borderRadius: 999, background: COLORS.progressTrack, overflow: "hidden", border: `1px solid ${COLORS.borderSubtle}` }}>
           <div style={{
             width: `${value}%`,
             height: "100%",
@@ -2601,7 +2495,7 @@ function ValidationForm({
           <button
             type="button"
             onClick={() => setShowBlockedDetectedLines(prev => !prev)}
-            style={{ marginTop: 10, minHeight: 42, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "rgba(255,255,255,.06)", color: COLORS.text, fontWeight: 950, padding: "0 14px" }}
+            style={{ marginTop: 10, minHeight: 42, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: COLORS.surface, color: COLORS.text, fontWeight: 950, padding: "0 14px" }}
           >
             {showBlockedDetectedLines ? txt.hideDetectedLines : txt.showDetectedLines}
           </button>
@@ -2633,7 +2527,7 @@ function ValidationForm({
           const itemNeedsReview = normalizeItemQualityStatus(item) !== "trusted" || articlesBlocked || item.needs_review === true
           const marketDisplay = resolveMarketDisplayName(item)
           return (
-          <div key={index} style={{ background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.09)", borderRadius: 16, padding: 12 }}>
+          <div key={index} style={{ background: COLORS.row, border: `1px solid ${COLORS.border}`, borderRadius: 16, padding: 12 }}>
             <div style={{ display: "grid", gap: 10 }}>
               {(itemNeedsReview || !itemAllowed || marketDisplay.marketRecognized) && (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -2717,8 +2611,8 @@ function MetaChip({ label, strong = false }) {
   return (
     <span style={{
       border: `1px solid ${strong ? COLORS.yellow : COLORS.border}`,
-      background: strong ? "rgba(252,211,77,.13)" : "rgba(255,255,255,.06)",
-      color: strong ? COLORS.yellow : COLORS.muted,
+      background: strong ? COLORS.yellowSoft : COLORS.surface,
+      color: strong ? COLORS.text : COLORS.muted,
       borderRadius: 999,
       padding: "5px 8px",
       fontSize: 11,
@@ -2742,9 +2636,9 @@ function HistoryList({ txt, rows, busy, onOpen, onDelete }) {
           {safeRows.map(row => (
             <div key={row.id} style={{
               minHeight: 74,
-              border: "1px solid rgba(255,255,255,.09)",
+              border: `1px solid ${COLORS.border}`,
               borderRadius: 16,
-              background: "rgba(255,255,255,.05)",
+              background: COLORS.row,
               color: COLORS.text,
               padding: 12,
               display: "grid",
@@ -2965,8 +2859,8 @@ function ReceiptDetail({
         gap: 8,
         padding: 12,
         borderRadius: 16,
-        border: "1px solid rgba(255,255,255,.08)",
-        background: "rgba(255,255,255,.04)",
+        border: `1px solid ${COLORS.border}`,
+        background: COLORS.surface,
         color: COLORS.muted,
         fontSize: 13,
         lineHeight: 1.45,
@@ -2987,7 +2881,7 @@ function ReceiptDetail({
             disabled={busy || batchSaving}
             muted
           />
-          {showOriginal && <img src={imageUrl} alt="" style={{ width: "100%", maxHeight: 420, objectFit: "contain", borderRadius: 16, marginTop: 10, border: "1px solid rgba(255,255,255,.12)" }} />}
+          {showOriginal && <img src={imageUrl} alt="" style={{ width: "100%", maxHeight: 420, objectFit: "contain", borderRadius: 16, marginTop: 10, border: `1px solid ${COLORS.border}` }} />}
         </div>
       )}
       <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 950, marginTop: 18 }}>
@@ -3006,8 +2900,8 @@ function ReceiptDetail({
           padding: 12,
           borderRadius: 16,
           border: "1px solid rgba(35,211,214,.28)",
-          background: "rgba(10,22,40,.94)",
-          boxShadow: "0 14px 30px rgba(0,0,0,.25)",
+          background: COLORS.card,
+          boxShadow: COLORS.shadow,
         }}>
           <div style={{ color: COLORS.text, fontSize: 13, fontWeight: 900 }}>
             {dirtyItems.length} correction{dirtyItems.length > 1 ? "s" : ""} en attente
@@ -3034,7 +2928,7 @@ function ReceiptDetail({
           const draftCategory = itemDrafts[item.id]?.category || item.category || "alimentaire"
 
           return (
-          <div key={item.id} style={{ display: "grid", gap: 8, color: COLORS.text, borderBottom: "1px solid rgba(255,255,255,.08)", paddingBottom: 12 }}>
+          <div key={item.id} style={{ display: "grid", gap: 8, color: COLORS.text, borderBottom: `1px solid ${COLORS.borderSubtle}`, paddingBottom: 12 }}>
             {item.ocr_name && item.ocr_name !== item.name && (
               <div style={{ color: COLORS.muted, fontSize: 12 }}>OCR : {item.ocr_name}</div>
             )}

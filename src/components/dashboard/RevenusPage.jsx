@@ -1,16 +1,10 @@
 import { useState } from "react"
 import { formatMontant } from "../../utils/format"
 import { getIncomeDetailsTotal, normalizeIncomeDetails, saveProfileIncomeDetails } from "../../services/income/profileIncomeService"
+import { createColorAliases } from "../../styles/designSystem"
+import { useTheme } from "../../styles/ThemeProvider"
 
-const COLORS = {
-  card: "#0F1E38",
-  cardLight: "#152444",
-  border: "#1E3A5F",
-  green: "#22C55E",
-  cyan: "#23D3D6",
-  muted: "#8EA4C5",
-  text: "#F8FAFC",
-}
+const COLORS = createColorAliases()
 
 function getIsKreol(t) {
   const lang = String(t?.lang || "").toLowerCase()
@@ -32,6 +26,7 @@ export default function RevenusPage({
   onGoPremium,
   t,
 }) {
+  useTheme()
   const isKreol = getIsKreol(t)
   const [incomeEditorOpen, setIncomeEditorOpen] = useState(false)
   const [savingIncome, setSavingIncome] = useState(false)

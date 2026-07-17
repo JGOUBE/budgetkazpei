@@ -1,18 +1,7 @@
 import { useState } from "react"
+import { createColorAliases } from "../../styles/designSystem"
 
-const COLORS = {
-  card: "#0F1E38",
-  cardLight: "#152444",
-  border: "#1E3A5F",
-  accent: "#F97316",
-  green: "#22C55E",
-  red: "#EF4444",
-  muted: "#8EA4C5",
-  text: "#F1F5F9",
-  yellow: "#FCD34D",
-  cyan: "#23D3D6",
-  purple: "#A78BFA",
-}
+const COLORS = createColorAliases()
 
 const WATERMARK = "/icons-creole/palmier.png"
 const PREMIUM_URL = "https://budgetkazpei.vercel.app/premium"

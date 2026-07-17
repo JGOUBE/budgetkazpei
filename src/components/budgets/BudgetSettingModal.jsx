@@ -1,14 +1,7 @@
 import { useMemo, useState } from "react"
+import { createColorAliases } from "../../styles/designSystem"
 
-const COLORS = {
-  bg: "#0A1628",
-  border: "#1E3A5F",
-  accent: "#F97316",
-  red: "#EF4444",
-  muted: "#8EA4C5",
-  text: "#F8FAFC",
-  whiteSoft: "rgba(248,250,252,.82)",
-}
+const COLORS = createColorAliases()
 
 export default function BudgetSettingsModal({
   categories,

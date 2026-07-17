@@ -2,11 +2,13 @@ import LanguageSwitcher from "../LanguageSwitcher"
 import { BkIcons } from "../icons-budgetkazpei"
 import { ds, buttonStyle } from "../../styles/designSystem"
 import AppLogo from "../AppLogo"
+import ThemeToggle from "../ThemeToggle"
+import { useTheme } from "../../styles/ThemeProvider"
 
 export default function Header({ activeNav, onAdd, lang, onToggleLang, t, commune }) {
+  useTheme()
   const LocationIcon = BkIcons.location
   const AddIcon = BkIcons.add
-  const AppearanceIcon = BkIcons.appearance
 
   const titles = {
     dashboard: { section: "nav", key: "dashboard" },
@@ -39,10 +41,7 @@ export default function Header({ activeNav, onAdd, lang, onToggleLang, t, commun
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-        <button type="button" style={buttonStyle({ padding: "0 12px", background: "rgba(255,255,255,.05)", color: ds.textSecondary, display: "inline-flex", alignItems: "center", gap: 8 })}>
-          <AppearanceIcon size={17} />
-          {lang === "fr" ? "Apparence" : "Aparans"}
-        </button>
+        <ThemeToggle />
         <LanguageSwitcher lang={lang} onToggle={onToggleLang} />
         <button
           onClick={onAdd}

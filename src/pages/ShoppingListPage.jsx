@@ -13,9 +13,10 @@ import {
   saveShoppingListSnapshot,
 } from "../services/shoppingList/shoppingListSnapshots"
 import { formatMontant } from "../utils/format"
+import { createColorAliases } from "../styles/designSystem"
 
-const COLORS = { card: "#0F1E38", cardLight: "#152444", border: "#1E3A5F", accent: "#F97316", green: "#22C55E", cyan: "#23D3D6", yellow: "#FCD34D", muted: "#8EA4C5", text: "#F8FAFC", danger: "#EF4444" }
-const card = extra => ({ background: `linear-gradient(135deg, ${COLORS.card}, ${COLORS.cardLight})`, border: `1px solid ${COLORS.border}`, borderRadius: 22, padding: 18, ...extra })
+const COLORS = createColorAliases({ danger: () => COLORS.red })
+const card = extra => ({ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 22, padding: 18, boxShadow: COLORS.shadow, ...extra })
 
 function daysUntil(dateValue) {
   const time = new Date(dateValue).getTime()
@@ -311,7 +312,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
 
       <div style={card()}>
         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr auto auto", gap: 10 }}>
-          <input data-shopping-add value={query} onChange={e => setQuery(e.target.value)} onKeyDown={e => e.key === "Enter" && addItem()} placeholder={txt.addPlaceholder} style={{ minHeight: 50, borderRadius: 14, border: `1px solid ${COLORS.border}`, background: COLORS.cardLight, color: COLORS.text, padding: "0 14px" }} />
+          <input data-shopping-add value={query} onChange={e => setQuery(e.target.value)} onKeyDown={e => e.key === "Enter" && addItem()} placeholder={txt.addPlaceholder} style={{ minHeight: 50, borderRadius: 14, border: `1px solid ${COLORS.inputBorder}`, background: COLORS.input, color: COLORS.text, padding: "0 14px" }} />
           <button type="button" onClick={() => addItem()} style={{ minHeight: 50, border: "none", borderRadius: 14, background: COLORS.accent, color: "#fff", fontWeight: 950, padding: "0 16px" }}>{txt.add}</button>
           <button type="button" onClick={startShare} style={{ minHeight: 50, border: `1px solid ${COLORS.cyan}66`, borderRadius: 14, background: "rgba(35,211,214,.12)", color: COLORS.text, fontWeight: 950, padding: "0 16px", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
             <Share2 size={18} /> {txt.share}
@@ -324,7 +325,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
 
       <div style={card()}>
         {estimate.items.length === 0 ? <div style={{ color: COLORS.muted }}>{txt.empty}</div> : estimate.items.map(item => (
-          <label key={item.id} style={{ display: "grid", gridTemplateColumns: "auto 1fr auto", gap: 10, alignItems: "center", color: COLORS.text, borderBottom: "1px solid rgba(255,255,255,.08)", padding: "10px 0" }}>
+          <label key={item.id} style={{ display: "grid", gridTemplateColumns: "auto 1fr auto", gap: 10, alignItems: "center", color: COLORS.text, borderBottom: `1px solid ${COLORS.borderSubtle}`, padding: "10px 0" }}>
             <input type="checkbox" checked={item.checked} onChange={e => setItems(prev => prev.map(row => row.id === item.id ? { ...row, checked: e.target.checked } : row))} />
             <span style={{ textDecoration: item.checked ? "line-through" : "none" }}>
               {item.name}
@@ -350,7 +351,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
           {snapshots.length === 0 ? (
             <div style={{ color: COLORS.muted }}>{txt.noSavedLists}</div>
           ) : snapshots.map(snapshot => (
-            <div key={snapshot.id} style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr auto", gap: 12, alignItems: "center", border: "1px solid rgba(255,255,255,.08)", borderRadius: 14, padding: 12 }}>
+            <div key={snapshot.id} style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr auto", gap: 12, alignItems: "center", border: `1px solid ${COLORS.border}`, background: COLORS.row, borderRadius: 14, padding: 12 }}>
               <div>
                 <div style={{ color: COLORS.text, fontWeight: 950 }}>{snapshot.title}</div>
                 <div style={{ color: COLORS.muted, marginTop: 4, fontSize: 13 }}>
@@ -370,7 +371,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
 
       {shareModal && (
         <Modal title={txt.shareTitle} closeLabel={txt.close} onClose={() => setShareModal(null)}>
-          <textarea readOnly value={shareModal.text} style={{ width: "100%", minHeight: 190, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: COLORS.card, color: COLORS.text, padding: 12, resize: "vertical" }} />
+          <textarea readOnly value={shareModal.text} style={{ width: "100%", minHeight: 190, borderRadius: 12, border: `1px solid ${COLORS.inputBorder}`, background: COLORS.input, color: COLORS.text, padding: 12, resize: "vertical" }} />
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(4, 1fr)", gap: 10, marginTop: 12 }}>
             <ActionButton onClick={() => shareWith("copy", shareModal.text)} icon={<Copy size={18} />} label={txt.copy} />
             <ActionButton onClick={() => shareWith("email", shareModal.text)} icon={<Mail size={18} />} label="Email" />
@@ -400,7 +401,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
 
 function SmallButton({ icon, label, onClick, danger = false }) {
   return (
-    <button type="button" onClick={onClick} style={{ minHeight: 36, borderRadius: 12, border: `1px solid ${danger ? COLORS.danger : COLORS.border}`, background: "rgba(255,255,255,.04)", color: danger ? "#FCA5A5" : COLORS.text, fontWeight: 850, padding: "0 10px", display: "inline-flex", alignItems: "center", gap: 6 }}>
+    <button type="button" onClick={onClick} style={{ minHeight: 36, borderRadius: 12, border: `1px solid ${danger ? `${COLORS.danger}55` : COLORS.border}`, background: danger ? COLORS.redSoft : COLORS.card, color: danger ? COLORS.danger : COLORS.text, fontWeight: 850, padding: "0 10px", display: "inline-flex", alignItems: "center", gap: 6 }}>
       {icon} {label}
     </button>
   )
@@ -417,10 +418,10 @@ function ActionButton({ icon, label, onClick }) {
 function Modal({ title, children, onClose, closeLabel = "Fermer" }) {
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(2,6,23,.72)", display: "flex", alignItems: "center", justifyContent: "center", padding: 18 }}>
-      <div style={{ width: "min(680px, 100%)", background: COLORS.cardLight, border: `1px solid ${COLORS.border}`, borderRadius: 18, padding: 18, boxShadow: "0 24px 80px rgba(0,0,0,.35)" }}>
+      <div style={{ width: "min(680px, 100%)", background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 18, padding: 18, boxShadow: COLORS.shadow }}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", marginBottom: 12 }}>
           <h3 style={{ margin: 0, color: COLORS.text }}>{title}</h3>
-          <button type="button" onClick={onClose} style={{ minHeight: 36, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "rgba(255,255,255,.06)", color: COLORS.text, fontWeight: 900, padding: "0 12px" }}>{closeLabel}</button>
+          <button type="button" onClick={onClose} style={{ minHeight: 36, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: COLORS.surface, color: COLORS.text, fontWeight: 900, padding: "0 12px" }}>{closeLabel}</button>
         </div>
         {children}
       </div>

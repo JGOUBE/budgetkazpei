@@ -2,8 +2,9 @@ import { useEffect, useMemo, useState } from "react"
 import { listShoppingItems } from "../features/shopping/services/shoppingEngine"
 import { buildSavingsInsights } from "../services/savings/savingsEngine"
 import { formatMontant } from "../utils/format"
+import { createColorAliases } from "../styles/designSystem"
 
-const COLORS = { card: "#0F1E38", cardLight: "#152444", border: "#1E3A5F", accent: "#F97316", green: "#22C55E", cyan: "#23D3D6", muted: "#8EA4C5", text: "#F8FAFC" }
+const COLORS = createColorAliases()
 const card = extra => ({ background: `linear-gradient(135deg, ${COLORS.card}, ${COLORS.cardLight})`, border: `1px solid ${COLORS.border}`, borderRadius: 22, padding: 18, ...extra })
 
 const COPY = {

@@ -1,19 +1,8 @@
 import { useMemo, useState } from "react"
 import { supabase } from "../../services/supabase"
+import { createColorAliases } from "../../styles/designSystem"
 
-const COLORS = {
-  card: "#0F1E38",
-  cardLight: "#152444",
-  border: "#1E3A5F",
-  accent: "#F97316",
-  yellow: "#FCD34D",
-  cyan: "#23D3D6",
-  green: "#22C55E",
-  muted: "#8EA4C5",
-  text: "#F1F5F9",
-  red: "#FB7185",
-  purple: "#A78BFA",
-}
+const COLORS = createColorAliases({ red: () => "#FB7185" })
 
 function normalize(value) {
   return String(value || "").toLowerCase()

@@ -4,8 +4,8 @@ import { supabase } from "../../services/supabase"
 const boxStyle = {
   minHeight: "100vh",
   background:
-    "radial-gradient(circle at top, rgba(35,211,214,.12), transparent 35%), #0A1628",
-  color: "#F8FAFC",
+    "radial-gradient(circle at top, rgba(35,211,214,.12), transparent 35%), var(--bkp-bg)",
+  color: "var(--bkp-text)",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
@@ -17,8 +17,8 @@ const cardStyle = {
   width: 460,
   maxWidth: "94vw",
   background:
-    "linear-gradient(135deg, rgba(15,30,56,.98), rgba(10,22,40,.98))",
-  border: "1px solid rgba(56,189,248,.25)",
+    "linear-gradient(135deg, var(--bkp-card), var(--bkp-card-hover))",
+  border: "1px solid var(--bkp-border)",
   borderRadius: 24,
   padding: 24,
   boxShadow: "0 30px 90px rgba(0,0,0,.35)",
@@ -89,7 +89,7 @@ export default class ErrorBoundary extends React.Component {
           <p
             style={{
               margin: "0 0 16px",
-              color: "#8EA4C5",
+              color: "var(--bkp-muted)",
               fontSize: 14,
               lineHeight: 1.6,
             }}
@@ -116,8 +116,8 @@ export default class ErrorBoundary extends React.Component {
             style={{
               ...buttonStyle,
               background: "rgba(255,255,255,.08)",
-              color: "#F8FAFC",
-              border: "1px solid rgba(255,255,255,.12)",
+              color: "var(--bkp-text)",
+              border: "1px solid var(--bkp-border)",
             }}
           >
             Me déconnecter
@@ -127,7 +127,7 @@ export default class ErrorBoundary extends React.Component {
             style={{
               marginTop: 16,
               textAlign: "left",
-              color: "#94A3B8",
+              color: "var(--bkp-subtle)",
               fontSize: 12,
             }}
           >

@@ -45,20 +45,12 @@ import TermsPage from "./pages/TermsPage"
 import SuppressionComptePage from "./pages/SuppressionComptePage"
 import ResetPasswordPage from "./pages/ResetPasswordPage"
 import { BkIcons } from "./components/icons-budgetkazpei"
-import { ds } from "./styles/designSystem"
+import { createColorAliases, ds } from "./styles/designSystem"
+import { useTheme } from "./styles/ThemeProvider"
 import AppLogo from "./components/AppLogo"
+import ThemeToggle from "./components/ThemeToggle"
 
-const COLORS = {
-  bg: ds.background,
-  card: ds.card,
-  cardLight: ds.cardHover,
-  border: ds.border,
-  accent: ds.primary,
-  green: ds.success,
-  red: ds.danger,
-  muted: ds.textSecondary,
-  text: ds.textPrimary,
-}
+const COLORS = createColorAliases()
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
@@ -125,6 +117,7 @@ function BudgetKazPeiApp({ initialAuthPage = "login" }) {
   const [editingTransaction, setEditingTransaction] = useState(null)
   const [subscriptionPlan, setSubscriptionPlan] = useState("free")
   const [dashboardOpportunitiesCount, setDashboardOpportunitiesCount] = useState(0)
+  const { themeName } = useTheme()
 
   const isMobile = useIsMobile()
   const { lang, toggleLang, t } = useLanguage()
@@ -386,13 +379,14 @@ function BudgetKazPeiApp({ initialAuthPage = "login" }) {
     <div
       style={{
         minHeight: "100vh",
-        background: "linear-gradient(180deg, #07192E 0%, #0A1628 46%, #07111F 100%)",
+        background: ds.appBackground,
         color: COLORS.text,
         fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif",
         opacity: mounted ? 1 : 0,
         transition: "opacity 0.5s ease",
         display: isMobile ? "block" : "flex",
       }}
+      data-theme={themeName}
     >
       {isMobile && (
         <div
@@ -591,6 +585,7 @@ function BudgetKazPeiApp({ initialAuthPage = "login" }) {
             >
               {lang === "fr" ? "Kreol" : "Francais"}
             </button>
+            <ThemeToggle compact />
           </div>
         )}
 
@@ -880,7 +875,7 @@ function BudgetKazPeiApp({ initialAuthPage = "login" }) {
             left: 0,
             right: 0,
             zIndex: 50,
-            background: "rgba(15,30,56,.96)",
+            background: ds.elevated,
             borderTop: `1px solid ${COLORS.border}`,
             display: "flex",
             justifyContent: "space-around",
@@ -904,7 +899,6 @@ function BudgetKazPeiApp({ initialAuthPage = "login" }) {
               type="button"
               onClick={() => handleNavChange(item.id)}
               style={{
-                background: "transparent",
                 border: "none",
                 display: "flex",
                 flexDirection: "column",

@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react"
 import { supabase } from "../services/supabase"
 import { buildGamificationState } from "../services/gamification/gamificationEngine"
+import { createColorAliases } from "../styles/designSystem"
 
-const COLORS = { card: "#0F1E38", cardLight: "#152444", border: "#1E3A5F", accent: "#F97316", green: "#22C55E", cyan: "#23D3D6", yellow: "#FCD34D", muted: "#A9BBDD", text: "#F8FAFC", red: "#EF4444" }
+const COLORS = createColorAliases()
 const card = extra => ({ background: `linear-gradient(135deg, ${COLORS.card}, ${COLORS.cardLight})`, border: `1px solid ${COLORS.border}`, borderRadius: 22, padding: 18, ...extra })
 
 const COPY = {

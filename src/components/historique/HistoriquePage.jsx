@@ -2,17 +2,9 @@ import { useState } from "react"
 import { Download, Lock, CalendarClock, FileText } from "lucide-react"
 import { formatMontant } from "../../utils/format"
 import { generateMonthlyBudgetPDF } from "../../services/pdfService"
+import { createColorAliases } from "../../styles/designSystem"
 
-const COLORS = {
-  card: "#0F1E38",
-  cardLight: "#152444",
-  border: "#1E3A5F",
-  accent: "#F97316",
-  yellow: "#FCD34D",
-  cyan: "#23D3D6",
-  muted: "#8EA4C5",
-  text: "#F1F5F9",
-}
+const COLORS = createColorAliases()
 
 function translate(t, section, key, fallback) {
   if (typeof t !== "function") return fallback

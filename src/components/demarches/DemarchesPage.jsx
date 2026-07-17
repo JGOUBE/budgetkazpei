@@ -17,20 +17,21 @@ import {
 } from "lucide-react"
 
 import { supabase } from "../../services/supabase"
+import { createColorAliases } from "../../styles/designSystem"
+import { useTheme } from "../../styles/ThemeProvider"
 
-const COLORS = {
-  text: "#F1F5F9",
-  muted: "#8EA4C5",
-  card: "#0F1E38",
-  cardLight: "#152444",
-  border: "#1E3A5F",
-  accent: "#F97316",
-  yellow: "#FCD34D",
-  cyan: "#23D3D6",
-  green: "#22C55E",
-  red: "#FB7185",
-  orange: "#FB923C",
-  purple: "#A78BFA",
+const COLORS = createColorAliases({
+  red: () => "#FB7185",
+  orange: () => "#FB923C",
+})
+
+function getReadableAccent(color, themeName = COLORS.themeName) {
+  if (themeName !== "light") return color
+  if (color === COLORS.yellow) return "#B45309"
+  if (color === COLORS.green) return "#15803D"
+  if (color === COLORS.cyan) return "#0284C7"
+  if (color === COLORS.purple) return "#6D28D9"
+  return color
 }
 
 const SUIVI_STATUSES = [
@@ -235,7 +236,9 @@ export default function DemarchesPage({
   onGoAides,
   onGoPremium,
 }) {
+  const { themeName } = useTheme()
   const isKreol = getIsKreol(language)
+  const isLightTheme = themeName === "light"
 
   const [demarches, setDemarches] = useState([])
   const [loading, setLoading] = useState(true)
@@ -593,11 +596,13 @@ export default function DemarchesPage({
       <section
         style={{
           background:
-            "linear-gradient(135deg, rgba(35,211,214,.16), rgba(15,30,56,.96))",
-          border: "1px solid rgba(35,211,214,.28)",
+            isLightTheme
+              ? "linear-gradient(135deg, #DCEEFE 0%, #FFF4D9 58%, #FFFFFF 100%)"
+              : "linear-gradient(135deg, rgba(35,211,214,.16), rgba(15,30,56,.96))",
+          border: isLightTheme ? "1px solid #D4E4F2" : "1px solid rgba(35,211,214,.28)",
           borderRadius: 22,
           padding: isMobile ? 18 : 22,
-          boxShadow: "0 14px 32px rgba(0,0,0,.16)",
+          boxShadow: isLightTheme ? "0 14px 30px rgba(20,32,51,.08)" : "0 14px 32px rgba(0,0,0,.16)",
         }}
       >
         <h2
@@ -633,10 +638,11 @@ export default function DemarchesPage({
       {demarches.length > 0 && (
         <div
           style={{
-            background: "rgba(255,255,255,.04)",
-            border: "1px solid rgba(255,255,255,.08)",
+            background: isLightTheme ? "#FFFFFF" : "rgba(255,255,255,.04)",
+            border: isLightTheme ? "1px solid #E6EAF0" : "1px solid rgba(255,255,255,.08)",
             borderRadius: 16,
             padding: 16,
+            boxShadow: isLightTheme ? "0 10px 22px rgba(20,32,51,.05)" : "none",
           }}
         >
           <div
@@ -657,7 +663,7 @@ export default function DemarchesPage({
           <div
             style={{
               height: 10,
-              background: "rgba(255,255,255,.08)",
+              background: isLightTheme ? "#E6EAF0" : "rgba(255,255,255,.08)",
               borderRadius: 999,
               overflow: "hidden",
               marginBottom: 12,
@@ -749,10 +755,13 @@ export default function DemarchesPage({
               <div
                 key={demarche.id}
                 style={{
-                  background: "rgba(255,255,255,.045)",
-                  border: "1px solid rgba(255,255,255,.08)",
+                  background: isLightTheme
+                    ? "linear-gradient(135deg, #FFFFFF 0%, #F8FBFF 100%)"
+                    : "rgba(255,255,255,.045)",
+                  border: isLightTheme ? "1px solid #E6EAF0" : "1px solid rgba(255,255,255,.08)",
                   borderRadius: 18,
                   padding: 16,
+                  boxShadow: isLightTheme ? "0 10px 24px rgba(20,32,51,.055)" : "none",
                   display: "grid",
                   gridTemplateColumns: isMobile ? "1fr" : "1fr auto auto",
                   gap: 12,
@@ -1039,11 +1048,15 @@ export default function DemarchesPage({
 }
 
 function MiniInfoBox({ label, value, color, icon }) {
+  const { themeName } = useTheme()
+  const isLightTheme = themeName === "light"
+  const valueColor = getReadableAccent(color, themeName)
+
   return (
     <div
       style={{
-        background: "rgba(10,22,40,.40)",
-        border: "1px solid rgba(255,255,255,.08)",
+        background: isLightTheme ? "#FFF4D9" : "rgba(10,22,40,.40)",
+        border: isLightTheme ? "1px solid #F3DCA2" : "1px solid rgba(255,255,255,.08)",
         borderRadius: 12,
         padding: "9px 10px",
       }}
@@ -1051,7 +1064,7 @@ function MiniInfoBox({ label, value, color, icon }) {
       <div style={{ color: COLORS.muted, fontSize: 10.5, fontWeight: 900, marginBottom: 4 }}>
         {icon} {label}
       </div>
-      <div style={{ color, fontSize: 13, fontWeight: 900 }}>
+      <div style={{ color: valueColor, fontSize: 13, fontWeight: 900 }}>
         {value}
       </div>
     </div>
@@ -1059,11 +1072,14 @@ function MiniInfoBox({ label, value, color, icon }) {
 }
 
 function InfoPanel({ title, text }) {
+  const { themeName } = useTheme()
+  const isLightTheme = themeName === "light"
+
   return (
     <div
       style={{
-        background: "rgba(10,22,40,.34)",
-        border: "1px solid rgba(255,255,255,.07)",
+        background: isLightTheme ? "#FFFFFF" : "rgba(10,22,40,.34)",
+        border: isLightTheme ? "1px solid #E6EAF0" : "1px solid rgba(255,255,255,.07)",
         borderRadius: 12,
         padding: "9px 10px",
         minHeight: 58,
@@ -1086,6 +1102,8 @@ function DemarchePremiumTools({
   onGoPremium,
   onOpenTool,
 }) {
+  const { themeName } = useTheme()
+  const isLightTheme = themeName === "light"
   const tools = [
     {
       id: "prepare_dossier",
@@ -1154,7 +1172,7 @@ function DemarchePremiumTools({
       style={{
         marginTop: 12,
         paddingTop: 12,
-        borderTop: "1px solid rgba(255,255,255,.08)",
+        borderTop: isLightTheme ? "1px solid #E6EAF0" : "1px solid rgba(255,255,255,.08)",
       }}
     >
       <div
@@ -1190,9 +1208,13 @@ function DemarchePremiumTools({
               display: "flex",
               alignItems: "center",
               gap: 5,
-              background: isPremiumPlus ? "rgba(167,139,250,.12)" : "rgba(252,211,77,.08)",
-              border: isPremiumPlus ? "1px solid rgba(167,139,250,.25)" : "1px solid rgba(252,211,77,.22)",
-              color: isPremiumPlus ? "#DDD6FE" : COLORS.yellow,
+              background: isPremiumPlus
+                ? (isLightTheme ? "#EEE7FB" : "rgba(167,139,250,.12)")
+                : (isLightTheme ? "#FFF4D9" : "rgba(252,211,77,.08)"),
+              border: isPremiumPlus
+                ? (isLightTheme ? "1px solid #D8CBF6" : "1px solid rgba(167,139,250,.25)")
+                : (isLightTheme ? "1px solid #F3DCA2" : "1px solid rgba(252,211,77,.22)"),
+              color: isPremiumPlus ? getReadableAccent(COLORS.purple, themeName) : getReadableAccent(COLORS.yellow, themeName),
               borderRadius: 999,
               padding: "7px 9px",
               cursor: isPremiumPlus ? "pointer" : "pointer",
@@ -1242,7 +1264,7 @@ function PreparationDossierPanel({ demarche, isKreol, isMobile, onClose }) {
           maxWidth: 900,
           maxHeight: isMobile ? "100dvh" : "88dvh",
           overflowY: "auto",
-          background: "linear-gradient(135deg, #0F1E38, #132747)",
+          background: `linear-gradient(135deg, ${COLORS.card}, ${COLORS.cardLight})`,
           border: `1px solid ${COLORS.border}`,
           borderRadius: isMobile ? 0 : 24,
           padding: isMobile ? 18 : 24,
@@ -1482,7 +1504,7 @@ function GeneratedEmailPanel({ demarche, isKreol, isMobile, onClose }) {
           maxWidth: 900,
           maxHeight: isMobile ? "100dvh" : "88dvh",
           overflowY: "auto",
-          background: "linear-gradient(135deg, #0F1E38, #132747)",
+          background: `linear-gradient(135deg, ${COLORS.card}, ${COLORS.cardLight})`,
           border: `1px solid ${COLORS.border}`,
           borderRadius: isMobile ? 0 : 24,
           padding: isMobile ? 18 : 24,
@@ -1700,7 +1722,7 @@ function GeneratedLetterPanel({ demarche, isKreol, isMobile, onClose }) {
           maxWidth: 900,
           maxHeight: isMobile ? "100dvh" : "88dvh",
           overflowY: "auto",
-          background: "linear-gradient(135deg, #0F1E38, #132747)",
+          background: `linear-gradient(135deg, ${COLORS.card}, ${COLORS.cardLight})`,
           border: `1px solid ${COLORS.border}`,
           borderRadius: isMobile ? 0 : 24,
           padding: isMobile ? 18 : 24,
@@ -1991,7 +2013,7 @@ function UnderstandRefusalPanel({ demarche, isKreol, isMobile, onClose }) {
           maxWidth: 980,
           maxHeight: isMobile ? "100dvh" : "88dvh",
           overflowY: "auto",
-          background: "linear-gradient(135deg, #0F1E38, #132747)",
+          background: `linear-gradient(135deg, ${COLORS.card}, ${COLORS.cardLight})`,
           border: `1px solid ${COLORS.border}`,
           borderRadius: isMobile ? 0 : 24,
           padding: isMobile ? 18 : 24,
@@ -2284,7 +2306,7 @@ function GainObtainedPanel({ demarche, isKreol, isMobile, onSave, onClose }) {
           maxWidth: 720,
           maxHeight: isMobile ? "100dvh" : "88dvh",
           overflowY: "auto",
-          background: "linear-gradient(135deg, #0F1E38, #132747)",
+          background: `linear-gradient(135deg, ${COLORS.card}, ${COLORS.cardLight})`,
           border: `1px solid ${COLORS.border}`,
           borderRadius: isMobile ? 0 : 24,
           padding: isMobile ? 18 : 24,
@@ -2580,7 +2602,7 @@ function AdminReminderPanel({ demarche, reminder, isKreol, isMobile, onSave, onD
           maxWidth: 760,
           maxHeight: isMobile ? "100dvh" : "88dvh",
           overflowY: "auto",
-          background: "linear-gradient(135deg, #0F1E38, #132747)",
+          background: `linear-gradient(135deg, ${COLORS.card}, ${COLORS.cardLight})`,
           border: `1px solid ${COLORS.border}`,
           borderRadius: isMobile ? 0 : 24,
           padding: isMobile ? 18 : 24,
@@ -2836,7 +2858,7 @@ function ComingSoonPanel({ demarche, isKreol, isMobile, tool, onClose }) {
         style={{
           width: "100%",
           maxWidth: 680,
-          background: "linear-gradient(135deg, #0F1E38, #132747)",
+          background: `linear-gradient(135deg, ${COLORS.card}, ${COLORS.cardLight})`,
           border: `1px solid ${COLORS.border}`,
           borderRadius: isMobile ? 0 : 24,
           padding: isMobile ? 18 : 24,
@@ -2903,13 +2925,17 @@ function ComingSoonPanel({ demarche, isKreol, isMobile, tool, onClose }) {
 
 
 function PanelCard({ title, children, style = {} }) {
+  const { themeName } = useTheme()
+  const isLightTheme = themeName === "light"
+
   return (
     <div
       style={{
-        background: "rgba(10,22,40,.44)",
-        border: "1px solid rgba(255,255,255,.08)",
+        background: isLightTheme ? "#FFFFFF" : "rgba(10,22,40,.44)",
+        border: isLightTheme ? "1px solid #E6EAF0" : "1px solid rgba(255,255,255,.08)",
         borderRadius: 16,
         padding: 15,
+        boxShadow: isLightTheme ? "0 8px 18px rgba(20,32,51,.045)" : "none",
         ...style,
       }}
     >
@@ -2940,19 +2966,23 @@ function CheckRow({ text }) {
 }
 
 function InfoLine({ label, value, color }) {
+  const { themeName } = useTheme()
+  const isLightTheme = themeName === "light"
+  const valueColor = getReadableAccent(color, themeName)
+
   return (
     <div
       style={{
         display: "flex",
         justifyContent: "space-between",
         gap: 10,
-        borderBottom: "1px solid rgba(255,255,255,.08)",
+        borderBottom: isLightTheme ? "1px solid #E6EAF0" : "1px solid rgba(255,255,255,.08)",
         padding: "9px 0",
         fontSize: 13,
       }}
     >
       <span style={{ color: COLORS.muted }}>{label}</span>
-      <strong style={{ color }}>{value}</strong>
+      <strong style={{ color: valueColor }}>{value}</strong>
     </div>
   )
 }
@@ -3209,7 +3239,7 @@ function PrepareAppealPanel({ demarche, isKreol, isMobile, onClose }) {
           maxWidth: 900,
           maxHeight: isMobile ? "100dvh" : "88dvh",
           overflowY: "auto",
-          background: "linear-gradient(135deg, #0F1E38, #132747)",
+          background: `linear-gradient(135deg, ${COLORS.card}, ${COLORS.cardLight})`,
           border: `1px solid ${COLORS.border}`,
           borderRadius: isMobile ? 0 : 24,
           padding: isMobile ? 18 : 24,

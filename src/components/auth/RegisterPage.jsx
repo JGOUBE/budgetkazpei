@@ -1,17 +1,14 @@
 import { useState } from "react"
 import AppLogo from "../AppLogo"
+import { createColorAliases, ds } from "../../styles/designSystem"
 
-const COLORS = {
-  bg: "#0A1628",
-  card: "#0F1E38",
-  ink: "#05080C",
-  cream: "#F8ECD0",
-  paper: "#FFF6DE",
-  accent: "#F97316",
-  red: "#EF4444",
-  muted: "#8AA0BD",
-  text: "#F1F5F9",
-}
+const COLORS = createColorAliases({
+  bg: () => ds.background,
+  card: () => ds.card,
+  ink: () => (ds.name === "light" ? "#6B4E28" : "#05080C"),
+  cream: () => (ds.name === "light" ? ds.textPrimary : "#F8ECD0"),
+  paper: () => (ds.name === "light" ? "#FFFFFF" : "#FFF6DE"),
+})
 
 export default function RegisterPage({ onRegister, onGoLogin }) {
   const [nom, setNom] = useState("")
@@ -76,13 +73,13 @@ export default function RegisterPage({ onRegister, onGoLogin }) {
 
   if (success) {
     return (
-      <div style={pageStyle}>
-        <div style={cardStyle}>
-          <h2 style={titleStyle}>Vérifie ta boîte mail !</h2>
+      <div style={pageStyle()}>
+        <div style={cardStyle()}>
+          <h2 style={titleStyle()}>Vérifie ta boîte mail !</h2>
           <p style={{ color: COLORS.muted, textAlign: "center" }}>
             Un lien de confirmation a été envoyé à {email}.
           </p>
-          <button onClick={onGoLogin} style={buttonStyle}>
+          <button onClick={onGoLogin} style={buttonStyle()}>
             Retour à la connexion
           </button>
         </div>
@@ -91,7 +88,7 @@ export default function RegisterPage({ onRegister, onGoLogin }) {
   }
 
   return (
-    <div style={pageStyle}>
+    <div style={pageStyle()}>
       <div style={{ width: 440, maxWidth: "94vw" }}>
         <div style={{ textAlign: "center", marginBottom: 18 }}>
           <div
@@ -137,7 +134,7 @@ export default function RegisterPage({ onRegister, onGoLogin }) {
           </p>
         </div>
 
-        <div style={cardStyle}>
+        <div style={cardStyle()}>
           <img
             src="/icons-creole/palmier.png"
             alt=""
@@ -155,7 +152,7 @@ export default function RegisterPage({ onRegister, onGoLogin }) {
           />
 
           <div style={{ position: "relative", zIndex: 1 }}>
-            <h2 style={titleStyle}>Inscription</h2>
+            <h2 style={titleStyle()}>Inscription</h2>
 
             <form
               onSubmit={handleSubmit}
@@ -225,7 +222,7 @@ export default function RegisterPage({ onRegister, onGoLogin }) {
                 </div>
               )}
 
-              <button type="submit" disabled={loading} style={buttonStyle}>
+              <button type="submit" disabled={loading} style={buttonStyle()}>
                 {loading ? "Création..." : "Créer mon compte"}
               </button>
             </form>
@@ -252,38 +249,40 @@ export default function RegisterPage({ onRegister, onGoLogin }) {
   )
 }
 
-const pageStyle = {
+const pageStyle = () => ({
   minHeight: "100vh",
-  background:
-    "radial-gradient(circle at top, rgba(35,211,214,.12), transparent 35%), #0A1628",
+  background: ds.name === "light"
+    ? "radial-gradient(circle at top, rgba(249,115,22,.13), transparent 35%), #F7F3EA"
+    : "radial-gradient(circle at top, rgba(35,211,214,.12), transparent 35%), #0A1628",
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
   fontFamily: "'DM Sans', sans-serif",
   padding: "32px 18px",
-}
+})
 
-const cardStyle = {
+const cardStyle = () => ({
   position: "relative",
   overflow: "hidden",
-  background:
-    "linear-gradient(145deg, rgba(10,31,61,.98), rgba(13,52,92,.96), rgba(24,92,138,.92))",
+  background: ds.name === "light"
+    ? "linear-gradient(145deg, rgba(255,255,255,.98), rgba(255,248,236,.96), rgba(238,247,246,.94))"
+    : "linear-gradient(145deg, rgba(10,31,61,.98), rgba(13,52,92,.96), rgba(24,92,138,.92))",
   border: `3px solid ${COLORS.ink}`,
   borderRadius: 22,
   padding: "34px 28px 30px",
   boxShadow: `9px 9px 0 ${COLORS.ink}, 0 26px 70px rgba(0,0,0,.35)`,
-}
+})
 
-const titleStyle = {
+const titleStyle = () => ({
   margin: "0 0 26px",
   fontSize: 26,
   color: COLORS.cream,
   textAlign: "center",
   fontFamily: "Impact, 'Arial Black', 'DM Serif Display', serif",
   textShadow: `3px 3px 0 ${COLORS.ink}`,
-}
+})
 
-const buttonStyle = {
+const buttonStyle = () => ({
   width: "100%",
   background: COLORS.accent,
   border: `3px solid ${COLORS.ink}`,
@@ -295,4 +294,4 @@ const buttonStyle = {
   cursor: "pointer",
   fontFamily: "inherit",
   boxShadow: `5px 5px 0 ${COLORS.ink}`,
-}
+})
