@@ -51,6 +51,8 @@ class ScannerSettings:
     quota_release_rpc_name: str = "release_receipt_scan"
     quota_timeout_seconds: float = 5.0
     idempotency_cache_ttl_seconds: int = 900
+    log_level: str = "INFO"
+    ocr_log_level: str = "WARNING"
 
     @property
     def max_file_size_bytes(self) -> int:
@@ -194,6 +196,14 @@ def load_settings(*, validate: bool = True) -> ScannerSettings:
             "RECEIPT_SCANNER_IDEMPOTENCY_CACHE_TTL_SECONDS",
             900,
         ),
+        log_level=os.environ.get(
+            "RECEIPT_SCANNER_LOG_LEVEL",
+            "INFO",
+        ).strip().upper() or "INFO",
+        ocr_log_level=os.environ.get(
+            "RECEIPT_SCANNER_OCR_LOG_LEVEL",
+            "WARNING",
+        ).strip().upper() or "WARNING",
     )
     if validate:
         settings.validate()

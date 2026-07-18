@@ -305,22 +305,7 @@ class ReceiptScanService:
                 dir=self.settings.temp_parent_dir,
                 ignore_cleanup_errors=True,
             ) as temp_dir:
-                executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
-                future = executor.submit(operation, Path(temp_dir))
-                try:
-                    response = future.result(
-                        timeout=self.settings.processing_timeout_seconds
-                    )
-                except concurrent.futures.TimeoutError as exc:
-                    future.cancel()
-                    executor.shutdown(wait=False, cancel_futures=True)
-                    raise ScannerApiError(
-                        code="processing_timeout",
-                        retryable=True,
-                        scan_id=scan_id,
-                    ) from exc
-                else:
-                    executor.shutdown(wait=True, cancel_futures=True)
+                response = operation(Path(temp_dir))
                 self._log_success(scan_id, mode, response, started)
                 return response
         except ScannerApiError:
@@ -472,7 +457,26 @@ class ReceiptScanService:
             access_token=access_token,
         )
         try:
-            result = operation()
+            executor: concurrent.futures.ThreadPoolExecutor | None = (
+                concurrent.futures.ThreadPoolExecutor(max_workers=1)
+            )
+            try:
+                future = executor.submit(operation)
+                result = future.result(
+                    timeout=self.settings.processing_timeout_seconds
+                )
+            except concurrent.futures.TimeoutError as exc:
+                future.cancel()
+                executor.shutdown(wait=False, cancel_futures=True)
+                executor = None
+                raise ScannerApiError(
+                    code="processing_timeout",
+                    retryable=True,
+                    scan_id=scan_id,
+                ) from exc
+            finally:
+                if executor is not None:
+                    executor.shutdown(wait=True, cancel_futures=True)
             response = self._to_api_response(
                 scan_id=scan_id,
                 mode=mode,

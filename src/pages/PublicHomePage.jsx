@@ -8,8 +8,10 @@ import LandingHeader from "../components/landing/LandingHeader"
 import LandingLink from "../components/landing/LandingLink"
 import PricingSection from "../components/landing/PricingSection"
 import ScanJourney from "../components/landing/ScanJourney"
-import { benefits, howItWorks, useCases } from "../components/landing/landingContent"
+import { localDealCategories, localDealPrinciples, pillars } from "../components/landing/landingContent"
 import "../styles/landing.css"
+
+const CONTACT_EMAIL = "contact.budgetkazpei@gmail.com"
 
 function upsertMeta(selector, attributes) {
   if (typeof document === "undefined") return
@@ -24,18 +26,18 @@ function upsertMeta(selector, attributes) {
 function useLandingSeo() {
   useEffect(() => {
     if (typeof document === "undefined") return
-    document.title = "BudgetKazPei — Budget, tickets et aides à La Réunion"
+    document.title = "BudgetKazPei — Budget, courses, aides et bons plans à La Réunion"
     upsertMeta('meta[name="description"]', {
       name: "description",
-      content: "Scannez vos tickets, suivez votre budget et préparez vos démarches avec une application pensée pour le quotidien à La Réunion.",
+      content: "Suivez votre budget, comprenez vos courses, préparez vos démarches et découvrez progressivement les bons plans locaux avec BudgetKazPei.",
     })
     upsertMeta('meta[property="og:title"]', {
       property: "og:title",
-      content: "BudgetKazPei - Vos tickets deviennent des conseils utiles",
+      content: "BudgetKazPei - Budget, courses, aides et bons plans à La Réunion",
     })
     upsertMeta('meta[property="og:description"]', {
       property: "og:description",
-      content: "Une application locale pour suivre son budget, comprendre ses courses et préparer ses démarches.",
+      content: "Une application locale pour réunir budget, courses, aides, démarches et solutions utiles autour de vous.",
     })
     upsertMeta('meta[property="og:type"]', { property: "og:type", content: "website" })
     upsertMeta('meta[property="og:image"]', { property: "og:image", content: "/icons-creole/logo-budgetkazpei.png" })
@@ -52,6 +54,41 @@ function SectionHeading({ id, eyebrow, title, children }) {
   )
 }
 
+function LocalDealsSection() {
+  return (
+    <section className="landing-section landing-local" id="bons-plans" aria-labelledby="local-deals-title">
+      <div className="landing-shell local-deals">
+        <div>
+          <p className="landing-eyebrow">Bons plans locaux</p>
+          <h2 id="local-deals-title">Les bons plans autour de chez vous.</h2>
+          <p>
+            Retrouvez progressivement des promotions, commerces, artisans et services locaux classés par ville et catégorie.
+          </p>
+          <div className="landing-pill-row" aria-label="Catégories de bons plans">
+            {localDealCategories.map(category => <span key={category}>{category}</span>)}
+          </div>
+        </div>
+
+        <div className="local-deals__cards" aria-label="Fonctionnement progressif des bons plans">
+          {localDealPrinciples.map(item => (
+            <article key={item}>
+              <BkIcons.check size={18} aria-hidden="true" />
+              <span>{item}</span>
+            </article>
+          ))}
+          <article className="local-deals__pro">
+            <h3>Vous êtes commerçant, artisan ou professionnel à La Réunion ?</h3>
+            <p>Proposez votre établissement, une promotion ou un service local pour apparaître dans les Bons plans BudgetKazPei.</p>
+            <a className="landing-link-button landing-link-button--primary" href={`mailto:${CONTACT_EMAIL}`}>
+              Nous contacter
+            </a>
+          </article>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 export default function PublicHomePage({ isAuthenticated = false }) {
   const dashboardLabel = "Accéder à mon tableau de bord"
   useLandingSeo()
@@ -63,144 +100,46 @@ export default function PublicHomePage({ isAuthenticated = false }) {
       <section className="landing-hero" aria-labelledby="landing-title">
         <div className="landing-shell landing-hero__grid">
           <div className="landing-hero__copy">
-            <p className="landing-eyebrow">Budget, tickets et démarches</p>
-            <h1 id="landing-title">Vos tickets deviennent des conseils utiles.</h1>
+            <p className="landing-eyebrow">BudgetKazPei à La Réunion</p>
+            <h1 id="landing-title">Votre budget, vos courses et vos aides. Au même endroit.</h1>
             <p className="landing-hero__lead">
-              Scannez vos achats, suivez votre budget et découvrez progressivement où vous pouvez économiser à La Réunion.
+              Suivez vos dépenses, comprenez mieux vos achats, préparez vos démarches et découvrez progressivement
+              les solutions utiles autour de vous, avec une application pensée pour La Réunion.
             </p>
             <div className="landing-hero__actions">
               <LandingLink href={isAuthenticated ? "/app" : "/register"} className="landing-link-button landing-link-button--primary">
-                {isAuthenticated ? dashboardLabel : "Essayer gratuitement"}
+                {isAuthenticated ? dashboardLabel : "Créer mon compte"}
               </LandingLink>
-              <a className="landing-link-button landing-link-button--ghost" href="#demo-scanner">
-                Voir comment ça marche
+              <a className="landing-link-button landing-link-button--ghost" href="#fonctionnalites">
+                Découvrir les fonctionnalités
               </a>
             </div>
-            <p className="landing-hero__microcopy">
-              Création gratuite · Sans carte bancaire · Français et créole
-            </p>
           </div>
           <HeroProductDemo />
         </div>
       </section>
 
-      <ScanJourney />
-
-      <section className="landing-section" id="fonctionnalites" aria-labelledby="benefits-title">
+      <section className="landing-section" id="fonctionnalites" aria-labelledby="pillars-title">
         <div className="landing-shell">
-          <SectionHeading id="benefits-title" eyebrow="Ce que ça change" title="Un budget plus lisible, sans promesse magique.">
-            Quatre usages simples pour passer du ticket oublié à une décision plus claire.
+          <SectionHeading id="pillars-title" eyebrow="Fonctionnalités" title="Tout votre quotidien dans une seule application.">
+            Budget, courses, aides et bons plans avancent ensemble, sans présenter le scanner comme tout le produit.
           </SectionHeading>
           <div className="benefit-grid">
-            {benefits.map(benefit => (
+            {pillars.map(benefit => (
               <BenefitCard key={benefit.title} benefit={benefit} />
             ))}
           </div>
         </div>
       </section>
 
-      <section className="landing-section landing-section--split" aria-labelledby="how-title">
-        <div className="landing-shell split-grid">
-          <div>
-            <p className="landing-eyebrow">Comment ça marche</p>
-            <h2 id="how-title">Trois gestes simples pour y voir plus clair.</h2>
-            <p>
-              BudgetKazPei vous accompagne, mais vous restez la personne qui vérifie, corrige et décide.
-            </p>
-          </div>
-          <div className="how-list">
-            {howItWorks.map((step, index) => (
-              <article key={step.title}>
-                <span>{index + 1}</span>
-                <div>
-                  <h3>{step.title}</h3>
-                  <p>{step.text}</p>
-                </div>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="landing-section" aria-labelledby="use-cases-title">
-        <div className="landing-shell">
-          <SectionHeading id="use-cases-title" eyebrow="Cas d'usage" title="Pour les petits budgets, les familles et les démarches du quotidien." />
-          <div className="use-case-grid">
-            {useCases.map((item, index) => (
-              <article key={item.title}>
-                <span aria-hidden="true">{["Courses", "Famille", "Dossier"][index]}</span>
-                <h3>{item.title}</h3>
-                <p>{item.text}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="landing-section landing-local" aria-labelledby="local-title">
-        <div className="landing-shell split-grid">
-          <div className="landing-local__badge" aria-hidden="true">
-            <BkIcons.location size={34} />
-            <span>La Réunion</span>
-          </div>
-          <div>
-            <p className="landing-eyebrow">Valeur locale</p>
-            <h2 id="local-title">Pensé pour le quotidien à La Réunion.</h2>
-            <p>
-              Aujourd'hui, BudgetKazPei vous aide à mieux comprendre vos habitudes. Les comparaisons
-              deviendront plus précises à mesure que la base de prix grandira avec des données validées.
-            </p>
-            <div className="landing-pill-row" aria-label="Points locaux">
-              <span>Français et créole</span>
-              <span>Aides locales et nationales</span>
-              <span>Courses du quotidien</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="landing-section landing-section--soft" aria-labelledby="advisor-title">
-        <div className="landing-shell advisor-grid">
-          <div>
-            <p className="landing-eyebrow">Conseiller et démarches</p>
-            <h2 id="advisor-title">Un parcours clair, pas quatre produits séparés.</h2>
-            <p>
-              BudgetKazPei vous aide à préparer vos démarches. La décision finale appartient toujours
-              à l'organisme officiel.
-            </p>
-          </div>
-          <div className="advisor-flow" aria-label="Parcours Conseiller BudgetKazPei">
-            {["Mon profil", "Aides possibles", "Mes démarches", "Documents et prochaine action"].map(item => (
-              <article key={item}>
-                <BkIcons.check size={20} aria-hidden="true" />
-                <span>{item}</span>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="landing-section privacy-band" aria-labelledby="privacy-title">
-        <div className="landing-shell privacy-band__inner">
-          <div>
-            <p className="landing-eyebrow">Confidentialité</p>
-            <h2 id="privacy-title">Vos données restent sous votre contrôle.</h2>
-            <p>
-              BudgetKazPei ne revend pas vos données personnelles. Vous pouvez demander l'accès, la correction
-              ou la suppression de vos informations, et corriger les résultats avant de les utiliser.
-            </p>
-          </div>
-          <div className="privacy-links">
-            <LandingLink href="/privacy">Confidentialité</LandingLink>
-            <LandingLink href="/terms">Conditions</LandingLink>
-            <LandingLink href="/suppression-compte">Suppression de compte</LandingLink>
-          </div>
-        </div>
-      </section>
-
+      <ScanJourney />
+      <LocalDealsSection />
       <PricingSection isAuthenticated={isAuthenticated} />
-      <LandingFAQ />
-      <FinalCTA isAuthenticated={isAuthenticated} />
+
+      <section className="landing-section landing-section--soft landing-closing" aria-labelledby="faq-title">
+        <LandingFAQ />
+        <FinalCTA isAuthenticated={isAuthenticated} />
+      </section>
 
       <footer className="landing-footer">
         <div className="landing-shell landing-footer__inner">
@@ -209,7 +148,7 @@ export default function PublicHomePage({ isAuthenticated = false }) {
             <LandingLink href="/privacy">Confidentialité</LandingLink>
             <LandingLink href="/terms">Conditions</LandingLink>
             <LandingLink href="/suppression-compte">Suppression compte</LandingLink>
-            <a href="mailto:contact.budgetkazpei@gmail.com">contact.budgetkazpei@gmail.com</a>
+            <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
           </nav>
         </div>
       </footer>

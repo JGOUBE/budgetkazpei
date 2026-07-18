@@ -142,7 +142,7 @@ class SupabaseJwtVerifier:
             )
 
         role = payload.get("role")
-        if not isinstance(role, str) or role not in {"authenticated", "service_role"}:
+        if role != "authenticated":
             raise ScannerApiError(
                 code="authentication_invalid",
                 retryable=True,

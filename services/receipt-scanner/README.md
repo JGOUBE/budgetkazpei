@@ -17,11 +17,10 @@ Included:
 - two-photo long receipt merge pipeline.
 - FastAPI wrapper with `/health`, `/ready`, `/scan/single` and
   `/scan/long-receipt`.
+- Supabase JWT authentication and server-side scan quota reservation via RPC.
 
 Excluded for this step:
 
-- React integration;
-- Supabase writes or migrations;
 - lab virtual environments;
 - `input/`, `output/`, real receipt photos, logs and one-off diagnostics.
 
@@ -58,6 +57,7 @@ Production must not use disabled authentication. Configure:
 - `ENV=production`
 - `RECEIPT_SCANNER_AUTH_MODE=required`
 - `RECEIPT_SCANNER_SUPABASE_URL=https://<project-ref>.supabase.co`
+- `RECEIPT_SCANNER_SUPABASE_ANON_KEY=<anon-key>`
 - `RECEIPT_SCANNER_EXPECTED_AUDIENCE=authenticated`
 - `RECEIPT_SCANNER_EXPECTED_ISSUER=https://<project-ref>.supabase.co/auth/v1`
 
@@ -86,10 +86,37 @@ Runtime guardrails:
 - `RECEIPT_SCANNER_BUSY_TIMEOUT_SECONDS=2`
 - `RECEIPT_SCANNER_PROCESSING_TIMEOUT_SECONDS=90`
 - `RECEIPT_SCANNER_DIAGNOSTICS_ENABLED=true`
+- `RECEIPT_SCANNER_QUOTA_MODE=supabase`
+- `RECEIPT_SCANNER_QUOTA_TIMEOUT_SECONDS=5`
+- `RECEIPT_SCANNER_LOG_LEVEL=INFO`
+- `RECEIPT_SCANNER_OCR_LOG_LEVEL=WARNING`
+
+Production logs must remain sanitized: no JWT, Authorization header, full OCR
+text, image payload, user email, or local filesystem path. Keep RapidOCR and
+ONNX Runtime at `WARNING` or stricter outside controlled debug sessions.
 
 Supported uploads are JPEG, PNG and WebP. The service validates both declared
 MIME type and Pillow-decoded image format, then deletes all temporary files at
 the end of each request.
+
+### Server-side quota
+
+When authentication is required, quota mode defaults to `supabase`. The API
+uses the caller's Supabase access token to call three RPCs:
+
+- `reserve_receipt_scan`;
+- `complete_receipt_scan`;
+- `release_receipt_scan`.
+
+The local migration `supabase/migrations/202607180001_receipt_scan_server_quota.sql`
+adds those RPCs plus a `receipt_scan_requests` idempotency table. It also
+removes direct authenticated insert, update and delete privileges on
+`scan_usage`, so browser DevTools cannot increment or reset quota rows
+directly.
+
+The optional `scan_id` multipart field is the idempotency key. Reusing the same
+`scan_id` for the same user and scan type returns the same in-process response
+and the Supabase reservation remains idempotent.
 
 ### Endpoints
 

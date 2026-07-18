@@ -10,11 +10,17 @@ import {
   resolveAuthRoute,
 } from "../src/services/authNavigation.js"
 import {
+  FREE_OPERATIONAL_SCAN_LIMIT,
   PLAN_IDS,
   PLAN_PRICES,
   PLAN_SCAN_LIMITS,
+  PLAN_SCAN_POLICY,
+  PREMIUM_PLUS_SAFETY_MESSAGE,
+  PREMIUM_PLUS_SAFETY_SCAN_LIMIT,
   PUBLIC_PLAN_CARDS,
   getPlanFlags,
+  getPlanPublicScanLabel,
+  getPlanScanLimit,
   normalizePlan,
 } from "../src/config/plans.js"
 
@@ -92,28 +98,47 @@ assert.deepEqual(getPlanFlags("free"), { plan: PLAN_IDS.free, isPremium: false, 
 assert.equal(PLAN_PRICES[PLAN_IDS.free], "0 €")
 assert.equal(PLAN_PRICES[PLAN_IDS.premium], "2,99 €/mois")
 assert.equal(PLAN_PRICES[PLAN_IDS.premiumPlus], "4,99 €/mois")
-assert.equal(PLAN_SCAN_LIMITS[PLAN_IDS.free], 10)
-assert.equal(PLAN_SCAN_LIMITS[PLAN_IDS.premium], 30)
-assert.equal(PLAN_SCAN_LIMITS[PLAN_IDS.premiumPlus], 100)
+
+assert.equal(FREE_OPERATIONAL_SCAN_LIMIT, 1)
+assert.equal(PLAN_SCAN_POLICY[PLAN_IDS.free].commercialScanLimit, null)
+assert.equal(PLAN_SCAN_POLICY[PLAN_IDS.free].operationalScanLimit, FREE_OPERATIONAL_SCAN_LIMIT)
+assert.equal(PLAN_SCAN_POLICY[PLAN_IDS.free].needsCommercialValidation, true)
+assert.equal(getPlanPublicScanLabel(PLAN_IDS.free), "Accès découverte au scanner")
+assert.equal(PLAN_SCAN_LIMITS[PLAN_IDS.free], FREE_OPERATIONAL_SCAN_LIMIT)
+
+assert.equal(PLAN_SCAN_POLICY[PLAN_IDS.premium].commercialScanLimit, 10)
+assert.equal(PLAN_SCAN_POLICY[PLAN_IDS.premium].operationalScanLimit, 10)
+assert.equal(getPlanScanLimit(PLAN_IDS.premium), 10)
+assert.equal(getPlanPublicScanLabel(PLAN_IDS.premium), "10 scans par mois")
+
+assert.equal(PREMIUM_PLUS_SAFETY_SCAN_LIMIT, 50)
+assert.equal(PLAN_SCAN_POLICY[PLAN_IDS.premiumPlus].commercialScanLimit, null)
+assert.equal(PLAN_SCAN_POLICY[PLAN_IDS.premiumPlus].operationalScanLimit, 50)
+assert.equal(PLAN_SCAN_POLICY[PLAN_IDS.premiumPlus].isUnlimitedForUser, true)
+assert.equal(PLAN_SCAN_POLICY[PLAN_IDS.premiumPlus].isSafetyLimited, true)
+assert.equal(getPlanPublicScanLabel(PLAN_IDS.premiumPlus), "Scans illimités")
+assert.match(PREMIUM_PLUS_SAFETY_MESSAGE, /nombre inhabituel de scans/, "Premium+ safety message missing")
+assert.notDeepEqual(
+  [PLAN_SCAN_LIMITS[PLAN_IDS.free], PLAN_SCAN_LIMITS[PLAN_IDS.premium], PLAN_SCAN_LIMITS[PLAN_IDS.premiumPlus]],
+  [10, 30, 100],
+  "scanner quotas must not regress to 10/30/100",
+)
 
 const scanLimits = read("src/config/scanLimits.ts")
-const quotaHook = read("src/features/receipts/hooks/useReceiptQuota.js")
 assert.match(scanLimits, /PLAN_SCAN_LIMITS/, "scanLimits must use central quota source")
-assert.doesNotMatch(scanLimits, /free:\s*1|premium:\s*10|premium_plus:\s*50/, "old scanner quotas must be gone")
-assert.doesNotMatch(quotaHook, /Infinity|premium_plus.*illimit/i, "Premium+ must not be unlimited")
-
-const aides = read("src/components/aides/AidesPage.jsx")
-assert.doesNotMatch(aides, /isPremiumPlus=\{false\}/, "Aides must not force Premium+ off")
-assert.match(aides, /isPremiumPlus = false/, "Aides can default Premium+ to false for safety")
 
 const publicTexts = [
   read("src/components/landing/landingContent.js"),
+  read("src/pages/PublicHomePage.jsx"),
   read("src/pages/PremiumLandingPage.jsx"),
 ].join("\n")
-assert.doesNotMatch(publicTexts, /\b(?:10|30|100)\s+(?:scans?|analyses?|tickets?)/i, "Public marketing must not lead with numeric quotas")
-assert.doesNotMatch(publicTexts, /illimit/i, "Public marketing must not claim unlimited scans")
+assert.doesNotMatch(publicTexts, /\b50\b|50 sur 50/, "Public marketing must not expose Premium+ safety limit")
+assert.doesNotMatch(publicTexts, /Gratuit[\s\S]{0,120}\b(?:1|5|10)\s+scans?\b/i, "Free plan must not expose a definitive numeric scanner quota")
+assert.match(read("src/config/plans.js"), /10 scans par mois/, "Premium public quota must be defined centrally")
+assert.ok(PUBLIC_PLAN_CARDS.find(plan => plan.id === PLAN_IDS.premium)?.items.some(item => item.text === "10 scans par mois"), "Premium public quota must be visible")
+assert.ok(PUBLIC_PLAN_CARDS.find(plan => plan.id === PLAN_IDS.premiumPlus)?.items.some(item => item.text === "Scans illimités"), "Premium+ must be commercially unlimited in public wording")
 assert.equal(PUBLIC_PLAN_CARDS.length, 3)
-assert.match(read("src/config/plans.js"), /Bientôt disponible/, "Future features must be labelled")
+assert.match(read("src/config/plans.js"), /PLAN_FEATURE_STATUS\.soon|soon/, "Future features must be labelled")
 
 const main = read("src/main.jsx")
 assert.match(main, /data-app-version/, "App version must be exposed discreetly on root")

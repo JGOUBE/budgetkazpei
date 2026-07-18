@@ -1,5 +1,6 @@
 import { supabase } from "../supabase"
 import { getScanPlan, type ScanPlan } from "../../config/scanLimits"
+import { getPlanQuotaExceededCode } from "../../config/plans"
 
 function monthKey(date = new Date()) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
@@ -45,31 +46,18 @@ export async function incrementScanUsage({
 }) {
   if (!userId) return null
 
-  const key = monthKey()
-  const { data: existing } = await supabase
-    .from("scan_usage")
-    .select("id, scan_count, ai_scan_count, manual_count")
-    .eq("user_id", userId)
-    .eq("month_key", key)
-    .maybeSingle()
-
-  const next = {
-    user_id: userId,
-    month_key: key,
-    scan_count: Number(existing?.scan_count || 0) + (kind === "ai" ? 1 : 0),
-    ai_scan_count: Number(existing?.ai_scan_count || 0) + (kind === "ai" ? 1 : 0),
-    manual_count: Number(existing?.manual_count || 0) + (kind === "manual" ? 1 : 0),
-    plan,
-    last_scan_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-  }
-
-  const query = existing?.id
-    ? supabase.from("scan_usage").update(next).eq("id", existing.id).select().single()
-    : supabase.from("scan_usage").insert(next).select().single()
-
-  const { data, error } = await query
+  const { data, error } = await supabase.rpc("increment_scan_usage", {
+    p_kind: kind,
+  })
   if (error) throw error
+  if (data?.allowed === false) {
+    throw Object.assign(new Error("scan_quota_exceeded"), {
+      code: data.reason || getPlanQuotaExceededCode(data.plan || plan),
+      plan: data.plan,
+      limit: data.limit,
+      remaining: data.remaining,
+    })
+  }
   return data
 }
 

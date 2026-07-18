@@ -11,6 +11,7 @@ from PIL import Image
 
 from receipt_scanner.api.errors import ScannerApiError
 from receipt_scanner.api.settings import ScannerSettings
+from receipt_scanner.quota import QuotaReservation, ScanQuotaProvider
 from receipt_scanner.receipt_parser_fr import ParsedReceipt
 from receipt_scanner.service import PipelineResult, ReceiptScanService, ScanUpload
 
@@ -135,6 +136,68 @@ class FakeRunner:
         return self.result
 
 
+class FakeQuotaProvider(ScanQuotaProvider):
+    def __init__(
+        self,
+        *,
+        allowed: bool = True,
+        reason: str = "monthly_quota_reached",
+    ) -> None:
+        self.allowed = allowed
+        self.reason = reason
+        self.reserve_calls: list[dict[str, object]] = []
+        self.complete_calls: list[QuotaReservation] = []
+        self.release_calls: list[tuple[QuotaReservation, str]] = []
+
+    def reserve_scan(
+        self,
+        *,
+        user_id: str,
+        mode: str,
+        request_id: str,
+        access_token: str | None,
+    ) -> QuotaReservation:
+        self.reserve_calls.append(
+            {
+                "user_id": user_id,
+                "mode": mode,
+                "request_id": request_id,
+                "access_token": access_token,
+            }
+        )
+        if not self.allowed:
+            raise ScannerApiError(
+                code=self.reason,
+                retryable=True,
+                scan_id=request_id,
+            )
+        return QuotaReservation(
+            allowed=True,
+            reservation_id=f"reservation:{request_id}",
+            request_id=request_id,
+            status="reserved",
+        )
+
+    def complete_scan(
+        self,
+        *,
+        reservation: QuotaReservation,
+        access_token: str | None,
+    ) -> None:
+        del access_token
+        self.complete_calls.append(reservation)
+
+    def release_scan(
+        self,
+        *,
+        reservation: QuotaReservation,
+        access_token: str | None,
+        reason: str,
+    ) -> None:
+        del access_token
+        self.release_calls.append((reservation, reason))
+
+
 class ReceiptScanServiceTest(unittest.TestCase):
     def settings(self, **overrides) -> ScannerSettings:
         values = {
@@ -147,10 +210,16 @@ class ReceiptScanServiceTest(unittest.TestCase):
         values.update(overrides)
         return ScannerSettings(**values)
 
-    def service(self, runner: FakeRunner | None = None, **settings) -> ReceiptScanService:
+    def service(
+        self,
+        runner: FakeRunner | None = None,
+        quota_provider: ScanQuotaProvider | None = None,
+        **settings,
+    ) -> ReceiptScanService:
         return ReceiptScanService(
             settings=self.settings(**settings),
             runner=runner or FakeRunner(),
+            quota_provider=quota_provider,
         )
 
     def test_rejects_invalid_mime(self) -> None:
@@ -188,6 +257,99 @@ class ReceiptScanServiceTest(unittest.TestCase):
         response = svc.scan_single(upload=upload(), user_id="u1")
         self.assertEqual(response["status"], "trusted")
         self.assertFalse(runner.work_dirs[0].exists())
+
+    def test_reserves_and_completes_quota_after_valid_upload(self) -> None:
+        quota = FakeQuotaProvider()
+        response = self.service(quota_provider=quota).scan_single(
+            upload=upload(),
+            user_id="u1",
+            access_token="user-token",
+            scan_id="scan-123",
+        )
+        self.assertEqual(response["status"], "trusted")
+        self.assertEqual(len(quota.reserve_calls), 1)
+        self.assertEqual(quota.reserve_calls[0]["request_id"], "scan-123")
+        self.assertEqual(quota.reserve_calls[0]["access_token"], "user-token")
+        self.assertEqual(len(quota.complete_calls), 1)
+        self.assertEqual(quota.release_calls, [])
+
+    def test_invalid_upload_does_not_reserve_quota(self) -> None:
+        quota = FakeQuotaProvider()
+        with self.assertRaisesRegex(ScannerApiError, "invalid_file_type"):
+            self.service(quota_provider=quota).scan_single(
+                upload=upload(content_type="application/pdf"),
+                user_id="u1",
+                access_token="user-token",
+                scan_id="scan-123",
+            )
+        self.assertEqual(quota.reserve_calls, [])
+
+    def test_monthly_quota_stops_before_pipeline(self) -> None:
+        quota = FakeQuotaProvider(allowed=False)
+        runner = FakeRunner()
+        with self.assertRaisesRegex(ScannerApiError, "monthly_quota_reached"):
+            self.service(runner=runner, quota_provider=quota).scan_single(
+                upload=upload(),
+                user_id="u1",
+                access_token="user-token",
+                scan_id="scan-123",
+            )
+        self.assertEqual(len(quota.reserve_calls), 1)
+        self.assertEqual(runner.work_dirs, [])
+        self.assertEqual(quota.complete_calls, [])
+
+    def test_safety_limit_stops_before_pipeline(self) -> None:
+        quota = FakeQuotaProvider(
+            allowed=False,
+            reason="scan_safety_limit_reached",
+        )
+        runner = FakeRunner()
+        with self.assertRaisesRegex(ScannerApiError, "scan_safety_limit_reached"):
+            self.service(runner=runner, quota_provider=quota).scan_single(
+                upload=upload(),
+                user_id="u1",
+                access_token="user-token",
+                scan_id="scan-123",
+            )
+        self.assertEqual(len(quota.reserve_calls), 1)
+        self.assertEqual(runner.work_dirs, [])
+        self.assertEqual(quota.complete_calls, [])
+
+    def test_releases_reserved_quota_on_pipeline_failure(self) -> None:
+        quota = FakeQuotaProvider()
+        runner = FakeRunner(error=RuntimeError("boom"))
+        with self.assertRaisesRegex(ScannerApiError, "internal_scan_error"):
+            self.service(runner=runner, quota_provider=quota).scan_single(
+                upload=upload(),
+                user_id="u1",
+                access_token="user-token",
+                scan_id="scan-123",
+            )
+        self.assertEqual(len(quota.reserve_calls), 1)
+        self.assertEqual(quota.complete_calls, [])
+        self.assertEqual(len(quota.release_calls), 1)
+        self.assertEqual(quota.release_calls[0][1], "internal_scan_error")
+
+    def test_same_scan_id_is_idempotent_in_process(self) -> None:
+        quota = FakeQuotaProvider()
+        runner = FakeRunner()
+        svc = self.service(runner=runner, quota_provider=quota)
+        first = svc.scan_single(
+            upload=upload(),
+            user_id="u1",
+            access_token="user-token",
+            scan_id="scan-123",
+        )
+        second = svc.scan_single(
+            upload=upload(),
+            user_id="u1",
+            access_token="user-token",
+            scan_id="scan-123",
+        )
+        self.assertEqual(first, second)
+        self.assertEqual(len(quota.reserve_calls), 1)
+        self.assertEqual(len(quota.complete_calls), 1)
+        self.assertEqual(len(runner.work_dirs), 1)
 
     def test_cleans_temp_dir_after_error(self) -> None:
         runner = FakeRunner(error=RuntimeError("boom"))

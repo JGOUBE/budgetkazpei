@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react"
 import { countMonthlyReceipts } from "../services/receiptService"
 import { getScanPlan, getScanPlanLabel, SCAN_LIMITS } from "../../../config/scanLimits"
 import { getScanUsage } from "../../../services/scan/scanUsageService"
+import { getPlanScanPolicy } from "../../../config/plans"
 
 export function useReceiptQuota(userId, isPremium = false, isPremiumPlus = false) {
   const [used, setUsed] = useState(0)
@@ -9,9 +10,13 @@ export function useReceiptQuota(userId, isPremium = false, isPremiumPlus = false
   const [loading, setLoading] = useState(true)
 
   const plan = getScanPlan(isPremium, isPremiumPlus)
+  const policy = getPlanScanPolicy(plan)
   const limit = SCAN_LIMITS[plan]
   const remaining = Math.max(limit - used, 0)
   const reached = remaining <= 0
+  const isUnlimitedForUser = policy.isUnlimitedForUser
+  const isSafetyLimited = policy.isSafetyLimited
+  const safetyLimitReached = isSafetyLimited && reached
 
   const refresh = useCallback(async (options = {}) => {
     const ignore = Boolean(options.ignore)
@@ -60,6 +65,9 @@ export function useReceiptQuota(userId, isPremium = false, isPremiumPlus = false
     limit,
     remaining,
     reached,
+    isUnlimitedForUser,
+    isSafetyLimited,
+    safetyLimitReached,
     plan,
     planLabel: getScanPlanLabel(plan),
     source,

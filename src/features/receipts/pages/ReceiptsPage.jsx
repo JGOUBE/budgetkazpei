@@ -37,6 +37,7 @@ import { createScanMetric, incrementScanUsage } from "../../../services/scan/sca
 import { syncShoppingItemsFromReceipt } from "../../shopping/services/shoppingEngine"
 import { BkIcons } from "../../../components/icons-budgetkazpei"
 import { createColorAliases } from "../../../styles/designSystem"
+import { PREMIUM_PLUS_SAFETY_MESSAGE } from "../../../config/plans"
 
 const COLORS = createColorAliases()
 
@@ -86,7 +87,9 @@ const TEXT = {
     pythonTechnicalFallbackHint: "Le nouveau service de scan n'a pas repondu correctement. Vous pouvez reessayer ou choisir l'ancien scanner.",
     pythonBusinessErrorHint: "Le nouveau service a refuse ce scan pour une raison de qualite ou de securite. Aucune bascule automatique n'a ete lancee.",
     pythonLocalSaveBlocked: "Verification locale terminee. Aucune ecriture BudgetKazPei n'est effectuee dans cette etape.",
-    quota: quota => `Analyses IA : ${quota.used} / ${quota.limit}`,
+    quota: quota => quota.isUnlimitedForUser
+      ? "Scans illimités"
+      : `Scans utilisés ce mois-ci : ${quota.used} sur ${quota.limit}`,
     methodTitle: "Choisissez une méthode",
     privacy: "Vos tickets restent privés. Ils servent uniquement à mettre à jour votre budget.",
     foodHint: "Ajoutez vos courses automatiquement ou manuellement. L'analyse automatique sert surtout aux tickets alimentaires, pour comprendre vos habitudes et recevoir des conseils utiles.",
@@ -132,7 +135,7 @@ const TEXT = {
     deleted: "Ticket retiré de l'historique.",
     error: "Analyse impossible. Vous pouvez réessayer ou remplir manuellement.",
     quotaReached: "Quota atteint. Vous pouvez quand même remplir manuellement.",
-    intensiveUsage: "Vous utilisez BudgetKazPei de manière intensive. Contactez-nous afin que nous trouvions la formule la plus adaptée.",
+    intensiveUsage: PREMIUM_PLUS_SAFETY_MESSAGE,
     expenseCreated: "Dépense créée",
     noUser: "Utilisateur non connecté.",
   },
@@ -181,7 +184,9 @@ const TEXT = {
     pythonTechnicalFallbackHint: "Nouveau servis scan-la la pa reponn bien. Ou pe reessaye ou swazi ancien scanner.",
     pythonBusinessErrorHint: "Nouveau servis-la la refuse scan-la pou kalite ou sekirite. Nena okenn bascule otomatik.",
     pythonLocalSaveBlocked: "Verification locale fini. Nena okenn ecriture BudgetKazPei dan sa letap-la.",
-    quota: quota => `Analiz IA : ${quota.used} / ${quota.limit}`,
+    quota: quota => quota.isUnlimitedForUser
+      ? "Scans illimités"
+      : `Analiz IA : ${quota.used} / ${quota.limit}`,
     methodTitle: "Swazi in fason",
     privacy: "Bann tiké a ou i reste privé. Nou i servi azot zis pou met out bidzé à jour.",
     foodHint: "Azout out courses otomatikman ou amain. Analiz otomatik-la lé surtout pou bann tiké manzé, pou konprann out labitid ek gagn bann konsey itil.",
@@ -227,7 +232,7 @@ const TEXT = {
     deleted: "Tiké retiré dann listwar.",
     error: "Analiz-la pa marche. Ou pé réessayé ou ranpli amain.",
     quotaReached: "Quota atteint. Ou pé kan même ranpli amain.",
-    intensiveUsage: "Ou pe servi BudgetKazPei souvan. Contacte a nou pou trouv formule pli adapté.",
+    intensiveUsage: PREMIUM_PLUS_SAFETY_MESSAGE,
     expenseCreated: "Dépans créée",
     noUser: "Utilisateur pa connecté.",
   },
@@ -1122,7 +1127,7 @@ export default function ReceiptsPage({
     }
 
     if (quota.reached) {
-      setMessage(quota.plan === "premium_plus" ? txt.intensiveUsage : txt.quotaReached)
+      setMessage(quota.safetyLimitReached ? txt.intensiveUsage : txt.quotaReached)
       startManual({ keepError: true })
       return
     }

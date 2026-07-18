@@ -9,7 +9,7 @@ export default function LandingHeader({ isAuthenticated = false }) {
   const menuButtonRef = useRef(null)
   const closeButtonRef = useRef(null)
   const primaryHref = isAuthenticated ? "/app" : "/register"
-  const primaryLabel = isAuthenticated ? "Accéder à mon tableau de bord" : "Essayer gratuitement"
+  const primaryLabel = isAuthenticated ? "Accéder à mon tableau de bord" : "Créer mon compte"
 
   useEffect(() => {
     if (!isMenuOpen) return undefined
@@ -76,7 +76,7 @@ export default function LandingHeader({ isAuthenticated = false }) {
           <div className="landing-mobile-menu__panel" role="dialog" aria-modal="true" aria-label="Menu BudgetKazPei">
             <div className="landing-mobile-menu__top">
               <span>BudgetKazPei</span>
-              <button ref={closeButtonRef} type="button" onClick={closeMenu}>
+              <button ref={closeButtonRef} type="button" onClick={() => closeMenu(true)}>
                 Fermer
               </button>
             </div>

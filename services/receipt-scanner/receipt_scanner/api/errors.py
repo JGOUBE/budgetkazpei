@@ -20,6 +20,8 @@ ERROR_HTTP_STATUS = {
     "scan_not_exploitable": 422,
     "scanner_busy": 429,
     "quota_exceeded": 429,
+    "monthly_quota_reached": 429,
+    "scan_safety_limit_reached": 429,
     "quota_unavailable": 429,
     "processing_timeout": 504,
     "internal_scan_error": 500,
@@ -36,6 +38,12 @@ ERROR_MESSAGES = {
     "images_order_invalid": "Les deux photos semblent inversees ou incoherentes.",
     "scanner_busy": "Le scanner est temporairement occupe.",
     "quota_exceeded": "Votre quota de scans est atteint.",
+    "monthly_quota_reached": "Votre quota de scans est atteint.",
+    "scan_safety_limit_reached": (
+        "Vous avez effectue un nombre inhabituel de scans ce mois-ci. "
+        "Par securite, le scanner est temporairement limite. "
+        "Contactez-nous si vous avez besoin de continuer."
+    ),
     "quota_unavailable": "Le controle de quota est temporairement indisponible.",
     "processing_timeout": "Le traitement du ticket a depasse le delai maximal.",
     "authentication_required": "Une authentification est requise.",

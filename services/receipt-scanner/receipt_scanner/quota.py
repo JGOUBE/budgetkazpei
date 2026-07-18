@@ -115,9 +115,13 @@ class SupabaseScanQuotaProvider(ScanQuotaProvider):
         )
         reservation = _reservation_from_payload(payload, request_id=request_id)
         if not reservation.allowed:
+            code = (
+                "scan_safety_limit_reached"
+                if reservation.reason == "scan_safety_limit_reached"
+                else "monthly_quota_reached"
+            )
             raise ScannerApiError(
-                code="quota_exceeded",
-                message=reservation.reason,
+                code=code,
                 retryable=True,
                 scan_id=request_id,
             )
@@ -201,6 +205,10 @@ class SupabaseScanQuotaProvider(ScanQuotaProvider):
 def build_quota_provider(settings: ScannerSettings) -> ScanQuotaProvider:
     if settings.quota_mode == "disabled" or settings.auth_mode == "disabled":
         return NoopScanQuotaProvider()
+    if not settings.resolved_supabase_url or not settings.supabase_anon_key:
+        if settings.env != "production":
+            return NoopScanQuotaProvider()
+        raise ScannerApiError(code="quota_unavailable", retryable=True)
     return SupabaseScanQuotaProvider(settings)
 
 
@@ -227,7 +235,8 @@ def _map_supabase_error(status: int, body: str) -> ScannerApiError:
     if status in {401, 403}:
         return ScannerApiError(code="authentication_invalid", retryable=True)
     if status == 429 or "quota" in lowered:
-        return ScannerApiError(code="quota_exceeded", retryable=True)
+        code = "scan_safety_limit_reached" if "scan_safety_limit_reached" in lowered else "monthly_quota_reached"
+        return ScannerApiError(code=code, retryable=True)
     return ScannerApiError(code="quota_unavailable", retryable=True)
 
 

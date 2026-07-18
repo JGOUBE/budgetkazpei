@@ -95,6 +95,7 @@ class ApiAppTest(unittest.TestCase):
         ready = client.get("/ready").json()
         self.assertTrue(ready["ready"])
         self.assertEqual(ready["auth_mode"], "disabled")
+        self.assertEqual(ready["quota_mode"], "supabase")
 
     def test_scan_single_endpoint(self) -> None:
         response = self.client().post(

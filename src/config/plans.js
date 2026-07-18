@@ -6,11 +6,53 @@ export const PLAN_IDS = {
 
 export const PLAN_ORDER = [PLAN_IDS.free, PLAN_IDS.premium, PLAN_IDS.premiumPlus]
 
-export const PLAN_SCAN_LIMITS = {
-  [PLAN_IDS.free]: 10,
-  [PLAN_IDS.premium]: 30,
-  [PLAN_IDS.premiumPlus]: 100,
+// Valeur provisoire : le quota gratuit reste à valider après mesure du coût réel du service Python.
+export const FREE_OPERATIONAL_SCAN_LIMIT = 1
+export const PREMIUM_PLUS_SAFETY_SCAN_LIMIT = 50
+export const MONTHLY_QUOTA_REACHED_CODE = "monthly_quota_reached"
+export const SCAN_SAFETY_LIMIT_REACHED_CODE = "scan_safety_limit_reached"
+
+export const PLAN_SCAN_POLICY = {
+  [PLAN_IDS.free]: {
+    publicScanLabel: "Accès découverte au scanner",
+    commercialScanLimit: null,
+    operationalScanLimit: FREE_OPERATIONAL_SCAN_LIMIT,
+    isUnlimitedForUser: false,
+    isSafetyLimited: false,
+    needsCommercialValidation: true,
+  },
+  [PLAN_IDS.premium]: {
+    publicScanLabel: "10 scans par mois",
+    commercialScanLimit: 10,
+    operationalScanLimit: 10,
+    isUnlimitedForUser: false,
+    isSafetyLimited: false,
+    needsCommercialValidation: false,
+  },
+  [PLAN_IDS.premiumPlus]: {
+    publicScanLabel: "Scans illimités",
+    commercialScanLimit: null,
+    operationalScanLimit: PREMIUM_PLUS_SAFETY_SCAN_LIMIT,
+    isUnlimitedForUser: true,
+    isSafetyLimited: true,
+    needsCommercialValidation: false,
+  },
 }
+
+export const PLAN_SCAN_LIMITS = {
+  [PLAN_IDS.free]: PLAN_SCAN_POLICY[PLAN_IDS.free].operationalScanLimit,
+  [PLAN_IDS.premium]: PLAN_SCAN_POLICY[PLAN_IDS.premium].operationalScanLimit,
+  [PLAN_IDS.premiumPlus]: PLAN_SCAN_POLICY[PLAN_IDS.premiumPlus].operationalScanLimit,
+}
+
+export const PLAN_PUBLIC_SCAN_LABELS = {
+  [PLAN_IDS.free]: PLAN_SCAN_POLICY[PLAN_IDS.free].publicScanLabel,
+  [PLAN_IDS.premium]: PLAN_SCAN_POLICY[PLAN_IDS.premium].publicScanLabel,
+  [PLAN_IDS.premiumPlus]: PLAN_SCAN_POLICY[PLAN_IDS.premiumPlus].publicScanLabel,
+}
+
+export const PREMIUM_PLUS_SAFETY_MESSAGE =
+  "Vous avez effectué un nombre inhabituel de scans ce mois-ci. Par sécurité, le scanner est temporairement limité. Contactez-nous si vous avez besoin de continuer."
 
 export const PLAN_PRICES = {
   [PLAN_IDS.free]: "0 €",
@@ -25,22 +67,25 @@ export const PLAN_NAMES = {
 }
 
 export const PLAN_FEATURE_STATUS = {
-  available: "Disponible",
-  soon: "Bientôt disponible",
-  confirm: "À confirmer",
+  included: "included",
+  soon: "soon",
+  unavailable: "unavailable",
 }
 
 export const PUBLIC_PLAN_CARDS = [
   {
     id: PLAN_IDS.free,
     tone: "cream",
-    cta: "Essayer gratuitement",
+    cta: "Créer mon compte",
     href: "/register",
-    intro: "Pour commencer à suivre son budget sans complexité.",
+    intro: "Pour découvrir BudgetKazPei et commencer à suivre l'essentiel.",
     items: [
-      { status: PLAN_FEATURE_STATUS.available, text: "Budget essentiel, revenus et dépenses." },
-      { status: PLAN_FEATURE_STATUS.available, text: "Ajout manuel et analyse de courses de base." },
-      { status: PLAN_FEATURE_STATUS.available, text: "Premiers repères sur vos habitudes." },
+      { status: PLAN_FEATURE_STATUS.included, text: "Budget essentiel" },
+      { status: PLAN_FEATURE_STATUS.included, text: "Revenus et dépenses" },
+      { status: PLAN_FEATURE_STATUS.included, text: "Statistiques simples" },
+      { status: PLAN_FEATURE_STATUS.included, text: "Aides en version essentielle" },
+      { status: PLAN_FEATURE_STATUS.included, text: "Accès aux Bons plans locaux" },
+      { status: PLAN_FEATURE_STATUS.included, text: PLAN_SCAN_POLICY[PLAN_IDS.free].publicScanLabel },
     ],
   },
   {
@@ -49,11 +94,14 @@ export const PUBLIC_PLAN_CARDS = [
     cta: "Voir Premium",
     href: "/premium",
     featured: true,
-    intro: "Pour renforcer le suivi, les alertes et l'accompagnement quotidien.",
+    intro: "Pour mieux suivre son budget et ses habitudes.",
     items: [
-      { status: PLAN_FEATURE_STATUS.available, text: "Statistiques renforcées et historique étendu." },
-      { status: PLAN_FEATURE_STATUS.available, text: "Alertes budget, exports et suivi plus complet." },
-      { status: PLAN_FEATURE_STATUS.available, text: "Assistant standard pour mieux préparer vos démarches." },
+      { status: PLAN_FEATURE_STATUS.included, text: "Tout le Gratuit" },
+      { status: PLAN_FEATURE_STATUS.included, text: PLAN_SCAN_POLICY[PLAN_IDS.premium].publicScanLabel },
+      { status: PLAN_FEATURE_STATUS.included, text: "Historique et statistiques avancées" },
+      { status: PLAN_FEATURE_STATUS.included, text: "Alertes budget" },
+      { status: PLAN_FEATURE_STATUS.included, text: "Export PDF" },
+      { status: PLAN_FEATURE_STATUS.included, text: "Assistant standard" },
     ],
   },
   {
@@ -61,11 +109,15 @@ export const PUBLIC_PLAN_CARDS = [
     tone: "lavender",
     cta: "Découvrir Premium+",
     href: "/premium",
-    intro: "Pour un accompagnement avancé et des fonctions intelligentes clairement identifiées.",
+    intro: "Pour bénéficier d'un accompagnement plus complet.",
     items: [
-      { status: PLAN_FEATURE_STATUS.available, text: "Conseiller renforcé et accompagnement avancé." },
-      { status: PLAN_FEATURE_STATUS.available, text: "Suivi des démarches et aide à la préparation." },
-      { status: PLAN_FEATURE_STATUS.soon, text: "Prévisions et résumés intelligents." },
+      { status: PLAN_FEATURE_STATUS.included, text: "Tout le Premium" },
+      { status: PLAN_FEATURE_STATUS.included, text: PLAN_SCAN_POLICY[PLAN_IDS.premiumPlus].publicScanLabel },
+      { status: PLAN_FEATURE_STATUS.included, text: "Conseiller renforcé" },
+      { status: PLAN_FEATURE_STATUS.included, text: "Suivi des démarches et accompagnement avancé" },
+      { status: PLAN_FEATURE_STATUS.included, text: "Conseils personnalisés" },
+      { status: PLAN_FEATURE_STATUS.soon, text: "Comparaisons intelligentes en cours d'enrichissement" },
+      { status: PLAN_FEATURE_STATUS.soon, text: "Bons plans personnalisés" },
     ],
   },
 ]
@@ -97,8 +149,22 @@ export function getPlanFlags(planInput, legacyFlags = {}) {
   }
 }
 
+export function getPlanScanPolicy(planInput) {
+  return PLAN_SCAN_POLICY[normalizePlan(planInput)]
+}
+
 export function getPlanScanLimit(planInput) {
-  return PLAN_SCAN_LIMITS[normalizePlan(planInput)]
+  return getPlanScanPolicy(planInput).operationalScanLimit
+}
+
+export function getPlanPublicScanLabel(planInput) {
+  return getPlanScanPolicy(planInput).publicScanLabel
+}
+
+export function getPlanQuotaExceededCode(planInput) {
+  return getPlanScanPolicy(planInput).isSafetyLimited
+    ? SCAN_SAFETY_LIMIT_REACHED_CODE
+    : MONTHLY_QUOTA_REACHED_CODE
 }
 
 export function getPublicPlanCard(planId) {

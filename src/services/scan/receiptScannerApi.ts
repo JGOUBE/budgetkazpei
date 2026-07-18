@@ -1,4 +1,5 @@
 import { supabase } from "../supabase"
+import { PREMIUM_PLUS_SAFETY_MESSAGE } from "../../config/plans"
 import type { ReceiptScanError, ReceiptScanResponse } from "./receiptScannerTypes"
 
 export type ReceiptScannerApiOptions = {
@@ -7,6 +8,7 @@ export type ReceiptScannerApiOptions = {
   getSession?: () => Promise<any>
   fetchImpl?: typeof fetch
   signal?: AbortSignal
+  requestId?: string
 }
 
 const DEFAULT_TIMEOUT_MS = 100000
@@ -14,22 +16,27 @@ const MAX_CLIENT_UPLOAD_BYTES = 12 * 1024 * 1024
 const SUPPORTED_CLIENT_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"])
 const SAFE_ERROR_MESSAGES: Record<string, string> = {
   invalid_file: "Ajoutez une image de ticket valide.",
-  invalid_file_type: "Format non accepte. Utilisez une photo JPEG, PNG ou WebP.",
-  file_too_large: "La photo est trop lourde. Reprenez une image plus legere.",
-  invalid_image: "L'image ne peut pas etre lue. Reprenez la photo ou choisissez une autre image.",
+  invalid_file_type: "Format non accepté. Utilisez une photo JPEG, PNG ou WebP.",
+  file_too_large: "La photo est trop lourde. Reprenez une image plus légère.",
+  invalid_image: "L'image ne peut pas être lue. Reprenez la photo ou choisissez une autre image.",
   image_dimensions_invalid: "La photo est trop petite, trop grande ou invalide.",
-  image_quality_failed: "La photo n'est pas assez lisible. Reprenez le ticket bien a plat, avec plus de lumiere.",
+  image_quality_failed: "La photo n'est pas assez lisible. Reprenez le ticket bien à plat, avec plus de lumière.",
   scan_not_exploitable: "Le ticket n'est pas assez exploitable. Reprenez la photo ou saisissez le ticket manuellement.",
   overlap_not_found: "Les deux photos du ticket ne se recoupent pas assez. Gardez une zone commune visible.",
-  images_order_invalid: "Les deux photos semblent dans le mauvais ordre. Inversez haut et bas puis reessayez.",
-  images_identical: "Ajoutez deux photos differentes du ticket long.",
-  scanner_busy: "Le service de scan est occupe. Reessayez dans quelques instants.",
-  processing_timeout: "L'analyse a pris trop de temps. Reessayez avec une photo plus nette ou utilisez la saisie manuelle.",
-  authentication_required: "Votre session a expire. Reconnectez-vous pour scanner ce ticket.",
-  authentication_invalid: "Votre session n'est pas acceptee pour ce scan. Reconnectez-vous.",
-  invalid_response: "Le service de scan a renvoye une reponse inattendue.",
-  internal_scan_error: "Le service de scan a rencontre une erreur technique.",
-  network_error: "Le service de scan est momentanement indisponible.",
+  images_order_invalid: "Les deux photos semblent dans le mauvais ordre. Inversez haut et bas puis réessayez.",
+  images_identical: "Ajoutez deux photos différentes du ticket long.",
+  scanner_busy: "Le service de scan est occupé. Réessayez dans quelques instants.",
+  processing_timeout: "L'analyse a pris trop de temps. Réessayez avec une photo plus nette ou utilisez la saisie manuelle.",
+  authentication_required: "Votre session a expiré. Reconnectez-vous pour scanner ce ticket.",
+  authentication_invalid: "Votre session n'est pas acceptée pour ce scan. Reconnectez-vous.",
+  forbidden: "Votre compte ne peut pas utiliser ce service pour le moment.",
+  quota_exceeded: "Votre quota de scans est atteint.",
+  monthly_quota_reached: "Votre quota de scans est atteint.",
+  scan_safety_limit_reached: PREMIUM_PLUS_SAFETY_MESSAGE,
+  quota_unavailable: "Le contrôle de quota est temporairement indisponible.",
+  invalid_response: "Le service de scan a renvoyé une réponse inattendue.",
+  internal_scan_error: "Le service de scan a rencontré une erreur technique.",
+  network_error: "Le service de scan est momentanément indisponible.",
 }
 
 export class ReceiptScannerApiError extends Error {
@@ -94,7 +101,12 @@ function safeErrorMessage(code: string) {
 
 function mapStructuredError(payload: any, httpStatus?: number): ReceiptScanError {
   const error = payload?.error || {}
-  const code = String(error.code || "internal_scan_error")
+  const fallbackCode = httpStatus === 403
+    ? "forbidden"
+    : httpStatus === 429
+      ? "quota_exceeded"
+      : "internal_scan_error"
+  const code = String(error.code || fallbackCode)
   return {
     code: code as ReceiptScanError["code"],
     message: safeErrorMessage(code),
@@ -164,6 +176,9 @@ async function postScan(path: string, formData: FormData, options: ReceiptScanne
   const token = await getAccessToken(options.getSession)
   const fetcher = options.fetchImpl || fetch
   const abort = composeAbortSignal(timeoutMs, options.signal)
+  if (!formData.has("scan_id")) {
+    formData.append("scan_id", options.requestId || createRequestId())
+  }
 
   try {
     const response = await fetcher(`${apiUrl}${path}`, {
@@ -189,6 +204,13 @@ async function postScan(path: string, formData: FormData, options: ReceiptScanne
   } finally {
     abort.cleanup()
   }
+}
+
+function createRequestId() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID()
+  }
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`
 }
 
 export async function scanSingleReceiptWithApi(file: File, options: ReceiptScannerApiOptions = {}) {

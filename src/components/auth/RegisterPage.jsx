@@ -107,7 +107,7 @@ export default function RegisterPage({
     if (googleLoading || loading) return
 
     if (!acceptedTerms) {
-      const nextErrors = { terms: "Vous devez accepter les conditions pour crÃ©er votre compte." }
+      const nextErrors = { terms: "Vous devez accepter les conditions pour créer votre compte." }
       setErrors(nextErrors)
       focusFirstError(nextErrors)
       return

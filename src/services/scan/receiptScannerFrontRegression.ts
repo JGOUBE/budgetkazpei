@@ -190,10 +190,12 @@ export async function runReceiptScannerFrontRegressionFixtures(): Promise<Regres
     apiUrl: "https://scanner.local",
     getSession: fakeSession(),
     fetchImpl: okFetch(responseFor("trusted"), singleCalls) as typeof fetch,
+    requestId: "11111111-1111-4111-8111-111111111111",
   })
   results.push(assertEqual("single-endpoint", singleCalls[0]?.url, "https://scanner.local/scan/single"))
   results.push(assertEqual("single-auth-header", singleCalls[0]?.init?.headers?.Authorization, "Bearer test-access-token"))
   results.push(assertTrue("single-form-image", singleCalls[0]?.init?.body instanceof FormData && singleCalls[0].init.body.has("image")))
+  results.push(assertEqual("single-form-scan-id", singleCalls[0]?.init?.body?.get("scan_id"), "11111111-1111-4111-8111-111111111111"))
   results.push(assertEqual("single-no-secret-header", singleCalls[0]?.init?.headers?.["x-jwt-secret"], undefined))
 
   const longCalls: any[] = []
@@ -201,11 +203,13 @@ export async function runReceiptScannerFrontRegressionFixtures(): Promise<Regres
     apiUrl: "https://scanner.local/",
     getSession: fakeSession("long-token"),
     fetchImpl: okFetch({ ...responseFor("trusted"), mode: "long_receipt" }, longCalls) as typeof fetch,
+    requestId: "22222222-2222-4222-8222-222222222222",
   })
   const longForm = longCalls[0]?.init?.body
   results.push(assertEqual("long-endpoint", longCalls[0]?.url, "https://scanner.local/scan/long-receipt"))
   results.push(assertEqual("long-auth-header", longCalls[0]?.init?.headers?.Authorization, "Bearer long-token"))
   results.push(assertTrue("long-form-top-bottom", longForm instanceof FormData && longForm.has("top_image") && longForm.has("bottom_image")))
+  results.push(assertEqual("long-form-scan-id", longForm?.get("scan_id"), "22222222-2222-4222-8222-222222222222"))
 
   try {
     await scanSingleReceiptWithApi(fakeFile("no-session.jpg"), {
@@ -379,6 +383,53 @@ export async function runReceiptScannerFrontRegressionFixtures(): Promise<Regres
   } catch (error) {
     const message = String((error as ReceiptScannerApiError).scanError?.message || "")
     results.push(assertEqual("backend-message-sanitized", message.includes("simulated authentication_invalid"), false))
+  }
+
+  try {
+    await scanSingleReceiptWithApi(fakeFile("quota.jpg"), {
+      apiUrl: "https://scanner.local",
+      getSession: fakeSession(),
+      fetchImpl: errorFetch("quota_exceeded", false, 429) as typeof fetch,
+    })
+    results.push(fail("quota-error-code", "quota_exceeded", "no error"))
+  } catch (error) {
+    results.push(assertEqual("quota-error-code", (error as ReceiptScannerApiError).scanError?.code, "quota_exceeded"))
+    results.push(assertEqual("quota-error-http-status", (error as ReceiptScannerApiError).httpStatus, 429))
+  }
+
+  try {
+    await scanSingleReceiptWithApi(fakeFile("monthly-quota.jpg"), {
+      apiUrl: "https://scanner.local",
+      getSession: fakeSession(),
+      fetchImpl: errorFetch("monthly_quota_reached", false, 429) as typeof fetch,
+    })
+    results.push(fail("monthly-quota-error-code", "monthly_quota_reached", "no error"))
+  } catch (error) {
+    results.push(assertEqual("monthly-quota-error-code", (error as ReceiptScannerApiError).scanError?.code, "monthly_quota_reached"))
+  }
+
+  try {
+    await scanSingleReceiptWithApi(fakeFile("safety-quota.jpg"), {
+      apiUrl: "https://scanner.local",
+      getSession: fakeSession(),
+      fetchImpl: errorFetch("scan_safety_limit_reached", false, 429) as typeof fetch,
+    })
+    results.push(fail("safety-quota-error-code", "scan_safety_limit_reached", "no error"))
+  } catch (error) {
+    const scanError = (error as ReceiptScannerApiError).scanError
+    results.push(assertEqual("safety-quota-error-code", scanError?.code, "scan_safety_limit_reached"))
+    results.push(assertTrue("safety-quota-message", String(scanError?.message || "").includes("nombre inhabituel de scans")))
+  }
+
+  try {
+    await scanSingleReceiptWithApi(fakeFile("forbidden.jpg"), {
+      apiUrl: "https://scanner.local",
+      getSession: fakeSession(),
+      fetchImpl: invalidJsonFetch({}, 403) as typeof fetch,
+    })
+    results.push(fail("forbidden-error-code", "forbidden", "no error"))
+  } catch (error) {
+    results.push(assertEqual("forbidden-error-code", (error as ReceiptScannerApiError).scanError?.code, "forbidden"))
   }
 
   const trusted = mapPythonScanToDraft(responseFor("trusted"))

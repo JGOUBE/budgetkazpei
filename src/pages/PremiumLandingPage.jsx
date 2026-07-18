@@ -1,7 +1,7 @@
 import { useState } from "react"
 import AppLogo from "../components/AppLogo"
 import { createColorAliases, ds } from "../styles/designSystem"
-import { PLAN_IDS, PLAN_PRICES } from "../config/plans"
+import { PLAN_IDS, PLAN_PRICES, PLAN_PUBLIC_SCAN_LABELS } from "../config/plans"
 
 const COLORS = createColorAliases({
   band: () => ds.elevated,
@@ -38,20 +38,20 @@ const CONTENT = {
         color: COLORS.green,
         price: "0 €",
         promise: "Découvrir BudgetKazPei.",
-        features: ["Budget simple", "Dépenses et revenus", "Aides en version simple", "Ajout manuel disponible"],
+        features: ["Budget simple", "Dépenses et revenus", "Aides en version simple", PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.free]],
       },
       {
         name: "Premium",
         color: COLORS.yellow,
         promise: "Gérer parfaitement son budget.",
-        features: ["Statistiques avancées", "Historique complet", "Produits et magasins", "Dashboard enrichi", "Alertes budget", "Exports et suivi plus complet"],
+        features: [PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premium], "Statistiques avancées", "Historique complet", "Alertes budget", "Export PDF", "Assistant standard"],
         featured: true,
       },
       {
         name: "Premium+",
         color: COLORS.purple,
         promise: "Votre copilote financier intelligent.",
-        features: ["Assistant IA", "Prévisions budgétaires bientôt disponible", "Conseils personnalisés", "Résumé hebdomadaire bientôt disponible", "Analyses avancées", "Comparaisons intelligentes bientôt disponible"],
+        features: [PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premiumPlus], "Conseiller renforcé", "Suivi des démarches", "Conseils personnalisés", "Comparaisons intelligentes bientôt disponible", "Bons plans personnalisés bientôt disponible"],
       },
     ],
     valueTitle: "Premium+ est votre copilote financier",
@@ -73,7 +73,7 @@ const CONTENT = {
     heroBadge: "BudgetKazPei Premium",
     heroTitle: "Swazi lakonpagnman ki aide aou pou de vrai.",
     heroText:
-      "Premium ek Premium+ lé pa zis pou azout plis courses. Zot transforme out donnees an statistik, prevision, konsey ek desizion pli simple.",
+      "Premium ek Premium+ lé pa zis pou azout plis courses. Zot transforme out données an statistik, prévision, konsey ek desizion pli simple.",
     plansTitle: "Bann offres",
     monthly: "Mensuel",
     choosePremiumMonthly: "Choisir Premium mensuel",
@@ -85,20 +85,20 @@ const CONTENT = {
         color: COLORS.green,
         price: "0 €",
         promise: "Dekouv BudgetKazPei.",
-        features: ["Bidze simple", "Depans ek larzan rantre", "Aides version simple", "Azout amain disponible"],
+        features: ["Bidze simple", "Depans ek larzan rantre", "Aides version simple", PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.free]],
       },
       {
         name: "Premium",
         color: COLORS.yellow,
         promise: "Gere bien out bidze.",
-        features: ["Statistik avance", "Istorik complet", "Produits ek magasins", "Dashboard enrichi", "Alertes bidze", "Swivi pli complet"],
+        features: [PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premium], "Statistik avance", "Istorik complet", "Alertes bidze", "Export PDF", "Assistant standard"],
         featured: true,
       },
       {
         name: "Premium+",
         color: COLORS.purple,
-        promise: "Out copilote financier entelizan.",
-        features: ["Assistant IA", "Prevision bidze bientot disponible", "Konsey personnalise", "Resume la semaine bientot disponible", "Analiz avance", "Comparaisons entelizantes bientot disponible"],
+        promise: "Out copilote financier entélizan.",
+        features: [PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premiumPlus], "Conseiller renforcé", "Swivi démarches", "Konsey personnalisé", "Comparaisons entélizantes bientôt disponible", "Bons plans personnalisés bientôt disponible"],
       },
     ],
     valueTitle: "Premium+ lé out copilote financier",
@@ -108,8 +108,8 @@ const CONTENT = {
     faq: [
       ["Poukisa encadrer bann analiz otomatik ?", "In analiz otomatik i servi OCR, parsing ek parfwa IA. Azout amain ek consultation i reste disponible selon l'offre."],
       ["Scanner lé obligatoire ?", "Non. Ou pe toujours azout in course amain. Scanner-la lé zis fason pli rapide."],
-      ["Kosa Premium i donn amwin ?", "In lecture pli complete de out courses, produits, magasins, istorik ek statistik."],
-      ["Kosa Premium+ i donn amwin ?", "In vrai copilote financier : assistant IA, explications, previsions, konsey ek resumes personnalise."],
+      ["Kosa Premium i donn amwin ?", "In lecture pli complète de out courses, produits, magasins, istorik ek statistik."],
+      ["Kosa Premium+ i donn amwin ?", "In vrai copilote financier : assistant IA, explications, prévisions, konsey ek résumés personnalisés."],
     ],
   },
 }

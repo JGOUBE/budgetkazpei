@@ -1,6 +1,6 @@
 import { useState } from "react"
 import { createColorAliases } from "../../styles/designSystem"
-import { PLAN_IDS, PLAN_SCAN_LIMITS } from "../../config/plans"
+import { PLAN_IDS, PLAN_PUBLIC_SCAN_LABELS } from "../../config/plans"
 
 const COLORS = createColorAliases()
 
@@ -8,7 +8,7 @@ const WATERMARK = "/icons-creole/palmier.png"
 const PREMIUM_URL = "https://budgetkazpei.vercel.app/premium"
 
 const FREE_FEATURES_FR = [
-  `${PLAN_SCAN_LIMITS[PLAN_IDS.free]} analyses de courses par mois`,
+  PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.free],
   "Tableau de bord budget",
   "Ajout des dépenses et revenus",
   "Charges fixes",
@@ -19,7 +19,7 @@ const FREE_FEATURES_FR = [
 ]
 
 const PREMIUM_FEATURES_FR = [
-  `${PLAN_SCAN_LIMITS[PLAN_IDS.premium]} analyses de courses par mois`,
+  PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premium],
   "Statistiques avancées",
   "Produits et magasins",
   "Historique complet",
@@ -39,7 +39,7 @@ const PREMIUM_FEATURES_FR = [
 
 const PREMIUM_PLUS_FEATURES_FR = [
   "Votre copilote financier intelligent",
-  `${PLAN_SCAN_LIMITS[PLAN_IDS.premiumPlus]} analyses de courses par mois`,
+  PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premiumPlus],
   "Prévisions budgétaires — bientôt disponible",
   "Résumé hebdomadaire — bientôt disponible",
   "Tout Premium inclus",
@@ -55,7 +55,7 @@ const PREMIUM_PLUS_FEATURES_FR = [
 ]
 
 const FREE_FEATURES_KR = [
-  `${PLAN_SCAN_LIMITS[PLAN_IDS.free]} analiz courses par mwa`,
+  PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.free],
   "Tablo débor bidjé",
   "Azout dépans é larzan rantre",
   "Sarz fix",
@@ -66,7 +66,7 @@ const FREE_FEATURES_KR = [
 ]
 
 const PREMIUM_FEATURES_KR = [
-  `${PLAN_SCAN_LIMITS[PLAN_IDS.premium]} analiz courses par mwa`,
+  PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premium],
   "Statistik avansé",
   "Produits ek magasins",
   "Istorik complet",
@@ -86,7 +86,7 @@ const PREMIUM_FEATURES_KR = [
 
 const PREMIUM_PLUS_FEATURES_KR = [
   "Out copilote financier entèlizan",
-  `${PLAN_SCAN_LIMITS[PLAN_IDS.premiumPlus]} analiz courses par mwa`,
+  PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premiumPlus],
   "Prévision bidjé — bientôt disponible",
   "Résumé la semaine — bientôt disponible",
   "Tout Premium inclus",
@@ -449,7 +449,7 @@ export default function PremiumPage({ user, isPremium, isPremiumPlus = false, t 
           title="Premium+"
           subtitle={
             isKreol
-              ? "Out copilote financier intelligent pou comprendre out depans, anticiper ek gagn bann konsey personnalise."
+              ? "Out copilote financier intelligent pou comprendre out dépans, anticiper ek gagn bann konsey personnalisé."
               : "Votre copilote financier intelligent pour comprendre vos dépenses, anticiper et recevoir des conseils personnalisés."
           }
           features={premiumPlusFeatures}

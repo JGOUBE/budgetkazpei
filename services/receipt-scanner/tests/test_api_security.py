@@ -21,6 +21,7 @@ def settings(**overrides) -> ScannerSettings:
     values = {
         "auth_mode": "required",
         "supabase_url": "https://project-ref.supabase.co",
+        "supabase_anon_key": "test-anon-key",
         "expected_audience": AUDIENCE,
     }
     values.update(overrides)
@@ -61,6 +62,7 @@ class ApiSecurityTest(unittest.TestCase):
         verifier = SupabaseJwtVerifier(ScannerSettings(auth_mode="disabled"))
         user = verifier.verify_authorization(None)
         self.assertEqual(user.user_id, "local-dev")
+        self.assertIsNone(user.access_token)
 
     def test_missing_authentication_is_rejected(self) -> None:
         verifier = SupabaseJwtVerifier(
@@ -84,6 +86,7 @@ class ApiSecurityTest(unittest.TestCase):
         user = verifier.verify_authorization(f"Bearer {token}")
         self.assertEqual(user.user_id, "user-123")
         self.assertEqual(user.role, "authenticated")
+        self.assertEqual(user.access_token, token)
 
     def test_hs256_requires_legacy_secret_and_never_fetches_jwks(self) -> None:
         token = jwt.encode(payload(), "secret", algorithm="HS256")
@@ -177,14 +180,41 @@ class ApiSecurityTest(unittest.TestCase):
         with self.assertRaisesRegex(ScannerApiError, "authentication_invalid"):
             verifier.verify_authorization(f"Bearer {token}")
 
+    def test_rejects_service_role_token_for_user_scans(self) -> None:
+        token = jwt.encode(payload(role="service_role"), "secret", algorithm="HS256")
+        verifier = SupabaseJwtVerifier(
+            settings(supabase_jwt_secret="secret")
+        )
+        with self.assertRaisesRegex(ScannerApiError, "authentication_invalid"):
+            verifier.verify_authorization(f"Bearer {token}")
+
     def test_disabled_auth_is_rejected_in_production_validation(self) -> None:
         with self.assertRaises(RuntimeError):
             ScannerSettings(env="production", auth_mode="disabled").validate()
+
+    def test_disabled_quota_is_rejected_in_production_validation(self) -> None:
+        with self.assertRaises(RuntimeError):
+            settings(
+                env="production",
+                quota_mode="disabled",
+                supabase_jwt_secret="secret",
+            ).validate()
+
+    def test_supabase_quota_requires_anon_key_when_auth_is_required(self) -> None:
+        with self.assertRaises(ValueError):
+            ScannerSettings(
+                auth_mode="required",
+                quota_mode="supabase",
+                supabase_url="https://project-ref.supabase.co",
+                supabase_jwt_secret="secret",
+                supabase_anon_key=None,
+            ).validate()
 
     def test_jwks_only_configuration_is_valid_without_legacy_secret(self) -> None:
         ScannerSettings(
             auth_mode="required",
             supabase_url="https://project-ref.supabase.co",
+            supabase_anon_key="test-anon-key",
             supabase_jwt_secret=None,
         ).validate()
 

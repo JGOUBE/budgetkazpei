@@ -5,6 +5,7 @@ from starlette.concurrency import run_in_threadpool
 
 from .dependencies import get_scan_service, require_user
 from .errors import ScannerApiError, scanner_error_handler, unhandled_error_handler
+from .logging_config import configure_logging
 from .schemas import ErrorResponse, HealthResponse, ReadyResponse, ScanResponse
 from .security import AuthenticatedUser, SupabaseJwtVerifier
 from .settings import ScannerSettings, load_settings
@@ -17,6 +18,7 @@ def create_app(
     scan_service: ReceiptScanService | None = None,
 ) -> FastAPI:
     resolved_settings = settings or load_settings(validate=False)
+    configure_logging(resolved_settings)
 
     app = FastAPI(
         title="BudgetKazPei Receipt Scanner API",

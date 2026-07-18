@@ -2,108 +2,99 @@ import { PLAN_NAMES, PLAN_PRICES, PUBLIC_PLAN_CARDS } from "../../config/plans"
 
 export const navItems = [
   { label: "Fonctionnalités", href: "#fonctionnalites" },
-  { label: "Comment ça marche", href: "#demo-scanner" },
+  { label: "Bons plans", href: "#bons-plans" },
   { label: "Tarifs", href: "#offres" },
 ]
 
-export const heroStats = [
-  { label: "Ticket courses", value: "42,80 €" },
-  { label: "Budget alimentaire", value: "-42,80 €" },
-  { label: "Statut", value: "À vérifier" },
+export const heroSignals = [
+  { label: "Budget", value: "Solde du mois suivi" },
+  { label: "Courses", value: "Ticket reconnu" },
+  { label: "Aides", value: "Prochaine action" },
+  { label: "Local", value: "Bon plan près de vous" },
 ]
 
-export const receiptItems = [
-  ["Riz parfumé", "4,90 €"],
-  ["Tomates pays", "3,40 €"],
-  ["Lait demi-écrémé", "2,15 €"],
-]
-
-export const scanSteps = [
-  {
-    title: "Prenez une photo",
-    text: "Photographiez le ticket ou importez une image déjà présente sur votre téléphone.",
-    badge: "Photo",
-  },
-  {
-    title: "BudgetKazPei lit le ticket",
-    text: "Articles, total et date sont préparés quand la photo est suffisamment lisible.",
-    badge: "Lecture",
-  },
-  {
-    title: "Vérifiez avant d'ajouter",
-    text: "Vous pouvez corriger un article, ajuster le total ou refuser une information.",
-    badge: "Contrôle",
-  },
-  {
-    title: "Le budget se met à jour",
-    text: "La dépense rejoint votre mois et nourrit progressivement vos habitudes de courses.",
-    badge: "Budget",
-  },
-]
-
-export const benefits = [
+export const pillars = [
   {
     title: "Mon budget en clair",
-    question: "Où part mon argent ce mois-ci ?",
-    answer: "Visualisez vos dépenses, vos revenus et ce qu'il vous reste sans ouvrir un tableur.",
-    points: ["Dépenses du mois", "Solde lisible", "Alertes simples"],
+    answer: "Visualisez ce qui entre, ce qui sort et ce qu'il vous reste, sans devoir tout suivre dans un tableau.",
+    points: ["Revenus et dépenses", "Solde et alertes", "Statistiques"],
     tone: "cream",
     icon: "budget",
   },
   {
-    title: "Mes tickets sans tout ressaisir",
-    question: "Comment éviter de tout taper à la main ?",
-    answer: "Scannez vos courses, vérifiez les montants et alimentez votre historique plus vite.",
-    points: ["Photo ou import", "Correction possible", "Ticket long accompagné"],
+    title: "Mes courses mieux comprises",
+    answer: "Ajoutez vos tickets, retrouvez vos habitudes et préparez progressivement des achats plus adaptés.",
+    points: ["Tickets", "Produits fréquents", "Courses intelligentes"],
     tone: "blue",
-    icon: "scan",
+    icon: "shopping",
   },
   {
-    title: "Mes aides et démarches",
-    question: "Quelles aides peuvent concerner ma situation ?",
-    answer: "Repérez des aides possibles, préparez vos pièces et suivez vos démarches au même endroit.",
-    points: ["Profil", "Documents", "Prochaine action"],
+    title: "Mes aides et mes démarches",
+    answer: "Repérez des aides possibles, préparez vos pièces et sachez plus facilement quelle étape effectuer ensuite.",
+    points: ["Aides possibles", "Documents", "Prochaine action"],
     tone: "lavender",
     icon: "aides",
   },
   {
-    title: "Mes courses mieux préparées",
-    question: "Quels achats reviennent souvent ?",
-    answer: "Avec l'historique validé, BudgetKazPei vous aide à mieux comprendre vos habitudes.",
-    points: ["Habitudes", "Postes récurrents", "Conseils progressifs"],
+    title: "Mes bons plans locaux",
+    answer: "Découvrez progressivement des professionnels, promotions et services utiles près de chez vous.",
+    points: ["Commerces", "Artisans", "Ville et catégorie"],
     tone: "sage",
-    icon: "shopping",
+    icon: "location",
   },
 ]
 
-export const howItWorks = [
+export const productTabs = [
   {
-    title: "Ajoutez ou scannez",
-    text: "Entrez une dépense, un revenu ou un ticket de courses.",
+    id: "budget",
+    label: "Budget",
+    title: "Un mois plus lisible",
+    intro: "BudgetKazPei rapproche vos revenus, dépenses et alertes pour comprendre rapidement où vous en êtes.",
+    metrics: [
+      ["Solde du mois", "À jour"],
+      ["Dépenses", "Classées"],
+      ["Répartition", "Visible"],
+      ["Alerte", "Avant dépassement"],
+    ],
   },
   {
-    title: "BudgetKazPei analyse",
-    text: "Vos montants, catégories et habitudes se regroupent progressivement.",
+    id: "courses",
+    label: "Courses intelligentes",
+    title: "Des tickets qui enrichissent vos habitudes",
+    intro: "Un ticket analysé peut alimenter vos produits fréquents, vos listes et vos conseils de courses progressivement.",
+    metrics: [
+      ["Ticket analysé", "Total contrôlé"],
+      ["Produits", "Regroupés"],
+      ["Habitudes", "Enrichies"],
+      ["Comparaison", "En cours"],
+    ],
+    note: "Un ticket difficile peut demander une nouvelle photo ou une correction.",
   },
   {
-    title: "Vous gardez le contrôle",
-    text: "Vous vérifiez, corrigez, supprimez et décidez quoi faire ensuite.",
+    id: "aides",
+    label: "Aides et démarches",
+    title: "Du profil à la prochaine action",
+    intro: "Le Conseiller aide à préparer une démarche, sans remplacer les organismes officiels.",
+    flow: ["Profil", "Aide possible", "Documents", "Prochaine action"],
+    note: "La décision finale appartient toujours à l'organisme officiel.",
   },
 ]
 
-export const useCases = [
-  {
-    title: "Après les courses",
-    text: "Je scanne mon ticket, je vérifie le total et je vois l'impact sur mon budget du mois.",
-  },
-  {
-    title: "Budget familial",
-    text: "Je retrouve mes dépenses alimentaires et les achats qui reviennent souvent.",
-  },
-  {
-    title: "Démarches",
-    text: "Je prépare une demande sans oublier les documents et la prochaine action.",
-  },
+export const localDealCategories = [
+  "Restaurants et snacks",
+  "Boulangeries",
+  "Commerces",
+  "Artisans",
+  "Services",
+  "Promotions locales",
+]
+
+export const localDealPrinciples = [
+  "Filtre par ville",
+  "Filtre par catégorie",
+  "Partenaires locaux",
+  "Mises en avant limitées",
+  "Offres sponsorisées identifiées",
 ]
 
 export const pricingPlans = PUBLIC_PLAN_CARDS.map(plan => ({
@@ -115,42 +106,22 @@ export const pricingPlans = PUBLIC_PLAN_CARDS.map(plan => ({
 export const faqs = [
   [
     "Est-ce gratuit ?",
-    "Oui, vous pouvez commencer gratuitement. Les offres Premium ajoutent des possibilités de suivi et d'accompagnement selon la formule.",
+    "Oui. L'offre gratuite permet de découvrir BudgetKazPei et de suivre l'essentiel. Les offres Premium ajoutent plus de suivi et d'accompagnement.",
   ],
   [
-    "Le scanner fonctionne-t-il avec tous les tickets ?",
-    "Non. Il aide quand la photo est lisible, mais un ticket froissé, coupé ou flou peut demander une reprise ou une correction.",
+    "Comment fonctionne le scanner de tickets ?",
+    "Vous ajoutez une photo lisible, BudgetKazPei prépare les informations, puis vous gardez la main pour vérifier ou corriger.",
   ],
   [
     "Que se passe-t-il si mon ticket est illisible ?",
-    "BudgetKazPei vous laisse reprendre la photo, corriger les informations ou ajouter la dépense manuellement.",
+    "Vous pouvez reprendre la photo, corriger les informations ou ajouter la dépense manuellement.",
   ],
   [
-    "Mes photos sont-elles conservées ?",
-    "La landing ne promet pas de durée automatique non confirmée. Consultez la politique de confidentialité pour les règles publiées.",
-  ],
-  [
-    "BudgetKazPei vend-il mes données ?",
-    "Non, les informations personnelles ne sont pas revendues aux enseignes. Vous pouvez demander l'accès, la correction ou la suppression.",
-  ],
-  [
-    "Est-ce disponible en créole ?",
-    "L'application prévoit une expérience français et créole. Les textes créoles publics doivent rester validés avant publication.",
-  ],
-  [
-    "Les aides proposées sont-elles garanties ?",
+    "Les aides proposees sont-elles garanties ?",
     "Non. BudgetKazPei aide à préparer vos démarches, mais la décision finale appartient toujours à l'organisme officiel.",
   ],
   [
-    "Courses intelligentes compare-t-il déjà tous les magasins ?",
-    "Non. Aujourd'hui, l'application aide à comprendre vos habitudes. Les comparaisons deviendront plus précises avec la base de prix.",
-  ],
-  [
-    "Puis-je ajouter une dépense sans scanner ?",
-    "Oui, l'ajout manuel reste disponible quand vous ne voulez pas ou ne pouvez pas scanner.",
-  ],
-  [
-    "Puis-je résilier mon abonnement ?",
-    "Oui, la gestion de l'abonnement se fait depuis l'espace prévu par l'offre et les conditions publiées.",
+    "Comment proposer un bon plan ou devenir partenaire ?",
+    "Les professionnels peuvent prendre contact avec BudgetKazPei. Les offres sponsorisées devront toujours être clairement identifiées.",
   ],
 ]

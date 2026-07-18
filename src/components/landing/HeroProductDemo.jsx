@@ -1,47 +1,41 @@
-import { heroStats, receiptItems } from "./landingContent"
+import { heroSignals } from "./landingContent"
 
 export default function HeroProductDemo() {
   return (
-    <div className="hero-demo" aria-label="Démonstration fictive du parcours ticket vers budget">
-      <div className="hero-demo__phone">
+    <div className="hero-demo" aria-label="Demonstration fictive des parcours BudgetKazPei">
+      <div className="hero-demo__panel">
         <div className="hero-demo__topbar">
           <span />
-          <strong>Ticket reconnu</strong>
-          <em>À vérifier</em>
+          <strong>Vue quotidienne</strong>
+          <em>Exemple</em>
         </div>
-        <div className="hero-demo__receipt">
-          <p className="hero-demo__receipt-title">Courses du samedi</p>
-          {receiptItems.map(([label, price]) => (
-            <div key={label}>
-              <span>{label}</span>
-              <strong>{price}</strong>
-            </div>
-          ))}
-          <div className="hero-demo__total">
-            <span>Total détecté</span>
-            <strong>42,80 €</strong>
-          </div>
-        </div>
-        <div className="hero-demo__budget-card">
-          <span>Budget alimentaire</span>
-          <strong>Dépense prête à ajouter</strong>
-          <div aria-hidden="true">
-            <i style={{ width: "58%" }} />
-          </div>
-        </div>
-      </div>
 
-      <div className="hero-demo__floating hero-demo__floating--scan">
-        <span className="landing-dot landing-dot--blue" />
-        Photo lisible
-      </div>
-      <div className="hero-demo__floating hero-demo__floating--budget">
-        <span className="landing-dot landing-dot--green" />
-        Budget mis à jour
+        <div className="hero-demo__cards">
+          <article className="hero-demo__card hero-demo__card--budget">
+            <span>Budget</span>
+            <strong>Solde du mois</strong>
+            <p>Dépenses classées, catégorie visible et alerte avant dépassement.</p>
+          </article>
+          <article className="hero-demo__card hero-demo__card--courses">
+            <span>Courses</span>
+            <strong>Ticket reconnu</strong>
+            <p>Produits fréquents, habitudes d'achat et comparaison en enrichissement.</p>
+          </article>
+          <article className="hero-demo__card hero-demo__card--aides">
+            <span>Aides</span>
+            <strong>Prochaine action</strong>
+            <p>Aide possible, document à préparer et statut de démarche.</p>
+          </article>
+          <article className="hero-demo__card hero-demo__card--local">
+            <span>Bons plans</span>
+            <strong>Pres de chez vous</strong>
+            <p>Ville, catégorie et service local clairement identifié.</p>
+          </article>
+        </div>
       </div>
 
       <div className="hero-demo__stats">
-        {heroStats.map(item => (
+        {heroSignals.map(item => (
           <div key={item.label}>
             <span>{item.label}</span>
             <strong>{item.value}</strong>

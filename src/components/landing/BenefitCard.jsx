@@ -8,7 +8,6 @@ export default function BenefitCard({ benefit }) {
       <div className="benefit-card__icon" aria-hidden="true">
         <Icon size={24} />
       </div>
-      <p className="benefit-card__question">{benefit.question}</p>
       <h3>{benefit.title}</h3>
       <p>{benefit.answer}</p>
       <ul>
