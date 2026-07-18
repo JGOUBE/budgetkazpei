@@ -65,6 +65,25 @@ _NON_ITEM_PREFIXES = (
     "TUA",
     "TTC",
 )
+_FINAL_PAYABLE_LABELS = (
+    "RESTE A PAYER",
+    "NET A PAYER",
+    "TOTAL A PAYER",
+    "MONTANT A PAYER",
+    "MONTANT DU",
+)
+_IMMEDIATE_DISCOUNT_LABELS = (
+    "BON IMMEDIAT",
+    "REMISE IMMEDIATE",
+    "AVANTAGE IMMEDIAT",
+    "COUPON DEDUIT",
+)
+_FUTURE_BON_LABELS = (
+    "PROCHAIN",
+    "PROCHAINE",
+    "FUTUR",
+    "A VALOIR",
+)
 
 ITEM_REVIEW_CONFIDENCE_THRESHOLD = 0.88
 
@@ -114,6 +133,18 @@ def _parse_money_tokens(tokens: Iterable[OCRToken]) -> Decimal | None:
             parsed = _decimal(match.group(1))
             if parsed is not None:
                 return parsed
+    return None
+
+
+def _parse_line_money(line: ReconstructedLine) -> Decimal | None:
+    price_tokens = [token for token in line.tokens if token.column == "price"]
+    parsed = _parse_money_tokens(price_tokens)
+    if parsed is not None:
+        return parsed
+
+    matches = _MONEY_RE.findall(line.text)
+    if matches:
+        return _decimal(matches[-1])
     return None
 
 
@@ -172,6 +203,9 @@ class ParsedReceipt:
     items: list[ParsedReceiptItem]
     excluded_sections: list[str]
     warnings: list[str] = field(default_factory=list)
+    article_total: float | None = None
+    immediate_discount_total: float | None = None
+    payable_total: float | None = None
 
     @property
     def items_total(self) -> float:
@@ -184,6 +218,10 @@ class ParsedReceipt:
     @property
     def counted_quantity(self) -> float:
         return float(sum(Decimal(str(item.quantity)) for item in self.items))
+
+    @property
+    def article_reconciliation_total(self) -> float | None:
+        return self.article_total if self.article_total is not None else self.total
 
     def to_dict(self) -> dict[str, Any]:
         payload = asdict(self)
@@ -208,6 +246,15 @@ class _PendingDescription:
     tokens: list[OCRToken]
 
 
+@dataclass(slots=True)
+class _ReceiptTotals:
+    total: float | None
+    article_total: float | None
+    immediate_discount_total: float | None
+    payable_total: float | None
+    warnings: list[str] = field(default_factory=list)
+
+
 class ReceiptParserFR:
     """Geometry-first parser for French supermarket receipts."""
 
@@ -221,11 +268,11 @@ class ReceiptParserFR:
         receipt_date = self._extract_date(lines)
         receipt_time = self._extract_time(lines)
         declared_item_count = self._extract_declared_item_count(lines)
-        total = self._extract_total(lines)
+        totals = self._extract_totals(lines)
 
         items: list[ParsedReceiptItem] = []
         excluded_sections: list[str] = []
-        warnings: list[str] = []
+        warnings: list[str] = list(totals.warnings)
         pending: _PendingDescription | None = None
         item_area_started = False
 
@@ -388,15 +435,23 @@ class ReceiptParserFR:
             receipt_date=receipt_date,
             receipt_time=receipt_time,
             declared_item_count=declared_item_count,
-            total=total,
+            total=totals.total,
             items=items,
             excluded_sections=excluded_sections,
             warnings=warnings,
+            article_total=totals.article_total,
+            immediate_discount_total=totals.immediate_discount_total,
+            payable_total=totals.payable_total,
         )
 
-        if parsed.total is not None and abs(parsed.items_total - parsed.total) > 0.02:
+        reconciliation_total = parsed.article_reconciliation_total
+        if (
+            reconciliation_total is not None
+            and abs(parsed.items_total - reconciliation_total) > 0.02
+        ):
             parsed.warnings.append(
-                f"Somme des articles {parsed.items_total:.2f} != total {parsed.total:.2f}"
+                "Somme des articles "
+                f"{parsed.items_total:.2f} != total articles {reconciliation_total:.2f}"
             )
 
         if (
@@ -494,6 +549,64 @@ class ReceiptParserFR:
 
     @staticmethod
     def _extract_total(lines: list[ReconstructedLine]) -> float | None:
+        return ReceiptParserFR._extract_totals(lines).total
+
+    @staticmethod
+    def _extract_totals(lines: list[ReconstructedLine]) -> _ReceiptTotals:
+        article_total = ReceiptParserFR._extract_article_total(lines)
+        payable_total = ReceiptParserFR._extract_payable_total(lines)
+        immediate_discount_total = ReceiptParserFR._extract_immediate_discount_total(
+            lines
+        )
+        warnings: list[str] = []
+
+        computed_payable = None
+        if article_total is not None and immediate_discount_total is not None:
+            computed_payable = article_total - immediate_discount_total
+
+        if payable_total is not None:
+            if (
+                computed_payable is not None
+                and abs(payable_total - computed_payable) > 0.02
+            ):
+                warnings.append(
+                    "Total final contradictoire avec la remise immediate; "
+                    "validation manuelle requise"
+                )
+                return _ReceiptTotals(
+                    total=None,
+                    article_total=article_total,
+                    immediate_discount_total=immediate_discount_total,
+                    payable_total=payable_total,
+                    warnings=warnings,
+                )
+            return _ReceiptTotals(
+                total=payable_total,
+                article_total=article_total,
+                immediate_discount_total=immediate_discount_total,
+                payable_total=payable_total,
+                warnings=warnings,
+            )
+
+        if computed_payable is not None:
+            return _ReceiptTotals(
+                total=round(computed_payable, 2),
+                article_total=article_total,
+                immediate_discount_total=immediate_discount_total,
+                payable_total=round(computed_payable, 2),
+                warnings=warnings,
+            )
+
+        return _ReceiptTotals(
+            total=article_total,
+            article_total=article_total,
+            immediate_discount_total=immediate_discount_total,
+            payable_total=None,
+            warnings=warnings,
+        )
+
+    @staticmethod
+    def _extract_article_total(lines: list[ReconstructedLine]) -> float | None:
         """
         Extracts the receipt total from the declared-item-count area.
 
@@ -508,17 +621,9 @@ class ReceiptParserFR:
             if not _DECLARED_ITEMS_RE.search(line.text):
                 continue
 
-            price_tokens = [
-                token for token in line.tokens if token.column == "price"
-            ]
-            total = _parse_money_tokens(price_tokens)
+            total = _parse_line_money(line)
             if total is not None:
                 return float(total)
-
-            matches = _MONEY_RE.findall(line.text)
-            if matches:
-                parsed_total = _decimal(matches[-1])
-                return _decimal_float(parsed_total)
 
             declared_height = max(1.0, line.y_max - line.y_min)
             max_vertical_gap = max(45.0, declared_height * 1.8)
@@ -530,24 +635,47 @@ class ReceiptParserFR:
                 if vertical_gap > max_vertical_gap:
                     break
 
-                candidate_price_tokens = [
-                    token
-                    for token in candidate.tokens
-                    if token.column == "price"
-                ]
-                candidate_total = _parse_money_tokens(
-                    candidate_price_tokens
-                )
-                if candidate_total is not None:
-                    return float(candidate_total)
-
-                candidate_matches = _MONEY_RE.findall(candidate.text)
                 only_financial_columns = bool(candidate.tokens) and all(
                     token.column in {"price", "vat"}
                     for token in candidate.tokens
                 )
-                if candidate_matches and only_financial_columns:
-                    parsed_total = _decimal(candidate_matches[-1])
-                    return _decimal_float(parsed_total)
+                if only_financial_columns:
+                    candidate_total = _parse_line_money(candidate)
+                    if candidate_total is not None:
+                        return float(candidate_total)
 
         return None
+
+    @staticmethod
+    def _extract_payable_total(lines: list[ReconstructedLine]) -> float | None:
+        for line in lines:
+            normalized = _normalized_upper(line.text)
+            if not any(label in normalized for label in _FINAL_PAYABLE_LABELS):
+                continue
+            parsed = _parse_line_money(line)
+            if parsed is not None:
+                return float(parsed)
+        return None
+
+    @staticmethod
+    def _extract_immediate_discount_total(
+        lines: list[ReconstructedLine],
+    ) -> float | None:
+        discounts: list[Decimal] = []
+        for line in lines:
+            normalized = _normalized_upper(line.text)
+            if any(label in normalized for label in _FUTURE_BON_LABELS):
+                continue
+            if not any(label in normalized for label in _IMMEDIATE_DISCOUNT_LABELS):
+                continue
+            parsed = _parse_line_money(line)
+            if parsed is not None:
+                discounts.append(abs(parsed))
+
+        if not discounts:
+            return None
+        total = sum(discounts, Decimal("0")).quantize(
+            Decimal("0.01"),
+            rounding=ROUND_HALF_UP,
+        )
+        return float(total)

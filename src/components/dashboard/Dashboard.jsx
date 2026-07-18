@@ -10,6 +10,7 @@ import { useDashboardInsights } from "../../hooks/useDashboardInsights"
 import { BkIcons } from "../icons-budgetkazpei"
 import { createColorAliases } from "../../styles/designSystem"
 import { useTheme } from "../../styles/ThemeProvider"
+import { getPlanFlags } from "../../config/plans"
 
 // Dashboard V2 - Mobile First
 // Regle UX : Carte = Action
@@ -39,35 +40,18 @@ function normalizeText(value = "") {
     .replace(/[\u0300-\u036f]/g, "")
 }
 
-function normalizeSubscriptionPlan({ plan, status, isPremium, isPremiumPlus } = {}) {
+function getDashboardPlanFlags({ plan, status, isPremium, isPremiumPlus } = {}) {
   const cleanStatus = String(status || "").toLowerCase().trim()
   const hasInactiveStatus = ["canceled", "cancelled", "inactive", "past_due", "unpaid", "expired"].includes(cleanStatus)
 
-  if (hasInactiveStatus) return "free"
-
-  const cleanPlan = String(plan || "")
-    .toLowerCase()
-    .trim()
-    .replace(/-/g, "_")
-    .replace(/\s+/g, "_")
-
-  if (cleanPlan.includes("premium_plus") || cleanPlan.includes("premium+")) return "premium_plus"
-  if (cleanPlan.includes("premium")) return "premium"
-  if (cleanPlan === "free" || cleanPlan === "gratuit") return "free"
-
-  if (isPremiumPlus === true) return "premium_plus"
-  if (isPremium === true) return "premium"
-
-  return "free"
-}
-
-function getPremiumFlags({ plan, status, isPremium, isPremiumPlus } = {}) {
-  const normalizedPlan = normalizeSubscriptionPlan({ plan, status, isPremium, isPremiumPlus })
+  const flags = hasInactiveStatus
+    ? getPlanFlags("free")
+    : getPlanFlags(plan, { isPremium, isPremiumPlus })
 
   return {
-    plan: normalizedPlan,
-    hasPremiumAccess: normalizedPlan === "premium" || normalizedPlan === "premium_plus",
-    hasPremiumPlusAccess: normalizedPlan === "premium_plus",
+    plan: flags.plan,
+    hasPremiumAccess: flags.isPremium,
+    hasPremiumPlusAccess: flags.isPremiumPlus,
   }
 }
 
@@ -2028,7 +2012,7 @@ export default function Dashboard({
 
   const effectivePlan = subscriptionFromDb.plan || plan
   const effectiveStatus = subscriptionFromDb.status || ""
-  const premiumStatus = getPremiumFlags({
+  const premiumStatus = getDashboardPlanFlags({
     plan: effectivePlan,
     status: effectiveStatus,
     isPremium,

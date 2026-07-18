@@ -125,18 +125,21 @@ class QualityGateTest(TempImageTestCase):
         self.assertIn("final_total_not_proven", decision.reasons)
         self.assertIn("declared_item_count_missing", decision.reasons)
 
-    def test_case_e_long_receipt_partial_keeps_printed_total_and_unattributed_gap(self) -> None:
+    def test_case_e_long_receipt_partial_uses_paid_total_and_unattributed_gap(self) -> None:
         receipt = parsed_receipt(
-            total=74.24,
+            total=73.99,
             items=long_receipt_partial_items(),
             declared_item_count=33,
             warnings=["Description sans ligne secondaire: > FRUTS ET LEGUMES"],
+            article_total=74.24,
+            immediate_discount_total=0.25,
+            payable_total=73.99,
         )
         decision = self.evaluate(receipt)
         self.assertEqual(decision.status, "budget_ok_articles_partial")
         self.assertTrue(decision.exploitable)
         self.assertTrue(decision.should_record_budget)
-        self.assertEqual(decision.budget_amount, 74.24)
+        self.assertEqual(decision.budget_amount, 73.99)
         self.assertEqual(decision.article_data_mode, "partial")
         self.assertFalse(decision.should_feed_courses)
         self.assertFalse(decision.should_feed_market_database)
@@ -147,15 +150,25 @@ class QualityGateTest(TempImageTestCase):
         self.assertEqual(decision.receipt.counted_quantity, 33)
         self.assertEqual(decision.receipt.declared_item_count, 33)
         self.assertEqual(decision.receipt.items_total, 74.04)
-        self.assertEqual(decision.receipt.total, 74.24)
+        self.assertEqual(decision.receipt.total, 73.99)
+        self.assertEqual(decision.receipt.article_total, 74.24)
+        self.assertEqual(decision.receipt.article_reconciliation_total, 74.24)
         self.assertIn("items_sum_differs_from_total", decision.reasons)
         self.assertNotIn("parser_warnings_present", decision.reasons)
 
     def test_regression_does_not_force_7404_items_total_to_7424(self) -> None:
-        receipt = parsed_receipt(total=74.24, items=long_receipt_partial_items(), declared_item_count=33)
+        receipt = parsed_receipt(
+            total=73.99,
+            items=long_receipt_partial_items(),
+            declared_item_count=33,
+            article_total=74.24,
+            immediate_discount_total=0.25,
+            payable_total=73.99,
+        )
         decision = self.evaluate(receipt)
         self.assertEqual(decision.receipt.items_total, 74.04)
-        self.assertNotEqual(decision.receipt.items_total, decision.receipt.total)
+        self.assertNotEqual(decision.receipt.items_total, decision.receipt.article_total)
+        self.assertEqual(decision.budget_amount, 73.99)
         self.assertEqual(decision.unattributed_amount, 0.20)
 
 

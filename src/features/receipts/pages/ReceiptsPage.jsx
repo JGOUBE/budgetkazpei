@@ -16,7 +16,17 @@ import {
   validateReceipt,
 } from "../services/receiptService"
 import { useReceiptQuota } from "../hooks/useReceiptQuota"
-import { clearLastScanDraft, getLastScanDraft, runSmartScan, runSmartScanLongTicket } from "../../../services/scan/scanEngine"
+import { clearLastScanDraft, getLastScanDraft } from "../../../services/scan/scanEngine"
+import {
+  canOfferLegacyFallback,
+  getReceiptScannerEngineMode,
+  scanLongReceiptWithConfiguredEngine,
+  scanReceiptWithConfiguredEngine,
+  scanWithLegacyEngine,
+  scanLongWithLegacyEngine,
+} from "../../../services/scan/receiptScannerEngine"
+import { createPythonScanPersistenceState, persistPythonScanResult } from "../../../services/scan/pythonReceiptPersistence"
+import { ReceiptScannerApiError } from "../../../services/scan/receiptScannerApi"
 import { findDuplicateReceipt, getConfidenceColor, getConfidenceIcon } from "../../../services/scan/receiptValidator"
 import { importValidatedReceipt } from "../../../services/scan/receiptImporter"
 import { resolveMarketDisplayName } from "../../../services/scan/marketDisplay"
@@ -46,6 +56,7 @@ const TEXT = {
     longTicketBadge: "Nouveau",
     longTicketTitle: "Scanner un ticket long",
     longTicketHint: "Photo 1 : haut ou milieu du ticket. Photo 2 : bas du ticket avec total et paiement.",
+    longTicketOverlapHint: "Gardez environ 15 à 25 % du ticket en commun sur les deux photos.",
     longTicketTop: "Photo 1 : haut du ticket",
     longTicketBottom: "Photo 2 : bas avec total",
     longTicketGallery: "Importer 2 images",
@@ -57,9 +68,25 @@ const TEXT = {
     longTicketNeedTwo: "Sélectionnez 2 images : le haut puis le bas du ticket.",
     longTicketModeOpened: "Ajoutez le haut puis le bas du ticket.",
     longTicketMerging: "Analyse séparée des deux photos du ticket...",
-    quota: quota => quota.plan === "premium_plus"
-      ? `Analyses IA : ${quota.used} / illimité`
-      : `Analyses IA : ${quota.used} / ${quota.limit}`,
+    swapLongTicketPhotos: "Inverser haut / bas",
+    pythonTrusted: "Votre ticket a été lu et vérifié.",
+    pythonPartial: "Le total de votre ticket est fiable, mais certains articles doivent être vérifiés.",
+    pythonNeedsReview: "Certaines informations doivent être confirmées avant l'enregistrement.",
+    pythonNotExploitable: "La photo est trop difficile à lire. Reprenez le ticket bien à plat, avec plus de lumière, ou saisissez vos achats manuellement.",
+    pythonLocalOnly: "Étape de vérification uniquement : rien n'est encore enregistré dans BudgetKazPei.",
+    saveTotalLocalOnly: "Enregistrer seulement le total",
+    verifyArticlesLocalOnly: "Vérifier les articles",
+    continueLocalOnly: "Vérifier et continuer",
+    retry: "Réessayer",
+    useLegacyScanner: "Utiliser l'ancien scanner",
+    singlePreviewTitle: "Verifier la photo",
+    singlePreviewHint: "Confirmez cette image avant de lancer l'analyse.",
+    confirmImage: "Analyser cette photo",
+    replacePhoto: "Choisir une autre photo",
+    pythonTechnicalFallbackHint: "Le nouveau service de scan n'a pas repondu correctement. Vous pouvez reessayer ou choisir l'ancien scanner.",
+    pythonBusinessErrorHint: "Le nouveau service a refuse ce scan pour une raison de qualite ou de securite. Aucune bascule automatique n'a ete lancee.",
+    pythonLocalSaveBlocked: "Verification locale terminee. Aucune ecriture BudgetKazPei n'est effectuee dans cette etape.",
+    quota: quota => `Analyses IA : ${quota.used} / ${quota.limit}`,
     methodTitle: "Choisissez une méthode",
     privacy: "Vos tickets restent privés. Ils servent uniquement à mettre à jour votre budget.",
     foodHint: "Ajoutez vos courses automatiquement ou manuellement. L'analyse automatique sert surtout aux tickets alimentaires, pour comprendre vos habitudes et recevoir des conseils utiles.",
@@ -124,6 +151,7 @@ const TEXT = {
     longTicketBadge: "Nouveau",
     longTicketTitle: "Scanner in tiké long",
     longTicketHint: "Foto 1 : lao ou milié tiké-la. Foto 2 : anba tiké-la ek total ek paiement.",
+    longTicketOverlapHint: "Gard environ 15 à 25 % tiké-la pareil su deux foto-la.",
     longTicketTop: "Foto 1 : lao tiké-la",
     longTicketBottom: "Foto 2 : anba ek total",
     longTicketGallery: "Import 2 zimaz",
@@ -135,9 +163,25 @@ const TEXT = {
     longTicketNeedTwo: "Swazi 2 zimaz : lao tiké-la, apre anba tiké-la.",
     longTicketModeOpened: "Azout lao tiké-la, apre anba tiké-la.",
     longTicketMerging: "Nou pe analiz sak foto tiké-la séparéman...",
-    quota: quota => quota.plan === "premium_plus"
-      ? `Analiz IA : ${quota.used} / san limit`
-      : `Analiz IA : ${quota.used} / ${quota.limit}`,
+    swapLongTicketPhotos: "Invers lao / anba",
+    pythonTrusted: "Out tiké la bien lir é vérifié.",
+    pythonPartial: "Total tiké-la lé fiable, mé fo vérifié dé-trwa lartik.",
+    pythonNeedsReview: "Fo confirmé dé-trwa zinfo avan anrezistre.",
+    pythonNotExploitable: "Foto-la lé trop difficile pou lir. Repran tiké-la bien plat ek plis lumière, ou ranpli amain.",
+    pythonLocalOnly: "Étape vérification sèlman : nout la pankor anrezistre rien dann BudgetKazPei.",
+    saveTotalLocalOnly: "Gard seulement total-la",
+    verifyArticlesLocalOnly: "Vérifié bann lartik",
+    continueLocalOnly: "Vérifié é continuer",
+    retry: "Réessayé",
+    useLegacyScanner: "Servi ancien scanner",
+    singlePreviewTitle: "Verifie foto-la",
+    singlePreviewHint: "Confirme sa zimaz-la avan analiz-la.",
+    confirmImage: "Analiz sa foto-la",
+    replacePhoto: "Swazi in lot foto",
+    pythonTechnicalFallbackHint: "Nouveau servis scan-la la pa reponn bien. Ou pe reessaye ou swazi ancien scanner.",
+    pythonBusinessErrorHint: "Nouveau servis-la la refuse scan-la pou kalite ou sekirite. Nena okenn bascule otomatik.",
+    pythonLocalSaveBlocked: "Verification locale fini. Nena okenn ecriture BudgetKazPei dan sa letap-la.",
+    quota: quota => `Analiz IA : ${quota.used} / ${quota.limit}`,
     methodTitle: "Swazi in fason",
     privacy: "Bann tiké a ou i reste privé. Nou i servi azot zis pou met out bidzé à jour.",
     foodHint: "Azout out courses otomatikman ou amain. Analiz otomatik-la lé surtout pou bann tiké manzé, pou konprann out labitid ek gagn bann konsey itil.",
@@ -853,6 +897,7 @@ export default function ReceiptsPage({
   const longTopCameraRef = useRef(null)
   const longBottomCameraRef = useRef(null)
   const longGalleryRef = useRef(null)
+  const pythonPersistenceStateRef = useRef(createPythonScanPersistenceState())
 
   const [mode, setMode] = useState("history")
   const [draft, setDraft] = useState(null)
@@ -875,10 +920,20 @@ export default function ReceiptsPage({
     top: null,
     bottom: null,
   })
+  const [pendingLegacyFallback, setPendingLegacyFallback] = useState(null)
+  const [singlePreviewFile, setSinglePreviewFile] = useState(null)
 
   const globalCategory = draft?.items?.[0]?.category || "alimentaire"
   const receiptRows = useMemo(() => Array.isArray(receipts) ? receipts : [], [receipts])
   const showMethodActions = mode === "history" || mode === "validate"
+  const singlePreviewUrl = useMemo(
+    () => singlePreviewFile ? URL.createObjectURL(singlePreviewFile) : "",
+    [singlePreviewFile],
+  )
+  const longTicketPreviewUrls = useMemo(() => ({
+    top: longTicketFiles.top ? URL.createObjectURL(longTicketFiles.top) : "",
+    bottom: longTicketFiles.bottom ? URL.createObjectURL(longTicketFiles.bottom) : "",
+  }), [longTicketFiles.top, longTicketFiles.bottom])
 
   useEffect(() => {
     if (!draft || !isBudgetOkArticlesBlocked(draft)) {
@@ -895,6 +950,19 @@ export default function ReceiptsPage({
     if (!lastScan?.receipt) return
     setResumeDraft(lastScan.receipt)
   }, [])
+
+  useEffect(() => {
+    return () => {
+      if (singlePreviewUrl) URL.revokeObjectURL(singlePreviewUrl)
+    }
+  }, [singlePreviewUrl])
+
+  useEffect(() => {
+    return () => {
+      if (longTicketPreviewUrls.top) URL.revokeObjectURL(longTicketPreviewUrls.top)
+      if (longTicketPreviewUrls.bottom) URL.revokeObjectURL(longTicketPreviewUrls.bottom)
+    }
+  }, [longTicketPreviewUrls.top, longTicketPreviewUrls.bottom])
 
   function resumeLastScan() {
     if (!resumeDraft) return
@@ -937,6 +1005,34 @@ export default function ReceiptsPage({
     if (longTopCameraRef.current) longTopCameraRef.current.value = ""
     if (longBottomCameraRef.current) longBottomCameraRef.current.value = ""
     if (longGalleryRef.current) longGalleryRef.current.value = ""
+  }
+
+  function handleSingleFileSelected(file) {
+    if (!file) return
+    setSinglePreviewFile(file)
+    setPendingLegacyFallback(null)
+    setScanError(null)
+    setMessage(txt.singlePreviewHint)
+    setMode("history")
+  }
+
+  async function confirmSinglePreviewScan() {
+    if (!singlePreviewFile) return
+    const file = singlePreviewFile
+    setSinglePreviewFile(null)
+    await handleFile(file)
+  }
+
+  function clearSinglePreview() {
+    setSinglePreviewFile(null)
+    setMessage("")
+  }
+
+  function swapLongTicketPhotos() {
+    setLongTicketFiles(prev => ({
+      top: prev.bottom,
+      bottom: prev.top,
+    }))
   }
 
   function handleLongTicketPart(part, file) {
@@ -983,6 +1079,40 @@ export default function ReceiptsPage({
     })
   }
 
+  function getPythonScanMessage(receiptDraft = {}) {
+    const status = String(receiptDraft.python_scan_status || "")
+    if (status === "trusted") return txt.pythonTrusted
+    if (status === "budget_ok_articles_partial") return txt.pythonPartial
+    if (status === "needs_review") return txt.pythonNeedsReview
+    if (status === "scan_not_exploitable") return txt.pythonNotExploitable
+    return txt.loaded
+  }
+
+  function getPythonScannerErrorMessage(error) {
+    if (error instanceof ReceiptScannerApiError) {
+      const apiMessage = error.scanError?.message || txt.error
+      return `${apiMessage} ${error.scanError?.technical ? txt.pythonTechnicalFallbackHint : txt.pythonBusinessErrorHint}`
+    }
+    return txt.error
+  }
+
+  async function runPendingLegacyFallback() {
+    if (!pendingLegacyFallback) return
+    const fallback = pendingLegacyFallback
+    setPendingLegacyFallback(null)
+    await handleFile(fallback.file, {
+      ...fallback.scanOptions,
+      forceLegacy: true,
+    })
+  }
+
+  async function retryPendingPythonScan() {
+    if (!pendingLegacyFallback) return
+    const fallback = pendingLegacyFallback
+    setPendingLegacyFallback(null)
+    await handleFile(fallback.file, fallback.scanOptions)
+  }
+
   async function handleFile(file, scanOptions = {}) {
     if (!file) return
 
@@ -1000,6 +1130,7 @@ export default function ReceiptsPage({
     const inputBytes = scanOptions.longTicketFiles
       ? Number(scanOptions.longTicketFiles.top?.size || 0) + Number(scanOptions.longTicketFiles.bottom?.size || 0)
       : Number(file.size || 0)
+    const requestedEngineMode = scanOptions.forceLegacy ? "legacy" : getReceiptScannerEngineMode()
 
     setBusy(true)
     setMessage("")
@@ -1007,19 +1138,35 @@ export default function ReceiptsPage({
 
     try {
       setMode("analysis")
-      setScanProgress({ label: "Preparation...", progress: 5 })
+      setPendingLegacyFallback(null)
+      setScanProgress({ label: "Préparation de la photo...", progress: 5 })
 
+      const progressOptions = {
+        onProgress: progress => setScanProgress(progress),
+        plan: quota.plan,
+      }
       const scan = scanOptions.longTicketFiles
-        ? await runSmartScanLongTicket(scanOptions.longTicketFiles, {
-            onProgress: progress => setScanProgress(progress),
-            plan: quota.plan,
-          })
-        : await runSmartScan(file, {
-            onProgress: progress => setScanProgress(progress),
-            plan: quota.plan,
-          })
+        ? requestedEngineMode === "legacy"
+          ? await scanLongWithLegacyEngine(scanOptions.longTicketFiles, progressOptions)
+          : await scanLongReceiptWithConfiguredEngine(scanOptions.longTicketFiles, progressOptions)
+        : requestedEngineMode === "legacy"
+          ? await scanWithLegacyEngine(file, progressOptions)
+          : await scanReceiptWithConfiguredEngine(file, progressOptions)
 
       const parsed = scan.receipt
+      if (scan.engine_used === "python") {
+        const items = parsed.items?.length ? parsed.items : (parsed.python_scan_status === "scan_not_exploitable" ? [] : [emptyItem()])
+        setReceipt(null)
+        setPendingImagePath(null)
+        setScanMetrics(scan.metrics || null)
+        setDraft({ ...parsed, items })
+        setDuplicateReceipt(null)
+        setAllowDuplicateImport(false)
+        setMode("validate")
+        setMessage(`${getPythonScanMessage(parsed)} ${txt.pythonLocalOnly}`)
+        return
+      }
+
       const dateDiagnostic = getTicketMonthDiagnostic(parsed.purchase_date)
       console.info("[scanner] ticket_date_month_check", dateDiagnostic)
       if (!dateDiagnostic.date_in_current_month) {
@@ -1124,14 +1271,22 @@ export default function ReceiptsPage({
         isKreol,
       }))
     } catch (error) {
-      console.error("Erreur scanner ticket:", error)
+      const allowFallback = requestedEngineMode !== "legacy" && canOfferLegacyFallback(error)
+      if (!(error instanceof ReceiptScannerApiError)) {
+        console.error("Erreur scanner ticket:", error)
+      }
       const details = getScanErrorDetails(error)
       const technicalMessage = String(details.technicalMessage || error.message || "")
       const isDateError = /date\/time field value out of range|invalid_ocr_date|date invalide/i.test(technicalMessage)
       setScanError(details)
+      setPendingLegacyFallback(allowFallback ? { file, scanOptions } : null)
+      if (error instanceof ReceiptScannerApiError) {
+        setMessage(getPythonScannerErrorMessage(error))
+      } else {
       setMessage(isDateError
         ? "Ticket lu, mais la date a été estimée automatiquement. Réessayez l'enregistrement."
         : details.userMessage || txt.error)
+      }
       try {
         await createScanMetric({
           userId: user?.id,
@@ -1142,7 +1297,11 @@ export default function ReceiptsPage({
       } catch (metricError) {
         console.warn("Metrique scanner indisponible:", metricError)
       }
-      startManual({ keepError: true })
+      if (allowFallback) {
+        setMode("history")
+      } else {
+        startManual({ keepError: true })
+      }
     } finally {
       setBusy(false)
     }
@@ -1382,6 +1541,112 @@ export default function ReceiptsPage({
 
   async function handleSmartImport(options = {}) {
     if (!user?.id || !draft) return
+    if (draft.python_scan_pending_save) {
+      const pythonStatus = String(draft.python_scan_status || "")
+      setScanError(null)
+      const dateDiagnostic = getTicketMonthDiagnostic(draft.purchase_date)
+      console.info("[scanner] python_ticket_date_month_check", dateDiagnostic)
+      if (!["needs_review", "scan_not_exploitable"].includes(pythonStatus) && !dateDiagnostic.date_in_current_month) {
+        setMessage(getTicketOutsideCurrentMonthMessage(isKreol))
+        return
+      }
+
+      if (!["needs_review", "scan_not_exploitable"].includes(pythonStatus)) {
+        const validationError = getDraftValidationError(draft)
+        if (validationError) {
+          setMessage(validationError)
+          return
+        }
+      }
+
+      const validItems = getValidDraftItems(draft)
+      const duplicate = duplicateReceipt || findDuplicateReceipt(draft, receipts)
+      if (duplicate && !allowDuplicateImport && !options.skipDuplicateCheck && !["needs_review", "scan_not_exploitable"].includes(pythonStatus)) {
+        setDuplicateReceipt(duplicate)
+        setMessage(txt.duplicateMessage)
+        return
+      }
+
+      setBusy(true)
+      setMessage("Enregistrement...")
+
+      try {
+        const draftToSave = duplicate
+          ? { ...draft, duplicate_confirmed: true, duplicate_of_receipt_id: duplicate.id }
+          : draft
+        const persistenceResult = await persistPythonScanResult({
+          userId: user.id,
+          draft: draftToSave,
+          receipt,
+          imagePath: pendingImagePath,
+          items: validItems,
+          action: options.pythonAction || "record_full",
+          scanMetrics,
+          state: pythonPersistenceStateRef.current,
+        })
+
+        setScanMetrics(prev => ({
+          ...(prev || {}),
+          pythonPersistence: {
+            status: persistenceResult.status,
+            receiptSaved: persistenceResult.receiptSaved,
+            transactionSaved: persistenceResult.transactionSaved,
+            receiptItemsCreated: persistenceResult.receiptItemsCreated,
+            shoppingItemsCreated: persistenceResult.shoppingItemsCreated,
+            smartShoppingFed: persistenceResult.smartShoppingFed,
+            marketSynced: persistenceResult.marketSynced,
+            warnings: persistenceResult.warnings,
+          },
+        }))
+
+        if (persistenceResult.status === "failed") {
+          const details = getScanErrorDetails(new Error(persistenceResult.technicalError?.message || txt.error))
+          setScanError(details)
+          setMessage(`Enregistrement impossible : ${persistenceResult.technicalError?.message || txt.error}`)
+          return
+        }
+
+        if (persistenceResult.status === "saved") {
+          setMessage(persistenceResult.userMessage)
+          setDraft(null)
+          setReceipt(null)
+          setDuplicateReceipt(null)
+          setAllowDuplicateImport(false)
+          setPendingImagePath(null)
+          setScanMetrics(null)
+          setMode("history")
+          clearLastScanDraft()
+          await refreshReceipts()
+          window.dispatchEvent(new CustomEvent("budgetkazpei:transactions-updated"))
+          if (persistenceResult.smartShoppingFed) {
+            window.dispatchEvent(new CustomEvent("budgetkazpei:shopping-updated"))
+          }
+          console.info("SCANNER_SUMMARY", buildScannerSummary({
+            parsed: draftToSave,
+            items: validItems,
+            metrics: scanMetrics,
+            importResult: {
+              receiptSaved: persistenceResult.receiptSaved,
+              receipt_id: persistenceResult.receiptId,
+              receiptItemsCreated: persistenceResult.receiptItemsCreated,
+              shoppingItemsCreated: persistenceResult.shoppingItemsCreated,
+              transactionCreated: persistenceResult.transactionCreated,
+              transactionUpdated: persistenceResult.transactionUpdated,
+              transactionSkipReason: persistenceResult.transactionSkipReason,
+            },
+            duplicateDetected: Boolean(duplicate),
+            duplicateConfirmed: Boolean(draftToSave.duplicate_confirmed),
+          }))
+          return
+        }
+
+        setMessage(persistenceResult.userMessage || txt.pythonLocalSaveBlocked)
+      } finally {
+        setBusy(false)
+      }
+      return
+    }
+
     const dateDiagnostic = getTicketMonthDiagnostic(draft.purchase_date)
     console.info("[scanner] ticket_date_month_check", dateDiagnostic)
     if (isScannedReceiptDraft(draft, scanMetrics) && !dateDiagnostic.date_in_current_month) {
@@ -1830,6 +2095,18 @@ export default function ReceiptsPage({
 
       {scanError && <ScanErrorMessage details={scanError} />}
 
+      {pendingLegacyFallback && (
+        <div style={cardStyle({ display: "grid", gap: 12, padding: 14 })}>
+          <div style={{ color: COLORS.text, fontWeight: 950 }}>
+            {txt.pythonTechnicalFallbackHint}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 10 }}>
+            <ActionButton label={txt.retry} Icon={BkIcons.scan} disabled={busy} onClick={retryPendingPythonScan} />
+            <ActionButton label={txt.useLegacyScanner} Icon={BkIcons.receipts} disabled={busy} onClick={runPendingLegacyFallback} muted />
+          </div>
+        </div>
+      )}
+
       {message && (
         <div style={{
           background: "rgba(35,211,214,.10)",
@@ -1916,6 +2193,37 @@ export default function ReceiptsPage({
         />
       </div>
 
+      {showMethodActions && singlePreviewFile && (
+        <div style={cardStyle({ display: "grid", gap: 12 })}>
+          <div>
+            <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 950 }}>
+              {txt.singlePreviewTitle}
+            </div>
+            <div style={{ color: COLORS.muted, fontSize: 13, lineHeight: 1.5, marginTop: 4 }}>
+              {txt.singlePreviewHint}
+            </div>
+          </div>
+          {singlePreviewUrl && (
+            <img
+              src={singlePreviewUrl}
+              alt={txt.singlePreviewTitle}
+              style={{
+                width: "100%",
+                maxHeight: 360,
+                objectFit: "contain",
+                borderRadius: 14,
+                border: `1px solid ${COLORS.border}`,
+                background: COLORS.surface,
+              }}
+            />
+          )}
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 10 }}>
+            <ActionButton label={txt.confirmImage} Icon={BkIcons.scan} disabled={busy} onClick={confirmSinglePreviewScan} />
+            <ActionButton label={txt.replacePhoto} Icon={BkIcons.receipts} disabled={busy} onClick={clearSinglePreview} muted />
+          </div>
+        </div>
+      )}
+
       {showMethodActions && longTicketMode && (
         <div style={cardStyle({ display: "grid", gap: 14 })}>
           <div>
@@ -1924,6 +2232,9 @@ export default function ReceiptsPage({
             </div>
             <div style={{ color: COLORS.muted, fontSize: 13, lineHeight: 1.5, marginTop: 4 }}>
               {txt.longTicketHint}
+            </div>
+            <div style={{ color: COLORS.yellow, fontSize: 12.5, lineHeight: 1.45, marginTop: 5, fontWeight: 850 }}>
+              {txt.longTicketOverlapHint}
             </div>
           </div>
 
@@ -1965,12 +2276,53 @@ export default function ReceiptsPage({
             </button>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: 10 }}>
+          {(longTicketPreviewUrls.top || longTicketPreviewUrls.bottom) && (
+            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: 12 }}>
+              {longTicketPreviewUrls.top && (
+                <img
+                  src={longTicketPreviewUrls.top}
+                  alt={txt.longTicketTop}
+                  style={{
+                    width: "100%",
+                    maxHeight: 320,
+                    objectFit: "contain",
+                    borderRadius: 14,
+                    border: `1px solid ${COLORS.border}`,
+                    background: COLORS.surface,
+                  }}
+                />
+              )}
+              {longTicketPreviewUrls.bottom && (
+                <img
+                  src={longTicketPreviewUrls.bottom}
+                  alt={txt.longTicketBottom}
+                  style={{
+                    width: "100%",
+                    maxHeight: 320,
+                    objectFit: "contain",
+                    borderRadius: 14,
+                    border: `1px solid ${COLORS.border}`,
+                    background: COLORS.surface,
+                  }}
+                />
+              )}
+            </div>
+          )}
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10 }}>
             <ActionButton
               label={txt.longTicketGallery}
               Icon={BkIcons.receipts}
               disabled={busy}
               onClick={() => longGalleryRef.current?.click()}
+              muted
+            />
+
+            <ActionButton
+              label={txt.swapLongTicketPhotos}
+              Icon={BkIcons.receipts}
+              disabled={busy || !longTicketFiles.top || !longTicketFiles.bottom}
+              onClick={swapLongTicketPhotos}
               muted
             />
 
@@ -1992,8 +2344,27 @@ export default function ReceiptsPage({
         </div>
       )}
 
-      <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={event => handleFile(event.target.files?.[0])} />
-      <input ref={galleryRef} type="file" accept="image/*" hidden onChange={event => handleFile(event.target.files?.[0])} />
+      <input
+        ref={cameraRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        hidden
+        onChange={event => {
+          handleSingleFileSelected(event.target.files?.[0])
+          event.target.value = ""
+        }}
+      />
+      <input
+        ref={galleryRef}
+        type="file"
+        accept="image/*"
+        hidden
+        onChange={event => {
+          handleSingleFileSelected(event.target.files?.[0])
+          event.target.value = ""
+        }}
+      />
       <input
         ref={longTopCameraRef}
         type="file"
@@ -2388,6 +2759,8 @@ function ValidationForm({
   const validationError = getDraftValidationError(draft)
   const articlesBlocked = isBudgetOkArticlesBlocked(draft)
   const partialLowItems = String(draft?.scan_status || "").includes("partial_low_items") || articlesBlocked
+  const pythonPending = Boolean(draft?.python_scan_pending_save)
+  const pythonPartial = draft?.python_scan_status === "budget_ok_articles_partial"
   const displayDetectedLines = !articlesBlocked || showBlockedDetectedLines
   const visibleDraftItems = (draft.items || [])
     .map((item, index) => ({ item, index }))
@@ -2590,10 +2963,31 @@ function ValidationForm({
         {txt.addLine}
       </button>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 10, marginTop: 18 }}>
-        <ActionButton label={txt.cancel} icon="" onClick={onCancel} disabled={busy} muted />
-        <ActionButton label={partialLowItems ? txt.saveAnyway : txt.save} icon="" onClick={onSave} disabled={busy || Boolean(validationError)} />
-      </div>
+      {pythonPending ? (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10, marginTop: 18 }}>
+          <ActionButton label={txt.cancel} icon="" onClick={onCancel} disabled={busy} muted />
+          {pythonPartial && (
+            <ActionButton
+              label={txt.saveTotalLocalOnly}
+              icon=""
+              onClick={() => onSave({ pythonAction: "total_only" })}
+              disabled={busy || Boolean(validationError)}
+              muted
+            />
+          )}
+          <ActionButton
+            label={pythonPartial ? txt.verifyArticlesLocalOnly : txt.continueLocalOnly}
+            icon=""
+            onClick={() => onSave({ pythonAction: pythonPartial ? "verify_articles" : "review" })}
+            disabled={busy || Boolean(validationError)}
+          />
+        </div>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 10, marginTop: 18 }}>
+          <ActionButton label={txt.cancel} icon="" onClick={onCancel} disabled={busy} muted />
+          <ActionButton label={partialLowItems ? txt.saveAnyway : txt.save} icon="" onClick={onSave} disabled={busy || Boolean(validationError)} />
+        </div>
+      )}
     </div>
   )
 }

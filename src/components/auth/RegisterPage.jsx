@@ -1,297 +1,253 @@
-import { useState } from "react"
-import AppLogo from "../AppLogo"
-import { createColorAliases, ds } from "../../styles/designSystem"
+import { useEffect, useRef, useState } from "react"
+import AuthCard from "./AuthCard"
+import AuthField from "./AuthField"
+import AuthLayout from "./AuthLayout"
+import AuthMessage from "./AuthMessage"
+import GoogleAuthButton from "./GoogleAuthButton"
+import PasswordField from "./PasswordField"
+import { DISCOVER_ROUTE, LOGIN_ROUTE, navigate } from "../../services/authNavigation"
 
-const COLORS = createColorAliases({
-  bg: () => ds.background,
-  card: () => ds.card,
-  ink: () => (ds.name === "light" ? "#6B4E28" : "#05080C"),
-  cream: () => (ds.name === "light" ? ds.textPrimary : "#F8ECD0"),
-  paper: () => (ds.name === "light" ? "#FFFFFF" : "#FFF6DE"),
-})
+function cleanError(error, fallback = "Impossible de créer le compte. Réessayez dans un instant.") {
+  const raw = String(error?.message || error || "").toLowerCase()
+  if (raw.includes("already") || raw.includes("existe")) {
+    return "Un compte existe déjà avec cette adresse. Essayez de vous connecter."
+  }
+  if (raw.includes("weak") || raw.includes("faible") || raw.includes("password")) {
+    return "Choisissez un mot de passe plus long et plus difficile à deviner."
+  }
+  if (raw.includes("google")) return "La connexion avec Google n'a pas abouti. Réessayez."
+  if (raw.includes("network") || raw.includes("fetch") || raw.includes("réseau")) {
+    return "Impossible de contacter le service. Vérifiez votre connexion."
+  }
+  return error?.message && !/authapierror|invalid_grant|supabase|stack/i.test(error.message)
+    ? error.message
+    : fallback
+}
 
-export default function RegisterPage({ onRegister, onGoLogin }) {
+function maskEmail(address) {
+  const [name = "", domain = ""] = address.split("@")
+  if (!name || !domain) return address
+  const safeName = name.length <= 2 ? `${name[0] || ""}...` : `${name.slice(0, 2)}...${name.slice(-1)}`
+  return `${safeName}@${domain}`
+}
+
+export default function RegisterPage({
+  onRegister,
+  onGoLogin,
+  onGoogleLogin,
+  next = "/app",
+}) {
+  const titleRef = useRef(null)
+  const nameRef = useRef(null)
+  const emailRef = useRef(null)
+  const passwordRef = useRef(null)
+  const confirmRef = useRef(null)
+  const termsRef = useRef(null)
   const [nom, setNom] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirm, setConfirm] = useState("")
-  const [error, setError] = useState("")
-  const [success, setSuccess] = useState(false)
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
+  const [errors, setErrors] = useState({})
+  const [successEmail, setSuccessEmail] = useState("")
   const [loading, setLoading] = useState(false)
+  const [googleLoading, setGoogleLoading] = useState(false)
 
-  async function handleSubmit(e) {
-    e.preventDefault()
-    setError("")
+  useEffect(() => {
+    titleRef.current?.focus()
+    setTimeout(() => nameRef.current?.focus(), 0)
+  }, [successEmail])
 
-    if (password !== confirm) {
-      setError("Les mots de passe ne correspondent pas")
-      return
-    }
+  function focusFirstError(nextErrors) {
+    if (nextErrors.nom) nameRef.current?.focus()
+    else if (nextErrors.email) emailRef.current?.focus()
+    else if (nextErrors.password) passwordRef.current?.focus()
+    else if (nextErrors.confirm) confirmRef.current?.focus()
+    else if (nextErrors.terms) termsRef.current?.focus()
+  }
 
-    if (password.length < 6) {
-      setError("Le mot de passe doit faire au moins 6 caractères")
+  function validate() {
+    const nextErrors = {}
+    if (!email.trim()) nextErrors.email = "Entrez votre adresse e-mail."
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) nextErrors.email = "Entrez une adresse e-mail valide."
+    if (!password) nextErrors.password = "Choisissez un mot de passe."
+    else if (password.length < 6) nextErrors.password = "Choisissez un mot de passe d'au moins 6 caractères."
+    if (!confirm) nextErrors.confirm = "Confirmez votre mot de passe."
+    else if (password !== confirm) nextErrors.confirm = "Les deux mots de passe ne correspondent pas."
+    if (!acceptedTerms) nextErrors.terms = "Vous devez accepter les conditions pour créer votre compte."
+    return nextErrors
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault()
+    if (loading || googleLoading) return
+
+    const nextErrors = validate()
+    setErrors(nextErrors)
+
+    if (Object.keys(nextErrors).length) {
+      focusFirstError(nextErrors)
       return
     }
 
     setLoading(true)
-
     try {
-      await onRegister(email, password, nom)
-      setSuccess(true)
-    } catch (err) {
-      setError(err.message || "Erreur lors de l'inscription")
+      const result = await onRegister(email.trim(), password, nom.trim(), { next })
+      if (result?.needsEmailConfirmation !== false) {
+        setSuccessEmail(email.trim())
+      }
+    } catch (error) {
+      setErrors({ form: cleanError(error) })
     } finally {
       setLoading(false)
     }
   }
 
-  const inputStyle = {
-    width: "100%",
-    background: COLORS.paper,
-    border: `3px solid ${COLORS.ink}`,
-    borderRadius: 10,
-    padding: "13px 16px",
-    color: COLORS.ink,
-    fontSize: 15,
-    fontWeight: 800,
-    outline: "none",
-    fontFamily: "inherit",
-    boxShadow: `5px 5px 0 ${COLORS.ink}`,
+  async function handleGoogleLogin() {
+    if (googleLoading || loading) return
+
+    if (!acceptedTerms) {
+      const nextErrors = { terms: "Vous devez accepter les conditions pour crÃ©er votre compte." }
+      setErrors(nextErrors)
+      focusFirstError(nextErrors)
+      return
+    }
+
+    setErrors({})
+    setGoogleLoading(true)
+    try {
+      await onGoogleLogin({ next })
+    } catch (error) {
+      setErrors({ form: cleanError(error, "La connexion avec Google n'a pas abouti. Réessayez.") })
+      setGoogleLoading(false)
+    }
   }
 
-  const labelStyle = {
-    display: "block",
-    textAlign: "center",
-    marginBottom: 8,
-    color: COLORS.cream,
-    fontSize: 12,
-    fontWeight: 900,
-    letterSpacing: 0.8,
-    textTransform: "uppercase",
-    textShadow: `2px 2px 0 ${COLORS.ink}`,
-  }
-
-  if (success) {
+  if (successEmail) {
     return (
-      <div style={pageStyle()}>
-        <div style={cardStyle()}>
-          <h2 style={titleStyle()}>Vérifie ta boîte mail !</h2>
-          <p style={{ color: COLORS.muted, textAlign: "center" }}>
-            Un lien de confirmation a été envoyé à {email}.
+      <AuthLayout
+        title="Vérifiez votre boîte mail."
+        subtitle="Votre compte est créé, mais il doit encore être confirmé avant l'ouverture de session."
+        titleRef={titleRef}
+      >
+        <AuthCard>
+          <AuthMessage type="success">
+            Un lien de confirmation a été envoyé à {maskEmail(successEmail)}. Vérifiez aussi vos spams.
+          </AuthMessage>
+          <p>
+            Si votre projet Supabase confirme les comptes par e-mail, la session ne sera ouverte qu'après
+            validation du lien.
           </p>
-          <button onClick={onGoLogin} style={buttonStyle()}>
+          <button type="button" className="auth-primary-button" onClick={onGoLogin || (() => navigate(LOGIN_ROUTE))}>
             Retour à la connexion
           </button>
-        </div>
-      </div>
+        </AuthCard>
+      </AuthLayout>
     )
   }
 
+  const busy = loading || googleLoading
+
   return (
-    <div style={pageStyle()}>
-      <div style={{ width: 440, maxWidth: "94vw" }}>
-        <div style={{ textAlign: "center", marginBottom: 18 }}>
-          <div
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 11,
-              margin: "0 auto 10px",
-            }}
-          >
-            <AppLogo
-              size={64}
-              style={{
-                pointerEvents: "none",
-                filter: "drop-shadow(0 10px 20px rgba(0,0,0,.32))",
-              }}
-            />
-            <span
-              style={{
-                color: COLORS.cream,
-                fontSize: 28,
-                fontWeight: 950,
-                lineHeight: 1,
-                textShadow: `3px 3px 0 ${COLORS.ink}`,
-              }}
-            >
-              BudgetKazPei
-            </span>
-          </div>
+    <AuthLayout
+      title="Créez votre espace BudgetKazPei."
+      subtitle="Commencez gratuitement et complétez votre profil plus tard, à votre rythme."
+      sideTitle="Un compte d'abord, le profil ensuite."
+      sideText="Revenus, aides, famille ou Conseiller se complètent progressivement dans l'application, quand ces informations deviennent utiles."
+      titleRef={titleRef}
+    >
+      <AuthCard busy={busy}>
+        <AuthMessage type="error">{errors.form}</AuthMessage>
 
-          <p
-            style={{
-              margin: "0",
-              color: "#23D3D6",
-              fontSize: 15,
-              fontWeight: 700,
-              fontFamily: "Poppins, 'DM Sans', sans-serif",
-              textAlign: "center",
-            }}
-          >
-            Crée ton compte gratuitement
-          </p>
-        </div>
+        <GoogleAuthButton
+          onClick={handleGoogleLogin}
+          loading={googleLoading}
+          disabled={loading}
+          label="Créer avec Google"
+          loadingLabel="Ouverture de Google..."
+        />
+        <div className="auth-divider">ou créer avec l'e-mail</div>
 
-        <div style={cardStyle()}>
-          <img
-            src="/icons-creole/palmier.png"
-            alt=""
-            aria-hidden="true"
-            style={{
-              position: "absolute",
-              width: 210,
-              height: 210,
-              right: -80,
-              top: -50,
-              opacity: 0.07,
-              transform: "rotate(-18deg)",
-              pointerEvents: "none",
-            }}
+        <form className="auth-form" onSubmit={handleSubmit} noValidate aria-busy={busy}>
+          <AuthField
+            ref={nameRef}
+            id="register-name"
+            label="Prénom ou nom d'usage"
+            type="text"
+            value={nom}
+            onChange={event => setNom(event.target.value)}
+            autoComplete="given-name"
+            hint="Facultatif. Vous pourrez compléter votre profil plus tard."
+            error={errors.nom}
+          />
+          <AuthField
+            ref={emailRef}
+            id="register-email"
+            label="Adresse e-mail"
+            type="email"
+            value={email}
+            onChange={event => setEmail(event.target.value)}
+            autoComplete="email"
+            inputMode="email"
+            error={errors.email}
+            required
+          />
+          <PasswordField
+            ref={passwordRef}
+            id="register-password"
+            label="Mot de passe"
+            value={password}
+            onChange={event => setPassword(event.target.value)}
+            autoComplete="new-password"
+            hint="Minimum 6 caractères. Évitez les mots de passe trop évidents."
+            error={errors.password}
+            required
+          />
+          <PasswordField
+            ref={confirmRef}
+            id="register-confirm"
+            label="Confirmer le mot de passe"
+            value={confirm}
+            onChange={event => setConfirm(event.target.value)}
+            autoComplete="new-password"
+            error={errors.confirm}
+            required
           />
 
-          <div style={{ position: "relative", zIndex: 1 }}>
-            <h2 style={titleStyle()}>Inscription</h2>
+          <label className="auth-checkbox">
+            <input
+              ref={termsRef}
+              type="checkbox"
+              checked={acceptedTerms}
+              onChange={event => setAcceptedTerms(event.target.checked)}
+              aria-invalid={Boolean(errors.terms)}
+              aria-describedby={errors.terms ? "register-terms-error" : undefined}
+            />
+            <span>
+              J'accepte les <a href="/terms">conditions d'utilisation</a> et la{" "}
+              <a href="/privacy">politique de confidentialité</a>.
+              {errors.terms && <em id="register-terms-error" role="alert">{errors.terms}</em>}
+            </span>
+          </label>
 
-            <form
-              onSubmit={handleSubmit}
-              style={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 16,
-              }}
-            >
-              <div>
-                <label style={labelStyle}>Prénom ou pseudo</label>
-                <input
-                  type="text"
-                  value={nom}
-                  onChange={e => setNom(e.target.value)}
-                  required
-                  style={inputStyle}
-                />
-              </div>
+          <button type="submit" className="auth-primary-button" disabled={busy} aria-busy={loading}>
+            {loading ? "Création du compte..." : "Créer mon compte"}
+          </button>
+          <p className="auth-field__hint">Aucune carte bancaire nécessaire.</p>
+        </form>
 
-              <div>
-                <label style={labelStyle}>Email</label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  required
-                  style={inputStyle}
-                />
-              </div>
-
-              <div>
-                <label style={labelStyle}>Mot de passe</label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  required
-                  style={inputStyle}
-                />
-              </div>
-
-              <div>
-                <label style={labelStyle}>Confirmer le mot de passe</label>
-                <input
-                  type="password"
-                  value={confirm}
-                  onChange={e => setConfirm(e.target.value)}
-                  required
-                  style={inputStyle}
-                />
-              </div>
-
-              {error && (
-                <div
-                  style={{
-                    background: `${COLORS.red}18`,
-                    border: `2px solid ${COLORS.red}`,
-                    borderRadius: 10,
-                    padding: "10px 14px",
-                    color: "#FFD6D6",
-                    fontWeight: 700,
-                    fontSize: 13,
-                  }}
-                >
-                  ⚠️ {error}
-                </div>
-              )}
-
-              <button type="submit" disabled={loading} style={buttonStyle()}>
-                {loading ? "Création..." : "Créer mon compte"}
-              </button>
-            </form>
-
-            <p style={{ textAlign: "center", marginTop: 22, color: COLORS.muted }}>
-              Déjà un compte ?{" "}
-              <button
-                onClick={onGoLogin}
-                style={{
-                  background: "none",
-                  border: "none",
-                  color: COLORS.accent,
-                  cursor: "pointer",
-                  fontWeight: 900,
-                }}
-              >
-                Se connecter
-              </button>
-            </p>
-          </div>
+        <div className="auth-switch">
+          <p>
+            Déjà un compte ?{" "}
+            <button type="button" className="auth-text-button" onClick={onGoLogin || (() => navigate(LOGIN_ROUTE))}>
+              Se connecter
+            </button>
+          </p>
+          <button type="button" className="auth-text-button" onClick={() => navigate(DISCOVER_ROUTE)}>
+            Découvrir BudgetKazPei
+          </button>
         </div>
-      </div>
-    </div>
+      </AuthCard>
+    </AuthLayout>
   )
 }
-
-const pageStyle = () => ({
-  minHeight: "100vh",
-  background: ds.name === "light"
-    ? "radial-gradient(circle at top, rgba(249,115,22,.13), transparent 35%), #F7F3EA"
-    : "radial-gradient(circle at top, rgba(35,211,214,.12), transparent 35%), #0A1628",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontFamily: "'DM Sans', sans-serif",
-  padding: "32px 18px",
-})
-
-const cardStyle = () => ({
-  position: "relative",
-  overflow: "hidden",
-  background: ds.name === "light"
-    ? "linear-gradient(145deg, rgba(255,255,255,.98), rgba(255,248,236,.96), rgba(238,247,246,.94))"
-    : "linear-gradient(145deg, rgba(10,31,61,.98), rgba(13,52,92,.96), rgba(24,92,138,.92))",
-  border: `3px solid ${COLORS.ink}`,
-  borderRadius: 22,
-  padding: "34px 28px 30px",
-  boxShadow: `9px 9px 0 ${COLORS.ink}, 0 26px 70px rgba(0,0,0,.35)`,
-})
-
-const titleStyle = () => ({
-  margin: "0 0 26px",
-  fontSize: 26,
-  color: COLORS.cream,
-  textAlign: "center",
-  fontFamily: "Impact, 'Arial Black', 'DM Serif Display', serif",
-  textShadow: `3px 3px 0 ${COLORS.ink}`,
-})
-
-const buttonStyle = () => ({
-  width: "100%",
-  background: COLORS.accent,
-  border: `3px solid ${COLORS.ink}`,
-  borderRadius: 12,
-  padding: "14px 0",
-  color: "#fff",
-  fontSize: 17,
-  fontWeight: 900,
-  cursor: "pointer",
-  fontFamily: "inherit",
-  boxShadow: `5px 5px 0 ${COLORS.ink}`,
-})

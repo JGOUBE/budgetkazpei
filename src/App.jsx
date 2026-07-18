@@ -14,6 +14,8 @@ import { syncProfileIncomeForCurrentMonth } from "./services/income/profileIncom
 
 import LoginPage from "./components/auth/LoginPage"
 import RegisterPage from "./components/auth/RegisterPage"
+import AuthCallbackPage from "./components/auth/AuthCallbackPage"
+import AuthLoadingScreen from "./components/auth/AuthLoadingScreen"
 import Sidebar from "./components/sidebar/Sidebar"
 import Header from "./components/header/Header"
 import AddTransactionModal from "./components/modals/AddTransactionModal"
@@ -49,6 +51,15 @@ import { createColorAliases, ds } from "./styles/designSystem"
 import { useTheme } from "./styles/ThemeProvider"
 import AppLogo from "./components/AppLogo"
 import ThemeToggle from "./components/ThemeToggle"
+import { getPlanFlags, normalizePlan } from "./config/plans"
+import {
+  LOGIN_ROUTE,
+  REGISTER_ROUTE,
+  ROUTE_CHANGE_EVENT,
+  getCurrentLocation,
+  navigate,
+  resolveAuthRoute,
+} from "./services/authNavigation"
 
 const COLORS = createColorAliases()
 
@@ -65,51 +76,84 @@ function useIsMobile() {
 }
 
 export default function App() {
-  const currentPath =
-    typeof window !== "undefined"
-      ? window.location.pathname
-      : "/"
+  const auth = useAuth()
+  const location = useRouteLocation()
+  const route = resolveAuthRoute({
+    pathname: location.pathname,
+    search: location.search,
+    isAuthenticated: Boolean(auth.user),
+    hasAuthenticatedBefore: Boolean(auth.hasAuthenticatedBefore),
+    loading: auth.loading,
+  })
 
-  const forceApp =
-    typeof window !== "undefined" &&
-    window.location.search.includes("app=true")
+  if (route.type === "loading") return <AuthLoadingScreen />
+  if (route.type === "redirect") return <RouteRedirect to={route.to} replace={route.replace} />
+  if (route.type === "auth-callback") return <AuthCallbackPage />
+
+  if (route.page === "privacy") return <PrivacyPage />
+  if (route.page === "terms") return <TermsPage />
+  if (route.page === "suppression-compte") return <SuppressionComptePage />
+  if (route.page === "reset-password") return <ResetPasswordPage />
+  if (route.page === "premium") {
+    return <PremiumLandingPage isAuthenticated={Boolean(auth.user)} />
+  }
+
+  if (route.page === "login") {
+    return <BudgetKazPeiApp auth={auth} initialAuthPage="login" next={route.next} />
+  }
+
+  if (route.page === "register") {
+    return <BudgetKazPeiApp auth={auth} initialAuthPage="register" next={route.next} />
+  }
+
+  if (route.page === "app") {
+    return <BudgetKazPeiApp auth={auth} initialAuthPage="login" next="/app" />
+  }
+
+  return <PublicHomePage isAuthenticated={Boolean(auth.user)} />
+}
+
+function useRouteLocation() {
+  const [location, setLocation] = useState(getCurrentLocation)
 
   useEffect(() => {
-    if (
-      typeof window !== "undefined" &&
-      window.location.search.includes("app=true")
-    ) {
-      window.history.replaceState({}, "", "/app")
+    const updateLocation = () => setLocation(getCurrentLocation())
+
+    window.addEventListener("popstate", updateLocation)
+    window.addEventListener(ROUTE_CHANGE_EVENT, updateLocation)
+
+    return () => {
+      window.removeEventListener("popstate", updateLocation)
+      window.removeEventListener(ROUTE_CHANGE_EVENT, updateLocation)
     }
   }, [])
 
-  if (currentPath === "/privacy") return <PrivacyPage />
-  if (currentPath === "/terms") return <TermsPage />
-  if (currentPath === "/suppression-compte") return <SuppressionComptePage />
-  if (currentPath === "/reset-password") return <ResetPasswordPage />
-  if (currentPath === "/premium" || currentPath.startsWith("/premium/")) {
-    return <PremiumLandingPage />
-  }
-
-  if (currentPath === "/login") return <BudgetKazPeiApp initialAuthPage="login" />
-  if (currentPath === "/register") return <BudgetKazPeiApp initialAuthPage="register" />
-  if (currentPath === "/app" || forceApp) return <BudgetKazPeiApp initialAuthPage="login" />
-
-  return <PublicHomePage />
+  return location
 }
 
-function BudgetKazPeiApp({ initialAuthPage = "login" }) {
+function RouteRedirect({ to, replace = true }) {
+  useEffect(() => {
+    navigate(to, { replace })
+  }, [to, replace])
+
+  return <AuthLoadingScreen />
+}
+
+function BudgetKazPeiApp({ auth, initialAuthPage = "login", next = "/app" }) {
+  const contextAuth = useAuth()
   const {
     user,
     loading,
+    authMessage,
+    clearAuthMessage,
     signIn,
     signUp,
     signOut,
     signInWithGoogle,
     resetPassword,
-  } = useAuth()
+  } = auth || contextAuth
 
-  const [authPage, setAuthPage] = useState(initialAuthPage)
+  const authPage = initialAuthPage
   const [activeNav, setActiveNav] = useState("dashboard")
   const [showModal, setShowModal] = useState(false)
   const [showSidebar, setShowSidebar] = useState(false)
@@ -160,20 +204,13 @@ function BudgetKazPeiApp({ initialAuthPage = "login" }) {
     loadSubscriptionPlan()
   }, [user?.id, profile?.plan])
 
-  const isAdmin = profile?.is_admin === true
-  const plan = subscriptionPlan || profile?.plan || "free"
-
-  const isPremium =
-    isAdmin ||
-    plan === "premium" ||
-    plan === "premium_plus" ||
-    profile?.premium === true ||
-    profile?.is_premium === true ||
-    profile?.premium_plus === true
-
-  const isPremiumPlus =
-    plan === "premium_plus" ||
-    profile?.premium_plus === true
+  const plan = normalizePlan(subscriptionPlan || profile?.plan || "free")
+  const planFlags = getPlanFlags(plan, {
+    isPremium: profile?.premium === true || profile?.is_premium === true,
+    isPremiumPlus: profile?.premium_plus === true,
+  })
+  const isPremium = planFlags.isPremium
+  const isPremiumPlus = planFlags.isPremiumPlus
 
   const hasPremiumAccess = isPremium || isPremiumPlus
 
@@ -336,31 +373,16 @@ function BudgetKazPeiApp({ initialAuthPage = "login" }) {
     }
   }, [])
 
-  if (loading) {
-    return (
-      <div
-        style={{
-          minHeight: "100vh",
-          background: COLORS.bg,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontFamily: "'DM Sans', sans-serif",
-        }}
-      >
-        <div style={{ textAlign: "center" }}>
-          <p style={{ color: COLORS.muted, fontSize: 14 }}>Chargement...</p>
-        </div>
-      </div>
-    )
-  }
+  if (loading) return <AuthLoadingScreen />
 
   if (!user) {
     if (authPage === "register") {
       return (
         <RegisterPage
           onRegister={signUp}
-          onGoLogin={() => setAuthPage("login")}
+          onGoLogin={() => navigate(LOGIN_ROUTE)}
+          onGoogleLogin={signInWithGoogle}
+          next={next}
         />
       )
     }
@@ -368,9 +390,12 @@ function BudgetKazPeiApp({ initialAuthPage = "login" }) {
     return (
       <LoginPage
         onLogin={signIn}
-        onGoRegister={() => setAuthPage("register")}
+        onGoRegister={() => navigate(REGISTER_ROUTE)}
         onGoogleLogin={signInWithGoogle}
         onResetPassword={resetPassword}
+        next={next}
+        authMessage={authMessage}
+        onAuthMessageRead={clearAuthMessage}
       />
     )
   }
@@ -881,8 +906,6 @@ function BudgetKazPeiApp({ initialAuthPage = "login" }) {
             justifyContent: "space-around",
             padding: "8px 8px calc(12px + env(safe-area-inset-bottom))",
             boxShadow: "0 -16px 36px rgba(0,0,0,.28)",
-            backdropFilter: "blur(18px)",
-            WebkitBackdropFilter: "blur(18px)",
           }}
         >
           {[

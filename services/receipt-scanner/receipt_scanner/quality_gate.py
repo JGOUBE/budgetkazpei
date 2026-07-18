@@ -57,6 +57,10 @@ class ReceiptQualityMetrics:
     declared_item_count: int | None
     items_total: float
     total: float | None
+    article_total: float | None
+    immediate_discount_total: float | None
+    payable_total: float | None
+    article_reconciliation_total: float | None
     total_delta: float | None
     quantity_delta: float | None
     warning_count: int
@@ -230,9 +234,10 @@ class ReceiptQualityGate:
         cls,
         receipt: ParsedReceipt,
     ) -> ReceiptQualityMetrics:
+        reconciliation_total = receipt.article_reconciliation_total
         total_delta = (
-            round(abs(receipt.items_total - receipt.total), 2)
-            if receipt.total is not None
+            round(abs(receipt.items_total - reconciliation_total), 2)
+            if reconciliation_total is not None
             else None
         )
         quantity_delta = (
@@ -270,6 +275,10 @@ class ReceiptQualityGate:
             declared_item_count=receipt.declared_item_count,
             items_total=receipt.items_total,
             total=receipt.total,
+            article_total=receipt.article_total,
+            immediate_discount_total=receipt.immediate_discount_total,
+            payable_total=receipt.payable_total,
+            article_reconciliation_total=reconciliation_total,
             total_delta=total_delta,
             quantity_delta=quantity_delta,
             warning_count=len(receipt.warnings),

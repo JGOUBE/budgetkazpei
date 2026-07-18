@@ -10,8 +10,8 @@ export function useReceiptQuota(userId, isPremium = false, isPremiumPlus = false
 
   const plan = getScanPlan(isPremium, isPremiumPlus)
   const limit = SCAN_LIMITS[plan]
-  const remaining = plan === "premium_plus" ? Infinity : Math.max(limit - used, 0)
-  const reached = plan !== "premium_plus" && remaining <= 0
+  const remaining = Math.max(limit - used, 0)
+  const reached = remaining <= 0
 
   const refresh = useCallback(async (options = {}) => {
     const ignore = Boolean(options.ignore)

@@ -37,6 +37,22 @@ def coherent_short_receipt_lines():
     return lines
 
 
+def total_lines(*extra_lines: tuple[str, str]) -> list:
+    lines = [
+        make_line(0, [("E.LECLERC", "description", 70)], y=40),
+        make_line(1, [("LE PORTAIL", "description", 70)], y=80),
+        make_line(2, [(">> EPICERIE", "description", 70)], y=130),
+        make_line(3, [("PRODUIT TEST", "description", 70), ("74.24", "price", 620)], y=180),
+        make_line(4, [("TOTAL 33 ARTICLES", "description", 70), ("74.24", "price", 620)], y=230),
+    ]
+    for index, (label, amount) in enumerate(extra_lines, start=5):
+        parts = [(label, "description", 70)]
+        if amount:
+            parts.append((amount, "price", 620))
+        lines.append(make_line(index, parts, y=230 + ((index - 4) * 42)))
+    return lines
+
+
 class ReceiptParserFRTest(unittest.TestCase):
     def test_short_receipt_case_a_is_parsed_without_private_photo(self) -> None:
         lines = coherent_short_receipt_lines()
@@ -49,6 +65,67 @@ class ReceiptParserFRTest(unittest.TestCase):
         self.assertEqual(parsed.counted_quantity, 21)
         self.assertEqual(parsed.items_total, 48.58)
         self.assertEqual(parsed.excluded_sections, ["EPICERIE", "FRUITS ET LEGUMES", "CREMERIE"])
+
+    def test_immediate_discount_uses_final_paid_total(self) -> None:
+        parsed = ReceiptParserFR().parse(
+            make_document([]),
+            total_lines(("BON IMMEDIAT", "0.25"), ("RESTE A PAYER", "73.99"), ("CB", "73.99")),
+        )
+
+        self.assertEqual(parsed.article_total, 74.24)
+        self.assertEqual(parsed.immediate_discount_total, 0.25)
+        self.assertEqual(parsed.payable_total, 73.99)
+        self.assertEqual(parsed.total, 73.99)
+        self.assertEqual(parsed.article_reconciliation_total, 74.24)
+
+    def test_future_voucher_does_not_reduce_budget_total(self) -> None:
+        parsed = ReceiptParserFR().parse(
+            make_document([]),
+            total_lines(("BON ACHAT PROCHAIN PASSAGE", "5.00"), ("CB", "74.24")),
+        )
+
+        self.assertEqual(parsed.total, 74.24)
+        self.assertEqual(parsed.article_total, 74.24)
+        self.assertIsNone(parsed.immediate_discount_total)
+
+    def test_cash_tender_and_change_do_not_override_article_total(self) -> None:
+        parsed = ReceiptParserFR().parse(
+            make_document([]),
+            total_lines(("ESPECES", "80.00"), ("RENDU", "5.76")),
+        )
+
+        self.assertEqual(parsed.total, 74.24)
+        self.assertEqual(parsed.article_total, 74.24)
+
+    def test_split_payment_keeps_explicit_total_to_pay(self) -> None:
+        parsed = ReceiptParserFR().parse(
+            make_document([]),
+            total_lines(("TOTAL A PAYER", "73.99"), ("CB", "50.00"), ("ESPECES", "23.99")),
+        )
+
+        self.assertEqual(parsed.total, 73.99)
+        self.assertEqual(parsed.payable_total, 73.99)
+
+    def test_contradictory_discount_total_requires_manual_total_review(self) -> None:
+        parsed = ReceiptParserFR().parse(
+            make_document([]),
+            total_lines(("BON IMMEDIAT", "0.25"), ("RESTE A PAYER", "72.99")),
+        )
+
+        self.assertIsNone(parsed.total)
+        self.assertEqual(parsed.article_total, 74.24)
+        self.assertEqual(parsed.immediate_discount_total, 0.25)
+        self.assertEqual(parsed.payable_total, 72.99)
+        self.assertTrue(any("contradictoire" in warning for warning in parsed.warnings))
+
+    def test_unreadable_immediate_discount_amount_does_not_invent_discount(self) -> None:
+        parsed = ReceiptParserFR().parse(
+            make_document([]),
+            total_lines(("BON IMMEDIAT", ""), ("CB", "74.24")),
+        )
+
+        self.assertEqual(parsed.total, 74.24)
+        self.assertIsNone(parsed.immediate_discount_total)
 
     def test_multibuy_line_preserves_quantity_unit_and_total(self) -> None:
         parsed = ReceiptParserFR().parse(make_document([]), coherent_short_receipt_lines())

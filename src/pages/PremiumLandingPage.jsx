@@ -1,6 +1,7 @@
 import { useState } from "react"
 import AppLogo from "../components/AppLogo"
 import { createColorAliases, ds } from "../styles/designSystem"
+import { PLAN_IDS, PLAN_PRICES } from "../config/plans"
 
 const COLORS = createColorAliases({
   band: () => ds.elevated,
@@ -8,49 +9,41 @@ const COLORS = createColorAliases({
 
 const HERO_BG = "/icons-creole/fond-principal.png"
 
-const PREMIUM_PRICE = "2,99 €"
-const PREMIUM_ANNUAL_PRICE = "29,99 €"
-const PREMIUM_PLUS_PRICE = "4,99 €"
-const PREMIUM_PLUS_ANNUAL_PRICE = "49,99 €"
+const PREMIUM_PRICE = PLAN_PRICES[PLAN_IDS.premium].replace("/mois", "")
+const PREMIUM_PLUS_PRICE = PLAN_PRICES[PLAN_IDS.premiumPlus].replace("/mois", "")
 
 const STRIPE_LINKS = {
   premiumMonthly: "https://buy.stripe.com/7sYbJ0fIR2JU4yua1ggMw00",
-  premiumAnnual: "https://buy.stripe.com/14AcN41S184ed502yOgMw01",
   premiumPlusMonthly: "https://buy.stripe.com/7sY28qdAJ1FQ6GCddsgMw03",
-  premiumPlusAnnual: "https://buy.stripe.com/cNicN468hacm9SOa1ggMw02",
 }
 
 const CONTENT = {
   fr: {
     switchLang: "RE Kreol",
     back: "Retour à l'app",
+    login: "Se connecter",
+    dashboard: "Accéder à mon tableau de bord",
     heroBadge: "BudgetKazPei Premium",
     heroTitle: "Choisissez le niveau d'accompagnement qui vous aide vraiment.",
     heroText:
       "Premium et Premium+ ne servent pas seulement à ajouter plus de courses. Ils transforment vos données en statistiques, prévisions, conseils et décisions plus simples au quotidien.",
     plansTitle: "Les offres",
     monthly: "Mensuel",
-    annual: "Annuel",
-    annualBadge: "2 mois offerts",
     choosePremiumMonthly: "Choisir Premium mensuel",
-    choosePremiumAnnual: "Choisir Premium annuel",
     choosePlusMonthly: "Choisir Premium+ mensuel",
-    choosePlusAnnual: "Choisir Premium+ annuel",
-    freeButton: "Commencer gratuitement",
+    freeButton: "Essayer gratuitement",
     plans: [
       {
         name: "Gratuit",
         color: COLORS.green,
         price: "0 €",
         promise: "Découvrir BudgetKazPei.",
-        quota: "10 analyses de courses par mois",
-        features: ["Budget simple", "Dépenses et revenus", "Aides en version simple", "Ajout manuel illimité"],
+        features: ["Budget simple", "Dépenses et revenus", "Aides en version simple", "Ajout manuel disponible"],
       },
       {
         name: "Premium",
         color: COLORS.yellow,
         promise: "Gérer parfaitement son budget.",
-        quota: "30 analyses de courses par mois",
         features: ["Statistiques avancées", "Historique complet", "Produits et magasins", "Dashboard enrichi", "Alertes budget", "Exports et suivi plus complet"],
         featured: true,
       },
@@ -58,8 +51,7 @@ const CONTENT = {
         name: "Premium+",
         color: COLORS.purple,
         promise: "Votre copilote financier intelligent.",
-        quota: "100 analyses de courses par mois",
-        features: ["Assistant IA", "Prévisions budgétaires", "Conseils personnalisés", "Résumé hebdomadaire", "Analyses avancées", "Comparaisons intelligentes prochainement"],
+        features: ["Assistant IA", "Prévisions budgétaires bientôt disponible", "Conseils personnalisés", "Résumé hebdomadaire bientôt disponible", "Analyses avancées", "Comparaisons intelligentes bientôt disponible"],
       },
     ],
     valueTitle: "Premium+ est votre copilote financier",
@@ -67,7 +59,7 @@ const CONTENT = {
       "Premium+ est pensé comme un accompagnement : comprendre pourquoi votre budget évolue, anticiper les fins de mois, repérer les économies possibles et vous guider sans complexité.",
     faqTitle: "Questions fréquentes",
     faq: [
-      ["Pourquoi limiter les analyses automatiques ?", "Une analyse automatique utilise OCR, parsing et parfois IA. Les actions manuelles et la consultation restent illimitées."],
+      ["Pourquoi encadrer les analyses automatiques ?", "Une analyse automatique utilise OCR, parsing et parfois IA. Les actions manuelles et la consultation restent disponibles selon l'offre."],
       ["Le scanner est-il obligatoire ?", "Non. Vous pouvez toujours ajouter une course manuellement. Le scanner est simplement le moyen le plus rapide."],
       ["Que vais-je gagner avec Premium ?", "Une lecture plus complète de vos courses, produits, magasins, historiques et statistiques."],
       ["Que vais-je gagner avec Premium+ ?", "Un vrai copilote financier : assistant IA, explications, prévisions, conseils et résumés personnalisés."],
@@ -76,18 +68,16 @@ const CONTENT = {
   kr: {
     switchLang: "FR Français",
     back: "Retour dann l'app",
+    login: "Konekte",
+    dashboard: "Accéder à mon tableau de bord",
     heroBadge: "BudgetKazPei Premium",
     heroTitle: "Swazi lakonpagnman ki aide aou pou de vrai.",
     heroText:
       "Premium ek Premium+ lé pa zis pou azout plis courses. Zot transforme out donnees an statistik, prevision, konsey ek desizion pli simple.",
     plansTitle: "Bann offres",
     monthly: "Mensuel",
-    annual: "Annuel",
-    annualBadge: "2 mwa offert",
     choosePremiumMonthly: "Choisir Premium mensuel",
-    choosePremiumAnnual: "Choisir Premium annuel",
     choosePlusMonthly: "Choisir Premium+ mensuel",
-    choosePlusAnnual: "Choisir Premium+ annuel",
     freeButton: "Koumans gratis",
     plans: [
       {
@@ -95,14 +85,12 @@ const CONTENT = {
         color: COLORS.green,
         price: "0 €",
         promise: "Dekouv BudgetKazPei.",
-        quota: "10 analiz courses par mwa",
-        features: ["Bidze simple", "Depans ek larzan rantre", "Aides version simple", "Azout amain illimite"],
+        features: ["Bidze simple", "Depans ek larzan rantre", "Aides version simple", "Azout amain disponible"],
       },
       {
         name: "Premium",
         color: COLORS.yellow,
         promise: "Gere bien out bidze.",
-        quota: "30 analiz courses par mwa",
         features: ["Statistik avance", "Istorik complet", "Produits ek magasins", "Dashboard enrichi", "Alertes bidze", "Swivi pli complet"],
         featured: true,
       },
@@ -110,8 +98,7 @@ const CONTENT = {
         name: "Premium+",
         color: COLORS.purple,
         promise: "Out copilote financier entelizan.",
-        quota: "100 analiz courses par mwa",
-        features: ["Assistant IA", "Prevision bidze", "Konsey personnalise", "Resume la semaine", "Analiz avance", "Comparaisons entelizantes bientot"],
+        features: ["Assistant IA", "Prevision bidze bientot disponible", "Konsey personnalise", "Resume la semaine bientot disponible", "Analiz avance", "Comparaisons entelizantes bientot disponible"],
       },
     ],
     valueTitle: "Premium+ lé out copilote financier",
@@ -119,7 +106,7 @@ const CONTENT = {
       "Premium+ lé fait pou accompagne aou : konprann poukisa out bidze i bouge, anticipe fin de mwa, trouv lekonomi possible ek guide aou simplement.",
     faqTitle: "Kestion souvent",
     faq: [
-      ["Poukisa limite bann analiz otomatik ?", "In analiz otomatik i servi OCR, parsing ek parfwa IA. Azout amain ek consultation i reste illimite."],
+      ["Poukisa encadrer bann analiz otomatik ?", "In analiz otomatik i servi OCR, parsing ek parfwa IA. Azout amain ek consultation i reste disponible selon l'offre."],
       ["Scanner lé obligatoire ?", "Non. Ou pe toujours azout in course amain. Scanner-la lé zis fason pli rapide."],
       ["Kosa Premium i donn amwin ?", "In lecture pli complete de out courses, produits, magasins, istorik ek statistik."],
       ["Kosa Premium+ i donn amwin ?", "In vrai copilote financier : assistant IA, explications, previsions, konsey ek resumes personnalise."],
@@ -170,7 +157,7 @@ function BillingChoice({ label, price, period, badge, color, onClick, button }) 
   )
 }
 
-export default function PremiumLandingPage() {
+export default function PremiumLandingPage({ isAuthenticated = false }) {
   const [lang, setLang] = useState("fr")
   const c = CONTENT[lang]
 
@@ -192,7 +179,14 @@ export default function PremiumLandingPage() {
             <button type="button" onClick={() => setLang(lang === "fr" ? "kr" : "fr")} style={{ minHeight: 42, borderRadius: 12, border: `1px solid ${COLORS.cyan}66`, background: "rgba(8,20,38,.72)", color: COLORS.cyan, fontWeight: 950, padding: "0 12px", fontFamily: "inherit", cursor: "pointer" }}>
               {c.switchLang}
             </button>
-            <Button href="/app" variant="secondary">{c.back}</Button>
+            {isAuthenticated ? (
+              <Button href="/app" variant="secondary">{c.dashboard}</Button>
+            ) : (
+              <>
+                <Button href="/login" variant="secondary">{c.login}</Button>
+                <Button href="/register">{c.freeButton}</Button>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -220,24 +214,25 @@ export default function PremiumLandingPage() {
             <article key={plan.name} style={{ background: plan.featured ? `linear-gradient(135deg, ${COLORS.yellow}18, ${COLORS.card})` : COLORS.card, border: `1px solid ${plan.featured ? COLORS.yellow : COLORS.border}`, borderRadius: 8, padding: 20 }}>
               <h3 style={{ margin: 0, color: plan.color, fontSize: 28 }}>{plan.name}</h3>
               <p style={{ color: COLORS.text, fontWeight: 950, margin: "10px 0 6px" }}>{plan.promise}</p>
-              <p style={{ color: COLORS.cyan, fontWeight: 950, margin: "0 0 16px" }}>{plan.quota}</p>
               <div style={{ display: "grid", gap: 8, marginBottom: index === 0 ? 18 : 16 }}>
                 {plan.features.map(feature => (
                   <div key={feature} style={{ color: COLORS.muted, fontWeight: 750 }}>✓ {feature}</div>
                 ))}
               </div>
 
-              {index === 0 && <Button href="/register">{c.freeButton}</Button>}
+              {index === 0 && (
+                <Button href={isAuthenticated ? "/app" : "/register"}>
+                  {isAuthenticated ? c.dashboard : c.freeButton}
+                </Button>
+              )}
               {index === 1 && (
                 <div style={{ display: "grid", gap: 10 }}>
                   <BillingChoice label={c.monthly} price={PREMIUM_PRICE} period="/mois" color={plan.color} button={c.choosePremiumMonthly} onClick={() => openStripeLink(STRIPE_LINKS.premiumMonthly)} />
-                  <BillingChoice label={c.annual} price={PREMIUM_ANNUAL_PRICE} period="/an" badge={c.annualBadge} color={plan.color} button={c.choosePremiumAnnual} onClick={() => openStripeLink(STRIPE_LINKS.premiumAnnual)} />
                 </div>
               )}
               {index === 2 && (
                 <div style={{ display: "grid", gap: 10 }}>
                   <BillingChoice label={c.monthly} price={PREMIUM_PLUS_PRICE} period="/mois" color={plan.color} button={c.choosePlusMonthly} onClick={() => openStripeLink(STRIPE_LINKS.premiumPlusMonthly)} />
-                  <BillingChoice label={c.annual} price={PREMIUM_PLUS_ANNUAL_PRICE} period="/an" badge={c.annualBadge} color={plan.color} button={c.choosePlusAnnual} onClick={() => openStripeLink(STRIPE_LINKS.premiumPlusAnnual)} />
                 </div>
               )}
             </article>

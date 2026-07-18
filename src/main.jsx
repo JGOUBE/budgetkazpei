@@ -4,13 +4,20 @@ import "./index.css"
 import App from "./App.jsx"
 import ErrorBoundary from "./components/system/ErrorBoundary.jsx"
 import { ThemeProvider } from "./styles/ThemeProvider.jsx"
+import { AuthProvider } from "./context/AuthContext.jsx"
+import packageInfo from "../package.json"
 
-createRoot(document.getElementById("root")).render(
+const rootElement = document.getElementById("root")
+rootElement?.setAttribute("data-app-version", packageInfo.version)
+
+createRoot(rootElement).render(
   <StrictMode>
     <ThemeProvider>
-      <ErrorBoundary>
-        <App />
-      </ErrorBoundary>
+      <AuthProvider>
+        <ErrorBoundary>
+          <App />
+        </ErrorBoundary>
+      </AuthProvider>
     </ThemeProvider>
   </StrictMode>
 )

@@ -520,7 +520,7 @@ function normalizeDemarche(row = {}) {
   }
 }
 
-export default function AidesPage({ isMobile, t, isPremium, user }) {
+export default function AidesPage({ isMobile, t, isPremium, isPremiumPlus = false, user }) {
   const { themeName } = useTheme()
   const languageKey = getLanguageKey(t)
   const isKreol = isKreolLang(t)
@@ -1151,7 +1151,7 @@ export default function AidesPage({ isMobile, t, isPremium, user }) {
 
                     <DemarchePremiumTools
                       isKreol={isKreol}
-                      isPremiumPlus={false}
+                      isPremiumPlus={isPremiumPlus}
                     />
                   </div>
 

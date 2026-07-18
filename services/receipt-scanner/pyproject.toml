@@ -8,15 +8,21 @@ version = "0.1.0"
 description = "BudgetKazPei Python receipt scanner engine"
 requires-python = ">=3.12,<3.13"
 dependencies = [
+  "cryptography==46.0.3",
+  "fastapi==0.124.2",
+  "httpx==0.28.1",
   "numpy==2.5.1",
   "opencv-python-headless==5.0.0.93",
   "onnxruntime==1.27.0",
   "pillow==12.3.0",
+  "PyJWT==2.10.1",
+  "python-multipart==0.0.21",
   "rapidocr==3.9.1",
+  "uvicorn==0.38.0",
 ]
 
 [project.scripts]
 receipt-scanner-smoke = "receipt_scanner.smoke:main"
 
-[tool.setuptools]
-packages = ["receipt_scanner"]
+[tool.setuptools.packages.find]
+include = ["receipt_scanner*"]

@@ -782,6 +782,7 @@ def run_two_photo_pipeline(
     run_id: str = "ticket_long_2_photos",
     max_side: int = 1600,
     use_cls: bool = False,
+    ocr_engine: Any | None = None,
 ) -> dict[str, Any]:
     top_source = Path(top_image_path)
     bottom_source = Path(bottom_image_path)
@@ -791,7 +792,10 @@ def run_two_photo_pipeline(
     if not bottom_source.is_file():
         raise FileNotFoundError(f"Bottom image not found: {bottom_source}")
 
-    from .ocr_engine import RapidOCREngine
+    if ocr_engine is None:
+        from .ocr_engine import RapidOCREngine
+
+        ocr_engine = RapidOCREngine(use_cls=use_cls)
 
     run_dir = Path(output_root) / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
@@ -822,12 +826,11 @@ def run_two_photo_pipeline(
         bottom_preprocessed,
     )
 
-    engine = RapidOCREngine(use_cls=use_cls)
-    top_document = engine.analyze(
+    top_document = ocr_engine.analyze(
         top_preprocessed,
         source_segment="top",
     )
-    bottom_document = engine.analyze(
+    bottom_document = ocr_engine.analyze(
         bottom_preprocessed,
         source_segment="bottom",
     )
@@ -1040,12 +1043,17 @@ def run_two_photo_pipeline(
             "counted_quantity": receipt.counted_quantity,
             "items_total": receipt.items_total,
             "total": receipt.total,
+            "article_total": receipt.article_total,
+            "immediate_discount_total": receipt.immediate_discount_total,
+            "payable_total": receipt.payable_total,
             "warning_count": len(receipt.warnings),
             "warnings": receipt.warnings,
         },
         "quality": {
             "status": quality.status,
             "exploitable": quality.exploitable,
+            "budget_amount": quality.budget_amount,
+            "unattributed_amount": quality.unattributed_amount,
             "should_feed_courses": quality.should_feed_courses,
             "should_feed_market_database": (
                 quality.should_feed_market_database

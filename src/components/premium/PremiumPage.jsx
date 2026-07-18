@@ -1,5 +1,6 @@
 import { useState } from "react"
 import { createColorAliases } from "../../styles/designSystem"
+import { PLAN_IDS, PLAN_SCAN_LIMITS } from "../../config/plans"
 
 const COLORS = createColorAliases()
 
@@ -7,7 +8,7 @@ const WATERMARK = "/icons-creole/palmier.png"
 const PREMIUM_URL = "https://budgetkazpei.vercel.app/premium"
 
 const FREE_FEATURES_FR = [
-  "10 analyses de courses par mois",
+  `${PLAN_SCAN_LIMITS[PLAN_IDS.free]} analyses de courses par mois`,
   "Tableau de bord budget",
   "Ajout des dépenses et revenus",
   "Charges fixes",
@@ -18,7 +19,7 @@ const FREE_FEATURES_FR = [
 ]
 
 const PREMIUM_FEATURES_FR = [
-  "30 analyses de courses par mois",
+  `${PLAN_SCAN_LIMITS[PLAN_IDS.premium]} analyses de courses par mois`,
   "Statistiques avancées",
   "Produits et magasins",
   "Historique complet",
@@ -38,7 +39,7 @@ const PREMIUM_FEATURES_FR = [
 
 const PREMIUM_PLUS_FEATURES_FR = [
   "Votre copilote financier intelligent",
-  "100 analyses de courses par mois",
+  `${PLAN_SCAN_LIMITS[PLAN_IDS.premiumPlus]} analyses de courses par mois`,
   "Prévisions budgétaires — bientôt disponible",
   "Résumé hebdomadaire — bientôt disponible",
   "Tout Premium inclus",
@@ -54,7 +55,7 @@ const PREMIUM_PLUS_FEATURES_FR = [
 ]
 
 const FREE_FEATURES_KR = [
-  "10 analiz courses par mwa",
+  `${PLAN_SCAN_LIMITS[PLAN_IDS.free]} analiz courses par mwa`,
   "Tablo débor bidjé",
   "Azout dépans é larzan rantre",
   "Sarz fix",
@@ -65,7 +66,7 @@ const FREE_FEATURES_KR = [
 ]
 
 const PREMIUM_FEATURES_KR = [
-  "30 analiz courses par mwa",
+  `${PLAN_SCAN_LIMITS[PLAN_IDS.premium]} analiz courses par mwa`,
   "Statistik avansé",
   "Produits ek magasins",
   "Istorik complet",
@@ -85,7 +86,7 @@ const PREMIUM_FEATURES_KR = [
 
 const PREMIUM_PLUS_FEATURES_KR = [
   "Out copilote financier entèlizan",
-  "100 analiz courses par mwa",
+  `${PLAN_SCAN_LIMITS[PLAN_IDS.premiumPlus]} analiz courses par mwa`,
   "Prévision bidjé — bientôt disponible",
   "Résumé la semaine — bientôt disponible",
   "Tout Premium inclus",

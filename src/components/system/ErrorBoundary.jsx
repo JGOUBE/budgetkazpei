@@ -1,5 +1,6 @@
 import React from "react"
 import { supabase } from "../../services/supabase"
+import { navigate } from "../../services/authNavigation"
 
 const boxStyle = {
   minHeight: "100vh",
@@ -63,7 +64,7 @@ export default class ErrorBoundary extends React.Component {
       console.error("Erreur signOut fallback:", err)
     }
 
-    window.location.assign("/")
+    navigate("/", { replace: true })
   }
 
   render() {

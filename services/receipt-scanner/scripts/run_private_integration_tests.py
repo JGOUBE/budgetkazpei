@@ -116,7 +116,12 @@ def main() -> int:
         if long["receipt"]["receipt_date"] != "2026-07-07":
             raise AssertionError(f"long date expected 2026-07-07, got {long['receipt']['receipt_date']}")
         _assert_close("long items_total", long["receipt"]["items_total"], 74.04)
-        _assert_close("long total", long["receipt"]["total"], 74.24)
+        _assert_close("long total", long["receipt"]["total"], 73.99)
+        _assert_close("long article_total", long["receipt"]["article_total"], 74.24)
+        _assert_close("long immediate_discount_total", long["receipt"]["immediate_discount_total"], 0.25)
+        _assert_close("long payable_total", long["receipt"]["payable_total"], 73.99)
+        _assert_close("long budget_amount", long["quality"]["budget_amount"], 73.99)
+        _assert_close("long unattributed_amount", long["quality"]["unattributed_amount"], 0.20)
         if long["receipt"]["product_line_count"] != 32:
             raise AssertionError(f"long product_line_count expected 32, got {long['receipt']['product_line_count']}")
         _assert_close("long counted_quantity", long["receipt"]["counted_quantity"], 33, tolerance=0.001)

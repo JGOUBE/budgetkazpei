@@ -100,6 +100,9 @@ def parsed_receipt(
     items: list[ParsedReceiptItem],
     declared_item_count: int | None = None,
     warnings: list[str] | None = None,
+    article_total: float | None = None,
+    immediate_discount_total: float | None = None,
+    payable_total: float | None = None,
 ) -> ParsedReceipt:
     return ParsedReceipt(
         store_name="E.Leclerc",
@@ -111,6 +114,9 @@ def parsed_receipt(
         items=items,
         excluded_sections=[],
         warnings=warnings or [],
+        article_total=article_total,
+        immediate_discount_total=immediate_discount_total,
+        payable_total=payable_total,
     )
 
 
