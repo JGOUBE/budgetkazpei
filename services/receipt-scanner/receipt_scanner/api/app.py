@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from fastapi import Depends, FastAPI, File, Form, UploadFile
+from fastapi.middleware.cors import CORSMiddleware
 from starlette.concurrency import run_in_threadpool
 
 from .dependencies import get_scan_service, require_user
@@ -28,8 +29,32 @@ def create_app(
             "This service does not write to Supabase."
         ),
     )
+
+    # Autorise uniquement les frontends locaux utilisés pour les tests.
+    # Le JWT Supabase reste envoyé dans le header Authorization.
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[
+            "http://localhost:5175",
+            "http://127.0.0.1:5175",
+        ],
+        allow_credentials=False,
+        allow_methods=[
+            "GET",
+            "POST",
+            "OPTIONS",
+        ],
+        allow_headers=[
+            "Authorization",
+            "Content-Type",
+            "Accept",
+        ],
+        max_age=600,
+    )
+
     app.add_exception_handler(ScannerApiError, scanner_error_handler)
     app.add_exception_handler(Exception, unhandled_error_handler)
+
     app.state.settings = resolved_settings
     app.state.scan_service = scan_service or ReceiptScanService(
         settings=resolved_settings

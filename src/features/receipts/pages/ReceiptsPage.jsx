@@ -13,9 +13,8 @@ import {
   updateReceipt,
   updateReceiptItem,
   upsertReceiptTransaction,
-  validateReceipt,
 } from "../services/receiptService"
-import { useReceiptQuota } from "../hooks/useReceiptQuota"
+import { formatReceiptQuotaLabelFr, useReceiptQuota } from "../hooks/useReceiptQuota"
 import { clearLastScanDraft, getLastScanDraft } from "../../../services/scan/scanEngine"
 import {
   canOfferLegacyFallback,
@@ -26,9 +25,10 @@ import {
   scanLongWithLegacyEngine,
 } from "../../../services/scan/receiptScannerEngine"
 import { createPythonScanPersistenceState, persistPythonScanResult } from "../../../services/scan/pythonReceiptPersistence"
-import { ReceiptScannerApiError } from "../../../services/scan/receiptScannerApi"
+import { MONTHLY_SCAN_QUOTA_MESSAGE, ReceiptScannerApiError } from "../../../services/scan/receiptScannerApi"
 import { findDuplicateReceipt, getConfidenceColor, getConfidenceIcon } from "../../../services/scan/receiptValidator"
 import { importValidatedReceipt } from "../../../services/scan/receiptImporter"
+import { shouldIncrementClientScanUsage, shouldRefreshQuotaAfterPythonScan } from "../../../services/scan/receiptScannerQuotaPolicy"
 import { resolveMarketDisplayName } from "../../../services/scan/marketDisplay"
 import { deleteAnonymizedMarketReceipt, syncAnonymizedMarketReceipt } from "../../../services/scan/marketObservationService"
 import { isItemEligibleForSmartShopping, normalizeItemQualityStatus } from "../../../services/scan/receiptRules"
@@ -75,9 +75,27 @@ const TEXT = {
     pythonNeedsReview: "Certaines informations doivent être confirmées avant l'enregistrement.",
     pythonNotExploitable: "La photo est trop difficile à lire. Reprenez le ticket bien à plat, avec plus de lumière, ou saisissez vos achats manuellement.",
     pythonLocalOnly: "Étape de vérification uniquement : rien n'est encore enregistré dans BudgetKazPei.",
-    saveTotalLocalOnly: "Enregistrer seulement le total",
-    verifyArticlesLocalOnly: "Vérifier les articles",
-    continueLocalOnly: "Vérifier et continuer",
+    saveTotalLocalOnly: "Enregistrer uniquement le total",
+    verifyArticlesLocalOnly: "Enregistrer le ticket",
+    continueLocalOnly: "Enregistrer le ticket",
+    saveSummaryTitle: "Avant d’enregistrer",
+    trustedArticlesSummary: count => count === 1
+      ? "1 article fiable sera utilisé dans Courses intelligentes."
+      : `${count} articles fiables seront utilisés dans Courses intelligentes.`,
+    reviewArticlesSummary: count => count === 1
+      ? "1 article reste à vérifier et sera exclu tant qu’il n’est pas corrigé."
+      : `${count} articles restent à vérifier et seront exclus tant qu’ils ne sont pas corrigés.`,
+    noArticleToReview: "Tous les articles affichés sont prêts à être utilisés.",
+    saveTicketHint: "Le total et les articles fiables seront enregistrés. Les articles encore à vérifier seront conservés dans le ticket, mais exclus de Courses intelligentes.",
+    saveTotalHint: "Seul le total sera ajouté au budget. Aucun article ne sera utilisé dans Courses intelligentes.",
+    cancelHint: "Rien ne sera enregistré.",
+    laterCorrectionHint: "Vous pourrez encore corriger les articles plus tard depuis Mes tickets.",
+    itemTrusted: "Fiable — sera utilisé",
+    itemCorrected: "Corrigé — sera utilisé",
+    itemReviewActionHint: "Corrigez les informations si nécessaire, puis cliquez sur « Valider cet article ». Sans validation, il ne sera pas utilisé dans Courses intelligentes.",
+    itemTrustedActionHint: "Cet article sera utilisé dans Courses intelligentes. Vous pouvez encore le corriger avant l’enregistrement.",
+    validateItem: "Valider cet article",
+    removeLine: "Supprimer cette ligne du ticket",
     retry: "Réessayer",
     useLegacyScanner: "Utiliser l'ancien scanner",
     singlePreviewTitle: "Verifier la photo",
@@ -87,9 +105,7 @@ const TEXT = {
     pythonTechnicalFallbackHint: "Le nouveau service de scan n'a pas repondu correctement. Vous pouvez reessayer ou choisir l'ancien scanner.",
     pythonBusinessErrorHint: "Le nouveau service a refuse ce scan pour une raison de qualite ou de securite. Aucune bascule automatique n'a ete lancee.",
     pythonLocalSaveBlocked: "Verification locale terminee. Aucune ecriture BudgetKazPei n'est effectuee dans cette etape.",
-    quota: quota => quota.isUnlimitedForUser
-      ? "Scans illimités"
-      : `Scans utilisés ce mois-ci : ${quota.used} sur ${quota.limit}`,
+    quota: formatReceiptQuotaLabelFr,
     methodTitle: "Choisissez une méthode",
     privacy: "Vos tickets restent privés. Ils servent uniquement à mettre à jour votre budget.",
     foodHint: "Ajoutez vos courses automatiquement ou manuellement. L'analyse automatique sert surtout aux tickets alimentaires, pour comprendre vos habitudes et recevoir des conseils utiles.",
@@ -134,7 +150,7 @@ const TEXT = {
     saved: "Course enregistrée.",
     deleted: "Ticket retiré de l'historique.",
     error: "Analyse impossible. Vous pouvez réessayer ou remplir manuellement.",
-    quotaReached: "Quota atteint. Vous pouvez quand même remplir manuellement.",
+    quotaReached: MONTHLY_SCAN_QUOTA_MESSAGE,
     intensiveUsage: PREMIUM_PLUS_SAFETY_MESSAGE,
     expenseCreated: "Dépense créée",
     noUser: "Utilisateur non connecté.",
@@ -172,9 +188,23 @@ const TEXT = {
     pythonNeedsReview: "Fo confirmé dé-trwa zinfo avan anrezistre.",
     pythonNotExploitable: "Foto-la lé trop difficile pou lir. Repran tiké-la bien plat ek plis lumière, ou ranpli amain.",
     pythonLocalOnly: "Étape vérification sèlman : nout la pankor anrezistre rien dann BudgetKazPei.",
-    saveTotalLocalOnly: "Gard seulement total-la",
-    verifyArticlesLocalOnly: "Vérifié bann lartik",
-    continueLocalOnly: "Vérifié é continuer",
+    saveTotalLocalOnly: "Anrezistre zis total-la",
+    verifyArticlesLocalOnly: "Anrezistre tiké-la",
+    continueLocalOnly: "Anrezistre tiké-la",
+    saveSummaryTitle: "Avan anrezistré",
+    trustedArticlesSummary: count => `${count} lartik fiable va servi dann Courses intelligentes.`,
+    reviewArticlesSummary: count => `${count} lartik reste pou vérifié é pa va servi tant ké li lé pa korizé.`,
+    noArticleToReview: "Tout bann lartik afiché lé paré pou servi.",
+    saveTicketHint: "Total-la ek bann lartik fiable va anrezistré. Bann lartik ankor pou vérifié va reste dann tiké-la, mé pa va servi dann Courses intelligentes.",
+    saveTotalHint: "Zis total-la va azout dann bidzé. Okenn lartik pa va servi dann Courses intelligentes.",
+    cancelHint: "Nout pa va anrezistre rien.",
+    laterCorrectionHint: "Ou pourra ankor korize bann lartik pli tar dann Mon bann tike.",
+    itemTrusted: "Fiable — va servi",
+    itemCorrected: "Korizé — va servi",
+    itemReviewActionHint: "Koriz bann zinfo si bizin, apre klik lor « Valid sa lartik-la ». San validasyon, li pa va servi dann Courses intelligentes.",
+    itemTrustedActionHint: "Lartik-la va servi dann Courses intelligentes. Ou pe ankor korize ali avan anrezistré.",
+    validateItem: "Valid sa lartik-la",
+    removeLine: "Suprim sa lign-la dann tiké",
     retry: "Réessayé",
     useLegacyScanner: "Servi ancien scanner",
     singlePreviewTitle: "Verifie foto-la",
@@ -185,8 +215,8 @@ const TEXT = {
     pythonBusinessErrorHint: "Nouveau servis-la la refuse scan-la pou kalite ou sekirite. Nena okenn bascule otomatik.",
     pythonLocalSaveBlocked: "Verification locale fini. Nena okenn ecriture BudgetKazPei dan sa letap-la.",
     quota: quota => quota.isUnlimitedForUser
-      ? "Scans illimités"
-      : `Analiz IA : ${quota.used} / ${quota.limit}`,
+      ? `Scans illimites - ${quota.planLabel}`
+      : `Scans utilises sa mwa-la : ${quota.used} lor ${quota.limit} - ${quota.planLabel}`,
     methodTitle: "Swazi in fason",
     privacy: "Bann tiké a ou i reste privé. Nou i servi azot zis pou met out bidzé à jour.",
     foodHint: "Azout out courses otomatikman ou amain. Analiz otomatik-la lé surtout pou bann tiké manzé, pou konprann out labitid ek gagn bann konsey itil.",
@@ -231,21 +261,25 @@ const TEXT = {
     saved: "Course anrezistrée.",
     deleted: "Tiké retiré dann listwar.",
     error: "Analiz-la pa marche. Ou pé réessayé ou ranpli amain.",
-    quotaReached: "Quota atteint. Ou pé kan même ranpli amain.",
+    quotaReached: "Out quota mansuel scan lé atteint. Ou pe rantre tiket-la amain ou atann prochain renouvelman.",
     intensiveUsage: PREMIUM_PLUS_SAFETY_MESSAGE,
     expenseCreated: "Dépans créée",
     noUser: "Utilisateur pa connecté.",
   },
 }
 
-function hasRealAiCall(metrics = {}) {
-  return Boolean(metrics?.aiUsed || metrics?.openaiCalled || metrics?.visionUsed || metrics?.textAiUsed || Number(metrics?.openaiDurationMs || 0) > 0)
-}
-
 function getIsKreol(t) {
   const lang = String(t?.lang || "").toLowerCase()
   if (lang === "cr" || lang === "kreol") return true
   return String(t?.("nav", "dashboard") || "").toLowerCase().includes("tablo")
+}
+
+function deferStateUpdate(callback) {
+  if (typeof queueMicrotask === "function") {
+    queueMicrotask(callback)
+    return
+  }
+  setTimeout(callback, 0)
 }
 
 function emptyItem() {
@@ -268,11 +302,6 @@ function normalizeLabel(value = "") {
     .replace(/\s+/g, " ")
     .trim()
 }
-
-function isIsoDate(value = "") {
-  return /^\d{4}-\d{2}-\d{2}$/.test(String(value || ""))
-}
-
 
 function isClearlyNonProductReceiptLine(value = "") {
   const raw = normalizeLabel(value)
@@ -443,16 +472,6 @@ function isBudgetOkArticlesPartial(receipt = {}) {
     && (scanStatus.includes("budget_ok_articles_partial") || (smartShoppingSafe === true && itemsQualityStatus === "partial"))
 }
 
-function isBudgetReliableScannedReceipt(receipt = {}) {
-  const total = Number(receipt.total_amount || 0)
-  const scanStatus = String(receipt.scan_status || receipt.final_scan_status || receipt.parser_debug?.final_scan_status || "")
-  const budgetStatus = String(receipt.budget_status || receipt.parser_debug?.budget_status || "")
-  return total > 0
-    && receipt.total_needs_review !== true
-    && String(receipt.ocr_status || "").toLowerCase() !== "manual"
-    && (budgetStatus === "reliable" || scanStatus.includes("budget_ok_articles_"))
-}
-
 function getReceiptLearningCounts(receipt = {}) {
   const items = Array.isArray(receipt.receipt_items) ? receipt.receipt_items : Array.isArray(receipt.items) ? receipt.items : []
   const usableItems = items.filter(item => !isBlockedReceiptItem(item))
@@ -566,17 +585,6 @@ function isLockedScannedReceipt(receipt = {}) {
   return String(receipt.ocr_status || "").toLowerCase() !== "manual"
 }
 
-function canFeedSmartShoppingFromDraft(draft = {}) {
-  const scanStatus = String(draft.scan_status || "")
-  if (draft.total_needs_review === true) return false
-  if (isTrustedAutoScanPayload(draft)) return true
-  if (isBudgetOkArticlesBlocked(draft)) return false
-  if (draft.smart_shopping_safe === false || draft.parser_debug?.smart_shopping_safe === false) return false
-  if (String(draft.items_quality_status || draft.parser_debug?.items_quality_status || "") === "blocked") return false
-  if (scanStatus.includes("budget_needs_review") || scanStatus.includes("rejected")) return false
-  return true
-}
-
 function receiptHasUnreliableArticleCount(receipt = {}) {
   if (isTrustedAutoScanPayload(receipt) || isBudgetOkArticlesPartial(receipt)) return false
 
@@ -597,12 +605,14 @@ function receiptHasUnreliableArticleCount(receipt = {}) {
 function getReceiptArticleCountLabel(receipt = {}, txt) {
   const usedCount = getSmartShoppingUsedCount(receipt)
   const detectedCount = getDetectedReceiptItemsCount(receipt)
+  const usedLabel = usedCount === 1 ? "1 article utilisé" : `${usedCount} articles utilisés`
+  const detectedLabel = detectedCount === 1 ? "1 détecté" : `${detectedCount} détectés`
 
   if (hasReliableBudgetForReceipt(receipt) && usedCount > 0) {
     if (detectedCount > usedCount) {
-      return `Budget valide — ${usedCount} article(s) utilisés / ${detectedCount} détectés`
+      return `Ticket enregistré — ${usedLabel} / ${detectedLabel}`
     }
-    return `Budget valide — ${usedCount} article(s) utilisés`
+    return `Ticket enregistré — ${usedLabel}`
   }
 
   if (hasReliableBudgetForReceipt(receipt)) {
@@ -612,31 +622,38 @@ function getReceiptArticleCountLabel(receipt = {}, txt) {
     const explicitLabel = receipt.item_count_display_label || receipt.parser_debug?.item_count_display_label
 
     if (explicitLabel && !String(explicitLabel).toLowerCase().includes("non fiable")) {
-      return String(explicitLabel).startsWith("Budget")
-        ? String(explicitLabel)
-        : `Budget valide — ${explicitLabel}`
+      const cleanLabel = String(explicitLabel)
+        .replace(/^Budget valide\s*[—-]?\s*/i, "")
+        .replace(/^Ticket enregistré\s*[—-]?\s*/i, "")
+      return `Ticket enregistré — ${cleanLabel}`
     }
 
     if (scanStatus.includes("budget_ok_articles_partial") || itemsQualityStatus === "partial" || smartShoppingSafe === true) {
-      return "Budget valide — articles partiellement exploitables"
+      return "Ticket enregistré — articles partiellement exploitables"
     }
 
-    return "Budget valide — détail des articles disponible"
+    return "Ticket enregistré — détail des articles disponible"
   }
 
   if (isTrustedAutoScanPayload(receipt)) {
-    return detectedCount > 0 ? `Budget valide — ${detectedCount} article(s) utilisés` : "Budget valide — articles reconnus"
+    return detectedCount > 0
+      ? `Ticket enregistré — ${detectedCount === 1 ? "1 article utilisé" : `${detectedCount} articles utilisés`}`
+      : "Ticket enregistré — articles reconnus"
   }
 
   if (isBudgetOkArticlesPartial(receipt)) {
-    return getPartialArticleLabel(receipt, txt)
+    return `Ticket enregistré — ${getPartialArticleLabel(receipt, txt)}`
   }
 
   const explicitLabel = receipt.item_count_display_label || receipt.parser_debug?.item_count_display_label
-  if (explicitLabel && (String(explicitLabel).includes("exploitable") || !/^\d+\s+article/i.test(String(explicitLabel)))) return explicitLabel
-  if (receiptHasUnreliableArticleCount(receipt)) return txt.articlesToReview
+  if (explicitLabel && (String(explicitLabel).includes("exploitable") || !/^\d+\s+article/i.test(String(explicitLabel)))) {
+    return `Ticket enregistré — ${explicitLabel}`
+  }
+  if (receiptHasUnreliableArticleCount(receipt)) return `Ticket enregistré — ${txt.articlesToReview}`
 
-  return detectedCount > 0 ? `${detectedCount} article(s)` : txt.unreliableDetectedLines
+  return detectedCount > 0
+    ? `Ticket enregistré — ${detectedCount === 1 ? "1 article" : `${detectedCount} articles`}`
+    : "Ticket enregistré"
 }
 
 function getArticleCountDisplayInfo({ parsed = {}, items = [], trustedItems = [], needsReviewItems = [] }) {
@@ -890,7 +907,6 @@ export default function ReceiptsPage({
   isMobile = false,
   isPremium = false,
   isPremiumPlus = false,
-  onAddTransaction,
   onOpenReceipts,
   onOpenShoppingList,
 }) {
@@ -928,7 +944,6 @@ export default function ReceiptsPage({
   const [pendingLegacyFallback, setPendingLegacyFallback] = useState(null)
   const [singlePreviewFile, setSinglePreviewFile] = useState(null)
 
-  const globalCategory = draft?.items?.[0]?.category || "alimentaire"
   const receiptRows = useMemo(() => Array.isArray(receipts) ? receipts : [], [receipts])
   const showMethodActions = mode === "history" || mode === "validate"
   const singlePreviewUrl = useMemo(
@@ -942,7 +957,7 @@ export default function ReceiptsPage({
 
   useEffect(() => {
     if (!draft || !isBudgetOkArticlesBlocked(draft)) {
-      setShowBlockedDetectedLines(false)
+      deferStateUpdate(() => setShowBlockedDetectedLines(false))
     }
   }, [draft?.scan_status, draft?.smart_shopping_safe, draft?.items_quality_status])
 
@@ -953,7 +968,7 @@ export default function ReceiptsPage({
   useEffect(() => {
     const lastScan = getLastScanDraft()
     if (!lastScan?.receipt) return
-    setResumeDraft(lastScan.receipt)
+    deferStateUpdate(() => setResumeDraft(lastScan.receipt))
   }, [])
 
   useEffect(() => {
@@ -1095,6 +1110,9 @@ export default function ReceiptsPage({
 
   function getPythonScannerErrorMessage(error) {
     if (error instanceof ReceiptScannerApiError) {
+      if (error.httpStatus === 429 || ["quota_exceeded", "monthly_quota_reached"].includes(error.scanError?.code)) {
+        return txt.quotaReached
+      }
       const apiMessage = error.scanError?.message || txt.error
       return `${apiMessage} ${error.scanError?.technical ? txt.pythonTechnicalFallbackHint : txt.pythonBusinessErrorHint}`
     }
@@ -1126,8 +1144,9 @@ export default function ReceiptsPage({
       return
     }
 
-    if (quota.reached) {
-      setMessage(quota.safetyLimitReached ? txt.intensiveUsage : txt.quotaReached)
+    const activeQuota = await quota.refresh?.() || quota
+    if (activeQuota.reached) {
+      setMessage(activeQuota.safetyLimitReached ? txt.intensiveUsage : txt.quotaReached)
       startManual({ keepError: true })
       return
     }
@@ -1160,6 +1179,9 @@ export default function ReceiptsPage({
 
       const parsed = scan.receipt
       if (scan.engine_used === "python") {
+        if (shouldRefreshQuotaAfterPythonScan({ engineUsed: scan.engine_used })) {
+          await quota.refresh?.()
+        }
         const items = parsed.items?.length ? parsed.items : (parsed.python_scan_status === "scan_not_exploitable" ? [] : [emptyItem()])
         setReceipt(null)
         setPendingImagePath(null)
@@ -1286,6 +1308,9 @@ export default function ReceiptsPage({
       setScanError(details)
       setPendingLegacyFallback(allowFallback ? { file, scanOptions } : null)
       if (error instanceof ReceiptScannerApiError) {
+        if (shouldRefreshQuotaAfterPythonScan({ error })) {
+          await quota.refresh?.()
+        }
         setMessage(getPythonScannerErrorMessage(error))
       } else {
       setMessage(isDateError
@@ -1409,7 +1434,7 @@ export default function ReceiptsPage({
     })
 
     try {
-      const scanUsageIncremented = hasRealAiCall(metrics)
+      const scanUsageIncremented = shouldIncrementClientScanUsage(metrics)
       if (scanUsageIncremented) {
         console.info("[scanner] Mise a jour scan_usage: START", { userId: user?.id, plan: quota.plan })
         await incrementScanUsage({
@@ -1475,6 +1500,8 @@ export default function ReceiptsPage({
     }))
   }
 
+  // Conserved temporarily for the legacy save path while the scanner UI is stabilized.
+  // eslint-disable-next-line no-unused-vars
   async function handleSave() {
     if (!user?.id || !draft) return
     const validationError = getDraftValidationError(draft)
@@ -1533,6 +1560,8 @@ export default function ReceiptsPage({
       setDraft(null)
       setReceipt(null)
       setPendingImagePath(null)
+      setSinglePreviewFile(null)
+      resetLongTicketScan()
       setMode("history")
       await refreshReceipts()
       window.dispatchEvent(new CustomEvent("budgetkazpei:transactions-updated"))
@@ -1618,6 +1647,9 @@ export default function ReceiptsPage({
           setDuplicateReceipt(null)
           setAllowDuplicateImport(false)
           setPendingImagePath(null)
+          setSinglePreviewFile(null)
+          resetLongTicketScan()
+          setShowBlockedDetectedLines(false)
           setScanMetrics(null)
           setMode("history")
           clearLastScanDraft()
@@ -1716,7 +1748,7 @@ export default function ReceiptsPage({
 
       try {
         const scanWasProcessed = draft.ocr_status !== "manual" || Boolean(scanMetrics?.provider)
-        const scanUsageIncremented = scanWasProcessed && hasRealAiCall(scanMetrics)
+        const scanUsageIncremented = scanWasProcessed && shouldIncrementClientScanUsage(scanMetrics)
         if (scanUsageIncremented) {
           console.info("[scanner] Mise a jour scan_usage: START", { userId: user?.id, plan: quota.plan })
           await incrementScanUsage({
@@ -2094,7 +2126,7 @@ export default function ReceiptsPage({
           {txt.foodHint}
         </p>
         <div style={{ color: COLORS.yellow, fontSize: 13, fontWeight: 900 }}>
-          {quota.loading ? "" : `${txt.quota(quota)} - ${quota.planLabel}`}
+          {quota.loading ? "" : txt.quota(quota)}
         </div>
       </div>
 
@@ -2770,6 +2802,33 @@ function ValidationForm({
   const visibleDraftItems = (draft.items || [])
     .map((item, index) => ({ item, index }))
     .filter(row => !isBlockedReceiptItem(row.item))
+  function isDraftItemTrusted(item) {
+    const qualityStatus = normalizeItemQualityStatus(item)
+    return qualityStatus === "trusted" || qualityStatus === "user_validated"
+  }
+
+  const trustedDraftItems = visibleDraftItems.filter(({ item }) =>
+    isItemEligibleForSmartShopping(item)
+    && isDraftItemTrusted(item)
+    && item.needs_review !== true
+  )
+  const reviewDraftItems = visibleDraftItems.filter(({ item }) =>
+    !isItemEligibleForSmartShopping(item)
+    || !isDraftItemTrusted(item)
+    || item.needs_review === true
+  )
+
+  function updateItemAsUserValidated(index, updates) {
+    updateItem(index, {
+      ...updates,
+      item_status: "user_validated",
+      status: "user_validated",
+      review_status: "trusted",
+      needs_review: false,
+      eligible_for_courses: true,
+      confidence_score: Math.max(95, Number(draft.items?.[index]?.confidence_score || 0) || 95),
+    })
+  }
 
   return (
     <div style={cardStyle()}>
@@ -2880,6 +2939,34 @@ function ValidationForm({
         </div>
       )}
 
+      {pythonPending && (
+        <div style={{
+          display: "grid",
+          gap: 7,
+          background: "rgba(35,211,214,.08)",
+          border: "1px solid rgba(35,211,214,.28)",
+          borderRadius: 16,
+          padding: 14,
+          marginTop: 14,
+          color: COLORS.text,
+          fontSize: 13,
+          lineHeight: 1.45,
+        }}>
+          <strong style={{ fontSize: 15 }}>{txt.saveSummaryTitle}</strong>
+          <div style={{ color: COLORS.green, fontWeight: 900 }}>
+            {txt.trustedArticlesSummary(trustedDraftItems.length)}
+          </div>
+          <div style={{ color: reviewDraftItems.length > 0 ? COLORS.yellow : COLORS.green, fontWeight: 850 }}>
+            {reviewDraftItems.length > 0
+              ? txt.reviewArticlesSummary(reviewDraftItems.length)
+              : txt.noArticleToReview}
+          </div>
+          <div style={{ color: COLORS.muted }}>
+            {txt.laterCorrectionHint}
+          </div>
+        </div>
+      )}
+
       <div style={{ color: COLORS.text, fontWeight: 950, margin: "18px 0 10px" }}>
         {txt.items}
       </div>
@@ -2902,18 +2989,22 @@ function ValidationForm({
       <div style={{ display: displayDetectedLines ? "grid" : "none", gap: 12 }}>
         {visibleDraftItems.map(({ item, index }) => {
           const itemAllowed = isItemEligibleForSmartShopping(item)
-          const itemNeedsReview = normalizeItemQualityStatus(item) !== "trusted" || articlesBlocked || item.needs_review === true
+          const itemNeedsReview = !isDraftItemTrusted(item) || articlesBlocked || item.needs_review === true
           const marketDisplay = resolveMarketDisplayName(item)
           return (
           <div key={index} style={{ background: COLORS.row, border: `1px solid ${COLORS.border}`, borderRadius: 16, padding: 12 }}>
             <div style={{ display: "grid", gap: 10 }}>
-              {(itemNeedsReview || !itemAllowed || marketDisplay.marketRecognized) && (
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                  {itemNeedsReview && <MetaChip label={txt.itemNeedsReview} strong />}
-                  {!itemAllowed && <MetaChip label={txt.itemNotUsedForSmartShopping} />}
-                  {marketDisplay.marketRecognized && <MetaChip label="Produit reconnu" strong />}
-                </div>
-              )}
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                {!itemNeedsReview && itemAllowed && (
+                  <MetaChip
+                    label={item.item_status === "user_validated" ? txt.itemCorrected : txt.itemTrusted}
+                    tone="success"
+                  />
+                )}
+                {itemNeedsReview && <MetaChip label={txt.itemNeedsReview} tone="warning" />}
+                {!itemAllowed && <MetaChip label={txt.itemNotUsedForSmartShopping} />}
+                {marketDisplay.marketRecognized && <MetaChip label="Produit reconnu" strong />}
+              </div>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 10, color: COLORS.muted, fontSize: 12, fontWeight: 900 }}>
                 <span>{getConfidenceIcon(item.confidence_score || 0)} Confiance OCR</span>
                 <span style={{ color: getConfidenceColor(item.confidence_score || 0) }}>
@@ -2933,7 +3024,7 @@ function ValidationForm({
               <input
                 style={inputStyle()}
                 placeholder={txt.items}
-                value={marketDisplay.label || item.name}
+                value={item.name || marketDisplay.label}
                 onChange={e => updateItem(index, { name: e.target.value, corrected_name: e.target.value, normalized_name: "" })}
               />
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
@@ -2952,8 +3043,32 @@ function ValidationForm({
                   <option key={category.id} value={category.id}>{category.id}</option>
                 ))}
               </select>
+              <div style={{
+                color: itemNeedsReview ? COLORS.yellow : COLORS.muted,
+                fontSize: 12,
+                lineHeight: 1.45,
+                fontWeight: itemNeedsReview ? 850 : 700,
+              }}>
+                {itemNeedsReview ? txt.itemReviewActionHint : txt.itemTrustedActionHint}
+              </div>
+              {(itemNeedsReview || !itemAllowed) && (
+                <button
+                  type="button"
+                  onClick={() => updateItemAsUserValidated(index, {})}
+                  style={{
+                    minHeight: 48,
+                    borderRadius: 12,
+                    border: `1px solid ${COLORS.green}`,
+                    background: "rgba(34,197,94,.12)",
+                    color: COLORS.green,
+                    fontWeight: 950,
+                  }}
+                >
+                  {txt.validateItem}
+                </button>
+              )}
               <button type="button" onClick={() => removeItem(index)} style={{ minHeight: 48, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "transparent", color: COLORS.muted, fontWeight: 900 }}>
-                {txt.remove}
+                {txt.removeLine}
               </button>
             </div>
           </div>
@@ -2969,23 +3084,45 @@ function ValidationForm({
       </button>
 
       {pythonPending ? (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10, marginTop: 18 }}>
-          <ActionButton label={txt.cancel} icon="" onClick={onCancel} disabled={busy} muted />
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
+          gap: 10,
+          marginTop: 18,
+        }}>
+          <div style={{ display: "grid", gap: 7, alignContent: "start" }}>
+            <ActionButton label={txt.cancel} icon="" onClick={onCancel} disabled={busy} muted />
+            <div style={{ color: COLORS.muted, fontSize: 12, lineHeight: 1.4 }}>
+              {txt.cancelHint}
+            </div>
+          </div>
+
           {pythonPartial && (
-            <ActionButton
-              label={txt.saveTotalLocalOnly}
-              icon=""
-              onClick={() => onSave({ pythonAction: "total_only" })}
-              disabled={busy || Boolean(validationError)}
-              muted
-            />
+            <div style={{ display: "grid", gap: 7, alignContent: "start" }}>
+              <ActionButton
+                label={txt.saveTotalLocalOnly}
+                icon=""
+                onClick={() => onSave({ pythonAction: "total_only" })}
+                disabled={busy || Boolean(validationError)}
+                muted
+              />
+              <div style={{ color: COLORS.muted, fontSize: 12, lineHeight: 1.4 }}>
+                {txt.saveTotalHint}
+              </div>
+            </div>
           )}
-          <ActionButton
-            label={pythonPartial ? txt.verifyArticlesLocalOnly : txt.continueLocalOnly}
-            icon=""
-            onClick={() => onSave({ pythonAction: pythonPartial ? "verify_articles" : "review" })}
-            disabled={busy || Boolean(validationError)}
-          />
+
+          <div style={{ display: "grid", gap: 7, alignContent: "start" }}>
+            <ActionButton
+              label={pythonPartial ? txt.verifyArticlesLocalOnly : txt.continueLocalOnly}
+              icon=""
+              onClick={() => onSave({ pythonAction: pythonPartial ? "verify_articles" : "review" })}
+              disabled={busy || Boolean(validationError)}
+            />
+            <div style={{ color: COLORS.text, fontSize: 12, lineHeight: 1.4, fontWeight: 850 }}>
+              {txt.saveTicketHint}
+            </div>
+          </div>
         </div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 10, marginTop: 18 }}>
@@ -3006,12 +3143,23 @@ function Field({ label, children }) {
   )
 }
 
-function MetaChip({ label, strong = false }) {
+function MetaChip({ label, strong = false, tone = "" }) {
+  const success = tone === "success"
+  const warning = tone === "warning"
+
   return (
     <span style={{
-      border: `1px solid ${strong ? COLORS.yellow : COLORS.border}`,
-      background: strong ? COLORS.yellowSoft : COLORS.surface,
-      color: strong ? COLORS.text : COLORS.muted,
+      border: `1px solid ${success ? COLORS.green : warning || strong ? COLORS.yellow : COLORS.border}`,
+      background: success
+        ? "rgba(34,197,94,.12)"
+        : warning || strong
+          ? COLORS.yellowSoft
+          : COLORS.surface,
+      color: success
+        ? COLORS.green
+        : warning || strong
+          ? COLORS.text
+          : COLORS.muted,
       borderRadius: 999,
       padding: "5px 8px",
       fontSize: 11,
@@ -3126,7 +3274,6 @@ function ReceiptDetail({
   busy,
   onBack,
   onDelete,
-  onUpdateReceipt,
   onUpdateItem,
   onDeleteItem,
   onScanAnother,
@@ -3155,25 +3302,26 @@ function ReceiptDetail({
   })
 
   useEffect(() => {
-    setReceiptDraft({
-      store_name: receipt.store_name || "",
-      purchase_date: receipt.purchase_date || "",
-      total_amount: receipt.total_amount || "",
+    deferStateUpdate(() => {
+      setReceiptDraft({
+        store_name: receipt.store_name || "",
+        purchase_date: receipt.purchase_date || "",
+        total_amount: receipt.total_amount || "",
+      })
+      const entries = {}
+      ;(receipt.receipt_items || []).forEach(item => {
+        entries[item.id] = {
+          name: item.name || "",
+          total_price: item.total_price ?? "",
+          category: item.category || "alimentaire",
+        }
+      })
+      setItemDrafts(entries)
     })
-    const entries = {}
-    ;(receipt.receipt_items || []).forEach(item => {
-      entries[item.id] = {
-        name: item.name || "",
-        total_price: item.total_price ?? "",
-        category: item.category || "alimentaire",
-      }
-    })
-    setItemDrafts(entries)
   }, [receipt])
 
   const lockedReceipt = isLockedScannedReceipt(receipt)
   const partialReceipt = isBudgetOkArticlesPartial(receipt)
-  const headerLocked = lockedReceipt || isBudgetReliableScannedReceipt(receipt)
   const visibleItems = (receipt.receipt_items || []).filter(item => !isBlockedReceiptItem(item))
   const dirtyItems = visibleItems.filter(item => isReceiptItemDraftDirty(itemDrafts, item))
 

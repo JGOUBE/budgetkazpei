@@ -15,6 +15,9 @@ export type ScanErrorCode =
   | "SCAN_NETWORK_OFFLINE"
   | "SCAN_UNKNOWN_ERROR"
 
+export const MONTHLY_SCAN_QUOTA_MESSAGE =
+  "Votre quota mensuel de scans est atteint. Vous pouvez saisir le ticket manuellement ou attendre le prochain renouvellement."
+
 export type ScanErrorDetails = {
   code: ScanErrorCode
   title: string
@@ -91,10 +94,10 @@ const DETAILS: Record<ScanErrorCode, ScanErrorDetails> = {
   },
   SCAN_OPENAI_QUOTA_EXCEEDED: {
     code: "SCAN_OPENAI_QUOTA_EXCEEDED",
-    title: "Quota IA atteint",
-    userMessage: "Le service IA a refusé la demande pour cause de quota.",
+    title: "Quota mensuel atteint",
+    userMessage: MONTHLY_SCAN_QUOTA_MESSAGE,
     technicalMessage: "OpenAI quota or rate limit exceeded.",
-    action: "Vérifiez le compte OpenAI ou réessayez plus tard.",
+    action: MONTHLY_SCAN_QUOTA_MESSAGE,
     retryable: true,
   },
   SCAN_AI_RESPONSE_INVALID: {

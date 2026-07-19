@@ -14,6 +14,8 @@ export type ReceiptScannerApiOptions = {
 const DEFAULT_TIMEOUT_MS = 100000
 const MAX_CLIENT_UPLOAD_BYTES = 12 * 1024 * 1024
 const SUPPORTED_CLIENT_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"])
+export const MONTHLY_SCAN_QUOTA_MESSAGE =
+  "Votre quota mensuel de scans est atteint. Vous pouvez saisir le ticket manuellement ou attendre le prochain renouvellement."
 const SAFE_ERROR_MESSAGES: Record<string, string> = {
   invalid_file: "Ajoutez une image de ticket valide.",
   invalid_file_type: "Format non accepté. Utilisez une photo JPEG, PNG ou WebP.",
@@ -30,8 +32,8 @@ const SAFE_ERROR_MESSAGES: Record<string, string> = {
   authentication_required: "Votre session a expiré. Reconnectez-vous pour scanner ce ticket.",
   authentication_invalid: "Votre session n'est pas acceptée pour ce scan. Reconnectez-vous.",
   forbidden: "Votre compte ne peut pas utiliser ce service pour le moment.",
-  quota_exceeded: "Votre quota de scans est atteint.",
-  monthly_quota_reached: "Votre quota de scans est atteint.",
+  quota_exceeded: MONTHLY_SCAN_QUOTA_MESSAGE,
+  monthly_quota_reached: MONTHLY_SCAN_QUOTA_MESSAGE,
   scan_safety_limit_reached: PREMIUM_PLUS_SAFETY_MESSAGE,
   quota_unavailable: "Le contrôle de quota est temporairement indisponible.",
   invalid_response: "Le service de scan a renvoyé une réponse inattendue.",

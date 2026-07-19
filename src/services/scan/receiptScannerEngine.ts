@@ -24,8 +24,24 @@ function scanStatusForApi(status: ReceiptScanResponse["status"]) {
 }
 
 function itemStatus(item: ReceiptScanItem, response: ReceiptScanResponse) {
-  if (item.needs_review || response.status !== "trusted") return "needs_review"
-  return "trusted"
+  if (item.needs_review === true) return "needs_review"
+
+  const explicitlyEligible =
+    item.eligible_for_courses === true
+    || item.eligible_for_market_database === true
+
+  if (explicitlyEligible) return "trusted"
+  if (response.status === "trusted") return "trusted"
+
+  if (
+    response.status === "budget_ok_articles_partial"
+    && response.should_feed_verified_articles === true
+    && item.needs_review === false
+  ) {
+    return "trusted"
+  }
+
+  return "needs_review"
 }
 
 export function mapPythonScanToDraft(response: ReceiptScanResponse) {
@@ -34,6 +50,8 @@ export function mapPythonScanToDraft(response: ReceiptScanResponse) {
   const items = shouldUseItems
     ? (response.items || []).map((item, index) => {
         const qualityStatus = itemStatus(item, response)
+        const trusted = qualityStatus === "trusted"
+
         return {
           name: item.canonical_name || item.raw_name || "Produit à vérifier",
           ocr_name: item.raw_name || "",
@@ -48,12 +66,19 @@ export function mapPythonScanToDraft(response: ReceiptScanResponse) {
           category: "alimentaire",
           confidence_score: Math.round(Number(item.ocr_confidence || 0) * 100),
           item_quality_score: Math.round(Number(item.ocr_confidence || 0) * 100),
-          item_status: qualityStatus === "trusted" ? "trusted" : "a_verifier",
-          status: qualityStatus === "trusted" ? "trusted" : "a_verifier",
+          item_status: trusted ? "trusted" : "a_verifier",
+          status: trusted ? "trusted" : "a_verifier",
           review_status: qualityStatus,
-          needs_review: qualityStatus !== "trusted",
-          eligible_for_courses: item.eligible_for_courses,
-          eligible_for_market_database: item.eligible_for_market_database,
+          needs_review: !trusted,
+          eligible_for_courses: trusted && (
+            item.eligible_for_courses === true
+            || response.should_feed_courses === true
+            || response.should_feed_verified_articles === true
+          ),
+          eligible_for_market_database: trusted && (
+            item.eligible_for_market_database === true
+            || response.should_feed_market_database === true
+          ),
           source: "python_receipt_scanner",
           source_line_ids: [index],
         }
@@ -63,13 +88,15 @@ export function mapPythonScanToDraft(response: ReceiptScanResponse) {
   const total = Number(response.budget_amount ?? receipt.payable_total ?? receipt.total ?? 0)
   const printedTotal = Number(receipt.article_total ?? receipt.total ?? response.budget_amount ?? 0)
   const itemsTotal = Number(receipt.items_total ?? 0)
+  const hasVerifiedArticlesForCourses = response.should_feed_courses === true
+    || response.should_feed_verified_articles === true
   const parserDebug = {
     python_scan_response: true,
     scan_id: response.scan_id,
     final_scan_status: scanStatusForApi(response.status),
     budget_status: response.should_record_budget ? "reliable" : "needs_review",
     items_quality_status: response.article_data_mode,
-    smart_shopping_safe: response.should_feed_courses,
+    smart_shopping_safe: hasVerifiedArticlesForCourses,
     should_feed_market_database: response.should_feed_market_database,
     should_feed_verified_articles: response.should_feed_verified_articles,
     reasons: response.reasons || [],
@@ -105,7 +132,7 @@ export function mapPythonScanToDraft(response: ReceiptScanResponse) {
     items_quality_status: response.article_data_mode,
     total_needs_review: !response.should_record_budget || total <= 0,
     total_source: response.should_record_budget ? "python_api_verified" : "python_api_needs_review",
-    smart_shopping_safe: response.should_feed_courses,
+    smart_shopping_safe: hasVerifiedArticlesForCourses,
     python_scan_pending_save: true,
     python_scan_status: response.status,
     python_scan_id: response.scan_id,
@@ -138,6 +165,7 @@ function metricsForPython(response: ReceiptScanResponse) {
     shouldRecordBudget: response.should_record_budget,
     shouldFeedCourses: response.should_feed_courses,
     shouldFeedMarketDatabase: response.should_feed_market_database,
+    shouldFeedVerifiedArticles: response.should_feed_verified_articles,
   }
 }
 

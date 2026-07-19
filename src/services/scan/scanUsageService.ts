@@ -1,6 +1,6 @@
 import { supabase } from "../supabase"
 import { getScanPlan, type ScanPlan } from "../../config/scanLimits"
-import { getPlanQuotaExceededCode } from "../../config/plans"
+import { getPlanQuotaExceededCode, normalizePlan } from "../../config/plans"
 
 function monthKey(date = new Date()) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
@@ -15,8 +15,8 @@ export async function getScanUsage({
   isPremium?: boolean
   isPremiumPlus?: boolean
 }) {
-  const plan = getScanPlan(isPremium, isPremiumPlus)
-  if (!userId) return { used: 0, aiUsed: 0, manualUsed: 0, plan }
+  const localPlan = getScanPlan(isPremium, isPremiumPlus)
+  if (!userId) return { used: 0, aiUsed: 0, manualUsed: 0, plan: localPlan }
 
   const { data, error } = await supabase
     .from("scan_usage")
@@ -31,7 +31,7 @@ export async function getScanUsage({
     used: Number(data?.ai_scan_count ?? data?.scan_count ?? 0),
     aiUsed: Number(data?.ai_scan_count || 0),
     manualUsed: Number(data?.manual_count || 0),
-    plan: (data?.plan as ScanPlan) || plan,
+    plan: normalizePlan(data?.plan || "free") as ScanPlan,
   }
 }
 
@@ -76,8 +76,33 @@ export async function createScanMetric({
 }) {
   if (!userId) return null
 
+  const row = buildScanMetricRow({ userId, receiptId, metrics, status, error })
+
+  const { data, error: insertError } = await supabase
+    .from("scan_metrics")
+    .insert(row)
+    .select()
+    .single()
+
+  if (insertError) throw insertError
+  return data
+}
+
+export function buildScanMetricRow({
+  userId,
+  receiptId,
+  metrics = {},
+  status = "success",
+  error,
+}: {
+  userId?: string
+  receiptId?: string | null
+  metrics?: Record<string, any>
+  status?: "success" | "error"
+  error?: { code?: string; message?: string } | null
+}) {
   const isSuccess = metrics.success ?? (status === "success")
-  const row = {
+  return {
     user_id: userId,
     receipt_id: receiptId || null,
     model: metrics.model || "none",
@@ -99,7 +124,7 @@ export async function createScanMetric({
     scan_level_used: Number(metrics.scanLevelUsed || 1),
     confidence_score: Number(metrics.confidenceScore || 0),
     escalation_reason: metrics.escalationReason || null,
-    scan_status: metrics.scanStatus || (status === "success" ? "success" : "failed"),
+    scan_status: metrics.scanStatus || metrics.finalScanStatus || metrics.pythonStatus || (status === "success" ? "success" : "failed"),
     items_detected: Number(metrics.itemsDetected || 0),
     receipt_items_created: Number(metrics.receiptItemsCreated || 0),
     shopping_items_created: Number(metrics.shoppingItemsCreated || 0),
@@ -110,29 +135,4 @@ export async function createScanMetric({
     error_code: error?.code || null,
     error_message: error?.message || null,
   }
-
-  let { data, error: insertError } = await supabase
-    .from("scan_metrics")
-    .insert(row)
-    .select()
-    .single()
-
-  if (insertError && isMissingColumnError(insertError)) {
-    const { scan_level_used, confidence_score, escalation_reason, scan_status, ...legacyRow } = row
-    const retry = await supabase
-      .from("scan_metrics")
-      .insert(legacyRow)
-      .select()
-      .single()
-    data = retry.data
-    insertError = retry.error
-  }
-
-  if (insertError) throw insertError
-  return data
-}
-
-function isMissingColumnError(error: any) {
-  const message = String(error?.message || error?.details || "")
-  return error?.code === "PGRST204" || message.includes("Could not find") || message.includes("column")
 }

@@ -413,12 +413,12 @@ class ReceiptQualityGate:
                 parsed.total_delta is not None and parsed.total_delta > 0.02
             )
 
-            # Reliable items may be passed to a downstream line-level filter
-            # only when there is no unexplained accounting difference.
+            # A global accounting difference must not invalidate every
+            # individually reliable article. The downstream layer remains
+            # responsible for keeping only line-level trusted items and
+            # excluding items explicitly marked for review.
             should_feed_verified_articles = (
                 parsed.reliable_item_count > 0
-                and not has_unattributed_difference
-                and parsed.review_item_count > 0
             )
 
             return QualityDecision(

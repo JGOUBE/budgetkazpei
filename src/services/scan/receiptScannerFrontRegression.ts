@@ -1,8 +1,14 @@
-import { ReceiptScannerApiError, scanLongReceiptWithApi, scanSingleReceiptWithApi } from "./receiptScannerApi"
+import { formatReceiptQuotaLabelFr, resolveReceiptQuotaState } from "../../features/receipts/hooks/useReceiptQuota"
+import { MONTHLY_SCAN_QUOTA_MESSAGE, ReceiptScannerApiError, scanLongReceiptWithApi, scanSingleReceiptWithApi } from "./receiptScannerApi"
 import {
   canOfferLegacyFallback,
   mapPythonScanToDraft,
 } from "./receiptScannerEngine"
+import {
+  shouldIncrementClientScanUsage,
+  shouldRefreshQuotaAfterPythonScan,
+} from "./receiptScannerQuotaPolicy"
+import { buildScanMetricRow } from "./scanUsageService"
 import {
   createPythonScanPersistenceState,
   persistPythonScanResult,
@@ -184,6 +190,49 @@ function createPersistenceMocks(options: { failAt?: string, delayCreate?: boolea
 
 export async function runReceiptScannerFrontRegressionFixtures(): Promise<RegressionResult[]> {
   const results: RegressionResult[] = []
+
+  const freeQuota = resolveReceiptQuotaState({
+    usage: { used: 1, aiUsed: 1, manualUsed: 0, plan: "free" },
+    fallbackPlan: "premium",
+    source: "scan_usage",
+  })
+  results.push(assertEqual("quota-free-server-plan", freeQuota.plan, "free"))
+  results.push(assertEqual("quota-free-1-on-1-label", formatReceiptQuotaLabelFr(freeQuota), "Scans utilisés ce mois-ci : 1 sur 1 — Gratuit"))
+  results.push(assertTrue("quota-refresh-after-python-success", shouldRefreshQuotaAfterPythonScan({ engineUsed: "python" })))
+
+  const quotaApiError = new ReceiptScannerApiError({
+    code: "monthly_quota_reached",
+    message: MONTHLY_SCAN_QUOTA_MESSAGE,
+    retryable: true,
+    technical: false,
+  }, 429)
+  results.push(assertTrue("quota-refresh-after-python-429", shouldRefreshQuotaAfterPythonScan({ error: quotaApiError })))
+  results.push(assertFalse("python-no-client-double-count", shouldIncrementClientScanUsage({
+    provider: "python_receipt_scanner",
+    engine_used: "python",
+    scanId: "scan-python-1",
+    aiUsed: true,
+    openaiDurationMs: 123,
+  })))
+  results.push(assertTrue("legacy-ai-client-count-kept", shouldIncrementClientScanUsage({
+    provider: "legacy_edge_function",
+    aiUsed: true,
+  })))
+  results.push(assertEqual("quota-message-no-openai", MONTHLY_SCAN_QUOTA_MESSAGE.includes("OpenAI"), false))
+
+  const metricRow = buildScanMetricRow({
+    userId: "11111111-1111-4111-8111-111111111111",
+    receiptId: "22222222-2222-4222-8222-222222222222",
+    metrics: {
+      provider: "python_receipt_scanner",
+      finalScanStatus: "budget_ok_articles_partial",
+      itemsDetected: 3,
+      success: true,
+    },
+    status: "success",
+  })
+  results.push(assertEqual("scan-metrics-payload-has-scan-status", metricRow.scan_status, "budget_ok_articles_partial"))
+  results.push(assertEqual("scan-metrics-payload-status", metricRow.status, "success"))
 
   const singleCalls: any[] = []
   await scanSingleReceiptWithApi(fakeFile("single.jpg"), {

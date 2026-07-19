@@ -155,14 +155,34 @@ function buildNoWriteResult(reason: string, message: string, warnings: string[] 
   }
 }
 
+function itemHasExplicitReviewFlag(item: Record<string, any>) {
+  return item.needs_review === true
+    || item.review_status === "needs_review"
+    || item.item_status === "a_verifier"
+    || item.status === "a_verifier"
+}
+
+function itemHasExplicitTrustedFlag(item: Record<string, any>) {
+  return item.needs_review === false
+    || item.review_status === "trusted"
+    || item.item_status === "trusted"
+    || item.item_status === "user_validated"
+    || item.status === "trusted"
+    || item.status === "user_validated"
+    || item.eligible_for_courses === true
+    || item.eligible_for_market_database === true
+}
+
 function normalizeItemsForPersistence({
   items,
   allowArticles,
   allowAutomaticUse,
+  allowVerifiedArticles,
 }: {
   items: Record<string, any>[]
   allowArticles: boolean
   allowAutomaticUse: boolean
+  allowVerifiedArticles: boolean
 }) {
   if (!allowArticles) return []
 
@@ -170,16 +190,22 @@ function normalizeItemsForPersistence({
     .filter(item => String(item.name || item.ocr_name || item.corrected_name || "").trim())
     .filter(item => money(item.total_price ?? item.price ?? item.unit_price) > 0)
     .map(item => {
-      const needsReview = item.needs_review === true
-        || item.review_status === "needs_review"
-        || item.item_status === "a_verifier"
-        || item.status === "a_verifier"
+      const explicitlyNeedsReview = itemHasExplicitReviewFlag(item)
+      const explicitlyTrusted = itemHasExplicitTrustedFlag(item)
+      const canUseThisItemAutomatically = allowAutomaticUse
+        || (allowVerifiedArticles && explicitlyTrusted && !explicitlyNeedsReview)
 
-      if (allowAutomaticUse) {
+      if (canUseThisItemAutomatically) {
         return {
           ...item,
           line_type: item.line_type || "product",
           item_source: item.item_source || item.source || "python_receipt_scanner",
+          item_status: item.item_status === "user_validated" ? "user_validated" : "trusted",
+          status: item.status === "user_validated" ? "user_validated" : "trusted",
+          review_status: "trusted",
+          needs_review: false,
+          eligible_for_courses: item.eligible_for_courses !== false,
+          eligible_for_market_database: item.eligible_for_market_database !== false,
         }
       }
 
@@ -187,10 +213,10 @@ function normalizeItemsForPersistence({
         ...item,
         line_type: item.line_type || "product",
         item_source: item.item_source || item.source || "python_receipt_scanner",
-        item_status: needsReview || item.item_status !== "user_validated" ? "a_verifier" : "user_validated",
-        status: needsReview || item.status !== "user_validated" ? "a_verifier" : "user_validated",
-        review_status: needsReview || item.review_status !== "trusted" ? "needs_review" : "trusted",
-        needs_review: needsReview || item.item_status !== "user_validated",
+        item_status: "a_verifier",
+        status: "a_verifier",
+        review_status: "needs_review",
+        needs_review: true,
         eligible_for_courses: false,
         eligible_for_market_database: false,
       }
@@ -260,7 +286,7 @@ function resolveDecision(draft: Record<string, any>, action: PythonScanPersisten
       budgetAmount,
       flags,
       warnings,
-      message: "Le total de votre ticket a ete enregistre. Certains articles doivent encore etre verifies avant d'etre utilises dans Courses intelligentes.",
+      message: "Le total de votre ticket a ete enregistre. Les articles individuellement fiables sont conserves pour Courses intelligentes ; seuls les articles douteux restent a verifier.",
     }
   }
 
@@ -307,6 +333,9 @@ function buildDraftToPersist({
 }) {
   const full = decision.kind === "full"
   const partial = decision.kind === "budget_only_with_review_items"
+  const shouldFeedVerifiedArticles = decision.flags.should_feed_verified_articles === true
+  const smartShoppingSafe = (full && decision.flags.should_feed_courses === true)
+    || (partial && shouldFeedVerifiedArticles)
   return {
     ...draft,
     python_scan_pending_save: false,
@@ -317,7 +346,7 @@ function buildDraftToPersist({
     items,
     scan_status: full ? "budget_ok_articles_ok" : partial ? "budget_ok_articles_partial" : draft.scan_status,
     final_scan_status: full ? "budget_ok_articles_ok" : partial ? "budget_ok_articles_partial" : draft.final_scan_status,
-    smart_shopping_safe: full && decision.flags.should_feed_courses === true,
+    smart_shopping_safe: smartShoppingSafe,
     items_quality_status: full ? "trusted" : partial ? "partial" : draft.items_quality_status,
     parser_debug: {
       ...(draft.parser_debug || {}),
@@ -326,10 +355,10 @@ function buildDraftToPersist({
       budget_amount: decision.budgetAmount,
       unattributed_amount: decision.flags.unattributed_amount ?? null,
       items_quality_status: full ? "trusted" : partial ? "partial" : draft.parser_debug?.items_quality_status,
-      smart_shopping_safe: full && decision.flags.should_feed_courses === true,
+      smart_shopping_safe: smartShoppingSafe,
       should_feed_courses: full && decision.flags.should_feed_courses === true,
       should_feed_market_database: full && decision.flags.should_feed_market_database === true,
-      should_feed_verified_articles: full && decision.flags.should_feed_verified_articles === true,
+      should_feed_verified_articles: shouldFeedVerifiedArticles,
     },
   }
 }
@@ -380,10 +409,16 @@ export async function persistPythonScanResult({
     }
 
     const allowAutomaticUse = decision.kind === "full"
+    const allowVerifiedArticles = allowAutomaticUse
+      || (
+        decision.kind === "budget_only_with_review_items"
+        && decision.flags.should_feed_verified_articles === true
+      )
     const persistableItems = normalizeItemsForPersistence({
       items,
       allowArticles: true,
       allowAutomaticUse,
+      allowVerifiedArticles,
     })
     const draftToPersist = buildDraftToPersist({
       draft,
@@ -413,8 +448,12 @@ export async function persistPythonScanResult({
       transactionId,
     })
 
-    const trustedShoppingItems = allowAutomaticUse && decision.flags.should_feed_courses === true
-      ? persistableItems.filter(item => item.needs_review !== true && isItemEligibleForSmartShopping(item))
+    const trustedShoppingItems = allowVerifiedArticles
+      ? persistableItems.filter(item =>
+          item.needs_review !== true
+          && item.eligible_for_courses !== false
+          && isItemEligibleForSmartShopping(item)
+        )
       : []
     let shoppingItems: any[] = []
     if (trustedShoppingItems.length > 0 && transactionId) {

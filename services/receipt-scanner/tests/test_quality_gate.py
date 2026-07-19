@@ -143,7 +143,7 @@ class QualityGateTest(TempImageTestCase):
         self.assertEqual(decision.article_data_mode, "partial")
         self.assertFalse(decision.should_feed_courses)
         self.assertFalse(decision.should_feed_market_database)
-        self.assertFalse(decision.should_feed_verified_articles)
+        self.assertTrue(decision.should_feed_verified_articles)
         self.assertTrue(decision.requires_user_validation)
         self.assertEqual(decision.unattributed_amount, 0.20)
         self.assertEqual(decision.receipt.product_line_count, 32)

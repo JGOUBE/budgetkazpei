@@ -1,29 +1,58 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { countMonthlyReceipts } from "../services/receiptService"
 import { getScanPlan, getScanPlanLabel, SCAN_LIMITS } from "../../../config/scanLimits"
 import { getScanUsage } from "../../../services/scan/scanUsageService"
-import { getPlanScanPolicy } from "../../../config/plans"
+import { getPlanScanPolicy, normalizePlan } from "../../../config/plans"
 
-export function useReceiptQuota(userId, isPremium = false, isPremiumPlus = false) {
-  const [used, setUsed] = useState(0)
-  const [source, setSource] = useState("scan_usage")
-  const [loading, setLoading] = useState(true)
-
-  const plan = getScanPlan(isPremium, isPremiumPlus)
+export function resolveReceiptQuotaState({
+  usage = null,
+  fallbackUsed = 0,
+  fallbackPlan = "free",
+  source = "scan_usage",
+} = {}) {
+  const plan = normalizePlan(usage?.plan || fallbackPlan || "free")
+  const used = Number(usage?.used ?? usage?.aiUsed ?? fallbackUsed ?? 0)
   const policy = getPlanScanPolicy(plan)
   const limit = SCAN_LIMITS[plan]
   const remaining = Math.max(limit - used, 0)
   const reached = remaining <= 0
-  const isUnlimitedForUser = policy.isUnlimitedForUser
-  const isSafetyLimited = policy.isSafetyLimited
-  const safetyLimitReached = isSafetyLimited && reached
+
+  return {
+    used,
+    limit,
+    remaining,
+    reached,
+    isUnlimitedForUser: policy.isUnlimitedForUser,
+    isSafetyLimited: policy.isSafetyLimited,
+    safetyLimitReached: policy.isSafetyLimited && reached,
+    plan,
+    planLabel: getScanPlanLabel(plan),
+    source,
+  }
+}
+
+export function formatReceiptQuotaLabelFr(quota) {
+  return quota?.isUnlimitedForUser
+    ? `Scans illimités — ${quota.planLabel}`
+    : `Scans utilisés ce mois-ci : ${quota.used} sur ${quota.limit} — ${quota.planLabel}`
+}
+
+export function useReceiptQuota(userId, isPremium = false, isPremiumPlus = false) {
+  const localPlan = getScanPlan(isPremium, isPremiumPlus)
+  const fallbackState = useMemo(
+    () => resolveReceiptQuotaState({ fallbackPlan: "free", source: "scan_usage" }),
+    [],
+  )
+  const [quotaState, setQuotaState] = useState(fallbackState)
+  const [loading, setLoading] = useState(true)
 
   const refresh = useCallback(async (options = {}) => {
     const ignore = Boolean(options.ignore)
       if (!userId) {
-        setUsed(0)
+        const emptyState = resolveReceiptQuotaState({ fallbackPlan: "free", source: "scan_usage" })
+        if (!ignore) setQuotaState(emptyState)
         setLoading(false)
-        return
+        return emptyState
       }
 
       setLoading(true)
@@ -31,29 +60,45 @@ export function useReceiptQuota(userId, isPremium = false, isPremiumPlus = false
       try {
         try {
           const usage = await getScanUsage({ userId, isPremium, isPremiumPlus })
+          const nextState = resolveReceiptQuotaState({
+            usage,
+            fallbackPlan: "free",
+            source: "scan_usage",
+          })
           if (!ignore) {
-            setUsed(usage.used)
-            setSource("scan_usage")
+            setQuotaState(nextState)
           }
-        } catch (usageError) {
+          return nextState
+        } catch {
           const count = await countMonthlyReceipts({ userId })
+          const nextState = resolveReceiptQuotaState({
+            fallbackUsed: count,
+            fallbackPlan: localPlan,
+            source: "receipts",
+          })
           if (!ignore) {
-            setUsed(count)
-            setSource("receipts")
+            setQuotaState(nextState)
           }
+          return nextState
         }
       } catch (error) {
         console.error("Erreur quota tickets:", error)
-        if (!ignore) setUsed(0)
+        const emptyState = resolveReceiptQuotaState({ fallbackPlan: "free", source: "scan_usage" })
+        if (!ignore) setQuotaState(emptyState)
+        return emptyState
       } finally {
         if (!ignore) setLoading(false)
       }
-  }, [userId, isPremium, isPremiumPlus])
+  }, [userId, isPremium, isPremiumPlus, localPlan])
 
   useEffect(() => {
     let ignore = false
 
-    refresh({ ignore })
+    async function loadQuota() {
+      await refresh({ ignore })
+    }
+
+    loadQuota()
 
     return () => {
       ignore = true
@@ -61,16 +106,7 @@ export function useReceiptQuota(userId, isPremium = false, isPremiumPlus = false
   }, [refresh])
 
   return {
-    used,
-    limit,
-    remaining,
-    reached,
-    isUnlimitedForUser,
-    isSafetyLimited,
-    safetyLimitReached,
-    plan,
-    planLabel: getScanPlanLabel(plan),
-    source,
+    ...quotaState,
     loading,
     refresh,
   }
