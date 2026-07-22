@@ -48,17 +48,34 @@ export default function Sidebar({
     "Utilisateur"
 
   const premiumButtonLabel = isPremiumPlus
-    ? "Gerer Premium+"
+    ? "Gérer Premium+"
     : isPremium
-      ? "Passer Premium+"
+      ? "Passer à Premium+"
       : isKreol
         ? "Vir Premium"
-        : "Decouvrir Premium"
+        : "Découvrir Premium"
 
   const premiumColor = isPremiumPlus || isPremium ? ds.purple : ds.warning
 
   function getNavLabel(item) {
-    return t(item.section, item.key)
+    const translatedLabel = t(item.section, item.key)
+
+    if (!isKreol && item.id === "demarches") return "Démarches"
+    if (!isKreol && item.id === "conseiller") return "Conseiller"
+
+    return translatedLabel
+  }
+
+  function getNavBorder({ active, locked }) {
+    if (active) return `1px solid ${ds.primary}66`
+    if (locked) return `1px solid ${ds.warning}35`
+    return "1px solid transparent"
+  }
+
+  function getNavBackground({ active, locked }) {
+    if (active) return "rgba(249,115,22,.15)"
+    if (locked) return "rgba(252,211,77,.08)"
+    return "transparent"
   }
 
   return (
@@ -97,12 +114,32 @@ export default function Sidebar({
             const Icon = item.icon
             const active = activeNav === item.id
             const locked = item.premiumOnly && !isPremium
+            const baseBorder = getNavBorder({ active, locked })
+            const baseBackground = getNavBackground({ active, locked })
 
             return (
               <button
                 key={item.id}
                 type="button"
                 onClick={() => onNavChange(locked ? "premium" : item.id)}
+                onMouseEnter={event => {
+                  if (active) return
+
+                  event.currentTarget.style.border = locked
+                    ? `1px solid ${ds.warning}88`
+                    : `1px solid ${ds.primary}66`
+                  event.currentTarget.style.background = locked
+                    ? "rgba(252,211,77,.13)"
+                    : "rgba(249,115,22,.08)"
+                  event.currentTarget.style.boxShadow = locked
+                    ? `0 0 0 2px ${ds.warning}18`
+                    : `0 0 0 2px ${ds.primary}18`
+                }}
+                onMouseLeave={event => {
+                  event.currentTarget.style.border = baseBorder
+                  event.currentTarget.style.background = baseBackground
+                  event.currentTarget.style.boxShadow = "none"
+                }}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -110,14 +147,15 @@ export default function Sidebar({
                   width: "100%",
                   padding: "10px 13px",
                   borderRadius: 12,
-                  border: active ? `1px solid ${ds.primary}66` : locked ? `1px solid ${ds.warning}35` : "1px solid transparent",
-                  background: active ? "rgba(249,115,22,.15)" : locked ? "rgba(252,211,77,.08)" : "transparent",
+                  border: baseBorder,
+                  background: baseBackground,
                   color: active ? ds.primary : locked ? ds.warning : ds.textSecondary,
                   cursor: "pointer",
                   fontSize: 14,
                   fontWeight: active || locked ? 900 : 700,
                   fontFamily: "inherit",
                   textAlign: "left",
+                  transition: "border-color .18s ease, background .18s ease, box-shadow .18s ease, color .18s ease",
                 }}
               >
                 <Icon size={17} />
@@ -207,4 +245,3 @@ export default function Sidebar({
     </aside>
   )
 }
-
