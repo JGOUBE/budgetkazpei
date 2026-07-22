@@ -22,6 +22,7 @@ from .geometry_types import OCRDocument
 from .image_preprocessor import PreprocessResult, ImagePreprocessor
 from .line_reconstructor import LineReconstructor
 from .long_receipt_pipeline import run_two_photo_pipeline
+from .market_resolver import MarketProductResolver, build_market_product_resolver
 from .quality_gate import QualityDecision, ReceiptQualityGate
 from .quota import QuotaReservation, ScanQuotaProvider, build_quota_provider
 from .receipt_parser_fr import ParsedReceipt, ParsedReceiptItem, ReceiptParserFR
@@ -191,10 +192,14 @@ class ReceiptScanService:
         settings: ScannerSettings,
         runner: PipelineRunner | None = None,
         quota_provider: ScanQuotaProvider | None = None,
+        market_resolver: MarketProductResolver | None = None,
     ) -> None:
         self.settings = settings
         self.runner = runner or DefaultPipelineRunner()
         self.quota_provider = quota_provider or build_quota_provider(settings)
+        self.market_resolver = (
+            market_resolver or build_market_product_resolver(settings)
+        )
         self._semaphore = threading.BoundedSemaphore(
             value=settings.max_concurrent_scans
         )
@@ -477,6 +482,10 @@ class ReceiptScanService:
             finally:
                 if executor is not None:
                     executor.shutdown(wait=True, cancel_futures=True)
+            self.market_resolver.enrich(
+                result.receipt,
+                access_token=access_token,
+            )
             response = self._to_api_response(
                 scan_id=scan_id,
                 mode=mode,
