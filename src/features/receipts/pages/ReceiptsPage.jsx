@@ -102,7 +102,7 @@ const TEXT = {
     singlePreviewHint: "Confirmez cette image avant de lancer l'analyse.",
     confirmImage: "Analyser cette photo",
     replacePhoto: "Choisir une autre photo",
-    pythonTechnicalFallbackHint: "Le nouveau service de scan n'a pas repondu correctement. Vous pouvez reessayer ou choisir l'ancien scanner.",
+    pythonTechnicalFallbackHint: "Le nouveau service de scan n'a pas repondu correctement. Vous pouvez réessayer ou utiliser la saisie manuelle.",
     pythonBusinessErrorHint: "Le nouveau service a refuse ce scan pour une raison de qualite ou de securite. Aucune bascule automatique n'a ete lancee.",
     pythonLocalSaveBlocked: "Verification locale terminee. Aucune ecriture BudgetKazPei n'est effectuee dans cette etape.",
     quota: formatReceiptQuotaLabelFr,
@@ -211,7 +211,7 @@ const TEXT = {
     singlePreviewHint: "Confirme sa zimaz-la avan analiz-la.",
     confirmImage: "Analiz sa foto-la",
     replacePhoto: "Swazi in lot foto",
-    pythonTechnicalFallbackHint: "Nouveau servis scan-la la pa reponn bien. Ou pe reessaye ou swazi ancien scanner.",
+    pythonTechnicalFallbackHint: "Nouveau servis scan-la la pa reponn bien. Ou pe réessayé ou ranpli tiké-la amain.",
     pythonBusinessErrorHint: "Nouveau servis-la la refuse scan-la pou kalite ou sekirite. Nena okenn bascule otomatik.",
     pythonLocalSaveBlocked: "Verification locale fini. Nena okenn ecriture BudgetKazPei dan sa letap-la.",
     quota: quota => quota.isUnlimitedForUser
@@ -1154,7 +1154,7 @@ export default function ReceiptsPage({
     const inputBytes = scanOptions.longTicketFiles
       ? Number(scanOptions.longTicketFiles.top?.size || 0) + Number(scanOptions.longTicketFiles.bottom?.size || 0)
       : Number(file.size || 0)
-    const requestedEngineMode = scanOptions.forceLegacy ? "legacy" : getReceiptScannerEngineMode()
+    const requestedEngineMode = "python"
 
     setBusy(true)
     setMessage("")
@@ -1298,7 +1298,7 @@ export default function ReceiptsPage({
         isKreol,
       }))
     } catch (error) {
-      const allowFallback = requestedEngineMode !== "legacy" && canOfferLegacyFallback(error)
+      const allowFallback = false
       if (!(error instanceof ReceiptScannerApiError)) {
         console.error("Erreur scanner ticket:", error)
       }
@@ -2778,6 +2778,54 @@ function AnalysisScreen({ progress, txt }) {
   )
 }
 
+
+function isWeightedReceiptItem(item = {}) {
+  return String(item.item_type || "").toLowerCase() === "weight"
+    && Number(item.weight_kg || 0) > 0
+    && Number(item.price_per_kg || 0) > 0
+}
+
+function formatReceiptDecimalFr(value, digits) {
+  const numeric = Number(value || 0)
+  if (!Number.isFinite(numeric)) return ""
+
+  return numeric.toLocaleString("fr-FR", {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  })
+}
+
+function formatWeightedItemSummary(item = {}) {
+  return `${formatReceiptDecimalFr(item.weight_kg, 3)} kg × ${formatReceiptDecimalFr(item.price_per_kg, 2)} €/kg = ${formatMontant(Number(item.total_price || 0))}`
+}
+
+function buildWeightedItemUpdates(item = {}, field, rawValue) {
+  const nextWeight = field === "weight_kg"
+    ? Number(rawValue || 0)
+    : Number(item.weight_kg || 0)
+  const nextPricePerKg = field === "price_per_kg"
+    ? Number(rawValue || 0)
+    : Number(item.price_per_kg || 0)
+
+  const updates = {
+    [field]: rawValue,
+    quantity: 1,
+    item_type: "weight",
+  }
+
+  if (
+    field !== "total_price"
+    && Number.isFinite(nextWeight)
+    && nextWeight > 0
+    && Number.isFinite(nextPricePerKg)
+    && nextPricePerKg > 0
+  ) {
+    updates.total_price = (nextWeight * nextPricePerKg).toFixed(2)
+  }
+
+  return updates
+}
+
 function ValidationForm({
   txt,
   draft,
@@ -3027,10 +3075,89 @@ function ValidationForm({
                 value={item.name || marketDisplay.label}
                 onChange={e => updateItem(index, { name: e.target.value, corrected_name: e.target.value, normalized_name: "" })}
               />
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                <input style={inputStyle()} type="number" min="0" step="0.01" value={item.quantity} onChange={e => updateItem(index, { quantity: e.target.value })} />
-                <input style={inputStyle()} type="number" min="0" step="0.01" value={item.total_price ?? ""} onChange={e => updateItem(index, { total_price: e.target.value })} />
-              </div>
+              {isWeightedReceiptItem(item) ? (
+                <div style={{
+                  display: "grid",
+                  gap: 10,
+                  padding: 12,
+                  borderRadius: 14,
+                  border: "1px solid rgba(35,211,214,.32)",
+                  background: "rgba(35,211,214,.08)",
+                }}>
+                  <div style={{
+                    color: COLORS.text,
+                    fontSize: 14,
+                    fontWeight: 950,
+                    lineHeight: 1.45,
+                  }}>
+                    {formatWeightedItemSummary(item)}
+                  </div>
+                  <div style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+                    gap: 10,
+                  }}>
+                    <Field label="Poids (kg)">
+                      <input
+                        style={inputStyle()}
+                        type="number"
+                        min="0"
+                        step="0.001"
+                        value={item.weight_kg ?? ""}
+                        onChange={event => updateItem(
+                          index,
+                          buildWeightedItemUpdates(item, "weight_kg", event.target.value),
+                        )}
+                      />
+                    </Field>
+                    <Field label="Prix au kg">
+                      <input
+                        style={inputStyle()}
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={item.price_per_kg ?? ""}
+                        onChange={event => updateItem(
+                          index,
+                          buildWeightedItemUpdates(item, "price_per_kg", event.target.value),
+                        )}
+                      />
+                    </Field>
+                    <Field label="Total de la ligne">
+                      <input
+                        style={inputStyle()}
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={item.total_price ?? ""}
+                        onChange={event => updateItem(
+                          index,
+                          buildWeightedItemUpdates(item, "total_price", event.target.value),
+                        )}
+                      />
+                    </Field>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                  <input
+                    style={inputStyle()}
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={item.quantity}
+                    onChange={event => updateItem(index, { quantity: event.target.value })}
+                  />
+                  <input
+                    style={inputStyle()}
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={item.total_price ?? ""}
+                    onChange={event => updateItem(index, { total_price: event.target.value })}
+                  />
+                </div>
+              )}
               {(item.department || item.subcategory || item.promotion) && (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                   {item.department && <MetaChip label={`Rayon : ${item.department}`} />}

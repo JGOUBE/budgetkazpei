@@ -3,19 +3,16 @@ import { ReceiptScannerApiError, scanLongReceiptWithApi, scanSingleReceiptWithAp
 import type { ReceiptScannerEngineMode, ReceiptScannerResult, ReceiptScanItem, ReceiptScanResponse } from "./receiptScannerTypes"
 
 export function getReceiptScannerEngineMode(): ReceiptScannerEngineMode {
-  const raw = String(import.meta.env.VITE_RECEIPT_SCANNER_ENGINE || "legacy").toLowerCase()
-  return raw === "python" || raw === "auto" ? raw : "legacy"
+  return "python"
 }
-
 export function isTechnicalPythonScannerError(error: unknown) {
   if (!(error instanceof ReceiptScannerApiError)) return false
   return ["network_error", "internal_scan_error", "processing_timeout", "scanner_busy"].includes(error.scanError.code)
 }
 
-export function canOfferLegacyFallback(error: unknown) {
-  return isTechnicalPythonScannerError(error)
+export function canOfferLegacyFallback(_error: unknown) {
+  return false
 }
-
 function scanStatusForApi(status: ReceiptScanResponse["status"]) {
   if (status === "trusted") return "budget_ok_articles_ok"
   if (status === "budget_ok_articles_partial") return "budget_ok_articles_partial"
@@ -208,13 +205,8 @@ export async function scanLongWithLegacyEngine(files: { top: File; bottom: File 
 }
 
 export async function scanReceiptWithConfiguredEngine(file: File, options: ScanEngineOptions & ReceiptScannerApiOptions = {}) {
-  const mode = getReceiptScannerEngineMode()
-  if (mode === "legacy") return scanWithLegacyEngine(file, options)
   return scanWithPythonEngine(file, options)
 }
-
 export async function scanLongReceiptWithConfiguredEngine(files: { top: File; bottom: File }, options: ScanEngineOptions & ReceiptScannerApiOptions = {}) {
-  const mode = getReceiptScannerEngineMode()
-  if (mode === "legacy") return scanLongWithLegacyEngine(files, options)
   return scanLongWithPythonEngine(files, options)
 }

@@ -324,7 +324,10 @@ class ReceiptQualityGate:
         if image.blur_variance < 8 and ocr.token_count < 20:
             hard_fail_reasons.append("image_severely_blurred")
         if parsed.product_line_count == 0 and parsed.total is None:
-            hard_fail_reasons.append("no_receipt_structure_detected")
+            if ocr.token_count < 20 or ocr.average_confidence < 0.60:
+                hard_fail_reasons.append("no_receipt_structure_detected")
+            else:
+                budget_blocking_reasons.append("receipt_structure_not_recognized")
 
         if hard_fail_reasons:
             return QualityDecision(

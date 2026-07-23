@@ -30,11 +30,12 @@ def create_app(
         ),
     )
 
-    # Autorise uniquement les frontends locaux utilisés pour les tests.
-    # Le JWT Supabase reste envoyé dans le header Authorization.
+    # Autorise le frontend de production BudgetKazPei et les origines locales
+    # utilisées pour les tests. Le JWT Supabase reste envoyé dans Authorization.
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[
+            "https://budgetkazpei.vercel.app",
             "http://localhost:5175",
             "http://127.0.0.1:5175",
             "http://localhost:5173",
