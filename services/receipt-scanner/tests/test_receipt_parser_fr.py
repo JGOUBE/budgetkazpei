@@ -732,3 +732,54 @@ class ReceiptParserFRMultiStoreTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ReceiptParserFRPhase13IdentityTest(unittest.TestCase):
+    def parse(self, lines):
+        return ReceiptParserFR().parse(make_document([]), lines)
+
+    def test_carrefour_contact_and_footer_date_are_recovered(self):
+        lines = [
+            make_line(0, [("contact", "description", 70)], y=40),
+            make_line(1, [("CONTACT ST SAUVEUR", "description", 70)], y=80),
+            make_line(2, [("PRODUIT", "description", 70), ("21.54", "price", 620)], y=150),
+            make_line(3, [("TOTAL A PAYER", "description", 70), ("21.54", "price", 620)], y=210),
+            make_line(4, [("17/06/2025", "description", 70), ("18:04:15", "description", 250)], y=700),
+        ]
+        parsed = self.parse(lines)
+        self.assertEqual(parsed.store_name, "Carrefour Contact")
+        self.assertEqual(parsed.receipt_date, "2025-06-17")
+
+    def test_carrefour_market_split_logo_is_normalized(self):
+        lines = [
+            make_line(0, [("Carrefour", "description", 70)], y=40),
+            make_line(1, [("market", "description", 70)], y=75),
+            make_line(2, [("28/10/2024", "description", 70)], y=600),
+            make_line(3, [("TOTAL A PAYER", "description", 70), ("12.61", "price", 620)], y=650),
+        ]
+        parsed = self.parse(lines)
+        self.assertEqual(parsed.store_name, "Carrefour Market")
+        self.assertEqual(parsed.receipt_date, "2024-10-28")
+
+    def test_isolated_u_logo_is_normalized_as_super_u(self):
+        lines = [
+            make_line(0, [("U", "description", 70)], y=40),
+            make_line(1, [("COMMERCANTS AUTREMENT", "description", 70)], y=75),
+            make_line(2, [("20/01/24", "description", 70)], y=110),
+            make_line(3, [("TOTAL", "description", 70), ("79.07", "price", 620)], y=650),
+        ]
+        parsed = self.parse(lines)
+        self.assertEqual(parsed.store_name, "Super U")
+        self.assertEqual(parsed.receipt_date, "2024-01-20")
+
+    def test_textual_date_wins_over_noisy_numeric_duplicate(self):
+        lines = [
+            make_line(0, [("E.LECLERC", "description", 70)], y=40),
+            make_line(1, [("24 jui11et 2026 17:41", "description", 70)], y=90),
+            make_line(2, [("Ticket 24/07/25", "description", 70)], y=130),
+            make_line(3, [("TOTAL", "description", 70), ("54.87", "price", 620)], y=650),
+        ]
+        parsed = self.parse(lines)
+        self.assertEqual(parsed.receipt_date, "2026-07-24")
+
+

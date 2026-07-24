@@ -171,6 +171,41 @@ class QualityGateTest(TempImageTestCase):
         self.assertEqual(decision.budget_amount, 73.99)
         self.assertEqual(decision.unattributed_amount, 0.20)
 
+    def test_narrow_tall_receipt_with_strong_ocr_is_not_hard_rejected(self) -> None:
+        image_path = self.temp_path / "narrow-strong.jpg"
+        make_good_image(image_path, width=304, height=1600)
+        items = [standard_item(f"PRODUIT {index}", 2.00) for index in range(40)]
+        receipt = parsed_receipt(
+            total=80.00,
+            items=items,
+            declared_item_count=40,
+        )
+        decision = ReceiptQualityGate().evaluate(
+            image_path,
+            high_confidence_document(80),
+            receipt,
+        )
+        self.assertNotEqual(decision.status, "scan_not_exploitable")
+        self.assertTrue(decision.should_record_budget)
+        self.assertEqual(decision.budget_amount, 80.00)
+        self.assertNotIn("image_too_narrow", decision.reasons)
+
+    def test_narrow_receipt_with_weak_ocr_remains_rejected(self) -> None:
+        image_path = self.temp_path / "narrow-weak.jpg"
+        make_good_image(image_path, width=304, height=1600)
+        receipt = parsed_receipt(
+            total=4.00,
+            items=[standard_item("PRODUIT", 4.00)],
+            declared_item_count=1,
+        )
+        decision = ReceiptQualityGate().evaluate(
+            image_path,
+            high_confidence_document(20),
+            receipt,
+        )
+        self.assertEqual(decision.status, "scan_not_exploitable")
+        self.assertIn("image_too_narrow", decision.reasons)
+
 
 if __name__ == "__main__":
     unittest.main()

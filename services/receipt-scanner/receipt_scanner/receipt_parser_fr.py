@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import re
 import unicodedata
+from difflib import get_close_matches
 from dataclasses import asdict, dataclass, field
 from datetime import date
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
@@ -68,6 +69,8 @@ _FRENCH_MONTHS = {
 _STORE_CANONICAL_NAMES = (
     ("E.LECLERC", "E.Leclerc"),
     ("LECLERC", "E.Leclerc"),
+    ("ECLERC", "E.Leclerc"),
+    ("LECLER", "E.Leclerc"),
     ("LEADER PRICE", "Leader Price"),
     ("CARREFOUR MARKET", "Carrefour Market"),
     ("CARREFOUR EXPRESS", "Carrefour Express"),
@@ -1072,23 +1075,46 @@ class ReceiptParserFR:
     def _extract_store_name(
         lines: list[ReconstructedLine],
     ) -> str | None:
-        for line in lines[:12]:
-            text = line.text.strip()
-            normalized = _normalized_upper(text)
+        header = [
+            (line.text.strip(), _normalized_upper(line.text.strip()))
+            for line in lines[:12]
+        ]
+
+        # Split logos are common: "Carrefour" then "market" on the next OCR
+        # row. Resolve the pair before the generic single-line dictionary.
+        for index, (_, normalized) in enumerate(header):
+            following = header[index + 1][1] if index + 1 < len(header) else ""
+            if "CARREFOUR" in normalized and following.startswith("MARKET"):
+                return "Carrefour Market"
+
+        # Carrefour Contact receipts may expose only the "contact" logo.
+        if any(
+            normalized == "CONTACT"
+            or normalized.startswith("CONTACT ")
+            for _, normalized in header[:3]
+        ):
+            return "Carrefour Contact"
+
+        # The U logo is often isolated on its own line, followed by
+        # "Commerçants autrement".
+        if any(normalized == "U" for _, normalized in header[:3]):
+            return "Super U"
+
+        for text_value, normalized in header:
             for signal, canonical in _STORE_CANONICAL_NAMES:
                 if signal in normalized:
                     return canonical
 
         for line in lines[:8]:
-            text = _strip_product_marker(line.text.strip())
-            normalized = _normalized_upper(text)
-            if not text or _is_non_item_text(text):
+            text_value = _strip_product_marker(line.text.strip())
+            normalized = _normalized_upper(text_value)
+            if not text_value or _is_non_item_text(text_value):
                 continue
-            if _POSTCODE_RE.search(text) or normalized.startswith(
+            if _POSTCODE_RE.search(text_value) or normalized.startswith(
                 ("RUE ", "AVENUE ", "CHEMIN ", "BOULEVARD ")
             ):
                 continue
-            return text
+            return text_value
         return None
 
     @staticmethod
@@ -1160,14 +1186,26 @@ class ReceiptParserFR:
     def _extract_date(
         lines: list[ReconstructedLine],
     ) -> str | None:
-        for line in lines[:18]:
-            text = line.text
+        # Search a little beyond the header: Carrefour-family receipts often
+        # print the date near the bottom after the VAT table.
+        searchable = lines[:32]
 
-            textual = _TEXTUAL_DATE_RE.search(text)
+        month_names = tuple(_FRENCH_MONTHS)
+        loose_textual_re = re.compile(
+            r"\b(?P<day>\d{1,2})\s+"
+            r"(?P<month>[A-Za-zÀ-ÿ0-9|]{3,12})\s+"
+            r"(?P<year>\d{4})\b",
+            re.IGNORECASE,
+        )
+
+        # Prefer textual dates first. They frequently preserve the four-digit
+        # year even when the numeric ticket reference below contains an OCR
+        # error (for example 24/07/25 instead of 24/07/26).
+        for line in searchable:
+            text_value = line.text
+            textual = _TEXTUAL_DATE_RE.search(text_value)
             if textual:
-                month_key = _ascii_fold(
-                    textual.group("month").lower()
-                )
+                month_key = _ascii_fold(textual.group("month").lower())
                 try:
                     parsed = date(
                         int(textual.group("year")),
@@ -1178,7 +1216,34 @@ class ReceiptParserFR:
                 except (KeyError, ValueError):
                     pass
 
-            numeric = _NUMERIC_DATE_RE.search(text)
+            loose = loose_textual_re.search(text_value)
+            if loose:
+                raw_month = _ascii_fold(loose.group("month").lower())
+                raw_month = (
+                    raw_month.replace("1", "l")
+                    .replace("|", "l")
+                    .replace("0", "o")
+                    .replace("5", "s")
+                )
+                matches = get_close_matches(
+                    raw_month,
+                    month_names,
+                    n=1,
+                    cutoff=0.72,
+                )
+                if matches:
+                    try:
+                        parsed = date(
+                            int(loose.group("year")),
+                            _FRENCH_MONTHS[matches[0]],
+                            int(loose.group("day")),
+                        )
+                        return parsed.isoformat()
+                    except ValueError:
+                        pass
+
+        for line in searchable:
+            numeric = _NUMERIC_DATE_RE.search(line.text)
             if numeric:
                 year = int(numeric.group("year"))
                 if year < 100:

@@ -309,7 +309,22 @@ class ReceiptQualityGate:
         article_partial_reasons: list[str] = []
 
         # Hard failures: insufficient physical or OCR evidence.
-        if min(image.width, image.height) < self.min_width:
+        # A narrow but very tall receipt can still be fully exploitable when
+        # OCR evidence is exceptionally strong. This protects genuine
+        # high-resolution ticket screenshots (for example 304 x 1600 px)
+        # without accepting weak thumbnails.
+        narrow_but_strong = (
+            min(image.width, image.height) >= 280
+            and max(image.width, image.height) >= self.min_height
+            and ocr.token_count >= 60
+            and ocr.average_confidence >= 0.90
+            and ocr.low_confidence_ratio <= 0.10
+            and parsed.total is not None
+        )
+        if (
+            min(image.width, image.height) < self.min_width
+            and not narrow_but_strong
+        ):
             hard_fail_reasons.append("image_too_narrow")
         if max(image.width, image.height) < self.min_height:
             hard_fail_reasons.append("image_too_small")
@@ -367,7 +382,10 @@ class ReceiptQualityGate:
             budget_blocking_reasons.append("image_contrast_too_low")
         if image.brightness_mean < 55:
             budget_blocking_reasons.append("image_too_dark")
-        if image.brightness_mean > 230:
+        if (
+            image.brightness_mean > 238
+            and image.contrast_std < 35
+        ):
             budget_blocking_reasons.append("image_too_bright")
 
         # Article-detail issues. They do not invalidate a clearly proven final
