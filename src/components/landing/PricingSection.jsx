@@ -1,51 +1,93 @@
-import { PLAN_FEATURE_STATUS } from "../../config/plans"
-import { pricingPlans } from "./landingContent"
+import { PLAN_FEATURE_STATUS, PLAN_IDS } from "../../config/plans"
+import { getLandingContent } from "./landingContent"
 import LandingLink from "./LandingLink"
 
-function FeatureMarker({ status }) {
+function FeatureMarker({ status, copy }) {
   if (status === PLAN_FEATURE_STATUS.soon) {
-    return <span className="pricing-card__soon">Bientôt</span>
+    return <span className="pricing-card__soon">{copy.soonLabel}</span>
   }
+
   if (status === PLAN_FEATURE_STATUS.unavailable) {
-    return <span className="pricing-card__dash" aria-hidden="true">-</span>
+    return (
+      <span
+        className="pricing-card__dash"
+        role="img"
+        aria-label={copy.unavailableAriaLabel}
+      >
+        −
+      </span>
+    )
   }
-  return <span className="pricing-card__check" aria-hidden="true">✓</span>
+
+  return (
+    <span
+      className="pricing-card__check"
+      role="img"
+      aria-label={copy.includedAriaLabel}
+    >
+      ✓
+    </span>
+  )
 }
 
-export default function PricingSection({ isAuthenticated = false }) {
+export default function PricingSection({ isAuthenticated = false, content }) {
+  const copy = content || getLandingContent("fr").pricing
+
   return (
-    <section className="landing-section" id="offres" aria-labelledby="pricing-title">
+    <section
+      className="landing-section"
+      id="offres"
+      aria-labelledby="pricing-title"
+    >
       <div className="landing-shell">
         <div className="landing-section-heading">
-          <p className="landing-eyebrow">Offres</p>
-          <h2 id="pricing-title">Trois niveaux, lisibles en quelques secondes.</h2>
-          <p>Commencez simplement, puis choisissez plus d'accompagnement lorsque cela devient utile.</p>
+          <p className="landing-eyebrow">{copy.eyebrow}</p>
+          <h2 id="pricing-title">{copy.title}</h2>
+          <p>{copy.intro}</p>
         </div>
 
         <div className="pricing-grid">
-          {pricingPlans.map(plan => (
-            <article className={`pricing-card pricing-card--${plan.tone} ${plan.featured ? "pricing-card--featured" : ""}`} key={plan.name}>
-              <div>
-                <p className="pricing-card__label">{plan.name}</p>
-                <h3>{plan.price}</h3>
-                <p>{plan.intro}</p>
-              </div>
-              <ul>
-                {plan.items.map(item => (
-                  <li key={`${plan.name}-${item.text}`}>
-                    <FeatureMarker status={item.status} />
-                    <span>{item.text}</span>
-                  </li>
-                ))}
-              </ul>
-              <LandingLink
-                href={isAuthenticated && plan.name === "Gratuit" ? "/app" : plan.href}
-                className={plan.featured ? "landing-link-button landing-link-button--primary" : "landing-link-button landing-link-button--ghost"}
+          {copy.plans.map(plan => {
+            const isFreePlan = plan.id === PLAN_IDS.free
+            const href = isAuthenticated && isFreePlan ? "/app" : plan.href
+            const ctaLabel =
+              isAuthenticated && isFreePlan ? copy.dashboard : plan.cta
+
+            return (
+              <article
+                className={`pricing-card pricing-card--${plan.tone} ${
+                  plan.featured ? "pricing-card--featured" : ""
+                }`}
+                key={plan.id}
               >
-                {isAuthenticated && plan.name === "Gratuit" ? "Accéder à mon tableau de bord" : plan.cta}
-              </LandingLink>
-            </article>
-          ))}
+                <div>
+                  <p className="pricing-card__label">{plan.name}</p>
+                  <h3>{plan.price}</h3>
+                  <p>{plan.intro}</p>
+                </div>
+
+                <ul>
+                  {plan.items.map(item => (
+                    <li key={`${plan.id}-${item.text}`}>
+                      <FeatureMarker status={item.status} copy={copy} />
+                      <span>{item.text}</span>
+                    </li>
+                  ))}
+                </ul>
+
+                <LandingLink
+                  href={href}
+                  className={
+                    plan.featured
+                      ? "landing-link-button landing-link-button--primary"
+                      : "landing-link-button landing-link-button--ghost"
+                  }
+                >
+                  {ctaLabel}
+                </LandingLink>
+              </article>
+            )
+          })}
         </div>
       </div>
     </section>

@@ -110,7 +110,7 @@ export function mapPythonScanToDraft(response: ReceiptScanResponse) {
     store_name: receipt.store_name || "",
     merchant_name: receipt.store_name || "",
     store_location: receipt.store_location || "",
-    purchase_date: receipt.receipt_date || new Date().toISOString().slice(0, 10),
+    purchase_date: receipt.receipt_date || "",
     receipt_time: receipt.receipt_time || "",
     total_amount: total,
     currency: "EUR",

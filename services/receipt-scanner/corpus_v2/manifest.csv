@@ -1,0 +1,7 @@
+﻿case_id,enabled,mode,image_1,image_2,expected_store,expected_date,expected_total,expected_product_lines,expected_quantity,expected_status,notes
+LP_SAINT_LEU_17_95,1,single,C:\Users\Jack.LAPTOP-2USDKF0K\Downloads\lp_saint_leu_17_95.jpg,,Leader Price,2026-07-10,17.95,9,9,,Cas réel validé V2
+LP_CILAOS_15_07,1,single,C:\Users\Jack.LAPTOP-2USDKF0K\Downloads\lp_cilaos_15_07.jpg,,Leader Price,2026-07-09,15.07,,7,,Ticket froissé avec remise et quantités multiples
+LP_SAINT_LEU_39_30,1,single,C:\Users\Jack.LAPTOP-2USDKF0K\Downloads\lp_saint_leu_39_30.jpg,,Leader Price,2026-07-06,39.30,11,11,date_requires_review,"Total, articles et quantité validés. Date OCR à confirmer manuellement."
+LECLERC_LE_PORTAIL_109_27,1,single,C:\Users\Jack.LAPTOP-2USDKF0K\Downloads\leclerc_le_portail_109_27.jpg,,E.Leclerc,2026-07-20,109.27,,26,,Ticket long photographié en une image
+LP_SAINT_LEU_27_22,1,long,images/lp_saint_leu_27_22_haut.jpg,images/lp_saint_leu_27_22_bas.jpg,Leader Price,2026-07-23,27.22,14,14,,"Ticket deux photos avec remises négatives immédiates, sous-totaux de groupes et chevauchement."
+SUPER_U_PITON_SAINT_LEU_69_48,1,long,images/super_u_piton_saint_leu_69_48_haut.jpg,images/super_u_piton_saint_leu_69_48_bas.jpg,Super U,,69.48,20,24,date_requires_review,"Validation inconnue : premier passage V2 sans adaptation. Deux photos, 20 lignes, 24 articles, date non visible."

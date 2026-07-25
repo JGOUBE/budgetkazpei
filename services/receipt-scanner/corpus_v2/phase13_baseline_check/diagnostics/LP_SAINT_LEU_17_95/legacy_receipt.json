@@ -1,0 +1,271 @@
+{
+  "store_name": "Leader Price",
+  "store_location": "Saint Leu",
+  "receipt_date": "2026-07-10",
+  "receipt_time": "12:37:52",
+  "declared_item_count": 9,
+  "total": null,
+  "items": [
+    {
+      "raw_name": "225G GOUTER FOURRES CHOCO",
+      "quantity": 1.0,
+      "unit_price": 2.25,
+      "total_price": 2.25,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.952,
+      "source_line_ids": [
+        8
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "ST MICH GAL TIGREE CHOC.1",
+      "quantity": 1.0,
+      "unit_price": 2.69,
+      "total_price": 2.69,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.97874,
+      "source_line_ids": [
+        9
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "EPICERIE SUCREE 4.94 EUF",
+      "quantity": 1.0,
+      "unit_price": 4.94,
+      "total_price": 4.94,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.92878,
+      "source_line_ids": [
+        11
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "SAUCE DESHYDRATEE PO 29G",
+      "quantity": 1.0,
+      "unit_price": 0.84,
+      "total_price": 0.84,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.99682,
+      "source_line_ids": [
+        12
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "CHIPS A L ANCIENNE 150GR",
+      "quantity": 1.0,
+      "unit_price": 2.04,
+      "total_price": 2.04,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.96553,
+      "source_line_ids": [
+        13
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "EPICERIE SALEE 2.88 EUR",
+      "quantity": 1.0,
+      "unit_price": 2.88,
+      "total_price": 2.88,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.94731,
+      "source_line_ids": [
+        14
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "COPPA TRANCHE GAUL BOG",
+      "quantity": 1.0,
+      "unit_price": 1.99,
+      "total_price": 1.99,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.99705,
+      "source_line_ids": [
+        15
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "CHARCUTERIE LS 1.99 EUR",
+      "quantity": 1.0,
+      "unit_price": 1.99,
+      "total_price": 1.99,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.99558,
+      "source_line_ids": [
+        17
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "GOUDA TRANCHE BQT 15OG FR",
+      "quantity": 1.0,
+      "unit_price": 2.79,
+      "total_price": 2.79,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.95444,
+      "source_line_ids": [
+        18
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "CREMERIE 2.79 EUR",
+      "quantity": 1.0,
+      "unit_price": 2.79,
+      "total_price": 2.79,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.97525,
+      "source_line_ids": [
+        20
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "HARICOTS VERTS T.FINS IKG",
+      "quantity": 1.0,
+      "unit_price": 3.23,
+      "total_price": 3.23,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.93135,
+      "source_line_ids": [
+        21
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "SURGELES 3.23",
+      "quantity": 1.0,
+      "unit_price": 3.23,
+      "total_price": 3.23,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.91986,
+      "source_line_ids": [
+        22
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "POMME DE TERRE ROSE REUNI",
+      "quantity": 1.0,
+      "unit_price": null,
+      "total_price": 1.98,
+      "vat_code": null,
+      "item_type": "weight",
+      "raw_detail": "0.070 kg × 1.95 EUR/kg",
+      "weight_kg": 0.07,
+      "price_per_kg": 1.95,
+      "ocr_confidence": 0.93965,
+      "source_line_ids": [
+        23,
+        24,
+        27
+      ],
+      "needs_review": true,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    }
+  ],
+  "excluded_sections": [],
+  "warnings": [
+    "Calcul poids/prix incohérent pour POMME DE TERRE ROSE REUNI",
+    "Description remplacée sans prix: OIGNON ROUGE INDE KG",
+    "Quantité reconstruite 13 != nombre déclaré 9"
+  ],
+  "article_total": null,
+  "immediate_discount_total": null,
+  "payable_total": null,
+  "items_total": 33.64,
+  "counted_quantity": 13.0,
+  "product_line_count": 13
+}

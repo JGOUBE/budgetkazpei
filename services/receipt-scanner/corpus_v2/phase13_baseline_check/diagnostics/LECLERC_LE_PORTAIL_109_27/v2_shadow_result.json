@@ -1,0 +1,3219 @@
+{
+  "engine": "budgetkazpei-generic-parser-v2-shadow",
+  "phase": 1,
+  "production_output_changed": false,
+  "declared_count": 26,
+  "line_count": 51,
+  "candidate_count": 24,
+  "total_candidate_count": 1,
+  "selected_hypothesis": {
+    "items": [
+      {
+        "candidate_id": "c0001",
+        "start_line": 8,
+        "end_line": 8,
+        "source_line_ids": [
+          8
+        ],
+        "raw_name": "SUCRE ROUX SEMOUL 1KG MASC PAL",
+        "normalized_name": "SUCRE ROUX SEMOUL 1KG MASC PAL",
+        "quantity": 1.0,
+        "unit_price": 1.29,
+        "total_price": 1.29,
+        "item_type": "standard",
+        "confidence": 0.97557,
+        "local_score": 5.7756,
+        "evidence": [
+          "same_line_name_and_right_price"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0002",
+        "start_line": 9,
+        "end_line": 9,
+        "source_line_ids": [
+          9
+        ],
+        "raw_name": "CURLY CACAHUETE 100G X2",
+        "normalized_name": "CURLY CACAHUETE 100G X2",
+        "quantity": 1.0,
+        "unit_price": 2.95,
+        "total_price": 2.95,
+        "item_type": "standard",
+        "confidence": 0.99802,
+        "local_score": 5.798,
+        "evidence": [
+          "same_line_name_and_right_price"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0003",
+        "start_line": 10,
+        "end_line": 10,
+        "source_line_ids": [
+          10
+        ],
+        "raw_name": "H.BLANCS PRIX CHOC ROYAL B 800",
+        "normalized_name": "H.BLANCS PRIX CHOC ROYAL B 800",
+        "quantity": 1.0,
+        "unit_price": 2.15,
+        "total_price": 2.15,
+        "item_type": "standard",
+        "confidence": 0.98318,
+        "local_score": 5.7832,
+        "evidence": [
+          "same_line_name_and_right_price"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0004",
+        "start_line": 11,
+        "end_line": 11,
+        "source_line_ids": [
+          11
+        ],
+        "raw_name": "NOUILLE AUX OEUFS KEE ZEN 400G",
+        "normalized_name": "NOUILLE AUX OEUFS KEE ZEN 400G",
+        "quantity": 1.0,
+        "unit_price": 2.24,
+        "total_price": 2.24,
+        "item_type": "standard",
+        "confidence": 0.97336,
+        "local_score": 5.7734,
+        "evidence": [
+          "same_line_name_and_right_price"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0005",
+        "start_line": 12,
+        "end_line": 12,
+        "source_line_ids": [
+          12
+        ],
+        "raw_name": "SAUCE PIQUANTE PIRI-PIRI 200ML",
+        "normalized_name": "SAUCE PIQUANTE PIRI-PIRI 200ML",
+        "quantity": 1.0,
+        "unit_price": 1.41,
+        "total_price": 1.41,
+        "item_type": "standard",
+        "confidence": 0.9631,
+        "local_score": 5.7631,
+        "evidence": [
+          "same_line_name_and_right_price"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0006",
+        "start_line": 14,
+        "end_line": 14,
+        "source_line_ids": [
+          14
+        ],
+        "raw_name": "SIROP GRENADINE MASCARIN 1L",
+        "normalized_name": "SIROP GRENADINE MASCARIN 1L",
+        "quantity": 1.0,
+        "unit_price": 3.69,
+        "total_price": 3.69,
+        "item_type": "standard",
+        "confidence": 0.96106,
+        "local_score": 5.7611,
+        "evidence": [
+          "same_line_name_and_right_price"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0007",
+        "start_line": 15,
+        "end_line": 15,
+        "source_line_ids": [
+          15
+        ],
+        "raw_name": "BIERE RINCE COCHON BLG, 75CL",
+        "normalized_name": "BIERE RINCE COCHON BLG, 75CL",
+        "quantity": 1.0,
+        "unit_price": 4.7,
+        "total_price": 4.7,
+        "item_type": "standard",
+        "confidence": 0.98388,
+        "local_score": 5.7839,
+        "evidence": [
+          "same_line_name_and_right_price"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0008",
+        "start_line": 16,
+        "end_line": 16,
+        "source_line_ids": [
+          16
+        ],
+        "raw_name": "LIMONADE ZERO 1.5L SPRINK'S",
+        "normalized_name": "LIMONADE ZERO 1.5L SPRINK'S",
+        "quantity": 1.0,
+        "unit_price": 1.81,
+        "total_price": 1.81,
+        "item_type": "standard",
+        "confidence": 0.94835,
+        "local_score": 5.7484,
+        "evidence": [
+          "same_line_name_and_right_price"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0009",
+        "start_line": 17,
+        "end_line": 17,
+        "source_line_ids": [
+          17
+        ],
+        "raw_name": "PAIX DIEU 7SCL",
+        "normalized_name": "PAIX DIEU 7SCL",
+        "quantity": 1.0,
+        "unit_price": 8.5,
+        "total_price": 8.5,
+        "item_type": "standard",
+        "confidence": 0.98912,
+        "local_score": 5.7891,
+        "evidence": [
+          "same_line_name_and_right_price"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0010",
+        "start_line": 19,
+        "end_line": 19,
+        "source_line_ids": [
+          19
+        ],
+        "raw_name": "LIG GEL FRESH CANARD 750ML",
+        "normalized_name": "LIG GEL FRESH CANARD 750ML",
+        "quantity": 1.0,
+        "unit_price": 1.99,
+        "total_price": 1.99,
+        "item_type": "standard",
+        "confidence": 0.99229,
+        "local_score": 5.7923,
+        "evidence": [
+          "same_line_name_and_right_price"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0011",
+        "start_line": 21,
+        "end_line": 22,
+        "source_line_ids": [
+          21,
+          22
+        ],
+        "raw_name": "LAIT UHT 1/2ECREME NEUTRE BK1L",
+        "normalized_name": "LAIT UHT 1/2ECREME NEUTRE BK1L",
+        "quantity": 3.0,
+        "unit_price": 1.09,
+        "total_price": 3.27,
+        "item_type": "multibuy",
+        "confidence": 0.90254,
+        "local_score": 8.6985,
+        "evidence": [
+          "description_then_detail",
+          "detail_row_amount"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 3
+      },
+      {
+        "candidate_id": "c0012",
+        "start_line": 24,
+        "end_line": 25,
+        "source_line_ids": [
+          24,
+          25
+        ],
+        "raw_name": "POMME TERRE BLANCHE REUNION",
+        "normalized_name": "POMME TERRE BLANCHE REUNION",
+        "quantity": 1.0,
+        "unit_price": 1.9,
+        "total_price": 4.86,
+        "item_type": "weight",
+        "confidence": 0.98381,
+        "local_score": 8.7798,
+        "evidence": [
+          "description_then_detail",
+          "detail_row_amount"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0013",
+        "start_line": 26,
+        "end_line": 27,
+        "source_line_ids": [
+          26,
+          27
+        ],
+        "raw_name": "POIREAU",
+        "normalized_name": "POIREAU",
+        "quantity": 1.0,
+        "unit_price": 3.3,
+        "total_price": 0.78,
+        "item_type": "weight",
+        "confidence": 0.98467,
+        "local_score": 8.7807,
+        "evidence": [
+          "description_then_detail",
+          "detail_row_amount"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0014",
+        "start_line": 28,
+        "end_line": 28,
+        "source_line_ids": [
+          28
+        ],
+        "raw_name": "SALADE LAITUE",
+        "normalized_name": "SALADE LAITUE",
+        "quantity": 1.0,
+        "unit_price": 1.39,
+        "total_price": 1.39,
+        "item_type": "standard",
+        "confidence": 0.99817,
+        "local_score": 5.7982,
+        "evidence": [
+          "same_line_name_and_right_price"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0015",
+        "start_line": 30,
+        "end_line": 30,
+        "source_line_ids": [
+          30
+        ],
+        "raw_name": "ESCALOPE PLT JAUNE X6 KOKO",
+        "normalized_name": "ESCALOPE PLT JAUNE X6 KOKO",
+        "quantity": 1.0,
+        "unit_price": 15.51,
+        "total_price": 15.51,
+        "item_type": "standard",
+        "confidence": 0.98074,
+        "local_score": 5.7807,
+        "evidence": [
+          "same_line_name_and_right_price"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0016",
+        "start_line": 32,
+        "end_line": 32,
+        "source_line_ids": [
+          32
+        ],
+        "raw_name": "10 KNACKS PORC 350 GR CABY",
+        "normalized_name": "10 KNACKS PORC 350 GR CABY",
+        "quantity": 1.0,
+        "unit_price": 2.39,
+        "total_price": 2.39,
+        "item_type": "standard",
+        "confidence": 0.99687,
+        "local_score": 5.7969,
+        "evidence": [
+          "same_line_name_and_right_price"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0017",
+        "start_line": 34,
+        "end_line": 34,
+        "source_line_ids": [
+          34
+        ],
+        "raw_name": "6EXTREME PISTACH CHOCO,426G",
+        "normalized_name": "6EXTREME PISTACH CHOCO,426G",
+        "quantity": 1.0,
+        "unit_price": 6.69,
+        "total_price": 6.69,
+        "item_type": "standard",
+        "confidence": 0.98483,
+        "local_score": 5.7848,
+        "evidence": [
+          "same_line_name_and_right_price"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0018",
+        "start_line": 36,
+        "end_line": 36,
+        "source_line_ids": [
+          36
+        ],
+        "raw_name": "RACLETTE POIVRE&BAIES",
+        "normalized_name": "RACLETTE POIVRE&BAIES",
+        "quantity": 1.0,
+        "unit_price": 8.34,
+        "total_price": 8.34,
+        "item_type": "standard",
+        "confidence": 0.99909,
+        "local_score": 5.7991,
+        "evidence": [
+          "same_line_name_and_right_price"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0019",
+        "start_line": 37,
+        "end_line": 37,
+        "source_line_ids": [
+          37
+        ],
+        "raw_name": "MORBIER AOP AFF 45JOURS",
+        "normalized_name": "MORBIER AOP AFF 45JOURS",
+        "quantity": 1.0,
+        "unit_price": 11.66,
+        "total_price": 11.66,
+        "item_type": "standard",
+        "confidence": 0.99529,
+        "local_score": 5.7953,
+        "evidence": [
+          "same_line_name_and_right_price"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0020",
+        "start_line": 38,
+        "end_line": 38,
+        "source_line_ids": [
+          38
+        ],
+        "raw_name": "BRIE TARTE60%CREMIERE RUN+/-3K",
+        "normalized_name": "BRIE TARTE60%CREMIERE RUN+/-3K",
+        "quantity": 1.0,
+        "unit_price": 4.16,
+        "total_price": 4.16,
+        "item_type": "standard",
+        "confidence": 0.99126,
+        "local_score": 5.7913,
+        "evidence": [
+          "same_line_name_and_right_price"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0021",
+        "start_line": 40,
+        "end_line": 40,
+        "source_line_ids": [
+          40
+        ],
+        "raw_name": "VERITABLE ANDOUILLE DE GUEMENE",
+        "normalized_name": "VERITABLE ANDOUILLE DE GUEMENE",
+        "quantity": 1.0,
+        "unit_price": 1.3,
+        "total_price": 1.3,
+        "item_type": "standard",
+        "confidence": 0.98739,
+        "local_score": 5.7874,
+        "evidence": [
+          "same_line_name_and_right_price"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0022",
+        "start_line": 41,
+        "end_line": 41,
+        "source_line_ids": [
+          41
+        ],
+        "raw_name": "TERRINE PORC PIMENT SVP",
+        "normalized_name": "TERRINE PORC PIMENT SVP",
+        "quantity": 1.0,
+        "unit_price": 3.08,
+        "total_price": 3.08,
+        "item_type": "standard",
+        "confidence": 0.99974,
+        "local_score": 5.7997,
+        "evidence": [
+          "same_line_name_and_right_price"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0023",
+        "start_line": 42,
+        "end_line": 42,
+        "source_line_ids": [
+          42
+        ],
+        "raw_name": "JAMBON DE BAYO IGP 14M CP NRT",
+        "normalized_name": "JAMBON DE BAYO IGP 14M CP NRT",
+        "quantity": 1.0,
+        "unit_price": 6.51,
+        "total_price": 6.51,
+        "item_type": "standard",
+        "confidence": 0.97514,
+        "local_score": 5.7751,
+        "evidence": [
+          "same_line_name_and_right_price"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0024",
+        "start_line": 43,
+        "end_line": 43,
+        "source_line_ids": [
+          43
+        ],
+        "raw_name": "JAMBON CUIT AC FUME ABC",
+        "normalized_name": "JAMBON CUIT AC FUME ABC",
+        "quantity": 1.0,
+        "unit_price": 8.6,
+        "total_price": 8.6,
+        "item_type": "standard",
+        "confidence": 0.99858,
+        "local_score": 5.7986,
+        "evidence": [
+          "same_line_name_and_right_price"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      }
+    ],
+    "target_total": {
+      "line_ids": [
+        44
+      ],
+      "amount": 109.27,
+      "kind": "article_total",
+      "confidence": 0.99901,
+      "score": 7.55,
+      "evidence": [
+        "explicit_total_label"
+      ]
+    },
+    "declared_count": 26,
+    "items_total": 109.27,
+    "counted_quantity": 26,
+    "score": 211.3642,
+    "total_gap": 0.0,
+    "count_gap": 0,
+    "reasons": [
+      "exact_total_match",
+      "exact_declared_count_match"
+    ]
+  },
+  "total_candidates": [
+    {
+      "line_ids": [
+        44
+      ],
+      "amount": 109.27,
+      "kind": "article_total",
+      "confidence": 0.99901,
+      "score": 7.55,
+      "evidence": [
+        "explicit_total_label"
+      ]
+    }
+  ],
+  "item_candidates": [
+    {
+      "candidate_id": "c0001",
+      "start_line": 8,
+      "end_line": 8,
+      "source_line_ids": [
+        8
+      ],
+      "raw_name": "SUCRE ROUX SEMOUL 1KG MASC PAL",
+      "normalized_name": "SUCRE ROUX SEMOUL 1KG MASC PAL",
+      "quantity": 1.0,
+      "unit_price": 1.29,
+      "total_price": 1.29,
+      "item_type": "standard",
+      "confidence": 0.97557,
+      "local_score": 5.7756,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0002",
+      "start_line": 9,
+      "end_line": 9,
+      "source_line_ids": [
+        9
+      ],
+      "raw_name": "CURLY CACAHUETE 100G X2",
+      "normalized_name": "CURLY CACAHUETE 100G X2",
+      "quantity": 1.0,
+      "unit_price": 2.95,
+      "total_price": 2.95,
+      "item_type": "standard",
+      "confidence": 0.99802,
+      "local_score": 5.798,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0003",
+      "start_line": 10,
+      "end_line": 10,
+      "source_line_ids": [
+        10
+      ],
+      "raw_name": "H.BLANCS PRIX CHOC ROYAL B 800",
+      "normalized_name": "H.BLANCS PRIX CHOC ROYAL B 800",
+      "quantity": 1.0,
+      "unit_price": 2.15,
+      "total_price": 2.15,
+      "item_type": "standard",
+      "confidence": 0.98318,
+      "local_score": 5.7832,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0004",
+      "start_line": 11,
+      "end_line": 11,
+      "source_line_ids": [
+        11
+      ],
+      "raw_name": "NOUILLE AUX OEUFS KEE ZEN 400G",
+      "normalized_name": "NOUILLE AUX OEUFS KEE ZEN 400G",
+      "quantity": 1.0,
+      "unit_price": 2.24,
+      "total_price": 2.24,
+      "item_type": "standard",
+      "confidence": 0.97336,
+      "local_score": 5.7734,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0005",
+      "start_line": 12,
+      "end_line": 12,
+      "source_line_ids": [
+        12
+      ],
+      "raw_name": "SAUCE PIQUANTE PIRI-PIRI 200ML",
+      "normalized_name": "SAUCE PIQUANTE PIRI-PIRI 200ML",
+      "quantity": 1.0,
+      "unit_price": 1.41,
+      "total_price": 1.41,
+      "item_type": "standard",
+      "confidence": 0.9631,
+      "local_score": 5.7631,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0006",
+      "start_line": 14,
+      "end_line": 14,
+      "source_line_ids": [
+        14
+      ],
+      "raw_name": "SIROP GRENADINE MASCARIN 1L",
+      "normalized_name": "SIROP GRENADINE MASCARIN 1L",
+      "quantity": 1.0,
+      "unit_price": 3.69,
+      "total_price": 3.69,
+      "item_type": "standard",
+      "confidence": 0.96106,
+      "local_score": 5.7611,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0007",
+      "start_line": 15,
+      "end_line": 15,
+      "source_line_ids": [
+        15
+      ],
+      "raw_name": "BIERE RINCE COCHON BLG, 75CL",
+      "normalized_name": "BIERE RINCE COCHON BLG, 75CL",
+      "quantity": 1.0,
+      "unit_price": 4.7,
+      "total_price": 4.7,
+      "item_type": "standard",
+      "confidence": 0.98388,
+      "local_score": 5.7839,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0008",
+      "start_line": 16,
+      "end_line": 16,
+      "source_line_ids": [
+        16
+      ],
+      "raw_name": "LIMONADE ZERO 1.5L SPRINK'S",
+      "normalized_name": "LIMONADE ZERO 1.5L SPRINK'S",
+      "quantity": 1.0,
+      "unit_price": 1.81,
+      "total_price": 1.81,
+      "item_type": "standard",
+      "confidence": 0.94835,
+      "local_score": 5.7484,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0009",
+      "start_line": 17,
+      "end_line": 17,
+      "source_line_ids": [
+        17
+      ],
+      "raw_name": "PAIX DIEU 7SCL",
+      "normalized_name": "PAIX DIEU 7SCL",
+      "quantity": 1.0,
+      "unit_price": 8.5,
+      "total_price": 8.5,
+      "item_type": "standard",
+      "confidence": 0.98912,
+      "local_score": 5.7891,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0010",
+      "start_line": 19,
+      "end_line": 19,
+      "source_line_ids": [
+        19
+      ],
+      "raw_name": "LIG GEL FRESH CANARD 750ML",
+      "normalized_name": "LIG GEL FRESH CANARD 750ML",
+      "quantity": 1.0,
+      "unit_price": 1.99,
+      "total_price": 1.99,
+      "item_type": "standard",
+      "confidence": 0.99229,
+      "local_score": 5.7923,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0011",
+      "start_line": 21,
+      "end_line": 22,
+      "source_line_ids": [
+        21,
+        22
+      ],
+      "raw_name": "LAIT UHT 1/2ECREME NEUTRE BK1L",
+      "normalized_name": "LAIT UHT 1/2ECREME NEUTRE BK1L",
+      "quantity": 3.0,
+      "unit_price": 1.09,
+      "total_price": 3.27,
+      "item_type": "multibuy",
+      "confidence": 0.90254,
+      "local_score": 8.6985,
+      "evidence": [
+        "description_then_detail",
+        "detail_row_amount"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 3
+    },
+    {
+      "candidate_id": "c0012",
+      "start_line": 24,
+      "end_line": 25,
+      "source_line_ids": [
+        24,
+        25
+      ],
+      "raw_name": "POMME TERRE BLANCHE REUNION",
+      "normalized_name": "POMME TERRE BLANCHE REUNION",
+      "quantity": 1.0,
+      "unit_price": 1.9,
+      "total_price": 4.86,
+      "item_type": "weight",
+      "confidence": 0.98381,
+      "local_score": 8.7798,
+      "evidence": [
+        "description_then_detail",
+        "detail_row_amount"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0013",
+      "start_line": 26,
+      "end_line": 27,
+      "source_line_ids": [
+        26,
+        27
+      ],
+      "raw_name": "POIREAU",
+      "normalized_name": "POIREAU",
+      "quantity": 1.0,
+      "unit_price": 3.3,
+      "total_price": 0.78,
+      "item_type": "weight",
+      "confidence": 0.98467,
+      "local_score": 8.7807,
+      "evidence": [
+        "description_then_detail",
+        "detail_row_amount"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0014",
+      "start_line": 28,
+      "end_line": 28,
+      "source_line_ids": [
+        28
+      ],
+      "raw_name": "SALADE LAITUE",
+      "normalized_name": "SALADE LAITUE",
+      "quantity": 1.0,
+      "unit_price": 1.39,
+      "total_price": 1.39,
+      "item_type": "standard",
+      "confidence": 0.99817,
+      "local_score": 5.7982,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0015",
+      "start_line": 30,
+      "end_line": 30,
+      "source_line_ids": [
+        30
+      ],
+      "raw_name": "ESCALOPE PLT JAUNE X6 KOKO",
+      "normalized_name": "ESCALOPE PLT JAUNE X6 KOKO",
+      "quantity": 1.0,
+      "unit_price": 15.51,
+      "total_price": 15.51,
+      "item_type": "standard",
+      "confidence": 0.98074,
+      "local_score": 5.7807,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0016",
+      "start_line": 32,
+      "end_line": 32,
+      "source_line_ids": [
+        32
+      ],
+      "raw_name": "10 KNACKS PORC 350 GR CABY",
+      "normalized_name": "10 KNACKS PORC 350 GR CABY",
+      "quantity": 1.0,
+      "unit_price": 2.39,
+      "total_price": 2.39,
+      "item_type": "standard",
+      "confidence": 0.99687,
+      "local_score": 5.7969,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0017",
+      "start_line": 34,
+      "end_line": 34,
+      "source_line_ids": [
+        34
+      ],
+      "raw_name": "6EXTREME PISTACH CHOCO,426G",
+      "normalized_name": "6EXTREME PISTACH CHOCO,426G",
+      "quantity": 1.0,
+      "unit_price": 6.69,
+      "total_price": 6.69,
+      "item_type": "standard",
+      "confidence": 0.98483,
+      "local_score": 5.7848,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0018",
+      "start_line": 36,
+      "end_line": 36,
+      "source_line_ids": [
+        36
+      ],
+      "raw_name": "RACLETTE POIVRE&BAIES",
+      "normalized_name": "RACLETTE POIVRE&BAIES",
+      "quantity": 1.0,
+      "unit_price": 8.34,
+      "total_price": 8.34,
+      "item_type": "standard",
+      "confidence": 0.99909,
+      "local_score": 5.7991,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0019",
+      "start_line": 37,
+      "end_line": 37,
+      "source_line_ids": [
+        37
+      ],
+      "raw_name": "MORBIER AOP AFF 45JOURS",
+      "normalized_name": "MORBIER AOP AFF 45JOURS",
+      "quantity": 1.0,
+      "unit_price": 11.66,
+      "total_price": 11.66,
+      "item_type": "standard",
+      "confidence": 0.99529,
+      "local_score": 5.7953,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0020",
+      "start_line": 38,
+      "end_line": 38,
+      "source_line_ids": [
+        38
+      ],
+      "raw_name": "BRIE TARTE60%CREMIERE RUN+/-3K",
+      "normalized_name": "BRIE TARTE60%CREMIERE RUN+/-3K",
+      "quantity": 1.0,
+      "unit_price": 4.16,
+      "total_price": 4.16,
+      "item_type": "standard",
+      "confidence": 0.99126,
+      "local_score": 5.7913,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0021",
+      "start_line": 40,
+      "end_line": 40,
+      "source_line_ids": [
+        40
+      ],
+      "raw_name": "VERITABLE ANDOUILLE DE GUEMENE",
+      "normalized_name": "VERITABLE ANDOUILLE DE GUEMENE",
+      "quantity": 1.0,
+      "unit_price": 1.3,
+      "total_price": 1.3,
+      "item_type": "standard",
+      "confidence": 0.98739,
+      "local_score": 5.7874,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0022",
+      "start_line": 41,
+      "end_line": 41,
+      "source_line_ids": [
+        41
+      ],
+      "raw_name": "TERRINE PORC PIMENT SVP",
+      "normalized_name": "TERRINE PORC PIMENT SVP",
+      "quantity": 1.0,
+      "unit_price": 3.08,
+      "total_price": 3.08,
+      "item_type": "standard",
+      "confidence": 0.99974,
+      "local_score": 5.7997,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0023",
+      "start_line": 42,
+      "end_line": 42,
+      "source_line_ids": [
+        42
+      ],
+      "raw_name": "JAMBON DE BAYO IGP 14M CP NRT",
+      "normalized_name": "JAMBON DE BAYO IGP 14M CP NRT",
+      "quantity": 1.0,
+      "unit_price": 6.51,
+      "total_price": 6.51,
+      "item_type": "standard",
+      "confidence": 0.97514,
+      "local_score": 5.7751,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0024",
+      "start_line": 43,
+      "end_line": 43,
+      "source_line_ids": [
+        43
+      ],
+      "raw_name": "JAMBON CUIT AC FUME ABC",
+      "normalized_name": "JAMBON CUIT AC FUME ABC",
+      "quantity": 1.0,
+      "unit_price": 8.6,
+      "total_price": 8.6,
+      "item_type": "standard",
+      "confidence": 0.99858,
+      "local_score": 5.7986,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    }
+  ],
+  "lines": [
+    {
+      "line_id": 0,
+      "text": "E.Leclerc",
+      "normalized_text": "E.LECLERC",
+      "center_y": 42.0,
+      "y_min": 14.0,
+      "y_max": 70.0,
+      "confidence": 0.9999,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "tax": 0.0,
+        "total": 0.0,
+        "header": 0.0,
+        "footer": 0.0,
+        "product": 0.25
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 1,
+      "text": "LE PORTAIL",
+      "normalized_text": "LE PORTAIL",
+      "center_y": 90.0,
+      "y_min": 83.0,
+      "y_max": 97.0,
+      "confidence": 0.95353,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.55,
+        "tax": 0.0,
+        "total": 0.0,
+        "detail": 0.0,
+        "product": 0.25
+      },
+      "strongest_role": "section",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 2,
+      "text": "02.62.71.30.00",
+      "normalized_text": "02.62.71.30.00",
+      "center_y": 106.0,
+      "y_min": 99.0,
+      "y_max": 113.0,
+      "confidence": 0.99078,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "header": 1.0
+      },
+      "strongest_role": "header",
+      "has_letters": false,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 3,
+      "text": "Caisse 026-1035 20 juillet 2026 13:44",
+      "normalized_text": "CAISSE 026-1035 20 JUILLET 2026 13:44",
+      "center_y": 122.0,
+      "y_min": 115.0,
+      "y_max": 129.0,
+      "confidence": 0.99091,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "header": 1.0,
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "tax": 0.0,
+        "total": 0.0
+      },
+      "strongest_role": "header",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 4,
+      "text": "Ticket 20/07/26 0 0RS2 01z00",
+      "normalized_text": "TICKET 20/07/26 0 0RS2 01Z00",
+      "center_y": 136.5,
+      "y_min": 129.0,
+      "y_max": 144.0,
+      "confidence": 0.97248,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "header": 1.0,
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "tax": 0.0,
+        "total": 0.0
+      },
+      "strongest_role": "header",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 5,
+      "text": "€",
+      "normalized_text": "€",
+      "center_y": 224.5,
+      "y_min": 218.0,
+      "y_max": 231.0,
+      "confidence": 0.96856,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "unknown": 1.0
+      },
+      "strongest_role": "unknown",
+      "has_letters": false,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 6,
+      "text": "TTC | TVA",
+      "normalized_text": "TTC TVA",
+      "center_y": 239.5,
+      "y_min": 233.0,
+      "y_max": 246.0,
+      "confidence": 0.99619,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "tax": 0.8,
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.0,
+        "detail": 0.0
+      },
+      "strongest_role": "tax",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 7,
+      "text": ">> EPICERIE",
+      "normalized_text": ">> EPICERIE",
+      "center_y": 254.0,
+      "y_min": 247.0,
+      "y_max": 261.0,
+      "confidence": 0.9965,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "section": 1.0,
+        "product": -0.9,
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "detail": 0.0
+      },
+      "strongest_role": "section",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 8,
+      "text": "SUCRE ROUX SEMOUL 1KG MASC PAL | 1.29 | 2",
+      "normalized_text": "SUCRE ROUX SEMOUL 1KG MASC PAL 1.29 2",
+      "center_y": 269.0,
+      "y_min": 261.0,
+      "y_max": 276.0,
+      "confidence": 0.97557,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 1.29,
+          "token_index": 10,
+          "x_center": 382.5,
+          "score": 0.99922,
+          "raw_text": "1.29"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 9,
+      "text": "CURLY CACAHUETE 100G X2 | 2.95 | 2",
+      "normalized_text": "CURLY CACAHUETE 100G X2 2.95 2",
+      "center_y": 284.0,
+      "y_min": 276.0,
+      "y_max": 291.0,
+      "confidence": 0.99802,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 2.95,
+          "token_index": 13,
+          "x_center": 382.0,
+          "score": 0.99994,
+          "raw_text": "2.95"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 10,
+      "text": "H.BLANCS PRIX CHOC ROYAL B 800 | 2.15 | 1",
+      "normalized_text": "H.BLANCS PRIX CHOC ROYAL B 800 2.15 1",
+      "center_y": 299.5,
+      "y_min": 293.0,
+      "y_max": 306.0,
+      "confidence": 0.98318,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 2.15,
+          "token_index": 16,
+          "x_center": 382.0,
+          "score": 0.99998,
+          "raw_text": "2.15"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 11,
+      "text": "NOUILLE AUX OEUFS KEE ZEN 400G | 2.24 | 2",
+      "normalized_text": "NOUILLE AUX OEUFS KEE ZEN 400G 2.24 2",
+      "center_y": 314.5,
+      "y_min": 306.0,
+      "y_max": 322.0,
+      "confidence": 0.97336,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 2.24,
+          "token_index": 19,
+          "x_center": 382.5,
+          "score": 0.99994,
+          "raw_text": "2.24"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 12,
+      "text": "SAUCE PIQUANTE PIRI-PIRI 200ML | 1.41 | 1",
+      "normalized_text": "SAUCE PIQUANTE PIRI-PIRI 200ML 1.41 1",
+      "center_y": 329.5,
+      "y_min": 322.0,
+      "y_max": 337.0,
+      "confidence": 0.9631,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 1.41,
+          "token_index": 22,
+          "x_center": 382.0,
+          "score": 0.9998,
+          "raw_text": "1.41"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 13,
+      "text": ">> LIQUIDE",
+      "normalized_text": ">> LIQUIDE",
+      "center_y": 344.0,
+      "y_min": 337.0,
+      "y_max": 351.0,
+      "confidence": 0.9959,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "section": 1.0,
+        "product": -0.9,
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "detail": 0.0
+      },
+      "strongest_role": "section",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 14,
+      "text": "SIROP GRENADINE MASCARIN | 1L | 3.69 | 1",
+      "normalized_text": "SIROP GRENADINE MASCARIN 1L 3.69 1",
+      "center_y": 359.0,
+      "y_min": 351.0,
+      "y_max": 366.0,
+      "confidence": 0.96106,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 3.69,
+          "token_index": 27,
+          "x_center": 382.5,
+          "score": 0.9996,
+          "raw_text": "3.69"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 15,
+      "text": "BIERE RINCE COCHON BLG, 75CL | 4.70 | 3",
+      "normalized_text": "BIERE RINCE COCHON BLG, 75CL 4.70 3",
+      "center_y": 373.5,
+      "y_min": 366.0,
+      "y_max": 381.0,
+      "confidence": 0.98388,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 4.7,
+          "token_index": 30,
+          "x_center": 382.5,
+          "score": 0.9992,
+          "raw_text": "4.70"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 16,
+      "text": "LIMONADE ZERO 1.5L SPRINK'S | 1.81 | 2",
+      "normalized_text": "LIMONADE ZERO 1.5L SPRINK'S 1.81 2",
+      "center_y": 389.0,
+      "y_min": 381.0,
+      "y_max": 396.0,
+      "confidence": 0.94835,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 1.81,
+          "token_index": 33,
+          "x_center": 382.5,
+          "score": 0.94835,
+          "raw_text": "1.81"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 17,
+      "text": "PAIX DIEU 7SCL | 8.50 | 3",
+      "normalized_text": "PAIX DIEU 7SCL 8.50 3",
+      "center_y": 403.5,
+      "y_min": 396.0,
+      "y_max": 411.0,
+      "confidence": 0.98912,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 8.5,
+          "token_index": 36,
+          "x_center": 383.0,
+          "score": 0.99978,
+          "raw_text": "8.50"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 18,
+      "text": ">> DPH",
+      "normalized_text": ">> DPH",
+      "center_y": 419.0,
+      "y_min": 412.0,
+      "y_max": 426.0,
+      "confidence": 0.98699,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "section": 1.0,
+        "product": -0.9,
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "detail": 0.0
+      },
+      "strongest_role": "section",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 19,
+      "text": "LIG GEL FRESH CANARD 750ML | 1.99 | 1",
+      "normalized_text": "LIG GEL FRESH CANARD 750ML 1.99 1",
+      "center_y": 433.5,
+      "y_min": 426.0,
+      "y_max": 441.0,
+      "confidence": 0.99229,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 1.99,
+          "token_index": 40,
+          "x_center": 382.5,
+          "score": 0.9988,
+          "raw_text": "1.99"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 20,
+      "text": ">> CREMERIE",
+      "normalized_text": ">> CREMERIE",
+      "center_y": 448.0,
+      "y_min": 442.0,
+      "y_max": 454.0,
+      "confidence": 0.99638,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "section": 1.0,
+        "product": -0.9,
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "detail": 0.0
+      },
+      "strongest_role": "section",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 21,
+      "text": "LAIT UHT 1/2ECREME NEUTRE BK1L",
+      "normalized_text": "LAIT UHT 1/2ECREME NEUTRE BK1L",
+      "center_y": 463.5,
+      "y_min": 456.0,
+      "y_max": 471.0,
+      "confidence": 0.98004,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "tax": 0.0,
+        "total": 0.0,
+        "header": 0.0,
+        "footer": 0.0,
+        "product": 0.72
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 22,
+      "text": "3 × 1.09€ | 3.27 | 1",
+      "normalized_text": "3 × 1.09€ 3.27 1",
+      "center_y": 478.5,
+      "y_min": 471.0,
+      "y_max": 486.0,
+      "confidence": 0.90254,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 1.09,
+          "token_index": 44,
+          "x_center": 222.5,
+          "score": 0.90254,
+          "raw_text": "3 × 1.09€"
+        },
+        {
+          "amount": 3.27,
+          "token_index": 45,
+          "x_center": 382.5,
+          "score": 0.99995,
+          "raw_text": "3.27"
+        }
+      ],
+      "role_scores": {
+        "detail": 1.0,
+        "product": -0.6,
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0
+      },
+      "strongest_role": "detail",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": true,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 23,
+      "text": ">> FRUITS ET LEGUMES",
+      "normalized_text": ">> FRUITS ET LEGUMES",
+      "center_y": 494.0,
+      "y_min": 488.0,
+      "y_max": 500.0,
+      "confidence": 0.98974,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "section": 1.0,
+        "product": -0.9,
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "detail": 0.0
+      },
+      "strongest_role": "section",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 24,
+      "text": "POMME TERRE BLANCHE REUNION",
+      "normalized_text": "POMME TERRE BLANCHE REUNION",
+      "center_y": 508.0,
+      "y_min": 501.0,
+      "y_max": 515.0,
+      "confidence": 0.98381,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.55,
+        "tax": 0.0,
+        "total": 0.0,
+        "detail": 0.0,
+        "product": 0.72
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 25,
+      "text": "2.558kg X 1.90€/kg | 4.86 | 2",
+      "normalized_text": "2.558KG X 1.90€/KG 4.86 2",
+      "center_y": 524.0,
+      "y_min": 517.0,
+      "y_max": 531.0,
+      "confidence": 0.9902,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 1.9,
+          "token_index": 49,
+          "x_center": 213.0,
+          "score": 0.9902,
+          "raw_text": "2.558kg X 1.90€/kg"
+        },
+        {
+          "amount": 4.86,
+          "token_index": 50,
+          "x_center": 382.5,
+          "score": 0.99985,
+          "raw_text": "4.86"
+        }
+      ],
+      "role_scores": {
+        "detail": 1.0,
+        "product": -0.6,
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0
+      },
+      "strongest_role": "detail",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": true,
+      "declared_count": null
+    },
+    {
+      "line_id": 26,
+      "text": "POIREAU",
+      "normalized_text": "POIREAU",
+      "center_y": 538.5,
+      "y_min": 531.0,
+      "y_max": 546.0,
+      "confidence": 0.99731,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.55,
+        "tax": 0.0,
+        "total": 0.0,
+        "detail": 0.0,
+        "product": 0.72
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 27,
+      "text": "0.236kg X 3.30€/kg | 0.78 | 2",
+      "normalized_text": "0.236KG X 3.30€/KG 0.78 2",
+      "center_y": 554.0,
+      "y_min": 546.0,
+      "y_max": 562.0,
+      "confidence": 0.98467,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 3.3,
+          "token_index": 53,
+          "x_center": 212.5,
+          "score": 0.98467,
+          "raw_text": "0.236kg X 3.30€/kg"
+        },
+        {
+          "amount": 0.78,
+          "token_index": 54,
+          "x_center": 382.5,
+          "score": 0.9999,
+          "raw_text": "0.78"
+        }
+      ],
+      "role_scores": {
+        "detail": 1.0,
+        "product": -0.6,
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0
+      },
+      "strongest_role": "detail",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": true,
+      "declared_count": null
+    },
+    {
+      "line_id": 28,
+      "text": "SALADE LAITUE | 1.39 | 2",
+      "normalized_text": "SALADE LAITUE 1.39 2",
+      "center_y": 568.5,
+      "y_min": 561.0,
+      "y_max": 576.0,
+      "confidence": 0.99817,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 1.39,
+          "token_index": 57,
+          "x_center": 382.0,
+          "score": 0.99942,
+          "raw_text": "1.39"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 29,
+      "text": ">> VOLAILLE",
+      "normalized_text": ">> VOLAILLE",
+      "center_y": 583.0,
+      "y_min": 577.0,
+      "y_max": 589.0,
+      "confidence": 0.97796,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "section": 1.0,
+        "product": -0.9,
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "detail": 0.0
+      },
+      "strongest_role": "section",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 30,
+      "text": "ESCALOPE PLT JAUNE | X6 KOKO | 15.51 | 2",
+      "normalized_text": "ESCALOPE PLT JAUNE X6 KOKO 15.51 2",
+      "center_y": 598.0,
+      "y_min": 591.0,
+      "y_max": 606.0,
+      "confidence": 0.98074,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 15.51,
+          "token_index": 62,
+          "x_center": 379.0,
+          "score": 0.99998,
+          "raw_text": "15.51"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 31,
+      "text": ">> CHARCUTERIE TRAITEUR",
+      "normalized_text": ">> CHARCUTERIE TRAITEUR",
+      "center_y": 613.5,
+      "y_min": 606.0,
+      "y_max": 621.0,
+      "confidence": 0.999,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "section": 1.0,
+        "product": -0.9,
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "detail": 0.0
+      },
+      "strongest_role": "section",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 32,
+      "text": "10 KNACKS PORC 350 GR CABY | 2.39 | 1",
+      "normalized_text": "10 KNACKS PORC 350 GR CABY 2.39 1",
+      "center_y": 628.0,
+      "y_min": 621.0,
+      "y_max": 636.0,
+      "confidence": 0.99687,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 2.39,
+          "token_index": 66,
+          "x_center": 382.5,
+          "score": 0.99981,
+          "raw_text": "2.39"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 33,
+      "text": ">> SURGELES",
+      "normalized_text": ">> SURGELES",
+      "center_y": 643.0,
+      "y_min": 637.0,
+      "y_max": 649.0,
+      "confidence": 0.97126,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "section": 1.0,
+        "product": -0.9,
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "detail": 0.0
+      },
+      "strongest_role": "section",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 34,
+      "text": "6EXTREME PISTACH CHOCO,426G | 6.69 | 2",
+      "normalized_text": "6EXTREME PISTACH CHOCO,426G 6.69 2",
+      "center_y": 658.5,
+      "y_min": 651.0,
+      "y_max": 666.0,
+      "confidence": 0.98483,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 6.69,
+          "token_index": 70,
+          "x_center": 382.0,
+          "score": 0.99329,
+          "raw_text": "6.69"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 35,
+      "text": ">> FROMAGE COUPE",
+      "normalized_text": ">> FROMAGE COUPE",
+      "center_y": 673.0,
+      "y_min": 667.0,
+      "y_max": 679.0,
+      "confidence": 0.98599,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "section": 1.0,
+        "product": -0.9,
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "detail": 0.0
+      },
+      "strongest_role": "section",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 36,
+      "text": "RACLETTE POIVRE&BAIES | 8.34 | 2",
+      "normalized_text": "RACLETTE POIVRE&BAIES 8.34 2",
+      "center_y": 688.0,
+      "y_min": 681.0,
+      "y_max": 695.0,
+      "confidence": 0.99909,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 8.34,
+          "token_index": 74,
+          "x_center": 382.0,
+          "score": 0.99996,
+          "raw_text": "8.34"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 37,
+      "text": "MORBIER AOP AFF 45JOURS | 11.66 | 2",
+      "normalized_text": "MORBIER AOP AFF 45JOURS 11.66 2",
+      "center_y": 703.5,
+      "y_min": 696.0,
+      "y_max": 711.0,
+      "confidence": 0.99529,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 11.66,
+          "token_index": 77,
+          "x_center": 379.5,
+          "score": 0.99982,
+          "raw_text": "11.66"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 38,
+      "text": "BRIE TARTE60%CREMIERE RUN+/-3K | 4.16 | 2",
+      "normalized_text": "BRIE TARTE60%CREMIERE RUN+/-3K 4.16 2",
+      "center_y": 718.0,
+      "y_min": 711.0,
+      "y_max": 726.0,
+      "confidence": 0.99126,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 4.16,
+          "token_index": 80,
+          "x_center": 382.5,
+          "score": 0.99992,
+          "raw_text": "4.16"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 39,
+      "text": ">> CHARCUTERIE TRAITEUR TRAD",
+      "normalized_text": ">> CHARCUTERIE TRAITEUR TRAD",
+      "center_y": 732.5,
+      "y_min": 725.0,
+      "y_max": 740.0,
+      "confidence": 0.99785,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "section": 1.0,
+        "product": -0.9,
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "detail": 0.0
+      },
+      "strongest_role": "section",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 40,
+      "text": "VERITABLE ANDOUILLE DE GUEMENE | 1.30 | 1",
+      "normalized_text": "VERITABLE ANDOUILLE DE GUEMENE 1.30 1",
+      "center_y": 747.5,
+      "y_min": 741.0,
+      "y_max": 754.0,
+      "confidence": 0.98739,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 1.3,
+          "token_index": 84,
+          "x_center": 382.5,
+          "score": 0.99991,
+          "raw_text": "1.30"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 41,
+      "text": "TERRINE PORC PIMENT SVP | 3.08 | 2",
+      "normalized_text": "TERRINE PORC PIMENT SVP 3.08 2",
+      "center_y": 762.5,
+      "y_min": 756.0,
+      "y_max": 769.0,
+      "confidence": 0.99974,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 3.08,
+          "token_index": 87,
+          "x_center": 382.0,
+          "score": 0.99985,
+          "raw_text": "3.08"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 42,
+      "text": "JAMBON DE BAYO IGP 14M CP NRT | 6.51 | 2",
+      "normalized_text": "JAMBON DE BAYO IGP 14M CP NRT 6.51 2",
+      "center_y": 778.0,
+      "y_min": 771.0,
+      "y_max": 785.0,
+      "confidence": 0.97514,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 6.51,
+          "token_index": 90,
+          "x_center": 382.0,
+          "score": 0.99994,
+          "raw_text": "6.51"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 43,
+      "text": "JAMBON CUIT AC FUME ABC | 8.60 | 2",
+      "normalized_text": "JAMBON CUIT AC FUME ABC 8.60 2",
+      "center_y": 793.0,
+      "y_min": 786.0,
+      "y_max": 801.0,
+      "confidence": 0.99858,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 8.6,
+          "token_index": 93,
+          "x_center": 382.5,
+          "score": 0.99974,
+          "raw_text": "8.60"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 44,
+      "text": "Total 26 articles | 109.27",
+      "normalized_text": "TOTAL 26 ARTICLES 109.27",
+      "center_y": 822.75,
+      "y_min": 815.0,
+      "y_max": 830.0,
+      "confidence": 0.99901,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 109.27,
+          "token_index": 96,
+          "x_center": 376.0,
+          "score": 0.99988,
+          "raw_text": "109.27"
+        }
+      ],
+      "role_scores": {
+        "total": 0.85,
+        "count": 1.0,
+        "product": -0.8,
+        "footer": 0.85
+      },
+      "strongest_role": "count",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": 26
+    },
+    {
+      "line_id": 45,
+      "text": "Especes | 120.27",
+      "normalized_text": "ESPECES 120.27",
+      "center_y": 853.0,
+      "y_min": 846.0,
+      "y_max": 861.0,
+      "confidence": 0.99976,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 120.27,
+          "token_index": 98,
+          "x_center": 376.0,
+          "score": 0.99976,
+          "raw_text": "120.27"
+        }
+      ],
+      "role_scores": {
+        "payment": 1.0,
+        "total": -0.8,
+        "subtotal": 0.0,
+        "footer": 0.85
+      },
+      "strongest_role": "payment",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 46,
+      "text": "Rendu | 11.00",
+      "normalized_text": "RENDU 11.00",
+      "center_y": 867.5,
+      "y_min": 861.0,
+      "y_max": 874.0,
+      "confidence": 0.99937,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 11.0,
+          "token_index": 100,
+          "x_center": 379.0,
+          "score": 0.99987,
+          "raw_text": "11.00"
+        }
+      ],
+      "role_scores": {
+        "change": 1.0,
+        "total": -1.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "footer": 0.85
+      },
+      "strongest_role": "change",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 47,
+      "text": "Code | HT | TVA | TTC",
+      "normalized_text": "CODE HT TVA TTC",
+      "center_y": 898.0,
+      "y_min": 890.0,
+      "y_max": 906.0,
+      "confidence": 0.99675,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "tax": 0.8,
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "footer": 0.85
+      },
+      "strongest_role": "footer",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 48,
+      "text": "1 | 0%00 | 16.20 | 0.00 | 16.20",
+      "normalized_text": "1 0%00 16.20 0.00 16.20",
+      "center_y": 912.5,
+      "y_min": 905.0,
+      "y_max": 920.0,
+      "confidence": 0.9733,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 16.2,
+          "token_index": 107,
+          "x_center": 242.0,
+          "score": 0.99988,
+          "raw_text": "16.20"
+        },
+        {
+          "amount": 0.0,
+          "token_index": 108,
+          "x_center": 310.5,
+          "score": 0.9733,
+          "raw_text": "0.00"
+        },
+        {
+          "amount": 16.2,
+          "token_index": 109,
+          "x_center": 379.0,
+          "score": 0.99996,
+          "raw_text": "16.20"
+        }
+      ],
+      "role_scores": {
+        "unknown": 1.0,
+        "footer": 0.85
+      },
+      "strongest_role": "unknown",
+      "has_letters": false,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 49,
+      "text": "2 | 2910 | 78.23 | 1.64 | 79.87",
+      "normalized_text": "2 2910 78.23 1.64 79.87",
+      "center_y": 927.5,
+      "y_min": 920.0,
+      "y_max": 935.0,
+      "confidence": 0.9202,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 78.23,
+          "token_index": 112,
+          "x_center": 242.5,
+          "score": 0.99994,
+          "raw_text": "78.23"
+        },
+        {
+          "amount": 1.64,
+          "token_index": 113,
+          "x_center": 310.0,
+          "score": 0.99868,
+          "raw_text": "1.64"
+        },
+        {
+          "amount": 79.87,
+          "token_index": 114,
+          "x_center": 379.5,
+          "score": 0.99994,
+          "raw_text": "79.87"
+        }
+      ],
+      "role_scores": {
+        "unknown": 1.0,
+        "footer": 0.85
+      },
+      "strongest_role": "unknown",
+      "has_letters": false,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 50,
+      "text": "3 | 8850 | 12.17 | 1.03 | 13.20",
+      "normalized_text": "3 8850 12.17 1.03 13.20",
+      "center_y": 942.5,
+      "y_min": 935.0,
+      "y_max": 950.0,
+      "confidence": 0.98798,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 12.17,
+          "token_index": 117,
+          "x_center": 242.0,
+          "score": 0.98798,
+          "raw_text": "12.17"
+        },
+        {
+          "amount": 1.03,
+          "token_index": 118,
+          "x_center": 310.0,
+          "score": 0.9992,
+          "raw_text": "1.03"
+        },
+        {
+          "amount": 13.2,
+          "token_index": 119,
+          "x_center": 379.0,
+          "score": 0.99993,
+          "raw_text": "13.20"
+        }
+      ],
+      "role_scores": {
+        "unknown": 1.0,
+        "footer": 0.85
+      },
+      "strongest_role": "unknown",
+      "has_letters": false,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    }
+  ],
+  "legacy_receipt": {
+    "store_name": "E.Leclerc",
+    "store_location": "LE PORTAIL",
+    "receipt_date": "2026-07-20",
+    "receipt_time": "13:44",
+    "declared_item_count": 26,
+    "total": 109.27,
+    "items": [
+      {
+        "raw_name": "SUCRE ROUX SEMOUL 1KG MASC PAL",
+        "quantity": 1.0,
+        "unit_price": 1.29,
+        "total_price": 1.29,
+        "vat_code": 2,
+        "item_type": "standard",
+        "raw_detail": null,
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.97557,
+        "source_line_ids": [
+          8
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "CURLY CACAHUETE 100G X2",
+        "quantity": 1.0,
+        "unit_price": 2.95,
+        "total_price": 2.95,
+        "vat_code": 2,
+        "item_type": "standard",
+        "raw_detail": null,
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.99802,
+        "source_line_ids": [
+          9
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "H.BLANCS PRIX CHOC ROYAL B 800",
+        "quantity": 1.0,
+        "unit_price": 2.15,
+        "total_price": 2.15,
+        "vat_code": 1,
+        "item_type": "standard",
+        "raw_detail": null,
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.98318,
+        "source_line_ids": [
+          10
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "NOUILLE AUX OEUFS KEE ZEN 400G",
+        "quantity": 1.0,
+        "unit_price": 2.24,
+        "total_price": 2.24,
+        "vat_code": 2,
+        "item_type": "standard",
+        "raw_detail": null,
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.97336,
+        "source_line_ids": [
+          11
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "SAUCE PIQUANTE PIRI-PIRI 200ML",
+        "quantity": 1.0,
+        "unit_price": 1.41,
+        "total_price": 1.41,
+        "vat_code": 1,
+        "item_type": "standard",
+        "raw_detail": null,
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.9631,
+        "source_line_ids": [
+          12
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "SIROP GRENADINE MASCARIN 1L",
+        "quantity": 1.0,
+        "unit_price": 3.69,
+        "total_price": 3.69,
+        "vat_code": 1,
+        "item_type": "standard",
+        "raw_detail": null,
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.96106,
+        "source_line_ids": [
+          14
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "BIERE RINCE COCHON BLG, 75CL",
+        "quantity": 1.0,
+        "unit_price": 4.7,
+        "total_price": 4.7,
+        "vat_code": 3,
+        "item_type": "standard",
+        "raw_detail": null,
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.98388,
+        "source_line_ids": [
+          15
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "LIMONADE ZERO 1.5L SPRINK'S",
+        "quantity": 1.0,
+        "unit_price": 1.81,
+        "total_price": 1.81,
+        "vat_code": 2,
+        "item_type": "standard",
+        "raw_detail": null,
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.94835,
+        "source_line_ids": [
+          16
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "PAIX DIEU 7SCL",
+        "quantity": 1.0,
+        "unit_price": 8.5,
+        "total_price": 8.5,
+        "vat_code": 3,
+        "item_type": "standard",
+        "raw_detail": null,
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.98912,
+        "source_line_ids": [
+          17
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "LIG GEL FRESH CANARD 750ML",
+        "quantity": 1.0,
+        "unit_price": 1.99,
+        "total_price": 1.99,
+        "vat_code": 1,
+        "item_type": "standard",
+        "raw_detail": null,
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.99229,
+        "source_line_ids": [
+          19
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "LAIT UHT 1/2ECREME NEUTRE BK1L",
+        "quantity": 3.0,
+        "unit_price": 1.09,
+        "total_price": 3.27,
+        "vat_code": 1,
+        "item_type": "multibuy",
+        "raw_detail": "3 × 1.09€",
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.90254,
+        "source_line_ids": [
+          21,
+          22
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "POMME TERRE BLANCHE REUNION",
+        "quantity": 1.0,
+        "unit_price": null,
+        "total_price": 4.86,
+        "vat_code": 2,
+        "item_type": "weight",
+        "raw_detail": "2.558 kg X 1.90EUR/kg",
+        "weight_kg": 2.558,
+        "price_per_kg": 1.9,
+        "ocr_confidence": 0.98381,
+        "source_line_ids": [
+          24,
+          25
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "POIREAU",
+        "quantity": 1.0,
+        "unit_price": null,
+        "total_price": 0.78,
+        "vat_code": 2,
+        "item_type": "weight",
+        "raw_detail": "0.236 kg X 3.30EUR/kg",
+        "weight_kg": 0.236,
+        "price_per_kg": 3.3,
+        "ocr_confidence": 0.98467,
+        "source_line_ids": [
+          26,
+          27
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "SALADE LAITUE",
+        "quantity": 1.0,
+        "unit_price": 1.39,
+        "total_price": 1.39,
+        "vat_code": 2,
+        "item_type": "standard",
+        "raw_detail": null,
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.99817,
+        "source_line_ids": [
+          28
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "ESCALOPE PLT JAUNE X6 KOKO",
+        "quantity": 1.0,
+        "unit_price": 15.51,
+        "total_price": 15.51,
+        "vat_code": 2,
+        "item_type": "standard",
+        "raw_detail": null,
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.98074,
+        "source_line_ids": [
+          30
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "10 KNACKS PORC 350 GR CABY",
+        "quantity": 1.0,
+        "unit_price": 2.39,
+        "total_price": 2.39,
+        "vat_code": 1,
+        "item_type": "standard",
+        "raw_detail": null,
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.99687,
+        "source_line_ids": [
+          32
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "6EXTREME PISTACH CHOCO,426G",
+        "quantity": 1.0,
+        "unit_price": 6.69,
+        "total_price": 6.69,
+        "vat_code": 2,
+        "item_type": "standard",
+        "raw_detail": null,
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.98483,
+        "source_line_ids": [
+          34
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "RACLETTE POIVRE&BAIES",
+        "quantity": 1.0,
+        "unit_price": 8.34,
+        "total_price": 8.34,
+        "vat_code": 2,
+        "item_type": "standard",
+        "raw_detail": null,
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.99909,
+        "source_line_ids": [
+          36
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "MORBIER AOP AFF 45JOURS",
+        "quantity": 1.0,
+        "unit_price": 11.66,
+        "total_price": 11.66,
+        "vat_code": 2,
+        "item_type": "standard",
+        "raw_detail": null,
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.99529,
+        "source_line_ids": [
+          37
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "BRIE TARTE60%CREMIERE RUN+/-3K",
+        "quantity": 1.0,
+        "unit_price": 4.16,
+        "total_price": 4.16,
+        "vat_code": 2,
+        "item_type": "standard",
+        "raw_detail": null,
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.99126,
+        "source_line_ids": [
+          38
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "VERITABLE ANDOUILLE DE GUEMENE",
+        "quantity": 1.0,
+        "unit_price": 1.3,
+        "total_price": 1.3,
+        "vat_code": 1,
+        "item_type": "standard",
+        "raw_detail": null,
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.98739,
+        "source_line_ids": [
+          40
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "TERRINE PORC PIMENT SVP",
+        "quantity": 1.0,
+        "unit_price": 3.08,
+        "total_price": 3.08,
+        "vat_code": 2,
+        "item_type": "standard",
+        "raw_detail": null,
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.99974,
+        "source_line_ids": [
+          41
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "JAMBON DE BAYO IGP 14M CP NRT",
+        "quantity": 1.0,
+        "unit_price": 6.51,
+        "total_price": 6.51,
+        "vat_code": 2,
+        "item_type": "standard",
+        "raw_detail": null,
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.97514,
+        "source_line_ids": [
+          42
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "JAMBON CUIT AC FUME ABC",
+        "quantity": 1.0,
+        "unit_price": 8.6,
+        "total_price": 8.6,
+        "vat_code": 2,
+        "item_type": "standard",
+        "raw_detail": null,
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.99858,
+        "source_line_ids": [
+          43
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      }
+    ],
+    "excluded_sections": [
+      "EPICERIE",
+      "LIQUIDE",
+      "DPH",
+      "CREMERIE",
+      "FRUITS ET LEGUMES",
+      "VOLAILLE",
+      "CHARCUTERIE TRAITEUR",
+      "SURGELES",
+      "FROMAGE COUPE",
+      "CHARCUTERIE TRAITEUR TRAD"
+    ],
+    "warnings": [],
+    "article_total": 109.27,
+    "immediate_discount_total": null,
+    "payable_total": null,
+    "items_total": 109.27,
+    "counted_quantity": 26.0,
+    "product_line_count": 24
+  },
+  "comparison": {
+    "legacy_total": 109.27,
+    "legacy_article_total": 109.27,
+    "legacy_items_total": 109.27,
+    "legacy_product_line_count": 24,
+    "legacy_counted_quantity": 26.0,
+    "v2_total": 109.27,
+    "v2_items_total": 109.27,
+    "v2_product_line_count": 24,
+    "v2_counted_quantity": 26,
+    "v2_reasons": [
+      "exact_total_match",
+      "exact_declared_count_match"
+    ]
+  }
+}

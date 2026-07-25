@@ -1,0 +1,5961 @@
+{
+  "source": "C:\\Users\\Jack.LAPTOP-2USDKF0K\\budgetkazpei\\services\\receipt-scanner\\corpus_v2\\images\\super_u_piton_saint_leu_69_48_haut.jpg+C:\\Users\\Jack.LAPTOP-2USDKF0K\\budgetkazpei\\services\\receipt-scanner\\corpus_v2\\images\\super_u_piton_saint_leu_69_48_bas.jpg",
+  "image_width": 1080,
+  "image_height": 1996,
+  "elapsed_seconds": 38.745,
+  "engine": "rapidocr-onnxruntime-two-photo",
+  "reconstructed_line_count": 76,
+  "lines": [
+    {
+      "line_id": 0,
+      "center_y": 39.5,
+      "y_min": 0.0,
+      "y_max": 79.0,
+      "text": "SUPERU",
+      "token_indexes": [
+        0
+      ],
+      "tokens": [
+        {
+          "index": 0,
+          "text": "SUPERU",
+          "score": 0.99844,
+          "box": [
+            [
+              237.0,
+              0.0
+            ],
+            [
+              631.0,
+              0.0
+            ],
+            [
+              631.0,
+              79.0
+            ],
+            [
+              237.0,
+              79.0
+            ]
+          ],
+          "x": 237.0,
+          "y": 0.0,
+          "width": 394.0,
+          "height": 79.0,
+          "center_x": 434.0,
+          "center_y": 39.5,
+          "line_id": 0,
+          "column": "description",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 1,
+      "center_y": 103.5,
+      "y_min": 86.0,
+      "y_max": 121.0,
+      "text": "PITON ST LEU",
+      "token_indexes": [
+        1
+      ],
+      "tokens": [
+        {
+          "index": 1,
+          "text": "PITON ST LEU",
+          "score": 0.95758,
+          "box": [
+            [
+              369.0,
+              86.0
+            ],
+            [
+              496.0,
+              86.0
+            ],
+            [
+              496.0,
+              121.0
+            ],
+            [
+              369.0,
+              121.0
+            ]
+          ],
+          "x": 369.0,
+          "y": 86.0,
+          "width": 127.0,
+          "height": 35.0,
+          "center_x": 432.5,
+          "center_y": 103.5,
+          "line_id": 1,
+          "column": "description",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 2,
+      "center_y": 123.0,
+      "y_min": 107.0,
+      "y_max": 139.0,
+      "text": "Mauagin 99807",
+      "token_indexes": [
+        2
+      ],
+      "tokens": [
+        {
+          "index": 2,
+          "text": "Mauagin 99807",
+          "score": 0.79104,
+          "box": [
+            [
+              361.0,
+              107.0
+            ],
+            [
+              493.0,
+              107.0
+            ],
+            [
+              493.0,
+              139.0
+            ],
+            [
+              361.0,
+              139.0
+            ]
+          ],
+          "x": 361.0,
+          "y": 107.0,
+          "width": 132.0,
+          "height": 32.0,
+          "center_x": 427.0,
+          "center_y": 123.0,
+          "line_id": 2,
+          "column": "description",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 3,
+      "center_y": 141.5,
+      "y_min": 120.0,
+      "y_max": 163.0,
+      "text": "149 Cd li Piton St Leu",
+      "token_indexes": [
+        3
+      ],
+      "tokens": [
+        {
+          "index": 3,
+          "text": "149 Cd li Piton St Leu",
+          "score": 0.76069,
+          "box": [
+            [
+              323.0,
+              120.0
+            ],
+            [
+              544.0,
+              120.0
+            ],
+            [
+              544.0,
+              163.0
+            ],
+            [
+              323.0,
+              163.0
+            ]
+          ],
+          "x": 323.0,
+          "y": 120.0,
+          "width": 221.0,
+          "height": 43.0,
+          "center_x": 433.5,
+          "center_y": 141.5,
+          "line_id": 3,
+          "column": "description",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 4,
+      "center_y": 161.5,
+      "y_min": 146.0,
+      "y_max": 177.0,
+      "text": "97424 ST LEU",
+      "token_indexes": [
+        4
+      ],
+      "tokens": [
+        {
+          "index": 4,
+          "text": "97424 ST LEU",
+          "score": 0.98205,
+          "box": [
+            [
+              371.0,
+              146.0
+            ],
+            [
+              497.0,
+              146.0
+            ],
+            [
+              497.0,
+              177.0
+            ],
+            [
+              371.0,
+              177.0
+            ]
+          ],
+          "x": 371.0,
+          "y": 146.0,
+          "width": 126.0,
+          "height": 31.0,
+          "center_x": 434.0,
+          "center_y": 161.5,
+          "line_id": 4,
+          "column": "description",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 5,
+      "center_y": 181.5,
+      "y_min": 169.0,
+      "y_max": 194.0,
+      "text": "France",
+      "token_indexes": [
+        5
+      ],
+      "tokens": [
+        {
+          "index": 5,
+          "text": "France",
+          "score": 0.99905,
+          "box": [
+            [
+              399.0,
+              169.0
+            ],
+            [
+              468.0,
+              169.0
+            ],
+            [
+              468.0,
+              194.0
+            ],
+            [
+              399.0,
+              194.0
+            ]
+          ],
+          "x": 399.0,
+          "y": 169.0,
+          "width": 69.0,
+          "height": 25.0,
+          "center_x": 433.5,
+          "center_y": 181.5,
+          "line_id": 5,
+          "column": "description",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 6,
+      "center_y": 199.0,
+      "y_min": 184.0,
+      "y_max": 214.0,
+      "text": "Télephone 0262342222",
+      "token_indexes": [
+        6
+      ],
+      "tokens": [
+        {
+          "index": 6,
+          "text": "Télephone 0262342222",
+          "score": 0.94163,
+          "box": [
+            [
+              337.0,
+              184.0
+            ],
+            [
+              536.0,
+              184.0
+            ],
+            [
+              536.0,
+              214.0
+            ],
+            [
+              337.0,
+              214.0
+            ]
+          ],
+          "x": 337.0,
+          "y": 184.0,
+          "width": 199.0,
+          "height": 30.0,
+          "center_x": 436.5,
+          "center_y": 199.0,
+          "line_id": 6,
+          "column": "description",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 7,
+      "center_y": 225.5,
+      "y_min": 212.0,
+      "y_max": 239.0,
+      "text": "TUA: FR00018634040",
+      "token_indexes": [
+        7
+      ],
+      "tokens": [
+        {
+          "index": 7,
+          "text": "TUA: FR00018634040",
+          "score": 0.96137,
+          "box": [
+            [
+              346.0,
+              212.0
+            ],
+            [
+              525.0,
+              212.0
+            ],
+            [
+              525.0,
+              239.0
+            ],
+            [
+              346.0,
+              239.0
+            ]
+          ],
+          "x": 346.0,
+          "y": 212.0,
+          "width": 179.0,
+          "height": 27.0,
+          "center_x": 435.5,
+          "center_y": 225.5,
+          "line_id": 7,
+          "column": "description",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 8,
+      "center_y": 259.0,
+      "y_min": 244.0,
+      "y_max": 274.0,
+      "text": "*** VENTE ***",
+      "token_indexes": [
+        8
+      ],
+      "tokens": [
+        {
+          "index": 8,
+          "text": "*** VENTE ***",
+          "score": 0.78404,
+          "box": [
+            [
+              364.0,
+              244.0
+            ],
+            [
+              498.0,
+              244.0
+            ],
+            [
+              498.0,
+              274.0
+            ],
+            [
+              364.0,
+              274.0
+            ]
+          ],
+          "x": 364.0,
+          "y": 244.0,
+          "width": 134.0,
+          "height": 30.0,
+          "center_x": 431.0,
+          "center_y": 259.0,
+          "line_id": 8,
+          "column": "description",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 9,
+      "center_y": 275.75,
+      "y_min": 256.0,
+      "y_max": 298.0,
+      "text": "CAFE | TORREFIE/SOLUBLE",
+      "token_indexes": [
+        9,
+        10
+      ],
+      "tokens": [
+        {
+          "index": 9,
+          "text": "CAFE",
+          "score": 0.97938,
+          "box": [
+            [
+              165.0,
+              260.0
+            ],
+            [
+              218.0,
+              260.0
+            ],
+            [
+              218.0,
+              289.0
+            ],
+            [
+              165.0,
+              289.0
+            ]
+          ],
+          "x": 165.0,
+          "y": 260.0,
+          "width": 53.0,
+          "height": 29.0,
+          "center_x": 191.5,
+          "center_y": 274.5,
+          "line_id": 9,
+          "column": "description",
+          "source_segment": "top"
+        },
+        {
+          "index": 10,
+          "text": "TORREFIE/SOLUBLE",
+          "score": 0.99551,
+          "box": [
+            [
+              203.0,
+              256.0
+            ],
+            [
+              376.0,
+              256.0
+            ],
+            [
+              376.0,
+              298.0
+            ],
+            [
+              203.0,
+              298.0
+            ]
+          ],
+          "x": 203.0,
+          "y": 256.0,
+          "width": 173.0,
+          "height": 42.0,
+          "center_x": 289.5,
+          "center_y": 277.0,
+          "line_id": 9,
+          "column": "description",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 10,
+      "center_y": 299.25,
+      "y_min": 276.0,
+      "y_max": 324.0,
+      "text": "CAFE EXT.FILT.LVOPHILISE U100G | 5.39 € 11",
+      "token_indexes": [
+        11,
+        12
+      ],
+      "tokens": [
+        {
+          "index": 11,
+          "text": "CAFE EXT.FILT.LVOPHILISE U100G",
+          "score": 0.957,
+          "box": [
+            [
+              162.0,
+              276.0
+            ],
+            [
+              465.0,
+              276.0
+            ],
+            [
+              465.0,
+              324.0
+            ],
+            [
+              162.0,
+              324.0
+            ]
+          ],
+          "x": 162.0,
+          "y": 276.0,
+          "width": 303.0,
+          "height": 48.0,
+          "center_x": 313.5,
+          "center_y": 300.0,
+          "line_id": 10,
+          "column": "description",
+          "source_segment": "top"
+        },
+        {
+          "index": 12,
+          "text": "5.39 € 11",
+          "score": 0.94597,
+          "box": [
+            [
+              594.0,
+              283.0
+            ],
+            [
+              710.0,
+              283.0
+            ],
+            [
+              710.0,
+              314.0
+            ],
+            [
+              594.0,
+              314.0
+            ]
+          ],
+          "x": 594.0,
+          "y": 283.0,
+          "width": 116.0,
+          "height": 31.0,
+          "center_x": 652.0,
+          "center_y": 298.5,
+          "line_id": 10,
+          "column": "description",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 11,
+      "center_y": 324.5,
+      "y_min": 309.0,
+      "y_max": 340.0,
+      "text": "5,39 EUR",
+      "token_indexes": [
+        13
+      ],
+      "tokens": [
+        {
+          "index": 13,
+          "text": "5,39 EUR",
+          "score": 0.89517,
+          "box": [
+            [
+              372.0,
+              309.0
+            ],
+            [
+              462.0,
+              309.0
+            ],
+            [
+              462.0,
+              340.0
+            ],
+            [
+              372.0,
+              340.0
+            ]
+          ],
+          "x": 372.0,
+          "y": 309.0,
+          "width": 90.0,
+          "height": 31.0,
+          "center_x": 417.0,
+          "center_y": 324.5,
+          "line_id": 11,
+          "column": "detail",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 12,
+      "center_y": 339.5,
+      "y_min": 319.0,
+      "y_max": 360.0,
+      "text": "CEREALES ET POUDRES CHOCOLAT",
+      "token_indexes": [
+        14
+      ],
+      "tokens": [
+        {
+          "index": 14,
+          "text": "CEREALES ET POUDRES CHOCOLAT",
+          "score": 0.98769,
+          "box": [
+            [
+              164.0,
+              319.0
+            ],
+            [
+              445.0,
+              319.0
+            ],
+            [
+              445.0,
+              360.0
+            ],
+            [
+              164.0,
+              360.0
+            ]
+          ],
+          "x": 164.0,
+          "y": 319.0,
+          "width": 281.0,
+          "height": 41.0,
+          "center_x": 304.5,
+          "center_y": 339.5,
+          "line_id": 12,
+          "column": "description",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 13,
+      "center_y": 361.5,
+      "y_min": 343.0,
+      "y_max": 380.0,
+      "text": "MUESLI CROUSTIL.3 CHOCO.U 500G | 3,75€ 0",
+      "token_indexes": [
+        15,
+        16
+      ],
+      "tokens": [
+        {
+          "index": 15,
+          "text": "MUESLI CROUSTIL.3 CHOCO.U 500G",
+          "score": 0.87843,
+          "box": [
+            [
+              166.0,
+              343.0
+            ],
+            [
+              464.0,
+              343.0
+            ],
+            [
+              464.0,
+              380.0
+            ],
+            [
+              166.0,
+              380.0
+            ]
+          ],
+          "x": 166.0,
+          "y": 343.0,
+          "width": 298.0,
+          "height": 37.0,
+          "center_x": 315.0,
+          "center_y": 361.5,
+          "line_id": 13,
+          "column": "description",
+          "source_segment": "top"
+        },
+        {
+          "index": 16,
+          "text": "3,75€ 0",
+          "score": 0.88454,
+          "box": [
+            [
+              594.0,
+              345.0
+            ],
+            [
+              704.0,
+              345.0
+            ],
+            [
+              704.0,
+              378.0
+            ],
+            [
+              594.0,
+              378.0
+            ]
+          ],
+          "x": 594.0,
+          "y": 345.0,
+          "width": 110.0,
+          "height": 33.0,
+          "center_x": 649.0,
+          "center_y": 361.5,
+          "line_id": 13,
+          "column": "description",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 14,
+      "center_y": 384.5,
+      "y_min": 371.0,
+      "y_max": 398.0,
+      "text": "3,75 EUR",
+      "token_indexes": [
+        17
+      ],
+      "tokens": [
+        {
+          "index": 17,
+          "text": "3,75 EUR",
+          "score": 0.97094,
+          "box": [
+            [
+              376.0,
+              371.0
+            ],
+            [
+              463.0,
+              371.0
+            ],
+            [
+              463.0,
+              398.0
+            ],
+            [
+              376.0,
+              398.0
+            ]
+          ],
+          "x": 376.0,
+          "y": 371.0,
+          "width": 87.0,
+          "height": 27.0,
+          "center_x": 419.5,
+          "center_y": 384.5,
+          "line_id": 14,
+          "column": "detail",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 15,
+      "center_y": 402.5,
+      "y_min": 379.0,
+      "y_max": 424.0,
+      "text": "ICROUST CHOCO.LTU 500G | 3,85 € 0",
+      "token_indexes": [
+        18,
+        19
+      ],
+      "tokens": [
+        {
+          "index": 18,
+          "text": "ICROUST CHOCO.LTU 500G",
+          "score": 0.85747,
+          "box": [
+            [
+              168.0,
+              379.0
+            ],
+            [
+              461.0,
+              379.0
+            ],
+            [
+              461.0,
+              424.0
+            ],
+            [
+              168.0,
+              424.0
+            ]
+          ],
+          "x": 168.0,
+          "y": 379.0,
+          "width": 293.0,
+          "height": 45.0,
+          "center_x": 314.5,
+          "center_y": 401.5,
+          "line_id": 15,
+          "column": "description",
+          "source_segment": "top"
+        },
+        {
+          "index": 19,
+          "text": "3,85 € 0",
+          "score": 0.82475,
+          "box": [
+            [
+              595.0,
+              387.0
+            ],
+            [
+              705.0,
+              387.0
+            ],
+            [
+              705.0,
+              420.0
+            ],
+            [
+              595.0,
+              420.0
+            ]
+          ],
+          "x": 595.0,
+          "y": 387.0,
+          "width": 110.0,
+          "height": 33.0,
+          "center_x": 650.0,
+          "center_y": 403.5,
+          "line_id": 15,
+          "column": "description",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 16,
+      "center_y": 425.0,
+      "y_min": 411.0,
+      "y_max": 439.0,
+      "text": "3.85 EUR",
+      "token_indexes": [
+        20
+      ],
+      "tokens": [
+        {
+          "index": 20,
+          "text": "3.85 EUR",
+          "score": 0.95988,
+          "box": [
+            [
+              378.0,
+              411.0
+            ],
+            [
+              465.0,
+              411.0
+            ],
+            [
+              465.0,
+              439.0
+            ],
+            [
+              378.0,
+              439.0
+            ]
+          ],
+          "x": 378.0,
+          "y": 411.0,
+          "width": 87.0,
+          "height": 28.0,
+          "center_x": 421.5,
+          "center_y": 425.0,
+          "line_id": 16,
+          "column": "detail",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 17,
+      "center_y": 441.5,
+      "y_min": 422.0,
+      "y_max": 461.0,
+      "text": "CHARCT.LS UUCI",
+      "token_indexes": [
+        21
+      ],
+      "tokens": [
+        {
+          "index": 21,
+          "text": "CHARCT.LS UUCI",
+          "score": 0.98675,
+          "box": [
+            [
+              170.0,
+              422.0
+            ],
+            [
+              312.0,
+              422.0
+            ],
+            [
+              312.0,
+              461.0
+            ],
+            [
+              170.0,
+              461.0
+            ]
+          ],
+          "x": 170.0,
+          "y": 422.0,
+          "width": 142.0,
+          "height": 39.0,
+          "center_x": 241.0,
+          "center_y": 441.5,
+          "line_id": 17,
+          "column": "description",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 18,
+      "center_y": 464.5,
+      "y_min": 445.0,
+      "y_max": 483.0,
+      "text": "KNACK IER PRIX X20 | 3,95 € 0",
+      "token_indexes": [
+        22,
+        23
+      ],
+      "tokens": [
+        {
+          "index": 22,
+          "text": "KNACK IER PRIX X20",
+          "score": 0.95008,
+          "box": [
+            [
+              169.0,
+              445.0
+            ],
+            [
+              352.0,
+              445.0
+            ],
+            [
+              352.0,
+              483.0
+            ],
+            [
+              169.0,
+              483.0
+            ]
+          ],
+          "x": 169.0,
+          "y": 445.0,
+          "width": 183.0,
+          "height": 38.0,
+          "center_x": 260.5,
+          "center_y": 464.0,
+          "line_id": 18,
+          "column": "description",
+          "source_segment": "top"
+        },
+        {
+          "index": 23,
+          "text": "3,95 € 0",
+          "score": 0.90678,
+          "box": [
+            [
+              597.0,
+              448.0
+            ],
+            [
+              706.0,
+              448.0
+            ],
+            [
+              706.0,
+              482.0
+            ],
+            [
+              597.0,
+              482.0
+            ]
+          ],
+          "x": 597.0,
+          "y": 448.0,
+          "width": 109.0,
+          "height": 34.0,
+          "center_x": 651.5,
+          "center_y": 465.0,
+          "line_id": 18,
+          "column": "description",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 19,
+      "center_y": 484.5,
+      "y_min": 468.0,
+      "y_max": 501.0,
+      "text": "1x | 3.95 EUR",
+      "token_indexes": [
+        24,
+        25
+      ],
+      "tokens": [
+        {
+          "index": 24,
+          "text": "1x",
+          "score": 0.81478,
+          "box": [
+            [
+              281.0,
+              468.0
+            ],
+            [
+              324.0,
+              468.0
+            ],
+            [
+              324.0,
+              496.0
+            ],
+            [
+              281.0,
+              496.0
+            ]
+          ],
+          "x": 281.0,
+          "y": 468.0,
+          "width": 43.0,
+          "height": 28.0,
+          "center_x": 302.5,
+          "center_y": 482.0,
+          "line_id": 19,
+          "column": "description",
+          "source_segment": "top"
+        },
+        {
+          "index": 25,
+          "text": "3.95 EUR",
+          "score": 0.9877,
+          "box": [
+            [
+              380.0,
+              473.0
+            ],
+            [
+              467.0,
+              473.0
+            ],
+            [
+              467.0,
+              501.0
+            ],
+            [
+              380.0,
+              501.0
+            ]
+          ],
+          "x": 380.0,
+          "y": 473.0,
+          "width": 87.0,
+          "height": 28.0,
+          "center_x": 423.5,
+          "center_y": 487.0,
+          "line_id": 19,
+          "column": "detail",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 20,
+      "center_y": 506.5,
+      "y_min": 487.0,
+      "y_max": 526.0,
+      "text": "CONFISERTE",
+      "token_indexes": [
+        26
+      ],
+      "tokens": [
+        {
+          "index": 26,
+          "text": "CONFISERTE",
+          "score": 0.97975,
+          "box": [
+            [
+              170.0,
+              487.0
+            ],
+            [
+              276.0,
+              487.0
+            ],
+            [
+              276.0,
+              526.0
+            ],
+            [
+              170.0,
+              526.0
+            ]
+          ],
+          "x": 170.0,
+          "y": 487.0,
+          "width": 106.0,
+          "height": 39.0,
+          "center_x": 223.0,
+          "center_y": 506.5,
+          "line_id": 20,
+          "column": "description",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 21,
+      "center_y": 526.5,
+      "y_min": 507.0,
+      "y_max": 546.0,
+      "text": "TIC TAC BERRY MIX 18G | 1,39 € | 13",
+      "token_indexes": [
+        27,
+        28,
+        29
+      ],
+      "tokens": [
+        {
+          "index": 27,
+          "text": "TIC TAC BERRY MIX 18G",
+          "score": 0.99549,
+          "box": [
+            [
+              170.0,
+              507.0
+            ],
+            [
+              382.0,
+              507.0
+            ],
+            [
+              382.0,
+              546.0
+            ],
+            [
+              170.0,
+              546.0
+            ]
+          ],
+          "x": 170.0,
+          "y": 507.0,
+          "width": 212.0,
+          "height": 39.0,
+          "center_x": 276.0,
+          "center_y": 526.5,
+          "line_id": 21,
+          "column": "description",
+          "source_segment": "top"
+        },
+        {
+          "index": 28,
+          "text": "1,39 €",
+          "score": 0.91431,
+          "box": [
+            [
+              601.0,
+              509.0
+            ],
+            [
+              693.0,
+              509.0
+            ],
+            [
+              693.0,
+              544.0
+            ],
+            [
+              601.0,
+              544.0
+            ]
+          ],
+          "x": 601.0,
+          "y": 509.0,
+          "width": 92.0,
+          "height": 35.0,
+          "center_x": 647.0,
+          "center_y": 526.5,
+          "line_id": 21,
+          "column": "detail",
+          "source_segment": "top"
+        },
+        {
+          "index": 29,
+          "text": "13",
+          "score": 0.99998,
+          "box": [
+            [
+              683.0,
+              508.0
+            ],
+            [
+              717.0,
+              508.0
+            ],
+            [
+              717.0,
+              536.0
+            ],
+            [
+              683.0,
+              536.0
+            ]
+          ],
+          "x": 683.0,
+          "y": 508.0,
+          "width": 34.0,
+          "height": 28.0,
+          "center_x": 700.0,
+          "center_y": 522.0,
+          "line_id": 21,
+          "column": "price",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 22,
+      "center_y": 547.0,
+      "y_min": 531.0,
+      "y_max": 563.0,
+      "text": "1.39 EUR",
+      "token_indexes": [
+        30
+      ],
+      "tokens": [
+        {
+          "index": 30,
+          "text": "1.39 EUR",
+          "score": 0.98054,
+          "box": [
+            [
+              380.0,
+              531.0
+            ],
+            [
+              470.0,
+              531.0
+            ],
+            [
+              470.0,
+              563.0
+            ],
+            [
+              380.0,
+              563.0
+            ]
+          ],
+          "x": 380.0,
+          "y": 531.0,
+          "width": 90.0,
+          "height": 32.0,
+          "center_x": 425.0,
+          "center_y": 547.0,
+          "line_id": 22,
+          "column": "detail",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 23,
+      "center_y": 568.5,
+      "y_min": 551.0,
+      "y_max": 586.0,
+      "text": "COUSCOUS PUREE LEG SECS BLE",
+      "token_indexes": [
+        31
+      ],
+      "tokens": [
+        {
+          "index": 31,
+          "text": "COUSCOUS PUREE LEG SECS BLE",
+          "score": 0.98461,
+          "box": [
+            [
+              171.0,
+              551.0
+            ],
+            [
+              443.0,
+              551.0
+            ],
+            [
+              443.0,
+              586.0
+            ],
+            [
+              171.0,
+              586.0
+            ]
+          ],
+          "x": 171.0,
+          "y": 551.0,
+          "width": 272.0,
+          "height": 35.0,
+          "center_x": 307.0,
+          "center_y": 568.5,
+          "line_id": 23,
+          "column": "description",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 24,
+      "center_y": 590.0,
+      "y_min": 572.0,
+      "y_max": 608.0,
+      "text": "PUREE MOUSLINE 520G | 3,10€",
+      "token_indexes": [
+        32,
+        33
+      ],
+      "tokens": [
+        {
+          "index": 32,
+          "text": "PUREE MOUSLINE 520G",
+          "score": 0.96003,
+          "box": [
+            [
+              172.0,
+              574.0
+            ],
+            [
+              365.0,
+              574.0
+            ],
+            [
+              365.0,
+              608.0
+            ],
+            [
+              172.0,
+              608.0
+            ]
+          ],
+          "x": 172.0,
+          "y": 574.0,
+          "width": 193.0,
+          "height": 34.0,
+          "center_x": 268.5,
+          "center_y": 591.0,
+          "line_id": 24,
+          "column": "description",
+          "source_segment": "top"
+        },
+        {
+          "index": 33,
+          "text": "3,10€",
+          "score": 0.98598,
+          "box": [
+            [
+              601.0,
+              572.0
+            ],
+            [
+              683.0,
+              572.0
+            ],
+            [
+              683.0,
+              606.0
+            ],
+            [
+              601.0,
+              606.0
+            ]
+          ],
+          "x": 601.0,
+          "y": 572.0,
+          "width": 82.0,
+          "height": 34.0,
+          "center_x": 642.0,
+          "center_y": 589.0,
+          "line_id": 24,
+          "column": "detail",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 25,
+      "center_y": 612.0,
+      "y_min": 595.0,
+      "y_max": 627.0,
+      "text": "1x | 3.10 EUR",
+      "token_indexes": [
+        34,
+        35
+      ],
+      "tokens": [
+        {
+          "index": 34,
+          "text": "1x",
+          "score": 0.92094,
+          "box": [
+            [
+              288.0,
+              600.0
+            ],
+            [
+              328.0,
+              600.0
+            ],
+            [
+              328.0,
+              627.0
+            ],
+            [
+              288.0,
+              627.0
+            ]
+          ],
+          "x": 288.0,
+          "y": 600.0,
+          "width": 40.0,
+          "height": 27.0,
+          "center_x": 308.0,
+          "center_y": 613.5,
+          "line_id": 25,
+          "column": "description",
+          "source_segment": "top"
+        },
+        {
+          "index": 35,
+          "text": "3.10 EUR",
+          "score": 0.9805,
+          "box": [
+            [
+              383.0,
+              595.0
+            ],
+            [
+              471.0,
+              595.0
+            ],
+            [
+              471.0,
+              626.0
+            ],
+            [
+              383.0,
+              626.0
+            ]
+          ],
+          "x": 383.0,
+          "y": 595.0,
+          "width": 88.0,
+          "height": 31.0,
+          "center_x": 427.0,
+          "center_y": 610.5,
+          "line_id": 25,
+          "column": "detail",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 26,
+      "center_y": 636.0,
+      "y_min": 619.0,
+      "y_max": 653.0,
+      "text": "FROMAGE LS",
+      "token_indexes": [
+        36
+      ],
+      "tokens": [
+        {
+          "index": 36,
+          "text": "FROMAGE LS",
+          "score": 0.94944,
+          "box": [
+            [
+              172.0,
+              619.0
+            ],
+            [
+              281.0,
+              619.0
+            ],
+            [
+              281.0,
+              653.0
+            ],
+            [
+              172.0,
+              653.0
+            ]
+          ],
+          "x": 172.0,
+          "y": 619.0,
+          "width": 109.0,
+          "height": 34.0,
+          "center_x": 226.5,
+          "center_y": 636.0,
+          "line_id": 26,
+          "column": "description",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 27,
+      "center_y": 654.0,
+      "y_min": 634.0,
+      "y_max": 675.0,
+      "text": "PETIT BENARE 150G | 2,89 € 0",
+      "token_indexes": [
+        37,
+        38
+      ],
+      "tokens": [
+        {
+          "index": 37,
+          "text": "PETIT BENARE 150G",
+          "score": 0.99436,
+          "box": [
+            [
+              172.0,
+              639.0
+            ],
+            [
+              348.0,
+              639.0
+            ],
+            [
+              348.0,
+              675.0
+            ],
+            [
+              172.0,
+              675.0
+            ]
+          ],
+          "x": 172.0,
+          "y": 639.0,
+          "width": 176.0,
+          "height": 36.0,
+          "center_x": 260.0,
+          "center_y": 657.0,
+          "line_id": 27,
+          "column": "description",
+          "source_segment": "top"
+        },
+        {
+          "index": 38,
+          "text": "2,89 € 0",
+          "score": 0.96043,
+          "box": [
+            [
+              603.0,
+              634.0
+            ],
+            [
+              715.0,
+              634.0
+            ],
+            [
+              715.0,
+              668.0
+            ],
+            [
+              603.0,
+              668.0
+            ]
+          ],
+          "x": 603.0,
+          "y": 634.0,
+          "width": 112.0,
+          "height": 34.0,
+          "center_x": 659.0,
+          "center_y": 651.0,
+          "line_id": 27,
+          "column": "description",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 28,
+      "center_y": 677.0,
+      "y_min": 658.0,
+      "y_max": 693.0,
+      "text": "1X | 2.89 EUR",
+      "token_indexes": [
+        39,
+        40
+      ],
+      "tokens": [
+        {
+          "index": 39,
+          "text": "1X",
+          "score": 0.62943,
+          "box": [
+            [
+              291.0,
+              665.0
+            ],
+            [
+              331.0,
+              665.0
+            ],
+            [
+              331.0,
+              693.0
+            ],
+            [
+              291.0,
+              693.0
+            ]
+          ],
+          "x": 291.0,
+          "y": 665.0,
+          "width": 40.0,
+          "height": 28.0,
+          "center_x": 311.0,
+          "center_y": 679.0,
+          "line_id": 28,
+          "column": "description",
+          "source_segment": "top"
+        },
+        {
+          "index": 40,
+          "text": "2.89 EUR",
+          "score": 0.98196,
+          "box": [
+            [
+              385.0,
+              658.0
+            ],
+            [
+              473.0,
+              658.0
+            ],
+            [
+              473.0,
+              692.0
+            ],
+            [
+              385.0,
+              692.0
+            ]
+          ],
+          "x": 385.0,
+          "y": 658.0,
+          "width": 88.0,
+          "height": 34.0,
+          "center_x": 429.0,
+          "center_y": 675.0,
+          "line_id": 28,
+          "column": "detail",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 29,
+      "center_y": 698.5,
+      "y_min": 683.0,
+      "y_max": 714.0,
+      "text": "HUILES",
+      "token_indexes": [
+        41
+      ],
+      "tokens": [
+        {
+          "index": 41,
+          "text": "HUILES",
+          "score": 0.99306,
+          "box": [
+            [
+              173.0,
+              683.0
+            ],
+            [
+              245.0,
+              683.0
+            ],
+            [
+              245.0,
+              714.0
+            ],
+            [
+              173.0,
+              714.0
+            ]
+          ],
+          "x": 173.0,
+          "y": 683.0,
+          "width": 72.0,
+          "height": 31.0,
+          "center_x": 209.0,
+          "center_y": 698.5,
+          "line_id": 29,
+          "column": "description",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 30,
+      "center_y": 715.25,
+      "y_min": 695.0,
+      "y_max": 737.0,
+      "text": "BOP BOURBON HUILE TOURNESOL L | 2,44 € 0",
+      "token_indexes": [
+        42,
+        43
+      ],
+      "tokens": [
+        {
+          "index": 42,
+          "text": "BOP BOURBON HUILE TOURNESOL L",
+          "score": 0.95344,
+          "box": [
+            [
+              172.0,
+              700.0
+            ],
+            [
+              471.0,
+              700.0
+            ],
+            [
+              471.0,
+              737.0
+            ],
+            [
+              172.0,
+              737.0
+            ]
+          ],
+          "x": 172.0,
+          "y": 700.0,
+          "width": 299.0,
+          "height": 37.0,
+          "center_x": 321.5,
+          "center_y": 718.5,
+          "line_id": 30,
+          "column": "description",
+          "source_segment": "top"
+        },
+        {
+          "index": 43,
+          "text": "2,44 € 0",
+          "score": 0.89056,
+          "box": [
+            [
+              605.0,
+              695.0
+            ],
+            [
+              717.0,
+              695.0
+            ],
+            [
+              717.0,
+              729.0
+            ],
+            [
+              605.0,
+              729.0
+            ]
+          ],
+          "x": 605.0,
+          "y": 695.0,
+          "width": 112.0,
+          "height": 34.0,
+          "center_x": 661.0,
+          "center_y": 712.0,
+          "line_id": 30,
+          "column": "description",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 31,
+      "center_y": 740.25,
+      "y_min": 719.0,
+      "y_max": 757.0,
+      "text": "Ix | 2.,44 EUR",
+      "token_indexes": [
+        44,
+        45
+      ],
+      "tokens": [
+        {
+          "index": 44,
+          "text": "Ix",
+          "score": 0.53682,
+          "box": [
+            [
+              296.0,
+              731.0
+            ],
+            [
+              332.0,
+              731.0
+            ],
+            [
+              332.0,
+              754.0
+            ],
+            [
+              296.0,
+              754.0
+            ]
+          ],
+          "x": 296.0,
+          "y": 731.0,
+          "width": 36.0,
+          "height": 23.0,
+          "center_x": 314.0,
+          "center_y": 742.5,
+          "line_id": 31,
+          "column": "description",
+          "source_segment": "top"
+        },
+        {
+          "index": 45,
+          "text": "2.,44 EUR",
+          "score": 0.86197,
+          "box": [
+            [
+              384.0,
+              719.0
+            ],
+            [
+              475.0,
+              719.0
+            ],
+            [
+              475.0,
+              757.0
+            ],
+            [
+              384.0,
+              757.0
+            ]
+          ],
+          "x": 384.0,
+          "y": 719.0,
+          "width": 91.0,
+          "height": 38.0,
+          "center_x": 429.5,
+          "center_y": 738.0,
+          "line_id": 31,
+          "column": "description",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 32,
+      "center_y": 759.0,
+      "y_min": 743.0,
+      "y_max": 775.0,
+      "text": "LAITS ET DERIVES",
+      "token_indexes": [
+        46
+      ],
+      "tokens": [
+        {
+          "index": 46,
+          "text": "LAITS ET DERIVES",
+          "score": 0.98871,
+          "box": [
+            [
+              171.0,
+              743.0
+            ],
+            [
+              342.0,
+              743.0
+            ],
+            [
+              342.0,
+              775.0
+            ],
+            [
+              171.0,
+              775.0
+            ]
+          ],
+          "x": 171.0,
+          "y": 743.0,
+          "width": 171.0,
+          "height": 32.0,
+          "center_x": 256.5,
+          "center_y": 759.0,
+          "line_id": 32,
+          "column": "description",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 33,
+      "center_y": 773.5,
+      "y_min": 758.0,
+      "y_max": 795.0,
+      "text": "LAIT UHT 1/2EC LAIT D'ICI BK1L | 4.76 € | 0",
+      "token_indexes": [
+        47,
+        48,
+        49
+      ],
+      "tokens": [
+        {
+          "index": 47,
+          "text": "LAIT UHT 1/2EC LAIT D'ICI BK1L",
+          "score": 0.95494,
+          "box": [
+            [
+              172.0,
+              765.0
+            ],
+            [
+              471.0,
+              765.0
+            ],
+            [
+              471.0,
+              795.0
+            ],
+            [
+              172.0,
+              795.0
+            ]
+          ],
+          "x": 172.0,
+          "y": 765.0,
+          "width": 299.0,
+          "height": 30.0,
+          "center_x": 321.5,
+          "center_y": 780.0,
+          "line_id": 33,
+          "column": "description",
+          "source_segment": "top"
+        },
+        {
+          "index": 48,
+          "text": "4.76 €",
+          "score": 0.98747,
+          "box": [
+            [
+              609.0,
+              758.0
+            ],
+            [
+              681.0,
+              758.0
+            ],
+            [
+              681.0,
+              789.0
+            ],
+            [
+              609.0,
+              789.0
+            ]
+          ],
+          "x": 609.0,
+          "y": 758.0,
+          "width": 72.0,
+          "height": 31.0,
+          "center_x": 645.0,
+          "center_y": 773.5,
+          "line_id": 33,
+          "column": "detail",
+          "source_segment": "top"
+        },
+        {
+          "index": 49,
+          "text": "0",
+          "score": 0.99795,
+          "box": [
+            [
+              667.0,
+              758.0
+            ],
+            [
+              718.0,
+              758.0
+            ],
+            [
+              718.0,
+              787.0
+            ],
+            [
+              667.0,
+              787.0
+            ]
+          ],
+          "x": 667.0,
+          "y": 758.0,
+          "width": 51.0,
+          "height": 29.0,
+          "center_x": 692.5,
+          "center_y": 772.5,
+          "line_id": 33,
+          "column": "price",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 34,
+      "center_y": 808.0,
+      "y_min": 787.0,
+      "y_max": 830.0,
+      "text": "4 X | 1.19 EUR | 2,59 € | 11",
+      "token_indexes": [
+        50,
+        51,
+        53,
+        54
+      ],
+      "tokens": [
+        {
+          "index": 50,
+          "text": "4 X",
+          "score": 0.70514,
+          "box": [
+            [
+              290.0,
+              790.0
+            ],
+            [
+              332.0,
+              790.0
+            ],
+            [
+              332.0,
+              815.0
+            ],
+            [
+              290.0,
+              815.0
+            ]
+          ],
+          "x": 290.0,
+          "y": 790.0,
+          "width": 42.0,
+          "height": 25.0,
+          "center_x": 311.0,
+          "center_y": 802.5,
+          "line_id": 34,
+          "column": "description",
+          "source_segment": "top"
+        },
+        {
+          "index": 51,
+          "text": "1.19 EUR",
+          "score": 0.98964,
+          "box": [
+            [
+              390.0,
+              787.0
+            ],
+            [
+              473.0,
+              787.0
+            ],
+            [
+              473.0,
+              815.0
+            ],
+            [
+              390.0,
+              815.0
+            ]
+          ],
+          "x": 390.0,
+          "y": 787.0,
+          "width": 83.0,
+          "height": 28.0,
+          "center_x": 431.5,
+          "center_y": 801.0,
+          "line_id": 34,
+          "column": "detail",
+          "source_segment": "top"
+        },
+        {
+          "index": 53,
+          "text": "2,59 €",
+          "score": 0.9847,
+          "box": [
+            [
+              609.0,
+              799.0
+            ],
+            [
+              680.0,
+              799.0
+            ],
+            [
+              680.0,
+              830.0
+            ],
+            [
+              609.0,
+              830.0
+            ]
+          ],
+          "x": 609.0,
+          "y": 799.0,
+          "width": 71.0,
+          "height": 31.0,
+          "center_x": 644.5,
+          "center_y": 814.5,
+          "line_id": 34,
+          "column": "detail",
+          "source_segment": "top"
+        },
+        {
+          "index": 54,
+          "text": "11",
+          "score": 0.99931,
+          "box": [
+            [
+              698.0,
+              801.0
+            ],
+            [
+              726.0,
+              801.0
+            ],
+            [
+              726.0,
+              826.0
+            ],
+            [
+              698.0,
+              826.0
+            ]
+          ],
+          "x": 698.0,
+          "y": 801.0,
+          "width": 28.0,
+          "height": 25.0,
+          "center_x": 712.0,
+          "center_y": 813.5,
+          "line_id": 34,
+          "column": "price",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 35,
+      "center_y": 821.5,
+      "y_min": 804.0,
+      "y_max": 839.0,
+      "text": "SP.LAIT.FLUIDE UHT58MG U3X20CL",
+      "token_indexes": [
+        52
+      ],
+      "tokens": [
+        {
+          "index": 52,
+          "text": "SP.LAIT.FLUIDE UHT58MG U3X20CL",
+          "score": 0.94488,
+          "box": [
+            [
+              169.0,
+              804.0
+            ],
+            [
+              474.0,
+              804.0
+            ],
+            [
+              474.0,
+              839.0
+            ],
+            [
+              169.0,
+              839.0
+            ]
+          ],
+          "x": 169.0,
+          "y": 804.0,
+          "width": 305.0,
+          "height": 35.0,
+          "center_x": 321.5,
+          "center_y": 821.5,
+          "line_id": 35,
+          "column": "description",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 36,
+      "center_y": 844.25,
+      "y_min": 826.0,
+      "y_max": 860.0,
+      "text": "1 x | 2,59 EUR",
+      "token_indexes": [
+        55,
+        56
+      ],
+      "tokens": [
+        {
+          "index": 55,
+          "text": "1 x",
+          "score": 0.79058,
+          "box": [
+            [
+              292.0,
+              832.0
+            ],
+            [
+              333.0,
+              832.0
+            ],
+            [
+              333.0,
+              859.0
+            ],
+            [
+              292.0,
+              859.0
+            ]
+          ],
+          "x": 292.0,
+          "y": 832.0,
+          "width": 41.0,
+          "height": 27.0,
+          "center_x": 312.5,
+          "center_y": 845.5,
+          "line_id": 36,
+          "column": "description",
+          "source_segment": "top"
+        },
+        {
+          "index": 56,
+          "text": "2,59 EUR",
+          "score": 0.96765,
+          "box": [
+            [
+              386.0,
+              826.0
+            ],
+            [
+              476.0,
+              826.0
+            ],
+            [
+              476.0,
+              860.0
+            ],
+            [
+              386.0,
+              860.0
+            ]
+          ],
+          "x": 386.0,
+          "y": 826.0,
+          "width": 90.0,
+          "height": 34.0,
+          "center_x": 431.0,
+          "center_y": 843.0,
+          "line_id": 36,
+          "column": "detail",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 37,
+      "center_y": 862.5,
+      "y_min": 845.0,
+      "y_max": 880.0,
+      "text": "MOUCHOIRS",
+      "token_indexes": [
+        57
+      ],
+      "tokens": [
+        {
+          "index": 57,
+          "text": "MOUCHOIRS",
+          "score": 0.95593,
+          "box": [
+            [
+              168.0,
+              845.0
+            ],
+            [
+              272.0,
+              845.0
+            ],
+            [
+              272.0,
+              880.0
+            ],
+            [
+              168.0,
+              880.0
+            ]
+          ],
+          "x": 168.0,
+          "y": 845.0,
+          "width": 104.0,
+          "height": 35.0,
+          "center_x": 220.0,
+          "center_y": 862.5,
+          "line_id": 37,
+          "column": "description",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 38,
+      "center_y": 878.0,
+      "y_min": 864.0,
+      "y_max": 904.0,
+      "text": "BOP DOUPLI MOUCH POCK 3P X10 | 1,00 € | 0",
+      "token_indexes": [
+        58,
+        59,
+        60
+      ],
+      "tokens": [
+        {
+          "index": 58,
+          "text": "BOP DOUPLI MOUCH POCK 3P X10",
+          "score": 0.92809,
+          "box": [
+            [
+              166.0,
+              866.0
+            ],
+            [
+              461.0,
+              866.0
+            ],
+            [
+              461.0,
+              904.0
+            ],
+            [
+              166.0,
+              904.0
+            ]
+          ],
+          "x": 166.0,
+          "y": 866.0,
+          "width": 295.0,
+          "height": 38.0,
+          "center_x": 313.5,
+          "center_y": 885.0,
+          "line_id": 38,
+          "column": "description",
+          "source_segment": "top"
+        },
+        {
+          "index": 59,
+          "text": "1,00 €",
+          "score": 0.86728,
+          "box": [
+            [
+              612.0,
+              864.0
+            ],
+            [
+              684.0,
+              864.0
+            ],
+            [
+              684.0,
+              892.0
+            ],
+            [
+              612.0,
+              892.0
+            ]
+          ],
+          "x": 612.0,
+          "y": 864.0,
+          "width": 72.0,
+          "height": 28.0,
+          "center_x": 648.0,
+          "center_y": 878.0,
+          "line_id": 38,
+          "column": "price",
+          "source_segment": "top"
+        },
+        {
+          "index": 60,
+          "text": "0",
+          "score": 0.99802,
+          "box": [
+            [
+              696.0,
+              865.0
+            ],
+            [
+              719.0,
+              865.0
+            ],
+            [
+              719.0,
+              888.0
+            ],
+            [
+              696.0,
+              888.0
+            ]
+          ],
+          "x": 696.0,
+          "y": 865.0,
+          "width": 23.0,
+          "height": 23.0,
+          "center_x": 707.5,
+          "center_y": 876.5,
+          "line_id": 38,
+          "column": "price",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 39,
+      "center_y": 906.5,
+      "y_min": 887.0,
+      "y_max": 922.0,
+      "text": "1 x | 1.00 EUR",
+      "token_indexes": [
+        61,
+        62
+      ],
+      "tokens": [
+        {
+          "index": 61,
+          "text": "1 x",
+          "score": 0.80228,
+          "box": [
+            [
+              290.0,
+              896.0
+            ],
+            [
+              332.0,
+              896.0
+            ],
+            [
+              332.0,
+              922.0
+            ],
+            [
+              290.0,
+              922.0
+            ]
+          ],
+          "x": 290.0,
+          "y": 896.0,
+          "width": 42.0,
+          "height": 26.0,
+          "center_x": 311.0,
+          "center_y": 909.0,
+          "line_id": 39,
+          "column": "description",
+          "source_segment": "top"
+        },
+        {
+          "index": 62,
+          "text": "1.00 EUR",
+          "score": 0.91148,
+          "box": [
+            [
+              386.0,
+              887.0
+            ],
+            [
+              475.0,
+              887.0
+            ],
+            [
+              475.0,
+              921.0
+            ],
+            [
+              386.0,
+              921.0
+            ]
+          ],
+          "x": 386.0,
+          "y": 887.0,
+          "width": 89.0,
+          "height": 34.0,
+          "center_x": 430.5,
+          "center_y": 904.0,
+          "line_id": 39,
+          "column": "detail",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 40,
+      "center_y": 937.25,
+      "y_min": 913.0,
+      "y_max": 965.0,
+      "text": "BROSSE GLAMOUR DEMELAGE FACILE | PARFUMERTE | 5,99 e | 13",
+      "token_indexes": [
+        66,
+        63,
+        64,
+        65
+      ],
+      "tokens": [
+        {
+          "index": 66,
+          "text": "BROSSE GLAMOUR DEMELAGE FACILE",
+          "score": 0.99751,
+          "box": [
+            [
+              166.0,
+              928.0
+            ],
+            [
+              476.0,
+              928.0
+            ],
+            [
+              476.0,
+              965.0
+            ],
+            [
+              166.0,
+              965.0
+            ]
+          ],
+          "x": 166.0,
+          "y": 928.0,
+          "width": 310.0,
+          "height": 37.0,
+          "center_x": 321.0,
+          "center_y": 946.5,
+          "line_id": 40,
+          "column": "description",
+          "source_segment": "top"
+        },
+        {
+          "index": 63,
+          "text": "PARFUMERTE",
+          "score": 0.96481,
+          "box": [
+            [
+              168.0,
+              913.0
+            ],
+            [
+              281.0,
+              913.0
+            ],
+            [
+              281.0,
+              943.0
+            ],
+            [
+              168.0,
+              943.0
+            ]
+          ],
+          "x": 168.0,
+          "y": 913.0,
+          "width": 113.0,
+          "height": 30.0,
+          "center_x": 224.5,
+          "center_y": 928.0,
+          "line_id": 40,
+          "column": "description",
+          "source_segment": "top"
+        },
+        {
+          "index": 64,
+          "text": "5,99 e",
+          "score": 0.86094,
+          "box": [
+            [
+              611.0,
+              921.0
+            ],
+            [
+              683.0,
+              921.0
+            ],
+            [
+              683.0,
+              953.0
+            ],
+            [
+              611.0,
+              953.0
+            ]
+          ],
+          "x": 611.0,
+          "y": 921.0,
+          "width": 72.0,
+          "height": 32.0,
+          "center_x": 647.0,
+          "center_y": 937.0,
+          "line_id": 40,
+          "column": "description",
+          "source_segment": "top"
+        },
+        {
+          "index": 65,
+          "text": "13",
+          "score": 0.99992,
+          "box": [
+            [
+              702.0,
+              924.0
+            ],
+            [
+              730.0,
+              924.0
+            ],
+            [
+              730.0,
+              951.0
+            ],
+            [
+              702.0,
+              951.0
+            ]
+          ],
+          "x": 702.0,
+          "y": 924.0,
+          "width": 28.0,
+          "height": 27.0,
+          "center_x": 716.0,
+          "center_y": 937.5,
+          "line_id": 40,
+          "column": "price",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 41,
+      "center_y": 969.5,
+      "y_min": 950.0,
+      "y_max": 995.0,
+      "text": "1 x | 5,99 EUR | 3,25 € | 13",
+      "token_indexes": [
+        68,
+        69,
+        70,
+        71
+      ],
+      "tokens": [
+        {
+          "index": 68,
+          "text": "1 x",
+          "score": 0.87774,
+          "box": [
+            [
+              289.0,
+              957.0
+            ],
+            [
+              324.0,
+              957.0
+            ],
+            [
+              324.0,
+              976.0
+            ],
+            [
+              289.0,
+              976.0
+            ]
+          ],
+          "x": 289.0,
+          "y": 957.0,
+          "width": 35.0,
+          "height": 19.0,
+          "center_x": 306.5,
+          "center_y": 966.5,
+          "line_id": 41,
+          "column": "description",
+          "source_segment": "top"
+        },
+        {
+          "index": 69,
+          "text": "5,99 EUR",
+          "score": 0.95242,
+          "box": [
+            [
+              384.0,
+              950.0
+            ],
+            [
+              474.0,
+              950.0
+            ],
+            [
+              474.0,
+              976.0
+            ],
+            [
+              384.0,
+              976.0
+            ]
+          ],
+          "x": 384.0,
+          "y": 950.0,
+          "width": 90.0,
+          "height": 26.0,
+          "center_x": 429.0,
+          "center_y": 963.0,
+          "line_id": 41,
+          "column": "detail",
+          "source_segment": "top"
+        },
+        {
+          "index": 70,
+          "text": "3,25 €",
+          "score": 0.9132,
+          "box": [
+            [
+              612.0,
+              958.0
+            ],
+            [
+              684.0,
+              958.0
+            ],
+            [
+              684.0,
+              995.0
+            ],
+            [
+              612.0,
+              995.0
+            ]
+          ],
+          "x": 612.0,
+          "y": 958.0,
+          "width": 72.0,
+          "height": 37.0,
+          "center_x": 648.0,
+          "center_y": 976.5,
+          "line_id": 41,
+          "column": "price",
+          "source_segment": "top"
+        },
+        {
+          "index": 71,
+          "text": "13",
+          "score": 0.99994,
+          "box": [
+            [
+              707.0,
+              960.0
+            ],
+            [
+              734.0,
+              960.0
+            ],
+            [
+              734.0,
+              985.0
+            ],
+            [
+              707.0,
+              985.0
+            ]
+          ],
+          "x": 707.0,
+          "y": 960.0,
+          "width": 27.0,
+          "height": 25.0,
+          "center_x": 720.5,
+          "center_y": 972.5,
+          "line_id": 41,
+          "column": "price",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 42,
+      "center_y": 983.0,
+      "y_min": 965.0,
+      "y_max": 1001.0,
+      "text": "GL DCH.BAMBOU&ALOE VER.U 75OML",
+      "token_indexes": [
+        67
+      ],
+      "tokens": [
+        {
+          "index": 67,
+          "text": "GL DCH.BAMBOU&ALOE VER.U 75OML",
+          "score": 0.88919,
+          "box": [
+            [
+              162.0,
+              965.0
+            ],
+            [
+              474.0,
+              965.0
+            ],
+            [
+              474.0,
+              1001.0
+            ],
+            [
+              162.0,
+              1001.0
+            ]
+          ],
+          "x": 162.0,
+          "y": 965.0,
+          "width": 312.0,
+          "height": 36.0,
+          "center_x": 318.0,
+          "center_y": 983.0,
+          "line_id": 42,
+          "column": "description",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 43,
+      "center_y": 1001.75,
+      "y_min": 987.0,
+      "y_max": 1016.0,
+      "text": "1 x | 3.25 EUR",
+      "token_indexes": [
+        72,
+        73
+      ],
+      "tokens": [
+        {
+          "index": 72,
+          "text": "1 x",
+          "score": 0.74894,
+          "box": [
+            [
+              280.0,
+              989.0
+            ],
+            [
+              321.0,
+              989.0
+            ],
+            [
+              321.0,
+              1016.0
+            ],
+            [
+              280.0,
+              1016.0
+            ]
+          ],
+          "x": 280.0,
+          "y": 989.0,
+          "width": 41.0,
+          "height": 27.0,
+          "center_x": 300.5,
+          "center_y": 1002.5,
+          "line_id": 43,
+          "column": "description",
+          "source_segment": "top"
+        },
+        {
+          "index": 73,
+          "text": "3.25 EUR",
+          "score": 0.9798,
+          "box": [
+            [
+              381.0,
+              987.0
+            ],
+            [
+              473.0,
+              987.0
+            ],
+            [
+              473.0,
+              1015.0
+            ],
+            [
+              381.0,
+              1015.0
+            ]
+          ],
+          "x": 381.0,
+          "y": 987.0,
+          "width": 92.0,
+          "height": 28.0,
+          "center_x": 427.0,
+          "center_y": 1001.0,
+          "line_id": 43,
+          "column": "detail",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 44,
+      "center_y": 1033.25,
+      "y_min": 1008.0,
+      "y_max": 1061.0,
+      "text": "COOUILLETTES Q.SUP.U CELLO 1KG | PATES | 1,75 € | 11",
+      "token_indexes": [
+        74,
+        75,
+        76,
+        77
+      ],
+      "tokens": [
+        {
+          "index": 74,
+          "text": "COOUILLETTES Q.SUP.U CELLO 1KG",
+          "score": 0.95132,
+          "box": [
+            [
+              149.0,
+              1024.0
+            ],
+            [
+              473.0,
+              1024.0
+            ],
+            [
+              473.0,
+              1061.0
+            ],
+            [
+              149.0,
+              1061.0
+            ]
+          ],
+          "x": 149.0,
+          "y": 1024.0,
+          "width": 324.0,
+          "height": 37.0,
+          "center_x": 311.0,
+          "center_y": 1042.5,
+          "line_id": 44,
+          "column": "description",
+          "source_segment": "top"
+        },
+        {
+          "index": 75,
+          "text": "PATES",
+          "score": 0.9987,
+          "box": [
+            [
+              155.0,
+              1008.0
+            ],
+            [
+              217.0,
+              1008.0
+            ],
+            [
+              217.0,
+              1037.0
+            ],
+            [
+              155.0,
+              1037.0
+            ]
+          ],
+          "x": 155.0,
+          "y": 1008.0,
+          "width": 62.0,
+          "height": 29.0,
+          "center_x": 186.0,
+          "center_y": 1022.5,
+          "line_id": 44,
+          "column": "description",
+          "source_segment": "top"
+        },
+        {
+          "index": 76,
+          "text": "1,75 €",
+          "score": 0.96189,
+          "box": [
+            [
+              614.0,
+              1017.0
+            ],
+            [
+              695.0,
+              1017.0
+            ],
+            [
+              695.0,
+              1052.0
+            ],
+            [
+              614.0,
+              1052.0
+            ]
+          ],
+          "x": 614.0,
+          "y": 1017.0,
+          "width": 81.0,
+          "height": 35.0,
+          "center_x": 654.5,
+          "center_y": 1034.5,
+          "line_id": 44,
+          "column": "price",
+          "source_segment": "top"
+        },
+        {
+          "index": 77,
+          "text": "11",
+          "score": 0.99918,
+          "box": [
+            [
+              685.0,
+              1017.0
+            ],
+            [
+              740.0,
+              1017.0
+            ],
+            [
+              740.0,
+              1047.0
+            ],
+            [
+              685.0,
+              1047.0
+            ]
+          ],
+          "x": 685.0,
+          "y": 1017.0,
+          "width": 55.0,
+          "height": 30.0,
+          "center_x": 712.5,
+          "center_y": 1032.0,
+          "line_id": 44,
+          "column": "price",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 45,
+      "center_y": 1066.75,
+      "y_min": 1050.0,
+      "y_max": 1084.0,
+      "text": "1 x | 1,75 EUR",
+      "token_indexes": [
+        78,
+        79
+      ],
+      "tokens": [
+        {
+          "index": 78,
+          "text": "1 x",
+          "score": 0.84197,
+          "box": [
+            [
+              273.0,
+              1050.0
+            ],
+            [
+              318.0,
+              1050.0
+            ],
+            [
+              318.0,
+              1081.0
+            ],
+            [
+              273.0,
+              1081.0
+            ]
+          ],
+          "x": 273.0,
+          "y": 1050.0,
+          "width": 45.0,
+          "height": 31.0,
+          "center_x": 295.5,
+          "center_y": 1065.5,
+          "line_id": 45,
+          "column": "description",
+          "source_segment": "top"
+        },
+        {
+          "index": 79,
+          "text": "1,75 EUR",
+          "score": 0.96302,
+          "box": [
+            [
+              380.0,
+              1052.0
+            ],
+            [
+              472.0,
+              1052.0
+            ],
+            [
+              472.0,
+              1084.0
+            ],
+            [
+              380.0,
+              1084.0
+            ]
+          ],
+          "x": 380.0,
+          "y": 1052.0,
+          "width": 92.0,
+          "height": 32.0,
+          "center_x": 426.0,
+          "center_y": 1068.0,
+          "line_id": 45,
+          "column": "detail",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 46,
+      "center_y": 1087.0,
+      "y_min": 1070.0,
+      "y_max": 1104.0,
+      "text": "SAUCES CHAUDES",
+      "token_indexes": [
+        80
+      ],
+      "tokens": [
+        {
+          "index": 80,
+          "text": "SAUCES CHAUDES",
+          "score": 0.99798,
+          "box": [
+            [
+              146.0,
+              1070.0
+            ],
+            [
+              306.0,
+              1070.0
+            ],
+            [
+              306.0,
+              1104.0
+            ],
+            [
+              146.0,
+              1104.0
+            ]
+          ],
+          "x": 146.0,
+          "y": 1070.0,
+          "width": 160.0,
+          "height": 34.0,
+          "center_x": 226.0,
+          "center_y": 1087.0,
+          "line_id": 46,
+          "column": "description",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 47,
+      "center_y": 1106.5,
+      "y_min": 1084.0,
+      "y_max": 1129.0,
+      "text": "SAUCE TOMATE FRAICHES U 2X190U | 1,85 € 0",
+      "token_indexes": [
+        81,
+        82
+      ],
+      "tokens": [
+        {
+          "index": 81,
+          "text": "SAUCE TOMATE FRAICHES U 2X190U",
+          "score": 0.96797,
+          "box": [
+            [
+              144.0,
+              1093.0
+            ],
+            [
+              472.0,
+              1093.0
+            ],
+            [
+              472.0,
+              1129.0
+            ],
+            [
+              144.0,
+              1129.0
+            ]
+          ],
+          "x": 144.0,
+          "y": 1093.0,
+          "width": 328.0,
+          "height": 36.0,
+          "center_x": 308.0,
+          "center_y": 1111.0,
+          "line_id": 47,
+          "column": "description",
+          "source_segment": "top"
+        },
+        {
+          "index": 82,
+          "text": "1,85 € 0",
+          "score": 0.88685,
+          "box": [
+            [
+              614.0,
+              1084.0
+            ],
+            [
+              735.0,
+              1084.0
+            ],
+            [
+              735.0,
+              1120.0
+            ],
+            [
+              614.0,
+              1120.0
+            ]
+          ],
+          "x": 614.0,
+          "y": 1084.0,
+          "width": 121.0,
+          "height": 36.0,
+          "center_x": 674.5,
+          "center_y": 1102.0,
+          "line_id": 47,
+          "column": "description",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 48,
+      "center_y": 1135.75,
+      "y_min": 1120.0,
+      "y_max": 1151.0,
+      "text": "1 x | 1,85 EUR",
+      "token_indexes": [
+        83,
+        84
+      ],
+      "tokens": [
+        {
+          "index": 83,
+          "text": "1 x",
+          "score": 0.70224,
+          "box": [
+            [
+              271.0,
+              1121.0
+            ],
+            [
+              314.0,
+              1121.0
+            ],
+            [
+              314.0,
+              1151.0
+            ],
+            [
+              271.0,
+              1151.0
+            ]
+          ],
+          "x": 271.0,
+          "y": 1121.0,
+          "width": 43.0,
+          "height": 30.0,
+          "center_x": 292.5,
+          "center_y": 1136.0,
+          "line_id": 48,
+          "column": "description",
+          "source_segment": "top"
+        },
+        {
+          "index": 84,
+          "text": "1,85 EUR",
+          "score": 0.97768,
+          "box": [
+            [
+              377.0,
+              1120.0
+            ],
+            [
+              470.0,
+              1120.0
+            ],
+            [
+              470.0,
+              1151.0
+            ],
+            [
+              377.0,
+              1151.0
+            ]
+          ],
+          "x": 377.0,
+          "y": 1120.0,
+          "width": 93.0,
+          "height": 31.0,
+          "center_x": 423.5,
+          "center_y": 1135.5,
+          "line_id": 48,
+          "column": "detail",
+          "source_segment": "top"
+        }
+      ]
+    },
+    {
+      "line_id": 49,
+      "center_y": 1212.25,
+      "y_min": 1196.0,
+      "y_max": 1228.0,
+      "text": "1 x | 1,85 EUR",
+      "token_indexes": [
+        85,
+        86
+      ],
+      "tokens": [
+        {
+          "index": 85,
+          "text": "1 x",
+          "score": 0.80013,
+          "box": [
+            [
+              273.0,
+              1199.0
+            ],
+            [
+              315.0,
+              1199.0
+            ],
+            [
+              315.0,
+              1226.0
+            ],
+            [
+              273.0,
+              1226.0
+            ]
+          ],
+          "x": 273.0,
+          "y": 1199.0,
+          "width": 42.0,
+          "height": 27.0,
+          "center_x": 294.0,
+          "center_y": 1212.5,
+          "line_id": 49,
+          "column": "description",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 86,
+          "text": "1,85 EUR",
+          "score": 0.97408,
+          "box": [
+            [
+              378.0,
+              1196.0
+            ],
+            [
+              470.0,
+              1196.0
+            ],
+            [
+              470.0,
+              1228.0
+            ],
+            [
+              378.0,
+              1228.0
+            ]
+          ],
+          "x": 378.0,
+          "y": 1196.0,
+          "width": 92.0,
+          "height": 32.0,
+          "center_x": 424.0,
+          "center_y": 1212.0,
+          "line_id": 49,
+          "column": "detail",
+          "source_segment": "bottom"
+        }
+      ]
+    },
+    {
+      "line_id": 50,
+      "center_y": 1232.5,
+      "y_min": 1216.0,
+      "y_max": 1249.0,
+      "text": "SURGELE SALE",
+      "token_indexes": [
+        87
+      ],
+      "tokens": [
+        {
+          "index": 87,
+          "text": "SURGELE SALE",
+          "score": 0.99928,
+          "box": [
+            [
+              143.0,
+              1216.0
+            ],
+            [
+              281.0,
+              1216.0
+            ],
+            [
+              281.0,
+              1249.0
+            ],
+            [
+              143.0,
+              1249.0
+            ]
+          ],
+          "x": 143.0,
+          "y": 1216.0,
+          "width": 138.0,
+          "height": 33.0,
+          "center_x": 212.0,
+          "center_y": 1232.5,
+          "line_id": 50,
+          "column": "description",
+          "source_segment": "bottom"
+        }
+      ]
+    },
+    {
+      "line_id": 51,
+      "center_y": 1253.0,
+      "y_min": 1231.0,
+      "y_max": 1273.0,
+      "text": "Q.CREU TROP DEU 13/15 VANNAMEI | 5,10 € 0",
+      "token_indexes": [
+        88,
+        89
+      ],
+      "tokens": [
+        {
+          "index": 88,
+          "text": "Q.CREU TROP DEU 13/15 VANNAMEI",
+          "score": 0.9569,
+          "box": [
+            [
+              143.0,
+              1240.0
+            ],
+            [
+              467.0,
+              1240.0
+            ],
+            [
+              467.0,
+              1273.0
+            ],
+            [
+              143.0,
+              1273.0
+            ]
+          ],
+          "x": 143.0,
+          "y": 1240.0,
+          "width": 324.0,
+          "height": 33.0,
+          "center_x": 305.0,
+          "center_y": 1256.5,
+          "line_id": 51,
+          "column": "description",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 89,
+          "text": "5,10 € 0",
+          "score": 0.92898,
+          "box": [
+            [
+              616.0,
+              1231.0
+            ],
+            [
+              739.0,
+              1231.0
+            ],
+            [
+              739.0,
+              1268.0
+            ],
+            [
+              616.0,
+              1268.0
+            ]
+          ],
+          "x": 616.0,
+          "y": 1231.0,
+          "width": 123.0,
+          "height": 37.0,
+          "center_x": 677.5,
+          "center_y": 1249.5,
+          "line_id": 51,
+          "column": "description",
+          "source_segment": "bottom"
+        }
+      ]
+    },
+    {
+      "line_id": 52,
+      "center_y": 1279.5,
+      "y_min": 1262.0,
+      "y_max": 1296.0,
+      "text": "2x | 2,55 EUR",
+      "token_indexes": [
+        90,
+        91
+      ],
+      "tokens": [
+        {
+          "index": 90,
+          "text": "2x",
+          "score": 0.8769,
+          "box": [
+            [
+              266.0,
+              1265.0
+            ],
+            [
+              312.0,
+              1265.0
+            ],
+            [
+              312.0,
+              1296.0
+            ],
+            [
+              266.0,
+              1296.0
+            ]
+          ],
+          "x": 266.0,
+          "y": 1265.0,
+          "width": 46.0,
+          "height": 31.0,
+          "center_x": 289.0,
+          "center_y": 1280.5,
+          "line_id": 52,
+          "column": "description",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 91,
+          "text": "2,55 EUR",
+          "score": 0.98073,
+          "box": [
+            [
+              372.0,
+              1262.0
+            ],
+            [
+              467.0,
+              1262.0
+            ],
+            [
+              467.0,
+              1295.0
+            ],
+            [
+              372.0,
+              1295.0
+            ]
+          ],
+          "x": 372.0,
+          "y": 1262.0,
+          "width": 95.0,
+          "height": 33.0,
+          "center_x": 419.5,
+          "center_y": 1278.5,
+          "line_id": 52,
+          "column": "detail",
+          "source_segment": "bottom"
+        }
+      ]
+    },
+    {
+      "line_id": 53,
+      "center_y": 1296.0,
+      "y_min": 1279.0,
+      "y_max": 1319.0,
+      "text": "SAUMON SAUUAGE PAVE S/P 2X125G | 3,85 € | 11",
+      "token_indexes": [
+        92,
+        93,
+        94
+      ],
+      "tokens": [
+        {
+          "index": 92,
+          "text": "SAUMON SAUUAGE PAVE S/P 2X125G",
+          "score": 0.96981,
+          "box": [
+            [
+              147.0,
+              1286.0
+            ],
+            [
+              468.0,
+              1286.0
+            ],
+            [
+              468.0,
+              1319.0
+            ],
+            [
+              147.0,
+              1319.0
+            ]
+          ],
+          "x": 147.0,
+          "y": 1286.0,
+          "width": 321.0,
+          "height": 33.0,
+          "center_x": 307.5,
+          "center_y": 1302.5,
+          "line_id": 53,
+          "column": "description",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 93,
+          "text": "3,85 €",
+          "score": 0.9024,
+          "box": [
+            [
+              617.0,
+              1279.0
+            ],
+            [
+              698.0,
+              1279.0
+            ],
+            [
+              698.0,
+              1313.0
+            ],
+            [
+              617.0,
+              1313.0
+            ]
+          ],
+          "x": 617.0,
+          "y": 1279.0,
+          "width": 81.0,
+          "height": 34.0,
+          "center_x": 657.5,
+          "center_y": 1296.0,
+          "line_id": 53,
+          "column": "price",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 94,
+          "text": "11",
+          "score": 0.99046,
+          "box": [
+            [
+              716.0,
+              1280.0
+            ],
+            [
+              746.0,
+              1280.0
+            ],
+            [
+              746.0,
+              1310.0
+            ],
+            [
+              716.0,
+              1310.0
+            ]
+          ],
+          "x": 716.0,
+          "y": 1280.0,
+          "width": 30.0,
+          "height": 30.0,
+          "center_x": 731.0,
+          "center_y": 1295.0,
+          "line_id": 53,
+          "column": "price",
+          "source_segment": "bottom"
+        }
+      ]
+    },
+    {
+      "line_id": 54,
+      "center_y": 1327.25,
+      "y_min": 1310.0,
+      "y_max": 1343.0,
+      "text": "1x | 3.85 EUR",
+      "token_indexes": [
+        95,
+        96
+      ],
+      "tokens": [
+        {
+          "index": 95,
+          "text": "1x",
+          "score": 0.87852,
+          "box": [
+            [
+              266.0,
+              1314.0
+            ],
+            [
+              311.0,
+              1314.0
+            ],
+            [
+              311.0,
+              1343.0
+            ],
+            [
+              266.0,
+              1343.0
+            ]
+          ],
+          "x": 266.0,
+          "y": 1314.0,
+          "width": 45.0,
+          "height": 29.0,
+          "center_x": 288.5,
+          "center_y": 1328.5,
+          "line_id": 54,
+          "column": "description",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 96,
+          "text": "3.85 EUR",
+          "score": 0.952,
+          "box": [
+            [
+              371.0,
+              1310.0
+            ],
+            [
+              467.0,
+              1310.0
+            ],
+            [
+              467.0,
+              1342.0
+            ],
+            [
+              371.0,
+              1342.0
+            ]
+          ],
+          "x": 371.0,
+          "y": 1310.0,
+          "width": 96.0,
+          "height": 32.0,
+          "center_x": 419.0,
+          "center_y": 1326.0,
+          "line_id": 54,
+          "column": "detail",
+          "source_segment": "bottom"
+        }
+      ]
+    },
+    {
+      "line_id": 55,
+      "center_y": 1360.5,
+      "y_min": 1331.0,
+      "y_max": 1386.0,
+      "text": "SURGELE SUCRE | BAT.SORB.MULTIFRUIT.OASIS 400G | 5,50 € | 11",
+      "token_indexes": [
+        97,
+        98,
+        99,
+        100
+      ],
+      "tokens": [
+        {
+          "index": 97,
+          "text": "SURGELE SUCRE",
+          "score": 0.99521,
+          "box": [
+            [
+              147.0,
+              1331.0
+            ],
+            [
+              290.0,
+              1331.0
+            ],
+            [
+              290.0,
+              1364.0
+            ],
+            [
+              147.0,
+              1364.0
+            ]
+          ],
+          "x": 147.0,
+          "y": 1331.0,
+          "width": 143.0,
+          "height": 33.0,
+          "center_x": 218.5,
+          "center_y": 1347.5,
+          "line_id": 55,
+          "column": "description",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 98,
+          "text": "BAT.SORB.MULTIFRUIT.OASIS 400G",
+          "score": 0.97921,
+          "box": [
+            [
+              149.0,
+              1356.0
+            ],
+            [
+              470.0,
+              1356.0
+            ],
+            [
+              470.0,
+              1386.0
+            ],
+            [
+              149.0,
+              1386.0
+            ]
+          ],
+          "x": 149.0,
+          "y": 1356.0,
+          "width": 321.0,
+          "height": 30.0,
+          "center_x": 309.5,
+          "center_y": 1371.0,
+          "line_id": 55,
+          "column": "description",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 99,
+          "text": "5,50 €",
+          "score": 0.97739,
+          "box": [
+            [
+              619.0,
+              1342.0
+            ],
+            [
+              698.0,
+              1342.0
+            ],
+            [
+              698.0,
+              1382.0
+            ],
+            [
+              619.0,
+              1382.0
+            ]
+          ],
+          "x": 619.0,
+          "y": 1342.0,
+          "width": 79.0,
+          "height": 40.0,
+          "center_x": 658.5,
+          "center_y": 1362.0,
+          "line_id": 55,
+          "column": "price",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 100,
+          "text": "11",
+          "score": 0.99956,
+          "box": [
+            [
+              715.0,
+              1346.0
+            ],
+            [
+              743.0,
+              1346.0
+            ],
+            [
+              743.0,
+              1372.0
+            ],
+            [
+              715.0,
+              1372.0
+            ]
+          ],
+          "x": 715.0,
+          "y": 1346.0,
+          "width": 28.0,
+          "height": 26.0,
+          "center_x": 729.0,
+          "center_y": 1359.0,
+          "line_id": 55,
+          "column": "price",
+          "source_segment": "bottom"
+        }
+      ]
+    },
+    {
+      "line_id": 56,
+      "center_y": 1395.25,
+      "y_min": 1379.0,
+      "y_max": 1412.0,
+      "text": "1 x | 5,50 EUR",
+      "token_indexes": [
+        101,
+        102
+      ],
+      "tokens": [
+        {
+          "index": 101,
+          "text": "1 x",
+          "score": 0.73789,
+          "box": [
+            [
+              272.0,
+              1379.0
+            ],
+            [
+              316.0,
+              1379.0
+            ],
+            [
+              316.0,
+              1410.0
+            ],
+            [
+              272.0,
+              1410.0
+            ]
+          ],
+          "x": 272.0,
+          "y": 1379.0,
+          "width": 44.0,
+          "height": 31.0,
+          "center_x": 294.0,
+          "center_y": 1394.5,
+          "line_id": 56,
+          "column": "description",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 102,
+          "text": "5,50 EUR",
+          "score": 0.9238,
+          "box": [
+            [
+              376.0,
+              1380.0
+            ],
+            [
+              470.0,
+              1380.0
+            ],
+            [
+              470.0,
+              1412.0
+            ],
+            [
+              376.0,
+              1412.0
+            ]
+          ],
+          "x": 376.0,
+          "y": 1380.0,
+          "width": 94.0,
+          "height": 32.0,
+          "center_x": 423.0,
+          "center_y": 1396.0,
+          "line_id": 56,
+          "column": "detail",
+          "source_segment": "bottom"
+        }
+      ]
+    },
+    {
+      "line_id": 57,
+      "center_y": 1423.5,
+      "y_min": 1394.0,
+      "y_max": 1448.0,
+      "text": "ULTRA FRAIS | 4.29 € | 11",
+      "token_indexes": [
+        103,
+        106,
+        107
+      ],
+      "tokens": [
+        {
+          "index": 103,
+          "text": "ULTRA FRAIS",
+          "score": 0.99832,
+          "box": [
+            [
+              148.0,
+              1394.0
+            ],
+            [
+              276.0,
+              1394.0
+            ],
+            [
+              276.0,
+              1434.0
+            ],
+            [
+              148.0,
+              1434.0
+            ]
+          ],
+          "x": 148.0,
+          "y": 1394.0,
+          "width": 128.0,
+          "height": 40.0,
+          "center_x": 212.0,
+          "center_y": 1414.0,
+          "line_id": 57,
+          "column": "description",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 106,
+          "text": "4.29 €",
+          "score": 0.89734,
+          "box": [
+            [
+              621.0,
+              1409.0
+            ],
+            [
+              701.0,
+              1409.0
+            ],
+            [
+              701.0,
+              1448.0
+            ],
+            [
+              621.0,
+              1448.0
+            ]
+          ],
+          "x": 621.0,
+          "y": 1409.0,
+          "width": 80.0,
+          "height": 39.0,
+          "center_x": 661.0,
+          "center_y": 1428.5,
+          "line_id": 57,
+          "column": "price",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 107,
+          "text": "11",
+          "score": 0.99893,
+          "box": [
+            [
+              710.0,
+              1409.0
+            ],
+            [
+              744.0,
+              1409.0
+            ],
+            [
+              744.0,
+              1438.0
+            ],
+            [
+              710.0,
+              1438.0
+            ]
+          ],
+          "x": 710.0,
+          "y": 1409.0,
+          "width": 34.0,
+          "height": 29.0,
+          "center_x": 727.0,
+          "center_y": 1423.5,
+          "line_id": 57,
+          "column": "price",
+          "source_segment": "bottom"
+        }
+      ]
+    },
+    {
+      "line_id": 58,
+      "center_y": 1439.5,
+      "y_min": 1420.0,
+      "y_max": 1458.0,
+      "text": "BQP YOPLAIT | AROM/ILES 12X125G",
+      "token_indexes": [
+        104,
+        105
+      ],
+      "tokens": [
+        {
+          "index": 104,
+          "text": "BQP YOPLAIT",
+          "score": 0.96714,
+          "box": [
+            [
+              150.0,
+              1420.0
+            ],
+            [
+              277.0,
+              1420.0
+            ],
+            [
+              277.0,
+              1458.0
+            ],
+            [
+              150.0,
+              1458.0
+            ]
+          ],
+          "x": 150.0,
+          "y": 1420.0,
+          "width": 127.0,
+          "height": 38.0,
+          "center_x": 213.5,
+          "center_y": 1439.0,
+          "line_id": 58,
+          "column": "description",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 105,
+          "text": "AROM/ILES 12X125G",
+          "score": 0.97919,
+          "box": [
+            [
+              276.0,
+              1422.0
+            ],
+            [
+              464.0,
+              1422.0
+            ],
+            [
+              464.0,
+              1458.0
+            ],
+            [
+              276.0,
+              1458.0
+            ]
+          ],
+          "x": 276.0,
+          "y": 1422.0,
+          "width": 188.0,
+          "height": 36.0,
+          "center_x": 370.0,
+          "center_y": 1440.0,
+          "line_id": 58,
+          "column": "description",
+          "source_segment": "bottom"
+        }
+      ]
+    },
+    {
+      "line_id": 59,
+      "center_y": 1467.75,
+      "y_min": 1445.0,
+      "y_max": 1493.0,
+      "text": "1 X | 4,29 EUR | 2,79 € | 0",
+      "token_indexes": [
+        108,
+        109,
+        111,
+        112
+      ],
+      "tokens": [
+        {
+          "index": 108,
+          "text": "1 X",
+          "score": 0.69888,
+          "box": [
+            [
+              279.0,
+              1445.0
+            ],
+            [
+              320.0,
+              1445.0
+            ],
+            [
+              320.0,
+              1476.0
+            ],
+            [
+              279.0,
+              1476.0
+            ]
+          ],
+          "x": 279.0,
+          "y": 1445.0,
+          "width": 41.0,
+          "height": 31.0,
+          "center_x": 299.5,
+          "center_y": 1460.5,
+          "line_id": 59,
+          "column": "description",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 109,
+          "text": "4,29 EUR",
+          "score": 0.96364,
+          "box": [
+            [
+              378.0,
+              1449.0
+            ],
+            [
+              475.0,
+              1449.0
+            ],
+            [
+              475.0,
+              1483.0
+            ],
+            [
+              378.0,
+              1483.0
+            ]
+          ],
+          "x": 378.0,
+          "y": 1449.0,
+          "width": 97.0,
+          "height": 34.0,
+          "center_x": 426.5,
+          "center_y": 1466.0,
+          "line_id": 59,
+          "column": "detail",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 111,
+          "text": "2,79 €",
+          "score": 0.96523,
+          "box": [
+            [
+              622.0,
+              1454.0
+            ],
+            [
+              701.0,
+              1454.0
+            ],
+            [
+              701.0,
+              1493.0
+            ],
+            [
+              622.0,
+              1493.0
+            ]
+          ],
+          "x": 622.0,
+          "y": 1454.0,
+          "width": 79.0,
+          "height": 39.0,
+          "center_x": 661.5,
+          "center_y": 1473.5,
+          "line_id": 59,
+          "column": "price",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 112,
+          "text": "0",
+          "score": 0.99784,
+          "box": [
+            [
+              717.0,
+              1459.0
+            ],
+            [
+              734.0,
+              1459.0
+            ],
+            [
+              734.0,
+              1480.0
+            ],
+            [
+              717.0,
+              1480.0
+            ]
+          ],
+          "x": 717.0,
+          "y": 1459.0,
+          "width": 17.0,
+          "height": 21.0,
+          "center_x": 725.5,
+          "center_y": 1469.5,
+          "line_id": 59,
+          "column": "price",
+          "source_segment": "bottom"
+        }
+      ]
+    },
+    {
+      "line_id": 60,
+      "center_y": 1484.5,
+      "y_min": 1459.0,
+      "y_max": 1510.0,
+      "text": "BUP CALIN 20%MG 500G NAT",
+      "token_indexes": [
+        110
+      ],
+      "tokens": [
+        {
+          "index": 110,
+          "text": "BUP CALIN 20%MG 500G NAT",
+          "score": 0.95484,
+          "box": [
+            [
+              153.0,
+              1459.0
+            ],
+            [
+              417.0,
+              1459.0
+            ],
+            [
+              417.0,
+              1510.0
+            ],
+            [
+              153.0,
+              1510.0
+            ]
+          ],
+          "x": 153.0,
+          "y": 1459.0,
+          "width": 264.0,
+          "height": 51.0,
+          "center_x": 285.0,
+          "center_y": 1484.5,
+          "line_id": 60,
+          "column": "description",
+          "source_segment": "bottom"
+        }
+      ]
+    },
+    {
+      "line_id": 61,
+      "center_y": 1508.0,
+      "y_min": 1489.0,
+      "y_max": 1529.0,
+      "text": "1 x | 2.79 EUR",
+      "token_indexes": [
+        113,
+        114
+      ],
+      "tokens": [
+        {
+          "index": 113,
+          "text": "1 x",
+          "score": 0.81584,
+          "box": [
+            [
+              280.0,
+              1489.0
+            ],
+            [
+              324.0,
+              1489.0
+            ],
+            [
+              324.0,
+              1521.0
+            ],
+            [
+              280.0,
+              1521.0
+            ]
+          ],
+          "x": 280.0,
+          "y": 1489.0,
+          "width": 44.0,
+          "height": 32.0,
+          "center_x": 302.0,
+          "center_y": 1505.0,
+          "line_id": 61,
+          "column": "description",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 114,
+          "text": "2.79 EUR",
+          "score": 0.97792,
+          "box": [
+            [
+              380.0,
+              1493.0
+            ],
+            [
+              477.0,
+              1493.0
+            ],
+            [
+              477.0,
+              1529.0
+            ],
+            [
+              380.0,
+              1529.0
+            ]
+          ],
+          "x": 380.0,
+          "y": 1493.0,
+          "width": 97.0,
+          "height": 36.0,
+          "center_x": 428.5,
+          "center_y": 1511.0,
+          "line_id": 61,
+          "column": "detail",
+          "source_segment": "bottom"
+        }
+      ]
+    },
+    {
+      "line_id": 62,
+      "center_y": 1543.0,
+      "y_min": 1518.0,
+      "y_max": 1590.0,
+      "text": "Nanbre de | lignes d'article 20 | 69,48 €",
+      "token_indexes": [
+        115,
+        116,
+        117
+      ],
+      "tokens": [
+        {
+          "index": 115,
+          "text": "Nanbre de",
+          "score": 0.95255,
+          "box": [
+            [
+              160.0,
+              1518.0
+            ],
+            [
+              276.0,
+              1518.0
+            ],
+            [
+              276.0,
+              1568.0
+            ],
+            [
+              160.0,
+              1568.0
+            ]
+          ],
+          "x": 160.0,
+          "y": 1518.0,
+          "width": 116.0,
+          "height": 50.0,
+          "center_x": 218.0,
+          "center_y": 1543.0,
+          "line_id": 62,
+          "column": "description",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 116,
+          "text": "lignes d'article 20",
+          "score": 0.99622,
+          "box": [
+            [
+              261.0,
+              1520.0
+            ],
+            [
+              469.0,
+              1520.0
+            ],
+            [
+              469.0,
+              1559.0
+            ],
+            [
+              261.0,
+              1559.0
+            ]
+          ],
+          "x": 261.0,
+          "y": 1520.0,
+          "width": 208.0,
+          "height": 39.0,
+          "center_x": 365.0,
+          "center_y": 1539.5,
+          "line_id": 62,
+          "column": "description",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 117,
+          "text": "69,48 €",
+          "score": 0.914,
+          "box": [
+            [
+              668.0,
+              1552.0
+            ],
+            [
+              755.0,
+              1552.0
+            ],
+            [
+              755.0,
+              1590.0
+            ],
+            [
+              668.0,
+              1590.0
+            ]
+          ],
+          "x": 668.0,
+          "y": 1552.0,
+          "width": 87.0,
+          "height": 38.0,
+          "center_x": 711.5,
+          "center_y": 1571.0,
+          "line_id": 62,
+          "column": "price",
+          "source_segment": "bottom"
+        }
+      ]
+    },
+    {
+      "line_id": 63,
+      "center_y": 1597.25,
+      "y_min": 1552.0,
+      "y_max": 1630.0,
+      "text": "TOTAL [24] Articles | 68,11 €",
+      "token_indexes": [
+        118,
+        119
+      ],
+      "tokens": [
+        {
+          "index": 118,
+          "text": "TOTAL [24] Articles",
+          "score": 0.99603,
+          "box": [
+            [
+              164.0,
+              1552.0
+            ],
+            [
+              372.0,
+              1552.0
+            ],
+            [
+              372.0,
+              1618.0
+            ],
+            [
+              164.0,
+              1618.0
+            ]
+          ],
+          "x": 164.0,
+          "y": 1552.0,
+          "width": 208.0,
+          "height": 66.0,
+          "center_x": 268.0,
+          "center_y": 1585.0,
+          "line_id": 63,
+          "column": "description",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 119,
+          "text": "68,11 €",
+          "score": 0.8894,
+          "box": [
+            [
+              670.0,
+              1589.0
+            ],
+            [
+              756.0,
+              1589.0
+            ],
+            [
+              756.0,
+              1630.0
+            ],
+            [
+              670.0,
+              1630.0
+            ]
+          ],
+          "x": 670.0,
+          "y": 1589.0,
+          "width": 86.0,
+          "height": 41.0,
+          "center_x": 713.0,
+          "center_y": 1609.5,
+          "line_id": 63,
+          "column": "price",
+          "source_segment": "bottom"
+        }
+      ]
+    },
+    {
+      "line_id": 64,
+      "center_y": 1631.5,
+      "y_min": 1603.0,
+      "y_max": 1659.0,
+      "text": "SOUS-TOTAL | 1.37 €",
+      "token_indexes": [
+        120,
+        121
+      ],
+      "tokens": [
+        {
+          "index": 120,
+          "text": "SOUS-TOTAL",
+          "score": 0.99793,
+          "box": [
+            [
+              166.0,
+              1603.0
+            ],
+            [
+              280.0,
+              1603.0
+            ],
+            [
+              280.0,
+              1659.0
+            ],
+            [
+              166.0,
+              1659.0
+            ]
+          ],
+          "x": 166.0,
+          "y": 1603.0,
+          "width": 114.0,
+          "height": 56.0,
+          "center_x": 223.0,
+          "center_y": 1631.0,
+          "line_id": 64,
+          "column": "description",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 121,
+          "text": "1.37 €",
+          "score": 0.85877,
+          "box": [
+            [
+              677.0,
+              1610.0
+            ],
+            [
+              758.0,
+              1610.0
+            ],
+            [
+              758.0,
+              1654.0
+            ],
+            [
+              677.0,
+              1654.0
+            ]
+          ],
+          "x": 677.0,
+          "y": 1610.0,
+          "width": 81.0,
+          "height": 44.0,
+          "center_x": 717.5,
+          "center_y": 1632.0,
+          "line_id": 64,
+          "column": "price",
+          "source_segment": "bottom"
+        }
+      ]
+    },
+    {
+      "line_id": 65,
+      "center_y": 1661.5,
+      "y_min": 1628.0,
+      "y_max": 1694.0,
+      "text": "TOTAL TUA | Dont articles éligibles TR | 57,85 €",
+      "token_indexes": [
+        122,
+        123,
+        124
+      ],
+      "tokens": [
+        {
+          "index": 122,
+          "text": "TOTAL TUA",
+          "score": 0.96445,
+          "box": [
+            [
+              165.0,
+              1628.0
+            ],
+            [
+              275.0,
+              1628.0
+            ],
+            [
+              275.0,
+              1687.0
+            ],
+            [
+              165.0,
+              1687.0
+            ]
+          ],
+          "x": 165.0,
+          "y": 1628.0,
+          "width": 110.0,
+          "height": 59.0,
+          "center_x": 220.0,
+          "center_y": 1657.5,
+          "line_id": 65,
+          "column": "description",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 123,
+          "text": "Dont articles éligibles TR",
+          "score": 0.96876,
+          "box": [
+            [
+              289.0,
+              1647.0
+            ],
+            [
+              572.0,
+              1647.0
+            ],
+            [
+              572.0,
+              1694.0
+            ],
+            [
+              289.0,
+              1694.0
+            ]
+          ],
+          "x": 289.0,
+          "y": 1647.0,
+          "width": 283.0,
+          "height": 47.0,
+          "center_x": 430.5,
+          "center_y": 1670.5,
+          "line_id": 65,
+          "column": "description",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 124,
+          "text": "57,85 €",
+          "score": 0.82742,
+          "box": [
+            [
+              671.0,
+              1640.0
+            ],
+            [
+              759.0,
+              1640.0
+            ],
+            [
+              759.0,
+              1683.0
+            ],
+            [
+              671.0,
+              1683.0
+            ]
+          ],
+          "x": 671.0,
+          "y": 1640.0,
+          "width": 88.0,
+          "height": 43.0,
+          "center_x": 715.0,
+          "center_y": 1661.5,
+          "line_id": 65,
+          "column": "price",
+          "source_segment": "bottom"
+        }
+      ]
+    },
+    {
+      "line_id": 66,
+      "center_y": 1689.5,
+      "y_min": 1667.0,
+      "y_max": 1712.0,
+      "text": "70,00 €",
+      "token_indexes": [
+        125
+      ],
+      "tokens": [
+        {
+          "index": 125,
+          "text": "70,00 €",
+          "score": 0.92058,
+          "box": [
+            [
+              673.0,
+              1667.0
+            ],
+            [
+              759.0,
+              1667.0
+            ],
+            [
+              759.0,
+              1712.0
+            ],
+            [
+              673.0,
+              1712.0
+            ]
+          ],
+          "x": 673.0,
+          "y": 1667.0,
+          "width": 86.0,
+          "height": 45.0,
+          "center_x": 716.0,
+          "center_y": 1689.5,
+          "line_id": 66,
+          "column": "price",
+          "source_segment": "bottom"
+        }
+      ]
+    },
+    {
+      "line_id": 67,
+      "center_y": 1718.0,
+      "y_min": 1688.0,
+      "y_max": 1752.0,
+      "text": "ESPECES | 0.52 €",
+      "token_indexes": [
+        127,
+        126
+      ],
+      "tokens": [
+        {
+          "index": 127,
+          "text": "ESPECES",
+          "score": 0.99848,
+          "box": [
+            [
+              167.0,
+              1699.0
+            ],
+            [
+              260.0,
+              1699.0
+            ],
+            [
+              260.0,
+              1752.0
+            ],
+            [
+              167.0,
+              1752.0
+            ]
+          ],
+          "x": 167.0,
+          "y": 1699.0,
+          "width": 93.0,
+          "height": 53.0,
+          "center_x": 213.5,
+          "center_y": 1725.5,
+          "line_id": 67,
+          "column": "description",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 126,
+          "text": "0.52 €",
+          "score": 0.87855,
+          "box": [
+            [
+              680.0,
+              1688.0
+            ],
+            [
+              760.0,
+              1688.0
+            ],
+            [
+              760.0,
+              1733.0
+            ],
+            [
+              680.0,
+              1733.0
+            ]
+          ],
+          "x": 680.0,
+          "y": 1688.0,
+          "width": 80.0,
+          "height": 45.0,
+          "center_x": 720.0,
+          "center_y": 1710.5,
+          "line_id": 67,
+          "column": "price",
+          "source_segment": "bottom"
+        }
+      ]
+    },
+    {
+      "line_id": 68,
+      "center_y": 1749.5,
+      "y_min": 1711.0,
+      "y_max": 1772.0,
+      "text": "Rendu | ÉSPECES | TUA | HT | TTC",
+      "token_indexes": [
+        128,
+        129,
+        130,
+        132,
+        133
+      ],
+      "tokens": [
+        {
+          "index": 128,
+          "text": "Rendu",
+          "score": 0.99752,
+          "box": [
+            [
+              170.0,
+              1734.0
+            ],
+            [
+              241.0,
+              1734.0
+            ],
+            [
+              241.0,
+              1772.0
+            ],
+            [
+              170.0,
+              1772.0
+            ]
+          ],
+          "x": 170.0,
+          "y": 1734.0,
+          "width": 71.0,
+          "height": 38.0,
+          "center_x": 205.5,
+          "center_y": 1753.0,
+          "line_id": 68,
+          "column": "description",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 129,
+          "text": "ÉSPECES",
+          "score": 0.96937,
+          "box": [
+            [
+              230.0,
+              1711.0
+            ],
+            [
+              319.0,
+              1711.0
+            ],
+            [
+              319.0,
+              1765.0
+            ],
+            [
+              230.0,
+              1765.0
+            ]
+          ],
+          "x": 230.0,
+          "y": 1711.0,
+          "width": 89.0,
+          "height": 54.0,
+          "center_x": 274.5,
+          "center_y": 1738.0,
+          "line_id": 68,
+          "column": "description",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 130,
+          "text": "TUA",
+          "score": 0.99794,
+          "box": [
+            [
+              379.0,
+              1731.0
+            ],
+            [
+              422.0,
+              1731.0
+            ],
+            [
+              422.0,
+              1764.0
+            ],
+            [
+              379.0,
+              1764.0
+            ]
+          ],
+          "x": 379.0,
+          "y": 1731.0,
+          "width": 43.0,
+          "height": 33.0,
+          "center_x": 400.5,
+          "center_y": 1747.5,
+          "line_id": 68,
+          "column": "vat",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 132,
+          "text": "HT",
+          "score": 0.99872,
+          "box": [
+            [
+              511.0,
+              1737.0
+            ],
+            [
+              538.0,
+              1737.0
+            ],
+            [
+              538.0,
+              1763.0
+            ],
+            [
+              511.0,
+              1763.0
+            ]
+          ],
+          "x": 511.0,
+          "y": 1737.0,
+          "width": 27.0,
+          "height": 26.0,
+          "center_x": 524.5,
+          "center_y": 1750.0,
+          "line_id": 68,
+          "column": "description",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 133,
+          "text": "TTC",
+          "score": 0.9211,
+          "box": [
+            [
+              625.0,
+              1734.0
+            ],
+            [
+              667.0,
+              1734.0
+            ],
+            [
+              667.0,
+              1765.0
+            ],
+            [
+              625.0,
+              1765.0
+            ]
+          ],
+          "x": 625.0,
+          "y": 1734.0,
+          "width": 42.0,
+          "height": 31.0,
+          "center_x": 646.0,
+          "center_y": 1749.5,
+          "line_id": 68,
+          "column": "price",
+          "source_segment": "bottom"
+        }
+      ]
+    },
+    {
+      "line_id": 69,
+      "center_y": 1773.5,
+      "y_min": 1743.0,
+      "y_max": 1795.0,
+      "text": "0.00 € | 32,38 | 32,38€",
+      "token_indexes": [
+        134,
+        131,
+        136
+      ],
+      "tokens": [
+        {
+          "index": 134,
+          "text": "0.00 €",
+          "score": 0.94392,
+          "box": [
+            [
+              347.0,
+              1753.0
+            ],
+            [
+              427.0,
+              1753.0
+            ],
+            [
+              427.0,
+              1795.0
+            ],
+            [
+              347.0,
+              1795.0
+            ]
+          ],
+          "x": 347.0,
+          "y": 1753.0,
+          "width": 80.0,
+          "height": 42.0,
+          "center_x": 387.0,
+          "center_y": 1774.0,
+          "line_id": 69,
+          "column": "detail",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 131,
+          "text": "32,38",
+          "score": 0.96105,
+          "box": [
+            [
+              460.0,
+              1743.0
+            ],
+            [
+              547.0,
+              1743.0
+            ],
+            [
+              547.0,
+              1785.0
+            ],
+            [
+              460.0,
+              1785.0
+            ]
+          ],
+          "x": 460.0,
+          "y": 1743.0,
+          "width": 87.0,
+          "height": 42.0,
+          "center_x": 503.5,
+          "center_y": 1764.0,
+          "line_id": 69,
+          "column": "detail",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 136,
+          "text": "32,38€",
+          "score": 0.95272,
+          "box": [
+            [
+              583.0,
+              1757.0
+            ],
+            [
+              669.0,
+              1757.0
+            ],
+            [
+              669.0,
+              1790.0
+            ],
+            [
+              583.0,
+              1790.0
+            ]
+          ],
+          "x": 583.0,
+          "y": 1757.0,
+          "width": 86.0,
+          "height": 33.0,
+          "center_x": 626.0,
+          "center_y": 1773.5,
+          "line_id": 69,
+          "column": "detail",
+          "source_segment": "bottom"
+        }
+      ]
+    },
+    {
+      "line_id": 70,
+      "center_y": 1799.5,
+      "y_min": 1767.0,
+      "y_max": 1824.0,
+      "text": "0 | 0.00 | 0.54 C | 25,93 € | 9.80 | 26,47 €",
+      "token_indexes": [
+        137,
+        138,
+        139,
+        135,
+        140,
+        141
+      ],
+      "tokens": [
+        {
+          "index": 137,
+          "text": "0",
+          "score": 0.99544,
+          "box": [
+            [
+              185.0,
+              1796.0
+            ],
+            [
+              204.0,
+              1796.0
+            ],
+            [
+              204.0,
+              1821.0
+            ],
+            [
+              185.0,
+              1821.0
+            ]
+          ],
+          "x": 185.0,
+          "y": 1796.0,
+          "width": 19.0,
+          "height": 25.0,
+          "center_x": 194.5,
+          "center_y": 1808.5,
+          "line_id": 70,
+          "column": "detail",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 138,
+          "text": "0.00",
+          "score": 0.99983,
+          "box": [
+            [
+              227.0,
+              1781.0
+            ],
+            [
+              286.0,
+              1781.0
+            ],
+            [
+              286.0,
+              1820.0
+            ],
+            [
+              227.0,
+              1820.0
+            ]
+          ],
+          "x": 227.0,
+          "y": 1781.0,
+          "width": 59.0,
+          "height": 39.0,
+          "center_x": 256.5,
+          "center_y": 1800.5,
+          "line_id": 70,
+          "column": "detail",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 139,
+          "text": "0.54 C",
+          "score": 0.81456,
+          "box": [
+            [
+              348.0,
+              1777.0
+            ],
+            [
+              430.0,
+              1777.0
+            ],
+            [
+              430.0,
+              1820.0
+            ],
+            [
+              348.0,
+              1820.0
+            ]
+          ],
+          "x": 348.0,
+          "y": 1777.0,
+          "width": 82.0,
+          "height": 43.0,
+          "center_x": 389.0,
+          "center_y": 1798.5,
+          "line_id": 70,
+          "column": "description",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 135,
+          "text": "25,93 €",
+          "score": 0.91048,
+          "box": [
+            [
+              462.0,
+              1767.0
+            ],
+            [
+              547.0,
+              1767.0
+            ],
+            [
+              547.0,
+              1806.0
+            ],
+            [
+              462.0,
+              1806.0
+            ]
+          ],
+          "x": 462.0,
+          "y": 1767.0,
+          "width": 85.0,
+          "height": 39.0,
+          "center_x": 504.5,
+          "center_y": 1786.5,
+          "line_id": 70,
+          "column": "detail",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 140,
+          "text": "9.80",
+          "score": 0.86354,
+          "box": [
+            [
+              472.0,
+              1791.0
+            ],
+            [
+              528.0,
+              1791.0
+            ],
+            [
+              528.0,
+              1824.0
+            ],
+            [
+              472.0,
+              1824.0
+            ]
+          ],
+          "x": 472.0,
+          "y": 1791.0,
+          "width": 56.0,
+          "height": 33.0,
+          "center_x": 500.0,
+          "center_y": 1807.5,
+          "line_id": 70,
+          "column": "detail",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 141,
+          "text": "26,47 €",
+          "score": 0.87449,
+          "box": [
+            [
+              586.0,
+              1778.0
+            ],
+            [
+              670.0,
+              1778.0
+            ],
+            [
+              670.0,
+              1809.0
+            ],
+            [
+              586.0,
+              1809.0
+            ]
+          ],
+          "x": 586.0,
+          "y": 1778.0,
+          "width": 84.0,
+          "height": 31.0,
+          "center_x": 628.0,
+          "center_y": 1793.5,
+          "line_id": 70,
+          "column": "detail",
+          "source_segment": "bottom"
+        }
+      ]
+    },
+    {
+      "line_id": 71,
+      "center_y": 1822.75,
+      "y_min": 1797.0,
+      "y_max": 1844.0,
+      "text": "11 | 2.10 | 0,83 € | 10.63 €",
+      "token_indexes": [
+        143,
+        144,
+        145,
+        142
+      ],
+      "tokens": [
+        {
+          "index": 143,
+          "text": "11",
+          "score": 0.99642,
+          "box": [
+            [
+              178.0,
+              1817.0
+            ],
+            [
+              204.0,
+              1817.0
+            ],
+            [
+              204.0,
+              1844.0
+            ],
+            [
+              178.0,
+              1844.0
+            ]
+          ],
+          "x": 178.0,
+          "y": 1817.0,
+          "width": 26.0,
+          "height": 27.0,
+          "center_x": 191.0,
+          "center_y": 1830.5,
+          "line_id": 71,
+          "column": "detail",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 144,
+          "text": "2.10",
+          "score": 0.99394,
+          "box": [
+            [
+              229.0,
+              1807.0
+            ],
+            [
+              284.0,
+              1807.0
+            ],
+            [
+              284.0,
+              1840.0
+            ],
+            [
+              229.0,
+              1840.0
+            ]
+          ],
+          "x": 229.0,
+          "y": 1807.0,
+          "width": 55.0,
+          "height": 33.0,
+          "center_x": 256.5,
+          "center_y": 1823.5,
+          "line_id": 71,
+          "column": "detail",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 145,
+          "text": "0,83 €",
+          "score": 0.88657,
+          "box": [
+            [
+              350.0,
+              1800.0
+            ],
+            [
+              430.0,
+              1800.0
+            ],
+            [
+              430.0,
+              1844.0
+            ],
+            [
+              350.0,
+              1844.0
+            ]
+          ],
+          "x": 350.0,
+          "y": 1800.0,
+          "width": 80.0,
+          "height": 44.0,
+          "center_x": 390.0,
+          "center_y": 1822.0,
+          "line_id": 71,
+          "column": "detail",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 142,
+          "text": "10.63 €",
+          "score": 0.84381,
+          "box": [
+            [
+              586.0,
+              1797.0
+            ],
+            [
+              670.0,
+              1797.0
+            ],
+            [
+              670.0,
+              1831.0
+            ],
+            [
+              586.0,
+              1831.0
+            ]
+          ],
+          "x": 586.0,
+          "y": 1797.0,
+          "width": 84.0,
+          "height": 34.0,
+          "center_x": 628.0,
+          "center_y": 1814.0,
+          "line_id": 71,
+          "column": "detail",
+          "source_segment": "bottom"
+        }
+      ]
+    },
+    {
+      "line_id": 72,
+      "center_y": 1849.75,
+      "y_min": 1829.0,
+      "y_max": 1868.0,
+      "text": "13 | 8,50 | 60.11€ | 69,48 €",
+      "token_indexes": [
+        146,
+        147,
+        148,
+        149
+      ],
+      "tokens": [
+        {
+          "index": 146,
+          "text": "13",
+          "score": 0.9995,
+          "box": [
+            [
+              178.0,
+              1837.0
+            ],
+            [
+              207.0,
+              1837.0
+            ],
+            [
+              207.0,
+              1868.0
+            ],
+            [
+              178.0,
+              1868.0
+            ]
+          ],
+          "x": 178.0,
+          "y": 1837.0,
+          "width": 29.0,
+          "height": 31.0,
+          "center_x": 192.5,
+          "center_y": 1852.5,
+          "line_id": 72,
+          "column": "detail",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 147,
+          "text": "8,50",
+          "score": 0.90678,
+          "box": [
+            [
+              230.0,
+              1829.0
+            ],
+            [
+              284.0,
+              1829.0
+            ],
+            [
+              284.0,
+              1864.0
+            ],
+            [
+              230.0,
+              1864.0
+            ]
+          ],
+          "x": 230.0,
+          "y": 1829.0,
+          "width": 54.0,
+          "height": 35.0,
+          "center_x": 257.0,
+          "center_y": 1846.5,
+          "line_id": 72,
+          "column": "detail",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 148,
+          "text": "60.11€",
+          "score": 0.88397,
+          "box": [
+            [
+              466.0,
+              1830.0
+            ],
+            [
+              548.0,
+              1830.0
+            ],
+            [
+              548.0,
+              1865.0
+            ],
+            [
+              466.0,
+              1865.0
+            ]
+          ],
+          "x": 466.0,
+          "y": 1830.0,
+          "width": 82.0,
+          "height": 35.0,
+          "center_x": 507.0,
+          "center_y": 1847.5,
+          "line_id": 72,
+          "column": "detail",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 149,
+          "text": "69,48 €",
+          "score": 0.98632,
+          "box": [
+            [
+              589.0,
+              1836.0
+            ],
+            [
+              669.0,
+              1836.0
+            ],
+            [
+              669.0,
+              1868.0
+            ],
+            [
+              589.0,
+              1868.0
+            ]
+          ],
+          "x": 589.0,
+          "y": 1836.0,
+          "width": 80.0,
+          "height": 32.0,
+          "center_x": 629.0,
+          "center_y": 1852.0,
+          "line_id": 72,
+          "column": "detail",
+          "source_segment": "bottom"
+        }
+      ]
+    },
+    {
+      "line_id": 73,
+      "center_y": 1870.0,
+      "y_min": 1845.0,
+      "y_max": 1895.0,
+      "text": "1,37 €",
+      "token_indexes": [
+        150
+      ],
+      "tokens": [
+        {
+          "index": 150,
+          "text": "1,37 €",
+          "score": 0.98387,
+          "box": [
+            [
+              354.0,
+              1845.0
+            ],
+            [
+              436.0,
+              1845.0
+            ],
+            [
+              436.0,
+              1895.0
+            ],
+            [
+              354.0,
+              1895.0
+            ]
+          ],
+          "x": 354.0,
+          "y": 1845.0,
+          "width": 82.0,
+          "height": 50.0,
+          "center_x": 395.0,
+          "center_y": 1870.0,
+          "line_id": 73,
+          "column": "detail",
+          "source_segment": "bottom"
+        }
+      ]
+    },
+    {
+      "line_id": 74,
+      "center_y": 1890.25,
+      "y_min": 1873.0,
+      "y_max": 1915.0,
+      "text": "TOTAL | 26005",
+      "token_indexes": [
+        151,
+        152
+      ],
+      "tokens": [
+        {
+          "index": 151,
+          "text": "TOTAL",
+          "score": 0.99938,
+          "box": [
+            [
+              173.0,
+              1873.0
+            ],
+            [
+              242.0,
+              1873.0
+            ],
+            [
+              242.0,
+              1915.0
+            ],
+            [
+              173.0,
+              1915.0
+            ]
+          ],
+          "x": 173.0,
+          "y": 1873.0,
+          "width": 69.0,
+          "height": 42.0,
+          "center_x": 207.5,
+          "center_y": 1894.0,
+          "line_id": 74,
+          "column": "description",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 152,
+          "text": "26005",
+          "score": 0.99985,
+          "box": [
+            [
+              490.0,
+              1873.0
+            ],
+            [
+              586.0,
+              1873.0
+            ],
+            [
+              586.0,
+              1900.0
+            ],
+            [
+              490.0,
+              1900.0
+            ]
+          ],
+          "x": 490.0,
+          "y": 1873.0,
+          "width": 96.0,
+          "height": 27.0,
+          "center_x": 538.0,
+          "center_y": 1886.5,
+          "line_id": 74,
+          "column": "detail",
+          "source_segment": "bottom"
+        }
+      ]
+    },
+    {
+      "line_id": 75,
+      "center_y": 1971.5,
+      "y_min": 1950.0,
+      "y_max": 1995.0,
+      "text": "0872818600011 NAF | 4711E",
+      "token_indexes": [
+        154,
+        153
+      ],
+      "tokens": [
+        {
+          "index": 154,
+          "text": "0872818600011 NAF",
+          "score": 0.98572,
+          "box": [
+            [
+              395.0,
+              1950.0
+            ],
+            [
+              574.0,
+              1950.0
+            ],
+            [
+              574.0,
+              1995.0
+            ],
+            [
+              395.0,
+              1995.0
+            ]
+          ],
+          "x": 395.0,
+          "y": 1950.0,
+          "width": 179.0,
+          "height": 45.0,
+          "center_x": 484.5,
+          "center_y": 1972.5,
+          "line_id": 75,
+          "column": "description",
+          "source_segment": "bottom"
+        },
+        {
+          "index": 153,
+          "text": "4711E",
+          "score": 0.99944,
+          "box": [
+            [
+              567.0,
+              1951.0
+            ],
+            [
+              630.0,
+              1951.0
+            ],
+            [
+              630.0,
+              1990.0
+            ],
+            [
+              567.0,
+              1990.0
+            ]
+          ],
+          "x": 567.0,
+          "y": 1951.0,
+          "width": 63.0,
+          "height": 39.0,
+          "center_x": 598.5,
+          "center_y": 1970.5,
+          "line_id": 75,
+          "column": "description",
+          "source_segment": "bottom"
+        }
+      ]
+    }
+  ]
+}

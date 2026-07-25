@@ -1,0 +1,1865 @@
+{
+  "source": "C:\\Users\\Jack.LAPTOP-2USDKF0K\\budgetkazpei\\services\\receipt-scanner\\corpus_v2\\phase13_baseline_check\\diagnostics\\LP_SAINT_LEU_39_30\\preprocessed.jpg",
+  "image_width": 1200,
+  "image_height": 1600,
+  "elapsed_seconds": 10.616,
+  "engine": "rapidocr-onnxruntime",
+  "tokens": [
+    {
+      "index": 0,
+      "text": "LEADER PRICE SAINT LEU",
+      "score": 0.99588,
+      "box": [
+        [
+          362.0,
+          183.0
+        ],
+        [
+          657.0,
+          209.0
+        ],
+        [
+          653.0,
+          256.0
+        ],
+        [
+          358.0,
+          230.0
+        ]
+      ],
+      "x": 358.0,
+      "y": 183.0,
+      "width": 299.0,
+      "height": 73.0,
+      "center_x": 507.5,
+      "center_y": 219.5,
+      "line_id": 0,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 1,
+      "text": "150, Rue du Germeral Lanbert",
+      "score": 0.89433,
+      "box": [
+        [
+          326.0,
+          214.0
+        ],
+        [
+          688.0,
+          252.0
+        ],
+        [
+          683.0,
+          298.0
+        ],
+        [
+          321.0,
+          259.0
+        ]
+      ],
+      "x": 321.0,
+      "y": 214.0,
+      "width": 367.0,
+      "height": 84.0,
+      "center_x": 504.5,
+      "center_y": 256.0,
+      "line_id": 1,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 2,
+      "text": "97436 SA1NT-LEU",
+      "score": 0.97135,
+      "box": [
+        [
+          404.0,
+          270.0
+        ],
+        [
+          608.0,
+          284.0
+        ],
+        [
+          605.0,
+          317.0
+        ],
+        [
+          402.0,
+          303.0
+        ]
+      ],
+      "x": 402.0,
+      "y": 270.0,
+      "width": 206.0,
+      "height": 47.0,
+      "center_x": 505.0,
+      "center_y": 293.5,
+      "line_id": 2,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 3,
+      "text": "Te1: 02.62.34.78.73",
+      "score": 0.96575,
+      "box": [
+        [
+          370.0,
+          303.0
+        ],
+        [
+          640.0,
+          321.0
+        ],
+        [
+          638.0,
+          354.0
+        ],
+        [
+          368.0,
+          336.0
+        ]
+      ],
+      "x": 368.0,
+      "y": 303.0,
+      "width": 272.0,
+      "height": 51.0,
+      "center_x": 504.0,
+      "center_y": 328.5,
+      "line_id": 3,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 4,
+      "text": "BIE VUENUE",
+      "score": 0.95678,
+      "box": [
+        [
+          437.0,
+          378.0
+        ],
+        [
+          567.0,
+          388.0
+        ],
+        [
+          565.0,
+          422.0
+        ],
+        [
+          434.0,
+          412.0
+        ]
+      ],
+      "x": 434.0,
+      "y": 378.0,
+      "width": 133.0,
+      "height": 44.0,
+      "center_x": 500.5,
+      "center_y": 400.0,
+      "line_id": 4,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 5,
+      "text": "VOUS AVEZ ETE RECU PAR (MOUNIAPIN)",
+      "score": 0.99633,
+      "box": [
+        [
+          261.0,
+          446.0
+        ],
+        [
+          729.0,
+          472.0
+        ],
+        [
+          727.0,
+          511.0
+        ],
+        [
+          259.0,
+          485.0
+        ]
+      ],
+      "x": 259.0,
+      "y": 446.0,
+      "width": 470.0,
+      "height": 65.0,
+      "center_x": 494.0,
+      "center_y": 478.5,
+      "line_id": 5,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 6,
+      "text": "05/07/2026- 18:30:07",
+      "score": 0.96665,
+      "box": [
+        [
+          212.0,
+          488.0
+        ],
+        [
+          523.0,
+          504.0
+        ],
+        [
+          521.0,
+          544.0
+        ],
+        [
+          210.0,
+          528.0
+        ]
+      ],
+      "x": 210.0,
+      "y": 488.0,
+      "width": 313.0,
+      "height": 56.0,
+      "center_x": 366.5,
+      "center_y": 516.0,
+      "line_id": 6,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 7,
+      "text": "124 7 12823",
+      "score": 0.95961,
+      "box": [
+        [
+          624.0,
+          513.0
+        ],
+        [
+          776.0,
+          518.0
+        ],
+        [
+          775.0,
+          556.0
+        ],
+        [
+          622.0,
+          551.0
+        ]
+      ],
+      "x": 622.0,
+      "y": 513.0,
+      "width": 154.0,
+      "height": 43.0,
+      "center_x": 699.0,
+      "center_y": 534.5,
+      "line_id": 7,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 8,
+      "text": "OPERATIJN : VENTE",
+      "score": 0.95431,
+      "box": [
+        [
+          378.0,
+          543.0
+        ],
+        [
+          613.0,
+          554.0
+        ],
+        [
+          612.0,
+          592.0
+        ],
+        [
+          376.0,
+          581.0
+        ]
+      ],
+      "x": 376.0,
+      "y": 543.0,
+      "width": 237.0,
+      "height": 49.0,
+      "center_x": 494.5,
+      "center_y": 567.5,
+      "line_id": 8,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 9,
+      "text": "(1)3250391062126",
+      "score": 0.99948,
+      "box": [
+        [
+          110.0,
+          575.0
+        ],
+        [
+          332.0,
+          582.0
+        ],
+        [
+          331.0,
+          619.0
+        ],
+        [
+          109.0,
+          612.0
+        ]
+      ],
+      "x": 109.0,
+      "y": 575.0,
+      "width": 223.0,
+      "height": 44.0,
+      "center_x": 220.5,
+      "center_y": 597.0,
+      "line_id": 9,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 10,
+      "text": "IVORIA PAIE TARTINER DUO",
+      "score": 0.96671,
+      "box": [
+        [
+          381.0,
+          588.0
+        ],
+        [
+          703.0,
+          601.0
+        ],
+        [
+          702.0,
+          637.0
+        ],
+        [
+          379.0,
+          624.0
+        ]
+      ],
+      "x": 379.0,
+      "y": 588.0,
+      "width": 324.0,
+      "height": 49.0,
+      "center_x": 541.0,
+      "center_y": 612.5,
+      "line_id": 10,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 11,
+      "text": "3.94 EUR",
+      "score": 0.97279,
+      "box": [
+        [
+          744.0,
+          605.0
+        ],
+        [
+          857.0,
+          608.0
+        ],
+        [
+          856.0,
+          643.0
+        ],
+        [
+          743.0,
+          640.0
+        ]
+      ],
+      "x": 743.0,
+      "y": 605.0,
+      "width": 114.0,
+      "height": 38.0,
+      "center_x": 800.0,
+      "center_y": 624.0,
+      "line_id": 10,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 12,
+      "text": "(1)3222477013124",
+      "score": 0.99932,
+      "box": [
+        [
+          110.0,
+          618.0
+        ],
+        [
+          333.0,
+          625.0
+        ],
+        [
+          332.0,
+          662.0
+        ],
+        [
+          109.0,
+          655.0
+        ]
+      ],
+      "x": 109.0,
+      "y": 618.0,
+      "width": 224.0,
+      "height": 44.0,
+      "center_x": 221.0,
+      "center_y": 640.0,
+      "line_id": 11,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 13,
+      "text": "CONFITURE FRAISE 37OG CO",
+      "score": 0.98511,
+      "box": [
+        [
+          380.0,
+          631.0
+        ],
+        [
+          698.0,
+          643.0
+        ],
+        [
+          697.0,
+          676.0
+        ],
+        [
+          379.0,
+          664.0
+        ]
+      ],
+      "x": 379.0,
+      "y": 631.0,
+      "width": 319.0,
+      "height": 45.0,
+      "center_x": 538.5,
+      "center_y": 653.5,
+      "line_id": 12,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 14,
+      "text": "2.70 EUR",
+      "score": 0.99983,
+      "box": [
+        [
+          740.0,
+          645.0
+        ],
+        [
+          850.0,
+          648.0
+        ],
+        [
+          849.0,
+          683.0
+        ],
+        [
+          739.0,
+          680.0
+        ]
+      ],
+      "x": 739.0,
+      "y": 645.0,
+      "width": 111.0,
+      "height": 38.0,
+      "center_x": 794.5,
+      "center_y": 664.0,
+      "line_id": 12,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 15,
+      "text": "(1)3700311866469",
+      "score": 0.98881,
+      "box": [
+        [
+          111.0,
+          662.0
+        ],
+        [
+          333.0,
+          668.0
+        ],
+        [
+          332.0,
+          702.0
+        ],
+        [
+          110.0,
+          696.0
+        ]
+      ],
+      "x": 110.0,
+      "y": 662.0,
+      "width": 223.0,
+      "height": 40.0,
+      "center_x": 221.5,
+      "center_y": 682.0,
+      "line_id": 13,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 16,
+      "text": "TLJ BARRE CEREALE CHOCO B",
+      "score": 0.99777,
+      "box": [
+        [
+          381.0,
+          672.0
+        ],
+        [
+          707.0,
+          683.0
+        ],
+        [
+          706.0,
+          716.0
+        ],
+        [
+          380.0,
+          705.0
+        ]
+      ],
+      "x": 380.0,
+      "y": 672.0,
+      "width": 327.0,
+      "height": 44.0,
+      "center_x": 543.5,
+      "center_y": 694.0,
+      "line_id": 13,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 17,
+      "text": "1.70 EUR",
+      "score": 0.99403,
+      "box": [
+        [
+          735.0,
+          685.0
+        ],
+        [
+          844.0,
+          687.0
+        ],
+        [
+          843.0,
+          721.0
+        ],
+        [
+          734.0,
+          719.0
+        ]
+      ],
+      "x": 734.0,
+      "y": 685.0,
+      "width": 110.0,
+      "height": 36.0,
+      "center_x": 789.0,
+      "center_y": 703.0,
+      "line_id": 14,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 18,
+      "text": "(9)3263852201163",
+      "score": 0.99955,
+      "box": [
+        [
+          112.0,
+          704.0
+        ],
+        [
+          334.0,
+          709.0
+        ],
+        [
+          333.0,
+          743.0
+        ],
+        [
+          111.0,
+          738.0
+        ]
+      ],
+      "x": 111.0,
+      "y": 704.0,
+      "width": 223.0,
+      "height": 39.0,
+      "center_x": 222.5,
+      "center_y": 723.5,
+      "line_id": 15,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 19,
+      "text": "*TAB.CHOCU.NOIR 47% 100GX",
+      "score": 0.8971,
+      "box": [
+        [
+          379.0,
+          712.0
+        ],
+        [
+          702.0,
+          721.0
+        ],
+        [
+          701.0,
+          754.0
+        ],
+        [
+          378.0,
+          745.0
+        ]
+      ],
+      "x": 378.0,
+      "y": 712.0,
+      "width": 324.0,
+      "height": 42.0,
+      "center_x": 540.0,
+      "center_y": 733.0,
+      "line_id": 15,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 20,
+      "text": "4.40 EUR",
+      "score": 0.99762,
+      "box": [
+        [
+          731.0,
+          723.0
+        ],
+        [
+          839.0,
+          725.0
+        ],
+        [
+          838.0,
+          759.0
+        ],
+        [
+          730.0,
+          757.0
+        ]
+      ],
+      "x": 730.0,
+      "y": 723.0,
+      "width": 109.0,
+      "height": 36.0,
+      "center_x": 784.5,
+      "center_y": 741.0,
+      "line_id": 16,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 21,
+      "text": "(1)3700311810523",
+      "score": 0.99313,
+      "box": [
+        [
+          112.0,
+          745.0
+        ],
+        [
+          333.0,
+          749.0
+        ],
+        [
+          332.0,
+          783.0
+        ],
+        [
+          111.0,
+          779.0
+        ]
+      ],
+      "x": 111.0,
+      "y": 745.0,
+      "width": 222.0,
+      "height": 38.0,
+      "center_x": 222.0,
+      "center_y": 764.0,
+      "line_id": 17,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 22,
+      "text": "BOUTER CANRE FOUR CHO 300",
+      "score": 0.95551,
+      "box": [
+        [
+          376.0,
+          752.0
+        ],
+        [
+          699.0,
+          759.0
+        ],
+        [
+          698.0,
+          792.0
+        ],
+        [
+          376.0,
+          785.0
+        ]
+      ],
+      "x": 376.0,
+      "y": 752.0,
+      "width": 323.0,
+      "height": 40.0,
+      "center_x": 537.5,
+      "center_y": 772.0,
+      "line_id": 17,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 23,
+      "text": "2.04 EUR",
+      "score": 0.99954,
+      "box": [
+        [
+          725.0,
+          762.0
+        ],
+        [
+          832.0,
+          762.0
+        ],
+        [
+          832.0,
+          796.0
+        ],
+        [
+          725.0,
+          796.0
+        ]
+      ],
+      "x": 725.0,
+      "y": 762.0,
+      "width": 107.0,
+      "height": 34.0,
+      "center_x": 778.5,
+      "center_y": 779.0,
+      "line_id": 17,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 24,
+      "text": "(9)3700311620072",
+      "score": 0.97318,
+      "box": [
+        [
+          112.0,
+          787.0
+        ],
+        [
+          332.0,
+          791.0
+        ],
+        [
+          331.0,
+          825.0
+        ],
+        [
+          111.0,
+          821.0
+        ]
+      ],
+      "x": 111.0,
+      "y": 787.0,
+      "width": 221.0,
+      "height": 38.0,
+      "center_x": 221.5,
+      "center_y": 806.0,
+      "line_id": 18,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 25,
+      "text": "BISCUIT TOB CHOC NOIR 150",
+      "score": 0.95083,
+      "box": [
+        [
+          376.0,
+          792.0
+        ],
+        [
+          696.0,
+          797.0
+        ],
+        [
+          695.0,
+          830.0
+        ],
+        [
+          376.0,
+          825.0
+        ]
+      ],
+      "x": 376.0,
+      "y": 792.0,
+      "width": 320.0,
+      "height": 38.0,
+      "center_x": 536.0,
+      "center_y": 811.0,
+      "line_id": 18,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 26,
+      "text": "1.70 EUR",
+      "score": 0.99984,
+      "box": [
+        [
+          723.0,
+          800.0
+        ],
+        [
+          829.0,
+          800.0
+        ],
+        [
+          829.0,
+          834.0
+        ],
+        [
+          723.0,
+          834.0
+        ]
+      ],
+      "x": 723.0,
+      "y": 800.0,
+      "width": 106.0,
+      "height": 34.0,
+      "center_x": 776.0,
+      "center_y": 817.0,
+      "line_id": 18,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 27,
+      "text": "(1)3178530422412",
+      "score": 0.9979,
+      "box": [
+        [
+          110.0,
+          828.0
+        ],
+        [
+          330.0,
+          832.0
+        ],
+        [
+          329.0,
+          866.0
+        ],
+        [
+          109.0,
+          862.0
+        ]
+      ],
+      "x": 109.0,
+      "y": 828.0,
+      "width": 221.0,
+      "height": 38.0,
+      "center_x": 219.5,
+      "center_y": 847.0,
+      "line_id": 19,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 28,
+      "text": "225G GOUTER FOURRES CHOCO",
+      "score": 0.9978,
+      "box": [
+        [
+          375.0,
+          833.0
+        ],
+        [
+          696.0,
+          837.0
+        ],
+        [
+          695.0,
+          870.0
+        ],
+        [
+          375.0,
+          866.0
+        ]
+      ],
+      "x": 375.0,
+      "y": 833.0,
+      "width": 321.0,
+      "height": 37.0,
+      "center_x": 535.5,
+      "center_y": 851.5,
+      "line_id": 19,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 29,
+      "text": "2.25 EUR",
+      "score": 0.99961,
+      "box": [
+        [
+          722.0,
+          840.0
+        ],
+        [
+          826.0,
+          840.0
+        ],
+        [
+          826.0,
+          871.0
+        ],
+        [
+          722.0,
+          871.0
+        ]
+      ],
+      "x": 722.0,
+      "y": 840.0,
+      "width": 104.0,
+      "height": 31.0,
+      "center_x": 774.0,
+      "center_y": 855.5,
+      "line_id": 19,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 30,
+      "text": "EPICERIE SUCREE",
+      "score": 0.9983,
+      "box": [
+        [
+          105.0,
+          870.0
+        ],
+        [
+          316.0,
+          873.0
+        ],
+        [
+          315.0,
+          907.0
+        ],
+        [
+          104.0,
+          904.0
+        ]
+      ],
+      "x": 104.0,
+      "y": 870.0,
+      "width": 212.0,
+      "height": 37.0,
+      "center_x": 210.0,
+      "center_y": 888.5,
+      "line_id": 20,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 31,
+      "text": "10.73 EUR",
+      "score": 0.9635,
+      "box": [
+        [
+          347.0,
+          873.0
+        ],
+        [
+          488.0,
+          873.0
+        ],
+        [
+          488.0,
+          910.0
+        ],
+        [
+          347.0,
+          910.0
+        ]
+      ],
+      "x": 347.0,
+      "y": 873.0,
+      "width": 141.0,
+      "height": 37.0,
+      "center_x": 417.5,
+      "center_y": 891.5,
+      "line_id": 20,
+      "column": "detail",
+      "source_segment": "full"
+    },
+    {
+      "index": 32,
+      "text": "(1)3297565711558",
+      "score": 0.99798,
+      "box": [
+        [
+          107.0,
+          912.0
+        ],
+        [
+          327.0,
+          915.0
+        ],
+        [
+          326.0,
+          949.0
+        ],
+        [
+          106.0,
+          946.0
+        ]
+      ],
+      "x": 106.0,
+      "y": 912.0,
+      "width": 221.0,
+      "height": 37.0,
+      "center_x": 216.5,
+      "center_y": 930.5,
+      "line_id": 21,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 33,
+      "text": "KALAO THE PECHE 2L",
+      "score": 0.97538,
+      "box": [
+        [
+          370.0,
+          914.0
+        ],
+        [
+          607.0,
+          914.0
+        ],
+        [
+          607.0,
+          950.0
+        ],
+        [
+          370.0,
+          950.0
+        ]
+      ],
+      "x": 370.0,
+      "y": 914.0,
+      "width": 237.0,
+      "height": 36.0,
+      "center_x": 488.5,
+      "center_y": 932.0,
+      "line_id": 21,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 34,
+      "text": "2.86 EUR",
+      "score": 0.89117,
+      "box": [
+        [
+          722.0,
+          916.0
+        ],
+        [
+          828.0,
+          916.0
+        ],
+        [
+          828.0,
+          951.0
+        ],
+        [
+          722.0,
+          951.0
+        ]
+      ],
+      "x": 722.0,
+      "y": 916.0,
+      "width": 106.0,
+      "height": 35.0,
+      "center_x": 775.0,
+      "center_y": 933.5,
+      "line_id": 21,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 35,
+      "text": "BOISSONS SANS ALCOOL",
+      "score": 0.96419,
+      "box": [
+        [
+          102.0,
+          954.0
+        ],
+        [
+          379.0,
+          957.0
+        ],
+        [
+          379.0,
+          994.0
+        ],
+        [
+          102.0,
+          991.0
+        ]
+      ],
+      "x": 102.0,
+      "y": 954.0,
+      "width": 277.0,
+      "height": 40.0,
+      "center_x": 240.5,
+      "center_y": 974.0,
+      "line_id": 22,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 36,
+      "text": "2.86 EUR",
+      "score": 0.87879,
+      "box": [
+        [
+          406.0,
+          957.0
+        ],
+        [
+          536.0,
+          957.0
+        ],
+        [
+          536.0,
+          991.0
+        ],
+        [
+          406.0,
+          991.0
+        ]
+      ],
+      "x": 406.0,
+      "y": 957.0,
+      "width": 130.0,
+      "height": 34.0,
+      "center_x": 471.0,
+      "center_y": 974.0,
+      "line_id": 22,
+      "column": "detail",
+      "source_segment": "full"
+    },
+    {
+      "index": 37,
+      "text": "(9)3700328401675",
+      "score": 0.99475,
+      "box": [
+        [
+          103.0,
+          997.0
+        ],
+        [
+          323.0,
+          999.0
+        ],
+        [
+          322.0,
+          1033.0
+        ],
+        [
+          103.0,
+          1031.0
+        ]
+      ],
+      "x": 103.0,
+      "y": 997.0,
+      "width": 220.0,
+      "height": 36.0,
+      "center_x": 213.0,
+      "center_y": 1015.0,
+      "line_id": 23,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 38,
+      "text": "EMMENTAL HAPE FIN IKG",
+      "score": 0.99315,
+      "box": [
+        [
+          367.0,
+          998.0
+        ],
+        [
+          647.0,
+          996.0
+        ],
+        [
+          647.0,
+          1032.0
+        ],
+        [
+          367.0,
+          1034.0
+        ]
+      ],
+      "x": 367.0,
+      "y": 996.0,
+      "width": 280.0,
+      "height": 38.0,
+      "center_x": 507.0,
+      "center_y": 1015.0,
+      "line_id": 23,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 39,
+      "text": "6.49 EUR",
+      "score": 0.98568,
+      "box": [
+        [
+          722.0,
+          997.0
+        ],
+        [
+          829.0,
+          997.0
+        ],
+        [
+          829.0,
+          1031.0
+        ],
+        [
+          722.0,
+          1031.0
+        ]
+      ],
+      "x": 722.0,
+      "y": 997.0,
+      "width": 107.0,
+      "height": 34.0,
+      "center_x": 775.5,
+      "center_y": 1014.0,
+      "line_id": 23,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 40,
+      "text": "PRIX PROMOTION",
+      "score": 0.99493,
+      "box": [
+        [
+          287.0,
+          1041.0
+        ],
+        [
+          481.0,
+          1041.0
+        ],
+        [
+          481.0,
+          1075.0
+        ],
+        [
+          287.0,
+          1075.0
+        ]
+      ],
+      "x": 287.0,
+      "y": 1041.0,
+      "width": 194.0,
+      "height": 34.0,
+      "center_x": 384.0,
+      "center_y": 1058.0,
+      "line_id": 24,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 41,
+      "text": "CRENERIE",
+      "score": 0.94964,
+      "box": [
+        [
+          97.0,
+          1084.0
+        ],
+        [
+          214.0,
+          1084.0
+        ],
+        [
+          214.0,
+          1119.0
+        ],
+        [
+          97.0,
+          1119.0
+        ]
+      ],
+      "x": 97.0,
+      "y": 1084.0,
+      "width": 117.0,
+      "height": 35.0,
+      "center_x": 155.5,
+      "center_y": 1101.5,
+      "line_id": 25,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 42,
+      "text": "6.49 EUR",
+      "score": 0.99537,
+      "box": [
+        [
+          242.0,
+          1082.0
+        ],
+        [
+          377.0,
+          1082.0
+        ],
+        [
+          377.0,
+          1120.0
+        ],
+        [
+          242.0,
+          1120.0
+        ]
+      ],
+      "x": 242.0,
+      "y": 1082.0,
+      "width": 135.0,
+      "height": 38.0,
+      "center_x": 309.5,
+      "center_y": 1101.0,
+      "line_id": 25,
+      "column": "detail",
+      "source_segment": "full"
+    },
+    {
+      "index": 43,
+      "text": "(1)3448971300045",
+      "score": 0.99813,
+      "box": [
+        [
+          98.0,
+          1126.0
+        ],
+        [
+          318.0,
+          1126.0
+        ],
+        [
+          318.0,
+          1160.0
+        ],
+        [
+          98.0,
+          1160.0
+        ]
+      ],
+      "x": 98.0,
+      "y": 1126.0,
+      "width": 220.0,
+      "height": 34.0,
+      "center_x": 208.0,
+      "center_y": 1143.0,
+      "line_id": 26,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 44,
+      "text": "PETIT PAIH LAIT X10 350G",
+      "score": 0.9569,
+      "box": [
+        [
+          363.0,
+          1124.0
+        ],
+        [
+          684.0,
+          1121.0
+        ],
+        [
+          684.0,
+          1157.0
+        ],
+        [
+          363.0,
+          1160.0
+        ]
+      ],
+      "x": 363.0,
+      "y": 1121.0,
+      "width": 321.0,
+      "height": 39.0,
+      "center_x": 523.5,
+      "center_y": 1140.5,
+      "line_id": 26,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 45,
+      "text": "2.44 EUR",
+      "score": 0.99272,
+      "box": [
+        [
+          723.0,
+          1119.0
+        ],
+        [
+          831.0,
+          1117.0
+        ],
+        [
+          832.0,
+          1155.0
+        ],
+        [
+          724.0,
+          1157.0
+        ]
+      ],
+      "x": 723.0,
+      "y": 1117.0,
+      "width": 109.0,
+      "height": 40.0,
+      "center_x": 777.5,
+      "center_y": 1137.0,
+      "line_id": 26,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 46,
+      "text": "PPI  2.44 EUR",
+      "score": 0.95855,
+      "box": [
+        [
+          92.0,
+          1168.0
+        ],
+        [
+          305.0,
+          1168.0
+        ],
+        [
+          305.0,
+          1205.0
+        ],
+        [
+          92.0,
+          1205.0
+        ]
+      ],
+      "x": 92.0,
+      "y": 1168.0,
+      "width": 213.0,
+      "height": 37.0,
+      "center_x": 198.5,
+      "center_y": 1186.5,
+      "line_id": 27,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 47,
+      "text": "(1)299991057593",
+      "score": 0.99878,
+      "box": [
+        [
+          95.0,
+          1213.0
+        ],
+        [
+          301.0,
+          1213.0
+        ],
+        [
+          301.0,
+          1247.0
+        ],
+        [
+          95.0,
+          1247.0
+        ]
+      ],
+      "x": 95.0,
+      "y": 1213.0,
+      "width": 206.0,
+      "height": 34.0,
+      "center_x": 198.0,
+      "center_y": 1230.0,
+      "line_id": 28,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 48,
+      "text": "BOUCHERIE COUPE",
+      "score": 0.99926,
+      "box": [
+        [
+          360.0,
+          1209.0
+        ],
+        [
+          566.0,
+          1207.0
+        ],
+        [
+          567.0,
+          1244.0
+        ],
+        [
+          360.0,
+          1246.0
+        ]
+      ],
+      "x": 360.0,
+      "y": 1207.0,
+      "width": 207.0,
+      "height": 39.0,
+      "center_x": 463.5,
+      "center_y": 1226.5,
+      "line_id": 28,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 49,
+      "text": "8.78 EUR",
+      "score": 0.9991,
+      "box": [
+        [
+          723.0,
+          1201.0
+        ],
+        [
+          831.0,
+          1201.0
+        ],
+        [
+          831.0,
+          1236.0
+        ],
+        [
+          723.0,
+          1236.0
+        ]
+      ],
+      "x": 723.0,
+      "y": 1201.0,
+      "width": 108.0,
+      "height": 35.0,
+      "center_x": 777.0,
+      "center_y": 1218.5,
+      "line_id": 28,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 50,
+      "text": "SOUS TRAITANCE",
+      "score": 0.9801,
+      "box": [
+        [
+          91.0,
+          1257.0
+        ],
+        [
+          289.0,
+          1257.0
+        ],
+        [
+          289.0,
+          1291.0
+        ],
+        [
+          91.0,
+          1291.0
+        ]
+      ],
+      "x": 91.0,
+      "y": 1257.0,
+      "width": 198.0,
+      "height": 34.0,
+      "center_x": 190.0,
+      "center_y": 1274.0,
+      "line_id": 29,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 51,
+      "text": "8.70 EUR",
+      "score": 0.9001,
+      "box": [
+        [
+          317.0,
+          1252.0
+        ],
+        [
+          450.0,
+          1249.0
+        ],
+        [
+          451.0,
+          1287.0
+        ],
+        [
+          318.0,
+          1290.0
+        ]
+      ],
+      "x": 317.0,
+      "y": 1249.0,
+      "width": 134.0,
+      "height": 41.0,
+      "center_x": 384.0,
+      "center_y": 1269.5,
+      "line_id": 29,
+      "column": "detail",
+      "source_segment": "full"
+    },
+    {
+      "index": 52,
+      "text": "39.30 EUR",
+      "score": 0.98258,
+      "box": [
+        [
+          703.0,
+          1359.0
+        ],
+        [
+          823.0,
+          1355.0
+        ],
+        [
+          824.0,
+          1389.0
+        ],
+        [
+          705.0,
+          1393.0
+        ]
+      ],
+      "x": 703.0,
+      "y": 1355.0,
+      "width": 121.0,
+      "height": 38.0,
+      "center_x": 763.5,
+      "center_y": 1374.0,
+      "line_id": 30,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 53,
+      "text": "TOTAL",
+      "score": 0.93471,
+      "box": [
+        [
+          91.0,
+          1381.0
+        ],
+        [
+          164.0,
+          1381.0
+        ],
+        [
+          164.0,
+          1414.0
+        ],
+        [
+          91.0,
+          1414.0
+        ]
+      ],
+      "x": 91.0,
+      "y": 1381.0,
+      "width": 73.0,
+      "height": 33.0,
+      "center_x": 127.5,
+      "center_y": 1397.5,
+      "line_id": 31,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 54,
+      "text": "39.30 EUR",
+      "score": 0.95759,
+      "box": [
+        [
+          701.0,
+          1397.0
+        ],
+        [
+          820.0,
+          1393.0
+        ],
+        [
+          821.0,
+          1427.0
+        ],
+        [
+          703.0,
+          1431.0
+        ]
+      ],
+      "x": 701.0,
+      "y": 1393.0,
+      "width": 120.0,
+      "height": 38.0,
+      "center_x": 761.0,
+      "center_y": 1412.0,
+      "line_id": 32,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 55,
+      "text": "CARTE BLEUE",
+      "score": 0.99086,
+      "box": [
+        [
+          89.0,
+          1420.0
+        ],
+        [
+          244.0,
+          1417.0
+        ],
+        [
+          245.0,
+          1451.0
+        ],
+        [
+          89.0,
+          1454.0
+        ]
+      ],
+      "x": 89.0,
+      "y": 1417.0,
+      "width": 156.0,
+      "height": 37.0,
+      "center_x": 167.0,
+      "center_y": 1435.5,
+      "line_id": 33,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 56,
+      "text": "NOMBRE ARTICLES : 11",
+      "score": 0.99308,
+      "box": [
+        [
+          92.0,
+          1494.0
+        ],
+        [
+          365.0,
+          1492.0
+        ],
+        [
+          365.0,
+          1526.0
+        ],
+        [
+          92.0,
+          1528.0
+        ]
+      ],
+      "x": 92.0,
+      "y": 1492.0,
+      "width": 273.0,
+      "height": 36.0,
+      "center_x": 228.5,
+      "center_y": 1510.0,
+      "line_id": 34,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 57,
+      "text": "CARTE FIDELITE",
+      "score": 0.98272,
+      "box": [
+        [
+          94.0,
+          1531.0
+        ],
+        [
+          287.0,
+          1529.0
+        ],
+        [
+          287.0,
+          1563.0
+        ],
+        [
+          94.0,
+          1565.0
+        ]
+      ],
+      "x": 94.0,
+      "y": 1529.0,
+      "width": 193.0,
+      "height": 36.0,
+      "center_x": 190.5,
+      "center_y": 1547.0,
+      "line_id": 35,
+      "column": "description",
+      "source_segment": "full"
+    }
+  ]
+}

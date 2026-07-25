@@ -1,0 +1,53 @@
+{
+  "status": "needs_review",
+  "exploitable": true,
+  "should_record_budget": false,
+  "budget_amount": null,
+  "article_data_mode": "partial",
+  "should_feed_courses": false,
+  "should_feed_market_database": false,
+  "should_feed_verified_articles": false,
+  "requires_user_validation": true,
+  "reasons": [
+    "final_total_not_proven",
+    "reconstructed_quantity_differs_from_declared",
+    "items_marked_for_review",
+    "parser_warnings_present"
+  ],
+  "unattributed_amount": null,
+  "image": {
+    "width": 1200,
+    "height": 1600,
+    "brightness_mean": 142.51,
+    "contrast_std": 53.339,
+    "blur_variance": 432.194,
+    "dark_pixel_ratio": 0.01865,
+    "bright_pixel_ratio": 0.0
+  },
+  "ocr": {
+    "token_count": 62,
+    "average_confidence": 0.9834,
+    "median_confidence": 0.9943,
+    "low_confidence_ratio": 0.0,
+    "very_low_confidence_ratio": 0.0
+  },
+  "receipt": {
+    "product_line_count": 13,
+    "counted_quantity": 13.0,
+    "declared_item_count": 9,
+    "items_total": 33.64,
+    "total": null,
+    "article_total": null,
+    "immediate_discount_total": null,
+    "payable_total": null,
+    "article_reconciliation_total": null,
+    "total_delta": null,
+    "quantity_delta": 4.0,
+    "warning_count": 3,
+    "significant_warning_count": 3,
+    "ignored_warning_count": 0,
+    "reliable_item_count": 12,
+    "review_item_count": 1,
+    "reliable_items_total": 31.66
+  }
+}

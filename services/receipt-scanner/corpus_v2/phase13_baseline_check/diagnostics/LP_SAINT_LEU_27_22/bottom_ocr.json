@@ -1,0 +1,1897 @@
+{
+  "source": "C:\\Users\\Jack.LAPTOP-2USDKF0K\\budgetkazpei\\services\\receipt-scanner\\corpus_v2\\phase13_baseline_check\\diagnostics\\LP_SAINT_LEU_27_22\\bottom_preprocessed.jpg",
+  "image_width": 1200,
+  "image_height": 1600,
+  "elapsed_seconds": 11.27,
+  "engine": "rapidocr-onnxruntime",
+  "tokens": [
+    {
+      "index": 0,
+      "text": "(1)3263853183468",
+      "score": 0.98714,
+      "box": [
+        [
+          96.0,
+          0.0
+        ],
+        [
+          367.0,
+          0.0
+        ],
+        [
+          367.0,
+          37.0
+        ],
+        [
+          96.0,
+          39.0
+        ]
+      ],
+      "x": 96.0,
+      "y": 0.0,
+      "width": 271.0,
+      "height": 39.0,
+      "center_x": 231.5,
+      "center_y": 19.5,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 1,
+      "text": "*CACAHUETES GRILLEES 500G",
+      "score": 0.99923,
+      "box": [
+        [
+          425.0,
+          0.0
+        ],
+        [
+          852.0,
+          0.0
+        ],
+        [
+          852.0,
+          41.0
+        ],
+        [
+          425.0,
+          39.0
+        ]
+      ],
+      "x": 425.0,
+      "y": 0.0,
+      "width": 427.0,
+      "height": 41.0,
+      "center_x": 638.5,
+      "center_y": 20.5,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 2,
+      "text": "2.83 EUR",
+      "score": 0.99921,
+      "box": [
+        [
+          889.0,
+          0.0
+        ],
+        [
+          1032.0,
+          0.0
+        ],
+        [
+          1031.0,
+          47.0
+        ],
+        [
+          888.0,
+          45.0
+        ]
+      ],
+      "x": 888.0,
+      "y": 0.0,
+      "width": 144.0,
+      "height": 47.0,
+      "center_x": 960.0,
+      "center_y": 23.5,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 3,
+      "text": "JEUDI 10% MDD",
+      "score": 0.92093,
+      "box": [
+        [
+          93.0,
+          45.0
+        ],
+        [
+          318.0,
+          43.0
+        ],
+        [
+          319.0,
+          94.0
+        ],
+        [
+          93.0,
+          96.0
+        ]
+      ],
+      "x": 93.0,
+      "y": 43.0,
+      "width": 226.0,
+      "height": 53.0,
+      "center_x": 206.0,
+      "center_y": 69.5,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 4,
+      "text": "-0.28 EUR",
+      "score": 0.99917,
+      "box": [
+        [
+          877.0,
+          49.0
+        ],
+        [
+          1031.0,
+          49.0
+        ],
+        [
+          1031.0,
+          101.0
+        ],
+        [
+          877.0,
+          101.0
+        ]
+      ],
+      "x": 877.0,
+      "y": 49.0,
+      "width": 154.0,
+      "height": 52.0,
+      "center_x": 954.0,
+      "center_y": 75.0,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 5,
+      "text": "(1)3222477013445",
+      "score": 0.999,
+      "box": [
+        [
+          96.0,
+          102.0
+        ],
+        [
+          368.0,
+          98.0
+        ],
+        [
+          368.0,
+          148.0
+        ],
+        [
+          97.0,
+          152.0
+        ]
+      ],
+      "x": 96.0,
+      "y": 98.0,
+      "width": 272.0,
+      "height": 54.0,
+      "center_x": 232.0,
+      "center_y": 125.0,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 6,
+      "text": "SERPENIINI 500G CO",
+      "score": 0.94468,
+      "box": [
+        [
+          426.0,
+          98.0
+        ],
+        [
+          735.0,
+          100.0
+        ],
+        [
+          735.0,
+          147.0
+        ],
+        [
+          425.0,
+          145.0
+        ]
+      ],
+      "x": 425.0,
+      "y": 98.0,
+      "width": 310.0,
+      "height": 49.0,
+      "center_x": 580.0,
+      "center_y": 122.5,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 7,
+      "text": "1.80 EUR",
+      "score": 0.99964,
+      "box": [
+        [
+          889.0,
+          102.0
+        ],
+        [
+          1030.0,
+          104.0
+        ],
+        [
+          1029.0,
+          156.0
+        ],
+        [
+          888.0,
+          154.0
+        ]
+      ],
+      "x": 888.0,
+      "y": 102.0,
+      "width": 142.0,
+      "height": 54.0,
+      "center_x": 959.0,
+      "center_y": 129.0,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 8,
+      "text": "JEUDI 10% MDD",
+      "score": 0.99461,
+      "box": [
+        [
+          96.0,
+          156.0
+        ],
+        [
+          318.0,
+          153.0
+        ],
+        [
+          319.0,
+          204.0
+        ],
+        [
+          97.0,
+          207.0
+        ]
+      ],
+      "x": 96.0,
+      "y": 153.0,
+      "width": 223.0,
+      "height": 54.0,
+      "center_x": 207.5,
+      "center_y": 180.0,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 9,
+      "text": "-0.18 EUR",
+      "score": 0.99829,
+      "box": [
+        [
+          874.0,
+          159.0
+        ],
+        [
+          1027.0,
+          159.0
+        ],
+        [
+          1027.0,
+          208.0
+        ],
+        [
+          874.0,
+          208.0
+        ]
+      ],
+      "x": 874.0,
+      "y": 159.0,
+      "width": 153.0,
+      "height": 49.0,
+      "center_x": 950.5,
+      "center_y": 183.5,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 10,
+      "text": "(1)3222475104336",
+      "score": 0.99904,
+      "box": [
+        [
+          98.0,
+          210.0
+        ],
+        [
+          368.0,
+          206.0
+        ],
+        [
+          368.0,
+          256.0
+        ],
+        [
+          99.0,
+          260.0
+        ]
+      ],
+      "x": 98.0,
+      "y": 206.0,
+      "width": 270.0,
+      "height": 54.0,
+      "center_x": 233.0,
+      "center_y": 233.0,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 11,
+      "text": "GALETTE MAIS 115G CO BIO",
+      "score": 0.96964,
+      "box": [
+        [
+          425.0,
+          206.0
+        ],
+        [
+          833.0,
+          208.0
+        ],
+        [
+          833.0,
+          255.0
+        ],
+        [
+          425.0,
+          253.0
+        ]
+      ],
+      "x": 425.0,
+      "y": 206.0,
+      "width": 408.0,
+      "height": 49.0,
+      "center_x": 629.0,
+      "center_y": 230.5,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 12,
+      "text": "1.64 EUR",
+      "score": 0.99885,
+      "box": [
+        [
+          888.0,
+          212.0
+        ],
+        [
+          1028.0,
+          212.0
+        ],
+        [
+          1028.0,
+          260.0
+        ],
+        [
+          888.0,
+          260.0
+        ]
+      ],
+      "x": 888.0,
+      "y": 212.0,
+      "width": 140.0,
+      "height": 48.0,
+      "center_x": 958.0,
+      "center_y": 236.0,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 13,
+      "text": "JEUDI 10% MDD",
+      "score": 0.99315,
+      "box": [
+        [
+          95.0,
+          263.0
+        ],
+        [
+          319.0,
+          260.0
+        ],
+        [
+          320.0,
+          311.0
+        ],
+        [
+          96.0,
+          314.0
+        ]
+      ],
+      "x": 95.0,
+      "y": 260.0,
+      "width": 225.0,
+      "height": 54.0,
+      "center_x": 207.5,
+      "center_y": 287.0,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 14,
+      "text": "-0.16 EUR",
+      "score": 0.95392,
+      "box": [
+        [
+          874.0,
+          264.0
+        ],
+        [
+          1028.0,
+          264.0
+        ],
+        [
+          1028.0,
+          312.0
+        ],
+        [
+          874.0,
+          312.0
+        ]
+      ],
+      "x": 874.0,
+      "y": 264.0,
+      "width": 154.0,
+      "height": 48.0,
+      "center_x": 951.0,
+      "center_y": 288.0,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 15,
+      "text": "(1)3263853107815",
+      "score": 0.99941,
+      "box": [
+        [
+          98.0,
+          317.0
+        ],
+        [
+          368.0,
+          315.0
+        ],
+        [
+          368.0,
+          362.0
+        ],
+        [
+          98.0,
+          364.0
+        ]
+      ],
+      "x": 98.0,
+      "y": 315.0,
+      "width": 270.0,
+      "height": 49.0,
+      "center_x": 233.0,
+      "center_y": 339.5,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 16,
+      "text": "CHIPS A L ANCIENNE 150GR",
+      "score": 0.97378,
+      "box": [
+        [
+          425.0,
+          315.0
+        ],
+        [
+          834.0,
+          315.0
+        ],
+        [
+          834.0,
+          361.0
+        ],
+        [
+          425.0,
+          361.0
+        ]
+      ],
+      "x": 425.0,
+      "y": 315.0,
+      "width": 409.0,
+      "height": 46.0,
+      "center_x": 629.5,
+      "center_y": 338.0,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 17,
+      "text": "2.04 EUR",
+      "score": 0.99837,
+      "box": [
+        [
+          886.0,
+          316.0
+        ],
+        [
+          1029.0,
+          316.0
+        ],
+        [
+          1029.0,
+          361.0
+        ],
+        [
+          886.0,
+          361.0
+        ]
+      ],
+      "x": 886.0,
+      "y": 316.0,
+      "width": 143.0,
+      "height": 45.0,
+      "center_x": 957.5,
+      "center_y": 338.5,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 18,
+      "text": "JEUDI 10% MOD",
+      "score": 0.92932,
+      "box": [
+        [
+          94.0,
+          370.0
+        ],
+        [
+          319.0,
+          370.0
+        ],
+        [
+          319.0,
+          417.0
+        ],
+        [
+          94.0,
+          417.0
+        ]
+      ],
+      "x": 94.0,
+      "y": 370.0,
+      "width": 225.0,
+      "height": 47.0,
+      "center_x": 206.5,
+      "center_y": 393.5,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 19,
+      "text": "-0.20 EUR",
+      "score": 0.99849,
+      "box": [
+        [
+          873.0,
+          368.0
+        ],
+        [
+          1031.0,
+          368.0
+        ],
+        [
+          1031.0,
+          416.0
+        ],
+        [
+          873.0,
+          416.0
+        ]
+      ],
+      "x": 873.0,
+      "y": 368.0,
+      "width": 158.0,
+      "height": 48.0,
+      "center_x": 952.0,
+      "center_y": 392.0,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 20,
+      "text": "EPICERIE SALEE",
+      "score": 0.96333,
+      "box": [
+        [
+          92.0,
+          424.0
+        ],
+        [
+          338.0,
+          422.0
+        ],
+        [
+          339.0,
+          469.0
+        ],
+        [
+          92.0,
+          471.0
+        ]
+      ],
+      "x": 92.0,
+      "y": 422.0,
+      "width": 247.0,
+      "height": 49.0,
+      "center_x": 215.5,
+      "center_y": 446.5,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 21,
+      "text": "15.73 EUH",
+      "score": 0.95791,
+      "box": [
+        [
+          374.0,
+          420.0
+        ],
+        [
+          555.0,
+          418.0
+        ],
+        [
+          556.0,
+          470.0
+        ],
+        [
+          374.0,
+          472.0
+        ]
+      ],
+      "x": 374.0,
+      "y": 418.0,
+      "width": 182.0,
+      "height": 54.0,
+      "center_x": 465.0,
+      "center_y": 445.0,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 22,
+      "text": "(1)3263857071150",
+      "score": 0.98585,
+      "box": [
+        [
+          94.0,
+          479.0
+        ],
+        [
+          368.0,
+          477.0
+        ],
+        [
+          368.0,
+          521.0
+        ],
+        [
+          94.0,
+          523.0
+        ]
+      ],
+      "x": 94.0,
+      "y": 477.0,
+      "width": 274.0,
+      "height": 46.0,
+      "center_x": 231.0,
+      "center_y": 500.0,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 23,
+      "text": "JUS DE RAISIN 6X20 CL LP",
+      "score": 0.98783,
+      "box": [
+        [
+          427.0,
+          476.0
+        ],
+        [
+          832.0,
+          474.0
+        ],
+        [
+          832.0,
+          520.0
+        ],
+        [
+          427.0,
+          522.0
+        ]
+      ],
+      "x": 427.0,
+      "y": 474.0,
+      "width": 405.0,
+      "height": 48.0,
+      "center_x": 629.5,
+      "center_y": 498.0,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 24,
+      "text": "3.70 EUR",
+      "score": 0.93851,
+      "box": [
+        [
+          887.0,
+          473.0
+        ],
+        [
+          1032.0,
+          473.0
+        ],
+        [
+          1032.0,
+          521.0
+        ],
+        [
+          887.0,
+          521.0
+        ]
+      ],
+      "x": 887.0,
+      "y": 473.0,
+      "width": 145.0,
+      "height": 48.0,
+      "center_x": 959.5,
+      "center_y": 497.0,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 25,
+      "text": "JEUDI 10% MDD",
+      "score": 0.99132,
+      "box": [
+        [
+          92.0,
+          530.0
+        ],
+        [
+          321.0,
+          530.0
+        ],
+        [
+          321.0,
+          577.0
+        ],
+        [
+          92.0,
+          577.0
+        ]
+      ],
+      "x": 92.0,
+      "y": 530.0,
+      "width": 229.0,
+      "height": 47.0,
+      "center_x": 206.5,
+      "center_y": 553.5,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 26,
+      "text": "-0.37 EUR",
+      "score": 0.99276,
+      "box": [
+        [
+          873.0,
+          525.0
+        ],
+        [
+          1033.0,
+          525.0
+        ],
+        [
+          1033.0,
+          573.0
+        ],
+        [
+          873.0,
+          573.0
+        ]
+      ],
+      "x": 873.0,
+      "y": 525.0,
+      "width": 160.0,
+      "height": 48.0,
+      "center_x": 953.0,
+      "center_y": 549.0,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 27,
+      "text": "(1)3559509100096",
+      "score": 0.99869,
+      "box": [
+        [
+          93.0,
+          586.0
+        ],
+        [
+          368.0,
+          584.0
+        ],
+        [
+          368.0,
+          628.0
+        ],
+        [
+          93.0,
+          630.0
+        ]
+      ],
+      "x": 93.0,
+      "y": 584.0,
+      "width": 275.0,
+      "height": 46.0,
+      "center_x": 230.5,
+      "center_y": 607.0,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 28,
+      "text": "CERES JUS COCKTAIL DETE 1",
+      "score": 0.99331,
+      "box": [
+        [
+          425.0,
+          583.0
+        ],
+        [
+          847.0,
+          579.0
+        ],
+        [
+          848.0,
+          626.0
+        ],
+        [
+          426.0,
+          630.0
+        ]
+      ],
+      "x": 425.0,
+      "y": 579.0,
+      "width": 423.0,
+      "height": 51.0,
+      "center_x": 636.5,
+      "center_y": 604.5,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 29,
+      "text": "2.95 EUR",
+      "score": 0.99973,
+      "box": [
+        [
+          885.0,
+          578.0
+        ],
+        [
+          1034.0,
+          578.0
+        ],
+        [
+          1034.0,
+          626.0
+        ],
+        [
+          885.0,
+          626.0
+        ]
+      ],
+      "x": 885.0,
+      "y": 578.0,
+      "width": 149.0,
+      "height": 48.0,
+      "center_x": 959.5,
+      "center_y": 602.0,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 30,
+      "text": "BOISSONS SANS ALCOOL",
+      "score": 0.9799,
+      "box": [
+        [
+          90.0,
+          637.0
+        ],
+        [
+          435.0,
+          637.0
+        ],
+        [
+          435.0,
+          684.0
+        ],
+        [
+          90.0,
+          684.0
+        ]
+      ],
+      "x": 90.0,
+      "y": 637.0,
+      "width": 345.0,
+      "height": 47.0,
+      "center_x": 262.5,
+      "center_y": 660.5,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 31,
+      "text": "6.20 EUR",
+      "score": 0.95047,
+      "box": [
+        [
+          473.0,
+          634.0
+        ],
+        [
+          638.0,
+          634.0
+        ],
+        [
+          638.0,
+          685.0
+        ],
+        [
+          473.0,
+          685.0
+        ]
+      ],
+      "x": 473.0,
+      "y": 634.0,
+      "width": 165.0,
+      "height": 51.0,
+      "center_x": 555.5,
+      "center_y": 659.5,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 32,
+      "text": "(1)3263852917620",
+      "score": 0.99858,
+      "box": [
+        [
+          93.0,
+          692.0
+        ],
+        [
+          369.0,
+          690.0
+        ],
+        [
+          369.0,
+          734.0
+        ],
+        [
+          93.0,
+          736.0
+        ]
+      ],
+      "x": 93.0,
+      "y": 690.0,
+      "width": 276.0,
+      "height": 46.0,
+      "center_x": 231.0,
+      "center_y": 713.0,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 33,
+      "text": "GAUFRETTE CHOCOLAT 110G L",
+      "score": 0.97324,
+      "box": [
+        [
+          426.0,
+          690.0
+        ],
+        [
+          848.0,
+          687.0
+        ],
+        [
+          849.0,
+          733.0
+        ],
+        [
+          427.0,
+          736.0
+        ]
+      ],
+      "x": 426.0,
+      "y": 687.0,
+      "width": 423.0,
+      "height": 49.0,
+      "center_x": 637.5,
+      "center_y": 711.5,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 34,
+      "text": "1.70 EUR",
+      "score": 0.94749,
+      "box": [
+        [
+          887.0,
+          684.0
+        ],
+        [
+          1034.0,
+          682.0
+        ],
+        [
+          1034.0,
+          730.0
+        ],
+        [
+          888.0,
+          732.0
+        ]
+      ],
+      "x": 887.0,
+      "y": 682.0,
+      "width": 147.0,
+      "height": 50.0,
+      "center_x": 960.5,
+      "center_y": 707.0,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 35,
+      "text": "JEUDI 10% MDD",
+      "score": 0.94032,
+      "box": [
+        [
+          90.0,
+          744.0
+        ],
+        [
+          320.0,
+          744.0
+        ],
+        [
+          320.0,
+          791.0
+        ],
+        [
+          90.0,
+          791.0
+        ]
+      ],
+      "x": 90.0,
+      "y": 744.0,
+      "width": 230.0,
+      "height": 47.0,
+      "center_x": 205.0,
+      "center_y": 767.5,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 36,
+      "text": "-0.17 EUR",
+      "score": 0.94816,
+      "box": [
+        [
+          872.0,
+          737.0
+        ],
+        [
+          1034.0,
+          737.0
+        ],
+        [
+          1034.0,
+          785.0
+        ],
+        [
+          872.0,
+          785.0
+        ]
+      ],
+      "x": 872.0,
+      "y": 737.0,
+      "width": 162.0,
+      "height": 48.0,
+      "center_x": 953.0,
+      "center_y": 761.0,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 37,
+      "text": "(1)3263852915138",
+      "score": 0.99345,
+      "box": [
+        [
+          93.0,
+          799.0
+        ],
+        [
+          369.0,
+          799.0
+        ],
+        [
+          369.0,
+          843.0
+        ],
+        [
+          93.0,
+          843.0
+        ]
+      ],
+      "x": 93.0,
+      "y": 799.0,
+      "width": 276.0,
+      "height": 44.0,
+      "center_x": 231.0,
+      "center_y": 821.0,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 38,
+      "text": "*BISC.CHOCO LAIT X20 200G",
+      "score": 0.97261,
+      "box": [
+        [
+          427.0,
+          794.0
+        ],
+        [
+          847.0,
+          791.0
+        ],
+        [
+          848.0,
+          837.0
+        ],
+        [
+          428.0,
+          840.0
+        ]
+      ],
+      "x": 427.0,
+      "y": 791.0,
+      "width": 421.0,
+      "height": 49.0,
+      "center_x": 637.5,
+      "center_y": 815.5,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 39,
+      "text": "2.04 EUR",
+      "score": 0.99972,
+      "box": [
+        [
+          885.0,
+          790.0
+        ],
+        [
+          1033.0,
+          790.0
+        ],
+        [
+          1033.0,
+          838.0
+        ],
+        [
+          885.0,
+          838.0
+        ]
+      ],
+      "x": 885.0,
+      "y": 790.0,
+      "width": 148.0,
+      "height": 48.0,
+      "center_x": 959.0,
+      "center_y": 814.0,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 40,
+      "text": "JEUDI 10% MDD",
+      "score": 0.98416,
+      "box": [
+        [
+          88.0,
+          851.0
+        ],
+        [
+          320.0,
+          849.0
+        ],
+        [
+          321.0,
+          897.0
+        ],
+        [
+          88.0,
+          899.0
+        ]
+      ],
+      "x": 88.0,
+      "y": 849.0,
+      "width": 233.0,
+      "height": 50.0,
+      "center_x": 204.5,
+      "center_y": 874.0,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 41,
+      "text": "-0.20 EUR",
+      "score": 0.98456,
+      "box": [
+        [
+          873.0,
+          843.0
+        ],
+        [
+          1034.0,
+          843.0
+        ],
+        [
+          1034.0,
+          891.0
+        ],
+        [
+          873.0,
+          891.0
+        ]
+      ],
+      "x": 873.0,
+      "y": 843.0,
+      "width": 161.0,
+      "height": 48.0,
+      "center_x": 953.5,
+      "center_y": 867.0,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 42,
+      "text": "EPICERIE SUCREE",
+      "score": 0.99961,
+      "box": [
+        [
+          88.0,
+          906.0
+        ],
+        [
+          356.0,
+          903.0
+        ],
+        [
+          356.0,
+          950.0
+        ],
+        [
+          88.0,
+          953.0
+        ]
+      ],
+      "x": 88.0,
+      "y": 903.0,
+      "width": 268.0,
+      "height": 50.0,
+      "center_x": 222.0,
+      "center_y": 928.0,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 43,
+      "text": "3.37 EUI",
+      "score": 0.9218,
+      "box": [
+        [
+          391.0,
+          898.0
+        ],
+        [
+          557.0,
+          896.0
+        ],
+        [
+          558.0,
+          947.0
+        ],
+        [
+          391.0,
+          949.0
+        ]
+      ],
+      "x": 391.0,
+      "y": 896.0,
+      "width": 167.0,
+      "height": 53.0,
+      "center_x": 474.5,
+      "center_y": 922.5,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 44,
+      "text": "(9)3222473347087",
+      "score": 0.99828,
+      "box": [
+        [
+          92.0,
+          960.0
+        ],
+        [
+          369.0,
+          956.0
+        ],
+        [
+          369.0,
+          1003.0
+        ],
+        [
+          92.0,
+          1007.0
+        ]
+      ],
+      "x": 92.0,
+      "y": 956.0,
+      "width": 277.0,
+      "height": 51.0,
+      "center_x": 230.5,
+      "center_y": 981.5,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 45,
+      "text": "MOUCHOIR ETUI STD 15X9 CO",
+      "score": 0.98138,
+      "box": [
+        [
+          426.0,
+          953.0
+        ],
+        [
+          848.0,
+          949.0
+        ],
+        [
+          849.0,
+          996.0
+        ],
+        [
+          427.0,
+          1000.0
+        ]
+      ],
+      "x": 426.0,
+      "y": 949.0,
+      "width": 423.0,
+      "height": 51.0,
+      "center_x": 637.5,
+      "center_y": 974.5,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 46,
+      "text": "2.04 EUR",
+      "score": 0.99977,
+      "box": [
+        [
+          885.0,
+          949.0
+        ],
+        [
+          1033.0,
+          949.0
+        ],
+        [
+          1033.0,
+          997.0
+        ],
+        [
+          885.0,
+          997.0
+        ]
+      ],
+      "x": 885.0,
+      "y": 949.0,
+      "width": 148.0,
+      "height": 48.0,
+      "center_x": 959.0,
+      "center_y": 973.0,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 47,
+      "text": "-0.20 EUR",
+      "score": 0.97308,
+      "box": [
+        [
+          872.0,
+          1002.0
+        ],
+        [
+          1033.0,
+          1002.0
+        ],
+        [
+          1033.0,
+          1050.0
+        ],
+        [
+          872.0,
+          1050.0
+        ]
+      ],
+      "x": 872.0,
+      "y": 1002.0,
+      "width": 161.0,
+      "height": 48.0,
+      "center_x": 952.5,
+      "center_y": 1026.0,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 48,
+      "text": "JEUDI 10% MDD",
+      "score": 0.97278,
+      "box": [
+        [
+          88.0,
+          1012.0
+        ],
+        [
+          321.0,
+          1009.0
+        ],
+        [
+          322.0,
+          1060.0
+        ],
+        [
+          88.0,
+          1063.0
+        ]
+      ],
+      "x": 88.0,
+      "y": 1009.0,
+      "width": 234.0,
+      "height": 54.0,
+      "center_x": 205.0,
+      "center_y": 1036.0,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 49,
+      "text": "HYGIENE",
+      "score": 0.99806,
+      "box": [
+        [
+          85.0,
+          1067.0
+        ],
+        [
+          223.0,
+          1064.0
+        ],
+        [
+          224.0,
+          1116.0
+        ],
+        [
+          87.0,
+          1119.0
+        ]
+      ],
+      "x": 85.0,
+      "y": 1064.0,
+      "width": 139.0,
+      "height": 55.0,
+      "center_x": 154.5,
+      "center_y": 1091.5,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 50,
+      "text": "1.84",
+      "score": 0.99946,
+      "box": [
+        [
+          261.0,
+          1063.0
+        ],
+        [
+          343.0,
+          1063.0
+        ],
+        [
+          343.0,
+          1111.0
+        ],
+        [
+          261.0,
+          1111.0
+        ]
+      ],
+      "x": 261.0,
+      "y": 1063.0,
+      "width": 82.0,
+      "height": 48.0,
+      "center_x": 302.0,
+      "center_y": 1087.0,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 51,
+      "text": "EUR",
+      "score": 0.99859,
+      "box": [
+        [
+          356.0,
+          1061.0
+        ],
+        [
+          422.0,
+          1061.0
+        ],
+        [
+          422.0,
+          1107.0
+        ],
+        [
+          356.0,
+          1107.0
+        ]
+      ],
+      "x": 356.0,
+      "y": 1061.0,
+      "width": 66.0,
+      "height": 46.0,
+      "center_x": 389.0,
+      "center_y": 1084.0,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 52,
+      "text": "27.22 EUR",
+      "score": 0.95958,
+      "box": [
+        [
+          870.0,
+          1213.0
+        ],
+        [
+          1033.0,
+          1213.0
+        ],
+        [
+          1033.0,
+          1261.0
+        ],
+        [
+          870.0,
+          1261.0
+        ]
+      ],
+      "x": 870.0,
+      "y": 1213.0,
+      "width": 163.0,
+      "height": 48.0,
+      "center_x": 951.5,
+      "center_y": 1237.0,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 53,
+      "text": "TOTAL.:",
+      "score": 0.99391,
+      "box": [
+        [
+          90.0,
+          1228.0
+        ],
+        [
+          223.0,
+          1228.0
+        ],
+        [
+          223.0,
+          1280.0
+        ],
+        [
+          90.0,
+          1280.0
+        ]
+      ],
+      "x": 90.0,
+      "y": 1228.0,
+      "width": 133.0,
+      "height": 52.0,
+      "center_x": 156.5,
+      "center_y": 1254.0,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 54,
+      "text": "27.22 EUR",
+      "score": 0.99968,
+      "box": [
+        [
+          869.0,
+          1266.0
+        ],
+        [
+          1031.0,
+          1266.0
+        ],
+        [
+          1031.0,
+          1314.0
+        ],
+        [
+          869.0,
+          1314.0
+        ]
+      ],
+      "x": 869.0,
+      "y": 1266.0,
+      "width": 162.0,
+      "height": 48.0,
+      "center_x": 950.0,
+      "center_y": 1290.0,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 55,
+      "text": "CARTE BLEUE",
+      "score": 0.99707,
+      "box": [
+        [
+          87.0,
+          1283.0
+        ],
+        [
+          288.0,
+          1275.0
+        ],
+        [
+          290.0,
+          1327.0
+        ],
+        [
+          89.0,
+          1335.0
+        ]
+      ],
+      "x": 87.0,
+      "y": 1275.0,
+      "width": 203.0,
+      "height": 60.0,
+      "center_x": 188.5,
+      "center_y": 1305.0,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 56,
+      "text": "NOMBRE ARTICLES : 14",
+      "score": 0.99556,
+      "box": [
+        [
+          86.0,
+          1394.0
+        ],
+        [
+          438.0,
+          1372.0
+        ],
+        [
+          441.0,
+          1422.0
+        ],
+        [
+          89.0,
+          1444.0
+        ]
+      ],
+      "x": 86.0,
+      "y": 1372.0,
+      "width": 355.0,
+      "height": 72.0,
+      "center_x": 263.5,
+      "center_y": 1408.0,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 57,
+      "text": "CARTE FIDELITE",
+      "score": 0.99766,
+      "box": [
+        [
+          90.0,
+          1441.0
+        ],
+        [
+          339.0,
+          1428.0
+        ],
+        [
+          341.0,
+          1476.0
+        ],
+        [
+          92.0,
+          1489.0
+        ]
+      ],
+      "x": 90.0,
+      "y": 1428.0,
+      "width": 251.0,
+      "height": 61.0,
+      "center_x": 215.5,
+      "center_y": 1458.5,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    },
+    {
+      "index": 58,
+      "text": "Carte Client No : 9200XXXX:1195",
+      "score": 0.96663,
+      "box": [
+        [
+          93.0,
+          1535.0
+        ],
+        [
+          617.0,
+          1510.0
+        ],
+        [
+          619.0,
+          1563.0
+        ],
+        [
+          95.0,
+          1588.0
+        ]
+      ],
+      "x": 93.0,
+      "y": 1510.0,
+      "width": 526.0,
+      "height": 78.0,
+      "center_x": 356.0,
+      "center_y": 1549.0,
+      "line_id": null,
+      "column": null,
+      "source_segment": "bottom"
+    }
+  ]
+}

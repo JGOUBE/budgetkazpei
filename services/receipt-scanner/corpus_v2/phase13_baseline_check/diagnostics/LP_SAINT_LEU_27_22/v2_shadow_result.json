@@ -1,0 +1,2800 @@
+{
+  "engine": "budgetkazpei-generic-parser-v2-shadow",
+  "phase": 1,
+  "production_output_changed": false,
+  "declared_count": 14,
+  "line_count": 53,
+  "candidate_count": 31,
+  "total_candidate_count": 1,
+  "selected_hypothesis": {
+    "items": [
+      {
+        "candidate_id": "c0019",
+        "start_line": 8,
+        "end_line": 9,
+        "source_line_ids": [
+          8,
+          9
+        ],
+        "raw_name": "BETTERAVE ROUGE 1/2 400G",
+        "normalized_name": "BETTERAVE ROUGE 1/2 400G",
+        "quantity": 1.0,
+        "unit_price": 1.3,
+        "total_price": 1.17,
+        "item_type": "standard_discounted",
+        "confidence": 0.94132,
+        "local_score": 7.7766,
+        "evidence": [
+          "same_line_name_and_right_price",
+          "immediate_negative_discount",
+          "discount=0.13"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0020",
+        "start_line": 10,
+        "end_line": 11,
+        "source_line_ids": [
+          10,
+          11
+        ],
+        "raw_name": "HARICOTS RG 1/2 250G LP",
+        "normalized_name": "HARICOTS RG 1/2 250G LP",
+        "quantity": 1.0,
+        "unit_price": 1.37,
+        "total_price": 1.23,
+        "item_type": "standard_discounted",
+        "confidence": 0.9627,
+        "local_score": 7.7843,
+        "evidence": [
+          "same_line_name_and_right_price",
+          "immediate_negative_discount",
+          "discount=0.14"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0021",
+        "start_line": 12,
+        "end_line": 13,
+        "source_line_ids": [
+          12,
+          13
+        ],
+        "raw_name": "GARNITUR.PR.VOL AU VENT4O",
+        "normalized_name": "GARNITUR.PR.VOL AU VENT4O",
+        "quantity": 1.0,
+        "unit_price": 2.55,
+        "total_price": 2.29,
+        "item_type": "standard_discounted",
+        "confidence": 0.95939,
+        "local_score": 7.7594,
+        "evidence": [
+          "same_line_name_and_right_price",
+          "immediate_negative_discount",
+          "discount=0.26"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0022",
+        "start_line": 14,
+        "end_line": 15,
+        "source_line_ids": [
+          14,
+          15
+        ],
+        "raw_name": "//THON AILBACORE 1/4 140G",
+        "normalized_name": "//THON AILBACORE 1/4 140G",
+        "quantity": 1.0,
+        "unit_price": 2.34,
+        "total_price": 2.11,
+        "item_type": "standard_discounted",
+        "confidence": 0.94121,
+        "local_score": 7.7834,
+        "evidence": [
+          "same_line_name_and_right_price",
+          "immediate_negative_discount",
+          "discount=0.23"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0023",
+        "start_line": 16,
+        "end_line": 17,
+        "source_line_ids": [
+          16,
+          17
+        ],
+        "raw_name": "CRAKERS SS SEL 25GX10 LP",
+        "normalized_name": "CRAKERS SS SEL 25GX10 LP",
+        "quantity": 1.0,
+        "unit_price": 1.6,
+        "total_price": 1.44,
+        "item_type": "standard_discounted",
+        "confidence": 0.97522,
+        "local_score": 7.778,
+        "evidence": [
+          "same_line_name_and_right_price",
+          "immediate_negative_discount",
+          "discount=0.16"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0024",
+        "start_line": 18,
+        "end_line": 19,
+        "source_line_ids": [
+          18,
+          19
+        ],
+        "raw_name": "CACAHUETES GRILLEES 500G",
+        "normalized_name": "CACAHUETES GRILLEES 500G",
+        "quantity": 1.0,
+        "unit_price": 2.83,
+        "total_price": 2.55,
+        "item_type": "standard_discounted",
+        "confidence": 0.9948,
+        "local_score": 7.7948,
+        "evidence": [
+          "same_line_name_and_right_price",
+          "immediate_negative_discount",
+          "discount=0.28"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0025",
+        "start_line": 21,
+        "end_line": 23,
+        "source_line_ids": [
+          21,
+          22,
+          23
+        ],
+        "raw_name": "SERPENTINI 500G CO",
+        "normalized_name": "SERPENTINI 500G CO",
+        "quantity": 1.0,
+        "unit_price": 1.8,
+        "total_price": 1.62,
+        "item_type": "standard_discounted",
+        "confidence": 0.97573,
+        "local_score": 6.1757,
+        "evidence": [
+          "price_row_then_description",
+          "immediate_negative_discount",
+          "discount=0.18"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0026",
+        "start_line": 25,
+        "end_line": 27,
+        "source_line_ids": [
+          25,
+          26,
+          27
+        ],
+        "raw_name": "GALETTE MAIS 115G CO DIO",
+        "normalized_name": "GALETTE MAIS 115G CO DIO",
+        "quantity": 1.0,
+        "unit_price": 1.64,
+        "total_price": 1.48,
+        "item_type": "standard_discounted",
+        "confidence": 0.97154,
+        "local_score": 6.1715,
+        "evidence": [
+          "price_row_then_description",
+          "immediate_negative_discount",
+          "discount=0.16"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0027",
+        "start_line": 29,
+        "end_line": 31,
+        "source_line_ids": [
+          29,
+          30,
+          31
+        ],
+        "raw_name": "CHIPS A L ANCIENNE 150GR",
+        "normalized_name": "CHIPS A L ANCIENNE 150GR",
+        "quantity": 1.0,
+        "unit_price": 2.04,
+        "total_price": 1.84,
+        "item_type": "standard_discounted",
+        "confidence": 0.96096,
+        "local_score": 6.161,
+        "evidence": [
+          "price_row_then_description",
+          "immediate_negative_discount",
+          "discount=0.20"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0028",
+        "start_line": 34,
+        "end_line": 35,
+        "source_line_ids": [
+          34,
+          35
+        ],
+        "raw_name": "JUS DE RAISIN 6X20 CL LP",
+        "normalized_name": "JUS DE RAISIN 6X20 CL LP",
+        "quantity": 1.0,
+        "unit_price": 3.7,
+        "total_price": 3.33,
+        "item_type": "standard_discounted",
+        "confidence": 0.93851,
+        "local_score": 7.7385,
+        "evidence": [
+          "same_line_name_and_right_price",
+          "immediate_negative_discount",
+          "discount=0.37"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0014",
+        "start_line": 36,
+        "end_line": 36,
+        "source_line_ids": [
+          36
+        ],
+        "raw_name": "CERES JUS COCKTAIL DETE 1",
+        "normalized_name": "CERES JUS COCKTAIL DETE 1",
+        "quantity": 1.0,
+        "unit_price": 2.95,
+        "total_price": 2.95,
+        "item_type": "standard",
+        "confidence": 0.99331,
+        "local_score": 5.7933,
+        "evidence": [
+          "same_line_name_and_right_price"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0029",
+        "start_line": 38,
+        "end_line": 39,
+        "source_line_ids": [
+          38,
+          39
+        ],
+        "raw_name": "GAUFRETTE CHOCOLAT 110G L",
+        "normalized_name": "GAUFRETTE CHOCOLAT 110G L",
+        "quantity": 1.0,
+        "unit_price": 1.7,
+        "total_price": 1.53,
+        "item_type": "standard_discounted",
+        "confidence": 0.94032,
+        "local_score": 7.7475,
+        "evidence": [
+          "same_line_name_and_right_price",
+          "immediate_negative_discount",
+          "discount=0.17"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0030",
+        "start_line": 40,
+        "end_line": 41,
+        "source_line_ids": [
+          40,
+          41
+        ],
+        "raw_name": "BISC.CHOCO LAIT X20 200G",
+        "normalized_name": "BISC.CHOCO LAIT X20 200G",
+        "quantity": 1.0,
+        "unit_price": 2.04,
+        "total_price": 1.84,
+        "item_type": "standard_discounted",
+        "confidence": 0.97261,
+        "local_score": 7.7726,
+        "evidence": [
+          "same_line_name_and_right_price",
+          "immediate_negative_discount",
+          "discount=0.20"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0031",
+        "start_line": 43,
+        "end_line": 44,
+        "source_line_ids": [
+          43,
+          44
+        ],
+        "raw_name": "MOUCHOIR ETUI STD 15X9 CO",
+        "normalized_name": "MOUCHOIR ETUI STD 15X9 CO",
+        "quantity": 1.0,
+        "unit_price": 2.04,
+        "total_price": 1.84,
+        "item_type": "standard_discounted",
+        "confidence": 0.97278,
+        "local_score": 7.7814,
+        "evidence": [
+          "same_line_name_and_right_price",
+          "immediate_negative_discount",
+          "discount=0.20"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      }
+    ],
+    "target_total": {
+      "line_ids": [
+        47,
+        48
+      ],
+      "amount": 27.22,
+      "kind": "article_total",
+      "confidence": 0.99391,
+      "score": 7.0,
+      "evidence": [
+        "explicit_total_label_then_amount_row"
+      ]
+    },
+    "declared_count": 14,
+    "items_total": 27.22,
+    "counted_quantity": 14,
+    "score": 165.898,
+    "total_gap": 0.0,
+    "count_gap": 0,
+    "reasons": [
+      "exact_total_match",
+      "exact_declared_count_match"
+    ]
+  },
+  "total_candidates": [
+    {
+      "line_ids": [
+        47,
+        48
+      ],
+      "amount": 27.22,
+      "kind": "article_total",
+      "confidence": 0.99391,
+      "score": 7.0,
+      "evidence": [
+        "explicit_total_label_then_amount_row"
+      ]
+    }
+  ],
+  "item_candidates": [
+    {
+      "candidate_id": "c0001",
+      "start_line": 8,
+      "end_line": 8,
+      "source_line_ids": [
+        8
+      ],
+      "raw_name": "BETTERAVE ROUGE 1/2 400G",
+      "normalized_name": "BETTERAVE ROUGE 1/2 400G",
+      "quantity": 1.0,
+      "unit_price": 1.3,
+      "total_price": 1.3,
+      "item_type": "standard",
+      "confidence": 0.97664,
+      "local_score": 5.7766,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0019",
+      "start_line": 8,
+      "end_line": 9,
+      "source_line_ids": [
+        8,
+        9
+      ],
+      "raw_name": "BETTERAVE ROUGE 1/2 400G",
+      "normalized_name": "BETTERAVE ROUGE 1/2 400G",
+      "quantity": 1.0,
+      "unit_price": 1.3,
+      "total_price": 1.17,
+      "item_type": "standard_discounted",
+      "confidence": 0.94132,
+      "local_score": 7.7766,
+      "evidence": [
+        "same_line_name_and_right_price",
+        "immediate_negative_discount",
+        "discount=0.13"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0002",
+      "start_line": 10,
+      "end_line": 10,
+      "source_line_ids": [
+        10
+      ],
+      "raw_name": "HARICOTS RG 1/2 250G LP",
+      "normalized_name": "HARICOTS RG 1/2 250G LP",
+      "quantity": 1.0,
+      "unit_price": 1.37,
+      "total_price": 1.37,
+      "item_type": "standard",
+      "confidence": 0.98432,
+      "local_score": 5.7843,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0020",
+      "start_line": 10,
+      "end_line": 11,
+      "source_line_ids": [
+        10,
+        11
+      ],
+      "raw_name": "HARICOTS RG 1/2 250G LP",
+      "normalized_name": "HARICOTS RG 1/2 250G LP",
+      "quantity": 1.0,
+      "unit_price": 1.37,
+      "total_price": 1.23,
+      "item_type": "standard_discounted",
+      "confidence": 0.9627,
+      "local_score": 7.7843,
+      "evidence": [
+        "same_line_name_and_right_price",
+        "immediate_negative_discount",
+        "discount=0.14"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0003",
+      "start_line": 12,
+      "end_line": 12,
+      "source_line_ids": [
+        12
+      ],
+      "raw_name": "GARNITUR.PR.VOL AU VENT4O",
+      "normalized_name": "GARNITUR.PR.VOL AU VENT4O",
+      "quantity": 1.0,
+      "unit_price": 2.55,
+      "total_price": 2.55,
+      "item_type": "standard",
+      "confidence": 0.95939,
+      "local_score": 5.7594,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0021",
+      "start_line": 12,
+      "end_line": 13,
+      "source_line_ids": [
+        12,
+        13
+      ],
+      "raw_name": "GARNITUR.PR.VOL AU VENT4O",
+      "normalized_name": "GARNITUR.PR.VOL AU VENT4O",
+      "quantity": 1.0,
+      "unit_price": 2.55,
+      "total_price": 2.29,
+      "item_type": "standard_discounted",
+      "confidence": 0.95939,
+      "local_score": 7.7594,
+      "evidence": [
+        "same_line_name_and_right_price",
+        "immediate_negative_discount",
+        "discount=0.26"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0004",
+      "start_line": 14,
+      "end_line": 14,
+      "source_line_ids": [
+        14
+      ],
+      "raw_name": "//THON AILBACORE 1/4 140G",
+      "normalized_name": "//THON AILBACORE 1/4 140G",
+      "quantity": 1.0,
+      "unit_price": 2.34,
+      "total_price": 2.34,
+      "item_type": "standard",
+      "confidence": 0.98342,
+      "local_score": 5.7834,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0022",
+      "start_line": 14,
+      "end_line": 15,
+      "source_line_ids": [
+        14,
+        15
+      ],
+      "raw_name": "//THON AILBACORE 1/4 140G",
+      "normalized_name": "//THON AILBACORE 1/4 140G",
+      "quantity": 1.0,
+      "unit_price": 2.34,
+      "total_price": 2.11,
+      "item_type": "standard_discounted",
+      "confidence": 0.94121,
+      "local_score": 7.7834,
+      "evidence": [
+        "same_line_name_and_right_price",
+        "immediate_negative_discount",
+        "discount=0.23"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0005",
+      "start_line": 16,
+      "end_line": 16,
+      "source_line_ids": [
+        16
+      ],
+      "raw_name": "CRAKERS SS SEL 25GX10 LP",
+      "normalized_name": "CRAKERS SS SEL 25GX10 LP",
+      "quantity": 1.0,
+      "unit_price": 1.6,
+      "total_price": 1.6,
+      "item_type": "standard",
+      "confidence": 0.97801,
+      "local_score": 5.778,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0023",
+      "start_line": 16,
+      "end_line": 17,
+      "source_line_ids": [
+        16,
+        17
+      ],
+      "raw_name": "CRAKERS SS SEL 25GX10 LP",
+      "normalized_name": "CRAKERS SS SEL 25GX10 LP",
+      "quantity": 1.0,
+      "unit_price": 1.6,
+      "total_price": 1.44,
+      "item_type": "standard_discounted",
+      "confidence": 0.97522,
+      "local_score": 7.778,
+      "evidence": [
+        "same_line_name_and_right_price",
+        "immediate_negative_discount",
+        "discount=0.16"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0006",
+      "start_line": 18,
+      "end_line": 18,
+      "source_line_ids": [
+        18
+      ],
+      "raw_name": "CACAHUETES GRILLEES 500G",
+      "normalized_name": "CACAHUETES GRILLEES 500G",
+      "quantity": 1.0,
+      "unit_price": 2.83,
+      "total_price": 2.83,
+      "item_type": "standard",
+      "confidence": 0.9948,
+      "local_score": 5.7948,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0024",
+      "start_line": 18,
+      "end_line": 19,
+      "source_line_ids": [
+        18,
+        19
+      ],
+      "raw_name": "CACAHUETES GRILLEES 500G",
+      "normalized_name": "CACAHUETES GRILLEES 500G",
+      "quantity": 1.0,
+      "unit_price": 2.83,
+      "total_price": 2.55,
+      "item_type": "standard_discounted",
+      "confidence": 0.9948,
+      "local_score": 7.7948,
+      "evidence": [
+        "same_line_name_and_right_price",
+        "immediate_negative_discount",
+        "discount=0.28"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0007",
+      "start_line": 20,
+      "end_line": 21,
+      "source_line_ids": [
+        20,
+        21
+      ],
+      "raw_name": "JEUDI 10% MDD",
+      "normalized_name": "JEUDI 10% MDD",
+      "quantity": 1.0,
+      "unit_price": 1.8,
+      "total_price": 1.8,
+      "item_type": "standard",
+      "confidence": 0.96339,
+      "local_score": 4.3634,
+      "evidence": [
+        "description_then_price_row"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0008",
+      "start_line": 21,
+      "end_line": 22,
+      "source_line_ids": [
+        21,
+        22
+      ],
+      "raw_name": "SERPENTINI 500G CO",
+      "normalized_name": "SERPENTINI 500G CO",
+      "quantity": 1.0,
+      "unit_price": 1.8,
+      "total_price": 1.8,
+      "item_type": "standard",
+      "confidence": 0.97573,
+      "local_score": 4.1757,
+      "evidence": [
+        "price_row_then_description"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0025",
+      "start_line": 21,
+      "end_line": 23,
+      "source_line_ids": [
+        21,
+        22,
+        23
+      ],
+      "raw_name": "SERPENTINI 500G CO",
+      "normalized_name": "SERPENTINI 500G CO",
+      "quantity": 1.0,
+      "unit_price": 1.8,
+      "total_price": 1.62,
+      "item_type": "standard_discounted",
+      "confidence": 0.97573,
+      "local_score": 6.1757,
+      "evidence": [
+        "price_row_then_description",
+        "immediate_negative_discount",
+        "discount=0.18"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0009",
+      "start_line": 24,
+      "end_line": 25,
+      "source_line_ids": [
+        24,
+        25
+      ],
+      "raw_name": "JEUDI 10% MDD",
+      "normalized_name": "JEUDI 10% MDD",
+      "quantity": 1.0,
+      "unit_price": 1.64,
+      "total_price": 1.64,
+      "item_type": "standard",
+      "confidence": 0.98012,
+      "local_score": 4.3801,
+      "evidence": [
+        "description_then_price_row"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0010",
+      "start_line": 25,
+      "end_line": 26,
+      "source_line_ids": [
+        25,
+        26
+      ],
+      "raw_name": "GALETTE MAIS 115G CO DIO",
+      "normalized_name": "GALETTE MAIS 115G CO DIO",
+      "quantity": 1.0,
+      "unit_price": 1.64,
+      "total_price": 1.64,
+      "item_type": "standard",
+      "confidence": 0.97154,
+      "local_score": 4.1715,
+      "evidence": [
+        "price_row_then_description"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0026",
+      "start_line": 25,
+      "end_line": 27,
+      "source_line_ids": [
+        25,
+        26,
+        27
+      ],
+      "raw_name": "GALETTE MAIS 115G CO DIO",
+      "normalized_name": "GALETTE MAIS 115G CO DIO",
+      "quantity": 1.0,
+      "unit_price": 1.64,
+      "total_price": 1.48,
+      "item_type": "standard_discounted",
+      "confidence": 0.97154,
+      "local_score": 6.1715,
+      "evidence": [
+        "price_row_then_description",
+        "immediate_negative_discount",
+        "discount=0.16"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0011",
+      "start_line": 28,
+      "end_line": 29,
+      "source_line_ids": [
+        28,
+        29
+      ],
+      "raw_name": "JEUDI 10% MDD",
+      "normalized_name": "JEUDI 10% MDD",
+      "quantity": 1.0,
+      "unit_price": 2.04,
+      "total_price": 2.04,
+      "item_type": "standard",
+      "confidence": 0.97717,
+      "local_score": 4.3958,
+      "evidence": [
+        "description_then_price_row"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0012",
+      "start_line": 29,
+      "end_line": 30,
+      "source_line_ids": [
+        29,
+        30
+      ],
+      "raw_name": "CHIPS A L ANCIENNE 150GR",
+      "normalized_name": "CHIPS A L ANCIENNE 150GR",
+      "quantity": 1.0,
+      "unit_price": 2.04,
+      "total_price": 2.04,
+      "item_type": "standard",
+      "confidence": 0.96096,
+      "local_score": 4.161,
+      "evidence": [
+        "price_row_then_description"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0027",
+      "start_line": 29,
+      "end_line": 31,
+      "source_line_ids": [
+        29,
+        30,
+        31
+      ],
+      "raw_name": "CHIPS A L ANCIENNE 150GR",
+      "normalized_name": "CHIPS A L ANCIENNE 150GR",
+      "quantity": 1.0,
+      "unit_price": 2.04,
+      "total_price": 1.84,
+      "item_type": "standard_discounted",
+      "confidence": 0.96096,
+      "local_score": 6.161,
+      "evidence": [
+        "price_row_then_description",
+        "immediate_negative_discount",
+        "discount=0.20"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0013",
+      "start_line": 34,
+      "end_line": 34,
+      "source_line_ids": [
+        34
+      ],
+      "raw_name": "JUS DE RAISIN 6X20 CL LP",
+      "normalized_name": "JUS DE RAISIN 6X20 CL LP",
+      "quantity": 1.0,
+      "unit_price": 3.7,
+      "total_price": 3.7,
+      "item_type": "standard",
+      "confidence": 0.93851,
+      "local_score": 5.7385,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0028",
+      "start_line": 34,
+      "end_line": 35,
+      "source_line_ids": [
+        34,
+        35
+      ],
+      "raw_name": "JUS DE RAISIN 6X20 CL LP",
+      "normalized_name": "JUS DE RAISIN 6X20 CL LP",
+      "quantity": 1.0,
+      "unit_price": 3.7,
+      "total_price": 3.33,
+      "item_type": "standard_discounted",
+      "confidence": 0.93851,
+      "local_score": 7.7385,
+      "evidence": [
+        "same_line_name_and_right_price",
+        "immediate_negative_discount",
+        "discount=0.37"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0014",
+      "start_line": 36,
+      "end_line": 36,
+      "source_line_ids": [
+        36
+      ],
+      "raw_name": "CERES JUS COCKTAIL DETE 1",
+      "normalized_name": "CERES JUS COCKTAIL DETE 1",
+      "quantity": 1.0,
+      "unit_price": 2.95,
+      "total_price": 2.95,
+      "item_type": "standard",
+      "confidence": 0.99331,
+      "local_score": 5.7933,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0015",
+      "start_line": 38,
+      "end_line": 38,
+      "source_line_ids": [
+        38
+      ],
+      "raw_name": "GAUFRETTE CHOCOLAT 110G L",
+      "normalized_name": "GAUFRETTE CHOCOLAT 110G L",
+      "quantity": 1.0,
+      "unit_price": 1.7,
+      "total_price": 1.7,
+      "item_type": "standard",
+      "confidence": 0.94749,
+      "local_score": 5.7475,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0029",
+      "start_line": 38,
+      "end_line": 39,
+      "source_line_ids": [
+        38,
+        39
+      ],
+      "raw_name": "GAUFRETTE CHOCOLAT 110G L",
+      "normalized_name": "GAUFRETTE CHOCOLAT 110G L",
+      "quantity": 1.0,
+      "unit_price": 1.7,
+      "total_price": 1.53,
+      "item_type": "standard_discounted",
+      "confidence": 0.94032,
+      "local_score": 7.7475,
+      "evidence": [
+        "same_line_name_and_right_price",
+        "immediate_negative_discount",
+        "discount=0.17"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0016",
+      "start_line": 40,
+      "end_line": 40,
+      "source_line_ids": [
+        40
+      ],
+      "raw_name": "BISC.CHOCO LAIT X20 200G",
+      "normalized_name": "BISC.CHOCO LAIT X20 200G",
+      "quantity": 1.0,
+      "unit_price": 2.04,
+      "total_price": 2.04,
+      "item_type": "standard",
+      "confidence": 0.97261,
+      "local_score": 5.7726,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0030",
+      "start_line": 40,
+      "end_line": 41,
+      "source_line_ids": [
+        40,
+        41
+      ],
+      "raw_name": "BISC.CHOCO LAIT X20 200G",
+      "normalized_name": "BISC.CHOCO LAIT X20 200G",
+      "quantity": 1.0,
+      "unit_price": 2.04,
+      "total_price": 1.84,
+      "item_type": "standard_discounted",
+      "confidence": 0.97261,
+      "local_score": 7.7726,
+      "evidence": [
+        "same_line_name_and_right_price",
+        "immediate_negative_discount",
+        "discount=0.20"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0017",
+      "start_line": 43,
+      "end_line": 43,
+      "source_line_ids": [
+        43
+      ],
+      "raw_name": "MOUCHOIR ETUI STD 15X9 CO",
+      "normalized_name": "MOUCHOIR ETUI STD 15X9 CO",
+      "quantity": 1.0,
+      "unit_price": 2.04,
+      "total_price": 2.04,
+      "item_type": "standard",
+      "confidence": 0.98138,
+      "local_score": 5.7814,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0031",
+      "start_line": 43,
+      "end_line": 44,
+      "source_line_ids": [
+        43,
+        44
+      ],
+      "raw_name": "MOUCHOIR ETUI STD 15X9 CO",
+      "normalized_name": "MOUCHOIR ETUI STD 15X9 CO",
+      "quantity": 1.0,
+      "unit_price": 2.04,
+      "total_price": 1.84,
+      "item_type": "standard_discounted",
+      "confidence": 0.97278,
+      "local_score": 7.7814,
+      "evidence": [
+        "same_line_name_and_right_price",
+        "immediate_negative_discount",
+        "discount=0.20"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0018",
+      "start_line": 45,
+      "end_line": 45,
+      "source_line_ids": [
+        45
+      ],
+      "raw_name": "HYGIENE",
+      "normalized_name": "HYGIENE",
+      "quantity": 1.0,
+      "unit_price": 1.84,
+      "total_price": 1.84,
+      "item_type": "standard",
+      "confidence": 0.99806,
+      "local_score": 4.8981,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    }
+  ],
+  "lines": [
+    {
+      "line_id": 0,
+      "text": "LEADER PRICE SAINT LEU",
+      "normalized_text": "LEADER PRICE SAINT LEU",
+      "center_y": 76.0,
+      "y_min": 52.0,
+      "y_max": 100.0,
+      "confidence": 0.99315,
+      "source_segment": "top",
+      "money": [],
+      "role_scores": {
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.55,
+        "tax": 0.0,
+        "total": 0.0,
+        "detail": 0.0,
+        "product": 0.25
+      },
+      "strongest_role": "section",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 1,
+      "text": "150, Rue du General Lambert",
+      "normalized_text": "150, RUE DU GENERAL LAMBERT",
+      "center_y": 128.0,
+      "y_min": 103.0,
+      "y_max": 153.0,
+      "confidence": 0.99383,
+      "source_segment": "top",
+      "money": [],
+      "role_scores": {
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "tax": 0.0,
+        "total": 0.0,
+        "header": 0.0,
+        "footer": 0.0,
+        "product": 0.25
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 2,
+      "text": "97436 SAINT-LEU",
+      "normalized_text": "97436 SAINT-LEU",
+      "center_y": 180.5,
+      "y_min": 156.0,
+      "y_max": 205.0,
+      "confidence": 0.99905,
+      "source_segment": "top",
+      "money": [],
+      "role_scores": {
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.55,
+        "tax": 0.0,
+        "total": 0.0,
+        "detail": 0.0,
+        "product": 0.25
+      },
+      "strongest_role": "section",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 3,
+      "text": "Te1 : 02.62.34.78.73",
+      "normalized_text": "TE1 : 02.62.34.78.73",
+      "center_y": 236.5,
+      "y_min": 210.0,
+      "y_max": 263.0,
+      "confidence": 0.95115,
+      "source_segment": "top",
+      "money": [],
+      "role_scores": {
+        "header": 1.0,
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "tax": 0.0,
+        "total": 0.0
+      },
+      "strongest_role": "header",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 4,
+      "text": "BIENVENUE",
+      "normalized_text": "BIENVENUE",
+      "center_y": 348.5,
+      "y_min": 323.0,
+      "y_max": 374.0,
+      "confidence": 0.99461,
+      "source_segment": "top",
+      "money": [],
+      "role_scores": {
+        "header": 0.7,
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "tax": 0.0,
+        "total": 0.0,
+        "footer": 0.0,
+        "product": 0.25
+      },
+      "strongest_role": "header",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 5,
+      "text": "VOUS AVEZ ETE RECU PAR (KALOU)",
+      "normalized_text": "VOUS AVEZ ETE RECU PAR (KALOU)",
+      "center_y": 460.5,
+      "y_min": 433.0,
+      "y_max": 488.0,
+      "confidence": 0.98933,
+      "source_segment": "top",
+      "money": [],
+      "role_scores": {
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "tax": 0.0,
+        "total": 0.0,
+        "header": 0.0,
+        "footer": 0.0,
+        "product": 0.25
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 6,
+      "text": "23/07/2026 | 6 -18:41B:011 | 19 4 19053",
+      "normalized_text": "23/07/2026 6 -18:41B:011 19 4 19053",
+      "center_y": 518.0,
+      "y_min": 491.0,
+      "y_max": 545.0,
+      "confidence": 0.8941,
+      "source_segment": "top",
+      "money": [],
+      "role_scores": {
+        "header": 1.0,
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "tax": 0.0,
+        "total": 0.0
+      },
+      "strongest_role": "header",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 7,
+      "text": "OPERATION : VENTE",
+      "normalized_text": "OPERATION : VENTE",
+      "center_y": 573.0,
+      "y_min": 547.0,
+      "y_max": 599.0,
+      "confidence": 0.9798,
+      "source_segment": "top",
+      "money": [],
+      "role_scores": {
+        "header": 0.7,
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "tax": 0.0,
+        "total": 0.0,
+        "footer": 0.0,
+        "product": 0.25
+      },
+      "strongest_role": "header",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 8,
+      "text": "(1)3017800225660 | BETTERAVE ROUGE 1/2 400G | 1.30 EUR",
+      "normalized_text": "(1)3017800225660 BETTERAVE ROUGE 1/2 400G 1.30 EUR",
+      "center_y": 627.5,
+      "y_min": 600.0,
+      "y_max": 653.0,
+      "confidence": 0.97664,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 1.3,
+          "token_index": 12,
+          "x_center": 995.5,
+          "score": 0.99269,
+          "raw_text": "1.30 EUR"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 9,
+      "text": "JEUDI 10% MDD | -0.13 EUR",
+      "normalized_text": "JEUDI 10% MDD -0.13 EUR",
+      "center_y": 681.75,
+      "y_min": 655.0,
+      "y_max": 708.0,
+      "confidence": 0.94132,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 0.13,
+          "token_index": 14,
+          "x_center": 986.0,
+          "score": 0.99951,
+          "raw_text": "-0.13 EUR"
+        }
+      ],
+      "role_scores": {
+        "discount": 1.0,
+        "product": -0.8,
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0
+      },
+      "strongest_role": "discount",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 10,
+      "text": "(9)3263851373410 | *HARICOTS RG 1/2 250G LP | 1.37 EUR",
+      "normalized_text": "(9)3263851373410 *HARICOTS RG 1/2 250G LP 1.37 EUR",
+      "center_y": 734.5,
+      "y_min": 709.0,
+      "y_max": 761.0,
+      "confidence": 0.98432,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 1.37,
+          "token_index": 17,
+          "x_center": 992.5,
+          "score": 0.99843,
+          "raw_text": "1.37 EUR"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 11,
+      "text": "JEUDI 10% MDD | -0.14 EUR",
+      "normalized_text": "JEUDI 10% MDD -0.14 EUR",
+      "center_y": 789.25,
+      "y_min": 763.0,
+      "y_max": 815.0,
+      "confidence": 0.9627,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 0.14,
+          "token_index": 19,
+          "x_center": 983.0,
+          "score": 0.9627,
+          "raw_text": "-0.14 EUR"
+        }
+      ],
+      "role_scores": {
+        "discount": 1.0,
+        "product": -0.8,
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0
+      },
+      "strongest_role": "discount",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 12,
+      "text": "(9)3263852691018 | GARNITUR.PR.VOL AU VENT4O | 2.55 EUR",
+      "normalized_text": "(9)3263852691018 GARNITUR.PR.VOL AU VENT4O 2.55 EUR",
+      "center_y": 841.5,
+      "y_min": 817.0,
+      "y_max": 868.0,
+      "confidence": 0.95939,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 2.55,
+          "token_index": 22,
+          "x_center": 986.5,
+          "score": 0.99905,
+          "raw_text": "2.55 EUR"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 13,
+      "text": "JEUDI 10% MDD | -0.26 EUR",
+      "normalized_text": "JEUDI 10% MDD -0.26 EUR",
+      "center_y": 896.0,
+      "y_min": 870.0,
+      "y_max": 923.0,
+      "confidence": 0.99018,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 0.26,
+          "token_index": 24,
+          "x_center": 980.0,
+          "score": 0.99018,
+          "raw_text": "-0.26 EUR"
+        }
+      ],
+      "role_scores": {
+        "discount": 1.0,
+        "product": -0.8,
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0
+      },
+      "strongest_role": "discount",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 14,
+      "text": "(1)3263851282293 | //THON AILBACORE 1/4 140G | 2.34 EUR",
+      "normalized_text": "(1)3263851282293 //THON AILBACORE 1/4 140G 2.34 EUR",
+      "center_y": 949.0,
+      "y_min": 924.0,
+      "y_max": 977.0,
+      "confidence": 0.98342,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 2.34,
+          "token_index": 27,
+          "x_center": 986.5,
+          "score": 0.99909,
+          "raw_text": "2.34 EUR"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 15,
+      "text": "JEUDI 10% MDO | -0.23 EUR",
+      "normalized_text": "JEUDI 10% MDO -0.23 EUR",
+      "center_y": 1004.5,
+      "y_min": 974.0,
+      "y_max": 1033.0,
+      "confidence": 0.94121,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 0.23,
+          "token_index": 29,
+          "x_center": 980.5,
+          "score": 0.9979,
+          "raw_text": "-0.23 EUR"
+        }
+      ],
+      "role_scores": {
+        "discount": 1.0,
+        "product": -0.8,
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0
+      },
+      "strongest_role": "discount",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 16,
+      "text": "(1)8008910044307 | CRAKERS SS SEL 25GX10 LP | 1.60 EUR",
+      "normalized_text": "(1)8008910044307 CRAKERS SS SEL 25GX10 LP 1.60 EUR",
+      "center_y": 1060.0,
+      "y_min": 1029.0,
+      "y_max": 1089.0,
+      "confidence": 0.97801,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 1.6,
+          "token_index": 32,
+          "x_center": 989.0,
+          "score": 0.99924,
+          "raw_text": "1.60 EUR"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 17,
+      "text": "JEUDI 10% MDD | -0.16 EUR",
+      "normalized_text": "JEUDI 10% MDD -0.16 EUR",
+      "center_y": 1116.5,
+      "y_min": 1084.0,
+      "y_max": 1147.0,
+      "confidence": 0.97522,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 0.16,
+          "token_index": 33,
+          "x_center": 982.0,
+          "score": 0.99826,
+          "raw_text": "-0.16 EUR"
+        }
+      ],
+      "role_scores": {
+        "discount": 1.0,
+        "product": -0.8,
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0
+      },
+      "strongest_role": "discount",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 18,
+      "text": "(1)3263853183468 | *CACAHUETES GRILLEES 500G | 2.83 EUR",
+      "normalized_text": "(1)3263853183468 *CACAHUETES GRILLEES 500G 2.83 EUR",
+      "center_y": 1174.5,
+      "y_min": 1140.0,
+      "y_max": 1203.0,
+      "confidence": 0.9948,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 2.83,
+          "token_index": 35,
+          "x_center": 988.5,
+          "score": 0.999,
+          "raw_text": "2.83 EUR"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 19,
+      "text": "-0.28 EUR",
+      "normalized_text": "-0.28 EUR",
+      "center_y": 1218.0,
+      "y_min": 1191.0,
+      "y_max": 1245.0,
+      "confidence": 0.99859,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 0.28,
+          "token_index": 38,
+          "x_center": 980.5,
+          "score": 0.99859,
+          "raw_text": "-0.28 EUR"
+        }
+      ],
+      "role_scores": {
+        "discount": 1.0,
+        "product": -0.8
+      },
+      "strongest_role": "discount",
+      "has_letters": false,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 20,
+      "text": "JEUDI 10% MDD",
+      "normalized_text": "JEUDI 10% MDD",
+      "center_y": 1234.5,
+      "y_min": 1211.0,
+      "y_max": 1258.0,
+      "confidence": 0.96339,
+      "source_segment": "top",
+      "money": [],
+      "role_scores": {
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.55,
+        "tax": 0.0,
+        "total": 0.0,
+        "detail": 0.0,
+        "product": 0.72
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 21,
+      "text": "1.80 EUR",
+      "normalized_text": "1.80 EUR",
+      "center_y": 1267.5,
+      "y_min": 1240.0,
+      "y_max": 1295.0,
+      "confidence": 0.99803,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 1.8,
+          "token_index": 40,
+          "x_center": 983.5,
+          "score": 0.99803,
+          "raw_text": "1.80 EUR"
+        }
+      ],
+      "role_scores": {
+        "unknown": 1.0
+      },
+      "strongest_role": "unknown",
+      "has_letters": false,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 22,
+      "text": "(1)3222477013445 | SERPENTINI 500G CO",
+      "normalized_text": "(1)3222477013445 SERPENTINI 500G CO",
+      "center_y": 1284.0,
+      "y_min": 1256.0,
+      "y_max": 1311.0,
+      "confidence": 0.97573,
+      "source_segment": "top",
+      "money": [],
+      "role_scores": {
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.55,
+        "tax": 0.0,
+        "total": 0.0,
+        "detail": 0.0,
+        "product": 0.72
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 23,
+      "text": "-0.18 EUR",
+      "normalized_text": "-0.18 EUR",
+      "center_y": 1317.0,
+      "y_min": 1293.0,
+      "y_max": 1341.0,
+      "confidence": 0.9991,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 0.18,
+          "token_index": 43,
+          "x_center": 973.0,
+          "score": 0.9991,
+          "raw_text": "-0.18 EUR"
+        }
+      ],
+      "role_scores": {
+        "discount": 1.0,
+        "product": -0.8
+      },
+      "strongest_role": "discount",
+      "has_letters": false,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 24,
+      "text": "JEUDI 10% MDD",
+      "normalized_text": "JEUDI 10% MDD",
+      "center_y": 1339.0,
+      "y_min": 1313.0,
+      "y_max": 1365.0,
+      "confidence": 0.98012,
+      "source_segment": "top",
+      "money": [],
+      "role_scores": {
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.55,
+        "tax": 0.0,
+        "total": 0.0,
+        "detail": 0.0,
+        "product": 0.72
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 25,
+      "text": "1.64 EUR",
+      "normalized_text": "1.64 EUR",
+      "center_y": 1367.5,
+      "y_min": 1340.0,
+      "y_max": 1395.0,
+      "confidence": 0.98866,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 1.64,
+          "token_index": 45,
+          "x_center": 977.0,
+          "score": 0.98866,
+          "raw_text": "1.64 EUR"
+        }
+      ],
+      "role_scores": {
+        "unknown": 1.0
+      },
+      "strongest_role": "unknown",
+      "has_letters": false,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 26,
+      "text": "(1)3222475104336 | GALETTE MAIS 115G CO DIO",
+      "normalized_text": "(1)3222475104336 GALETTE MAIS 115G CO DIO",
+      "center_y": 1386.25,
+      "y_min": 1352.0,
+      "y_max": 1415.0,
+      "confidence": 0.97154,
+      "source_segment": "top",
+      "money": [],
+      "role_scores": {
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "tax": 0.0,
+        "total": 0.0,
+        "header": 0.0,
+        "footer": 0.0,
+        "product": 0.72
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 27,
+      "text": "-0.16 EUR",
+      "normalized_text": "-0.16 EUR",
+      "center_y": 1419.0,
+      "y_min": 1395.0,
+      "y_max": 1443.0,
+      "confidence": 0.99857,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 0.16,
+          "token_index": 48,
+          "x_center": 968.0,
+          "score": 0.99857,
+          "raw_text": "-0.16 EUR"
+        }
+      ],
+      "role_scores": {
+        "discount": 1.0,
+        "product": -0.8
+      },
+      "strongest_role": "discount",
+      "has_letters": false,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 28,
+      "text": "JEUDI 10% MDD",
+      "normalized_text": "JEUDI 10% MDD",
+      "center_y": 1441.5,
+      "y_min": 1418.0,
+      "y_max": 1465.0,
+      "confidence": 0.99579,
+      "source_segment": "top",
+      "money": [],
+      "role_scores": {
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.55,
+        "tax": 0.0,
+        "total": 0.0,
+        "detail": 0.0,
+        "product": 0.72
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 29,
+      "text": "2.04 EUR",
+      "normalized_text": "2.04 EUR",
+      "center_y": 1470.5,
+      "y_min": 1446.0,
+      "y_max": 1495.0,
+      "confidence": 0.97717,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 2.04,
+          "token_index": 50,
+          "x_center": 973.0,
+          "score": 0.97717,
+          "raw_text": "2.04 EUR"
+        }
+      ],
+      "role_scores": {
+        "unknown": 1.0
+      },
+      "strongest_role": "unknown",
+      "has_letters": false,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 30,
+      "text": "(1)3263853107815 | CHIPS A L ANCIENNE 150GR",
+      "normalized_text": "(1)3263853107815 CHIPS A L ANCIENNE 150GR",
+      "center_y": 1488.5,
+      "y_min": 1452.0,
+      "y_max": 1516.0,
+      "confidence": 0.96096,
+      "source_segment": "top",
+      "money": [],
+      "role_scores": {
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "tax": 0.0,
+        "total": 0.0,
+        "header": 0.0,
+        "footer": 0.0,
+        "product": 0.72
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 31,
+      "text": "-0.20 EUR",
+      "normalized_text": "-0.20 EUR",
+      "center_y": 1521.5,
+      "y_min": 1496.0,
+      "y_max": 1547.0,
+      "confidence": 0.99954,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 0.2,
+          "token_index": 53,
+          "x_center": 964.5,
+          "score": 0.99954,
+          "raw_text": "-0.20 EUR"
+        }
+      ],
+      "role_scores": {
+        "discount": 1.0,
+        "product": -0.8
+      },
+      "strongest_role": "discount",
+      "has_letters": false,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 32,
+      "text": "JEUDI 10% MDD",
+      "normalized_text": "JEUDI 10% MDD",
+      "center_y": 1544.5,
+      "y_min": 1519.0,
+      "y_max": 1570.0,
+      "confidence": 0.99095,
+      "source_segment": "top",
+      "money": [],
+      "role_scores": {
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.55,
+        "tax": 0.0,
+        "total": 0.0,
+        "detail": 0.0,
+        "product": 0.72
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 33,
+      "text": "FOICERTE SALEE | 15.73 | EUT",
+      "normalized_text": "FOICERTE SALEE 15.73 EUT",
+      "center_y": 1584.0,
+      "y_min": 1566.0,
+      "y_max": 1599.0,
+      "confidence": 0.74865,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 15.73,
+          "token_index": 56,
+          "x_center": 446.5,
+          "score": 0.99843,
+          "raw_text": "15.73"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.97,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 0.1,
+        "section": 0.92
+      },
+      "strongest_role": "subtotal",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 34,
+      "text": "(1)3263857071150 | JUS DE RAISIN 6X20 CL LP | 3.70 EUR",
+      "normalized_text": "(1)3263857071150 JUS DE RAISIN 6X20 CL LP 3.70 EUR",
+      "center_y": 1669.0,
+      "y_min": 1644.0,
+      "y_max": 1694.0,
+      "confidence": 0.93851,
+      "source_segment": "bottom",
+      "money": [
+        {
+          "amount": 3.7,
+          "token_index": 60,
+          "x_center": 959.5,
+          "score": 0.93851,
+          "raw_text": "3.70 EUR"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 35,
+      "text": "JEUDI 10% MDD | -0.37 EUR",
+      "normalized_text": "JEUDI 10% MDD -0.37 EUR",
+      "center_y": 1722.25,
+      "y_min": 1696.0,
+      "y_max": 1748.0,
+      "confidence": 0.99132,
+      "source_segment": "bottom",
+      "money": [
+        {
+          "amount": 0.37,
+          "token_index": 62,
+          "x_center": 953.0,
+          "score": 0.99276,
+          "raw_text": "-0.37 EUR"
+        }
+      ],
+      "role_scores": {
+        "discount": 1.0,
+        "product": -0.8,
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0
+      },
+      "strongest_role": "discount",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 36,
+      "text": "(1)3559509100096 | CERES JUS COCKTAIL DETE 1 | 2.95 EUR",
+      "normalized_text": "(1)3559509100096 CERES JUS COCKTAIL DETE 1 2.95 EUR",
+      "center_y": 1775.5,
+      "y_min": 1749.0,
+      "y_max": 1801.0,
+      "confidence": 0.99331,
+      "source_segment": "bottom",
+      "money": [
+        {
+          "amount": 2.95,
+          "token_index": 65,
+          "x_center": 959.5,
+          "score": 0.99973,
+          "raw_text": "2.95 EUR"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 37,
+      "text": "BOISSONS SANS ALCOOL | 6.20 EUR",
+      "normalized_text": "BOISSONS SANS ALCOOL 6.20 EUR",
+      "center_y": 1831.0,
+      "y_min": 1805.0,
+      "y_max": 1856.0,
+      "confidence": 0.95047,
+      "source_segment": "bottom",
+      "money": [
+        {
+          "amount": 6.2,
+          "token_index": 67,
+          "x_center": 555.5,
+          "score": 0.95047,
+          "raw_text": "6.20 EUR"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.97,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 0.1,
+        "section": 0.92
+      },
+      "strongest_role": "subtotal",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 38,
+      "text": "(1)3263852917620 | GAUFRETTE CHOCOLAT 110G L | 1.70 EUR",
+      "normalized_text": "(1)3263852917620 GAUFRETTE CHOCOLAT 110G L 1.70 EUR",
+      "center_y": 1882.5,
+      "y_min": 1853.0,
+      "y_max": 1907.0,
+      "confidence": 0.94749,
+      "source_segment": "bottom",
+      "money": [
+        {
+          "amount": 1.7,
+          "token_index": 70,
+          "x_center": 960.5,
+          "score": 0.94749,
+          "raw_text": "1.70 EUR"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 39,
+      "text": "JEUDI 10% MDD | -0.17 EUR",
+      "normalized_text": "JEUDI 10% MDD -0.17 EUR",
+      "center_y": 1935.25,
+      "y_min": 1908.0,
+      "y_max": 1962.0,
+      "confidence": 0.94032,
+      "source_segment": "bottom",
+      "money": [
+        {
+          "amount": 0.17,
+          "token_index": 72,
+          "x_center": 953.0,
+          "score": 0.94816,
+          "raw_text": "-0.17 EUR"
+        }
+      ],
+      "role_scores": {
+        "discount": 1.0,
+        "product": -0.8,
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0
+      },
+      "strongest_role": "discount",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 40,
+      "text": "(1)3263852915138 | *BISC.CHOCO LAIT X20 200G | 2.04 EUR",
+      "normalized_text": "(1)3263852915138 *BISC.CHOCO LAIT X20 200G 2.04 EUR",
+      "center_y": 1986.5,
+      "y_min": 1961.0,
+      "y_max": 2014.0,
+      "confidence": 0.97261,
+      "source_segment": "bottom",
+      "money": [
+        {
+          "amount": 2.04,
+          "token_index": 75,
+          "x_center": 959.0,
+          "score": 0.99972,
+          "raw_text": "2.04 EUR"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 41,
+      "text": "JEUDI 10% MDD | -0.20 EUR",
+      "normalized_text": "JEUDI 10% MDD -0.20 EUR",
+      "center_y": 2041.5,
+      "y_min": 2014.0,
+      "y_max": 2070.0,
+      "confidence": 0.98416,
+      "source_segment": "bottom",
+      "money": [
+        {
+          "amount": 0.2,
+          "token_index": 77,
+          "x_center": 953.5,
+          "score": 0.98456,
+          "raw_text": "-0.20 EUR"
+        }
+      ],
+      "role_scores": {
+        "discount": 1.0,
+        "product": -0.8,
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0
+      },
+      "strongest_role": "discount",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 42,
+      "text": "EPICERIE SUCREE | 3.37 EUI",
+      "normalized_text": "EPICERIE SUCREE 3.37 EUI",
+      "center_y": 2096.25,
+      "y_min": 2067.0,
+      "y_max": 2124.0,
+      "confidence": 0.9218,
+      "source_segment": "bottom",
+      "money": [
+        {
+          "amount": 3.37,
+          "token_index": 79,
+          "x_center": 474.5,
+          "score": 0.9218,
+          "raw_text": "3.37 EUI"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.97,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 0.1,
+        "section": 0.92
+      },
+      "strongest_role": "subtotal",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 43,
+      "text": "(9)3222473347087 | MOUCHOIR ETUI STD 15X9 CO | 2.04 EUR",
+      "normalized_text": "(9)3222473347087 MOUCHOIR ETUI STD 15X9 CO 2.04 EUR",
+      "center_y": 2145.5,
+      "y_min": 2120.0,
+      "y_max": 2178.0,
+      "confidence": 0.98138,
+      "source_segment": "bottom",
+      "money": [
+        {
+          "amount": 2.04,
+          "token_index": 82,
+          "x_center": 959.0,
+          "score": 0.99977,
+          "raw_text": "2.04 EUR"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 44,
+      "text": "JEUDI 10% MDD | -0.20 EUR",
+      "normalized_text": "JEUDI 10% MDD -0.20 EUR",
+      "center_y": 2202.0,
+      "y_min": 2173.0,
+      "y_max": 2234.0,
+      "confidence": 0.97278,
+      "source_segment": "bottom",
+      "money": [
+        {
+          "amount": 0.2,
+          "token_index": 83,
+          "x_center": 952.5,
+          "score": 0.97308,
+          "raw_text": "-0.20 EUR"
+        }
+      ],
+      "role_scores": {
+        "discount": 1.0,
+        "product": -0.8,
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0
+      },
+      "strongest_role": "discount",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 45,
+      "text": "HYGIENE | 1.84 | EUR",
+      "normalized_text": "HYGIENE 1.84 EUR",
+      "center_y": 2258.0,
+      "y_min": 2232.0,
+      "y_max": 2290.0,
+      "confidence": 0.99806,
+      "source_segment": "bottom",
+      "money": [
+        {
+          "amount": 1.84,
+          "token_index": 86,
+          "x_center": 302.0,
+          "score": 0.99946,
+          "raw_text": "1.84"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 0.85
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 46,
+      "text": "27.22 EUR",
+      "normalized_text": "27.22 EUR",
+      "center_y": 2408.0,
+      "y_min": 2384.0,
+      "y_max": 2432.0,
+      "confidence": 0.95958,
+      "source_segment": "bottom",
+      "money": [
+        {
+          "amount": 27.22,
+          "token_index": 88,
+          "x_center": 951.5,
+          "score": 0.95958,
+          "raw_text": "27.22 EUR"
+        }
+      ],
+      "role_scores": {
+        "unknown": 1.0
+      },
+      "strongest_role": "unknown",
+      "has_letters": false,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 47,
+      "text": "TOTAL.:",
+      "normalized_text": "TOTAL.:",
+      "center_y": 2425.0,
+      "y_min": 2399.0,
+      "y_max": 2451.0,
+      "confidence": 0.99391,
+      "source_segment": "bottom",
+      "money": [],
+      "role_scores": {
+        "total": 0.85,
+        "header": 0.0,
+        "footer": 0.85,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.0,
+        "tax": 0.0,
+        "detail": 0.0,
+        "product": 0.7
+      },
+      "strongest_role": "total",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 48,
+      "text": "27.22 EUR",
+      "normalized_text": "27.22 EUR",
+      "center_y": 2461.0,
+      "y_min": 2437.0,
+      "y_max": 2485.0,
+      "confidence": 0.99968,
+      "source_segment": "bottom",
+      "money": [
+        {
+          "amount": 27.22,
+          "token_index": 90,
+          "x_center": 950.0,
+          "score": 0.99968,
+          "raw_text": "27.22 EUR"
+        }
+      ],
+      "role_scores": {
+        "unknown": 1.0,
+        "footer": 0.85
+      },
+      "strongest_role": "unknown",
+      "has_letters": false,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 49,
+      "text": "CARTE BLEUE",
+      "normalized_text": "CARTE BLEUE",
+      "center_y": 2476.0,
+      "y_min": 2446.0,
+      "y_max": 2506.0,
+      "confidence": 0.99707,
+      "source_segment": "bottom",
+      "money": [],
+      "role_scores": {
+        "payment": 1.0,
+        "total": -0.8,
+        "header": 0.0,
+        "footer": 0.85,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.55,
+        "tax": 0.0,
+        "detail": 0.0,
+        "product": 0.7
+      },
+      "strongest_role": "payment",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 50,
+      "text": "NOMBRE ARTICLES : 14",
+      "normalized_text": "NOMBRE ARTICLES : 14",
+      "center_y": 2579.0,
+      "y_min": 2543.0,
+      "y_max": 2615.0,
+      "confidence": 0.99556,
+      "source_segment": "bottom",
+      "money": [],
+      "role_scores": {
+        "count": 1.0,
+        "product": -0.55,
+        "header": 0.0,
+        "footer": 0.85,
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "tax": 0.0,
+        "total": 0.0
+      },
+      "strongest_role": "count",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": 14
+    },
+    {
+      "line_id": 51,
+      "text": "CARTE FIDELITE",
+      "normalized_text": "CARTE FIDELITE",
+      "center_y": 2629.5,
+      "y_min": 2599.0,
+      "y_max": 2660.0,
+      "confidence": 0.99766,
+      "source_segment": "bottom",
+      "money": [],
+      "role_scores": {
+        "footer": 0.9,
+        "header": 0.0,
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "tax": 0.0,
+        "total": 0.0
+      },
+      "strongest_role": "footer",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 52,
+      "text": "Carte Client No : 9200XXXX:1195",
+      "normalized_text": "CARTE CLIENT NO : 9200XXXX:1195",
+      "center_y": 2720.0,
+      "y_min": 2681.0,
+      "y_max": 2759.0,
+      "confidence": 0.96663,
+      "source_segment": "bottom",
+      "money": [],
+      "role_scores": {
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "tax": 0.0,
+        "total": 0.0,
+        "header": 0.0,
+        "footer": 0.85,
+        "product": 0.25
+      },
+      "strongest_role": "footer",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    }
+  ],
+  "legacy_receipt": {
+    "store_name": "Leader Price",
+    "store_location": "Saint Leu",
+    "receipt_date": "2026-07-23",
+    "receipt_time": null,
+    "declared_item_count": 14,
+    "product_line_count": 24,
+    "counted_quantity": 24.0,
+    "items_total": 53.42,
+    "total": null,
+    "article_total": null,
+    "immediate_discount_total": null,
+    "payable_total": null,
+    "warning_count": 8,
+    "warnings": [
+      "Description remplacée sans prix: JEUDI 10% MDD",
+      "Description remplacée sans prix: SERPENTINI 500G CO",
+      "Description remplacée sans prix: JEUDI 10% MDD",
+      "Description remplacée sans prix: GALETTE MAIS 115G CO DIO",
+      "Description remplacée sans prix: JEUDI 10% MDD",
+      "Description remplacée sans prix: CHIPS A L ANCIENNE 150GR",
+      "Description sans ligne secondaire: JEUDI 10% MDD",
+      "Quantité reconstruite 24 != nombre déclaré 14"
+    ]
+  },
+  "comparison": {
+    "legacy_total": null,
+    "legacy_article_total": null,
+    "legacy_items_total": 53.42,
+    "legacy_product_line_count": 24,
+    "legacy_counted_quantity": 24.0,
+    "v2_total": 27.22,
+    "v2_items_total": 27.22,
+    "v2_product_line_count": 14,
+    "v2_counted_quantity": 14,
+    "v2_reasons": [
+      "exact_total_match",
+      "exact_declared_count_match"
+    ]
+  }
+}

@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Corpus V2 BudgetKazPei</title>
+<style>
+body{font-family:Arial,sans-serif;margin:24px;color:#17324d}
+h1{margin-bottom:6px}
+.cards{display:flex;gap:12px;flex-wrap:wrap;margin:18px 0}
+.card{border:1px solid #ccd8e2;border-radius:10px;padding:12px 18px;min-width:120px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{border:1px solid #d6dee5;padding:7px;text-align:left}
+th{background:#0f766e;color:white;position:sticky;top:0}
+tr.pass{background:#e9f8ef}
+tr.pass_with_review{background:#fff8d9}
+tr.fail{background:#fff0e8}
+tr.error{background:#fde7e7}
+tr.observe{background:#f6f7f8}
+.small{color:#607286;font-size:13px}
+</style>
+</head>
+<body>
+<h1>Corpus de régression — Parseur V2</h1>
+<p class="small">Mode ombre : aucune donnée envoyée à l'application ou à Supabase.</p>
+<div class="cards">
+<div class="card"><strong>6</strong><br>cas analysés</div>
+<div class="card"><strong>4</strong><br>réussites automatiques</div>
+<div class="card"><strong>2</strong><br>réussites avec confirmation</div>
+<div class="card"><strong>0</strong><br>échecs</div>
+<div class="card"><strong>0</strong><br>à documenter</div>
+<div class="card"><strong>0</strong><br>erreurs techniques</div>
+</div>
+<table>
+<thead><tr>
+<th>Ticket</th><th>Mode</th><th>Verdict</th>
+<th>Total attendu</th><th>Total fonctionnel</th><th>Source</th>
+<th>Cible V2</th><th>Budget qualité</th><th>Total articles</th>
+<th>Reste à payer</th><th>Total ancien</th>
+<th>Lignes attendues</th><th>Lignes V2</th><th>Lignes ancien</th>
+<th>Quantité attendue</th><th>Quantité V2</th><th>Quantité ancien</th>
+<th>Écart V2</th><th>Qualité</th><th>Confirmation</th><th>Erreur</th>
+</tr></thead>
+<tbody><tr class='pass'><td>LP_SAINT_LEU_17_95</td><td>single</td><td>PASS</td><td>17.95</td><td>17.95</td><td>v2_target_total</td><td>17.95</td><td>—</td><td>—</td><td>—</td><td>—</td><td>9</td><td>9</td><td>13</td><td>9</td><td>9</td><td>13.0</td><td>0.0</td><td>needs_review</td><td></td><td>—</td></tr><tr class='pass'><td>LP_CILAOS_15_07</td><td>single</td><td>PASS</td><td>15.07</td><td>15.07</td><td>v2_target_total</td><td>15.07</td><td>—</td><td>—</td><td>—</td><td>—</td><td>—</td><td>5</td><td>7</td><td>7</td><td>7</td><td>9.0</td><td>0.0</td><td>needs_review</td><td></td><td>—</td></tr><tr class='pass_with_review'><td>LP_SAINT_LEU_39_30</td><td>single</td><td>PASS_WITH_REVIEW</td><td>39.3</td><td>39.3</td><td>v2_target_total</td><td>39.3</td><td>—</td><td>—</td><td>—</td><td>—</td><td>11</td><td>11</td><td>14</td><td>11</td><td>11</td><td>14.0</td><td>0.0</td><td>needs_review</td><td>date_requires_review</td><td>—</td></tr><tr class='pass'><td>LECLERC_LE_PORTAIL_109_27</td><td>single</td><td>PASS</td><td>109.27</td><td>109.27</td><td>quality_budget_amount</td><td>109.27</td><td>109.27</td><td>109.27</td><td>—</td><td>109.27</td><td>—</td><td>24</td><td>24</td><td>26</td><td>26</td><td>26.0</td><td>0.0</td><td>trusted</td><td></td><td>—</td></tr><tr class='pass'><td>LP_SAINT_LEU_27_22</td><td>long</td><td>PASS</td><td>27.22</td><td>27.22</td><td>v2_target_total</td><td>27.22</td><td>—</td><td>—</td><td>—</td><td>—</td><td>14</td><td>14</td><td>24</td><td>14</td><td>14</td><td>24.0</td><td>0.0</td><td>needs_review</td><td></td><td>—</td></tr><tr class='pass_with_review'><td>SUPER_U_PITON_SAINT_LEU_69_48</td><td>long</td><td>PASS_WITH_REVIEW</td><td>69.48</td><td>69.48</td><td>v2_target_total</td><td>69.48</td><td>69.48</td><td>—</td><td>—</td><td>69.48</td><td>20</td><td>20</td><td>20</td><td>24</td><td>24</td><td>24.0</td><td>0.0</td><td>budget_ok_articles_partial</td><td>date_requires_review</td><td>—</td></tr></tbody>
+</table>
+</body></html>

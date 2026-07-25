@@ -1,0 +1,3849 @@
+{
+  "source": "C:\\Users\\Jack.LAPTOP-2USDKF0K\\budgetkazpei\\services\\receipt-scanner\\corpus_v2\\phase13_baseline_check\\diagnostics\\LECLERC_LE_PORTAIL_109_27\\preprocessed.jpg",
+  "image_width": 530,
+  "image_height": 960,
+  "elapsed_seconds": 14.954,
+  "engine": "rapidocr-onnxruntime",
+  "tokens": [
+    {
+      "index": 0,
+      "text": "E.Leclerc",
+      "score": 0.9999,
+      "box": [
+        [
+          102.0,
+          14.0
+        ],
+        [
+          352.0,
+          14.0
+        ],
+        [
+          352.0,
+          70.0
+        ],
+        [
+          102.0,
+          70.0
+        ]
+      ],
+      "x": 102.0,
+      "y": 14.0,
+      "width": 250.0,
+      "height": 56.0,
+      "center_x": 227.0,
+      "center_y": 42.0,
+      "line_id": 0,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 1,
+      "text": "LE PORTAIL",
+      "score": 0.95353,
+      "box": [
+        [
+          207.0,
+          83.0
+        ],
+        [
+          319.0,
+          83.0
+        ],
+        [
+          319.0,
+          97.0
+        ],
+        [
+          207.0,
+          97.0
+        ]
+      ],
+      "x": 207.0,
+      "y": 83.0,
+      "width": 112.0,
+      "height": 14.0,
+      "center_x": 263.0,
+      "center_y": 90.0,
+      "line_id": 1,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 2,
+      "text": "02.62.71.30.00",
+      "score": 0.99078,
+      "box": [
+        [
+          186.0,
+          99.0
+        ],
+        [
+          340.0,
+          99.0
+        ],
+        [
+          340.0,
+          113.0
+        ],
+        [
+          186.0,
+          113.0
+        ]
+      ],
+      "x": 186.0,
+      "y": 99.0,
+      "width": 154.0,
+      "height": 14.0,
+      "center_x": 263.0,
+      "center_y": 106.0,
+      "line_id": 2,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 3,
+      "text": "Caisse 026-1035 20 juillet 2026 13:44",
+      "score": 0.99091,
+      "box": [
+        [
+          132.0,
+          115.0
+        ],
+        [
+          377.0,
+          115.0
+        ],
+        [
+          377.0,
+          129.0
+        ],
+        [
+          132.0,
+          129.0
+        ]
+      ],
+      "x": 132.0,
+      "y": 115.0,
+      "width": 245.0,
+      "height": 14.0,
+      "center_x": 254.5,
+      "center_y": 122.0,
+      "line_id": 3,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 4,
+      "text": "Ticket 20/07/26 0 0RS2 01z00",
+      "score": 0.97248,
+      "box": [
+        [
+          132.0,
+          129.0
+        ],
+        [
+          319.0,
+          130.0
+        ],
+        [
+          319.0,
+          144.0
+        ],
+        [
+          132.0,
+          144.0
+        ]
+      ],
+      "x": 132.0,
+      "y": 129.0,
+      "width": 187.0,
+      "height": 15.0,
+      "center_x": 225.5,
+      "center_y": 136.5,
+      "line_id": 4,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 5,
+      "text": "€",
+      "score": 0.96856,
+      "box": [
+        [
+          387.0,
+          218.0
+        ],
+        [
+          399.0,
+          218.0
+        ],
+        [
+          399.0,
+          231.0
+        ],
+        [
+          387.0,
+          231.0
+        ]
+      ],
+      "x": 387.0,
+      "y": 218.0,
+      "width": 12.0,
+      "height": 13.0,
+      "center_x": 393.0,
+      "center_y": 224.5,
+      "line_id": 5,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 6,
+      "text": "TTC",
+      "score": 0.99619,
+      "box": [
+        [
+          354.0,
+          233.0
+        ],
+        [
+          378.0,
+          233.0
+        ],
+        [
+          378.0,
+          246.0
+        ],
+        [
+          354.0,
+          246.0
+        ]
+      ],
+      "x": 354.0,
+      "y": 233.0,
+      "width": 24.0,
+      "height": 13.0,
+      "center_x": 366.0,
+      "center_y": 239.5,
+      "line_id": 6,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 7,
+      "text": "TVA",
+      "score": 0.99963,
+      "box": [
+        [
+          399.0,
+          233.0
+        ],
+        [
+          424.0,
+          233.0
+        ],
+        [
+          424.0,
+          246.0
+        ],
+        [
+          399.0,
+          246.0
+        ]
+      ],
+      "x": 399.0,
+      "y": 233.0,
+      "width": 25.0,
+      "height": 13.0,
+      "center_x": 411.5,
+      "center_y": 239.5,
+      "line_id": 6,
+      "column": "vat",
+      "source_segment": "full"
+    },
+    {
+      "index": 8,
+      "text": ">> EPICERIE",
+      "score": 0.9965,
+      "box": [
+        [
+          132.0,
+          247.0
+        ],
+        [
+          209.0,
+          247.0
+        ],
+        [
+          209.0,
+          261.0
+        ],
+        [
+          132.0,
+          261.0
+        ]
+      ],
+      "x": 132.0,
+      "y": 247.0,
+      "width": 77.0,
+      "height": 14.0,
+      "center_x": 170.5,
+      "center_y": 254.0,
+      "line_id": 7,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 9,
+      "text": "SUCRE ROUX SEMOUL 1KG MASC PAL",
+      "score": 0.97557,
+      "box": [
+        [
+          132.0,
+          262.0
+        ],
+        [
+          332.0,
+          262.0
+        ],
+        [
+          332.0,
+          276.0
+        ],
+        [
+          132.0,
+          276.0
+        ]
+      ],
+      "x": 132.0,
+      "y": 262.0,
+      "width": 200.0,
+      "height": 14.0,
+      "center_x": 232.0,
+      "center_y": 269.0,
+      "line_id": 8,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 10,
+      "text": "1.29",
+      "score": 0.99922,
+      "box": [
+        [
+          367.0,
+          261.0
+        ],
+        [
+          398.0,
+          261.0
+        ],
+        [
+          398.0,
+          276.0
+        ],
+        [
+          367.0,
+          276.0
+        ]
+      ],
+      "x": 367.0,
+      "y": 261.0,
+      "width": 31.0,
+      "height": 15.0,
+      "center_x": 382.5,
+      "center_y": 268.5,
+      "line_id": 8,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 11,
+      "text": "2",
+      "score": 0.99996,
+      "box": [
+        [
+          413.0,
+          262.0
+        ],
+        [
+          424.0,
+          262.0
+        ],
+        [
+          424.0,
+          276.0
+        ],
+        [
+          413.0,
+          276.0
+        ]
+      ],
+      "x": 413.0,
+      "y": 262.0,
+      "width": 11.0,
+      "height": 14.0,
+      "center_x": 418.5,
+      "center_y": 269.0,
+      "line_id": 8,
+      "column": "vat",
+      "source_segment": "full"
+    },
+    {
+      "index": 12,
+      "text": "CURLY CACAHUETE 100G X2",
+      "score": 0.99802,
+      "box": [
+        [
+          132.0,
+          276.0
+        ],
+        [
+          287.0,
+          277.0
+        ],
+        [
+          287.0,
+          291.0
+        ],
+        [
+          132.0,
+          291.0
+        ]
+      ],
+      "x": 132.0,
+      "y": 276.0,
+      "width": 155.0,
+      "height": 15.0,
+      "center_x": 209.5,
+      "center_y": 283.5,
+      "line_id": 9,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 13,
+      "text": "2.95",
+      "score": 0.99994,
+      "box": [
+        [
+          367.0,
+          278.0
+        ],
+        [
+          397.0,
+          278.0
+        ],
+        [
+          397.0,
+          291.0
+        ],
+        [
+          367.0,
+          291.0
+        ]
+      ],
+      "x": 367.0,
+      "y": 278.0,
+      "width": 30.0,
+      "height": 13.0,
+      "center_x": 382.0,
+      "center_y": 284.5,
+      "line_id": 9,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 14,
+      "text": "2",
+      "score": 0.99997,
+      "box": [
+        [
+          413.0,
+          277.0
+        ],
+        [
+          424.0,
+          277.0
+        ],
+        [
+          424.0,
+          291.0
+        ],
+        [
+          413.0,
+          291.0
+        ]
+      ],
+      "x": 413.0,
+      "y": 277.0,
+      "width": 11.0,
+      "height": 14.0,
+      "center_x": 418.5,
+      "center_y": 284.0,
+      "line_id": 9,
+      "column": "vat",
+      "source_segment": "full"
+    },
+    {
+      "index": 15,
+      "text": "H.BLANCS PRIX CHOC ROYAL B 800",
+      "score": 0.98318,
+      "box": [
+        [
+          132.0,
+          294.0
+        ],
+        [
+          331.0,
+          294.0
+        ],
+        [
+          331.0,
+          306.0
+        ],
+        [
+          132.0,
+          306.0
+        ]
+      ],
+      "x": 132.0,
+      "y": 294.0,
+      "width": 199.0,
+      "height": 12.0,
+      "center_x": 231.5,
+      "center_y": 300.0,
+      "line_id": 10,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 16,
+      "text": "2.15",
+      "score": 0.99998,
+      "box": [
+        [
+          367.0,
+          293.0
+        ],
+        [
+          397.0,
+          293.0
+        ],
+        [
+          397.0,
+          306.0
+        ],
+        [
+          367.0,
+          306.0
+        ]
+      ],
+      "x": 367.0,
+      "y": 293.0,
+      "width": 30.0,
+      "height": 13.0,
+      "center_x": 382.0,
+      "center_y": 299.5,
+      "line_id": 10,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 17,
+      "text": "1",
+      "score": 0.99784,
+      "box": [
+        [
+          413.0,
+          293.0
+        ],
+        [
+          424.0,
+          293.0
+        ],
+        [
+          424.0,
+          306.0
+        ],
+        [
+          413.0,
+          306.0
+        ]
+      ],
+      "x": 413.0,
+      "y": 293.0,
+      "width": 11.0,
+      "height": 13.0,
+      "center_x": 418.5,
+      "center_y": 299.5,
+      "line_id": 10,
+      "column": "vat",
+      "source_segment": "full"
+    },
+    {
+      "index": 18,
+      "text": "NOUILLE AUX OEUFS KEE ZEN 400G",
+      "score": 0.97336,
+      "box": [
+        [
+          131.0,
+          306.0
+        ],
+        [
+          332.0,
+          307.0
+        ],
+        [
+          332.0,
+          321.0
+        ],
+        [
+          131.0,
+          321.0
+        ]
+      ],
+      "x": 131.0,
+      "y": 306.0,
+      "width": 201.0,
+      "height": 15.0,
+      "center_x": 231.5,
+      "center_y": 313.5,
+      "line_id": 11,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 19,
+      "text": "2.24",
+      "score": 0.99994,
+      "box": [
+        [
+          367.0,
+          307.0
+        ],
+        [
+          398.0,
+          307.0
+        ],
+        [
+          398.0,
+          322.0
+        ],
+        [
+          367.0,
+          322.0
+        ]
+      ],
+      "x": 367.0,
+      "y": 307.0,
+      "width": 31.0,
+      "height": 15.0,
+      "center_x": 382.5,
+      "center_y": 314.5,
+      "line_id": 11,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 20,
+      "text": "2",
+      "score": 0.99993,
+      "box": [
+        [
+          413.0,
+          308.0
+        ],
+        [
+          424.0,
+          308.0
+        ],
+        [
+          424.0,
+          321.0
+        ],
+        [
+          413.0,
+          321.0
+        ]
+      ],
+      "x": 413.0,
+      "y": 308.0,
+      "width": 11.0,
+      "height": 13.0,
+      "center_x": 418.5,
+      "center_y": 314.5,
+      "line_id": 11,
+      "column": "vat",
+      "source_segment": "full"
+    },
+    {
+      "index": 21,
+      "text": "SAUCE PIQUANTE PIRI-PIRI 200ML",
+      "score": 0.9631,
+      "box": [
+        [
+          133.0,
+          324.0
+        ],
+        [
+          331.0,
+          324.0
+        ],
+        [
+          331.0,
+          336.0
+        ],
+        [
+          133.0,
+          336.0
+        ]
+      ],
+      "x": 133.0,
+      "y": 324.0,
+      "width": 198.0,
+      "height": 12.0,
+      "center_x": 232.0,
+      "center_y": 330.0,
+      "line_id": 12,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 22,
+      "text": "1.41",
+      "score": 0.9998,
+      "box": [
+        [
+          366.0,
+          322.0
+        ],
+        [
+          398.0,
+          322.0
+        ],
+        [
+          398.0,
+          337.0
+        ],
+        [
+          366.0,
+          337.0
+        ]
+      ],
+      "x": 366.0,
+      "y": 322.0,
+      "width": 32.0,
+      "height": 15.0,
+      "center_x": 382.0,
+      "center_y": 329.5,
+      "line_id": 12,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 23,
+      "text": "1",
+      "score": 0.99795,
+      "box": [
+        [
+          413.0,
+          322.0
+        ],
+        [
+          424.0,
+          322.0
+        ],
+        [
+          424.0,
+          336.0
+        ],
+        [
+          413.0,
+          336.0
+        ]
+      ],
+      "x": 413.0,
+      "y": 322.0,
+      "width": 11.0,
+      "height": 14.0,
+      "center_x": 418.5,
+      "center_y": 329.0,
+      "line_id": 12,
+      "column": "vat",
+      "source_segment": "full"
+    },
+    {
+      "index": 24,
+      "text": ">> LIQUIDE",
+      "score": 0.9959,
+      "box": [
+        [
+          132.0,
+          337.0
+        ],
+        [
+          202.0,
+          337.0
+        ],
+        [
+          202.0,
+          351.0
+        ],
+        [
+          132.0,
+          351.0
+        ]
+      ],
+      "x": 132.0,
+      "y": 337.0,
+      "width": 70.0,
+      "height": 14.0,
+      "center_x": 167.0,
+      "center_y": 344.0,
+      "line_id": 13,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 25,
+      "text": "SIROP GRENADINE MASCARIN",
+      "score": 0.99819,
+      "box": [
+        [
+          131.0,
+          351.0
+        ],
+        [
+          295.0,
+          352.0
+        ],
+        [
+          294.0,
+          366.0
+        ],
+        [
+          131.0,
+          366.0
+        ]
+      ],
+      "x": 131.0,
+      "y": 351.0,
+      "width": 164.0,
+      "height": 15.0,
+      "center_x": 213.0,
+      "center_y": 358.5,
+      "line_id": 14,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 26,
+      "text": "1L",
+      "score": 0.96106,
+      "box": [
+        [
+          301.0,
+          354.0
+        ],
+        [
+          318.0,
+          354.0
+        ],
+        [
+          318.0,
+          365.0
+        ],
+        [
+          301.0,
+          365.0
+        ]
+      ],
+      "x": 301.0,
+      "y": 354.0,
+      "width": 17.0,
+      "height": 11.0,
+      "center_x": 309.5,
+      "center_y": 359.5,
+      "line_id": 14,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 27,
+      "text": "3.69",
+      "score": 0.9996,
+      "box": [
+        [
+          367.0,
+          351.0
+        ],
+        [
+          398.0,
+          351.0
+        ],
+        [
+          398.0,
+          366.0
+        ],
+        [
+          367.0,
+          366.0
+        ]
+      ],
+      "x": 367.0,
+      "y": 351.0,
+      "width": 31.0,
+      "height": 15.0,
+      "center_x": 382.5,
+      "center_y": 358.5,
+      "line_id": 14,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 28,
+      "text": "1",
+      "score": 0.99974,
+      "box": [
+        [
+          413.0,
+          354.0
+        ],
+        [
+          423.0,
+          354.0
+        ],
+        [
+          423.0,
+          365.0
+        ],
+        [
+          413.0,
+          365.0
+        ]
+      ],
+      "x": 413.0,
+      "y": 354.0,
+      "width": 10.0,
+      "height": 11.0,
+      "center_x": 418.0,
+      "center_y": 359.5,
+      "line_id": 14,
+      "column": "vat",
+      "source_segment": "full"
+    },
+    {
+      "index": 29,
+      "text": "BIERE RINCE COCHON BLG, 75CL",
+      "score": 0.98388,
+      "box": [
+        [
+          132.0,
+          366.0
+        ],
+        [
+          313.0,
+          367.0
+        ],
+        [
+          312.0,
+          381.0
+        ],
+        [
+          132.0,
+          381.0
+        ]
+      ],
+      "x": 132.0,
+      "y": 366.0,
+      "width": 181.0,
+      "height": 15.0,
+      "center_x": 222.5,
+      "center_y": 373.5,
+      "line_id": 15,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 30,
+      "text": "4.70",
+      "score": 0.9992,
+      "box": [
+        [
+          367.0,
+          366.0
+        ],
+        [
+          398.0,
+          366.0
+        ],
+        [
+          398.0,
+          381.0
+        ],
+        [
+          367.0,
+          381.0
+        ]
+      ],
+      "x": 367.0,
+      "y": 366.0,
+      "width": 31.0,
+      "height": 15.0,
+      "center_x": 382.5,
+      "center_y": 373.5,
+      "line_id": 15,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 31,
+      "text": "3",
+      "score": 0.99991,
+      "box": [
+        [
+          413.0,
+          366.0
+        ],
+        [
+          425.0,
+          366.0
+        ],
+        [
+          425.0,
+          381.0
+        ],
+        [
+          413.0,
+          381.0
+        ]
+      ],
+      "x": 413.0,
+      "y": 366.0,
+      "width": 12.0,
+      "height": 15.0,
+      "center_x": 419.0,
+      "center_y": 373.5,
+      "line_id": 15,
+      "column": "vat",
+      "source_segment": "full"
+    },
+    {
+      "index": 32,
+      "text": "LIMONADE ZERO 1.5L SPRINK'S",
+      "score": 0.98814,
+      "box": [
+        [
+          128.0,
+          383.0
+        ],
+        [
+          312.0,
+          383.0
+        ],
+        [
+          312.0,
+          395.0
+        ],
+        [
+          128.0,
+          395.0
+        ]
+      ],
+      "x": 128.0,
+      "y": 383.0,
+      "width": 184.0,
+      "height": 12.0,
+      "center_x": 220.0,
+      "center_y": 389.0,
+      "line_id": 16,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 33,
+      "text": "1.81",
+      "score": 0.94835,
+      "box": [
+        [
+          367.0,
+          381.0
+        ],
+        [
+          398.0,
+          381.0
+        ],
+        [
+          398.0,
+          396.0
+        ],
+        [
+          367.0,
+          396.0
+        ]
+      ],
+      "x": 367.0,
+      "y": 381.0,
+      "width": 31.0,
+      "height": 15.0,
+      "center_x": 382.5,
+      "center_y": 388.5,
+      "line_id": 16,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 34,
+      "text": "2",
+      "score": 0.99976,
+      "box": [
+        [
+          413.0,
+          382.0
+        ],
+        [
+          425.0,
+          382.0
+        ],
+        [
+          425.0,
+          396.0
+        ],
+        [
+          413.0,
+          396.0
+        ]
+      ],
+      "x": 413.0,
+      "y": 382.0,
+      "width": 12.0,
+      "height": 14.0,
+      "center_x": 419.0,
+      "center_y": 389.0,
+      "line_id": 16,
+      "column": "vat",
+      "source_segment": "full"
+    },
+    {
+      "index": 35,
+      "text": "PAIX DIEU 7SCL",
+      "score": 0.98912,
+      "box": [
+        [
+          132.0,
+          397.0
+        ],
+        [
+          227.0,
+          397.0
+        ],
+        [
+          227.0,
+          409.0
+        ],
+        [
+          132.0,
+          409.0
+        ]
+      ],
+      "x": 132.0,
+      "y": 397.0,
+      "width": 95.0,
+      "height": 12.0,
+      "center_x": 179.5,
+      "center_y": 403.0,
+      "line_id": 17,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 36,
+      "text": "8.50",
+      "score": 0.99978,
+      "box": [
+        [
+          367.0,
+          396.0
+        ],
+        [
+          399.0,
+          396.0
+        ],
+        [
+          399.0,
+          411.0
+        ],
+        [
+          367.0,
+          411.0
+        ]
+      ],
+      "x": 367.0,
+      "y": 396.0,
+      "width": 32.0,
+      "height": 15.0,
+      "center_x": 383.0,
+      "center_y": 403.5,
+      "line_id": 17,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 37,
+      "text": "3",
+      "score": 0.99996,
+      "box": [
+        [
+          413.0,
+          397.0
+        ],
+        [
+          424.0,
+          397.0
+        ],
+        [
+          424.0,
+          411.0
+        ],
+        [
+          413.0,
+          411.0
+        ]
+      ],
+      "x": 413.0,
+      "y": 397.0,
+      "width": 11.0,
+      "height": 14.0,
+      "center_x": 418.5,
+      "center_y": 404.0,
+      "line_id": 17,
+      "column": "vat",
+      "source_segment": "full"
+    },
+    {
+      "index": 38,
+      "text": ">> DPH",
+      "score": 0.98699,
+      "box": [
+        [
+          131.0,
+          412.0
+        ],
+        [
+          177.0,
+          412.0
+        ],
+        [
+          177.0,
+          426.0
+        ],
+        [
+          131.0,
+          426.0
+        ]
+      ],
+      "x": 131.0,
+      "y": 412.0,
+      "width": 46.0,
+      "height": 14.0,
+      "center_x": 154.0,
+      "center_y": 419.0,
+      "line_id": 18,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 39,
+      "text": "LIG GEL FRESH CANARD 750ML",
+      "score": 0.99229,
+      "box": [
+        [
+          131.0,
+          427.0
+        ],
+        [
+          306.0,
+          427.0
+        ],
+        [
+          306.0,
+          441.0
+        ],
+        [
+          131.0,
+          441.0
+        ]
+      ],
+      "x": 131.0,
+      "y": 427.0,
+      "width": 175.0,
+      "height": 14.0,
+      "center_x": 218.5,
+      "center_y": 434.0,
+      "line_id": 19,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 40,
+      "text": "1.99",
+      "score": 0.9988,
+      "box": [
+        [
+          367.0,
+          426.0
+        ],
+        [
+          398.0,
+          426.0
+        ],
+        [
+          398.0,
+          441.0
+        ],
+        [
+          367.0,
+          441.0
+        ]
+      ],
+      "x": 367.0,
+      "y": 426.0,
+      "width": 31.0,
+      "height": 15.0,
+      "center_x": 382.5,
+      "center_y": 433.5,
+      "line_id": 19,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 41,
+      "text": "1",
+      "score": 0.99987,
+      "box": [
+        [
+          413.0,
+          428.0
+        ],
+        [
+          423.0,
+          428.0
+        ],
+        [
+          423.0,
+          439.0
+        ],
+        [
+          413.0,
+          439.0
+        ]
+      ],
+      "x": 413.0,
+      "y": 428.0,
+      "width": 10.0,
+      "height": 11.0,
+      "center_x": 418.0,
+      "center_y": 433.5,
+      "line_id": 19,
+      "column": "vat",
+      "source_segment": "full"
+    },
+    {
+      "index": 42,
+      "text": ">> CREMERIE",
+      "score": 0.99638,
+      "box": [
+        [
+          132.0,
+          442.0
+        ],
+        [
+          207.0,
+          442.0
+        ],
+        [
+          207.0,
+          454.0
+        ],
+        [
+          132.0,
+          454.0
+        ]
+      ],
+      "x": 132.0,
+      "y": 442.0,
+      "width": 75.0,
+      "height": 12.0,
+      "center_x": 169.5,
+      "center_y": 448.0,
+      "line_id": 20,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 43,
+      "text": "LAIT UHT 1/2ECREME NEUTRE BK1L",
+      "score": 0.98004,
+      "box": [
+        [
+          130.0,
+          456.0
+        ],
+        [
+          332.0,
+          456.0
+        ],
+        [
+          332.0,
+          471.0
+        ],
+        [
+          130.0,
+          471.0
+        ]
+      ],
+      "x": 130.0,
+      "y": 456.0,
+      "width": 202.0,
+      "height": 15.0,
+      "center_x": 231.0,
+      "center_y": 463.5,
+      "line_id": 21,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 44,
+      "text": "3 × 1.09€",
+      "score": 0.90254,
+      "box": [
+        [
+          190.0,
+          471.0
+        ],
+        [
+          255.0,
+          471.0
+        ],
+        [
+          255.0,
+          486.0
+        ],
+        [
+          190.0,
+          486.0
+        ]
+      ],
+      "x": 190.0,
+      "y": 471.0,
+      "width": 65.0,
+      "height": 15.0,
+      "center_x": 222.5,
+      "center_y": 478.5,
+      "line_id": 22,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 45,
+      "text": "3.27",
+      "score": 0.99995,
+      "box": [
+        [
+          367.0,
+          472.0
+        ],
+        [
+          398.0,
+          472.0
+        ],
+        [
+          398.0,
+          485.0
+        ],
+        [
+          367.0,
+          485.0
+        ]
+      ],
+      "x": 367.0,
+      "y": 472.0,
+      "width": 31.0,
+      "height": 13.0,
+      "center_x": 382.5,
+      "center_y": 478.5,
+      "line_id": 22,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 46,
+      "text": "1",
+      "score": 0.99991,
+      "box": [
+        [
+          413.0,
+          473.0
+        ],
+        [
+          423.0,
+          473.0
+        ],
+        [
+          423.0,
+          484.0
+        ],
+        [
+          413.0,
+          484.0
+        ]
+      ],
+      "x": 413.0,
+      "y": 473.0,
+      "width": 10.0,
+      "height": 11.0,
+      "center_x": 418.0,
+      "center_y": 478.5,
+      "line_id": 22,
+      "column": "vat",
+      "source_segment": "full"
+    },
+    {
+      "index": 47,
+      "text": ">> FRUITS ET LEGUMES",
+      "score": 0.98974,
+      "box": [
+        [
+          132.0,
+          488.0
+        ],
+        [
+          266.0,
+          488.0
+        ],
+        [
+          266.0,
+          500.0
+        ],
+        [
+          132.0,
+          500.0
+        ]
+      ],
+      "x": 132.0,
+      "y": 488.0,
+      "width": 134.0,
+      "height": 12.0,
+      "center_x": 199.0,
+      "center_y": 494.0,
+      "line_id": 23,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 48,
+      "text": "POMME TERRE BLANCHE REUNION",
+      "score": 0.98381,
+      "box": [
+        [
+          132.0,
+          501.0
+        ],
+        [
+          312.0,
+          501.0
+        ],
+        [
+          312.0,
+          515.0
+        ],
+        [
+          132.0,
+          515.0
+        ]
+      ],
+      "x": 132.0,
+      "y": 501.0,
+      "width": 180.0,
+      "height": 14.0,
+      "center_x": 222.0,
+      "center_y": 508.0,
+      "line_id": 24,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 49,
+      "text": "2.558kg X 1.90€/kg",
+      "score": 0.9902,
+      "box": [
+        [
+          152.0,
+          517.0
+        ],
+        [
+          274.0,
+          517.0
+        ],
+        [
+          274.0,
+          531.0
+        ],
+        [
+          152.0,
+          531.0
+        ]
+      ],
+      "x": 152.0,
+      "y": 517.0,
+      "width": 122.0,
+      "height": 14.0,
+      "center_x": 213.0,
+      "center_y": 524.0,
+      "line_id": 25,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 50,
+      "text": "4.86",
+      "score": 0.99985,
+      "box": [
+        [
+          367.0,
+          517.0
+        ],
+        [
+          398.0,
+          517.0
+        ],
+        [
+          398.0,
+          530.0
+        ],
+        [
+          367.0,
+          530.0
+        ]
+      ],
+      "x": 367.0,
+      "y": 517.0,
+      "width": 31.0,
+      "height": 13.0,
+      "center_x": 382.5,
+      "center_y": 523.5,
+      "line_id": 25,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 51,
+      "text": "2",
+      "score": 0.99993,
+      "box": [
+        [
+          413.0,
+          518.0
+        ],
+        [
+          424.0,
+          518.0
+        ],
+        [
+          424.0,
+          531.0
+        ],
+        [
+          413.0,
+          531.0
+        ]
+      ],
+      "x": 413.0,
+      "y": 518.0,
+      "width": 11.0,
+      "height": 13.0,
+      "center_x": 418.5,
+      "center_y": 524.5,
+      "line_id": 25,
+      "column": "vat",
+      "source_segment": "full"
+    },
+    {
+      "index": 52,
+      "text": "POIREAU",
+      "score": 0.99731,
+      "box": [
+        [
+          131.0,
+          531.0
+        ],
+        [
+          182.0,
+          531.0
+        ],
+        [
+          182.0,
+          546.0
+        ],
+        [
+          131.0,
+          546.0
+        ]
+      ],
+      "x": 131.0,
+      "y": 531.0,
+      "width": 51.0,
+      "height": 15.0,
+      "center_x": 156.5,
+      "center_y": 538.5,
+      "line_id": 26,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 53,
+      "text": "0.236kg X 3.30€/kg",
+      "score": 0.98467,
+      "box": [
+        [
+          151.0,
+          546.0
+        ],
+        [
+          274.0,
+          546.0
+        ],
+        [
+          274.0,
+          562.0
+        ],
+        [
+          151.0,
+          562.0
+        ]
+      ],
+      "x": 151.0,
+      "y": 546.0,
+      "width": 123.0,
+      "height": 16.0,
+      "center_x": 212.5,
+      "center_y": 554.0,
+      "line_id": 27,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 54,
+      "text": "0.78",
+      "score": 0.9999,
+      "box": [
+        [
+          367.0,
+          547.0
+        ],
+        [
+          398.0,
+          547.0
+        ],
+        [
+          398.0,
+          560.0
+        ],
+        [
+          367.0,
+          560.0
+        ]
+      ],
+      "x": 367.0,
+      "y": 547.0,
+      "width": 31.0,
+      "height": 13.0,
+      "center_x": 382.5,
+      "center_y": 553.5,
+      "line_id": 27,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 55,
+      "text": "2",
+      "score": 0.99944,
+      "box": [
+        [
+          413.0,
+          547.0
+        ],
+        [
+          424.0,
+          547.0
+        ],
+        [
+          424.0,
+          561.0
+        ],
+        [
+          413.0,
+          561.0
+        ]
+      ],
+      "x": 413.0,
+      "y": 547.0,
+      "width": 11.0,
+      "height": 14.0,
+      "center_x": 418.5,
+      "center_y": 554.0,
+      "line_id": 27,
+      "column": "vat",
+      "source_segment": "full"
+    },
+    {
+      "index": 56,
+      "text": "SALADE LAITUE",
+      "score": 0.99817,
+      "box": [
+        [
+          132.0,
+          561.0
+        ],
+        [
+          223.0,
+          561.0
+        ],
+        [
+          223.0,
+          576.0
+        ],
+        [
+          132.0,
+          576.0
+        ]
+      ],
+      "x": 132.0,
+      "y": 561.0,
+      "width": 91.0,
+      "height": 15.0,
+      "center_x": 177.5,
+      "center_y": 568.5,
+      "line_id": 28,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 57,
+      "text": "1.39",
+      "score": 0.99942,
+      "box": [
+        [
+          367.0,
+          562.0
+        ],
+        [
+          397.0,
+          562.0
+        ],
+        [
+          397.0,
+          575.0
+        ],
+        [
+          367.0,
+          575.0
+        ]
+      ],
+      "x": 367.0,
+      "y": 562.0,
+      "width": 30.0,
+      "height": 13.0,
+      "center_x": 382.0,
+      "center_y": 568.5,
+      "line_id": 28,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 58,
+      "text": "2",
+      "score": 0.99992,
+      "box": [
+        [
+          413.0,
+          561.0
+        ],
+        [
+          424.0,
+          561.0
+        ],
+        [
+          424.0,
+          575.0
+        ],
+        [
+          413.0,
+          575.0
+        ]
+      ],
+      "x": 413.0,
+      "y": 561.0,
+      "width": 11.0,
+      "height": 14.0,
+      "center_x": 418.5,
+      "center_y": 568.0,
+      "line_id": 28,
+      "column": "vat",
+      "source_segment": "full"
+    },
+    {
+      "index": 59,
+      "text": ">> VOLAILLE",
+      "score": 0.97796,
+      "box": [
+        [
+          132.0,
+          577.0
+        ],
+        [
+          208.0,
+          577.0
+        ],
+        [
+          208.0,
+          589.0
+        ],
+        [
+          132.0,
+          589.0
+        ]
+      ],
+      "x": 132.0,
+      "y": 577.0,
+      "width": 76.0,
+      "height": 12.0,
+      "center_x": 170.0,
+      "center_y": 583.0,
+      "line_id": 29,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 60,
+      "text": "ESCALOPE PLT JAUNE",
+      "score": 0.98074,
+      "box": [
+        [
+          132.0,
+          592.0
+        ],
+        [
+          255.0,
+          592.0
+        ],
+        [
+          255.0,
+          604.0
+        ],
+        [
+          132.0,
+          604.0
+        ]
+      ],
+      "x": 132.0,
+      "y": 592.0,
+      "width": 123.0,
+      "height": 12.0,
+      "center_x": 193.5,
+      "center_y": 598.0,
+      "line_id": 30,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 61,
+      "text": "X6 KOKO",
+      "score": 0.98327,
+      "box": [
+        [
+          261.0,
+          592.0
+        ],
+        [
+          312.0,
+          592.0
+        ],
+        [
+          312.0,
+          604.0
+        ],
+        [
+          261.0,
+          604.0
+        ]
+      ],
+      "x": 261.0,
+      "y": 592.0,
+      "width": 51.0,
+      "height": 12.0,
+      "center_x": 286.5,
+      "center_y": 598.0,
+      "line_id": 30,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 62,
+      "text": "15.51",
+      "score": 0.99998,
+      "box": [
+        [
+          360.0,
+          591.0
+        ],
+        [
+          398.0,
+          591.0
+        ],
+        [
+          398.0,
+          606.0
+        ],
+        [
+          360.0,
+          606.0
+        ]
+      ],
+      "x": 360.0,
+      "y": 591.0,
+      "width": 38.0,
+      "height": 15.0,
+      "center_x": 379.0,
+      "center_y": 598.5,
+      "line_id": 30,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 63,
+      "text": "2",
+      "score": 0.99988,
+      "box": [
+        [
+          413.0,
+          591.0
+        ],
+        [
+          424.0,
+          591.0
+        ],
+        [
+          424.0,
+          605.0
+        ],
+        [
+          413.0,
+          605.0
+        ]
+      ],
+      "x": 413.0,
+      "y": 591.0,
+      "width": 11.0,
+      "height": 14.0,
+      "center_x": 418.5,
+      "center_y": 598.0,
+      "line_id": 30,
+      "column": "vat",
+      "source_segment": "full"
+    },
+    {
+      "index": 64,
+      "text": ">> CHARCUTERIE TRAITEUR",
+      "score": 0.999,
+      "box": [
+        [
+          131.0,
+          606.0
+        ],
+        [
+          287.0,
+          606.0
+        ],
+        [
+          287.0,
+          621.0
+        ],
+        [
+          131.0,
+          620.0
+        ]
+      ],
+      "x": 131.0,
+      "y": 606.0,
+      "width": 156.0,
+      "height": 15.0,
+      "center_x": 209.0,
+      "center_y": 613.5,
+      "line_id": 31,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 65,
+      "text": "10 KNACKS PORC 350 GR CABY",
+      "score": 0.99687,
+      "box": [
+        [
+          133.0,
+          622.0
+        ],
+        [
+          305.0,
+          622.0
+        ],
+        [
+          305.0,
+          634.0
+        ],
+        [
+          133.0,
+          634.0
+        ]
+      ],
+      "x": 133.0,
+      "y": 622.0,
+      "width": 172.0,
+      "height": 12.0,
+      "center_x": 219.0,
+      "center_y": 628.0,
+      "line_id": 32,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 66,
+      "text": "2.39",
+      "score": 0.99981,
+      "box": [
+        [
+          367.0,
+          621.0
+        ],
+        [
+          398.0,
+          621.0
+        ],
+        [
+          398.0,
+          636.0
+        ],
+        [
+          367.0,
+          636.0
+        ]
+      ],
+      "x": 367.0,
+      "y": 621.0,
+      "width": 31.0,
+      "height": 15.0,
+      "center_x": 382.5,
+      "center_y": 628.5,
+      "line_id": 32,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 67,
+      "text": "1",
+      "score": 0.99986,
+      "box": [
+        [
+          413.0,
+          621.0
+        ],
+        [
+          424.0,
+          621.0
+        ],
+        [
+          424.0,
+          634.0
+        ],
+        [
+          413.0,
+          634.0
+        ]
+      ],
+      "x": 413.0,
+      "y": 621.0,
+      "width": 11.0,
+      "height": 13.0,
+      "center_x": 418.5,
+      "center_y": 627.5,
+      "line_id": 32,
+      "column": "vat",
+      "source_segment": "full"
+    },
+    {
+      "index": 68,
+      "text": ">> SURGELES",
+      "score": 0.97126,
+      "box": [
+        [
+          132.0,
+          637.0
+        ],
+        [
+          208.0,
+          637.0
+        ],
+        [
+          208.0,
+          649.0
+        ],
+        [
+          132.0,
+          649.0
+        ]
+      ],
+      "x": 132.0,
+      "y": 637.0,
+      "width": 76.0,
+      "height": 12.0,
+      "center_x": 170.0,
+      "center_y": 643.0,
+      "line_id": 33,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 69,
+      "text": "6EXTREME PISTACH CHOCO,426G",
+      "score": 0.98483,
+      "box": [
+        [
+          132.0,
+          651.0
+        ],
+        [
+          313.0,
+          651.0
+        ],
+        [
+          312.0,
+          666.0
+        ],
+        [
+          132.0,
+          665.0
+        ]
+      ],
+      "x": 132.0,
+      "y": 651.0,
+      "width": 181.0,
+      "height": 15.0,
+      "center_x": 222.5,
+      "center_y": 658.5,
+      "line_id": 34,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 70,
+      "text": "6.69",
+      "score": 0.99329,
+      "box": [
+        [
+          366.0,
+          651.0
+        ],
+        [
+          398.0,
+          651.0
+        ],
+        [
+          398.0,
+          666.0
+        ],
+        [
+          366.0,
+          666.0
+        ]
+      ],
+      "x": 366.0,
+      "y": 651.0,
+      "width": 32.0,
+      "height": 15.0,
+      "center_x": 382.0,
+      "center_y": 658.5,
+      "line_id": 34,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 71,
+      "text": "2",
+      "score": 0.9999,
+      "box": [
+        [
+          413.0,
+          651.0
+        ],
+        [
+          424.0,
+          651.0
+        ],
+        [
+          424.0,
+          665.0
+        ],
+        [
+          413.0,
+          665.0
+        ]
+      ],
+      "x": 413.0,
+      "y": 651.0,
+      "width": 11.0,
+      "height": 14.0,
+      "center_x": 418.5,
+      "center_y": 658.0,
+      "line_id": 34,
+      "column": "vat",
+      "source_segment": "full"
+    },
+    {
+      "index": 72,
+      "text": ">> FROMAGE COUPE",
+      "score": 0.98599,
+      "box": [
+        [
+          132.0,
+          667.0
+        ],
+        [
+          241.0,
+          667.0
+        ],
+        [
+          241.0,
+          679.0
+        ],
+        [
+          132.0,
+          679.0
+        ]
+      ],
+      "x": 132.0,
+      "y": 667.0,
+      "width": 109.0,
+      "height": 12.0,
+      "center_x": 186.5,
+      "center_y": 673.0,
+      "line_id": 35,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 73,
+      "text": "RACLETTE POIVRE&BAIES",
+      "score": 0.99909,
+      "box": [
+        [
+          132.0,
+          682.0
+        ],
+        [
+          273.0,
+          682.0
+        ],
+        [
+          273.0,
+          694.0
+        ],
+        [
+          132.0,
+          694.0
+        ]
+      ],
+      "x": 132.0,
+      "y": 682.0,
+      "width": 141.0,
+      "height": 12.0,
+      "center_x": 202.5,
+      "center_y": 688.0,
+      "line_id": 36,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 74,
+      "text": "8.34",
+      "score": 0.99996,
+      "box": [
+        [
+          367.0,
+          681.0
+        ],
+        [
+          397.0,
+          681.0
+        ],
+        [
+          397.0,
+          694.0
+        ],
+        [
+          367.0,
+          694.0
+        ]
+      ],
+      "x": 367.0,
+      "y": 681.0,
+      "width": 30.0,
+      "height": 13.0,
+      "center_x": 382.0,
+      "center_y": 687.5,
+      "line_id": 36,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 75,
+      "text": "2",
+      "score": 0.99992,
+      "box": [
+        [
+          414.0,
+          682.0
+        ],
+        [
+          423.0,
+          682.0
+        ],
+        [
+          423.0,
+          695.0
+        ],
+        [
+          414.0,
+          695.0
+        ]
+      ],
+      "x": 414.0,
+      "y": 682.0,
+      "width": 9.0,
+      "height": 13.0,
+      "center_x": 418.5,
+      "center_y": 688.5,
+      "line_id": 36,
+      "column": "vat",
+      "source_segment": "full"
+    },
+    {
+      "index": 76,
+      "text": "MORBIER AOP AFF 45JOURS",
+      "score": 0.99529,
+      "box": [
+        [
+          132.0,
+          697.0
+        ],
+        [
+          286.0,
+          697.0
+        ],
+        [
+          286.0,
+          709.0
+        ],
+        [
+          132.0,
+          709.0
+        ]
+      ],
+      "x": 132.0,
+      "y": 697.0,
+      "width": 154.0,
+      "height": 12.0,
+      "center_x": 209.0,
+      "center_y": 703.0,
+      "line_id": 37,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 77,
+      "text": "11.66",
+      "score": 0.99982,
+      "box": [
+        [
+          361.0,
+          696.0
+        ],
+        [
+          398.0,
+          696.0
+        ],
+        [
+          398.0,
+          711.0
+        ],
+        [
+          361.0,
+          711.0
+        ]
+      ],
+      "x": 361.0,
+      "y": 696.0,
+      "width": 37.0,
+      "height": 15.0,
+      "center_x": 379.5,
+      "center_y": 703.5,
+      "line_id": 37,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 78,
+      "text": "2",
+      "score": 0.99975,
+      "box": [
+        [
+          413.0,
+          696.0
+        ],
+        [
+          424.0,
+          696.0
+        ],
+        [
+          424.0,
+          711.0
+        ],
+        [
+          413.0,
+          711.0
+        ]
+      ],
+      "x": 413.0,
+      "y": 696.0,
+      "width": 11.0,
+      "height": 15.0,
+      "center_x": 418.5,
+      "center_y": 703.5,
+      "line_id": 37,
+      "column": "vat",
+      "source_segment": "full"
+    },
+    {
+      "index": 79,
+      "text": "BRIE TARTE60%CREMIERE RUN+/-3K",
+      "score": 0.99126,
+      "box": [
+        [
+          133.0,
+          712.0
+        ],
+        [
+          331.0,
+          712.0
+        ],
+        [
+          331.0,
+          724.0
+        ],
+        [
+          133.0,
+          724.0
+        ]
+      ],
+      "x": 133.0,
+      "y": 712.0,
+      "width": 198.0,
+      "height": 12.0,
+      "center_x": 232.0,
+      "center_y": 718.0,
+      "line_id": 38,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 80,
+      "text": "4.16",
+      "score": 0.99992,
+      "box": [
+        [
+          367.0,
+          711.0
+        ],
+        [
+          398.0,
+          711.0
+        ],
+        [
+          398.0,
+          726.0
+        ],
+        [
+          367.0,
+          726.0
+        ]
+      ],
+      "x": 367.0,
+      "y": 711.0,
+      "width": 31.0,
+      "height": 15.0,
+      "center_x": 382.5,
+      "center_y": 718.5,
+      "line_id": 38,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 81,
+      "text": "2",
+      "score": 0.99992,
+      "box": [
+        [
+          413.0,
+          711.0
+        ],
+        [
+          424.0,
+          711.0
+        ],
+        [
+          424.0,
+          724.0
+        ],
+        [
+          413.0,
+          724.0
+        ]
+      ],
+      "x": 413.0,
+      "y": 711.0,
+      "width": 11.0,
+      "height": 13.0,
+      "center_x": 418.5,
+      "center_y": 717.5,
+      "line_id": 38,
+      "column": "vat",
+      "source_segment": "full"
+    },
+    {
+      "index": 82,
+      "text": ">> CHARCUTERIE TRAITEUR TRAD",
+      "score": 0.99785,
+      "box": [
+        [
+          132.0,
+          725.0
+        ],
+        [
+          320.0,
+          726.0
+        ],
+        [
+          320.0,
+          740.0
+        ],
+        [
+          132.0,
+          739.0
+        ]
+      ],
+      "x": 132.0,
+      "y": 725.0,
+      "width": 188.0,
+      "height": 15.0,
+      "center_x": 226.0,
+      "center_y": 732.5,
+      "line_id": 39,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 83,
+      "text": "VERITABLE ANDOUILLE DE GUEMENE",
+      "score": 0.98739,
+      "box": [
+        [
+          132.0,
+          742.0
+        ],
+        [
+          332.0,
+          742.0
+        ],
+        [
+          332.0,
+          754.0
+        ],
+        [
+          132.0,
+          754.0
+        ]
+      ],
+      "x": 132.0,
+      "y": 742.0,
+      "width": 200.0,
+      "height": 12.0,
+      "center_x": 232.0,
+      "center_y": 748.0,
+      "line_id": 40,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 84,
+      "text": "1.30",
+      "score": 0.99991,
+      "box": [
+        [
+          367.0,
+          741.0
+        ],
+        [
+          398.0,
+          741.0
+        ],
+        [
+          398.0,
+          754.0
+        ],
+        [
+          367.0,
+          754.0
+        ]
+      ],
+      "x": 367.0,
+      "y": 741.0,
+      "width": 31.0,
+      "height": 13.0,
+      "center_x": 382.5,
+      "center_y": 747.5,
+      "line_id": 40,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 85,
+      "text": "1",
+      "score": 0.99984,
+      "box": [
+        [
+          413.0,
+          741.0
+        ],
+        [
+          424.0,
+          741.0
+        ],
+        [
+          424.0,
+          754.0
+        ],
+        [
+          413.0,
+          754.0
+        ]
+      ],
+      "x": 413.0,
+      "y": 741.0,
+      "width": 11.0,
+      "height": 13.0,
+      "center_x": 418.5,
+      "center_y": 747.5,
+      "line_id": 40,
+      "column": "vat",
+      "source_segment": "full"
+    },
+    {
+      "index": 86,
+      "text": "TERRINE PORC PIMENT SVP",
+      "score": 0.99974,
+      "box": [
+        [
+          133.0,
+          757.0
+        ],
+        [
+          287.0,
+          757.0
+        ],
+        [
+          287.0,
+          769.0
+        ],
+        [
+          133.0,
+          769.0
+        ]
+      ],
+      "x": 133.0,
+      "y": 757.0,
+      "width": 154.0,
+      "height": 12.0,
+      "center_x": 210.0,
+      "center_y": 763.0,
+      "line_id": 41,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 87,
+      "text": "3.08",
+      "score": 0.99985,
+      "box": [
+        [
+          367.0,
+          756.0
+        ],
+        [
+          397.0,
+          756.0
+        ],
+        [
+          397.0,
+          769.0
+        ],
+        [
+          367.0,
+          769.0
+        ]
+      ],
+      "x": 367.0,
+      "y": 756.0,
+      "width": 30.0,
+      "height": 13.0,
+      "center_x": 382.0,
+      "center_y": 762.5,
+      "line_id": 41,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 88,
+      "text": "2",
+      "score": 0.99988,
+      "box": [
+        [
+          413.0,
+          756.0
+        ],
+        [
+          424.0,
+          756.0
+        ],
+        [
+          424.0,
+          769.0
+        ],
+        [
+          413.0,
+          769.0
+        ]
+      ],
+      "x": 413.0,
+      "y": 756.0,
+      "width": 11.0,
+      "height": 13.0,
+      "center_x": 418.5,
+      "center_y": 762.5,
+      "line_id": 41,
+      "column": "vat",
+      "source_segment": "full"
+    },
+    {
+      "index": 89,
+      "text": "JAMBON DE BAYO IGP 14M CP NRT",
+      "score": 0.97514,
+      "box": [
+        [
+          133.0,
+          772.0
+        ],
+        [
+          325.0,
+          772.0
+        ],
+        [
+          325.0,
+          784.0
+        ],
+        [
+          133.0,
+          784.0
+        ]
+      ],
+      "x": 133.0,
+      "y": 772.0,
+      "width": 192.0,
+      "height": 12.0,
+      "center_x": 229.0,
+      "center_y": 778.0,
+      "line_id": 42,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 90,
+      "text": "6.51",
+      "score": 0.99994,
+      "box": [
+        [
+          367.0,
+          771.0
+        ],
+        [
+          397.0,
+          771.0
+        ],
+        [
+          397.0,
+          784.0
+        ],
+        [
+          367.0,
+          784.0
+        ]
+      ],
+      "x": 367.0,
+      "y": 771.0,
+      "width": 30.0,
+      "height": 13.0,
+      "center_x": 382.0,
+      "center_y": 777.5,
+      "line_id": 42,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 91,
+      "text": "2",
+      "score": 0.9996,
+      "box": [
+        [
+          413.0,
+          771.0
+        ],
+        [
+          425.0,
+          771.0
+        ],
+        [
+          425.0,
+          785.0
+        ],
+        [
+          413.0,
+          785.0
+        ]
+      ],
+      "x": 413.0,
+      "y": 771.0,
+      "width": 12.0,
+      "height": 14.0,
+      "center_x": 419.0,
+      "center_y": 778.0,
+      "line_id": 42,
+      "column": "vat",
+      "source_segment": "full"
+    },
+    {
+      "index": 92,
+      "text": "JAMBON CUIT AC FUME ABC",
+      "score": 0.99858,
+      "box": [
+        [
+          132.0,
+          787.0
+        ],
+        [
+          287.0,
+          787.0
+        ],
+        [
+          287.0,
+          799.0
+        ],
+        [
+          132.0,
+          799.0
+        ]
+      ],
+      "x": 132.0,
+      "y": 787.0,
+      "width": 155.0,
+      "height": 12.0,
+      "center_x": 209.5,
+      "center_y": 793.0,
+      "line_id": 43,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 93,
+      "text": "8.60",
+      "score": 0.99974,
+      "box": [
+        [
+          367.0,
+          786.0
+        ],
+        [
+          398.0,
+          786.0
+        ],
+        [
+          398.0,
+          801.0
+        ],
+        [
+          367.0,
+          801.0
+        ]
+      ],
+      "x": 367.0,
+      "y": 786.0,
+      "width": 31.0,
+      "height": 15.0,
+      "center_x": 382.5,
+      "center_y": 793.5,
+      "line_id": 43,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 94,
+      "text": "2",
+      "score": 0.99978,
+      "box": [
+        [
+          413.0,
+          786.0
+        ],
+        [
+          424.0,
+          786.0
+        ],
+        [
+          424.0,
+          800.0
+        ],
+        [
+          413.0,
+          800.0
+        ]
+      ],
+      "x": 413.0,
+      "y": 786.0,
+      "width": 11.0,
+      "height": 14.0,
+      "center_x": 418.5,
+      "center_y": 793.0,
+      "line_id": 43,
+      "column": "vat",
+      "source_segment": "full"
+    },
+    {
+      "index": 95,
+      "text": "Total 26 articles",
+      "score": 0.99901,
+      "box": [
+        [
+          132.0,
+          816.0
+        ],
+        [
+          247.0,
+          816.0
+        ],
+        [
+          247.0,
+          830.0
+        ],
+        [
+          132.0,
+          830.0
+        ]
+      ],
+      "x": 132.0,
+      "y": 816.0,
+      "width": 115.0,
+      "height": 14.0,
+      "center_x": 189.5,
+      "center_y": 823.0,
+      "line_id": 44,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 96,
+      "text": "109.27",
+      "score": 0.99988,
+      "box": [
+        [
+          354.0,
+          815.0
+        ],
+        [
+          398.0,
+          815.0
+        ],
+        [
+          398.0,
+          830.0
+        ],
+        [
+          354.0,
+          830.0
+        ]
+      ],
+      "x": 354.0,
+      "y": 815.0,
+      "width": 44.0,
+      "height": 15.0,
+      "center_x": 376.0,
+      "center_y": 822.5,
+      "line_id": 44,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 97,
+      "text": "Especes",
+      "score": 0.99986,
+      "box": [
+        [
+          132.0,
+          846.0
+        ],
+        [
+          182.0,
+          846.0
+        ],
+        [
+          182.0,
+          861.0
+        ],
+        [
+          132.0,
+          861.0
+        ]
+      ],
+      "x": 132.0,
+      "y": 846.0,
+      "width": 50.0,
+      "height": 15.0,
+      "center_x": 157.0,
+      "center_y": 853.5,
+      "line_id": 45,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 98,
+      "text": "120.27",
+      "score": 0.99976,
+      "box": [
+        [
+          355.0,
+          846.0
+        ],
+        [
+          397.0,
+          846.0
+        ],
+        [
+          397.0,
+          859.0
+        ],
+        [
+          355.0,
+          859.0
+        ]
+      ],
+      "x": 355.0,
+      "y": 846.0,
+      "width": 42.0,
+      "height": 13.0,
+      "center_x": 376.0,
+      "center_y": 852.5,
+      "line_id": 45,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 99,
+      "text": "Rendu",
+      "score": 0.99937,
+      "box": [
+        [
+          132.0,
+          861.0
+        ],
+        [
+          169.0,
+          861.0
+        ],
+        [
+          169.0,
+          874.0
+        ],
+        [
+          132.0,
+          874.0
+        ]
+      ],
+      "x": 132.0,
+      "y": 861.0,
+      "width": 37.0,
+      "height": 13.0,
+      "center_x": 150.5,
+      "center_y": 867.5,
+      "line_id": 46,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 100,
+      "text": "11.00",
+      "score": 0.99987,
+      "box": [
+        [
+          361.0,
+          861.0
+        ],
+        [
+          397.0,
+          861.0
+        ],
+        [
+          397.0,
+          874.0
+        ],
+        [
+          361.0,
+          874.0
+        ]
+      ],
+      "x": 361.0,
+      "y": 861.0,
+      "width": 36.0,
+      "height": 13.0,
+      "center_x": 379.0,
+      "center_y": 867.5,
+      "line_id": 46,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 101,
+      "text": "Code",
+      "score": 0.99984,
+      "box": [
+        [
+          132.0,
+          890.0
+        ],
+        [
+          163.0,
+          890.0
+        ],
+        [
+          163.0,
+          906.0
+        ],
+        [
+          132.0,
+          906.0
+        ]
+      ],
+      "x": 132.0,
+      "y": 890.0,
+      "width": 31.0,
+      "height": 16.0,
+      "center_x": 147.5,
+      "center_y": 898.0,
+      "line_id": 47,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 102,
+      "text": "HT",
+      "score": 0.99826,
+      "box": [
+        [
+          242.0,
+          891.0
+        ],
+        [
+          261.0,
+          891.0
+        ],
+        [
+          261.0,
+          905.0
+        ],
+        [
+          242.0,
+          905.0
+        ]
+      ],
+      "x": 242.0,
+      "y": 891.0,
+      "width": 19.0,
+      "height": 14.0,
+      "center_x": 251.5,
+      "center_y": 898.0,
+      "line_id": 47,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 103,
+      "text": "TVA",
+      "score": 0.99955,
+      "box": [
+        [
+          301.0,
+          890.0
+        ],
+        [
+          327.0,
+          890.0
+        ],
+        [
+          327.0,
+          906.0
+        ],
+        [
+          301.0,
+          906.0
+        ]
+      ],
+      "x": 301.0,
+      "y": 890.0,
+      "width": 26.0,
+      "height": 16.0,
+      "center_x": 314.0,
+      "center_y": 898.0,
+      "line_id": 47,
+      "column": "vat",
+      "source_segment": "full"
+    },
+    {
+      "index": 104,
+      "text": "TTC",
+      "score": 0.99675,
+      "box": [
+        [
+          373.0,
+          890.0
+        ],
+        [
+          398.0,
+          890.0
+        ],
+        [
+          398.0,
+          906.0
+        ],
+        [
+          373.0,
+          906.0
+        ]
+      ],
+      "x": 373.0,
+      "y": 890.0,
+      "width": 25.0,
+      "height": 16.0,
+      "center_x": 385.5,
+      "center_y": 898.0,
+      "line_id": 47,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 105,
+      "text": "1",
+      "score": 0.99971,
+      "box": [
+        [
+          133.0,
+          907.0
+        ],
+        [
+          143.0,
+          907.0
+        ],
+        [
+          143.0,
+          918.0
+        ],
+        [
+          133.0,
+          918.0
+        ]
+      ],
+      "x": 133.0,
+      "y": 907.0,
+      "width": 10.0,
+      "height": 11.0,
+      "center_x": 138.0,
+      "center_y": 912.5,
+      "line_id": 48,
+      "column": "detail",
+      "source_segment": "full"
+    },
+    {
+      "index": 106,
+      "text": "0%00",
+      "score": 0.97823,
+      "box": [
+        [
+          159.0,
+          906.0
+        ],
+        [
+          188.0,
+          906.0
+        ],
+        [
+          188.0,
+          919.0
+        ],
+        [
+          159.0,
+          919.0
+        ]
+      ],
+      "x": 159.0,
+      "y": 906.0,
+      "width": 29.0,
+      "height": 13.0,
+      "center_x": 173.5,
+      "center_y": 912.5,
+      "line_id": 48,
+      "column": "description",
+      "source_segment": "full"
+    },
+    {
+      "index": 107,
+      "text": "16.20",
+      "score": 0.99988,
+      "box": [
+        [
+          224.0,
+          906.0
+        ],
+        [
+          260.0,
+          906.0
+        ],
+        [
+          260.0,
+          919.0
+        ],
+        [
+          224.0,
+          919.0
+        ]
+      ],
+      "x": 224.0,
+      "y": 906.0,
+      "width": 36.0,
+      "height": 13.0,
+      "center_x": 242.0,
+      "center_y": 912.5,
+      "line_id": 48,
+      "column": "detail",
+      "source_segment": "full"
+    },
+    {
+      "index": 108,
+      "text": "0.00",
+      "score": 0.9733,
+      "box": [
+        [
+          295.0,
+          905.0
+        ],
+        [
+          326.0,
+          905.0
+        ],
+        [
+          326.0,
+          920.0
+        ],
+        [
+          295.0,
+          920.0
+        ]
+      ],
+      "x": 295.0,
+      "y": 905.0,
+      "width": 31.0,
+      "height": 15.0,
+      "center_x": 310.5,
+      "center_y": 912.5,
+      "line_id": 48,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 109,
+      "text": "16.20",
+      "score": 0.99996,
+      "box": [
+        [
+          361.0,
+          906.0
+        ],
+        [
+          397.0,
+          906.0
+        ],
+        [
+          397.0,
+          919.0
+        ],
+        [
+          361.0,
+          919.0
+        ]
+      ],
+      "x": 361.0,
+      "y": 906.0,
+      "width": 36.0,
+      "height": 13.0,
+      "center_x": 379.0,
+      "center_y": 912.5,
+      "line_id": 48,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 110,
+      "text": "2",
+      "score": 0.9999,
+      "box": [
+        [
+          132.0,
+          921.0
+        ],
+        [
+          144.0,
+          921.0
+        ],
+        [
+          144.0,
+          934.0
+        ],
+        [
+          132.0,
+          934.0
+        ]
+      ],
+      "x": 132.0,
+      "y": 921.0,
+      "width": 12.0,
+      "height": 13.0,
+      "center_x": 138.0,
+      "center_y": 927.5,
+      "line_id": 49,
+      "column": "detail",
+      "source_segment": "full"
+    },
+    {
+      "index": 111,
+      "text": "2910",
+      "score": 0.9202,
+      "box": [
+        [
+          159.0,
+          921.0
+        ],
+        [
+          188.0,
+          921.0
+        ],
+        [
+          188.0,
+          934.0
+        ],
+        [
+          159.0,
+          934.0
+        ]
+      ],
+      "x": 159.0,
+      "y": 921.0,
+      "width": 29.0,
+      "height": 13.0,
+      "center_x": 173.5,
+      "center_y": 927.5,
+      "line_id": 49,
+      "column": "detail",
+      "source_segment": "full"
+    },
+    {
+      "index": 112,
+      "text": "78.23",
+      "score": 0.99994,
+      "box": [
+        [
+          224.0,
+          920.0
+        ],
+        [
+          261.0,
+          920.0
+        ],
+        [
+          261.0,
+          935.0
+        ],
+        [
+          224.0,
+          935.0
+        ]
+      ],
+      "x": 224.0,
+      "y": 920.0,
+      "width": 37.0,
+      "height": 15.0,
+      "center_x": 242.5,
+      "center_y": 927.5,
+      "line_id": 49,
+      "column": "detail",
+      "source_segment": "full"
+    },
+    {
+      "index": 113,
+      "text": "1.64",
+      "score": 0.99868,
+      "box": [
+        [
+          295.0,
+          920.0
+        ],
+        [
+          325.0,
+          920.0
+        ],
+        [
+          325.0,
+          935.0
+        ],
+        [
+          295.0,
+          935.0
+        ]
+      ],
+      "x": 295.0,
+      "y": 920.0,
+      "width": 30.0,
+      "height": 15.0,
+      "center_x": 310.0,
+      "center_y": 927.5,
+      "line_id": 49,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 114,
+      "text": "79.87",
+      "score": 0.99994,
+      "box": [
+        [
+          361.0,
+          920.0
+        ],
+        [
+          398.0,
+          920.0
+        ],
+        [
+          398.0,
+          935.0
+        ],
+        [
+          361.0,
+          935.0
+        ]
+      ],
+      "x": 361.0,
+      "y": 920.0,
+      "width": 37.0,
+      "height": 15.0,
+      "center_x": 379.5,
+      "center_y": 927.5,
+      "line_id": 49,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 115,
+      "text": "3",
+      "score": 0.99995,
+      "box": [
+        [
+          132.0,
+          936.0
+        ],
+        [
+          144.0,
+          936.0
+        ],
+        [
+          144.0,
+          949.0
+        ],
+        [
+          132.0,
+          949.0
+        ]
+      ],
+      "x": 132.0,
+      "y": 936.0,
+      "width": 12.0,
+      "height": 13.0,
+      "center_x": 138.0,
+      "center_y": 942.5,
+      "line_id": 50,
+      "column": "detail",
+      "source_segment": "full"
+    },
+    {
+      "index": 116,
+      "text": "8850",
+      "score": 0.9988,
+      "box": [
+        [
+          158.0,
+          935.0
+        ],
+        [
+          189.0,
+          935.0
+        ],
+        [
+          189.0,
+          950.0
+        ],
+        [
+          158.0,
+          950.0
+        ]
+      ],
+      "x": 158.0,
+      "y": 935.0,
+      "width": 31.0,
+      "height": 15.0,
+      "center_x": 173.5,
+      "center_y": 942.5,
+      "line_id": 50,
+      "column": "detail",
+      "source_segment": "full"
+    },
+    {
+      "index": 117,
+      "text": "12.17",
+      "score": 0.98798,
+      "box": [
+        [
+          223.0,
+          935.0
+        ],
+        [
+          261.0,
+          935.0
+        ],
+        [
+          261.0,
+          950.0
+        ],
+        [
+          223.0,
+          950.0
+        ]
+      ],
+      "x": 223.0,
+      "y": 935.0,
+      "width": 38.0,
+      "height": 15.0,
+      "center_x": 242.0,
+      "center_y": 942.5,
+      "line_id": 50,
+      "column": "detail",
+      "source_segment": "full"
+    },
+    {
+      "index": 118,
+      "text": "1.03",
+      "score": 0.9992,
+      "box": [
+        [
+          294.0,
+          935.0
+        ],
+        [
+          326.0,
+          935.0
+        ],
+        [
+          326.0,
+          950.0
+        ],
+        [
+          294.0,
+          950.0
+        ]
+      ],
+      "x": 294.0,
+      "y": 935.0,
+      "width": 32.0,
+      "height": 15.0,
+      "center_x": 310.0,
+      "center_y": 942.5,
+      "line_id": 50,
+      "column": "price",
+      "source_segment": "full"
+    },
+    {
+      "index": 119,
+      "text": "13.20",
+      "score": 0.99993,
+      "box": [
+        [
+          360.0,
+          935.0
+        ],
+        [
+          398.0,
+          935.0
+        ],
+        [
+          398.0,
+          950.0
+        ],
+        [
+          360.0,
+          950.0
+        ]
+      ],
+      "x": 360.0,
+      "y": 935.0,
+      "width": 38.0,
+      "height": 15.0,
+      "center_x": 379.0,
+      "center_y": 942.5,
+      "line_id": 50,
+      "column": "price",
+      "source_segment": "full"
+    }
+  ]
+}

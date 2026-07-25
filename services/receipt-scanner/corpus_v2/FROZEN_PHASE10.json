@@ -1,0 +1,18 @@
+{
+  "phase": 10,
+  "frozen_contract": {
+    "date_requires_review": {
+      "budget_ok": true,
+      "articles_ok": true,
+      "date_confirmed": false,
+      "corpus_verdict": "PASS_WITH_REVIEW"
+    }
+  },
+  "blind_validation_case": {
+    "case_id": "SUPER_U_PITON_SAINT_LEU_69_48",
+    "parser_modified_for_case": false,
+    "expected_total": 69.48,
+    "expected_product_lines": 20,
+    "expected_quantity": 24
+  }
+}

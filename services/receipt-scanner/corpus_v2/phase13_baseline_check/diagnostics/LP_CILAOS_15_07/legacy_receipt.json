@@ -1,0 +1,156 @@
+{
+  "store_name": "Leader Price",
+  "store_location": "Cilaos",
+  "receipt_date": "2026-07-09",
+  "receipt_time": "16:14:28",
+  "declared_item_count": 7,
+  "total": null,
+  "items": [
+    {
+      "raw_name": "VINAIGRE BLANC INCOLORE 1",
+      "quantity": 1.0,
+      "unit_price": 0.99,
+      "total_price": 0.99,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.98796,
+      "source_line_ids": [
+        8
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "RAVIOLI LEGUNE.4/4 M.FOOD",
+      "quantity": 2.0,
+      "unit_price": 3.9,
+      "total_price": 7.8,
+      "vat_code": null,
+      "item_type": "multibuy",
+      "raw_detail": "2x 3.90",
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.77352,
+      "source_line_ids": [
+        9,
+        10
+      ],
+      "needs_review": true,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "POIURE BLANC FLACON 40G L",
+      "quantity": 1.0,
+      "unit_price": 2.31,
+      "total_price": 2.31,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.97552,
+      "source_line_ids": [
+        11
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "CURCUMA RAMA POT 100G",
+      "quantity": 1.0,
+      "unit_price": 2.2,
+      "total_price": 2.2,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.94016,
+      "source_line_ids": [
+        14
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "EPICERIE SALEE 13.07",
+      "quantity": 1.0,
+      "unit_price": 13.07,
+      "total_price": 13.07,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.97782,
+      "source_line_ids": [
+        16
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "AVOCAT LOCAL PIECE",
+      "quantity": 2.0,
+      "unit_price": 1.0,
+      "total_price": 2.0,
+      "vat_code": null,
+      "item_type": "multibuy",
+      "raw_detail": "2x 1.00",
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.85002,
+      "source_line_ids": [
+        17,
+        19
+      ],
+      "needs_review": true,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "2.00",
+      "quantity": 1.0,
+      "unit_price": 2.0,
+      "total_price": 2.0,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.99972,
+      "source_line_ids": [
+        20
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    }
+  ],
+  "excluded_sections": [],
+  "warnings": [
+    "Description sans ligne secondaire: JEUDI 10% MDD",
+    "Quantité reconstruite 9 != nombre déclaré 7"
+  ],
+  "article_total": null,
+  "immediate_discount_total": null,
+  "payable_total": null,
+  "items_total": 30.37,
+  "counted_quantity": 9.0,
+  "product_line_count": 7
+}

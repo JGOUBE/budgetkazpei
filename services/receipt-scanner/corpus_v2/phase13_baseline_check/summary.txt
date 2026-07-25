@@ -1,0 +1,15 @@
+BUDGETKAZPEI — CORPUS V2
+================================
+Cas analysés : 6
+PASS : 4
+PASS_WITH_REVIEW : 2
+FAIL : 0
+OBSERVE : 0
+ERROR : 0
+
+PASS    | LP_SAINT_LEU_17_95       | budget=17.95 (v2_target_total) | V2=17.95 | articles=None | à_payer=None | lignes=9 | q=9
+PASS    | LP_CILAOS_15_07          | budget=15.07 (v2_target_total) | V2=15.07 | articles=None | à_payer=None | lignes=5 | q=7
+PASS_WITH_REVIEW | LP_SAINT_LEU_39_30       | budget=39.3 (v2_target_total) | V2=39.3 | articles=None | à_payer=None | lignes=11 | q=11
+PASS    | LECLERC_LE_PORTAIL_109_27 | budget=109.27 (quality_budget_amount) | V2=109.27 | articles=109.27 | à_payer=None | lignes=24 | q=26
+PASS    | LP_SAINT_LEU_27_22       | budget=27.22 (v2_target_total) | V2=27.22 | articles=None | à_payer=None | lignes=14 | q=14
+PASS_WITH_REVIEW | SUPER_U_PITON_SAINT_LEU_69_48 | budget=69.48 (v2_target_total) | V2=69.48 | articles=None | à_payer=None | lignes=20 | q=24

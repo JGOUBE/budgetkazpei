@@ -1,0 +1,1424 @@
+{
+  "engine": "budgetkazpei-generic-parser-v2-shadow",
+  "phase": 1,
+  "production_output_changed": false,
+  "declared_count": 7,
+  "line_count": 30,
+  "candidate_count": 10,
+  "total_candidate_count": 1,
+  "selected_hypothesis": {
+    "items": [
+      {
+        "candidate_id": "c0001",
+        "start_line": 8,
+        "end_line": 8,
+        "source_line_ids": [
+          8
+        ],
+        "raw_name": "VINAIGRE BLANC INCOLORE 1",
+        "normalized_name": "VINAIGRE BLANC INCOLORE 1",
+        "quantity": 1.0,
+        "unit_price": 0.99,
+        "total_price": 0.99,
+        "item_type": "standard",
+        "confidence": 0.98796,
+        "local_score": 5.788,
+        "evidence": [
+          "same_line_name_and_right_price"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0003",
+        "start_line": 9,
+        "end_line": 10,
+        "source_line_ids": [
+          9,
+          10
+        ],
+        "raw_name": "RAVIOLI LEGUNE.4/4 M.FOOD",
+        "normalized_name": "RAVIOLI LEGUNE.4/4 M.FOOD",
+        "quantity": 2.0,
+        "unit_price": 3.9,
+        "total_price": 7.8,
+        "item_type": "multibuy",
+        "confidence": 0.77352,
+        "local_score": 9.0735,
+        "evidence": [
+          "description_then_detail",
+          "description_line_total"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 2
+      },
+      {
+        "candidate_id": "c0010",
+        "start_line": 11,
+        "end_line": 12,
+        "source_line_ids": [
+          11,
+          12
+        ],
+        "raw_name": "POIURE BLANC FLACON 40G L",
+        "normalized_name": "POIURE BLANC FLACON 40G L",
+        "quantity": 1.0,
+        "unit_price": 2.31,
+        "total_price": 2.08,
+        "item_type": "standard_discounted",
+        "confidence": 0.97552,
+        "local_score": 7.7755,
+        "evidence": [
+          "same_line_name_and_right_price",
+          "immediate_negative_discount",
+          "discount=0.23"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0005",
+        "start_line": 14,
+        "end_line": 14,
+        "source_line_ids": [
+          14
+        ],
+        "raw_name": "CURCUMA RAMA POT 100G",
+        "normalized_name": "CURCUMA RAMA POT 100G",
+        "quantity": 1.0,
+        "unit_price": 2.2,
+        "total_price": 2.2,
+        "item_type": "standard",
+        "confidence": 0.94016,
+        "local_score": 5.7402,
+        "evidence": [
+          "same_line_name_and_right_price"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0007",
+        "start_line": 17,
+        "end_line": 19,
+        "source_line_ids": [
+          17,
+          18,
+          19
+        ],
+        "raw_name": "AVOCAT LOCAL PIECE",
+        "normalized_name": "AVOCAT LOCAL PIECE",
+        "quantity": 2.0,
+        "unit_price": 1.0,
+        "total_price": 2.0,
+        "item_type": "multibuy",
+        "confidence": 0.85002,
+        "local_score": 9.8,
+        "evidence": [
+          "description_code_bridge_then_detail",
+          "description_line_total"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 2
+      }
+    ],
+    "target_total": {
+      "line_ids": [
+        23,
+        24
+      ],
+      "amount": 15.07,
+      "kind": "article_total",
+      "confidence": 0.97174,
+      "score": 7.0,
+      "evidence": [
+        "explicit_total_label_then_amount_row"
+      ]
+    },
+    "declared_count": 7,
+    "items_total": 15.07,
+    "counted_quantity": 7,
+    "score": 102.7772,
+    "total_gap": 0.0,
+    "count_gap": 0,
+    "reasons": [
+      "exact_total_match",
+      "exact_declared_count_match"
+    ]
+  },
+  "total_candidates": [
+    {
+      "line_ids": [
+        23,
+        24
+      ],
+      "amount": 15.07,
+      "kind": "article_total",
+      "confidence": 0.97174,
+      "score": 7.0,
+      "evidence": [
+        "explicit_total_label_then_amount_row"
+      ]
+    }
+  ],
+  "item_candidates": [
+    {
+      "candidate_id": "c0001",
+      "start_line": 8,
+      "end_line": 8,
+      "source_line_ids": [
+        8
+      ],
+      "raw_name": "VINAIGRE BLANC INCOLORE 1",
+      "normalized_name": "VINAIGRE BLANC INCOLORE 1",
+      "quantity": 1.0,
+      "unit_price": 0.99,
+      "total_price": 0.99,
+      "item_type": "standard",
+      "confidence": 0.98796,
+      "local_score": 5.788,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0002",
+      "start_line": 9,
+      "end_line": 9,
+      "source_line_ids": [
+        9
+      ],
+      "raw_name": "RAVIOLI LEGUNE.4/4 M.FOOD",
+      "normalized_name": "RAVIOLI LEGUNE.4/4 M.FOOD",
+      "quantity": 1.0,
+      "unit_price": 7.8,
+      "total_price": 7.8,
+      "item_type": "standard",
+      "confidence": 0.99364,
+      "local_score": 5.7936,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0003",
+      "start_line": 9,
+      "end_line": 10,
+      "source_line_ids": [
+        9,
+        10
+      ],
+      "raw_name": "RAVIOLI LEGUNE.4/4 M.FOOD",
+      "normalized_name": "RAVIOLI LEGUNE.4/4 M.FOOD",
+      "quantity": 2.0,
+      "unit_price": 3.9,
+      "total_price": 7.8,
+      "item_type": "multibuy",
+      "confidence": 0.77352,
+      "local_score": 9.0735,
+      "evidence": [
+        "description_then_detail",
+        "description_line_total"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 2
+    },
+    {
+      "candidate_id": "c0004",
+      "start_line": 11,
+      "end_line": 11,
+      "source_line_ids": [
+        11
+      ],
+      "raw_name": "POIURE BLANC FLACON 40G L",
+      "normalized_name": "POIURE BLANC FLACON 40G L",
+      "quantity": 1.0,
+      "unit_price": 2.31,
+      "total_price": 2.31,
+      "item_type": "standard",
+      "confidence": 0.97552,
+      "local_score": 5.7755,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0010",
+      "start_line": 11,
+      "end_line": 12,
+      "source_line_ids": [
+        11,
+        12
+      ],
+      "raw_name": "POIURE BLANC FLACON 40G L",
+      "normalized_name": "POIURE BLANC FLACON 40G L",
+      "quantity": 1.0,
+      "unit_price": 2.31,
+      "total_price": 2.08,
+      "item_type": "standard_discounted",
+      "confidence": 0.97552,
+      "local_score": 7.7755,
+      "evidence": [
+        "same_line_name_and_right_price",
+        "immediate_negative_discount",
+        "discount=0.23"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0005",
+      "start_line": 14,
+      "end_line": 14,
+      "source_line_ids": [
+        14
+      ],
+      "raw_name": "CURCUMA RAMA POT 100G",
+      "normalized_name": "CURCUMA RAMA POT 100G",
+      "quantity": 1.0,
+      "unit_price": 2.2,
+      "total_price": 2.2,
+      "item_type": "standard",
+      "confidence": 0.94016,
+      "local_score": 5.7402,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0006",
+      "start_line": 17,
+      "end_line": 17,
+      "source_line_ids": [
+        17
+      ],
+      "raw_name": "AVOCAT LOCAL PIECE",
+      "normalized_name": "AVOCAT LOCAL PIECE",
+      "quantity": 1.0,
+      "unit_price": 2.0,
+      "total_price": 2.0,
+      "item_type": "standard",
+      "confidence": 0.98458,
+      "local_score": 5.7846,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0007",
+      "start_line": 17,
+      "end_line": 19,
+      "source_line_ids": [
+        17,
+        18,
+        19
+      ],
+      "raw_name": "AVOCAT LOCAL PIECE",
+      "normalized_name": "AVOCAT LOCAL PIECE",
+      "quantity": 2.0,
+      "unit_price": 1.0,
+      "total_price": 2.0,
+      "item_type": "multibuy",
+      "confidence": 0.85002,
+      "local_score": 9.8,
+      "evidence": [
+        "description_code_bridge_then_detail",
+        "description_line_total"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 2
+    },
+    {
+      "candidate_id": "c0008",
+      "start_line": 20,
+      "end_line": 21,
+      "source_line_ids": [
+        20,
+        21
+      ],
+      "raw_name": "FLEURS.PLANTES, FROITS-LEGUNES",
+      "normalized_name": "FLEURS.PLANTES, FROITS-LEGUNES",
+      "quantity": 1.0,
+      "unit_price": 2.0,
+      "total_price": 2.0,
+      "item_type": "standard",
+      "confidence": 0.96484,
+      "local_score": 4.1648,
+      "evidence": [
+        "price_row_then_description"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0009",
+      "start_line": 21,
+      "end_line": 22,
+      "source_line_ids": [
+        21,
+        22
+      ],
+      "raw_name": "FLEURS.PLANTES, FROITS-LEGUNES",
+      "normalized_name": "FLEURS.PLANTES, FROITS-LEGUNES",
+      "quantity": 1.0,
+      "unit_price": 15.07,
+      "total_price": 15.07,
+      "item_type": "standard",
+      "confidence": 0.96484,
+      "local_score": 4.3648,
+      "evidence": [
+        "description_then_price_row"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    }
+  ],
+  "lines": [
+    {
+      "line_id": 0,
+      "text": "LEADER PRICE CILAOS",
+      "normalized_text": "LEADER PRICE CILAOS",
+      "center_y": 215.5,
+      "y_min": 188.0,
+      "y_max": 243.0,
+      "confidence": 0.98292,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.55,
+        "tax": 0.0,
+        "total": 0.0,
+        "detail": 0.0,
+        "product": 0.25
+      },
+      "strongest_role": "section",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 1,
+      "text": "72 Rue du pere Boiteau",
+      "normalized_text": "72 RUE DU PERE BOITEAU",
+      "center_y": 265.0,
+      "y_min": 238.0,
+      "y_max": 292.0,
+      "confidence": 0.98737,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "tax": 0.0,
+        "total": 0.0,
+        "header": 0.0,
+        "footer": 0.0,
+        "product": 0.25
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 2,
+      "text": "97413 CILAOS",
+      "normalized_text": "97413 CILAOS",
+      "center_y": 316.5,
+      "y_min": 296.0,
+      "y_max": 337.0,
+      "confidence": 0.95706,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.55,
+        "tax": 0.0,
+        "total": 0.0,
+        "detail": 0.0,
+        "product": 0.25
+      },
+      "strongest_role": "section",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 3,
+      "text": "TEL 02.62.21.71.86",
+      "normalized_text": "TEL 02.62.21.71.86",
+      "center_y": 363.0,
+      "y_min": 341.0,
+      "y_max": 385.0,
+      "confidence": 0.99913,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "header": 1.0,
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "tax": 0.0,
+        "total": 0.0
+      },
+      "strongest_role": "header",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 4,
+      "text": "BIENVENUE",
+      "normalized_text": "BIENVENUE",
+      "center_y": 463.0,
+      "y_min": 441.0,
+      "y_max": 485.0,
+      "confidence": 0.99874,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "header": 0.7,
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "tax": 0.0,
+        "total": 0.0,
+        "footer": 0.0,
+        "product": 0.25
+      },
+      "strongest_role": "header",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 5,
+      "text": "VOUS AVEZ ETE RECU PAR (CAISSE 2)",
+      "normalized_text": "VOUS AVEZ ETE RECU PAR (CAISSE 2)",
+      "center_y": 508.5,
+      "y_min": 481.0,
+      "y_max": 536.0,
+      "confidence": 0.98352,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "header": 0.7,
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "tax": 0.0,
+        "total": 0.0,
+        "footer": 0.0,
+        "product": 0.25
+      },
+      "strongest_role": "header",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 6,
+      "text": "09/07/2026 | 6-16:14:28 | 2 2 30685",
+      "normalized_text": "09/07/2026 6-16:14:28 2 2 30685",
+      "center_y": 560.5,
+      "y_min": 532.0,
+      "y_max": 587.0,
+      "confidence": 0.98211,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "header": 1.0
+      },
+      "strongest_role": "header",
+      "has_letters": false,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 7,
+      "text": "OPERATION : VENTE",
+      "normalized_text": "OPERATION : VENTE",
+      "center_y": 613.0,
+      "y_min": 591.0,
+      "y_max": 635.0,
+      "confidence": 0.96119,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "header": 0.7,
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "tax": 0.0,
+        "total": 0.0,
+        "footer": 0.0,
+        "product": 0.25
+      },
+      "strongest_role": "header",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 8,
+      "text": "(9)3700311800739 | VINAIGRE BLANC INCOLORE 1 | 0.99",
+      "normalized_text": "(9)3700311800739 VINAIGRE BLANC INCOLORE 1 0.99",
+      "center_y": 660.5,
+      "y_min": 635.0,
+      "y_max": 686.0,
+      "confidence": 0.98796,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 0.99,
+          "token_index": 12,
+          "x_center": 890.0,
+          "score": 0.99996,
+          "raw_text": "0.99"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 9,
+      "text": "(1)3021690032253 | RAVIOLI LEGUNE.4/4 M.FOOD | 7.80",
+      "normalized_text": "(1)3021690032253 RAVIOLI LEGUNE.4/4 M.FOOD 7.80",
+      "center_y": 711.5,
+      "y_min": 686.0,
+      "y_max": 737.0,
+      "confidence": 0.99364,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 7.8,
+          "token_index": 15,
+          "x_center": 889.5,
+          "score": 0.99941,
+          "raw_text": "7.80"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 10,
+      "text": "2x | 3.90",
+      "normalized_text": "2X 3.90",
+      "center_y": 765.5,
+      "y_min": 743.0,
+      "y_max": 788.0,
+      "confidence": 0.77352,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 3.9,
+          "token_index": 17,
+          "x_center": 449.5,
+          "score": 0.99999,
+          "raw_text": "3.90"
+        }
+      ],
+      "role_scores": {
+        "detail": 1.0,
+        "product": -0.6,
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0
+      },
+      "strongest_role": "detail",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": true,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 11,
+      "text": "(9)3263850313165 | POIURE BLANC FLACON 40G L | 2.31",
+      "normalized_text": "(9)3263850313165 POIURE BLANC FLACON 40G L 2.31",
+      "center_y": 814.0,
+      "y_min": 787.0,
+      "y_max": 843.0,
+      "confidence": 0.97552,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 2.31,
+          "token_index": 20,
+          "x_center": 885.0,
+          "score": 0.99996,
+          "raw_text": "2.31"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 12,
+      "text": "-0.23",
+      "normalized_text": "-0.23",
+      "center_y": 858.0,
+      "y_min": 836.0,
+      "y_max": 880.0,
+      "confidence": 0.99992,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 0.23,
+          "token_index": 21,
+          "x_center": 880.0,
+          "score": 0.99992,
+          "raw_text": "-0.23"
+        }
+      ],
+      "role_scores": {
+        "discount": 1.0,
+        "product": -0.8
+      },
+      "strongest_role": "discount",
+      "has_letters": false,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 13,
+      "text": "JEUDI 10% MDD",
+      "normalized_text": "JEUDI 10% MDD",
+      "center_y": 874.0,
+      "y_min": 850.0,
+      "y_max": 898.0,
+      "confidence": 0.98219,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.55,
+        "tax": 0.0,
+        "total": 0.0,
+        "detail": 0.0,
+        "product": 0.72
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 14,
+      "text": "CURCUMA RAMA POT 100G | 2.20",
+      "normalized_text": "CURCUMA RAMA POT 100G 2.20",
+      "center_y": 911.5,
+      "y_min": 885.0,
+      "y_max": 944.0,
+      "confidence": 0.94016,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 2.2,
+          "token_index": 23,
+          "x_center": 883.5,
+          "score": 0.94016,
+          "raw_text": "2.20"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 15,
+      "text": "(9)3266840005002",
+      "normalized_text": "(9)3266840005002",
+      "center_y": 926.5,
+      "y_min": 903.0,
+      "y_max": 950.0,
+      "confidence": 0.99971,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "unknown": 1.0
+      },
+      "strongest_role": "unknown",
+      "has_letters": false,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 16,
+      "text": "EPICERIE SALEE | 13.07",
+      "normalized_text": "EPICERIE SALEE 13.07",
+      "center_y": 976.75,
+      "y_min": 952.0,
+      "y_max": 1004.0,
+      "confidence": 0.97782,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 13.07,
+          "token_index": 27,
+          "x_center": 382.0,
+          "score": 0.99999,
+          "raw_text": "13.07"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.97,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 0.1,
+        "section": 0.92
+      },
+      "strongest_role": "subtotal",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 17,
+      "text": "AVOCAT LOCAL PIECE | 2.00",
+      "normalized_text": "AVOCAT LOCAL PIECE 2.00",
+      "center_y": 1008.5,
+      "y_min": 980.0,
+      "y_max": 1043.0,
+      "confidence": 0.98458,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 2.0,
+          "token_index": 28,
+          "x_center": 881.0,
+          "score": 0.9997,
+          "raw_text": "2.00"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 18,
+      "text": "(1)5052",
+      "normalized_text": "(1)5052",
+      "center_y": 1033.0,
+      "y_min": 1009.0,
+      "y_max": 1057.0,
+      "confidence": 0.99974,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "unknown": 1.0
+      },
+      "strongest_role": "unknown",
+      "has_letters": false,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 19,
+      "text": "2x | 1.00",
+      "normalized_text": "2X 1.00",
+      "center_y": 1069.0,
+      "y_min": 1043.0,
+      "y_max": 1093.0,
+      "confidence": 0.85002,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 1.0,
+          "token_index": 32,
+          "x_center": 448.0,
+          "score": 0.99996,
+          "raw_text": "1.00"
+        }
+      ],
+      "role_scores": {
+        "detail": 1.0,
+        "product": -0.6,
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0
+      },
+      "strongest_role": "detail",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": true,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 20,
+      "text": "2.00",
+      "normalized_text": "2.00",
+      "center_y": 1106.0,
+      "y_min": 1085.0,
+      "y_max": 1127.0,
+      "confidence": 0.99972,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 2.0,
+          "token_index": 33,
+          "x_center": 618.0,
+          "score": 0.99972,
+          "raw_text": "2.00"
+        }
+      ],
+      "role_scores": {
+        "unknown": 1.0
+      },
+      "strongest_role": "unknown",
+      "has_letters": false,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 21,
+      "text": "FLEURS.PLANTES, FROITS-LEGUNES",
+      "normalized_text": "FLEURS.PLANTES, FROITS-LEGUNES",
+      "center_y": 1119.0,
+      "y_min": 1086.0,
+      "y_max": 1152.0,
+      "confidence": 0.96484,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.55,
+        "tax": 0.0,
+        "total": 0.0,
+        "detail": 0.0,
+        "product": 0.72
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 22,
+      "text": "15.07",
+      "normalized_text": "15.07",
+      "center_y": 1246.5,
+      "y_min": 1220.0,
+      "y_max": 1273.0,
+      "confidence": 0.99995,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 15.07,
+          "token_index": 35,
+          "x_center": 890.0,
+          "score": 0.99995,
+          "raw_text": "15.07"
+        }
+      ],
+      "role_scores": {
+        "unknown": 1.0
+      },
+      "strongest_role": "unknown",
+      "has_letters": false,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 23,
+      "text": "TOTAL :",
+      "normalized_text": "TOTAL :",
+      "center_y": 1281.5,
+      "y_min": 1257.0,
+      "y_max": 1306.0,
+      "confidence": 0.97174,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "total": 0.85,
+        "header": 0.0,
+        "footer": 0.85,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.0,
+        "tax": 0.0,
+        "detail": 0.0,
+        "product": 0.7
+      },
+      "strongest_role": "total",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 24,
+      "text": "15.07",
+      "normalized_text": "15.07",
+      "center_y": 1300.0,
+      "y_min": 1274.0,
+      "y_max": 1326.0,
+      "confidence": 0.99995,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 15.07,
+          "token_index": 37,
+          "x_center": 891.0,
+          "score": 0.99995,
+          "raw_text": "15.07"
+        }
+      ],
+      "role_scores": {
+        "unknown": 1.0,
+        "footer": 0.85
+      },
+      "strongest_role": "unknown",
+      "has_letters": false,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 25,
+      "text": "CB M",
+      "normalized_text": "CB M",
+      "center_y": 1337.5,
+      "y_min": 1310.0,
+      "y_max": 1365.0,
+      "confidence": 0.9229,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "payment": 1.0,
+        "total": -0.8,
+        "header": 0.0,
+        "footer": 0.85,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.55,
+        "tax": 0.0,
+        "detail": 0.0,
+        "product": 0.7
+      },
+      "strongest_role": "payment",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 26,
+      "text": "NOMBRE ARTICLES : 7",
+      "normalized_text": "NOMBRE ARTICLES : 7",
+      "center_y": 1429.0,
+      "y_min": 1399.0,
+      "y_max": 1459.0,
+      "confidence": 0.98079,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "count": 1.0,
+        "product": -0.55,
+        "header": 0.0,
+        "footer": 0.85,
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "tax": 0.0,
+        "total": 0.0
+      },
+      "strongest_role": "count",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": 7
+    },
+    {
+      "line_id": 27,
+      "text": "CARTE FIDELITE",
+      "normalized_text": "CARTE FIDELITE",
+      "center_y": 1476.5,
+      "y_min": 1449.0,
+      "y_max": 1504.0,
+      "confidence": 0.96546,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "footer": 0.9,
+        "header": 0.0,
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "tax": 0.0,
+        "total": 0.0
+      },
+      "strongest_role": "footer",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 28,
+      "text": "Carte Client No : 9200xxXXX1195",
+      "normalized_text": "CARTE CLIENT NO : 9200XXXXX1195",
+      "center_y": 1554.0,
+      "y_min": 1509.0,
+      "y_max": 1599.0,
+      "confidence": 0.96057,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "tax": 0.0,
+        "total": 0.0,
+        "header": 0.0,
+        "footer": 0.85,
+        "product": 0.25
+      },
+      "strongest_role": "footer",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 29,
+      "text": "：280",
+      "normalized_text": ":280",
+      "center_y": 1579.5,
+      "y_min": 1560.0,
+      "y_max": 1599.0,
+      "confidence": 0.87616,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "unknown": 1.0,
+        "footer": 0.85
+      },
+      "strongest_role": "unknown",
+      "has_letters": false,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    }
+  ],
+  "legacy_receipt": {
+    "store_name": "Leader Price",
+    "store_location": "Cilaos",
+    "receipt_date": "2026-07-09",
+    "receipt_time": "16:14:28",
+    "declared_item_count": 7,
+    "total": null,
+    "items": [
+      {
+        "raw_name": "VINAIGRE BLANC INCOLORE 1",
+        "quantity": 1.0,
+        "unit_price": 0.99,
+        "total_price": 0.99,
+        "vat_code": null,
+        "item_type": "standard",
+        "raw_detail": null,
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.98796,
+        "source_line_ids": [
+          8
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "RAVIOLI LEGUNE.4/4 M.FOOD",
+        "quantity": 2.0,
+        "unit_price": 3.9,
+        "total_price": 7.8,
+        "vat_code": null,
+        "item_type": "multibuy",
+        "raw_detail": "2x 3.90",
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.77352,
+        "source_line_ids": [
+          9,
+          10
+        ],
+        "needs_review": true,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "POIURE BLANC FLACON 40G L",
+        "quantity": 1.0,
+        "unit_price": 2.31,
+        "total_price": 2.31,
+        "vat_code": null,
+        "item_type": "standard",
+        "raw_detail": null,
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.97552,
+        "source_line_ids": [
+          11
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "CURCUMA RAMA POT 100G",
+        "quantity": 1.0,
+        "unit_price": 2.2,
+        "total_price": 2.2,
+        "vat_code": null,
+        "item_type": "standard",
+        "raw_detail": null,
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.94016,
+        "source_line_ids": [
+          14
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "EPICERIE SALEE 13.07",
+        "quantity": 1.0,
+        "unit_price": 13.07,
+        "total_price": 13.07,
+        "vat_code": null,
+        "item_type": "standard",
+        "raw_detail": null,
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.97782,
+        "source_line_ids": [
+          16
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "AVOCAT LOCAL PIECE",
+        "quantity": 2.0,
+        "unit_price": 1.0,
+        "total_price": 2.0,
+        "vat_code": null,
+        "item_type": "multibuy",
+        "raw_detail": "2x 1.00",
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.85002,
+        "source_line_ids": [
+          17,
+          19
+        ],
+        "needs_review": true,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "2.00",
+        "quantity": 1.0,
+        "unit_price": 2.0,
+        "total_price": 2.0,
+        "vat_code": null,
+        "item_type": "standard",
+        "raw_detail": null,
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.99972,
+        "source_line_ids": [
+          20
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      }
+    ],
+    "excluded_sections": [],
+    "warnings": [
+      "Description sans ligne secondaire: JEUDI 10% MDD",
+      "Quantité reconstruite 9 != nombre déclaré 7"
+    ],
+    "article_total": null,
+    "immediate_discount_total": null,
+    "payable_total": null,
+    "items_total": 30.37,
+    "counted_quantity": 9.0,
+    "product_line_count": 7
+  },
+  "comparison": {
+    "legacy_total": null,
+    "legacy_article_total": null,
+    "legacy_items_total": 30.37,
+    "legacy_product_line_count": 7,
+    "legacy_counted_quantity": 9.0,
+    "v2_total": 15.07,
+    "v2_items_total": 15.07,
+    "v2_product_line_count": 5,
+    "v2_counted_quantity": 7,
+    "v2_reasons": [
+      "exact_total_match",
+      "exact_declared_count_match"
+    ]
+  }
+}

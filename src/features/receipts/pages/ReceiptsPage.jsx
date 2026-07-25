@@ -13,33 +13,22 @@ import {
   updateReceipt,
   updateReceiptItem,
   upsertReceiptTransaction,
+  validateReceipt,
 } from "../services/receiptService"
-import { formatReceiptQuotaLabelFr, useReceiptQuota } from "../hooks/useReceiptQuota"
-import { clearLastScanDraft, getLastScanDraft } from "../../../services/scan/scanEngine"
-import {
-  canOfferLegacyFallback,
-  getReceiptScannerEngineMode,
-  scanLongReceiptWithConfiguredEngine,
-  scanReceiptWithConfiguredEngine,
-  scanWithLegacyEngine,
-  scanLongWithLegacyEngine,
-} from "../../../services/scan/receiptScannerEngine"
-import { createPythonScanPersistenceState, persistPythonScanResult } from "../../../services/scan/pythonReceiptPersistence"
-import { MONTHLY_SCAN_QUOTA_MESSAGE, ReceiptScannerApiError } from "../../../services/scan/receiptScannerApi"
+import { useReceiptQuota } from "../hooks/useReceiptQuota"
+import { clearLastScanDraft, getLastScanDraft, runSmartScan } from "../../../services/scan/scanEngine"
 import { findDuplicateReceipt, getConfidenceColor, getConfidenceIcon } from "../../../services/scan/receiptValidator"
 import { importValidatedReceipt } from "../../../services/scan/receiptImporter"
-import { shouldIncrementClientScanUsage, shouldRefreshQuotaAfterPythonScan } from "../../../services/scan/receiptScannerQuotaPolicy"
-import { resolveMarketDisplayName } from "../../../services/scan/marketDisplay"
-import { deleteAnonymizedMarketReceipt, syncAnonymizedMarketReceipt } from "../../../services/scan/marketObservationService"
 import { isItemEligibleForSmartShopping, normalizeItemQualityStatus } from "../../../services/scan/receiptRules"
 import { getScanErrorDetails, ScanError } from "../../../services/scan/scanErrors"
 import { createScanMetric, incrementScanUsage } from "../../../services/scan/scanUsageService"
 import { syncShoppingItemsFromReceipt } from "../../shopping/services/shoppingEngine"
 import { BkIcons } from "../../../components/icons-budgetkazpei"
-import { createColorAliases } from "../../../styles/designSystem"
-import { PREMIUM_PLUS_SAFETY_MESSAGE } from "../../../config/plans"
+import { createColorAliases, ds } from "../../../styles/designSystem"
 
-const COLORS = createColorAliases()
+const COLORS = createColorAliases({
+  cardLight: () => ds.elevated,
+})
 
 const TEXT = {
   fr: {
@@ -47,17 +36,11 @@ const TEXT = {
     scanTitle: "Scanner ticket",
     scanCta: "Scanner ticket",
     camera: "Prendre une photo",
-    cameraHint: "Idéal pour un ticket simple",
     gallery: "Importer une image",
-    galleryHint: "Depuis votre galerie",
     manual: "Remplir manuellement",
-    manualHint: "Option de secours",
-    longTicket: "Ticket long (2 photos)",
-    longTicketShortHint: "Haut + bas du ticket",
-    longTicketBadge: "Nouveau",
+    longTicket: "Ticket long",
     longTicketTitle: "Scanner un ticket long",
     longTicketHint: "Photo 1 : haut ou milieu du ticket. Photo 2 : bas du ticket avec total et paiement.",
-    longTicketOverlapHint: "Gardez environ 15 à 25 % du ticket en commun sur les deux photos.",
     longTicketTop: "Photo 1 : haut du ticket",
     longTicketBottom: "Photo 2 : bas avec total",
     longTicketGallery: "Importer 2 images",
@@ -68,44 +51,10 @@ const TEXT = {
     longTicketMissing: "Ajoutez les 2 photos du ticket.",
     longTicketNeedTwo: "Sélectionnez 2 images : le haut puis le bas du ticket.",
     longTicketModeOpened: "Ajoutez le haut puis le bas du ticket.",
-    longTicketMerging: "Analyse séparée des deux photos du ticket...",
-    swapLongTicketPhotos: "Inverser haut / bas",
-    pythonTrusted: "Votre ticket a été lu et vérifié.",
-    pythonPartial: "Le total de votre ticket est fiable, mais certains articles doivent être vérifiés.",
-    pythonNeedsReview: "Certaines informations doivent être confirmées avant l'enregistrement.",
-    pythonNotExploitable: "La photo est trop difficile à lire. Reprenez le ticket bien à plat, avec plus de lumière, ou saisissez vos achats manuellement.",
-    pythonLocalOnly: "Étape de vérification uniquement : rien n'est encore enregistré dans BudgetKazPei.",
-    saveTotalLocalOnly: "Enregistrer uniquement le total",
-    verifyArticlesLocalOnly: "Enregistrer le ticket",
-    continueLocalOnly: "Enregistrer le ticket",
-    saveSummaryTitle: "Avant d’enregistrer",
-    trustedArticlesSummary: count => count === 1
-      ? "1 article fiable sera utilisé dans Courses intelligentes."
-      : `${count} articles fiables seront utilisés dans Courses intelligentes.`,
-    reviewArticlesSummary: count => count === 1
-      ? "1 article reste à vérifier et sera exclu tant qu’il n’est pas corrigé."
-      : `${count} articles restent à vérifier et seront exclus tant qu’ils ne sont pas corrigés.`,
-    noArticleToReview: "Tous les articles affichés sont prêts à être utilisés.",
-    saveTicketHint: "Le total et les articles fiables seront enregistrés. Les articles encore à vérifier seront conservés dans le ticket, mais exclus de Courses intelligentes.",
-    saveTotalHint: "Seul le total sera ajouté au budget. Aucun article ne sera utilisé dans Courses intelligentes.",
-    cancelHint: "Rien ne sera enregistré.",
-    laterCorrectionHint: "Vous pourrez encore corriger les articles plus tard depuis Mes tickets.",
-    itemTrusted: "Fiable — sera utilisé",
-    itemCorrected: "Corrigé — sera utilisé",
-    itemReviewActionHint: "Corrigez les informations si nécessaire, puis cliquez sur « Valider cet article ». Sans validation, il ne sera pas utilisé dans Courses intelligentes.",
-    itemTrustedActionHint: "Cet article sera utilisé dans Courses intelligentes. Vous pouvez encore le corriger avant l’enregistrement.",
-    validateItem: "Valider cet article",
-    removeLine: "Supprimer cette ligne du ticket",
-    retry: "Réessayer",
-    useLegacyScanner: "Utiliser l'ancien scanner",
-    singlePreviewTitle: "Verifier la photo",
-    singlePreviewHint: "Confirmez cette image avant de lancer l'analyse.",
-    confirmImage: "Analyser cette photo",
-    replacePhoto: "Choisir une autre photo",
-    pythonTechnicalFallbackHint: "Le nouveau service de scan n'a pas repondu correctement. Vous pouvez réessayer ou utiliser la saisie manuelle.",
-    pythonBusinessErrorHint: "Le nouveau service a refuse ce scan pour une raison de qualite ou de securite. Aucune bascule automatique n'a ete lancee.",
-    pythonLocalSaveBlocked: "Verification locale terminee. Aucune ecriture BudgetKazPei n'est effectuee dans cette etape.",
-    quota: formatReceiptQuotaLabelFr,
+    longTicketMerging: "Fusion des deux photos du ticket...",
+    quota: quota => quota.plan === "premium_plus"
+      ? `Analyses IA : ${quota.used} / illimité`
+      : `Analyses IA : ${quota.used} / ${quota.limit}`,
     methodTitle: "Choisissez une méthode",
     privacy: "Vos tickets restent privés. Ils servent uniquement à mettre à jour votre budget.",
     foodHint: "Ajoutez vos courses automatiquement ou manuellement. L'analyse automatique sert surtout aux tickets alimentaires, pour comprendre vos habitudes et recevoir des conseils utiles.",
@@ -150,8 +99,8 @@ const TEXT = {
     saved: "Course enregistrée.",
     deleted: "Ticket retiré de l'historique.",
     error: "Analyse impossible. Vous pouvez réessayer ou remplir manuellement.",
-    quotaReached: MONTHLY_SCAN_QUOTA_MESSAGE,
-    intensiveUsage: PREMIUM_PLUS_SAFETY_MESSAGE,
+    quotaReached: "Quota atteint. Vous pouvez quand même remplir manuellement.",
+    intensiveUsage: "Vous utilisez BudgetKazPei de manière intensive. Contactez-nous afin que nous trouvions la formule la plus adaptée.",
     expenseCreated: "Dépense créée",
     noUser: "Utilisateur non connecté.",
   },
@@ -160,17 +109,11 @@ const TEXT = {
     scanTitle: "Scanner tike",
     scanCta: "Scanner tike",
     camera: "Pran in foto",
-    cameraHint: "Idéal pou in tiké simple",
     gallery: "Import in zimaz",
-    galleryHint: "Depuis out galerie",
     manual: "Ranpli amain",
-    manualHint: "Si scan-la i marche pa",
-    longTicket: "Tiké long (2 foto)",
-    longTicketShortHint: "Lao + anba tiké-la",
-    longTicketBadge: "Nouveau",
+    longTicket: "Tiké long",
     longTicketTitle: "Scanner in tiké long",
     longTicketHint: "Foto 1 : lao ou milié tiké-la. Foto 2 : anba tiké-la ek total ek paiement.",
-    longTicketOverlapHint: "Gard environ 15 à 25 % tiké-la pareil su deux foto-la.",
     longTicketTop: "Foto 1 : lao tiké-la",
     longTicketBottom: "Foto 2 : anba ek total",
     longTicketGallery: "Import 2 zimaz",
@@ -181,42 +124,10 @@ const TEXT = {
     longTicketMissing: "Azout 2 foto tiké-la.",
     longTicketNeedTwo: "Swazi 2 zimaz : lao tiké-la, apre anba tiké-la.",
     longTicketModeOpened: "Azout lao tiké-la, apre anba tiké-la.",
-    longTicketMerging: "Nou pe analiz sak foto tiké-la séparéman...",
-    swapLongTicketPhotos: "Invers lao / anba",
-    pythonTrusted: "Out tiké la bien lir é vérifié.",
-    pythonPartial: "Total tiké-la lé fiable, mé fo vérifié dé-trwa lartik.",
-    pythonNeedsReview: "Fo confirmé dé-trwa zinfo avan anrezistre.",
-    pythonNotExploitable: "Foto-la lé trop difficile pou lir. Repran tiké-la bien plat ek plis lumière, ou ranpli amain.",
-    pythonLocalOnly: "Étape vérification sèlman : nout la pankor anrezistre rien dann BudgetKazPei.",
-    saveTotalLocalOnly: "Anrezistre zis total-la",
-    verifyArticlesLocalOnly: "Anrezistre tiké-la",
-    continueLocalOnly: "Anrezistre tiké-la",
-    saveSummaryTitle: "Avan anrezistré",
-    trustedArticlesSummary: count => `${count} lartik fiable va servi dann Courses intelligentes.`,
-    reviewArticlesSummary: count => `${count} lartik reste pou vérifié é pa va servi tant ké li lé pa korizé.`,
-    noArticleToReview: "Tout bann lartik afiché lé paré pou servi.",
-    saveTicketHint: "Total-la ek bann lartik fiable va anrezistré. Bann lartik ankor pou vérifié va reste dann tiké-la, mé pa va servi dann Courses intelligentes.",
-    saveTotalHint: "Zis total-la va azout dann bidzé. Okenn lartik pa va servi dann Courses intelligentes.",
-    cancelHint: "Nout pa va anrezistre rien.",
-    laterCorrectionHint: "Ou pourra ankor korize bann lartik pli tar dann Mon bann tike.",
-    itemTrusted: "Fiable — va servi",
-    itemCorrected: "Korizé — va servi",
-    itemReviewActionHint: "Koriz bann zinfo si bizin, apre klik lor « Valid sa lartik-la ». San validasyon, li pa va servi dann Courses intelligentes.",
-    itemTrustedActionHint: "Lartik-la va servi dann Courses intelligentes. Ou pe ankor korize ali avan anrezistré.",
-    validateItem: "Valid sa lartik-la",
-    removeLine: "Suprim sa lign-la dann tiké",
-    retry: "Réessayé",
-    useLegacyScanner: "Servi ancien scanner",
-    singlePreviewTitle: "Verifie foto-la",
-    singlePreviewHint: "Confirme sa zimaz-la avan analiz-la.",
-    confirmImage: "Analiz sa foto-la",
-    replacePhoto: "Swazi in lot foto",
-    pythonTechnicalFallbackHint: "Nouveau servis scan-la la pa reponn bien. Ou pe réessayé ou ranpli tiké-la amain.",
-    pythonBusinessErrorHint: "Nouveau servis-la la refuse scan-la pou kalite ou sekirite. Nena okenn bascule otomatik.",
-    pythonLocalSaveBlocked: "Verification locale fini. Nena okenn ecriture BudgetKazPei dan sa letap-la.",
-    quota: quota => quota.isUnlimitedForUser
-      ? `Scans illimites - ${quota.planLabel}`
-      : `Scans utilises sa mwa-la : ${quota.used} lor ${quota.limit} - ${quota.planLabel}`,
+    longTicketMerging: "Nou pe kol 2 foto tiké-la...",
+    quota: quota => quota.plan === "premium_plus"
+      ? `Analiz IA : ${quota.used} / san limit`
+      : `Analiz IA : ${quota.used} / ${quota.limit}`,
     methodTitle: "Swazi in fason",
     privacy: "Bann tiké a ou i reste privé. Nou i servi azot zis pou met out bidzé à jour.",
     foodHint: "Azout out courses otomatikman ou amain. Analiz otomatik-la lé surtout pou bann tiké manzé, pou konprann out labitid ek gagn bann konsey itil.",
@@ -261,25 +172,21 @@ const TEXT = {
     saved: "Course anrezistrée.",
     deleted: "Tiké retiré dann listwar.",
     error: "Analiz-la pa marche. Ou pé réessayé ou ranpli amain.",
-    quotaReached: "Out quota mansuel scan lé atteint. Ou pe rantre tiket-la amain ou atann prochain renouvelman.",
-    intensiveUsage: PREMIUM_PLUS_SAFETY_MESSAGE,
+    quotaReached: "Quota atteint. Ou pé kan même ranpli amain.",
+    intensiveUsage: "Ou pe servi BudgetKazPei souvan. Contacte a nou pou trouv formule pli adapté.",
     expenseCreated: "Dépans créée",
     noUser: "Utilisateur pa connecté.",
   },
+}
+
+function hasRealAiCall(metrics = {}) {
+  return Boolean(metrics?.aiUsed || metrics?.openaiCalled || metrics?.visionUsed || metrics?.textAiUsed || Number(metrics?.openaiDurationMs || 0) > 0)
 }
 
 function getIsKreol(t) {
   const lang = String(t?.lang || "").toLowerCase()
   if (lang === "cr" || lang === "kreol") return true
   return String(t?.("nav", "dashboard") || "").toLowerCase().includes("tablo")
-}
-
-function deferStateUpdate(callback) {
-  if (typeof queueMicrotask === "function") {
-    queueMicrotask(callback)
-    return
-  }
-  setTimeout(callback, 0)
 }
 
 function emptyItem() {
@@ -302,6 +209,11 @@ function normalizeLabel(value = "") {
     .replace(/\s+/g, " ")
     .trim()
 }
+
+function isIsoDate(value = "") {
+  return /^\d{4}-\d{2}-\d{2}$/.test(String(value || ""))
+}
+
 
 function isClearlyNonProductReceiptLine(value = "") {
   const raw = normalizeLabel(value)
@@ -472,6 +384,16 @@ function isBudgetOkArticlesPartial(receipt = {}) {
     && (scanStatus.includes("budget_ok_articles_partial") || (smartShoppingSafe === true && itemsQualityStatus === "partial"))
 }
 
+function isBudgetReliableScannedReceipt(receipt = {}) {
+  const total = Number(receipt.total_amount || 0)
+  const scanStatus = String(receipt.scan_status || receipt.final_scan_status || receipt.parser_debug?.final_scan_status || "")
+  const budgetStatus = String(receipt.budget_status || receipt.parser_debug?.budget_status || "")
+  return total > 0
+    && receipt.total_needs_review !== true
+    && String(receipt.ocr_status || "").toLowerCase() !== "manual"
+    && (budgetStatus === "reliable" || scanStatus.includes("budget_ok_articles_"))
+}
+
 function getReceiptLearningCounts(receipt = {}) {
   const items = Array.isArray(receipt.receipt_items) ? receipt.receipt_items : Array.isArray(receipt.items) ? receipt.items : []
   const usableItems = items.filter(item => !isBlockedReceiptItem(item))
@@ -585,6 +507,17 @@ function isLockedScannedReceipt(receipt = {}) {
   return String(receipt.ocr_status || "").toLowerCase() !== "manual"
 }
 
+function canFeedSmartShoppingFromDraft(draft = {}) {
+  const scanStatus = String(draft.scan_status || "")
+  if (draft.total_needs_review === true) return false
+  if (isTrustedAutoScanPayload(draft)) return true
+  if (isBudgetOkArticlesBlocked(draft)) return false
+  if (draft.smart_shopping_safe === false || draft.parser_debug?.smart_shopping_safe === false) return false
+  if (String(draft.items_quality_status || draft.parser_debug?.items_quality_status || "") === "blocked") return false
+  if (scanStatus.includes("budget_needs_review") || scanStatus.includes("rejected")) return false
+  return true
+}
+
 function receiptHasUnreliableArticleCount(receipt = {}) {
   if (isTrustedAutoScanPayload(receipt) || isBudgetOkArticlesPartial(receipt)) return false
 
@@ -605,14 +538,12 @@ function receiptHasUnreliableArticleCount(receipt = {}) {
 function getReceiptArticleCountLabel(receipt = {}, txt) {
   const usedCount = getSmartShoppingUsedCount(receipt)
   const detectedCount = getDetectedReceiptItemsCount(receipt)
-  const usedLabel = usedCount === 1 ? "1 article utilisé" : `${usedCount} articles utilisés`
-  const detectedLabel = detectedCount === 1 ? "1 détecté" : `${detectedCount} détectés`
 
   if (hasReliableBudgetForReceipt(receipt) && usedCount > 0) {
     if (detectedCount > usedCount) {
-      return `Ticket enregistré — ${usedLabel} / ${detectedLabel}`
+      return `Budget valide — ${usedCount} article(s) utilisés / ${detectedCount} détectés`
     }
-    return `Ticket enregistré — ${usedLabel}`
+    return `Budget valide — ${usedCount} article(s) utilisés`
   }
 
   if (hasReliableBudgetForReceipt(receipt)) {
@@ -622,38 +553,31 @@ function getReceiptArticleCountLabel(receipt = {}, txt) {
     const explicitLabel = receipt.item_count_display_label || receipt.parser_debug?.item_count_display_label
 
     if (explicitLabel && !String(explicitLabel).toLowerCase().includes("non fiable")) {
-      const cleanLabel = String(explicitLabel)
-        .replace(/^Budget valide\s*[—-]?\s*/i, "")
-        .replace(/^Ticket enregistré\s*[—-]?\s*/i, "")
-      return `Ticket enregistré — ${cleanLabel}`
+      return String(explicitLabel).startsWith("Budget")
+        ? String(explicitLabel)
+        : `Budget valide — ${explicitLabel}`
     }
 
     if (scanStatus.includes("budget_ok_articles_partial") || itemsQualityStatus === "partial" || smartShoppingSafe === true) {
-      return "Ticket enregistré — articles partiellement exploitables"
+      return "Budget valide — articles partiellement exploitables"
     }
 
-    return "Ticket enregistré — détail des articles disponible"
+    return "Budget valide — détail des articles disponible"
   }
 
   if (isTrustedAutoScanPayload(receipt)) {
-    return detectedCount > 0
-      ? `Ticket enregistré — ${detectedCount === 1 ? "1 article utilisé" : `${detectedCount} articles utilisés`}`
-      : "Ticket enregistré — articles reconnus"
+    return detectedCount > 0 ? `Budget valide — ${detectedCount} article(s) utilisés` : "Budget valide — articles reconnus"
   }
 
   if (isBudgetOkArticlesPartial(receipt)) {
-    return `Ticket enregistré — ${getPartialArticleLabel(receipt, txt)}`
+    return getPartialArticleLabel(receipt, txt)
   }
 
   const explicitLabel = receipt.item_count_display_label || receipt.parser_debug?.item_count_display_label
-  if (explicitLabel && (String(explicitLabel).includes("exploitable") || !/^\d+\s+article/i.test(String(explicitLabel)))) {
-    return `Ticket enregistré — ${explicitLabel}`
-  }
-  if (receiptHasUnreliableArticleCount(receipt)) return `Ticket enregistré — ${txt.articlesToReview}`
+  if (explicitLabel && (String(explicitLabel).includes("exploitable") || !/^\d+\s+article/i.test(String(explicitLabel)))) return explicitLabel
+  if (receiptHasUnreliableArticleCount(receipt)) return txt.articlesToReview
 
-  return detectedCount > 0
-    ? `Ticket enregistré — ${detectedCount === 1 ? "1 article" : `${detectedCount} articles`}`
-    : "Ticket enregistré"
+  return detectedCount > 0 ? `${detectedCount} article(s)` : txt.unreliableDetectedLines
 }
 
 function getArticleCountDisplayInfo({ parsed = {}, items = [], trustedItems = [], needsReviewItems = [] }) {
@@ -879,8 +803,8 @@ function inputStyle() {
   return {
     width: "100%",
     minHeight: 48,
-    border: `1px solid ${COLORS.inputBorder}`,
-    background: COLORS.input,
+    border: `1px solid ${COLORS.border}`,
+    background: COLORS.cardLight,
     borderRadius: 14,
     color: COLORS.text,
     padding: "11px 13px",
@@ -896,9 +820,106 @@ function cardStyle(extra = {}) {
     border: `1px solid ${COLORS.border}`,
     borderRadius: 22,
     padding: 18,
-    boxShadow: COLORS.shadow,
+    boxShadow: "0 12px 30px rgba(15,23,42,.06)",
     ...extra,
   }
+}
+
+function loadImageFromFile(file) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file)
+    const image = new Image()
+
+    image.onload = () => {
+      URL.revokeObjectURL(url)
+      resolve(image)
+    }
+
+    image.onerror = () => {
+      URL.revokeObjectURL(url)
+      reject(new Error("Image illisible."))
+    }
+
+    image.src = url
+  })
+}
+
+async function mergeReceiptImagesVertically(files = []) {
+  const validFiles = files.filter(Boolean)
+
+  if (validFiles.length < 2) {
+    throw new Error("Deux photos sont nécessaires.")
+  }
+
+  const images = await Promise.all(validFiles.map(loadImageFromFile))
+
+  const naturalWidths = images
+    .map(image => image.naturalWidth || image.width || 0)
+    .filter(width => width > 0)
+
+  const targetWidthInitial = Math.min(1280, Math.max(...naturalWidths, 900))
+  const gap = 16
+
+  function computeLayout(targetWidth) {
+    const parts = images.map(image => {
+      const width = image.naturalWidth || image.width || targetWidth
+      const height = image.naturalHeight || image.height || targetWidth
+      const scale = targetWidth / width
+
+      return {
+        image,
+        width: Math.round(width * scale),
+        height: Math.round(height * scale),
+      }
+    })
+
+    const totalHeight = parts.reduce((sum, part) => sum + part.height, 0) + gap * (parts.length - 1)
+
+    return { parts, totalHeight }
+  }
+
+  let targetWidth = targetWidthInitial
+  let layout = computeLayout(targetWidth)
+
+  const maxTotalHeight = 5200
+  if (layout.totalHeight > maxTotalHeight) {
+    targetWidth = Math.max(900, Math.round(targetWidth * (maxTotalHeight / layout.totalHeight)))
+    layout = computeLayout(targetWidth)
+  }
+
+  const canvas = document.createElement("canvas")
+  canvas.width = targetWidth
+  canvas.height = layout.totalHeight
+
+  const context = canvas.getContext("2d")
+  if (!context) {
+    throw new Error("Fusion image impossible.")
+  }
+
+  context.fillStyle = "#FFFFFF"
+  context.fillRect(0, 0, canvas.width, canvas.height)
+  context.imageSmoothingEnabled = true
+  context.imageSmoothingQuality = "high"
+
+  let y = 0
+  for (const part of layout.parts) {
+    const x = Math.round((targetWidth - part.width) / 2)
+    context.drawImage(part.image, x, y, part.width, part.height)
+    y += part.height + gap
+  }
+
+  const blob = await new Promise(resolve => {
+    canvas.toBlob(resolve, "image/jpeg", 0.86)
+  })
+
+  if (!blob) {
+    throw new Error("Fusion image impossible.")
+  }
+
+  return new File([blob], `ticket-long-2-photos-${Date.now()}.jpg`, {
+    type: "image/jpeg",
+    lastModified: Date.now(),
+  })
 }
 
 export default function ReceiptsPage({
@@ -907,6 +928,7 @@ export default function ReceiptsPage({
   isMobile = false,
   isPremium = false,
   isPremiumPlus = false,
+  onAddTransaction,
   onOpenReceipts,
   onOpenShoppingList,
 }) {
@@ -918,7 +940,6 @@ export default function ReceiptsPage({
   const longTopCameraRef = useRef(null)
   const longBottomCameraRef = useRef(null)
   const longGalleryRef = useRef(null)
-  const pythonPersistenceStateRef = useRef(createPythonScanPersistenceState())
 
   const [mode, setMode] = useState("history")
   const [draft, setDraft] = useState(null)
@@ -941,23 +962,14 @@ export default function ReceiptsPage({
     top: null,
     bottom: null,
   })
-  const [pendingLegacyFallback, setPendingLegacyFallback] = useState(null)
-  const [singlePreviewFile, setSinglePreviewFile] = useState(null)
 
+  const globalCategory = draft?.items?.[0]?.category || "alimentaire"
   const receiptRows = useMemo(() => Array.isArray(receipts) ? receipts : [], [receipts])
   const showMethodActions = mode === "history" || mode === "validate"
-  const singlePreviewUrl = useMemo(
-    () => singlePreviewFile ? URL.createObjectURL(singlePreviewFile) : "",
-    [singlePreviewFile],
-  )
-  const longTicketPreviewUrls = useMemo(() => ({
-    top: longTicketFiles.top ? URL.createObjectURL(longTicketFiles.top) : "",
-    bottom: longTicketFiles.bottom ? URL.createObjectURL(longTicketFiles.bottom) : "",
-  }), [longTicketFiles.top, longTicketFiles.bottom])
 
   useEffect(() => {
     if (!draft || !isBudgetOkArticlesBlocked(draft)) {
-      deferStateUpdate(() => setShowBlockedDetectedLines(false))
+      setShowBlockedDetectedLines(false)
     }
   }, [draft?.scan_status, draft?.smart_shopping_safe, draft?.items_quality_status])
 
@@ -968,21 +980,8 @@ export default function ReceiptsPage({
   useEffect(() => {
     const lastScan = getLastScanDraft()
     if (!lastScan?.receipt) return
-    deferStateUpdate(() => setResumeDraft(lastScan.receipt))
+    setResumeDraft(lastScan.receipt)
   }, [])
-
-  useEffect(() => {
-    return () => {
-      if (singlePreviewUrl) URL.revokeObjectURL(singlePreviewUrl)
-    }
-  }, [singlePreviewUrl])
-
-  useEffect(() => {
-    return () => {
-      if (longTicketPreviewUrls.top) URL.revokeObjectURL(longTicketPreviewUrls.top)
-      if (longTicketPreviewUrls.bottom) URL.revokeObjectURL(longTicketPreviewUrls.bottom)
-    }
-  }, [longTicketPreviewUrls.top, longTicketPreviewUrls.bottom])
 
   function resumeLastScan() {
     if (!resumeDraft) return
@@ -1027,34 +1026,6 @@ export default function ReceiptsPage({
     if (longGalleryRef.current) longGalleryRef.current.value = ""
   }
 
-  function handleSingleFileSelected(file) {
-    if (!file) return
-    setSinglePreviewFile(file)
-    setPendingLegacyFallback(null)
-    setScanError(null)
-    setMessage(txt.singlePreviewHint)
-    setMode("history")
-  }
-
-  async function confirmSinglePreviewScan() {
-    if (!singlePreviewFile) return
-    const file = singlePreviewFile
-    setSinglePreviewFile(null)
-    await handleFile(file)
-  }
-
-  function clearSinglePreview() {
-    setSinglePreviewFile(null)
-    setMessage("")
-  }
-
-  function swapLongTicketPhotos() {
-    setLongTicketFiles(prev => ({
-      top: prev.bottom,
-      bottom: prev.top,
-    }))
-  }
-
   function handleLongTicketPart(part, file) {
     if (!file) return
 
@@ -1088,55 +1059,27 @@ export default function ReceiptsPage({
       return
     }
 
+    setBusy(true)
     setMessage(txt.longTicketMerging)
     setScanError(null)
 
-    await handleFile(longTicketFiles.top, {
-      longTicketFiles: {
-        top: longTicketFiles.top,
-        bottom: longTicketFiles.bottom,
-      },
-    })
-  }
+    try {
+      const mergedFile = await mergeReceiptImagesVertically([
+        longTicketFiles.top,
+        longTicketFiles.bottom,
+      ])
 
-  function getPythonScanMessage(receiptDraft = {}) {
-    const status = String(receiptDraft.python_scan_status || "")
-    if (status === "trusted") return txt.pythonTrusted
-    if (status === "budget_ok_articles_partial") return txt.pythonPartial
-    if (status === "needs_review") return txt.pythonNeedsReview
-    if (status === "scan_not_exploitable") return txt.pythonNotExploitable
-    return txt.loaded
-  }
-
-  function getPythonScannerErrorMessage(error) {
-    if (error instanceof ReceiptScannerApiError) {
-      if (error.httpStatus === 429 || ["quota_exceeded", "monthly_quota_reached"].includes(error.scanError?.code)) {
-        return txt.quotaReached
-      }
-      const apiMessage = error.scanError?.message || txt.error
-      return `${apiMessage} ${error.scanError?.technical ? txt.pythonTechnicalFallbackHint : txt.pythonBusinessErrorHint}`
+      await handleFile(mergedFile)
+      resetLongTicketScan()
+    } catch (error) {
+      console.error("[scanner] Fusion ticket long impossible:", error)
+      setMessage(error.message || txt.error)
+    } finally {
+      setBusy(false)
     }
-    return txt.error
   }
 
-  async function runPendingLegacyFallback() {
-    if (!pendingLegacyFallback) return
-    const fallback = pendingLegacyFallback
-    setPendingLegacyFallback(null)
-    await handleFile(fallback.file, {
-      ...fallback.scanOptions,
-      forceLegacy: true,
-    })
-  }
-
-  async function retryPendingPythonScan() {
-    if (!pendingLegacyFallback) return
-    const fallback = pendingLegacyFallback
-    setPendingLegacyFallback(null)
-    await handleFile(fallback.file, fallback.scanOptions)
-  }
-
-  async function handleFile(file, scanOptions = {}) {
+  async function handleFile(file) {
     if (!file) return
 
     if (!user?.id) {
@@ -1144,17 +1087,11 @@ export default function ReceiptsPage({
       return
     }
 
-    const activeQuota = await quota.refresh?.() || quota
-    if (activeQuota.reached) {
-      setMessage(activeQuota.safetyLimitReached ? txt.intensiveUsage : txt.quotaReached)
+    if (quota.reached) {
+      setMessage(quota.plan === "premium_plus" ? txt.intensiveUsage : txt.quotaReached)
       startManual({ keepError: true })
       return
     }
-
-    const inputBytes = scanOptions.longTicketFiles
-      ? Number(scanOptions.longTicketFiles.top?.size || 0) + Number(scanOptions.longTicketFiles.bottom?.size || 0)
-      : Number(file.size || 0)
-    const requestedEngineMode = "python"
 
     setBusy(true)
     setMessage("")
@@ -1162,38 +1099,14 @@ export default function ReceiptsPage({
 
     try {
       setMode("analysis")
-      setPendingLegacyFallback(null)
-      setScanProgress({ label: "Préparation de la photo...", progress: 5 })
+      setScanProgress({ label: "Preparation...", progress: 5 })
 
-      const progressOptions = {
+      const scan = await runSmartScan(file, {
         onProgress: progress => setScanProgress(progress),
         plan: quota.plan,
-      }
-      const scan = scanOptions.longTicketFiles
-        ? requestedEngineMode === "legacy"
-          ? await scanLongWithLegacyEngine(scanOptions.longTicketFiles, progressOptions)
-          : await scanLongReceiptWithConfiguredEngine(scanOptions.longTicketFiles, progressOptions)
-        : requestedEngineMode === "legacy"
-          ? await scanWithLegacyEngine(file, progressOptions)
-          : await scanReceiptWithConfiguredEngine(file, progressOptions)
+      })
 
       const parsed = scan.receipt
-      if (scan.engine_used === "python") {
-        if (shouldRefreshQuotaAfterPythonScan({ engineUsed: scan.engine_used })) {
-          await quota.refresh?.()
-        }
-        const items = parsed.items?.length ? parsed.items : (parsed.python_scan_status === "scan_not_exploitable" ? [] : [emptyItem()])
-        setReceipt(null)
-        setPendingImagePath(null)
-        setScanMetrics(scan.metrics || null)
-        setDraft({ ...parsed, items })
-        setDuplicateReceipt(null)
-        setAllowDuplicateImport(false)
-        setMode("validate")
-        setMessage(`${getPythonScanMessage(parsed)} ${txt.pythonLocalOnly}`)
-        return
-      }
-
       const dateDiagnostic = getTicketMonthDiagnostic(parsed.purchase_date)
       console.info("[scanner] ticket_date_month_check", dateDiagnostic)
       if (!dateDiagnostic.date_in_current_month) {
@@ -1298,40 +1211,25 @@ export default function ReceiptsPage({
         isKreol,
       }))
     } catch (error) {
-      const allowFallback = false
-      if (!(error instanceof ReceiptScannerApiError)) {
-        console.error("Erreur scanner ticket:", error)
-      }
+      console.error("Erreur scanner ticket:", error)
       const details = getScanErrorDetails(error)
       const technicalMessage = String(details.technicalMessage || error.message || "")
       const isDateError = /date\/time field value out of range|invalid_ocr_date|date invalide/i.test(technicalMessage)
       setScanError(details)
-      setPendingLegacyFallback(allowFallback ? { file, scanOptions } : null)
-      if (error instanceof ReceiptScannerApiError) {
-        if (shouldRefreshQuotaAfterPythonScan({ error })) {
-          await quota.refresh?.()
-        }
-        setMessage(getPythonScannerErrorMessage(error))
-      } else {
       setMessage(isDateError
         ? "Ticket lu, mais la date a été estimée automatiquement. Réessayez l'enregistrement."
         : details.userMessage || txt.error)
-      }
       try {
         await createScanMetric({
           userId: user?.id,
-          metrics: { imageInitialBytes: inputBytes },
+          metrics: { imageInitialBytes: file.size },
           status: "error",
           error: { code: details.code, message: details.technicalMessage },
         })
       } catch (metricError) {
         console.warn("Metrique scanner indisponible:", metricError)
       }
-      if (allowFallback) {
-        setMode("history")
-      } else {
-        startManual({ keepError: true })
-      }
+      startManual({ keepError: true })
     } finally {
       setBusy(false)
     }
@@ -1418,15 +1316,6 @@ export default function ReceiptsPage({
       items: validItems,
     })
     const importDurationMs = Math.round(performance.now() - importStartedAt)
-    const analyticsResult = await ensureReceiptAnalytics({
-      receipt: currentReceipt,
-      draft: draftToPersist,
-      items: validItems,
-    })
-    if (analyticsResult.transactionId) {
-      currentReceipt.transaction_id = analyticsResult.transactionId
-      currentReceipt.is_food_ticket = true
-    }
     console.info("[scanner] scan_persisted", {
       receipt_created: Boolean(currentReceipt.id),
       receipt_items_inserted: importResult.receiptItemsCreated || 0,
@@ -1434,7 +1323,7 @@ export default function ReceiptsPage({
     })
 
     try {
-      const scanUsageIncremented = shouldIncrementClientScanUsage(metrics)
+      const scanUsageIncremented = hasRealAiCall(metrics)
       if (scanUsageIncremented) {
         console.info("[scanner] Mise a jour scan_usage: START", { userId: user?.id, plan: quota.plan })
         await incrementScanUsage({
@@ -1500,8 +1389,6 @@ export default function ReceiptsPage({
     }))
   }
 
-  // Conserved temporarily for the legacy save path while the scanner UI is stabilized.
-  // eslint-disable-next-line no-unused-vars
   async function handleSave() {
     if (!user?.id || !draft) return
     const validationError = getDraftValidationError(draft)
@@ -1525,15 +1412,6 @@ export default function ReceiptsPage({
         items: validItems,
       })
       const importDurationMs = Math.round(performance.now() - importStartedAt)
-      const analyticsResult = await ensureReceiptAnalytics({
-        receipt: currentReceipt,
-        draft,
-        items: validItems,
-      })
-      if (analyticsResult.transactionId) {
-        currentReceipt.transaction_id = analyticsResult.transactionId
-        currentReceipt.is_food_ticket = true
-      }
 
       try {
         await createScanMetric({
@@ -1560,8 +1438,6 @@ export default function ReceiptsPage({
       setDraft(null)
       setReceipt(null)
       setPendingImagePath(null)
-      setSinglePreviewFile(null)
-      resetLongTicketScan()
       setMode("history")
       await refreshReceipts()
       window.dispatchEvent(new CustomEvent("budgetkazpei:transactions-updated"))
@@ -1575,115 +1451,6 @@ export default function ReceiptsPage({
 
   async function handleSmartImport(options = {}) {
     if (!user?.id || !draft) return
-    if (draft.python_scan_pending_save) {
-      const pythonStatus = String(draft.python_scan_status || "")
-      setScanError(null)
-      const dateDiagnostic = getTicketMonthDiagnostic(draft.purchase_date)
-      console.info("[scanner] python_ticket_date_month_check", dateDiagnostic)
-      if (!["needs_review", "scan_not_exploitable"].includes(pythonStatus) && !dateDiagnostic.date_in_current_month) {
-        setMessage(getTicketOutsideCurrentMonthMessage(isKreol))
-        return
-      }
-
-      if (!["needs_review", "scan_not_exploitable"].includes(pythonStatus)) {
-        const validationError = getDraftValidationError(draft)
-        if (validationError) {
-          setMessage(validationError)
-          return
-        }
-      }
-
-      const validItems = getValidDraftItems(draft)
-      const duplicate = duplicateReceipt || findDuplicateReceipt(draft, receipts)
-      if (duplicate && !allowDuplicateImport && !options.skipDuplicateCheck && !["needs_review", "scan_not_exploitable"].includes(pythonStatus)) {
-        setDuplicateReceipt(duplicate)
-        setMessage(txt.duplicateMessage)
-        return
-      }
-
-      setBusy(true)
-      setMessage("Enregistrement...")
-
-      try {
-        const draftToSave = duplicate
-          ? { ...draft, duplicate_confirmed: true, duplicate_of_receipt_id: duplicate.id }
-          : draft
-        const persistenceResult = await persistPythonScanResult({
-          userId: user.id,
-          draft: draftToSave,
-          receipt,
-          imagePath: pendingImagePath,
-          items: validItems,
-          action: options.pythonAction || "record_full",
-          scanMetrics,
-          state: pythonPersistenceStateRef.current,
-        })
-
-        setScanMetrics(prev => ({
-          ...(prev || {}),
-          pythonPersistence: {
-            status: persistenceResult.status,
-            receiptSaved: persistenceResult.receiptSaved,
-            transactionSaved: persistenceResult.transactionSaved,
-            receiptItemsCreated: persistenceResult.receiptItemsCreated,
-            shoppingItemsCreated: persistenceResult.shoppingItemsCreated,
-            smartShoppingFed: persistenceResult.smartShoppingFed,
-            marketSynced: persistenceResult.marketSynced,
-            warnings: persistenceResult.warnings,
-          },
-        }))
-
-        if (persistenceResult.status === "failed") {
-          const details = getScanErrorDetails(new Error(persistenceResult.technicalError?.message || txt.error))
-          setScanError(details)
-          setMessage(`Enregistrement impossible : ${persistenceResult.technicalError?.message || txt.error}`)
-          return
-        }
-
-        if (persistenceResult.status === "saved") {
-          setMessage(persistenceResult.userMessage)
-          setDraft(null)
-          setReceipt(null)
-          setDuplicateReceipt(null)
-          setAllowDuplicateImport(false)
-          setPendingImagePath(null)
-          setSinglePreviewFile(null)
-          resetLongTicketScan()
-          setShowBlockedDetectedLines(false)
-          setScanMetrics(null)
-          setMode("history")
-          clearLastScanDraft()
-          await refreshReceipts()
-          window.dispatchEvent(new CustomEvent("budgetkazpei:transactions-updated"))
-          if (persistenceResult.smartShoppingFed) {
-            window.dispatchEvent(new CustomEvent("budgetkazpei:shopping-updated"))
-          }
-          console.info("SCANNER_SUMMARY", buildScannerSummary({
-            parsed: draftToSave,
-            items: validItems,
-            metrics: scanMetrics,
-            importResult: {
-              receiptSaved: persistenceResult.receiptSaved,
-              receipt_id: persistenceResult.receiptId,
-              receiptItemsCreated: persistenceResult.receiptItemsCreated,
-              shoppingItemsCreated: persistenceResult.shoppingItemsCreated,
-              transactionCreated: persistenceResult.transactionCreated,
-              transactionUpdated: persistenceResult.transactionUpdated,
-              transactionSkipReason: persistenceResult.transactionSkipReason,
-            },
-            duplicateDetected: Boolean(duplicate),
-            duplicateConfirmed: Boolean(draftToSave.duplicate_confirmed),
-          }))
-          return
-        }
-
-        setMessage(persistenceResult.userMessage || txt.pythonLocalSaveBlocked)
-      } finally {
-        setBusy(false)
-      }
-      return
-    }
-
     const dateDiagnostic = getTicketMonthDiagnostic(draft.purchase_date)
     console.info("[scanner] ticket_date_month_check", dateDiagnostic)
     if (isScannedReceiptDraft(draft, scanMetrics) && !dateDiagnostic.date_in_current_month) {
@@ -1736,19 +1503,10 @@ export default function ReceiptsPage({
         items: validItems,
       })
       const importDurationMs = Math.round(performance.now() - importStartedAt)
-      const analyticsResult = await ensureReceiptAnalytics({
-        receipt: currentReceipt,
-        draft: draftToSave,
-        items: validItems,
-      })
-      if (analyticsResult.transactionId) {
-        currentReceipt.transaction_id = analyticsResult.transactionId
-        currentReceipt.is_food_ticket = true
-      }
 
       try {
         const scanWasProcessed = draft.ocr_status !== "manual" || Boolean(scanMetrics?.provider)
-        const scanUsageIncremented = scanWasProcessed && shouldIncrementClientScanUsage(scanMetrics)
+        const scanUsageIncremented = scanWasProcessed && hasRealAiCall(scanMetrics)
         if (scanUsageIncremented) {
           console.info("[scanner] Mise a jour scan_usage: START", { userId: user?.id, plan: quota.plan })
           await incrementScanUsage({
@@ -1833,31 +1591,12 @@ export default function ReceiptsPage({
     }
   }
 
-  async function syncMarketReceiptSafely(receiptId, context = "sync") {
-    try {
-      return await syncAnonymizedMarketReceipt(receiptId)
-    } catch (error) {
-      console.warn(`[market-sync] ${context} indisponible`, error)
-      return { ok: false, skipped: true, reason: "market_unavailable" }
-    }
-  }
-
-  async function deleteMarketReceiptSafely(receiptId, context = "delete") {
-    try {
-      return await deleteAnonymizedMarketReceipt(receiptId)
-    } catch (error) {
-      console.warn(`[market-delete] ${context} indisponible`, error)
-      return { ok: false, skipped: true, reason: "market_unavailable" }
-    }
-  }
-
   async function handleDelete() {
     if (!detail || !window.confirm(txt.confirmDelete)) return
 
     setBusy(true)
 
     try {
-      await deleteMarketReceiptSafely(detail.id, "detail_delete")
       await deleteReceipt({ receipt: detail, userId: user?.id, removeBudget: true, removeLearning: true, reason: "user_removed_receipt" })
       setDetail(null)
       setDetailImageUrl("")
@@ -1877,7 +1616,6 @@ export default function ReceiptsPage({
 
     setBusy(true)
     try {
-      await deleteMarketReceiptSafely(row.id, "row_delete")
       await deleteReceipt({ receipt: row, userId: user?.id, removeBudget: true, removeLearning: true, reason: "user_removed_receipt" })
       setReceipts(prev => prev.filter(receiptRow => receiptRow.id !== row.id))
       setMessage(txt.deleted)
@@ -1888,69 +1626,6 @@ export default function ReceiptsPage({
     } finally {
       setBusy(false)
     }
-  }
-
-  async function ensureReceiptAnalytics({ receipt: sourceReceipt, draft: sourceDraft = {}, items = [] } = {}) {
-    if (!user?.id || !sourceReceipt?.id) {
-      return { transaction: null, transactionId: sourceReceipt?.transaction_id || null, shoppingItems: [] }
-    }
-
-    const analyticsReceipt = {
-      ...sourceReceipt,
-      store_name: sourceReceipt.store_name || sourceDraft.store_name || "Enseigne non reconnue",
-      purchase_date: sourceReceipt.purchase_date || sourceDraft.purchase_date || new Date().toISOString().slice(0, 10),
-      scan_status: sourceReceipt.scan_status || sourceDraft.scan_status || "success",
-      is_food_ticket: sourceReceipt.is_food_ticket ?? sourceDraft.is_food_ticket ?? true,
-    }
-
-    const analyticsDraft = {
-      ...sourceDraft,
-      ...analyticsReceipt,
-      total_needs_review: false,
-      is_food_ticket: true,
-      budget_category: sourceDraft.budget_category || sourceReceipt.budget_category || "alimentaire",
-    }
-
-    const transactionResult = await upsertReceiptTransaction({
-      userId: user.id,
-      receipt: analyticsReceipt,
-      draft: analyticsDraft,
-      transactionId: analyticsReceipt.transaction_id,
-    })
-
-    const transactionId = transactionResult?.transaction?.id || analyticsReceipt.transaction_id || null
-
-    if (transactionId) {
-      try {
-        await updateReceipt({
-          receiptId: analyticsReceipt.id,
-          userId: user.id,
-          updates: {
-            transaction_id: transactionId,
-            is_food_ticket: true,
-            budget_category: "alimentaire",
-          },
-        })
-      } catch (error) {
-        console.warn("[scanner] liaison receipt transaction indisponible", error)
-      }
-
-      const shoppingItems = await syncShoppingItemsFromReceipt({
-        userId: user.id,
-        transactionId,
-        receipt: {
-          id: analyticsReceipt.id,
-          store_name: analyticsReceipt.store_name,
-          purchase_date: analyticsReceipt.purchase_date,
-          scan_status: analyticsReceipt.scan_status,
-        },
-        items,
-      })
-
-      return { ...transactionResult, transactionId, shoppingItems }
-    }
-
-    return { ...transactionResult, transactionId: null, shoppingItems: [] }
   }
 
   async function handleUpdateReceipt(updates) {
@@ -1994,81 +1669,40 @@ export default function ReceiptsPage({
   }
 
   async function handleUpdateReceiptItem(itemId, updates) {
-    if (!detail || !user?.id) return null
+    if (!detail || !user?.id) return
+    if (isLockedScannedReceipt(detail)) {
+      setMessage("Ce ticket est issu d'un scan fiable. Ses articles ne sont plus modifiables.")
+      return
+    }
 
     setBusy(true)
     try {
-      const currentItems = Array.isArray(detail.receipt_items) ? detail.receipt_items : []
-      const previousItem = currentItems.find(item => item.id === itemId) || {}
-      const updatePayload = {
-        name: String(updates.name || previousItem.name || "").trim(),
-        corrected_name: String(updates.corrected_name || updates.name || previousItem.corrected_name || previousItem.name || "").trim(),
-        total_price: Number(updates.total_price ?? previousItem.total_price ?? 0),
-        category: updates.category || previousItem.category || "alimentaire",
-        item_status: updates.item_status || "user_validated",
-        status: updates.status || updates.item_status || "user_validated",
-        review_status: updates.review_status || "trusted",
-        needs_review: updates.needs_review === true ? true : false,
-      }
+      const next = await updateReceiptItem({ itemId, userId: user?.id, updates })
+      const updatedItem = { ...next, ...updates }
+      setDetail(prev => ({
+        ...prev,
+        receipt_items: (prev.receipt_items || []).map(item => item.id === itemId ? { ...item, ...updatedItem } : item),
+      }))
 
-      if (!updatePayload.name || updatePayload.total_price <= 0) {
-        throw new Error("Nom ou prix article invalide.")
-      }
-
-      await updateReceiptItem({ itemId, userId: user?.id, updates: updatePayload })
-
-      // Lecture immédiate depuis Supabase : on ne montre plus un succès basé seulement
-      // sur l'état local React. Si Supabase n'a pas réellement gardé la modification,
-      // on bloque et on affiche une erreur.
-      const persistedAfterItemUpdate = await getReceiptDetail({
-        receiptId: detail.id,
-        userId: user?.id,
-      })
-      const persistedItem = (persistedAfterItemUpdate.receipt_items || []).find(item => item.id === itemId)
-
-      const persistedName = String(persistedItem?.name || "").trim()
-      const persistedPrice = Number(persistedItem?.total_price || 0)
-      if (
-        !persistedItem ||
-        persistedName !== updatePayload.name ||
-        Math.abs(persistedPrice - updatePayload.total_price) > 0.001
-      ) {
-        console.warn("[scanner] correction_non_persistée", {
-          expected: updatePayload,
-          persisted: persistedItem || null,
-        })
-        throw new Error("La correction n'a pas été confirmée par la base. Réessayez.")
-      }
-
-      // Stats + Courses intelligentes : on repart des lignes réellement relues depuis Supabase.
-      await syncMarketReceiptSafely(detail.id, "item_update")
-
-      const analyticsResult = await ensureReceiptAnalytics({
-        receipt: persistedAfterItemUpdate,
-        draft: persistedAfterItemUpdate,
-        items: persistedAfterItemUpdate.receipt_items || [],
-      })
-
-      let finalDetail = persistedAfterItemUpdate
-      if (analyticsResult.transactionId) {
-        // Deuxième relecture pour récupérer transaction_id/is_food_ticket/budget_category après liaison.
-        finalDetail = await getReceiptDetail({
-          receiptId: detail.id,
+      if (detail.is_food_ticket && detail.transaction_id && isItemEligibleForSmartShopping(updatedItem)) {
+        await syncShoppingItemsFromReceipt({
           userId: user?.id,
+          transactionId: detail.transaction_id,
+          receipt: {
+            id: detail.id,
+            store_name: detail.store_name,
+            purchase_date: detail.purchase_date,
+            scan_status: detail.scan_status,
+          },
+          items: [updatedItem],
         })
+        window.dispatchEvent(new CustomEvent("budgetkazpei:transactions-updated"))
       }
 
-      setDetail(finalDetail)
-      window.dispatchEvent(new CustomEvent("budgetkazpei:transactions-updated"))
-      window.dispatchEvent(new CustomEvent("budgetkazpei:shopping-updated"))
-
-      setMessage("Correction enregistrée et synchronisée.")
-      await refreshReceipts()
-      return persistedItem
+      setMessage("Ligne mise à jour.")
     } catch (error) {
       console.error("Erreur modification ligne ticket:", error)
-      setMessage(`Correction impossible : ${error.message || txt.error}`)
-      throw error
+      setMessage(txt.error)
     } finally {
       setBusy(false)
     }
@@ -2076,35 +1710,22 @@ export default function ReceiptsPage({
 
   async function handleDeleteReceiptItem(itemId) {
     if (!detail || !user?.id) return
+    if (isLockedScannedReceipt(detail)) {
+      setMessage("Ce ticket est issu d'un scan fiable. Ses articles ne sont plus modifiables.")
+      return
+    }
 
     setBusy(true)
     try {
-      const remainingItems = (detail.receipt_items || []).filter(item => item.id !== itemId)
       await deleteReceiptItem({ itemId, userId: user?.id })
-      await syncMarketReceiptSafely(detail.id, "item_delete")
       setDetail(prev => ({
         ...prev,
-        receipt_items: remainingItems,
+        receipt_items: (prev.receipt_items || []).filter(item => item.id !== itemId),
       }))
-
-      const analyticsResult = await ensureReceiptAnalytics({
-        receipt: { ...detail, receipt_items: remainingItems },
-        draft: { ...detail },
-        items: remainingItems,
-      })
-      setDetail(prev => ({
-        ...prev,
-        transaction_id: analyticsResult.transactionId || prev?.transaction_id,
-        is_food_ticket: true,
-        receipt_items: remainingItems,
-      }))
-      window.dispatchEvent(new CustomEvent("budgetkazpei:transactions-updated"))
-
-      setMessage("Ligne supprimée et Courses intelligentes mises à jour.")
-      await refreshReceipts()
+      setMessage("Ligne supprimee.")
     } catch (error) {
       console.error("Erreur suppression ligne ticket:", error)
-      setMessage(`Suppression impossible : ${error.message || txt.error}`)
+      setMessage(txt.error)
     } finally {
       setBusy(false)
     }
@@ -2126,23 +1747,11 @@ export default function ReceiptsPage({
           {txt.foodHint}
         </p>
         <div style={{ color: COLORS.yellow, fontSize: 13, fontWeight: 900 }}>
-          {quota.loading ? "" : txt.quota(quota)}
+          {quota.loading ? "" : `${txt.quota(quota)} - ${quota.planLabel}`}
         </div>
       </div>
 
       {scanError && <ScanErrorMessage details={scanError} />}
-
-      {pendingLegacyFallback && (
-        <div style={cardStyle({ display: "grid", gap: 12, padding: 14 })}>
-          <div style={{ color: COLORS.text, fontWeight: 950 }}>
-            {txt.pythonTechnicalFallbackHint}
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 10 }}>
-            <ActionButton label={txt.retry} Icon={BkIcons.scan} disabled={busy} onClick={retryPendingPythonScan} />
-            <ActionButton label={txt.useLegacyScanner} Icon={BkIcons.receipts} disabled={busy} onClick={runPendingLegacyFallback} muted />
-          </div>
-        </div>
-      )}
 
       {message && (
         <div style={{
@@ -2189,77 +1798,37 @@ export default function ReceiptsPage({
         </div>
       )}
 
-      <div style={{
-        display: showMethodActions ? "grid" : "none",
-        gridTemplateColumns: isMobile ? "1fr" : "repeat(2, minmax(0, 1fr))",
-        gap: 12,
-      }}>
-        <ScannerActionButton
-          title={txt.camera}
-          description={txt.cameraHint}
+      <div style={{ display: showMethodActions ? "grid" : "none", gridTemplateColumns: isMobile ? "1fr" : "repeat(4, 1fr)", gap: 12 }}>
+        <ActionButton
+          label={txt.camera}
           Icon={BkIcons.scan}
-          variant="primary"
           disabled={busy}
           onClick={() => cameraRef.current.click()}
+          variant="primary"
         />
-        <ScannerActionButton
-          title={txt.gallery}
-          description={txt.galleryHint}
+        <ActionButton
+          label={txt.gallery}
           Icon={BkIcons.receipts}
-          variant="secondary"
           disabled={busy}
           onClick={() => galleryRef.current.click()}
+          variant="secondary"
         />
-        <ScannerActionButton
-          title={txt.longTicket}
-          description={txt.longTicketShortHint}
-          badge={txt.longTicketBadge}
+        <ActionButton
+          label={txt.longTicket}
           Icon={BkIcons.receipts}
-          variant="special"
-          active={longTicketMode}
           disabled={busy}
           onClick={openLongTicketMode}
+          variant="special"
+          active={longTicketMode}
         />
-        <ScannerActionButton
-          title={txt.manual}
-          description={txt.manualHint}
+        <ActionButton
+          label={txt.manual}
           Icon={BkIcons.add}
-          variant="neutral"
           disabled={busy}
           onClick={startManual}
+          variant="neutral"
         />
       </div>
-
-      {showMethodActions && singlePreviewFile && (
-        <div style={cardStyle({ display: "grid", gap: 12 })}>
-          <div>
-            <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 950 }}>
-              {txt.singlePreviewTitle}
-            </div>
-            <div style={{ color: COLORS.muted, fontSize: 13, lineHeight: 1.5, marginTop: 4 }}>
-              {txt.singlePreviewHint}
-            </div>
-          </div>
-          {singlePreviewUrl && (
-            <img
-              src={singlePreviewUrl}
-              alt={txt.singlePreviewTitle}
-              style={{
-                width: "100%",
-                maxHeight: 360,
-                objectFit: "contain",
-                borderRadius: 14,
-                border: `1px solid ${COLORS.border}`,
-                background: COLORS.surface,
-              }}
-            />
-          )}
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 10 }}>
-            <ActionButton label={txt.confirmImage} Icon={BkIcons.scan} disabled={busy} onClick={confirmSinglePreviewScan} />
-            <ActionButton label={txt.replacePhoto} Icon={BkIcons.receipts} disabled={busy} onClick={clearSinglePreview} muted />
-          </div>
-        </div>
-      )}
 
       {showMethodActions && longTicketMode && (
         <div style={cardStyle({ display: "grid", gap: 14 })}>
@@ -2269,9 +1838,6 @@ export default function ReceiptsPage({
             </div>
             <div style={{ color: COLORS.muted, fontSize: 13, lineHeight: 1.5, marginTop: 4 }}>
               {txt.longTicketHint}
-            </div>
-            <div style={{ color: COLORS.yellow, fontSize: 12.5, lineHeight: 1.45, marginTop: 5, fontWeight: 850 }}>
-              {txt.longTicketOverlapHint}
             </div>
           </div>
 
@@ -2284,7 +1850,7 @@ export default function ReceiptsPage({
                 minHeight: 54,
                 borderRadius: 16,
                 border: `1px solid ${longTicketFiles.top ? COLORS.green : COLORS.border}`,
-                background: COLORS.surface,
+                background: COLORS.cardLight,
                 color: COLORS.text,
                 fontWeight: 950,
                 fontFamily: "inherit",
@@ -2302,7 +1868,7 @@ export default function ReceiptsPage({
                 minHeight: 54,
                 borderRadius: 16,
                 border: `1px solid ${longTicketFiles.bottom ? COLORS.green : COLORS.border}`,
-                background: COLORS.surface,
+                background: COLORS.cardLight,
                 color: COLORS.text,
                 fontWeight: 950,
                 fontFamily: "inherit",
@@ -2313,53 +1879,12 @@ export default function ReceiptsPage({
             </button>
           </div>
 
-          {(longTicketPreviewUrls.top || longTicketPreviewUrls.bottom) && (
-            <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: 12 }}>
-              {longTicketPreviewUrls.top && (
-                <img
-                  src={longTicketPreviewUrls.top}
-                  alt={txt.longTicketTop}
-                  style={{
-                    width: "100%",
-                    maxHeight: 320,
-                    objectFit: "contain",
-                    borderRadius: 14,
-                    border: `1px solid ${COLORS.border}`,
-                    background: COLORS.surface,
-                  }}
-                />
-              )}
-              {longTicketPreviewUrls.bottom && (
-                <img
-                  src={longTicketPreviewUrls.bottom}
-                  alt={txt.longTicketBottom}
-                  style={{
-                    width: "100%",
-                    maxHeight: 320,
-                    objectFit: "contain",
-                    borderRadius: 14,
-                    border: `1px solid ${COLORS.border}`,
-                    background: COLORS.surface,
-                  }}
-                />
-              )}
-            </div>
-          )}
-
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: 10 }}>
             <ActionButton
               label={txt.longTicketGallery}
               Icon={BkIcons.receipts}
               disabled={busy}
               onClick={() => longGalleryRef.current?.click()}
-              muted
-            />
-
-            <ActionButton
-              label={txt.swapLongTicketPhotos}
-              Icon={BkIcons.receipts}
-              disabled={busy || !longTicketFiles.top || !longTicketFiles.bottom}
-              onClick={swapLongTicketPhotos}
               muted
             />
 
@@ -2381,27 +1906,8 @@ export default function ReceiptsPage({
         </div>
       )}
 
-      <input
-        ref={cameraRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        hidden
-        onChange={event => {
-          handleSingleFileSelected(event.target.files?.[0])
-          event.target.value = ""
-        }}
-      />
-      <input
-        ref={galleryRef}
-        type="file"
-        accept="image/*"
-        hidden
-        onChange={event => {
-          handleSingleFileSelected(event.target.files?.[0])
-          event.target.value = ""
-        }}
-      />
+      <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={event => handleFile(event.target.files?.[0])} />
+      <input ref={galleryRef} type="file" accept="image/*" hidden onChange={event => handleFile(event.target.files?.[0])} />
       <input
         ref={longTopCameraRef}
         type="file"
@@ -2514,209 +2020,70 @@ function ScanErrorMessage({ details }) {
   )
 }
 
+function ActionButton({
+  label,
+  Icon,
+  onClick,
+  disabled,
+  muted = false,
+  variant = "primary",
+  active = false,
+}) {
+  const resolvedVariant = muted && variant === "primary" ? "neutral" : variant
 
-function triggerButtonFeedback() {
-  try {
-    if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
-      navigator.vibrate(8)
-    }
-  } catch {
-    // Retour haptique facultatif.
-  }
-}
-
-function ScannerActionButton({ title, description, badge = "", Icon, onClick, disabled, variant = "neutral", active = false }) {
-  const [pressed, setPressed] = useState(false)
-  const isDisabled = Boolean(disabled)
-
-  const variants = {
+  const palettes = {
     primary: {
-      background: `linear-gradient(135deg, ${COLORS.accent}, #FB923C)`,
-      border: "1px solid rgba(255,255,255,.18)",
+      background: COLORS.accent,
+      border: COLORS.accent,
       color: "#FFFFFF",
-      descriptionColor: "rgba(255,255,255,.82)",
-      iconBackground: "rgba(255,255,255,.18)",
-      shadow: "0 18px 34px rgba(249,115,22,.30)",
-      activeShadow: "0 8px 18px rgba(249,115,22,.22)",
+      shadow: "0 10px 22px rgba(249,115,22,.22)",
     },
     secondary: {
-      background: COLORS.blueSoft,
-      border: "1px solid rgba(35,211,214,.38)",
-      color: COLORS.text,
-      descriptionColor: COLORS.muted,
-      iconBackground: "rgba(35,211,214,.16)",
-      shadow: "0 14px 28px rgba(35,211,214,.10)",
-      activeShadow: "0 7px 16px rgba(35,211,214,.12)",
+      background: `color-mix(in srgb, ${COLORS.cyan} 14%, ${COLORS.card})`,
+      border: `color-mix(in srgb, ${COLORS.cyan} 58%, ${COLORS.border})`,
+      color: COLORS.cyan,
+      shadow: "none",
     },
     special: {
       background: active
-        ? COLORS.selected
-        : COLORS.surface,
-      border: active ? "1px solid rgba(168,85,247,.75)" : "1px solid rgba(168,85,247,.42)",
-      color: COLORS.text,
-      descriptionColor: COLORS.muted,
-      iconBackground: "rgba(168,85,247,.18)",
-      shadow: "0 16px 32px rgba(124,58,237,.16)",
-      activeShadow: "0 8px 18px rgba(124,58,237,.18)",
+        ? COLORS.purple
+        : `color-mix(in srgb, ${COLORS.purple} 14%, ${COLORS.card})`,
+      border: COLORS.purple,
+      color: active ? "#FFFFFF" : COLORS.purple,
+      shadow: active ? "0 10px 22px rgba(139,92,246,.20)" : "none",
     },
     neutral: {
-      background: COLORS.surface,
-      border: `1px solid ${COLORS.border}`,
+      background: COLORS.card,
+      border: COLORS.border,
       color: COLORS.text,
-      descriptionColor: COLORS.muted,
-      iconBackground: COLORS.card,
-      shadow: "0 10px 22px rgba(0,0,0,.16)",
-      activeShadow: "0 5px 14px rgba(0,0,0,.18)",
+      shadow: "none",
     },
   }
 
-  const style = variants[variant] || variants.neutral
+  const palette = palettes[resolvedVariant] || palettes.primary
 
   return (
     <button
       type="button"
-      disabled={isDisabled}
-      aria-pressed={active ? "true" : undefined}
-      onClick={event => {
-        if (isDisabled) return
-        triggerButtonFeedback()
-        onClick?.(event)
-      }}
-      onPointerDown={() => !isDisabled && setPressed(true)}
-      onPointerUp={() => setPressed(false)}
-      onPointerLeave={() => setPressed(false)}
-      onPointerCancel={() => setPressed(false)}
-      style={{
-        width: "100%",
-        minHeight: 82,
-        borderRadius: 20,
-        border: style.border,
-        background: style.background,
-        color: style.color,
-        padding: "14px 16px",
-        display: "grid",
-        gridTemplateColumns: "auto 1fr",
-        alignItems: "center",
-        gap: 12,
-        textAlign: "left",
-        fontFamily: "inherit",
-        cursor: isDisabled ? "wait" : "pointer",
-        transform: pressed ? "translateY(2px) scale(.975)" : "translateY(0) scale(1)",
-        transition: "transform .12s cubic-bezier(.2,.8,.2,1), filter .12s ease, box-shadow .12s ease, border-color .12s ease",
-        boxShadow: pressed ? style.activeShadow : style.shadow,
-        filter: isDisabled ? "grayscale(.2) opacity(.65)" : pressed ? "brightness(1.08)" : "none",
-        position: "relative",
-        overflow: "hidden",
-      }}
-    >
-      <span style={{
-        width: 44,
-        height: 44,
-        borderRadius: 16,
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: style.iconBackground,
-        border: `1px solid ${COLORS.border}`,
-        flexShrink: 0,
-      }}>
-        {Icon && typeof Icon === "function" ? <Icon size={22} /> : null}
-      </span>
-
-      <span style={{ display: "grid", gap: 4, minWidth: 0 }}>
-        <span style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 15, fontWeight: 950, lineHeight: 1.15 }}>{title}</span>
-          {badge && (
-            <span style={{
-              borderRadius: 999,
-              padding: "3px 7px",
-              fontSize: 10,
-              fontWeight: 950,
-              letterSpacing: ".01em",
-              color: variant === "special" ? "#F5F3FF" : COLORS.yellow,
-              background: variant === "special" ? "rgba(168,85,247,.35)" : "rgba(252,211,77,.16)",
-              border: variant === "special" ? "1px solid rgba(216,180,254,.45)" : "1px solid rgba(252,211,77,.32)",
-            }}>
-              {badge}
-            </span>
-          )}
-        </span>
-        <span style={{ fontSize: 12.5, fontWeight: 800, color: style.descriptionColor, lineHeight: 1.25 }}>
-          {description}
-        </span>
-      </span>
-    </button>
-  )
-}
-
-function ActionButton({ label, Icon, icon, onClick, disabled, muted, danger, success, loading }) {
-  const [pressed, setPressed] = useState(false)
-  const ButtonIcon = Icon || icon
-  const isDisabled = disabled || loading
-  const background = danger
-    ? COLORS.red
-    : success
-      ? COLORS.green
-      : muted
-        ? COLORS.surface
-        : COLORS.accent
-  const color = success ? "#06101F" : muted ? COLORS.text : "#fff"
-  const border = muted ? `1px solid ${COLORS.border}` : `1px solid ${COLORS.borderSubtle}`
-  const shadow = danger
-    ? "0 12px 26px rgba(239,68,68,.24)"
-    : success
-      ? "0 12px 26px rgba(34,197,94,.22)"
-      : muted
-        ? COLORS.shadow
-        : "0 12px 26px rgba(249,115,22,.26)"
-
-  return (
-    <button
-      type="button"
-      onClick={event => {
-        if (isDisabled) return
-        triggerButtonFeedback()
-        onClick?.(event)
-      }}
-      onPointerDown={() => !isDisabled && setPressed(true)}
-      onPointerUp={() => setPressed(false)}
-      onPointerLeave={() => setPressed(false)}
-      onPointerCancel={() => setPressed(false)}
-      disabled={isDisabled}
+      onClick={onClick}
+      disabled={disabled}
+      aria-pressed={resolvedVariant === "special" ? active : undefined}
       style={{
         minHeight: 58,
-        border,
+        border: `1px solid ${palette.border}`,
         borderRadius: 16,
-        background,
-        color,
+        background: palette.background,
+        color: palette.color,
+        boxShadow: palette.shadow,
         fontWeight: 950,
-        cursor: isDisabled ? "wait" : "pointer",
+        cursor: disabled ? "wait" : "pointer",
         fontFamily: "inherit",
         fontSize: 15,
-        transform: pressed ? "translateY(1px) scale(.975)" : "translateY(0) scale(1)",
-        transition: "transform .12s cubic-bezier(.2,.8,.2,1), filter .12s ease, box-shadow .12s ease, background .12s ease",
-        boxShadow: pressed ? "0 4px 12px rgba(0,0,0,.20)" : shadow,
-        filter: isDisabled ? "grayscale(.15) opacity(.72)" : pressed ? "brightness(1.08)" : "none",
-        outline: "none",
-        padding: "0 14px",
-        position: "relative",
-        overflow: "hidden",
+        opacity: disabled ? 0.58 : 1,
+        transition: "transform .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease",
       }}
     >
-      {loading && (
-        <span style={{
-          display: "inline-block",
-          width: 14,
-          height: 14,
-          borderRadius: 999,
-          border: "2px solid rgba(255,255,255,.45)",
-          borderTopColor: color,
-          marginRight: 8,
-          verticalAlign: "-2px",
-          animation: "bk-spin .7s linear infinite",
-        }} />
-      )}
-      {!loading && ButtonIcon && typeof ButtonIcon === "function" && <ButtonIcon size={18} style={{ marginRight: 8, verticalAlign: "text-bottom" }} />}
+      {Icon && <Icon size={18} style={{ marginRight: 8, verticalAlign: "text-bottom" }} />}
       {label}
     </button>
   )
@@ -2747,7 +2114,7 @@ function AnalysisScreen({ progress, txt }) {
         <h2 style={{ color: COLORS.text, margin: "0 0 18px", fontSize: 28 }}>
           Analyse du ticket
         </h2>
-        <div style={{ height: 12, borderRadius: 999, background: COLORS.progressTrack, overflow: "hidden", border: `1px solid ${COLORS.borderSubtle}` }}>
+        <div style={{ height: 12, borderRadius: 999, background: COLORS.cardLight, overflow: "hidden", border: `1px solid ${COLORS.border}` }}>
           <div style={{
             width: `${value}%`,
             height: "100%",
@@ -2778,54 +2145,6 @@ function AnalysisScreen({ progress, txt }) {
   )
 }
 
-
-function isWeightedReceiptItem(item = {}) {
-  return String(item.item_type || "").toLowerCase() === "weight"
-    && Number(item.weight_kg || 0) > 0
-    && Number(item.price_per_kg || 0) > 0
-}
-
-function formatReceiptDecimalFr(value, digits) {
-  const numeric = Number(value || 0)
-  if (!Number.isFinite(numeric)) return ""
-
-  return numeric.toLocaleString("fr-FR", {
-    minimumFractionDigits: digits,
-    maximumFractionDigits: digits,
-  })
-}
-
-function formatWeightedItemSummary(item = {}) {
-  return `${formatReceiptDecimalFr(item.weight_kg, 3)} kg × ${formatReceiptDecimalFr(item.price_per_kg, 2)} €/kg = ${formatMontant(Number(item.total_price || 0))}`
-}
-
-function buildWeightedItemUpdates(item = {}, field, rawValue) {
-  const nextWeight = field === "weight_kg"
-    ? Number(rawValue || 0)
-    : Number(item.weight_kg || 0)
-  const nextPricePerKg = field === "price_per_kg"
-    ? Number(rawValue || 0)
-    : Number(item.price_per_kg || 0)
-
-  const updates = {
-    [field]: rawValue,
-    quantity: 1,
-    item_type: "weight",
-  }
-
-  if (
-    field !== "total_price"
-    && Number.isFinite(nextWeight)
-    && nextWeight > 0
-    && Number.isFinite(nextPricePerKg)
-    && nextPricePerKg > 0
-  ) {
-    updates.total_price = (nextWeight * nextPricePerKg).toFixed(2)
-  }
-
-  return updates
-}
-
 function ValidationForm({
   txt,
   draft,
@@ -2844,39 +2163,10 @@ function ValidationForm({
   const validationError = getDraftValidationError(draft)
   const articlesBlocked = isBudgetOkArticlesBlocked(draft)
   const partialLowItems = String(draft?.scan_status || "").includes("partial_low_items") || articlesBlocked
-  const pythonPending = Boolean(draft?.python_scan_pending_save)
-  const pythonPartial = draft?.python_scan_status === "budget_ok_articles_partial"
   const displayDetectedLines = !articlesBlocked || showBlockedDetectedLines
   const visibleDraftItems = (draft.items || [])
     .map((item, index) => ({ item, index }))
     .filter(row => !isBlockedReceiptItem(row.item))
-  function isDraftItemTrusted(item) {
-    const qualityStatus = normalizeItemQualityStatus(item)
-    return qualityStatus === "trusted" || qualityStatus === "user_validated"
-  }
-
-  const trustedDraftItems = visibleDraftItems.filter(({ item }) =>
-    isItemEligibleForSmartShopping(item)
-    && isDraftItemTrusted(item)
-    && item.needs_review !== true
-  )
-  const reviewDraftItems = visibleDraftItems.filter(({ item }) =>
-    !isItemEligibleForSmartShopping(item)
-    || !isDraftItemTrusted(item)
-    || item.needs_review === true
-  )
-
-  function updateItemAsUserValidated(index, updates) {
-    updateItem(index, {
-      ...updates,
-      item_status: "user_validated",
-      status: "user_validated",
-      review_status: "trusted",
-      needs_review: false,
-      eligible_for_courses: true,
-      confidence_score: Math.max(95, Number(draft.items?.[index]?.confidence_score || 0) || 95),
-    })
-  }
 
   return (
     <div style={cardStyle()}>
@@ -2980,38 +2270,10 @@ function ValidationForm({
           <button
             type="button"
             onClick={() => setShowBlockedDetectedLines(prev => !prev)}
-            style={{ marginTop: 10, minHeight: 42, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: COLORS.surface, color: COLORS.text, fontWeight: 950, padding: "0 14px" }}
+            style={{ marginTop: 10, minHeight: 42, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: COLORS.cardLight, color: COLORS.text, fontWeight: 950, padding: "0 14px" }}
           >
             {showBlockedDetectedLines ? txt.hideDetectedLines : txt.showDetectedLines}
           </button>
-        </div>
-      )}
-
-      {pythonPending && (
-        <div style={{
-          display: "grid",
-          gap: 7,
-          background: "rgba(35,211,214,.08)",
-          border: "1px solid rgba(35,211,214,.28)",
-          borderRadius: 16,
-          padding: 14,
-          marginTop: 14,
-          color: COLORS.text,
-          fontSize: 13,
-          lineHeight: 1.45,
-        }}>
-          <strong style={{ fontSize: 15 }}>{txt.saveSummaryTitle}</strong>
-          <div style={{ color: COLORS.green, fontWeight: 900 }}>
-            {txt.trustedArticlesSummary(trustedDraftItems.length)}
-          </div>
-          <div style={{ color: reviewDraftItems.length > 0 ? COLORS.yellow : COLORS.green, fontWeight: 850 }}>
-            {reviewDraftItems.length > 0
-              ? txt.reviewArticlesSummary(reviewDraftItems.length)
-              : txt.noArticleToReview}
-          </div>
-          <div style={{ color: COLORS.muted }}>
-            {txt.laterCorrectionHint}
-          </div>
         </div>
       )}
 
@@ -3037,22 +2299,16 @@ function ValidationForm({
       <div style={{ display: displayDetectedLines ? "grid" : "none", gap: 12 }}>
         {visibleDraftItems.map(({ item, index }) => {
           const itemAllowed = isItemEligibleForSmartShopping(item)
-          const itemNeedsReview = !isDraftItemTrusted(item) || articlesBlocked || item.needs_review === true
-          const marketDisplay = resolveMarketDisplayName(item)
+          const itemNeedsReview = normalizeItemQualityStatus(item) !== "trusted" || articlesBlocked || item.needs_review === true
           return (
-          <div key={index} style={{ background: COLORS.row, border: `1px solid ${COLORS.border}`, borderRadius: 16, padding: 12 }}>
+          <div key={index} style={{ background: COLORS.cardLight, border: `1px solid ${COLORS.border}`, borderRadius: 16, padding: 12 }}>
             <div style={{ display: "grid", gap: 10 }}>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-                {!itemNeedsReview && itemAllowed && (
-                  <MetaChip
-                    label={item.item_status === "user_validated" ? txt.itemCorrected : txt.itemTrusted}
-                    tone="success"
-                  />
-                )}
-                {itemNeedsReview && <MetaChip label={txt.itemNeedsReview} tone="warning" />}
-                {!itemAllowed && <MetaChip label={txt.itemNotUsedForSmartShopping} />}
-                {marketDisplay.marketRecognized && <MetaChip label="Produit reconnu" strong />}
-              </div>
+              {(itemNeedsReview || !itemAllowed) && (
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {itemNeedsReview && <MetaChip label={txt.itemNeedsReview} strong />}
+                  {!itemAllowed && <MetaChip label={txt.itemNotUsedForSmartShopping} />}
+                </div>
+              )}
               <div style={{ display: "flex", justifyContent: "space-between", gap: 10, color: COLORS.muted, fontSize: 12, fontWeight: 900 }}>
                 <span>{getConfidenceIcon(item.confidence_score || 0)} Confiance OCR</span>
                 <span style={{ color: getConfidenceColor(item.confidence_score || 0) }}>
@@ -3072,92 +2328,13 @@ function ValidationForm({
               <input
                 style={inputStyle()}
                 placeholder={txt.items}
-                value={item.name || marketDisplay.label}
+                value={item.name}
                 onChange={e => updateItem(index, { name: e.target.value, corrected_name: e.target.value, normalized_name: "" })}
               />
-              {isWeightedReceiptItem(item) ? (
-                <div style={{
-                  display: "grid",
-                  gap: 10,
-                  padding: 12,
-                  borderRadius: 14,
-                  border: "1px solid rgba(35,211,214,.32)",
-                  background: "rgba(35,211,214,.08)",
-                }}>
-                  <div style={{
-                    color: COLORS.text,
-                    fontSize: 14,
-                    fontWeight: 950,
-                    lineHeight: 1.45,
-                  }}>
-                    {formatWeightedItemSummary(item)}
-                  </div>
-                  <div style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
-                    gap: 10,
-                  }}>
-                    <Field label="Poids (kg)">
-                      <input
-                        style={inputStyle()}
-                        type="number"
-                        min="0"
-                        step="0.001"
-                        value={item.weight_kg ?? ""}
-                        onChange={event => updateItem(
-                          index,
-                          buildWeightedItemUpdates(item, "weight_kg", event.target.value),
-                        )}
-                      />
-                    </Field>
-                    <Field label="Prix au kg">
-                      <input
-                        style={inputStyle()}
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={item.price_per_kg ?? ""}
-                        onChange={event => updateItem(
-                          index,
-                          buildWeightedItemUpdates(item, "price_per_kg", event.target.value),
-                        )}
-                      />
-                    </Field>
-                    <Field label="Total de la ligne">
-                      <input
-                        style={inputStyle()}
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={item.total_price ?? ""}
-                        onChange={event => updateItem(
-                          index,
-                          buildWeightedItemUpdates(item, "total_price", event.target.value),
-                        )}
-                      />
-                    </Field>
-                  </div>
-                </div>
-              ) : (
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-                  <input
-                    style={inputStyle()}
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={item.quantity}
-                    onChange={event => updateItem(index, { quantity: event.target.value })}
-                  />
-                  <input
-                    style={inputStyle()}
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={item.total_price ?? ""}
-                    onChange={event => updateItem(index, { total_price: event.target.value })}
-                  />
-                </div>
-              )}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+                <input style={inputStyle()} type="number" min="0" step="0.01" value={item.quantity} onChange={e => updateItem(index, { quantity: e.target.value })} />
+                <input style={inputStyle()} type="number" min="0" step="0.01" value={item.total_price ?? ""} onChange={e => updateItem(index, { total_price: e.target.value })} />
+              </div>
               {(item.department || item.subcategory || item.promotion) && (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                   {item.department && <MetaChip label={`Rayon : ${item.department}`} />}
@@ -3170,32 +2347,8 @@ function ValidationForm({
                   <option key={category.id} value={category.id}>{category.id}</option>
                 ))}
               </select>
-              <div style={{
-                color: itemNeedsReview ? COLORS.yellow : COLORS.muted,
-                fontSize: 12,
-                lineHeight: 1.45,
-                fontWeight: itemNeedsReview ? 850 : 700,
-              }}>
-                {itemNeedsReview ? txt.itemReviewActionHint : txt.itemTrustedActionHint}
-              </div>
-              {(itemNeedsReview || !itemAllowed) && (
-                <button
-                  type="button"
-                  onClick={() => updateItemAsUserValidated(index, {})}
-                  style={{
-                    minHeight: 48,
-                    borderRadius: 12,
-                    border: `1px solid ${COLORS.green}`,
-                    background: "rgba(34,197,94,.12)",
-                    color: COLORS.green,
-                    fontWeight: 950,
-                  }}
-                >
-                  {txt.validateItem}
-                </button>
-              )}
               <button type="button" onClick={() => removeItem(index)} style={{ minHeight: 48, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "transparent", color: COLORS.muted, fontWeight: 900 }}>
-                {txt.removeLine}
+                {txt.remove}
               </button>
             </div>
           </div>
@@ -3210,53 +2363,10 @@ function ValidationForm({
         {txt.addLine}
       </button>
 
-      {pythonPending ? (
-        <div style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
-          gap: 10,
-          marginTop: 18,
-        }}>
-          <div style={{ display: "grid", gap: 7, alignContent: "start" }}>
-            <ActionButton label={txt.cancel} icon="" onClick={onCancel} disabled={busy} muted />
-            <div style={{ color: COLORS.muted, fontSize: 12, lineHeight: 1.4 }}>
-              {txt.cancelHint}
-            </div>
-          </div>
-
-          {pythonPartial && (
-            <div style={{ display: "grid", gap: 7, alignContent: "start" }}>
-              <ActionButton
-                label={txt.saveTotalLocalOnly}
-                icon=""
-                onClick={() => onSave({ pythonAction: "total_only" })}
-                disabled={busy || Boolean(validationError)}
-                muted
-              />
-              <div style={{ color: COLORS.muted, fontSize: 12, lineHeight: 1.4 }}>
-                {txt.saveTotalHint}
-              </div>
-            </div>
-          )}
-
-          <div style={{ display: "grid", gap: 7, alignContent: "start" }}>
-            <ActionButton
-              label={pythonPartial ? txt.verifyArticlesLocalOnly : txt.continueLocalOnly}
-              icon=""
-              onClick={() => onSave({ pythonAction: pythonPartial ? "verify_articles" : "review" })}
-              disabled={busy || Boolean(validationError)}
-            />
-            <div style={{ color: COLORS.text, fontSize: 12, lineHeight: 1.4, fontWeight: 850 }}>
-              {txt.saveTicketHint}
-            </div>
-          </div>
-        </div>
-      ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 10, marginTop: 18 }}>
-          <ActionButton label={txt.cancel} icon="" onClick={onCancel} disabled={busy} muted />
-          <ActionButton label={partialLowItems ? txt.saveAnyway : txt.save} icon="" onClick={onSave} disabled={busy || Boolean(validationError)} />
-        </div>
-      )}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 10, marginTop: 18 }}>
+        <ActionButton label={txt.cancel} icon="" onClick={onCancel} disabled={busy} muted />
+        <ActionButton label={partialLowItems ? txt.saveAnyway : txt.save} icon="" onClick={onSave} disabled={busy || Boolean(validationError)} />
+      </div>
     </div>
   )
 }
@@ -3270,23 +2380,12 @@ function Field({ label, children }) {
   )
 }
 
-function MetaChip({ label, strong = false, tone = "" }) {
-  const success = tone === "success"
-  const warning = tone === "warning"
-
+function MetaChip({ label, strong = false }) {
   return (
     <span style={{
-      border: `1px solid ${success ? COLORS.green : warning || strong ? COLORS.yellow : COLORS.border}`,
-      background: success
-        ? "rgba(34,197,94,.12)"
-        : warning || strong
-          ? COLORS.yellowSoft
-          : COLORS.surface,
-      color: success
-        ? COLORS.green
-        : warning || strong
-          ? COLORS.text
-          : COLORS.muted,
+      border: `1px solid ${strong ? COLORS.yellow : COLORS.border}`,
+      background: strong ? "rgba(252,211,77,.13)" : COLORS.cardLight,
+      color: strong ? COLORS.yellow : COLORS.muted,
       borderRadius: 999,
       padding: "5px 8px",
       fontSize: 11,
@@ -3312,7 +2411,7 @@ function HistoryList({ txt, rows, busy, onOpen, onDelete }) {
               minHeight: 74,
               border: `1px solid ${COLORS.border}`,
               borderRadius: 16,
-              background: COLORS.row,
+              background: COLORS.cardLight,
               color: COLORS.text,
               padding: 12,
               display: "grid",
@@ -3347,53 +2446,6 @@ function HistoryList({ txt, rows, busy, onOpen, onDelete }) {
   )
 }
 
-function normalizeReceiptDraftText(value = "") {
-  return String(value || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9 ]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim()
-}
-
-function receiptItemDraftValue(itemDrafts, item, key, fallback = "") {
-  return itemDrafts[item.id]?.[key] ?? item[key] ?? fallback
-}
-
-function buildReceiptItemCorrectionPayload(itemDrafts, item) {
-  const name = String(receiptItemDraftValue(itemDrafts, item, "name", item.name || "")).trim()
-  const totalPrice = Number(String(receiptItemDraftValue(itemDrafts, item, "total_price", item.total_price ?? "0")).replace(",", ".")) || 0
-  const category = String(receiptItemDraftValue(itemDrafts, item, "category", item.category || "alimentaire") || "alimentaire")
-  const normalizedName = normalizeReceiptDraftText(name)
-
-  return {
-    name,
-    corrected_name: name,
-    normalized_name: normalizedName,
-    total_price: totalPrice,
-    category,
-    item_status: "user_validated",
-    review_status: "trusted",
-    needs_review: false,
-    confidence_score: Math.max(95, Number(item.confidence_score || 0) || 95),
-  }
-}
-
-function isReceiptItemDraftDirty(itemDrafts, item) {
-  const draft = itemDrafts[item.id] || {}
-  const currentName = String(item.name || "").trim()
-  const draftName = String(draft.name ?? currentName).trim()
-  const currentPrice = Number(item.total_price ?? 0)
-  const draftPrice = Number(String(draft.total_price ?? currentPrice).replace(",", ".")) || 0
-  const currentCategory = String(item.category || "alimentaire")
-  const draftCategory = String(draft.category ?? currentCategory)
-
-  return draftName !== currentName
-    || Math.abs(draftPrice - currentPrice) > 0.001
-    || draftCategory !== currentCategory
-}
-
 function ReceiptDetail({
   txt,
   receipt,
@@ -3401,6 +2453,7 @@ function ReceiptDetail({
   busy,
   onBack,
   onDelete,
+  onUpdateReceipt,
   onUpdateItem,
   onDeleteItem,
   onScanAnother,
@@ -3408,9 +2461,6 @@ function ReceiptDetail({
   onOpenShoppingList,
 }) {
   const [showOriginal, setShowOriginal] = useState(false)
-  const [savingItemIds, setSavingItemIds] = useState(() => new Set())
-  const [savedItemIds, setSavedItemIds] = useState(() => new Set())
-  const [batchSaving, setBatchSaving] = useState(false)
   const [receiptDraft, setReceiptDraft] = useState({
     store_name: receipt.store_name || "",
     purchase_date: receipt.purchase_date || "",
@@ -3429,196 +2479,107 @@ function ReceiptDetail({
   })
 
   useEffect(() => {
-    deferStateUpdate(() => {
-      setReceiptDraft({
-        store_name: receipt.store_name || "",
-        purchase_date: receipt.purchase_date || "",
-        total_amount: receipt.total_amount || "",
-      })
-      const entries = {}
-      ;(receipt.receipt_items || []).forEach(item => {
-        entries[item.id] = {
-          name: item.name || "",
-          total_price: item.total_price ?? "",
-          category: item.category || "alimentaire",
-        }
-      })
-      setItemDrafts(entries)
+    setReceiptDraft({
+      store_name: receipt.store_name || "",
+      purchase_date: receipt.purchase_date || "",
+      total_amount: receipt.total_amount || "",
     })
+    const entries = {}
+    ;(receipt.receipt_items || []).forEach(item => {
+      entries[item.id] = {
+        name: item.name || "",
+        total_price: item.total_price ?? "",
+        category: item.category || "alimentaire",
+      }
+    })
+    setItemDrafts(entries)
   }, [receipt])
 
   const lockedReceipt = isLockedScannedReceipt(receipt)
   const partialReceipt = isBudgetOkArticlesPartial(receipt)
-  const visibleItems = (receipt.receipt_items || []).filter(item => !isBlockedReceiptItem(item))
-  const dirtyItems = visibleItems.filter(item => isReceiptItemDraftDirty(itemDrafts, item))
-
-  async function saveOneItem(item) {
-    const payload = buildReceiptItemCorrectionPayload(itemDrafts, item)
-    if (!payload.name || payload.total_price <= 0) return
-
-    setSavingItemIds(prev => new Set([...prev, item.id]))
-    setSavedItemIds(prev => {
-      const next = new Set(prev)
-      next.delete(item.id)
-      return next
-    })
-
-    try {
-      const updated = await onUpdateItem(item.id, payload)
-      setSavedItemIds(prev => new Set([...prev, item.id]))
-      setTimeout(() => {
-        setSavedItemIds(prev => {
-          const next = new Set(prev)
-          next.delete(item.id)
-          return next
-        })
-      }, 1600)
-      return updated
-    } finally {
-      setSavingItemIds(prev => {
-        const next = new Set(prev)
-        next.delete(item.id)
-        return next
-      })
-    }
-  }
-
-  async function saveAllCorrections() {
-    if (dirtyItems.length === 0 || batchSaving || busy) return
-    setBatchSaving(true)
-    try {
-      for (const item of dirtyItems) {
-        await saveOneItem(item)
-      }
-    } finally {
-      setBatchSaving(false)
-    }
-  }
+  const headerLocked = lockedReceipt || isBudgetReliableScannedReceipt(receipt)
 
   return (
     <div style={cardStyle()}>
-      <ActionButton label={`← ${txt.title}`} onClick={onBack} disabled={busy || batchSaving} muted />
-      <div style={{ marginTop: 12, color: COLORS.green, fontSize: 13, fontWeight: 950 }}>
+      <button type="button" onClick={onBack} style={{ minHeight: 44, background: "transparent", border: "none", color: COLORS.cyan, fontWeight: 900, cursor: "pointer" }}>
+        ← {txt.title}
+      </button>
+      <div style={{ marginTop: 6, color: COLORS.green, fontSize: 13, fontWeight: 950 }}>
         Ticket enregistré avec succès
       </div>
       {receipt.scan_status === "partial" && (
         <div style={{ marginTop: 8, color: COLORS.yellow, fontSize: 13, fontWeight: 900, lineHeight: 1.45 }}>
-          L'analyse complète n'a pas pu être terminée. Les données disponibles ont été sauvegardées.
+          L'analyse complete n'a pas pu etre terminee. Les donnees disponibles ont ete sauvegardees.
         </div>
       )}
       {lockedReceipt && (
         <div style={{ marginTop: 8, color: COLORS.cyan, fontSize: 13, fontWeight: 900, lineHeight: 1.45 }}>
-          Budget verrouillé : le total, la date et le magasin restent protégés. Les articles peuvent être corrigés manuellement si une désignation ou un prix est à ajuster.
+          Ticket verrouille : le scan est assez fiable pour le budget et les Courses intelligentes. Vous pouvez le consulter ou le retirer, mais pas modifier ses lignes.
         </div>
       )}
       {partialReceipt && (
         <div style={{ marginTop: 8, color: COLORS.yellow, fontSize: 13, fontWeight: 900, lineHeight: 1.45 }}>
-          Budget valide : le total est verrouillé. Vous pouvez corriger ou valider les articles. Les articles fiables alimentent Courses intelligentes.
+          Budget valide : le total est verrouillé. Vous pouvez corriger ou valider uniquement les articles à vérifier. Les articles fiables alimentent déjà Courses intelligentes.
         </div>
       )}
-      <h2 style={{ color: COLORS.text, margin: "14px 0 6px" }}>{receipt.store_name || txt.scanTitle}</h2>
+      <h2 style={{ color: COLORS.text, margin: "10px 0 6px" }}>{receipt.store_name || txt.scanTitle}</h2>
       <div style={{ color: COLORS.muted, fontSize: 13, marginBottom: 12 }}>
         {receipt.purchase_date} - {formatMontant(Number(receipt.total_amount || 0))}
-        {receipt.date_status === "estimated" ? " - date estimée" : ""}
+        {receipt.date_status === "estimated" ? " - date estimee" : ""}
         {receipt.ticket_type ? ` - ${receipt.ticket_type}` : ""}
         {formatBudgetCategoryLabel(receipt) ? ` - ${formatBudgetCategoryLabel(receipt)}` : ""}
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(170px, 1fr))", gap: 10, marginBottom: 14 }}>
-        <ActionButton label="Scanner un autre ticket" onClick={onScanAnother} disabled={busy || batchSaving} />
-        <ActionButton label="Retour à Mes tickets" onClick={onBackToTickets || onBack} disabled={busy || batchSaving} muted />
-        {receipt.is_food_ticket && <ActionButton label="Voir mes Courses intelligentes" onClick={onOpenShoppingList} disabled={busy || batchSaving} muted />}
+        <ActionButton label="Scanner un autre ticket" icon="" onClick={onScanAnother} disabled={busy} />
+        <ActionButton label="Retour à Mes tickets" icon="" onClick={onBackToTickets || onBack} disabled={busy} muted />
+        {receipt.is_food_ticket && <ActionButton label="Voir mes Courses intelligentes" icon="" onClick={onOpenShoppingList} disabled={busy} muted />}
       </div>
-      <div style={{
-        display: "grid",
-        gap: 8,
-        padding: 12,
-        borderRadius: 16,
-        border: `1px solid ${COLORS.border}`,
-        background: COLORS.surface,
-        color: COLORS.muted,
-        fontSize: 13,
-        lineHeight: 1.45,
-      }}>
-        <strong style={{ color: COLORS.text }}>Informations du ticket verrouillées</strong>
-        <span>Magasin : {receiptDraft.store_name || "Enseigne non reconnue"}</span>
-        <span>Date : {receiptDraft.purchase_date || "Non renseignée"}</span>
-        <span>Total budget : {formatMontant(Number(receiptDraft.total_amount || 0))}</span>
-        <span style={{ color: COLORS.cyan, fontWeight: 900 }}>
-          Ici, vous corrigez uniquement les articles. Le bouton “Mettre à jour le ticket” est retiré pour éviter d'écraser les corrections.
-        </span>
+      <div style={{ display: "grid", gap: 10 }}>
+        <input style={inputStyle()} value={receiptDraft.store_name} readOnly={headerLocked} onChange={event => !headerLocked && setReceiptDraft(prev => ({ ...prev, store_name: event.target.value }))} />
+        <input style={inputStyle()} type="date" value={receiptDraft.purchase_date || ""} readOnly={headerLocked} onChange={event => !headerLocked && setReceiptDraft(prev => ({ ...prev, purchase_date: event.target.value, date_status: "detected" }))} />
+        <input style={inputStyle()} type="number" min="0" step="0.01" value={receiptDraft.total_amount} readOnly={headerLocked} onChange={event => !headerLocked && setReceiptDraft(prev => ({ ...prev, total_amount: event.target.value }))} />
+        {!headerLocked && (
+          <button type="button" disabled={busy || Number(receiptDraft.total_amount || 0) <= 0} onClick={() => onUpdateReceipt({
+            store_name: receiptDraft.store_name || "Enseigne non reconnue",
+            merchant_name: receiptDraft.store_name || "Enseigne non reconnue",
+            purchase_date: receiptDraft.purchase_date || new Date().toISOString().slice(0, 10),
+            date_status: receiptDraft.date_status || "detected",
+            total_amount: Number(receiptDraft.total_amount || 0),
+          })} style={{ minHeight: 44, borderRadius: 12, border: "none", background: COLORS.cyan, color: "#06101F", fontWeight: 950 }}>
+            Mettre à jour le ticket
+          </button>
+        )}
       </div>
       {imageUrl && (
         <div style={{ marginTop: 14 }}>
-          <ActionButton
-            label={showOriginal ? "Masquer le ticket original" : "Voir le ticket original"}
-            onClick={() => setShowOriginal(prev => !prev)}
-            disabled={busy || batchSaving}
-            muted
-          />
+          <button type="button" onClick={() => setShowOriginal(prev => !prev)} style={{ minHeight: 44, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: COLORS.cardLight, color: COLORS.text, fontWeight: 950, width: "100%" }}>
+            {showOriginal ? "Masquer le ticket original" : "Voir le ticket original"}
+          </button>
           {showOriginal && <img src={imageUrl} alt="" style={{ width: "100%", maxHeight: 420, objectFit: "contain", borderRadius: 16, marginTop: 10, border: `1px solid ${COLORS.border}` }} />}
         </div>
       )}
       <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 950, marginTop: 18 }}>
         Lignes d'articles
       </div>
-      {dirtyItems.length > 0 && (
-        <div style={{
-          position: "sticky",
-          top: 8,
-          zIndex: 3,
-          display: "grid",
-          gridTemplateColumns: "1fr auto",
-          gap: 10,
-          alignItems: "center",
-          marginTop: 12,
-          padding: 12,
-          borderRadius: 16,
-          border: "1px solid rgba(35,211,214,.28)",
-          background: COLORS.card,
-          boxShadow: COLORS.shadow,
-        }}>
-          <div style={{ color: COLORS.text, fontSize: 13, fontWeight: 900 }}>
-            {dirtyItems.length} correction{dirtyItems.length > 1 ? "s" : ""} en attente
-          </div>
-          <ActionButton
-            label={batchSaving ? "Enregistrement…" : `Enregistrer les corrections`}
-            success
-            loading={batchSaving}
-            disabled={busy || batchSaving}
-            onClick={saveAllCorrections}
-          />
-        </div>
-      )}
-      <div style={{ display: "grid", gap: 10, marginTop: 10 }}>
-        {visibleItems.map(item => {
+      <div style={{ display: "grid", gap: 8, marginTop: 10 }}>
+        {(receipt.receipt_items || []).filter(item => !isBlockedReceiptItem(item)).map(item => {
           const itemUsedForSmartShopping = isItemEligibleForSmartShopping(item)
-          const itemEditable = true
-          const itemDirty = isReceiptItemDraftDirty(itemDrafts, item)
-          const itemSaving = savingItemIds.has(item.id)
-          const itemSaved = savedItemIds.has(item.id)
-          const marketDisplay = resolveMarketDisplayName(item)
-          const draftName = itemDrafts[item.id]?.name ?? marketDisplay.label ?? item.name ?? ""
-          const draftPrice = itemDrafts[item.id]?.total_price ?? item.total_price ?? ""
-          const draftCategory = itemDrafts[item.id]?.category || item.category || "alimentaire"
+          const itemEditable = !lockedReceipt && !itemUsedForSmartShopping
 
           return (
-          <div key={item.id} style={{ display: "grid", gap: 8, color: COLORS.text, borderBottom: `1px solid ${COLORS.borderSubtle}`, paddingBottom: 12 }}>
+          <div key={item.id} style={{ display: "grid", gap: 8, color: COLORS.text, borderBottom: `1px solid ${COLORS.border}`, paddingBottom: 10 }}>
             {item.ocr_name && item.ocr_name !== item.name && (
               <div style={{ color: COLORS.muted, fontSize: 12 }}>OCR : {item.ocr_name}</div>
             )}
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-              {itemUsedForSmartShopping
-                ? <MetaChip label="Utilisé pour Courses intelligentes" strong />
+              {isItemEligibleForSmartShopping(item)
+                ? <MetaChip label="Utilise pour Courses intelligentes" strong />
                 : <MetaChip label="À vérifier avant Courses intelligentes" />}
-              {marketDisplay.marketRecognized && <MetaChip label="Produit reconnu" strong />}
-              {itemEditable && <MetaChip label="Modifiable" />}
-              {itemDirty && <MetaChip label="Modifié" strong />}
-              {itemSaved && <MetaChip label="✓ Enregistré" strong />}
             </div>
             <input
               style={inputStyle()}
-              value={draftName}
-              readOnly={!itemEditable || itemSaving || batchSaving}
+                    value={itemDrafts[item.id]?.name ?? item.name ?? ""}
+              readOnly={!itemEditable}
               onChange={event => itemEditable && setItemDrafts(prev => ({ ...prev, [item.id]: { ...(prev[item.id] || {}), name: event.target.value } }))}
             />
             <div style={{ display: "grid", gridTemplateColumns: "1fr auto auto", gap: 8 }}>
@@ -3627,33 +2588,33 @@ function ReceiptDetail({
                 type="number"
                 min="0"
                 step="0.01"
-                value={draftPrice}
-                readOnly={!itemEditable || itemSaving || batchSaving}
+                    value={itemDrafts[item.id]?.total_price ?? item.total_price ?? ""}
+                readOnly={!itemEditable}
                 onChange={event => itemEditable && setItemDrafts(prev => ({ ...prev, [item.id]: { ...(prev[item.id] || {}), total_price: event.target.value } }))}
               />
               {itemEditable && (
-                <ActionButton
-                  label={itemSaving ? "Enregistrement…" : itemSaved ? "✓ OK" : "Enregistrer"}
-                  success
-                  loading={itemSaving}
-                  disabled={busy || batchSaving || itemSaving || !itemDirty}
-                  onClick={() => saveOneItem(item)}
-                />
+                <button type="button" disabled={busy} onClick={() => onUpdateItem(item.id, {
+                  name: itemDrafts[item.id].name || item.name,
+                  corrected_name: itemDrafts[item.id].name || item.name,
+                  total_price: Number(itemDrafts[item.id]?.total_price ?? item.total_price ?? 0),
+                  category: itemDrafts[item.id].category || item.category || "alimentaire",
+                  item_status: "user_validated",
+                  review_status: "trusted",
+                  needs_review: false,
+                })} style={{ minHeight: 44, borderRadius: 12, border: "none", background: COLORS.green, color: "#06101F", fontWeight: 950, padding: "0 12px" }}>
+                  Valider
+                </button>
               )}
               {itemEditable && (
-                <ActionButton
-                  label={txt.remove}
-                  danger
-                  muted={false}
-                  disabled={busy || batchSaving || itemSaving}
-                  onClick={() => onDeleteItem(item.id)}
-                />
+                <button type="button" disabled={busy} onClick={() => onDeleteItem(item.id)} style={{ minHeight: 44, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "transparent", color: COLORS.muted, fontWeight: 950, padding: "0 12px" }}>
+                  {txt.remove}
+                </button>
               )}
             </div>
             <select
               style={inputStyle()}
-              value={draftCategory}
-              disabled={!itemEditable || itemSaving || batchSaving}
+              value={itemDrafts[item.id]?.category || item.category || "alimentaire"}
+              disabled={!itemEditable}
               onChange={event => itemEditable && setItemDrafts(prev => ({ ...prev, [item.id]: { ...(prev[item.id] || {}), category: event.target.value } }))}
             >
               {CATEGORIES.map(category => (
@@ -3667,10 +2628,11 @@ function ReceiptDetail({
           )
         })}
       </div>
-      <div style={{ marginTop: 18 }}>
-        <ActionButton label={txt.deleteTicket} onClick={onDelete} disabled={busy || batchSaving} danger />
-      </div>
+      <button type="button" disabled={busy} onClick={onDelete} style={{ marginTop: 18, minHeight: 48, borderRadius: 14, border: "none", background: COLORS.red, color: "#fff", fontWeight: 950, width: "100%" }}>
+        {txt.deleteTicket}
+      </button>
     </div>
   )
 }
+
 

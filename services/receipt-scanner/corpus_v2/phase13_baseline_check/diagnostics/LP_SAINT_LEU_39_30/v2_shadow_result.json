@@ -1,0 +1,1949 @@
+{
+  "engine": "budgetkazpei-generic-parser-v2-shadow",
+  "phase": 1,
+  "production_output_changed": false,
+  "declared_count": 11,
+  "line_count": 36,
+  "candidate_count": 13,
+  "total_candidate_count": 1,
+  "selected_hypothesis": {
+    "items": [
+      {
+        "candidate_id": "c0001",
+        "start_line": 10,
+        "end_line": 10,
+        "source_line_ids": [
+          10
+        ],
+        "raw_name": "IVORIA PAIE TARTINER DUO",
+        "normalized_name": "IVORIA PAIE TARTINER DUO",
+        "quantity": 1.0,
+        "unit_price": 3.94,
+        "total_price": 3.94,
+        "item_type": "standard",
+        "confidence": 0.96671,
+        "local_score": 5.7667,
+        "evidence": [
+          "same_line_name_and_right_price"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0002",
+        "start_line": 12,
+        "end_line": 12,
+        "source_line_ids": [
+          12
+        ],
+        "raw_name": "CONFITURE FRAISE 37OG CO",
+        "normalized_name": "CONFITURE FRAISE 37OG CO",
+        "quantity": 1.0,
+        "unit_price": 2.7,
+        "total_price": 2.7,
+        "item_type": "standard",
+        "confidence": 0.98511,
+        "local_score": 5.7851,
+        "evidence": [
+          "same_line_name_and_right_price"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0003",
+        "start_line": 13,
+        "end_line": 14,
+        "source_line_ids": [
+          13,
+          14
+        ],
+        "raw_name": "TLJ BARRE CEREALE CHOCO B",
+        "normalized_name": "TLJ BARRE CEREALE CHOCO B",
+        "quantity": 1.0,
+        "unit_price": 1.7,
+        "total_price": 1.7,
+        "item_type": "standard",
+        "confidence": 0.98881,
+        "local_score": 4.3888,
+        "evidence": [
+          "description_then_price_row"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0005",
+        "start_line": 15,
+        "end_line": 16,
+        "source_line_ids": [
+          15,
+          16
+        ],
+        "raw_name": "TAB.CHOCU.NOIR 47% 100GX",
+        "normalized_name": "TAB.CHOCU.NOIR 47% 100GX",
+        "quantity": 1.0,
+        "unit_price": 4.4,
+        "total_price": 4.4,
+        "item_type": "standard",
+        "confidence": 0.8971,
+        "local_score": 4.2971,
+        "evidence": [
+          "description_then_price_row"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0006",
+        "start_line": 17,
+        "end_line": 17,
+        "source_line_ids": [
+          17
+        ],
+        "raw_name": "BOUTER CANRE FOUR CHO 300",
+        "normalized_name": "BOUTER CANRE FOUR CHO 300",
+        "quantity": 1.0,
+        "unit_price": 2.04,
+        "total_price": 2.04,
+        "item_type": "standard",
+        "confidence": 0.95551,
+        "local_score": 5.7555,
+        "evidence": [
+          "same_line_name_and_right_price"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0007",
+        "start_line": 18,
+        "end_line": 18,
+        "source_line_ids": [
+          18
+        ],
+        "raw_name": "BISCUIT TOB CHOC NOIR 150",
+        "normalized_name": "BISCUIT TOB CHOC NOIR 150",
+        "quantity": 1.0,
+        "unit_price": 1.7,
+        "total_price": 1.7,
+        "item_type": "standard",
+        "confidence": 0.95083,
+        "local_score": 5.7508,
+        "evidence": [
+          "same_line_name_and_right_price"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0008",
+        "start_line": 19,
+        "end_line": 19,
+        "source_line_ids": [
+          19
+        ],
+        "raw_name": "225G GOUTER FOURRES CHOCO",
+        "normalized_name": "225G GOUTER FOURRES CHOCO",
+        "quantity": 1.0,
+        "unit_price": 2.25,
+        "total_price": 2.25,
+        "item_type": "standard",
+        "confidence": 0.9978,
+        "local_score": 5.7978,
+        "evidence": [
+          "same_line_name_and_right_price"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0009",
+        "start_line": 21,
+        "end_line": 21,
+        "source_line_ids": [
+          21
+        ],
+        "raw_name": "KALAO THE PECHE 2L",
+        "normalized_name": "KALAO THE PECHE 2L",
+        "quantity": 1.0,
+        "unit_price": 2.86,
+        "total_price": 2.86,
+        "item_type": "standard",
+        "confidence": 0.89117,
+        "local_score": 5.6912,
+        "evidence": [
+          "same_line_name_and_right_price"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0010",
+        "start_line": 23,
+        "end_line": 23,
+        "source_line_ids": [
+          23
+        ],
+        "raw_name": "EMMENTAL HAPE FIN IKG",
+        "normalized_name": "EMMENTAL HAPE FIN IKG",
+        "quantity": 1.0,
+        "unit_price": 6.49,
+        "total_price": 6.49,
+        "item_type": "standard",
+        "confidence": 0.98568,
+        "local_score": 5.7857,
+        "evidence": [
+          "same_line_name_and_right_price"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0011",
+        "start_line": 26,
+        "end_line": 26,
+        "source_line_ids": [
+          26
+        ],
+        "raw_name": "PETIT PAIH LAIT X10 350G",
+        "normalized_name": "PETIT PAIH LAIT X10 350G",
+        "quantity": 1.0,
+        "unit_price": 2.44,
+        "total_price": 2.44,
+        "item_type": "standard",
+        "confidence": 0.9569,
+        "local_score": 5.7569,
+        "evidence": [
+          "same_line_name_and_right_price"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0012",
+        "start_line": 28,
+        "end_line": 28,
+        "source_line_ids": [
+          28
+        ],
+        "raw_name": "BOUCHERIE COUPE",
+        "normalized_name": "BOUCHERIE COUPE",
+        "quantity": 1.0,
+        "unit_price": 8.78,
+        "total_price": 8.78,
+        "item_type": "standard",
+        "confidence": 0.99878,
+        "local_score": 5.7988,
+        "evidence": [
+          "same_line_name_and_right_price"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      }
+    ],
+    "target_total": {
+      "line_ids": [
+        31,
+        32
+      ],
+      "amount": 39.3,
+      "kind": "article_total",
+      "confidence": 0.93471,
+      "score": 7.0,
+      "evidence": [
+        "explicit_total_label_then_amount_row"
+      ]
+    },
+    "declared_count": 11,
+    "items_total": 39.3,
+    "counted_quantity": 11,
+    "score": 124.6944,
+    "total_gap": 0.0,
+    "count_gap": 0,
+    "reasons": [
+      "exact_total_match",
+      "exact_declared_count_match"
+    ]
+  },
+  "total_candidates": [
+    {
+      "line_ids": [
+        31,
+        32
+      ],
+      "amount": 39.3,
+      "kind": "article_total",
+      "confidence": 0.93471,
+      "score": 7.0,
+      "evidence": [
+        "explicit_total_label_then_amount_row"
+      ]
+    }
+  ],
+  "item_candidates": [
+    {
+      "candidate_id": "c0001",
+      "start_line": 10,
+      "end_line": 10,
+      "source_line_ids": [
+        10
+      ],
+      "raw_name": "IVORIA PAIE TARTINER DUO",
+      "normalized_name": "IVORIA PAIE TARTINER DUO",
+      "quantity": 1.0,
+      "unit_price": 3.94,
+      "total_price": 3.94,
+      "item_type": "standard",
+      "confidence": 0.96671,
+      "local_score": 5.7667,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0002",
+      "start_line": 12,
+      "end_line": 12,
+      "source_line_ids": [
+        12
+      ],
+      "raw_name": "CONFITURE FRAISE 37OG CO",
+      "normalized_name": "CONFITURE FRAISE 37OG CO",
+      "quantity": 1.0,
+      "unit_price": 2.7,
+      "total_price": 2.7,
+      "item_type": "standard",
+      "confidence": 0.98511,
+      "local_score": 5.7851,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0003",
+      "start_line": 13,
+      "end_line": 14,
+      "source_line_ids": [
+        13,
+        14
+      ],
+      "raw_name": "TLJ BARRE CEREALE CHOCO B",
+      "normalized_name": "TLJ BARRE CEREALE CHOCO B",
+      "quantity": 1.0,
+      "unit_price": 1.7,
+      "total_price": 1.7,
+      "item_type": "standard",
+      "confidence": 0.98881,
+      "local_score": 4.3888,
+      "evidence": [
+        "description_then_price_row"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0004",
+      "start_line": 14,
+      "end_line": 15,
+      "source_line_ids": [
+        14,
+        15
+      ],
+      "raw_name": "TAB.CHOCU.NOIR 47% 100GX",
+      "normalized_name": "TAB.CHOCU.NOIR 47% 100GX",
+      "quantity": 1.0,
+      "unit_price": 1.7,
+      "total_price": 1.7,
+      "item_type": "standard",
+      "confidence": 0.8971,
+      "local_score": 4.0971,
+      "evidence": [
+        "price_row_then_description"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0005",
+      "start_line": 15,
+      "end_line": 16,
+      "source_line_ids": [
+        15,
+        16
+      ],
+      "raw_name": "TAB.CHOCU.NOIR 47% 100GX",
+      "normalized_name": "TAB.CHOCU.NOIR 47% 100GX",
+      "quantity": 1.0,
+      "unit_price": 4.4,
+      "total_price": 4.4,
+      "item_type": "standard",
+      "confidence": 0.8971,
+      "local_score": 4.2971,
+      "evidence": [
+        "description_then_price_row"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0006",
+      "start_line": 17,
+      "end_line": 17,
+      "source_line_ids": [
+        17
+      ],
+      "raw_name": "BOUTER CANRE FOUR CHO 300",
+      "normalized_name": "BOUTER CANRE FOUR CHO 300",
+      "quantity": 1.0,
+      "unit_price": 2.04,
+      "total_price": 2.04,
+      "item_type": "standard",
+      "confidence": 0.95551,
+      "local_score": 5.7555,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0007",
+      "start_line": 18,
+      "end_line": 18,
+      "source_line_ids": [
+        18
+      ],
+      "raw_name": "BISCUIT TOB CHOC NOIR 150",
+      "normalized_name": "BISCUIT TOB CHOC NOIR 150",
+      "quantity": 1.0,
+      "unit_price": 1.7,
+      "total_price": 1.7,
+      "item_type": "standard",
+      "confidence": 0.95083,
+      "local_score": 5.7508,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0008",
+      "start_line": 19,
+      "end_line": 19,
+      "source_line_ids": [
+        19
+      ],
+      "raw_name": "225G GOUTER FOURRES CHOCO",
+      "normalized_name": "225G GOUTER FOURRES CHOCO",
+      "quantity": 1.0,
+      "unit_price": 2.25,
+      "total_price": 2.25,
+      "item_type": "standard",
+      "confidence": 0.9978,
+      "local_score": 5.7978,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0009",
+      "start_line": 21,
+      "end_line": 21,
+      "source_line_ids": [
+        21
+      ],
+      "raw_name": "KALAO THE PECHE 2L",
+      "normalized_name": "KALAO THE PECHE 2L",
+      "quantity": 1.0,
+      "unit_price": 2.86,
+      "total_price": 2.86,
+      "item_type": "standard",
+      "confidence": 0.89117,
+      "local_score": 5.6912,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0010",
+      "start_line": 23,
+      "end_line": 23,
+      "source_line_ids": [
+        23
+      ],
+      "raw_name": "EMMENTAL HAPE FIN IKG",
+      "normalized_name": "EMMENTAL HAPE FIN IKG",
+      "quantity": 1.0,
+      "unit_price": 6.49,
+      "total_price": 6.49,
+      "item_type": "standard",
+      "confidence": 0.98568,
+      "local_score": 5.7857,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0011",
+      "start_line": 26,
+      "end_line": 26,
+      "source_line_ids": [
+        26
+      ],
+      "raw_name": "PETIT PAIH LAIT X10 350G",
+      "normalized_name": "PETIT PAIH LAIT X10 350G",
+      "quantity": 1.0,
+      "unit_price": 2.44,
+      "total_price": 2.44,
+      "item_type": "standard",
+      "confidence": 0.9569,
+      "local_score": 5.7569,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0012",
+      "start_line": 28,
+      "end_line": 28,
+      "source_line_ids": [
+        28
+      ],
+      "raw_name": "BOUCHERIE COUPE",
+      "normalized_name": "BOUCHERIE COUPE",
+      "quantity": 1.0,
+      "unit_price": 8.78,
+      "total_price": 8.78,
+      "item_type": "standard",
+      "confidence": 0.99878,
+      "local_score": 5.7988,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0013",
+      "start_line": 29,
+      "end_line": 29,
+      "source_line_ids": [
+        29
+      ],
+      "raw_name": "SOUS TRAITANCE",
+      "normalized_name": "SOUS TRAITANCE",
+      "quantity": 1.0,
+      "unit_price": 8.7,
+      "total_price": 8.7,
+      "item_type": "standard",
+      "confidence": 0.9001,
+      "local_score": 4.8001,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    }
+  ],
+  "lines": [
+    {
+      "line_id": 0,
+      "text": "LEADER PRICE SAINT LEU",
+      "normalized_text": "LEADER PRICE SAINT LEU",
+      "center_y": 219.5,
+      "y_min": 183.0,
+      "y_max": 256.0,
+      "confidence": 0.99588,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.55,
+        "tax": 0.0,
+        "total": 0.0,
+        "detail": 0.0,
+        "product": 0.25
+      },
+      "strongest_role": "section",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 1,
+      "text": "150, Rue du Germeral Lanbert",
+      "normalized_text": "150, RUE DU GERMERAL LANBERT",
+      "center_y": 256.0,
+      "y_min": 214.0,
+      "y_max": 298.0,
+      "confidence": 0.89433,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "tax": 0.0,
+        "total": 0.0,
+        "header": 0.0,
+        "footer": 0.0,
+        "product": 0.25
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 2,
+      "text": "97436 SA1NT-LEU",
+      "normalized_text": "97436 SA1NT-LEU",
+      "center_y": 293.5,
+      "y_min": 270.0,
+      "y_max": 317.0,
+      "confidence": 0.97135,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.55,
+        "tax": 0.0,
+        "total": 0.0,
+        "detail": 0.0,
+        "product": 0.25
+      },
+      "strongest_role": "section",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 3,
+      "text": "Te1: 02.62.34.78.73",
+      "normalized_text": "TE1: 02.62.34.78.73",
+      "center_y": 328.5,
+      "y_min": 303.0,
+      "y_max": 354.0,
+      "confidence": 0.96575,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "header": 1.0,
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "tax": 0.0,
+        "total": 0.0
+      },
+      "strongest_role": "header",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 4,
+      "text": "BIE VUENUE",
+      "normalized_text": "BIE VUENUE",
+      "center_y": 400.0,
+      "y_min": 378.0,
+      "y_max": 422.0,
+      "confidence": 0.95678,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.55,
+        "tax": 0.0,
+        "total": 0.0,
+        "detail": 0.0,
+        "product": 0.25
+      },
+      "strongest_role": "section",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 5,
+      "text": "VOUS AVEZ ETE RECU PAR (MOUNIAPIN)",
+      "normalized_text": "VOUS AVEZ ETE RECU PAR (MOUNIAPIN)",
+      "center_y": 478.5,
+      "y_min": 446.0,
+      "y_max": 511.0,
+      "confidence": 0.99633,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "tax": 0.0,
+        "total": 0.0,
+        "header": 0.0,
+        "footer": 0.0,
+        "product": 0.25
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 6,
+      "text": "05/07/2026- 18:30:07",
+      "normalized_text": "05/07/2026- 18:30:07",
+      "center_y": 516.0,
+      "y_min": 488.0,
+      "y_max": 544.0,
+      "confidence": 0.96665,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "header": 1.0
+      },
+      "strongest_role": "header",
+      "has_letters": false,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 7,
+      "text": "124 7 12823",
+      "normalized_text": "124 7 12823",
+      "center_y": 534.5,
+      "y_min": 513.0,
+      "y_max": 556.0,
+      "confidence": 0.95961,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "unknown": 1.0
+      },
+      "strongest_role": "unknown",
+      "has_letters": false,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 8,
+      "text": "OPERATIJN : VENTE",
+      "normalized_text": "OPERATIJN : VENTE",
+      "center_y": 567.5,
+      "y_min": 543.0,
+      "y_max": 592.0,
+      "confidence": 0.95431,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "header": 0.7,
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "tax": 0.0,
+        "total": 0.0,
+        "footer": 0.0,
+        "product": 0.25
+      },
+      "strongest_role": "header",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 9,
+      "text": "(1)3250391062126",
+      "normalized_text": "(1)3250391062126",
+      "center_y": 597.0,
+      "y_min": 575.0,
+      "y_max": 619.0,
+      "confidence": 0.99948,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "unknown": 1.0
+      },
+      "strongest_role": "unknown",
+      "has_letters": false,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 10,
+      "text": "IVORIA PAIE TARTINER DUO | 3.94 EUR",
+      "normalized_text": "IVORIA PAIE TARTINER DUO 3.94 EUR",
+      "center_y": 618.25,
+      "y_min": 588.0,
+      "y_max": 643.0,
+      "confidence": 0.96671,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 3.94,
+          "token_index": 11,
+          "x_center": 800.0,
+          "score": 0.97279,
+          "raw_text": "3.94 EUR"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 11,
+      "text": "(1)3222477013124",
+      "normalized_text": "(1)3222477013124",
+      "center_y": 640.0,
+      "y_min": 618.0,
+      "y_max": 662.0,
+      "confidence": 0.99932,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "unknown": 1.0
+      },
+      "strongest_role": "unknown",
+      "has_letters": false,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 12,
+      "text": "CONFITURE FRAISE 37OG CO | 2.70 EUR",
+      "normalized_text": "CONFITURE FRAISE 37OG CO 2.70 EUR",
+      "center_y": 658.75,
+      "y_min": 631.0,
+      "y_max": 683.0,
+      "confidence": 0.98511,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 2.7,
+          "token_index": 14,
+          "x_center": 794.5,
+          "score": 0.99983,
+          "raw_text": "2.70 EUR"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 13,
+      "text": "(1)3700311866469 | TLJ BARRE CEREALE CHOCO B",
+      "normalized_text": "(1)3700311866469 TLJ BARRE CEREALE CHOCO B",
+      "center_y": 688.0,
+      "y_min": 662.0,
+      "y_max": 716.0,
+      "confidence": 0.98881,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "tax": 0.0,
+        "total": 0.0,
+        "header": 0.0,
+        "footer": 0.0,
+        "product": 0.72
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 14,
+      "text": "1.70 EUR",
+      "normalized_text": "1.70 EUR",
+      "center_y": 703.0,
+      "y_min": 685.0,
+      "y_max": 721.0,
+      "confidence": 0.99403,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 1.7,
+          "token_index": 17,
+          "x_center": 789.0,
+          "score": 0.99403,
+          "raw_text": "1.70 EUR"
+        }
+      ],
+      "role_scores": {
+        "unknown": 1.0
+      },
+      "strongest_role": "unknown",
+      "has_letters": false,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 15,
+      "text": "(9)3263852201163 | *TAB.CHOCU.NOIR 47% 100GX",
+      "normalized_text": "(9)3263852201163 *TAB.CHOCU.NOIR 47% 100GX",
+      "center_y": 728.25,
+      "y_min": 704.0,
+      "y_max": 754.0,
+      "confidence": 0.8971,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "tax": 0.0,
+        "total": 0.0,
+        "header": 0.0,
+        "footer": 0.0,
+        "product": 0.72
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 16,
+      "text": "4.40 EUR",
+      "normalized_text": "4.40 EUR",
+      "center_y": 741.0,
+      "y_min": 723.0,
+      "y_max": 759.0,
+      "confidence": 0.99762,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 4.4,
+          "token_index": 20,
+          "x_center": 784.5,
+          "score": 0.99762,
+          "raw_text": "4.40 EUR"
+        }
+      ],
+      "role_scores": {
+        "unknown": 1.0
+      },
+      "strongest_role": "unknown",
+      "has_letters": false,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 17,
+      "text": "(1)3700311810523 | BOUTER CANRE FOUR CHO 300 | 2.04 EUR",
+      "normalized_text": "(1)3700311810523 BOUTER CANRE FOUR CHO 300 2.04 EUR",
+      "center_y": 772.0,
+      "y_min": 745.0,
+      "y_max": 796.0,
+      "confidence": 0.95551,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 2.04,
+          "token_index": 23,
+          "x_center": 778.5,
+          "score": 0.99954,
+          "raw_text": "2.04 EUR"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 18,
+      "text": "(9)3700311620072 | BISCUIT TOB CHOC NOIR 150 | 1.70 EUR",
+      "normalized_text": "(9)3700311620072 BISCUIT TOB CHOC NOIR 150 1.70 EUR",
+      "center_y": 811.0,
+      "y_min": 787.0,
+      "y_max": 834.0,
+      "confidence": 0.95083,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 1.7,
+          "token_index": 26,
+          "x_center": 776.0,
+          "score": 0.99984,
+          "raw_text": "1.70 EUR"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 19,
+      "text": "(1)3178530422412 | 225G GOUTER FOURRES CHOCO | 2.25 EUR",
+      "normalized_text": "(1)3178530422412 225G GOUTER FOURRES CHOCO 2.25 EUR",
+      "center_y": 851.5,
+      "y_min": 828.0,
+      "y_max": 871.0,
+      "confidence": 0.9978,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 2.25,
+          "token_index": 29,
+          "x_center": 774.0,
+          "score": 0.99961,
+          "raw_text": "2.25 EUR"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 20,
+      "text": "EPICERIE SUCREE | 10.73 EUR",
+      "normalized_text": "EPICERIE SUCREE 10.73 EUR",
+      "center_y": 890.0,
+      "y_min": 870.0,
+      "y_max": 910.0,
+      "confidence": 0.9635,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 10.73,
+          "token_index": 31,
+          "x_center": 417.5,
+          "score": 0.9635,
+          "raw_text": "10.73 EUR"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.97,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 0.1,
+        "section": 0.92
+      },
+      "strongest_role": "subtotal",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 21,
+      "text": "(1)3297565711558 | KALAO THE PECHE 2L | 2.86 EUR",
+      "normalized_text": "(1)3297565711558 KALAO THE PECHE 2L 2.86 EUR",
+      "center_y": 932.0,
+      "y_min": 912.0,
+      "y_max": 951.0,
+      "confidence": 0.89117,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 2.86,
+          "token_index": 34,
+          "x_center": 775.0,
+          "score": 0.89117,
+          "raw_text": "2.86 EUR"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 22,
+      "text": "BOISSONS SANS ALCOOL | 2.86 EUR",
+      "normalized_text": "BOISSONS SANS ALCOOL 2.86 EUR",
+      "center_y": 974.0,
+      "y_min": 954.0,
+      "y_max": 994.0,
+      "confidence": 0.87879,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 2.86,
+          "token_index": 36,
+          "x_center": 471.0,
+          "score": 0.87879,
+          "raw_text": "2.86 EUR"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.97,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 0.1,
+        "section": 0.92
+      },
+      "strongest_role": "subtotal",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 23,
+      "text": "(9)3700328401675 | EMMENTAL HAPE FIN IKG | 6.49 EUR",
+      "normalized_text": "(9)3700328401675 EMMENTAL HAPE FIN IKG 6.49 EUR",
+      "center_y": 1015.0,
+      "y_min": 996.0,
+      "y_max": 1034.0,
+      "confidence": 0.98568,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 6.49,
+          "token_index": 39,
+          "x_center": 775.5,
+          "score": 0.98568,
+          "raw_text": "6.49 EUR"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 24,
+      "text": "PRIX PROMOTION",
+      "normalized_text": "PRIX PROMOTION",
+      "center_y": 1058.0,
+      "y_min": 1041.0,
+      "y_max": 1075.0,
+      "confidence": 0.99493,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "discount": 1.0,
+        "product": -0.9,
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "detail": 0.0,
+        "section": 0.0
+      },
+      "strongest_role": "discount",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 25,
+      "text": "CRENERIE | 6.49 EUR",
+      "normalized_text": "CRENERIE 6.49 EUR",
+      "center_y": 1101.25,
+      "y_min": 1082.0,
+      "y_max": 1120.0,
+      "confidence": 0.94964,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 6.49,
+          "token_index": 42,
+          "x_center": 309.5,
+          "score": 0.99537,
+          "raw_text": "6.49 EUR"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.97,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 0.1,
+        "section": 0.92
+      },
+      "strongest_role": "subtotal",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 26,
+      "text": "(1)3448971300045 | PETIT PAIH LAIT X10 350G | 2.44 EUR",
+      "normalized_text": "(1)3448971300045 PETIT PAIH LAIT X10 350G 2.44 EUR",
+      "center_y": 1140.5,
+      "y_min": 1117.0,
+      "y_max": 1160.0,
+      "confidence": 0.9569,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 2.44,
+          "token_index": 45,
+          "x_center": 777.5,
+          "score": 0.99272,
+          "raw_text": "2.44 EUR"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 27,
+      "text": "PPI  2.44 EUR",
+      "normalized_text": "PPI 2.44 EUR",
+      "center_y": 1186.5,
+      "y_min": 1168.0,
+      "y_max": 1205.0,
+      "confidence": 0.95855,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 2.44,
+          "token_index": 46,
+          "x_center": 198.5,
+          "score": 0.95855,
+          "raw_text": "PPI  2.44 EUR"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.97,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 0.1,
+        "section": 0.92
+      },
+      "strongest_role": "subtotal",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 28,
+      "text": "(1)299991057593 | BOUCHERIE COUPE | 8.78 EUR",
+      "normalized_text": "(1)299991057593 BOUCHERIE COUPE 8.78 EUR",
+      "center_y": 1226.5,
+      "y_min": 1201.0,
+      "y_max": 1247.0,
+      "confidence": 0.99878,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 8.78,
+          "token_index": 49,
+          "x_center": 777.0,
+          "score": 0.9991,
+          "raw_text": "8.78 EUR"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 29,
+      "text": "SOUS TRAITANCE | 8.70 EUR",
+      "normalized_text": "SOUS TRAITANCE 8.70 EUR",
+      "center_y": 1271.75,
+      "y_min": 1249.0,
+      "y_max": 1291.0,
+      "confidence": 0.9001,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 8.7,
+          "token_index": 51,
+          "x_center": 384.0,
+          "score": 0.9001,
+          "raw_text": "8.70 EUR"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 0.85
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 30,
+      "text": "39.30 EUR",
+      "normalized_text": "39.30 EUR",
+      "center_y": 1374.0,
+      "y_min": 1355.0,
+      "y_max": 1393.0,
+      "confidence": 0.98258,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 39.3,
+          "token_index": 52,
+          "x_center": 763.5,
+          "score": 0.98258,
+          "raw_text": "39.30 EUR"
+        }
+      ],
+      "role_scores": {
+        "unknown": 1.0
+      },
+      "strongest_role": "unknown",
+      "has_letters": false,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 31,
+      "text": "TOTAL",
+      "normalized_text": "TOTAL",
+      "center_y": 1397.5,
+      "y_min": 1381.0,
+      "y_max": 1414.0,
+      "confidence": 0.93471,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "total": 0.85,
+        "header": 0.0,
+        "footer": 0.85,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.0,
+        "tax": 0.0,
+        "detail": 0.0,
+        "product": 0.7
+      },
+      "strongest_role": "total",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 32,
+      "text": "39.30 EUR",
+      "normalized_text": "39.30 EUR",
+      "center_y": 1412.0,
+      "y_min": 1393.0,
+      "y_max": 1431.0,
+      "confidence": 0.95759,
+      "source_segment": "full",
+      "money": [
+        {
+          "amount": 39.3,
+          "token_index": 54,
+          "x_center": 761.0,
+          "score": 0.95759,
+          "raw_text": "39.30 EUR"
+        }
+      ],
+      "role_scores": {
+        "unknown": 1.0,
+        "footer": 0.85
+      },
+      "strongest_role": "unknown",
+      "has_letters": false,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 33,
+      "text": "CARTE BLEUE",
+      "normalized_text": "CARTE BLEUE",
+      "center_y": 1435.5,
+      "y_min": 1417.0,
+      "y_max": 1454.0,
+      "confidence": 0.99086,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "payment": 1.0,
+        "total": -0.8,
+        "header": 0.0,
+        "footer": 0.85,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.55,
+        "tax": 0.0,
+        "detail": 0.0,
+        "product": 0.7
+      },
+      "strongest_role": "payment",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 34,
+      "text": "NOMBRE ARTICLES : 11",
+      "normalized_text": "NOMBRE ARTICLES : 11",
+      "center_y": 1510.0,
+      "y_min": 1492.0,
+      "y_max": 1528.0,
+      "confidence": 0.99308,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "count": 1.0,
+        "product": -0.55,
+        "header": 0.0,
+        "footer": 0.85,
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "tax": 0.0,
+        "total": 0.0
+      },
+      "strongest_role": "count",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": 11
+    },
+    {
+      "line_id": 35,
+      "text": "CARTE FIDELITE",
+      "normalized_text": "CARTE FIDELITE",
+      "center_y": 1547.0,
+      "y_min": 1529.0,
+      "y_max": 1565.0,
+      "confidence": 0.98272,
+      "source_segment": "full",
+      "money": [],
+      "role_scores": {
+        "footer": 0.9,
+        "header": 0.0,
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "tax": 0.0,
+        "total": 0.0
+      },
+      "strongest_role": "footer",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    }
+  ],
+  "legacy_receipt": {
+    "store_name": "Leader Price",
+    "store_location": "Saint Leu",
+    "receipt_date": "2026-07-05",
+    "receipt_time": "18:30:07",
+    "declared_item_count": 11,
+    "total": null,
+    "items": [
+      {
+        "raw_name": "IVORIA PAIE TARTINER DUO",
+        "quantity": 1.0,
+        "unit_price": 3.94,
+        "total_price": 3.94,
+        "vat_code": null,
+        "item_type": "standard",
+        "raw_detail": null,
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.96671,
+        "source_line_ids": [
+          10
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "CONFITURE FRAISE 37OG CO",
+        "quantity": 1.0,
+        "unit_price": 2.7,
+        "total_price": 2.7,
+        "vat_code": null,
+        "item_type": "standard",
+        "raw_detail": null,
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.98511,
+        "source_line_ids": [
+          12
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "BOUTER CANRE FOUR CHO 300",
+        "quantity": 1.0,
+        "unit_price": 2.04,
+        "total_price": 2.04,
+        "vat_code": null,
+        "item_type": "standard",
+        "raw_detail": null,
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.95551,
+        "source_line_ids": [
+          17
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "BISCUIT TOB CHOC NOIR 150",
+        "quantity": 1.0,
+        "unit_price": 1.7,
+        "total_price": 1.7,
+        "vat_code": null,
+        "item_type": "standard",
+        "raw_detail": null,
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.95083,
+        "source_line_ids": [
+          18
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "225G GOUTER FOURRES CHOCO",
+        "quantity": 1.0,
+        "unit_price": 2.25,
+        "total_price": 2.25,
+        "vat_code": null,
+        "item_type": "standard",
+        "raw_detail": null,
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.9978,
+        "source_line_ids": [
+          19
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "EPICERIE SUCREE 10.73 EUR",
+        "quantity": 1.0,
+        "unit_price": 10.73,
+        "total_price": 10.73,
+        "vat_code": null,
+        "item_type": "standard",
+        "raw_detail": null,
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.9635,
+        "source_line_ids": [
+          20
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "KALAO THE PECHE 2L",
+        "quantity": 1.0,
+        "unit_price": 2.86,
+        "total_price": 2.86,
+        "vat_code": null,
+        "item_type": "standard",
+        "raw_detail": null,
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.89117,
+        "source_line_ids": [
+          21
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "BOISSONS SANS ALCOOL 2.86 EUR",
+        "quantity": 1.0,
+        "unit_price": 2.86,
+        "total_price": 2.86,
+        "vat_code": null,
+        "item_type": "standard",
+        "raw_detail": null,
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.87879,
+        "source_line_ids": [
+          22
+        ],
+        "needs_review": true,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "EMMENTAL HAPE FIN IKG",
+        "quantity": 1.0,
+        "unit_price": 6.49,
+        "total_price": 6.49,
+        "vat_code": null,
+        "item_type": "standard",
+        "raw_detail": null,
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.98568,
+        "source_line_ids": [
+          23
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "CREMERIE 6.49 EUR",
+        "quantity": 1.0,
+        "unit_price": 6.49,
+        "total_price": 6.49,
+        "vat_code": null,
+        "item_type": "standard",
+        "raw_detail": null,
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.94964,
+        "source_line_ids": [
+          25
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "PETIT PAIH LAIT X10 350G",
+        "quantity": 1.0,
+        "unit_price": 2.44,
+        "total_price": 2.44,
+        "vat_code": null,
+        "item_type": "standard",
+        "raw_detail": null,
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.9569,
+        "source_line_ids": [
+          26
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "PPI 2.44 EUR",
+        "quantity": 1.0,
+        "unit_price": 2.44,
+        "total_price": 2.44,
+        "vat_code": null,
+        "item_type": "standard",
+        "raw_detail": null,
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.95855,
+        "source_line_ids": [
+          27
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "BOUCHERIE COUPE",
+        "quantity": 1.0,
+        "unit_price": 8.78,
+        "total_price": 8.78,
+        "vat_code": null,
+        "item_type": "generic_department",
+        "raw_detail": null,
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.99878,
+        "source_line_ids": [
+          28
+        ],
+        "needs_review": true,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      },
+      {
+        "raw_name": "SOUS TRAITANCE 8.70 EUR",
+        "quantity": 1.0,
+        "unit_price": 8.7,
+        "total_price": 8.7,
+        "vat_code": null,
+        "item_type": "standard",
+        "raw_detail": null,
+        "weight_kg": null,
+        "price_per_kg": null,
+        "ocr_confidence": 0.9001,
+        "source_line_ids": [
+          29
+        ],
+        "needs_review": false,
+        "canonical_name": null,
+        "match_type": null,
+        "match_confidence": null
+      }
+    ],
+    "excluded_sections": [],
+    "warnings": [
+      "Description remplacée sans prix: TLJ BARRE CEREALE CHOCO B",
+      "Description sans ligne secondaire: *TAB.CHOCU.NOIR 47% 100GX",
+      "Quantité reconstruite 14 != nombre déclaré 11"
+    ],
+    "article_total": null,
+    "immediate_discount_total": null,
+    "payable_total": null,
+    "items_total": 64.42,
+    "counted_quantity": 14.0,
+    "product_line_count": 14
+  },
+  "comparison": {
+    "legacy_total": null,
+    "legacy_article_total": null,
+    "legacy_items_total": 64.42,
+    "legacy_product_line_count": 14,
+    "legacy_counted_quantity": 14.0,
+    "v2_total": 39.3,
+    "v2_items_total": 39.3,
+    "v2_product_line_count": 11,
+    "v2_counted_quantity": 11,
+    "v2_reasons": [
+      "exact_total_match",
+      "exact_declared_count_match"
+    ]
+  }
+}

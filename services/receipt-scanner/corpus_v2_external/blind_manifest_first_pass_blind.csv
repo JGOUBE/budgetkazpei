@@ -1,0 +1,12 @@
+﻿case_id,enabled,mode,image_1,image_2,expected_store,expected_date,expected_total,expected_product_lines,expected_quantity,expected_status,notes
+BLIND_001_auchan_stalingrad_12_13_webp,1,single,images\auchan_stalingrad_12_13_webp_001.webp,,,,,,,,BLIND: ne pas renseigner avant le premier passage V2.
+BLIND_002_carrefour_contact_st_sauveur_webp,1,single,images\carrefour_contact_st_sauveur_webp_002.webp,,,,,,,,BLIND: ne pas renseigner avant le premier passage V2.
+BLIND_003_fr_auchan_grenoble_2024_10_17,1,single,images\fr_auchan_grenoble_2024_10_17_003.webp,,,,,,,,BLIND: ne pas renseigner avant le premier passage V2.
+BLIND_004_fr_carrefour_market_paris_2024_10_28,1,single,images\fr_carrefour_market_paris_2024_10_28_004.jpg,,,,,,,,BLIND: ne pas renseigner avant le premier passage V2.
+BLIND_005_fr_super_u_la_madeleine_2024_01_20,1,single,images\fr_super_u_la_madeleine_2024_01_20_005.png,,,,,,,,BLIND: ne pas renseigner avant le premier passage V2.
+BLIND_006_re_eleclerc_les_casernes_2026_07_21_8_,1,single,images\re_eleclerc_les_casernes_2026_07_21_8_20_jpg_006.jpg,,,,,,,,BLIND: ne pas renseigner avant le premier passage V2.
+BLIND_007_re_eleclerc_les_casernes_2026_07_24_10,1,single,images\re_eleclerc_les_casernes_2026_07_24_10_89_jpg_007.jpg,,,,,,,,BLIND: ne pas renseigner avant le premier passage V2.
+BLIND_008_re_eleclerc_les_casernes_2026_07_24_54,1,long,images\re_eleclerc_les_casernes_2026_07_24_54_87_jpg_haut_008.jpg,images\re_eleclerc_les_casernes_2026_07_24_54_87_jpg_bas_008.jpg,,,,,,,BLIND: ne pas renseigner avant le premier passage V2.
+BLIND_009_re_eleclerc_les_casernes_2026_07_24_66,1,single,images\re_eleclerc_les_casernes_2026_07_24_66_19_jpg_009.jpg,,,,,,,,BLIND: ne pas renseigner avant le premier passage V2.
+BLIND_010_re_eleclerc_les_casernes_2026_07_24_du,1,single,images\re_eleclerc_les_casernes_2026_07_24_duplicata_0_70_jpg_010.jpg,,,,,,,,BLIND: ne pas renseigner avant le premier passage V2.
+BLIND_011_re_eleclerc_les_casernes_2026_07_24_du,1,single,images\re_eleclerc_les_casernes_2026_07_24_duplicata_190_90_jpg_011.jpg,,,,,,,,BLIND: ne pas renseigner avant le premier passage V2.

@@ -1,0 +1,50 @@
+{
+  "status": "budget_ok_articles_partial",
+  "exploitable": true,
+  "should_record_budget": true,
+  "budget_amount": 69.48,
+  "article_data_mode": "partial",
+  "should_feed_courses": false,
+  "should_feed_market_database": false,
+  "should_feed_verified_articles": true,
+  "requires_user_validation": true,
+  "reasons": [
+    "items_marked_for_review"
+  ],
+  "unattributed_amount": null,
+  "image": {
+    "width": 1080,
+    "height": 1996,
+    "brightness_mean": 120.638,
+    "contrast_std": 45.474,
+    "blur_variance": 305.853,
+    "dark_pixel_ratio": 0.00886,
+    "bright_pixel_ratio": 0.01202
+  },
+  "ocr": {
+    "token_count": 155,
+    "average_confidence": 0.9322,
+    "median_confidence": 0.9614,
+    "low_confidence_ratio": 0.0452,
+    "very_low_confidence_ratio": 0.0
+  },
+  "receipt": {
+    "product_line_count": 20,
+    "counted_quantity": 24.0,
+    "declared_item_count": 24,
+    "items_total": 69.48,
+    "total": 69.48,
+    "article_total": 69.48,
+    "immediate_discount_total": null,
+    "payable_total": null,
+    "article_reconciliation_total": 69.48,
+    "total_delta": 0.0,
+    "quantity_delta": 0.0,
+    "warning_count": 0,
+    "significant_warning_count": 0,
+    "ignored_warning_count": 0,
+    "reliable_item_count": 3,
+    "review_item_count": 17,
+    "reliable_items_total": 9.88
+  }
+}

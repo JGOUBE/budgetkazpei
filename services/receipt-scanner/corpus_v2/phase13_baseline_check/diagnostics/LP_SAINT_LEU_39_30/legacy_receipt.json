@@ -1,0 +1,288 @@
+{
+  "store_name": "Leader Price",
+  "store_location": "Saint Leu",
+  "receipt_date": "2026-07-05",
+  "receipt_time": "18:30:07",
+  "declared_item_count": 11,
+  "total": null,
+  "items": [
+    {
+      "raw_name": "IVORIA PAIE TARTINER DUO",
+      "quantity": 1.0,
+      "unit_price": 3.94,
+      "total_price": 3.94,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.96671,
+      "source_line_ids": [
+        10
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "CONFITURE FRAISE 37OG CO",
+      "quantity": 1.0,
+      "unit_price": 2.7,
+      "total_price": 2.7,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.98511,
+      "source_line_ids": [
+        12
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "BOUTER CANRE FOUR CHO 300",
+      "quantity": 1.0,
+      "unit_price": 2.04,
+      "total_price": 2.04,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.95551,
+      "source_line_ids": [
+        17
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "BISCUIT TOB CHOC NOIR 150",
+      "quantity": 1.0,
+      "unit_price": 1.7,
+      "total_price": 1.7,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.95083,
+      "source_line_ids": [
+        18
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "225G GOUTER FOURRES CHOCO",
+      "quantity": 1.0,
+      "unit_price": 2.25,
+      "total_price": 2.25,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.9978,
+      "source_line_ids": [
+        19
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "EPICERIE SUCREE 10.73 EUR",
+      "quantity": 1.0,
+      "unit_price": 10.73,
+      "total_price": 10.73,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.9635,
+      "source_line_ids": [
+        20
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "KALAO THE PECHE 2L",
+      "quantity": 1.0,
+      "unit_price": 2.86,
+      "total_price": 2.86,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.89117,
+      "source_line_ids": [
+        21
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "BOISSONS SANS ALCOOL 2.86 EUR",
+      "quantity": 1.0,
+      "unit_price": 2.86,
+      "total_price": 2.86,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.87879,
+      "source_line_ids": [
+        22
+      ],
+      "needs_review": true,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "EMMENTAL HAPE FIN IKG",
+      "quantity": 1.0,
+      "unit_price": 6.49,
+      "total_price": 6.49,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.98568,
+      "source_line_ids": [
+        23
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "CREMERIE 6.49 EUR",
+      "quantity": 1.0,
+      "unit_price": 6.49,
+      "total_price": 6.49,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.94964,
+      "source_line_ids": [
+        25
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "PETIT PAIH LAIT X10 350G",
+      "quantity": 1.0,
+      "unit_price": 2.44,
+      "total_price": 2.44,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.9569,
+      "source_line_ids": [
+        26
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "PPI 2.44 EUR",
+      "quantity": 1.0,
+      "unit_price": 2.44,
+      "total_price": 2.44,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.95855,
+      "source_line_ids": [
+        27
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "BOUCHERIE COUPE",
+      "quantity": 1.0,
+      "unit_price": 8.78,
+      "total_price": 8.78,
+      "vat_code": null,
+      "item_type": "generic_department",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.99878,
+      "source_line_ids": [
+        28
+      ],
+      "needs_review": true,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "SOUS TRAITANCE 8.70 EUR",
+      "quantity": 1.0,
+      "unit_price": 8.7,
+      "total_price": 8.7,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.9001,
+      "source_line_ids": [
+        29
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    }
+  ],
+  "excluded_sections": [],
+  "warnings": [
+    "Description remplacée sans prix: TLJ BARRE CEREALE CHOCO B",
+    "Description sans ligne secondaire: *TAB.CHOCU.NOIR 47% 100GX",
+    "Quantité reconstruite 14 != nombre déclaré 11"
+  ],
+  "article_total": null,
+  "immediate_discount_total": null,
+  "payable_total": null,
+  "items_total": 64.42,
+  "counted_quantity": 14.0,
+  "product_line_count": 14
+}

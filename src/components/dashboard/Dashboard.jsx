@@ -1593,8 +1593,8 @@ function BudgetAlertCard({ alert, isKreol }) {
   const color = alert.level === "ok" ? COLORS.green : alert.level === "warning" ? COLORS.yellow : alert.level === "alert" ? COLORS.accent : COLORS.red
   const alertText =
     alert.level === "ok"
-      ? isKreol ? "Tout i sava bien, out depans i reste maitrisees mwa-la."
-        : "Tout va bien, tes depenses restent maitrisees ce mois-ci."
+      ? isKreol ? "Tout i sava bien, out dépans i reste anba kontrol pou mwa-la."
+        : "Tout va bien, tes dépenses restent maîtrisées ce mois-ci."
       : alert.level === "danger"
         ? isKreol ? `Bidze alimentaire depasse : ${alert.percent || 0} % utilise.`
           : `Budget alimentaire depasse : ${alert.percent || 0} % utilise.`
@@ -1604,7 +1604,7 @@ function BudgetAlertCard({ alert, isKreol }) {
   return (
     <TropicalCard variant={alert.level === "ok" ? "green" : "gold"} emoji={BkIcons.alert} style={{ padding: 18, borderRadius: 22 }} innerStyle={{ paddingLeft: 62 }}>
       <div style={{ color, fontSize: 13, fontWeight: 950, marginBottom: 8 }}>
-        {isKreol ? "Alèrte bidjé" : "Alerte budget"}
+        {isKreol ? "Alèrt bidjé" : "Alerte budget"}
       </div>
       <div style={{ color: COLORS.text, fontSize: 18, lineHeight: 1.35, fontWeight: 950 }}>
         {alertText}

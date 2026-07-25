@@ -1,0 +1,488 @@
+{
+  "store_name": "E.Leclerc",
+  "store_location": "LE PORTAIL",
+  "receipt_date": "2026-07-20",
+  "receipt_time": "13:44",
+  "declared_item_count": 26,
+  "total": 109.27,
+  "items": [
+    {
+      "raw_name": "SUCRE ROUX SEMOUL 1KG MASC PAL",
+      "quantity": 1.0,
+      "unit_price": 1.29,
+      "total_price": 1.29,
+      "vat_code": 2,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.97557,
+      "source_line_ids": [
+        8
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "CURLY CACAHUETE 100G X2",
+      "quantity": 1.0,
+      "unit_price": 2.95,
+      "total_price": 2.95,
+      "vat_code": 2,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.99802,
+      "source_line_ids": [
+        9
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "H.BLANCS PRIX CHOC ROYAL B 800",
+      "quantity": 1.0,
+      "unit_price": 2.15,
+      "total_price": 2.15,
+      "vat_code": 1,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.98318,
+      "source_line_ids": [
+        10
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "NOUILLE AUX OEUFS KEE ZEN 400G",
+      "quantity": 1.0,
+      "unit_price": 2.24,
+      "total_price": 2.24,
+      "vat_code": 2,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.97336,
+      "source_line_ids": [
+        11
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "SAUCE PIQUANTE PIRI-PIRI 200ML",
+      "quantity": 1.0,
+      "unit_price": 1.41,
+      "total_price": 1.41,
+      "vat_code": 1,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.9631,
+      "source_line_ids": [
+        12
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "SIROP GRENADINE MASCARIN 1L",
+      "quantity": 1.0,
+      "unit_price": 3.69,
+      "total_price": 3.69,
+      "vat_code": 1,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.96106,
+      "source_line_ids": [
+        14
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "BIERE RINCE COCHON BLG, 75CL",
+      "quantity": 1.0,
+      "unit_price": 4.7,
+      "total_price": 4.7,
+      "vat_code": 3,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.98388,
+      "source_line_ids": [
+        15
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "LIMONADE ZERO 1.5L SPRINK'S",
+      "quantity": 1.0,
+      "unit_price": 1.81,
+      "total_price": 1.81,
+      "vat_code": 2,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.94835,
+      "source_line_ids": [
+        16
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "PAIX DIEU 7SCL",
+      "quantity": 1.0,
+      "unit_price": 8.5,
+      "total_price": 8.5,
+      "vat_code": 3,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.98912,
+      "source_line_ids": [
+        17
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "LIG GEL FRESH CANARD 750ML",
+      "quantity": 1.0,
+      "unit_price": 1.99,
+      "total_price": 1.99,
+      "vat_code": 1,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.99229,
+      "source_line_ids": [
+        19
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "LAIT UHT 1/2ECREME NEUTRE BK1L",
+      "quantity": 3.0,
+      "unit_price": 1.09,
+      "total_price": 3.27,
+      "vat_code": 1,
+      "item_type": "multibuy",
+      "raw_detail": "3 × 1.09€",
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.90254,
+      "source_line_ids": [
+        21,
+        22
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "POMME TERRE BLANCHE REUNION",
+      "quantity": 1.0,
+      "unit_price": null,
+      "total_price": 4.86,
+      "vat_code": 2,
+      "item_type": "weight",
+      "raw_detail": "2.558 kg X 1.90EUR/kg",
+      "weight_kg": 2.558,
+      "price_per_kg": 1.9,
+      "ocr_confidence": 0.98381,
+      "source_line_ids": [
+        24,
+        25
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "POIREAU",
+      "quantity": 1.0,
+      "unit_price": null,
+      "total_price": 0.78,
+      "vat_code": 2,
+      "item_type": "weight",
+      "raw_detail": "0.236 kg X 3.30EUR/kg",
+      "weight_kg": 0.236,
+      "price_per_kg": 3.3,
+      "ocr_confidence": 0.98467,
+      "source_line_ids": [
+        26,
+        27
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "SALADE LAITUE",
+      "quantity": 1.0,
+      "unit_price": 1.39,
+      "total_price": 1.39,
+      "vat_code": 2,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.99817,
+      "source_line_ids": [
+        28
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "ESCALOPE PLT JAUNE X6 KOKO",
+      "quantity": 1.0,
+      "unit_price": 15.51,
+      "total_price": 15.51,
+      "vat_code": 2,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.98074,
+      "source_line_ids": [
+        30
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "10 KNACKS PORC 350 GR CABY",
+      "quantity": 1.0,
+      "unit_price": 2.39,
+      "total_price": 2.39,
+      "vat_code": 1,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.99687,
+      "source_line_ids": [
+        32
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "6EXTREME PISTACH CHOCO,426G",
+      "quantity": 1.0,
+      "unit_price": 6.69,
+      "total_price": 6.69,
+      "vat_code": 2,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.98483,
+      "source_line_ids": [
+        34
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "RACLETTE POIVRE&BAIES",
+      "quantity": 1.0,
+      "unit_price": 8.34,
+      "total_price": 8.34,
+      "vat_code": 2,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.99909,
+      "source_line_ids": [
+        36
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "MORBIER AOP AFF 45JOURS",
+      "quantity": 1.0,
+      "unit_price": 11.66,
+      "total_price": 11.66,
+      "vat_code": 2,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.99529,
+      "source_line_ids": [
+        37
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "BRIE TARTE60%CREMIERE RUN+/-3K",
+      "quantity": 1.0,
+      "unit_price": 4.16,
+      "total_price": 4.16,
+      "vat_code": 2,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.99126,
+      "source_line_ids": [
+        38
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "VERITABLE ANDOUILLE DE GUEMENE",
+      "quantity": 1.0,
+      "unit_price": 1.3,
+      "total_price": 1.3,
+      "vat_code": 1,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.98739,
+      "source_line_ids": [
+        40
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "TERRINE PORC PIMENT SVP",
+      "quantity": 1.0,
+      "unit_price": 3.08,
+      "total_price": 3.08,
+      "vat_code": 2,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.99974,
+      "source_line_ids": [
+        41
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "JAMBON DE BAYO IGP 14M CP NRT",
+      "quantity": 1.0,
+      "unit_price": 6.51,
+      "total_price": 6.51,
+      "vat_code": 2,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.97514,
+      "source_line_ids": [
+        42
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "JAMBON CUIT AC FUME ABC",
+      "quantity": 1.0,
+      "unit_price": 8.6,
+      "total_price": 8.6,
+      "vat_code": 2,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.99858,
+      "source_line_ids": [
+        43
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    }
+  ],
+  "excluded_sections": [
+    "EPICERIE",
+    "LIQUIDE",
+    "DPH",
+    "CREMERIE",
+    "FRUITS ET LEGUMES",
+    "VOLAILLE",
+    "CHARCUTERIE TRAITEUR",
+    "SURGELES",
+    "FROMAGE COUPE",
+    "CHARCUTERIE TRAITEUR TRAD"
+  ],
+  "warnings": [],
+  "article_total": 109.27,
+  "immediate_discount_total": null,
+  "payable_total": null,
+  "items_total": 109.27,
+  "counted_quantity": 26.0,
+  "product_line_count": 24
+}

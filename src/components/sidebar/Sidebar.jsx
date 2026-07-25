@@ -8,11 +8,11 @@ const NAV_ITEMS = [
   { id: "depenses", icon: BkIcons.depenses, section: "nav", key: "depenses" },
   { id: "receipts", icon: BkIcons.receipts, section: "nav", key: "receipts" },
   { id: "shopping", icon: BkIcons.shopping, section: "nav", key: "shopping" },
+  { id: "goodDeals", icon: BkIcons.deals, section: "nav", key: "goodDeals" },
   { id: "statistics", icon: BkIcons.stats, section: "nav", key: "statistics" },
   { id: "savings", icon: BkIcons.savings, section: "nav", key: "savings" },
   { id: "shoppingList", icon: BkIcons.list, section: "nav", key: "shoppingList" },
   { id: "financeAssistant", icon: BkIcons.assistant, section: "nav", key: "financeAssistant" },
-  { id: "rewards", icon: BkIcons.rewards, section: "nav", key: "rewards" },
   { id: "aides", icon: BkIcons.aides, section: "nav", key: "aides" },
   { id: "demarches", icon: BkIcons.demarches, section: "nav", key: "demarches" },
   { id: "conseiller", icon: BkIcons.assistant, section: "nav", key: "conseiller" },
@@ -58,6 +58,10 @@ export default function Sidebar({
   const premiumColor = isPremiumPlus || isPremium ? ds.purple : ds.warning
 
   function getNavLabel(item) {
+    if (item.id === "goodDeals") {
+      return isKreol ? "Mon bann bon plan" : "Mes bons plans"
+    }
+
     const translatedLabel = t(item.section, item.key)
 
     if (!isKreol && item.id === "demarches") return "Démarches"
@@ -91,20 +95,73 @@ export default function Sidebar({
         overflow: "hidden",
       }}
     >
-      <div style={{ flex: 1, overflowY: "auto", overflowX: "hidden", paddingRight: 2, paddingBottom: 10 }}>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, margin: "12px 0 18px" }}>
+      <div
+        style={{
+          flex: 1,
+          overflowY: "auto",
+          overflowX: "hidden",
+          paddingRight: 2,
+          paddingBottom: 10,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+            margin: "12px 0 18px",
+          }}
+        >
           <AppLogo size={68} />
-          <div style={{ color: ds.textPrimary, fontWeight: 950, fontSize: 19, letterSpacing: 0, lineHeight: 1 }}>
+
+          <div
+            style={{
+              color: ds.textPrimary,
+              fontWeight: 950,
+              fontSize: 19,
+              letterSpacing: 0,
+              lineHeight: 1,
+            }}
+          >
             BudgetKazPei
           </div>
         </div>
 
-        <div style={{ background: "rgba(249,115,22,.10)", border: `1px solid ${ds.primary}55`, borderRadius: ds.radius, padding: "11px 13px", marginBottom: 12 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 12, color: ds.primary, fontWeight: 900 }}>
+        <div
+          style={{
+            background: "rgba(249,115,22,.10)",
+            border: `1px solid ${ds.primary}55`,
+            borderRadius: ds.radius,
+            padding: "11px 13px",
+            marginBottom: 12,
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 7,
+              fontSize: 12,
+              color: ds.primary,
+              fontWeight: 900,
+            }}
+          >
             <PremiumIcon size={14} />
             {isKreol ? "Bienvenu," : "Bienvenue,"}
           </div>
-          <div style={{ marginTop: 3, fontSize: 15, color: ds.textPrimary, fontWeight: 900, lineHeight: 1.15, wordBreak: "break-word" }}>
+
+          <div
+            style={{
+              marginTop: 3,
+              fontSize: 15,
+              color: ds.textPrimary,
+              fontWeight: 900,
+              lineHeight: 1.15,
+              wordBreak: "break-word",
+            }}
+          >
             {prenom}
           </div>
         </div>
@@ -128,9 +185,11 @@ export default function Sidebar({
                   event.currentTarget.style.border = locked
                     ? `1px solid ${ds.warning}88`
                     : `1px solid ${ds.primary}66`
+
                   event.currentTarget.style.background = locked
                     ? "rgba(252,211,77,.13)"
                     : "rgba(249,115,22,.08)"
+
                   event.currentTarget.style.boxShadow = locked
                     ? `0 0 0 2px ${ds.warning}18`
                     : `0 0 0 2px ${ds.primary}18`
@@ -149,13 +208,18 @@ export default function Sidebar({
                   borderRadius: 12,
                   border: baseBorder,
                   background: baseBackground,
-                  color: active ? ds.primary : locked ? ds.warning : ds.textSecondary,
+                  color: active
+                    ? ds.primary
+                    : locked
+                      ? ds.warning
+                      : ds.textSecondary,
                   cursor: "pointer",
                   fontSize: 14,
                   fontWeight: active || locked ? 900 : 700,
                   fontFamily: "inherit",
                   textAlign: "left",
-                  transition: "border-color .18s ease, background .18s ease, box-shadow .18s ease, color .18s ease",
+                  transition:
+                    "border-color .18s ease, background .18s ease, box-shadow .18s ease, color .18s ease",
                 }}
               >
                 <Icon size={17} />

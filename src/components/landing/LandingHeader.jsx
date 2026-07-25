@@ -1,15 +1,24 @@
 import { useEffect, useRef, useState } from "react"
 import AppLogo from "../AppLogo"
 import ThemeToggle from "../ThemeToggle"
-import { navItems } from "./landingContent"
+import { getLandingContent } from "./landingContent"
 import LandingLink from "./LandingLink"
 
-export default function LandingHeader({ isAuthenticated = false }) {
+export default function LandingHeader({
+  isAuthenticated = false,
+  language = "fr",
+  onToggleLanguage,
+  content,
+  navItems,
+}) {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const menuButtonRef = useRef(null)
   const closeButtonRef = useRef(null)
+  const fallback = getLandingContent(language)
+  const copy = content || fallback.header
+  const navigationItems = navItems || fallback.navItems
   const primaryHref = isAuthenticated ? "/app" : "/register"
-  const primaryLabel = isAuthenticated ? "Accéder à mon tableau de bord" : "Créer mon compte"
+  const primaryLabel = isAuthenticated ? copy.dashboard : copy.register
 
   useEffect(() => {
     if (!isMenuOpen) return undefined
@@ -22,39 +31,71 @@ export default function LandingHeader({ isAuthenticated = false }) {
 
     window.addEventListener("keydown", handleKeyDown)
     closeButtonRef.current?.focus()
+
     return () => window.removeEventListener("keydown", handleKeyDown)
   }, [isMenuOpen])
 
   function closeMenu(restoreFocus = false) {
     setIsMenuOpen(false)
+
     if (restoreFocus) {
       requestAnimationFrame(() => menuButtonRef.current?.focus())
     }
   }
 
+  function handleLanguageToggle() {
+    onToggleLanguage?.()
+  }
+
   return (
     <header className="landing-header">
-      <a className="landing-skip-link" href="#contenu">Aller au contenu</a>
+      <a className="landing-skip-link" href="#contenu">
+        {copy.skipLink}
+      </a>
+
       <div className="landing-shell landing-header__inner">
-        <LandingLink href="/" className="landing-brand" aria-label="BudgetKazPei accueil">
-          <AppLogo size={46} alt="Logo BudgetKazPei" />
+        <LandingLink
+          href="/"
+          className="landing-brand"
+          aria-label={copy.homeAriaLabel}
+        >
+          <AppLogo size={46} alt={copy.logoAlt} />
           <span>BudgetKazPei</span>
         </LandingLink>
 
-        <nav className="landing-nav" aria-label="Navigation principale">
-          {navItems.map(item => (
-            <a key={item.href} href={item.href}>{item.label}</a>
+        <nav className="landing-nav" aria-label={copy.mainNavigationAriaLabel}>
+          {navigationItems.map(item => (
+            <a key={item.href} href={item.href}>
+              {item.label}
+            </a>
           ))}
         </nav>
 
         <div className="landing-header__actions">
           <ThemeToggle compact />
+
+          <button
+            type="button"
+            className="landing-language-button"
+            onClick={handleLanguageToggle}
+            aria-label={copy.languageAriaLabel}
+          >
+            {copy.languageButton}
+          </button>
+
           {!isAuthenticated && (
-            <LandingLink href="/login" className="landing-link-button landing-link-button--ghost">
-              Connexion
+            <LandingLink
+              href="/login"
+              className="landing-link-button landing-link-button--ghost"
+            >
+              {copy.login}
             </LandingLink>
           )}
-          <LandingLink href={primaryHref} className="landing-link-button landing-link-button--primary">
+
+          <LandingLink
+            href={primaryHref}
+            className="landing-link-button landing-link-button--primary"
+          >
             {primaryLabel}
           </LandingLink>
         </div>
@@ -67,34 +108,74 @@ export default function LandingHeader({ isAuthenticated = false }) {
           aria-controls="landing-mobile-menu"
           onClick={() => setIsMenuOpen(true)}
         >
-          Menu
+          {copy.menu}
         </button>
       </div>
 
       {isMenuOpen && (
         <div className="landing-mobile-menu" id="landing-mobile-menu">
-          <div className="landing-mobile-menu__panel" role="dialog" aria-modal="true" aria-label="Menu BudgetKazPei">
+          <div
+            className="landing-mobile-menu__panel"
+            role="dialog"
+            aria-modal="true"
+            aria-label={copy.menuDialogAriaLabel}
+          >
             <div className="landing-mobile-menu__top">
               <span>BudgetKazPei</span>
-              <button ref={closeButtonRef} type="button" onClick={() => closeMenu(true)}>
-                Fermer
+              <button
+                ref={closeButtonRef}
+                type="button"
+                onClick={() => closeMenu(true)}
+              >
+                {copy.close}
               </button>
             </div>
-            <nav aria-label="Navigation mobile">
-              {navItems.map(item => (
-                <a key={item.href} href={item.href} onClick={() => closeMenu()}>{item.label}</a>
+
+            <div className="landing-mobile-menu__settings">
+              <ThemeToggle compact />
+              <button
+                type="button"
+                className="landing-language-button"
+                onClick={handleLanguageToggle}
+                aria-label={copy.languageAriaLabel}
+              >
+                {copy.languageButton}
+              </button>
+            </div>
+
+            <nav aria-label={copy.mobileNavigationAriaLabel}>
+              {navigationItems.map(item => (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => closeMenu()}
+                >
+                  {item.label}
+                </a>
               ))}
+
               {!isAuthenticated && (
                 <LandingLink href="/login" onNavigate={() => closeMenu()}>
-                  Connexion
+                  {copy.login}
                 </LandingLink>
               )}
-              <LandingLink href={primaryHref} className="landing-link-button landing-link-button--primary" onNavigate={() => closeMenu()}>
+
+              <LandingLink
+                href={primaryHref}
+                className="landing-link-button landing-link-button--primary"
+                onNavigate={() => closeMenu()}
+              >
                 {primaryLabel}
               </LandingLink>
             </nav>
           </div>
-          <button type="button" className="landing-mobile-menu__backdrop" aria-label="Fermer le menu" onClick={() => closeMenu(true)} />
+
+          <button
+            type="button"
+            className="landing-mobile-menu__backdrop"
+            aria-label={copy.closeMenuAriaLabel}
+            onClick={() => closeMenu(true)}
+          />
         </div>
       )}
     </header>

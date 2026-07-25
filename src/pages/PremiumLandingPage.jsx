@@ -1,265 +1,561 @@
-import { useState } from "react"
-import AppLogo from "../components/AppLogo"
-import { createColorAliases, ds } from "../styles/designSystem"
-import { PLAN_IDS, PLAN_PRICES, PLAN_PUBLIC_SCAN_LABELS } from "../config/plans"
+import { useEffect, useState } from "react"
+import LandingHeader from "../components/landing/LandingHeader"
+import LandingLink from "../components/landing/LandingLink"
+import {
+  LANDING_LANGUAGES,
+  getLandingContent,
+} from "../components/landing/landingContent"
+import {
+  PLAN_IDS,
+  PLAN_PRICES,
+  PLAN_PUBLIC_SCAN_LABELS,
+} from "../config/plans"
+import "../styles/landing.css"
 
-const COLORS = createColorAliases({
-  band: () => ds.elevated,
-})
-
-const HERO_BG = "/icons-creole/fond-principal.png"
-
-const PREMIUM_PRICE = PLAN_PRICES[PLAN_IDS.premium].replace("/mois", "")
-const PREMIUM_PLUS_PRICE = PLAN_PRICES[PLAN_IDS.premiumPlus].replace("/mois", "")
+const CONTACT_EMAIL = "contact.budgetkazpei@gmail.com"
+const LANDING_LANGUAGE_STORAGE_KEY = "budgetkazpei-public-language"
 
 const STRIPE_LINKS = {
   premiumMonthly: "https://buy.stripe.com/7sYbJ0fIR2JU4yua1ggMw00",
   premiumPlusMonthly: "https://buy.stripe.com/7sY28qdAJ1FQ6GCddsgMw03",
 }
 
-const CONTENT = {
+const PREMIUM_PRICE = PLAN_PRICES[PLAN_IDS.premium].replace("/mois", "")
+const PREMIUM_PLUS_PRICE = PLAN_PRICES[PLAN_IDS.premiumPlus].replace("/mois", "")
+
+const PREMIUM_CONTENT = {
   fr: {
-    switchLang: "RE Kreol",
-    back: "Retour à l'app",
-    login: "Se connecter",
-    dashboard: "Accéder à mon tableau de bord",
-    heroBadge: "BudgetKazPei Premium",
-    heroTitle: "Choisissez le niveau d'accompagnement qui vous aide vraiment.",
-    heroText:
-      "Premium et Premium+ ne servent pas seulement à ajouter plus de courses. Ils transforment vos données en statistiques, prévisions, conseils et décisions plus simples au quotidien.",
-    plansTitle: "Les offres",
-    monthly: "Mensuel",
-    choosePremiumMonthly: "Choisir Premium mensuel",
-    choosePlusMonthly: "Choisir Premium+ mensuel",
-    freeButton: "Essayer gratuitement",
-    plans: [
-      {
-        name: "Gratuit",
-        color: COLORS.green,
-        price: "0 €",
-        promise: "Découvrir BudgetKazPei.",
-        features: ["Budget simple", "Dépenses et revenus", "Aides en version simple", PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.free]],
-      },
-      {
-        name: "Premium",
-        color: COLORS.yellow,
-        promise: "Gérer parfaitement son budget.",
-        features: [PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premium], "Statistiques avancées", "Historique complet", "Alertes budget", "Export PDF", "Assistant standard"],
-        featured: true,
-      },
-      {
-        name: "Premium+",
-        color: COLORS.purple,
-        promise: "Votre copilote financier intelligent.",
-        features: [PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premiumPlus], "Conseiller renforcé", "Suivi des démarches", "Conseils personnalisés", "Comparaisons intelligentes bientôt disponible", "Bons plans personnalisés bientôt disponible"],
-      },
+    seo: {
+      title: "Offres BudgetKazPei — Gratuit, Premium et Premium+",
+      description:
+        "Comparez les offres Gratuit, Premium et Premium+ de BudgetKazPei et choisissez le niveau d'accompagnement adapté à votre quotidien.",
+    },
+    navItems: [
+      { label: "Offres", href: "#offres" },
+      { label: "Quelle formule choisir ?", href: "#comparatif" },
+      { label: "FAQ", href: "#faq" },
     ],
-    valueTitle: "Premium+ est votre copilote financier",
-    valueText:
-      "Premium+ est pensé comme un accompagnement : comprendre pourquoi votre budget évolue, anticiper les fins de mois, repérer les économies possibles et vous guider sans complexité.",
-    faqTitle: "Questions fréquentes",
-    faq: [
-      ["Pourquoi encadrer les analyses automatiques ?", "Une analyse automatique utilise OCR, parsing et parfois IA. Les actions manuelles et la consultation restent disponibles selon l'offre."],
-      ["Le scanner est-il obligatoire ?", "Non. Vous pouvez toujours ajouter une course manuellement. Le scanner est simplement le moyen le plus rapide."],
-      ["Que vais-je gagner avec Premium ?", "Une lecture plus complète de vos courses, produits, magasins, historiques et statistiques."],
-      ["Que vais-je gagner avec Premium+ ?", "Un vrai copilote financier : assistant IA, explications, prévisions, conseils et résumés personnalisés."],
-    ],
+    hero: {
+      eyebrow: "BudgetKazPei Premium",
+      title: "Choisissez la formule adaptée à votre quotidien.",
+      text:
+        "Commencez gratuitement, puis passez à Premium lorsque vous avez besoin de plus de scans, d'analyses et d'accompagnement.",
+      trust: [
+        "Sans engagement",
+        "Paiement sécurisé par Stripe",
+        "Disponible en français et en créole réunionnais",
+      ],
+    },
+    offers: {
+      eyebrow: "Les offres",
+      title: "Trois niveaux, faciles à comparer.",
+      intro:
+        "Chaque formule reprend les outils de la précédente et ajoute un accompagnement plus complet.",
+      recommended: "Recommandé",
+      complete: "Accompagnement complet",
+      monthly: "Mensuel",
+      perMonth: "/mois",
+      freeCta: "Commencer gratuitement",
+      dashboardCta: "Accéder à mon tableau de bord",
+      premiumCta: "Choisir Premium",
+      premiumPlusCta: "Choisir Premium+",
+      plans: [
+        {
+          id: PLAN_IDS.free,
+          name: "Gratuit",
+          tone: "cream",
+          price: "0 €",
+          intro: "Pour découvrir BudgetKazPei et suivre l'essentiel.",
+          features: [
+            "Budget mensuel",
+            "Revenus et dépenses",
+            "Statistiques simples",
+            "Aides essentielles",
+            "Accès aux Bons plans locaux",
+            PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.free],
+          ],
+        },
+        {
+          id: PLAN_IDS.premium,
+          name: "Premium",
+          tone: "peach",
+          price: PREMIUM_PRICE,
+          intro: "Pour suivre précisément votre budget et vos habitudes.",
+          badge: "recommended",
+          featured: true,
+          features: [
+            "Tout le Gratuit",
+            PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premium],
+            "Historique et statistiques avancées",
+            "Alertes budget",
+            "Export PDF",
+            "Assistant standard",
+          ],
+        },
+        {
+          id: PLAN_IDS.premiumPlus,
+          name: "Premium+",
+          tone: "lavender",
+          price: PREMIUM_PLUS_PRICE,
+          intro: "Pour bénéficier d'un accompagnement plus complet.",
+          badge: "complete",
+          features: [
+            "Tout le Premium",
+            PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premiumPlus],
+            "Conseiller renforcé",
+            "Suivi des démarches et accompagnement avancé",
+            "Conseils personnalisés",
+            "Analyses plus approfondies",
+          ],
+        },
+      ],
+      comingSoonTitle: "En préparation",
+      comingSoonText:
+        "Les comparaisons intelligentes et les Bons plans personnalisés seront ajoutés progressivement, à mesure que la base locale s'enrichit.",
+    },
+    comparison: {
+      eyebrow: "Quelle formule choisir ?",
+      title: "Choisissez selon votre usage réel.",
+      intro:
+        "Vous pouvez commencer gratuitement et changer de formule lorsque vos besoins évoluent.",
+      choices: [
+        {
+          label: "Je veux découvrir l'application",
+          plan: "Gratuit",
+          text: "Pour gérer un budget simple et tester le scanner.",
+        },
+        {
+          label: "Je scanne régulièrement mes tickets",
+          plan: "Premium",
+          text: "Pour analyser davantage vos dépenses et retrouver un historique complet.",
+        },
+        {
+          label: "Je veux être davantage accompagné",
+          plan: "Premium+",
+          text: "Pour profiter des scans illimités, du Conseiller renforcé et de conseils personnalisés.",
+        },
+      ],
+    },
+    faq: {
+      eyebrow: "FAQ",
+      title: "Questions fréquentes",
+      items: [
+        [
+          "Quelle est la différence entre Premium et Premium+ ?",
+          "Premium améliore le suivi du budget, l'historique et les analyses. Premium+ ajoute les scans illimités et un accompagnement renforcé avec des conseils plus personnalisés.",
+        ],
+        [
+          "Que se passe-t-il lorsque j'atteins ma limite de scans ?",
+          "Avec Premium, le scanner redevient disponible au début du mois suivant. Vous pouvez toujours ajouter ou corriger une dépense manuellement.",
+        ],
+        [
+          "Le scanner de tickets est-il obligatoire ?",
+          "Non. BudgetKazPei reste utilisable sans scanner. Vous pouvez saisir vos revenus, dépenses et courses manuellement.",
+        ],
+        [
+          "Comment sont protégées les photos de mes tickets ?",
+          "Les photos servent temporairement au traitement du ticket. Elles sont ensuite supprimées automatiquement, tandis que les données utiles à votre budget restent conservées.",
+        ],
+        [
+          "Puis-je arrêter mon abonnement ?",
+          "Oui. Les formules Premium sont sans engagement et peuvent être arrêtées lorsque vous le souhaitez.",
+        ],
+      ],
+    },
+    footer: {
+      privacy: "Confidentialité",
+      terms: "Conditions",
+      deleteAccount: "Suppression du compte",
+      navigationAriaLabel: "Liens de pied de page",
+    },
   },
   kr: {
-    switchLang: "FR Français",
-    back: "Retour dann l'app",
-    login: "Konekte",
-    dashboard: "Accéder à mon tableau de bord",
-    heroBadge: "BudgetKazPei Premium",
-    heroTitle: "Swazi lakonpagnman ki aide aou pou de vrai.",
-    heroText:
-      "Premium ek Premium+ lé pa zis pou azout plis courses. Zot transforme out données an statistik, prévision, konsey ek desizion pli simple.",
-    plansTitle: "Bann offres",
-    monthly: "Mensuel",
-    choosePremiumMonthly: "Choisir Premium mensuel",
-    choosePlusMonthly: "Choisir Premium+ mensuel",
-    freeButton: "Koumans gratis",
-    plans: [
-      {
-        name: "Gratis",
-        color: COLORS.green,
-        price: "0 €",
-        promise: "Dekouv BudgetKazPei.",
-        features: ["Bidze simple", "Depans ek larzan rantre", "Aides version simple", PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.free]],
-      },
-      {
-        name: "Premium",
-        color: COLORS.yellow,
-        promise: "Gere bien out bidze.",
-        features: [PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premium], "Statistik avance", "Istorik complet", "Alertes bidze", "Export PDF", "Assistant standard"],
-        featured: true,
-      },
-      {
-        name: "Premium+",
-        color: COLORS.purple,
-        promise: "Out copilote financier entélizan.",
-        features: [PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premiumPlus], "Conseiller renforcé", "Swivi démarches", "Konsey personnalisé", "Comparaisons entélizantes bientôt disponible", "Bons plans personnalisés bientôt disponible"],
-      },
+    seo: {
+      title: "Bann offres BudgetKazPei — Gratis, Premium ek Premium+",
+      description:
+        "Konpar bann offres Gratis, Premium ek Premium+ BudgetKazPei é swazi lakonpagnman ki korespond ek out kotidien.",
+    },
+    navItems: [
+      { label: "Bann offres", href: "#offres" },
+      { label: "Kèl offre swazi ?", href: "#comparatif" },
+      { label: "FAQ", href: "#faq" },
     ],
-    valueTitle: "Premium+ lé out copilote financier",
-    valueText:
-      "Premium+ lé fait pou accompagne aou : konprann poukisa out bidze i bouge, anticipe fin de mwa, trouv lekonomi possible ek guide aou simplement.",
-    faqTitle: "Kestion souvent",
-    faq: [
-      ["Poukisa encadrer bann analiz otomatik ?", "In analiz otomatik i servi OCR, parsing ek parfwa IA. Azout amain ek consultation i reste disponible selon l'offre."],
-      ["Scanner lé obligatoire ?", "Non. Ou pe toujours azout in course amain. Scanner-la lé zis fason pli rapide."],
-      ["Kosa Premium i donn amwin ?", "In lecture pli complète de out courses, produits, magasins, istorik ek statistik."],
-      ["Kosa Premium+ i donn amwin ?", "In vrai copilote financier : assistant IA, explications, prévisions, konsey ek résumés personnalisés."],
-    ],
+    hero: {
+      eyebrow: "BudgetKazPei Premium",
+      title: "Swazi lof ki korespond ek out kotidien.",
+      text:
+        "Koumans gratis, épi pas Premium kan ou néna bezoin plis scans, plis analiz ek plis lakonpagnman.",
+      trust: [
+        "San langazman",
+        "Payman sekirizé par Stripe",
+        "Disponib an fransé ek kréol rényoné",
+      ],
+    },
+    offers: {
+      eyebrow: "Bann offres",
+      title: "Trois nivo, fasil pou konparé.",
+      intro:
+        "Sak formule i repran bann zouti formule avan é i azout in lakonpagnman pli konplé.",
+      recommended: "Nou konsey",
+      complete: "Lakonpagnman konplé",
+      monthly: "Chak mwa",
+      perMonth: "/mwa",
+      freeCta: "Koumans gratis",
+      dashboardCta: "Alé su mon tablo débor",
+      premiumCta: "Swazi Premium",
+      premiumPlusCta: "Swazi Premium+",
+      plans: [
+        {
+          id: PLAN_IDS.free,
+          name: "Gratis",
+          tone: "cream",
+          price: "0 €",
+          intro: "Pou dékouv BudgetKazPei ek swiv sak lé esansyèl.",
+          features: [
+            "Bidjé chak mwa",
+            "Larzan i rantre ek dépans",
+            "Statistik senp",
+            "Bann èd esansyèl",
+            "Aksé bann Bon Plan lokal",
+            "Aksé pou dékouv scanner-la",
+          ],
+        },
+        {
+          id: PLAN_IDS.premium,
+          name: "Premium",
+          tone: "peach",
+          price: PREMIUM_PRICE,
+          intro: "Pou swiv out bidjé ek out bann labitid pli présizéman.",
+          badge: "recommended",
+          featured: true,
+          features: [
+            "Tout sak lé dann Gratis",
+            "10 scans par mwa",
+            "Istorik ek statistik avansé",
+            "Alèrt bidjé",
+            "Èksport PDF",
+            "Asistan standar",
+          ],
+        },
+        {
+          id: PLAN_IDS.premiumPlus,
+          name: "Premium+",
+          tone: "lavender",
+          price: PREMIUM_PLUS_PRICE,
+          intro: "Pou gagn in lakonpagnman pli konplé.",
+          badge: "complete",
+          features: [
+            "Tout sak lé dann Premium",
+            "Scans san limit",
+            "Konseyé ranforsé",
+            "Swivi bann demars ek lakonpagnman avansé",
+            "Konsey pèsonalizé",
+            "Analiz pli pousé",
+          ],
+        },
+      ],
+      comingSoonTitle: "An préparasyon",
+      comingSoonText:
+        "Konparézon entélizan ek Bon Plan pèsonalizé va ariv progressivement, amezir baz lokal-la i grandi.",
+    },
+    comparison: {
+      eyebrow: "Kèl offre swazi ?",
+      title: "Swazi selon koman ou servi BudgetKazPei.",
+      intro:
+        "Ou pé koumans gratis é shanz formule kan out bezoin i évolié.",
+      choices: [
+        {
+          label: "Mi vé dékouv laplikasyon",
+          plan: "Gratis",
+          text: "Pou gèr in bidjé senp ek teste scanner-la.",
+        },
+        {
+          label: "Mi scan mon bann tiké souvan",
+          plan: "Premium",
+          text: "Pou analiz plis dépans ek retrouv in istorik konplé.",
+        },
+        {
+          label: "Mi vé plis lakonpagnman",
+          plan: "Premium+",
+          text: "Pou gagn scans san limit, Konseyé ranforsé ek konsey pèsonalizé.",
+        },
+      ],
+    },
+    faq: {
+      eyebrow: "FAQ",
+      title: "Kestion souvan pozé",
+      items: [
+        [
+          "Kosa lé diferans ant Premium ek Premium+ ?",
+          "Premium i amélior swivi bidjé, istorik ek bann analiz. Premium+ i azout scans san limit ek in lakonpagnman ranforsé avèk bann konsey pli pèsonalizé.",
+        ],
+        [
+          "Kosa i ariv kan mi ariv mon limit scans ?",
+          "Avèk Premium, scanner-la i revien disponib komansman mwa apré. Ou pé touzour azout ou korij in dépans amain.",
+        ],
+        [
+          "Scanner tiké-la lé obligatoire ?",
+          "Non. BudgetKazPei i marche san scanner osi. Ou pé rant out larzan, out dépans ek out courses amain.",
+        ],
+        [
+          "Koman bann foto mon tiké lé protézé ?",
+          "Bann foto i servi tanporèrman pou traite tiké-la. Apré zot lé suprimé otomatikman, mé bann données itil pou out bidjé i reste sovgardé.",
+        ],
+        [
+          "Mi pé arèt mon abonman ?",
+          "Wi. Bann formules Premium lé san langazman é ou pé arèt kan ou vé.",
+        ],
+      ],
+    },
+    footer: {
+      privacy: "Konfidansyalité",
+      terms: "Kondisyon",
+      deleteAccount: "Suprim mon kont",
+      navigationAriaLabel: "Lien anba paz",
+    },
   },
 }
 
-function openStripeLink(url) {
-  window.open(url, "_blank", "noopener,noreferrer")
-}
+function getInitialLanguage() {
+  if (typeof window === "undefined") return LANDING_LANGUAGES.fr
 
-function Button({ children, onClick, href, variant = "primary" }) {
-  const primary = variant === "primary"
-  const style = {
-    minHeight: 46,
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 14,
-    padding: "0 16px",
-    border: primary ? "none" : `1px solid ${COLORS.cyan}66`,
-    background: primary ? `linear-gradient(135deg, ${COLORS.yellow}, ${COLORS.accent})` : "rgba(8,20,38,.72)",
-    color: primary ? COLORS.bg : COLORS.text,
-    fontWeight: 950,
-    fontFamily: "inherit",
-    fontSize: 14,
-    cursor: "pointer",
-    textDecoration: "none",
+  try {
+    const storedLanguage = window.localStorage.getItem(LANDING_LANGUAGE_STORAGE_KEY)
+    return storedLanguage === LANDING_LANGUAGES.kr
+      ? LANDING_LANGUAGES.kr
+      : LANDING_LANGUAGES.fr
+  } catch {
+    return LANDING_LANGUAGES.fr
   }
-
-  if (href) return <a href={href} style={style}>{children}</a>
-  return <button type="button" onClick={onClick} style={style}>{children}</button>
 }
 
-function BillingChoice({ label, price, period, badge, color, onClick, button }) {
+function usePremiumSeo(content, language) {
+  useEffect(() => {
+    if (typeof document === "undefined") return
+
+    document.title = content.title
+    document.documentElement.lang = language === LANDING_LANGUAGES.kr ? "rcf" : "fr"
+
+    let description = document.head.querySelector('meta[name="description"]')
+    if (!description) {
+      description = document.createElement("meta")
+      description.setAttribute("name", "description")
+      document.head.appendChild(description)
+    }
+    description.setAttribute("content", content.description)
+  }, [content, language])
+}
+
+function PlanCard({ plan, content, isAuthenticated }) {
+  const isFree = plan.id === PLAN_IDS.free
+  const isPremium = plan.id === PLAN_IDS.premium
+  const badge = plan.badge ? content[plan.badge] : null
+  const ctaLabel = isFree
+    ? isAuthenticated
+      ? content.dashboardCta
+      : content.freeCta
+    : isPremium
+      ? content.premiumCta
+      : content.premiumPlusCta
+  const href = isFree
+    ? isAuthenticated
+      ? "/app"
+      : "/register"
+    : isPremium
+      ? STRIPE_LINKS.premiumMonthly
+      : STRIPE_LINKS.premiumPlusMonthly
+
   return (
-    <div style={{ border: `1px solid ${color}44`, background: "rgba(8,20,38,.55)", borderRadius: 8, padding: 13 }}>
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>
-        <strong>{label}</strong>
-        {badge && <span style={{ color, fontSize: 11, fontWeight: 950 }}>{badge}</span>}
+    <article
+      className={`pricing-card pricing-card--${plan.tone} premium-pricing-card ${plan.featured ? "pricing-card--featured premium-pricing-card--featured" : ""}`}
+    >
+      {badge && <span className="premium-pricing-card__badge">{badge}</span>}
+
+      <div className="premium-plan__heading">
+        <p className="pricing-card__label">{plan.name}</p>
+        <div className="premium-plan__price-row">
+          <strong className="premium-plan__price">{plan.price}</strong>
+          {!isFree && <span>{content.perMonth}</span>}
+        </div>
+        {!isFree && <p className="premium-plan__billing">{content.monthly}</p>}
+        <p className="premium-plan__intro">{plan.intro}</p>
       </div>
-      <div style={{ margin: "10px 0 12px" }}>
-        <span style={{ color, fontSize: 28, fontWeight: 950, fontFamily: "'DM Serif Display', serif" }}>{price}</span>
-        <span style={{ color: COLORS.muted, marginLeft: 5 }}>{period}</span>
-      </div>
-      <Button onClick={onClick}>{button}</Button>
-    </div>
+
+      <ul className="premium-plan__features">
+        {plan.features.map(feature => (
+          <li key={feature}>
+            <span className="premium-plan__check" aria-hidden="true">✓</span>
+            <span>{feature}</span>
+          </li>
+        ))}
+      </ul>
+
+      {isFree ? (
+        <LandingLink
+          href={href}
+          className={`landing-link-button ${plan.featured ? "landing-link-button--primary" : "landing-link-button--ghost"} premium-plan__action`}
+        >
+          {ctaLabel}
+        </LandingLink>
+      ) : (
+        <a
+          href={href}
+          target="_blank"
+          rel="noreferrer"
+          className="landing-link-button landing-link-button--primary premium-plan__action"
+        >
+          {ctaLabel}
+        </a>
+      )}
+    </article>
   )
 }
 
 export default function PremiumLandingPage({ isAuthenticated = false }) {
-  const [lang, setLang] = useState("fr")
-  const c = CONTENT[lang]
+  const [language, setLanguage] = useState(getInitialLanguage)
+  const sharedContent = getLandingContent(language)
+  const content = PREMIUM_CONTENT[language]
+
+  usePremiumSeo(content.seo, language)
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+
+    try {
+      window.localStorage.setItem(LANDING_LANGUAGE_STORAGE_KEY, language)
+    } catch {
+      // La page reste utilisable si le stockage local est indisponible.
+    }
+  }, [language])
+
+  function toggleLanguage() {
+    setLanguage(currentLanguage =>
+      currentLanguage === LANDING_LANGUAGES.fr
+        ? LANDING_LANGUAGES.kr
+        : LANDING_LANGUAGES.fr,
+    )
+  }
 
   return (
-    <main style={{ minHeight: "100vh", background: COLORS.bg, color: COLORS.text, fontFamily: "'DM Sans', sans-serif" }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;500;700;900&display=swap');
-        * { box-sizing: border-box; }
-        html, body, #root { margin: 0; min-height: 100%; background: ${COLORS.bg}; }
-      `}</style>
+    <main
+      className="landing-page premium-public-page"
+      id="contenu"
+      lang={language === LANDING_LANGUAGES.kr ? "rcf" : "fr"}
+      data-language={language}
+    >
+      <LandingHeader
+        isAuthenticated={isAuthenticated}
+        language={language}
+        onToggleLanguage={toggleLanguage}
+        content={sharedContent.header}
+        navItems={content.navItems}
+      />
 
-      <header style={{ padding: "20px 18px", position: "absolute", inset: "0 0 auto", zIndex: 4 }}>
-        <div style={{ maxWidth: 1160, margin: "0 auto", display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
-          <a href="/" aria-label="BudgetKazPei accueil" style={{ display: "inline-flex", alignItems: "center", gap: 9, textDecoration: "none" }}>
-            <AppLogo size={38} />
-            <span style={{ color: COLORS.text, fontWeight: 950, fontSize: 19, lineHeight: 1 }}>BudgetKazPei</span>
-          </a>
-          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
-            <button type="button" onClick={() => setLang(lang === "fr" ? "kr" : "fr")} style={{ minHeight: 42, borderRadius: 12, border: `1px solid ${COLORS.cyan}66`, background: "rgba(8,20,38,.72)", color: COLORS.cyan, fontWeight: 950, padding: "0 12px", fontFamily: "inherit", cursor: "pointer" }}>
-              {c.switchLang}
-            </button>
-            {isAuthenticated ? (
-              <Button href="/app" variant="secondary">{c.dashboard}</Button>
-            ) : (
-              <>
-                <Button href="/login" variant="secondary">{c.login}</Button>
-                <Button href="/register">{c.freeButton}</Button>
-              </>
-            )}
+      <section className="premium-page__hero" aria-labelledby="premium-title">
+        <div className="landing-shell premium-page__hero-inner">
+          <p className="landing-eyebrow">{content.hero.eyebrow}</p>
+          <h1 id="premium-title">{content.hero.title}</h1>
+          <p className="premium-page__hero-text">{content.hero.text}</p>
+
+          <div className="premium-page__trust" aria-label={content.hero.eyebrow}>
+            {content.hero.trust.map(item => (
+              <span key={item}>✓ {item}</span>
+            ))}
           </div>
         </div>
-      </header>
+      </section>
 
-      <section style={{ minHeight: "min(700px, calc(100vh - 80px))", display: "grid", placeItems: "center", textAlign: "center", padding: "122px 18px 72px", backgroundImage: `linear-gradient(180deg, rgba(8,20,38,.28), ${COLORS.bg} 96%), linear-gradient(90deg, rgba(8,20,38,.92), rgba(8,20,38,.60)), url(${HERO_BG})`, backgroundSize: "cover", backgroundPosition: "center" }}>
-        <div style={{ maxWidth: 920 }}>
-          <div style={{ display: "inline-flex", color: COLORS.cyan, fontWeight: 950, border: `1px solid ${COLORS.cyan}55`, background: "rgba(35,211,214,.10)", borderRadius: 999, padding: "7px 12px", marginBottom: 16 }}>
-            {c.heroBadge}
+      <section
+        className="landing-section premium-page__offers"
+        id="offres"
+        aria-labelledby="premium-offers-title"
+      >
+        <div className="landing-shell">
+          <div className="landing-section-heading">
+            <p className="landing-eyebrow">{content.offers.eyebrow}</p>
+            <h2 id="premium-offers-title">{content.offers.title}</h2>
+            <p>{content.offers.intro}</p>
           </div>
-          <h1 style={{ margin: 0, fontFamily: "'DM Serif Display', serif", fontSize: "clamp(40px, 7vw, 78px)", lineHeight: 1.04, fontWeight: 400 }}>
-            {c.heroTitle}
-          </h1>
-          <p style={{ maxWidth: 820, margin: "18px auto 0", color: "#D8E4F6", fontSize: "clamp(17px, 2.2vw, 21px)", lineHeight: 1.62, fontWeight: 800 }}>
-            {c.heroText}
-          </p>
+
+          <div className="pricing-grid premium-pricing-grid">
+            {content.offers.plans.map(plan => (
+              <PlanCard
+                key={plan.id}
+                plan={plan}
+                content={content.offers}
+                isAuthenticated={isAuthenticated}
+              />
+            ))}
+          </div>
+
+          <aside className="premium-page__coming-soon">
+            <strong>{content.offers.comingSoonTitle}</strong>
+            <p>{content.offers.comingSoonText}</p>
+          </aside>
         </div>
       </section>
 
-      <section style={{ padding: "50px 18px", background: COLORS.bg }}>
-        <h2 style={{ margin: "0 0 22px", textAlign: "center", fontFamily: "'DM Serif Display', serif", fontSize: "clamp(32px, 5vw, 48px)", fontWeight: 400 }}>
-          {c.plansTitle}
-        </h2>
-        <div style={{ maxWidth: 1160, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14 }}>
-          {c.plans.map((plan, index) => (
-            <article key={plan.name} style={{ background: plan.featured ? `linear-gradient(135deg, ${COLORS.yellow}18, ${COLORS.card})` : COLORS.card, border: `1px solid ${plan.featured ? COLORS.yellow : COLORS.border}`, borderRadius: 8, padding: 20 }}>
-              <h3 style={{ margin: 0, color: plan.color, fontSize: 28 }}>{plan.name}</h3>
-              <p style={{ color: COLORS.text, fontWeight: 950, margin: "10px 0 6px" }}>{plan.promise}</p>
-              <div style={{ display: "grid", gap: 8, marginBottom: index === 0 ? 18 : 16 }}>
-                {plan.features.map(feature => (
-                  <div key={feature} style={{ color: COLORS.muted, fontWeight: 750 }}>✓ {feature}</div>
-                ))}
-              </div>
+      <section
+        className="landing-section landing-section--soft"
+        id="comparatif"
+        aria-labelledby="premium-comparison-title"
+      >
+        <div className="landing-shell">
+          <div className="landing-section-heading">
+            <p className="landing-eyebrow">{content.comparison.eyebrow}</p>
+            <h2 id="premium-comparison-title">{content.comparison.title}</h2>
+            <p>{content.comparison.intro}</p>
+          </div>
 
-              {index === 0 && (
-                <Button href={isAuthenticated ? "/app" : "/register"}>
-                  {isAuthenticated ? c.dashboard : c.freeButton}
-                </Button>
-              )}
-              {index === 1 && (
-                <div style={{ display: "grid", gap: 10 }}>
-                  <BillingChoice label={c.monthly} price={PREMIUM_PRICE} period="/mois" color={plan.color} button={c.choosePremiumMonthly} onClick={() => openStripeLink(STRIPE_LINKS.premiumMonthly)} />
-                </div>
-              )}
-              {index === 2 && (
-                <div style={{ display: "grid", gap: 10 }}>
-                  <BillingChoice label={c.monthly} price={PREMIUM_PLUS_PRICE} period="/mois" color={plan.color} button={c.choosePlusMonthly} onClick={() => openStripeLink(STRIPE_LINKS.premiumPlusMonthly)} />
-                </div>
-              )}
-            </article>
-          ))}
+          <div className="premium-choice-grid">
+            {content.comparison.choices.map((choice, index) => (
+              <article key={choice.label}>
+                <span>{index + 1}</span>
+                <p>{choice.label}</p>
+                <h3>{choice.plan}</h3>
+                <strong>{choice.text}</strong>
+              </article>
+            ))}
+          </div>
         </div>
       </section>
 
-      <section style={{ padding: "46px 18px", background: COLORS.band }}>
-        <div style={{ maxWidth: 920, margin: "0 auto", textAlign: "center" }}>
-          <h2 style={{ margin: "0 0 10px", color: COLORS.purple, fontFamily: "'DM Serif Display', serif", fontSize: "clamp(32px, 5vw, 48px)", fontWeight: 400 }}>
-            {c.valueTitle}
-          </h2>
-          <p style={{ margin: 0, color: COLORS.muted, lineHeight: 1.7, fontWeight: 800, fontSize: 17 }}>{c.valueText}</p>
+      <section
+        className="landing-section premium-page__faq-section"
+        id="faq"
+        aria-labelledby="premium-faq-title"
+      >
+        <div className="landing-shell landing-shell--narrow">
+          <div className="landing-section-heading">
+            <p className="landing-eyebrow">{content.faq.eyebrow}</p>
+            <h2 id="premium-faq-title">{content.faq.title}</h2>
+          </div>
+
+          <div className="premium-faq">
+            {content.faq.items.map(([question, answer], index) => (
+              <details key={question} className="premium-faq__item" open={index === 0}>
+                <summary>{question}</summary>
+                <p>{answer}</p>
+              </details>
+            ))}
+          </div>
         </div>
       </section>
 
-      <section style={{ padding: "48px 18px", background: COLORS.bg }}>
-        <h2 style={{ margin: "0 0 18px", textAlign: "center", fontFamily: "'DM Serif Display', serif", fontSize: "clamp(30px, 5vw, 44px)", fontWeight: 400 }}>{c.faqTitle}</h2>
-        <div style={{ maxWidth: 900, margin: "0 auto", display: "grid", gap: 10 }}>
-          {c.faq.map(([question, answer]) => (
-            <details key={question} style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 8, padding: "15px 16px" }}>
-              <summary style={{ cursor: "pointer", color: COLORS.text, fontWeight: 950 }}>{question}</summary>
-              <p style={{ margin: "10px 0 0", color: COLORS.muted, lineHeight: 1.6, fontWeight: 700 }}>{answer}</p>
-            </details>
-          ))}
+      <footer className="landing-footer">
+        <div className="landing-shell landing-footer__inner">
+          <span>© {new Date().getFullYear()} BudgetKazPei</span>
+
+          <nav aria-label={content.footer.navigationAriaLabel}>
+            <LandingLink href="/privacy">{content.footer.privacy}</LandingLink>
+            <LandingLink href="/terms">{content.footer.terms}</LandingLink>
+            <LandingLink href="/suppression-compte">
+              {content.footer.deleteAccount}
+            </LandingLink>
+            <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
+          </nav>
         </div>
-      </section>
+      </footer>
     </main>
   )
 }

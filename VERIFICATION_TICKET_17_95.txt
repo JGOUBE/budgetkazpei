@@ -1,0 +1,21 @@
+VÉRIFICATION SUR LES FICHIERS RÉELS FOURNIS
+============================================
+
+Lignes OCR concernées :
+25 : OIGNON ROUGE INDE KG
+26 : (1)12679
+27 : 0.070 kg × | 1.95 EUR/kg | EUR
+
+Le token 0,14 EUR visible sur la photo n'a pas été détecté par RapidOCR.
+Le montant est néanmoins démontrable :
+0,070 kg × 1,95 EUR/kg = 0,1365 EUR, arrondi caisse = 0,14 EUR.
+
+Résultat du V2 phase 3 exécuté sur reconstructed_lines.json :
+- total cible : 17,95 EUR
+- somme articles : 17,95 EUR
+- lignes produits : 9
+- quantité : 9
+- oignon : lignes sources 25, 26 et 27
+- preuves : description_code_bridge_then_detail,
+             inferred_arithmetic_total
+- cohérence : exact_total_match, exact_declared_count_match

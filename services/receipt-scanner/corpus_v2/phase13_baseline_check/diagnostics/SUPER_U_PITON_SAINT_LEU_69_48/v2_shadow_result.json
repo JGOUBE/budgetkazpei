@@ -1,0 +1,3751 @@
+{
+  "engine": "budgetkazpei-generic-parser-v2-shadow",
+  "phase": 1,
+  "production_output_changed": false,
+  "declared_count": 24,
+  "line_count": 76,
+  "candidate_count": 32,
+  "total_candidate_count": 3,
+  "selected_hypothesis": {
+    "items": [
+      {
+        "candidate_id": "c0001",
+        "start_line": 10,
+        "end_line": 10,
+        "source_line_ids": [
+          10
+        ],
+        "raw_name": "CAFE EXT.FILT.LVOPHILISE U100G",
+        "normalized_name": "CAFE EXT.FILT.LVOPHILISE U100G",
+        "quantity": 1.0,
+        "unit_price": 5.39,
+        "total_price": 5.39,
+        "item_type": "standard",
+        "confidence": 0.94597,
+        "local_score": 5.746,
+        "evidence": [
+          "same_line_name_and_right_price"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0002",
+        "start_line": 13,
+        "end_line": 13,
+        "source_line_ids": [
+          13
+        ],
+        "raw_name": "MUESLI CROUSTIL.3 CHOCO.U 500G",
+        "normalized_name": "MUESLI CROUSTIL.3 CHOCO.U 500G",
+        "quantity": 1.0,
+        "unit_price": 3.75,
+        "total_price": 3.75,
+        "item_type": "standard",
+        "confidence": 0.87843,
+        "local_score": 5.6784,
+        "evidence": [
+          "same_line_name_and_right_price"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0003",
+        "start_line": 15,
+        "end_line": 15,
+        "source_line_ids": [
+          15
+        ],
+        "raw_name": "ICROUST CHOCO.LTU 500G",
+        "normalized_name": "ICROUST CHOCO.LTU 500G",
+        "quantity": 1.0,
+        "unit_price": 3.85,
+        "total_price": 3.85,
+        "item_type": "standard",
+        "confidence": 0.82475,
+        "local_score": 5.6247,
+        "evidence": [
+          "same_line_name_and_right_price"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0005",
+        "start_line": 18,
+        "end_line": 19,
+        "source_line_ids": [
+          18,
+          19
+        ],
+        "raw_name": "KNACK IER PRIX X20",
+        "normalized_name": "KNACK IER PRIX X20",
+        "quantity": 1.0,
+        "unit_price": 3.95,
+        "total_price": 3.95,
+        "item_type": "multibuy",
+        "confidence": 0.81478,
+        "local_score": 9.1148,
+        "evidence": [
+          "description_then_detail",
+          "description_line_total"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0006",
+        "start_line": 21,
+        "end_line": 21,
+        "source_line_ids": [
+          21
+        ],
+        "raw_name": "TIC TAC BERRY MIX 18G",
+        "normalized_name": "TIC TAC BERRY MIX 18G",
+        "quantity": 1.0,
+        "unit_price": 1.39,
+        "total_price": 1.39,
+        "item_type": "standard",
+        "confidence": 0.91431,
+        "local_score": 5.7143,
+        "evidence": [
+          "same_line_name_and_right_price"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0008",
+        "start_line": 24,
+        "end_line": 25,
+        "source_line_ids": [
+          24,
+          25
+        ],
+        "raw_name": "PUREE MOUSLINE 520G",
+        "normalized_name": "PUREE MOUSLINE 520G",
+        "quantity": 1.0,
+        "unit_price": 3.1,
+        "total_price": 3.1,
+        "item_type": "multibuy",
+        "confidence": 0.92094,
+        "local_score": 9.2209,
+        "evidence": [
+          "description_then_detail",
+          "description_line_total"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0010",
+        "start_line": 27,
+        "end_line": 28,
+        "source_line_ids": [
+          27,
+          28
+        ],
+        "raw_name": "PETIT BENARE 150G",
+        "normalized_name": "PETIT BENARE 150G",
+        "quantity": 1.0,
+        "unit_price": 2.89,
+        "total_price": 2.89,
+        "item_type": "multibuy",
+        "confidence": 0.62943,
+        "local_score": 8.9294,
+        "evidence": [
+          "description_then_detail",
+          "description_line_total"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0011",
+        "start_line": 30,
+        "end_line": 30,
+        "source_line_ids": [
+          30
+        ],
+        "raw_name": "BOP BOURBON HUILE TOURNESOL L",
+        "normalized_name": "BOP BOURBON HUILE TOURNESOL L",
+        "quantity": 1.0,
+        "unit_price": 2.44,
+        "total_price": 2.44,
+        "item_type": "standard",
+        "confidence": 0.89056,
+        "local_score": 5.6906,
+        "evidence": [
+          "same_line_name_and_right_price"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0013",
+        "start_line": 33,
+        "end_line": 34,
+        "source_line_ids": [
+          33,
+          34
+        ],
+        "raw_name": "LAIT UHT 1/2EC LAIT D'ICI BK1L",
+        "normalized_name": "LAIT UHT 1/2EC LAIT D'ICI BK1L",
+        "quantity": 4.0,
+        "unit_price": 1.19,
+        "total_price": 4.76,
+        "item_type": "multibuy",
+        "confidence": 0.70514,
+        "local_score": 9.0051,
+        "evidence": [
+          "description_then_detail",
+          "description_line_total"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 4
+      },
+      {
+        "candidate_id": "c0014",
+        "start_line": 35,
+        "end_line": 36,
+        "source_line_ids": [
+          35,
+          36
+        ],
+        "raw_name": "SP.LAIT.FLUIDE UHT58MG U3X20CL",
+        "normalized_name": "SP.LAIT.FLUIDE UHT58MG U3X20CL",
+        "quantity": 1.0,
+        "unit_price": 2.59,
+        "total_price": 2.59,
+        "item_type": "multibuy",
+        "confidence": 0.79058,
+        "local_score": 8.5866,
+        "evidence": [
+          "description_then_detail",
+          "detail_row_amount"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0016",
+        "start_line": 38,
+        "end_line": 39,
+        "source_line_ids": [
+          38,
+          39
+        ],
+        "raw_name": "BOP DOUPLI MOUCH POCK 3P X10",
+        "normalized_name": "BOP DOUPLI MOUCH POCK 3P X10",
+        "quantity": 1.0,
+        "unit_price": 1.0,
+        "total_price": 1.0,
+        "item_type": "multibuy",
+        "confidence": 0.80228,
+        "local_score": 9.1023,
+        "evidence": [
+          "description_then_detail",
+          "description_line_total"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0018",
+        "start_line": 40,
+        "end_line": 41,
+        "source_line_ids": [
+          40,
+          41
+        ],
+        "raw_name": "BROSSE GLAMOUR DEMELAGE FACILE PARFUMERTE e",
+        "normalized_name": "BROSSE GLAMOUR DEMELAGE FACILE PARFUMERTE E",
+        "quantity": 1.0,
+        "unit_price": 5.99,
+        "total_price": 5.99,
+        "item_type": "multibuy",
+        "confidence": 0.86094,
+        "local_score": 9.1609,
+        "evidence": [
+          "description_then_detail",
+          "description_line_total"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0019",
+        "start_line": 42,
+        "end_line": 43,
+        "source_line_ids": [
+          42,
+          43
+        ],
+        "raw_name": "GL DCH.BAMBOU&ALOE VER.U 75OML",
+        "normalized_name": "GL DCH.BAMBOU&ALOE VER.U 75OML",
+        "quantity": 1.0,
+        "unit_price": 3.25,
+        "total_price": 3.25,
+        "item_type": "multibuy",
+        "confidence": 0.74894,
+        "local_score": 8.5449,
+        "evidence": [
+          "description_then_detail",
+          "detail_row_amount"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0021",
+        "start_line": 44,
+        "end_line": 45,
+        "source_line_ids": [
+          44,
+          45
+        ],
+        "raw_name": "COOUILLETTES Q.SUP.U CELLO 1KG PATES",
+        "normalized_name": "COOUILLETTES Q.SUP.U CELLO 1KG PATES",
+        "quantity": 1.0,
+        "unit_price": 1.75,
+        "total_price": 1.75,
+        "item_type": "multibuy",
+        "confidence": 0.84197,
+        "local_score": 9.142,
+        "evidence": [
+          "description_then_detail",
+          "description_line_total"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0023",
+        "start_line": 47,
+        "end_line": 48,
+        "source_line_ids": [
+          47,
+          48
+        ],
+        "raw_name": "SAUCE TOMATE FRAICHES U 2X190U",
+        "normalized_name": "SAUCE TOMATE FRAICHES U 2X190U",
+        "quantity": 1.0,
+        "unit_price": 1.85,
+        "total_price": 1.85,
+        "item_type": "multibuy",
+        "confidence": 0.70224,
+        "local_score": 9.0022,
+        "evidence": [
+          "description_then_detail",
+          "description_line_total"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0025",
+        "start_line": 51,
+        "end_line": 52,
+        "source_line_ids": [
+          51,
+          52
+        ],
+        "raw_name": "Q.CREU TROP DEU 13/15 VANNAMEI",
+        "normalized_name": "Q.CREU TROP DEU 13/15 VANNAMEI",
+        "quantity": 2.0,
+        "unit_price": 2.55,
+        "total_price": 5.1,
+        "item_type": "multibuy",
+        "confidence": 0.8769,
+        "local_score": 9.1769,
+        "evidence": [
+          "description_then_detail",
+          "description_line_total"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 2
+      },
+      {
+        "candidate_id": "c0027",
+        "start_line": 53,
+        "end_line": 54,
+        "source_line_ids": [
+          53,
+          54
+        ],
+        "raw_name": "SAUMON SAUUAGE PAVE S/P 2X125G",
+        "normalized_name": "SAUMON SAUUAGE PAVE S/P 2X125G",
+        "quantity": 1.0,
+        "unit_price": 3.85,
+        "total_price": 3.85,
+        "item_type": "multibuy",
+        "confidence": 0.87852,
+        "local_score": 9.1785,
+        "evidence": [
+          "description_then_detail",
+          "description_line_total"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0029",
+        "start_line": 55,
+        "end_line": 56,
+        "source_line_ids": [
+          55,
+          56
+        ],
+        "raw_name": "SURGELE SUCRE BAT.SORB.MULTIFRUIT.OASIS 400G",
+        "normalized_name": "SURGELE SUCRE BAT.SORB.MULTIFRUIT.OASIS 400G",
+        "quantity": 1.0,
+        "unit_price": 5.5,
+        "total_price": 5.5,
+        "item_type": "multibuy",
+        "confidence": 0.73789,
+        "local_score": 9.0379,
+        "evidence": [
+          "description_then_detail",
+          "description_line_total"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0031",
+        "start_line": 58,
+        "end_line": 59,
+        "source_line_ids": [
+          58,
+          59
+        ],
+        "raw_name": "BQP YOPLAIT AROM/ILES 12X125G",
+        "normalized_name": "BQP YOPLAIT AROM/ILES 12X125G",
+        "quantity": 1.0,
+        "unit_price": 4.29,
+        "total_price": 4.29,
+        "item_type": "multibuy",
+        "confidence": 0.69888,
+        "local_score": 8.4949,
+        "evidence": [
+          "description_then_detail",
+          "detail_row_amount"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      },
+      {
+        "candidate_id": "c0032",
+        "start_line": 60,
+        "end_line": 61,
+        "source_line_ids": [
+          60,
+          61
+        ],
+        "raw_name": "BUP CALIN 20%MG 500G NAT",
+        "normalized_name": "BUP CALIN 20%MG 500G NAT",
+        "quantity": 1.0,
+        "unit_price": 2.79,
+        "total_price": 2.79,
+        "item_type": "multibuy",
+        "confidence": 0.81584,
+        "local_score": 8.6118,
+        "evidence": [
+          "description_then_detail",
+          "detail_row_amount"
+        ],
+        "arithmetic_ok": true,
+        "counted_quantity": 1
+      }
+    ],
+    "target_total": {
+      "line_ids": [
+        62
+      ],
+      "amount": 69.48,
+      "kind": "article_total",
+      "confidence": 0.914,
+      "score": 7.4,
+      "evidence": [
+        "line_count_summary_with_staggered_total_amount"
+      ]
+    },
+    "declared_count": 24,
+    "items_total": 69.48,
+    "counted_quantity": 24,
+    "score": 226.5631,
+    "total_gap": 0.0,
+    "count_gap": 0,
+    "reasons": [
+      "exact_total_match",
+      "exact_declared_count_match"
+    ]
+  },
+  "total_candidates": [
+    {
+      "line_ids": [
+        63
+      ],
+      "amount": 68.11,
+      "kind": "article_total",
+      "confidence": 0.8894,
+      "score": 7.55,
+      "evidence": [
+        "explicit_total_label"
+      ]
+    },
+    {
+      "line_ids": [
+        62
+      ],
+      "amount": 69.48,
+      "kind": "article_total",
+      "confidence": 0.914,
+      "score": 7.4,
+      "evidence": [
+        "line_count_summary_with_staggered_total_amount"
+      ]
+    },
+    {
+      "line_ids": [
+        63,
+        64
+      ],
+      "amount": 1.37,
+      "kind": "article_total",
+      "confidence": 0.85877,
+      "score": 5.5,
+      "evidence": [
+        "declared_count_then_amount_row"
+      ]
+    }
+  ],
+  "item_candidates": [
+    {
+      "candidate_id": "c0001",
+      "start_line": 10,
+      "end_line": 10,
+      "source_line_ids": [
+        10
+      ],
+      "raw_name": "CAFE EXT.FILT.LVOPHILISE U100G",
+      "normalized_name": "CAFE EXT.FILT.LVOPHILISE U100G",
+      "quantity": 1.0,
+      "unit_price": 5.39,
+      "total_price": 5.39,
+      "item_type": "standard",
+      "confidence": 0.94597,
+      "local_score": 5.746,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0002",
+      "start_line": 13,
+      "end_line": 13,
+      "source_line_ids": [
+        13
+      ],
+      "raw_name": "MUESLI CROUSTIL.3 CHOCO.U 500G",
+      "normalized_name": "MUESLI CROUSTIL.3 CHOCO.U 500G",
+      "quantity": 1.0,
+      "unit_price": 3.75,
+      "total_price": 3.75,
+      "item_type": "standard",
+      "confidence": 0.87843,
+      "local_score": 5.6784,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0003",
+      "start_line": 15,
+      "end_line": 15,
+      "source_line_ids": [
+        15
+      ],
+      "raw_name": "ICROUST CHOCO.LTU 500G",
+      "normalized_name": "ICROUST CHOCO.LTU 500G",
+      "quantity": 1.0,
+      "unit_price": 3.85,
+      "total_price": 3.85,
+      "item_type": "standard",
+      "confidence": 0.82475,
+      "local_score": 5.6247,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0004",
+      "start_line": 18,
+      "end_line": 18,
+      "source_line_ids": [
+        18
+      ],
+      "raw_name": "KNACK IER PRIX X20",
+      "normalized_name": "KNACK IER PRIX X20",
+      "quantity": 1.0,
+      "unit_price": 3.95,
+      "total_price": 3.95,
+      "item_type": "standard",
+      "confidence": 0.90678,
+      "local_score": 5.7068,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0005",
+      "start_line": 18,
+      "end_line": 19,
+      "source_line_ids": [
+        18,
+        19
+      ],
+      "raw_name": "KNACK IER PRIX X20",
+      "normalized_name": "KNACK IER PRIX X20",
+      "quantity": 1.0,
+      "unit_price": 3.95,
+      "total_price": 3.95,
+      "item_type": "multibuy",
+      "confidence": 0.81478,
+      "local_score": 9.1148,
+      "evidence": [
+        "description_then_detail",
+        "description_line_total"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0006",
+      "start_line": 21,
+      "end_line": 21,
+      "source_line_ids": [
+        21
+      ],
+      "raw_name": "TIC TAC BERRY MIX 18G",
+      "normalized_name": "TIC TAC BERRY MIX 18G",
+      "quantity": 1.0,
+      "unit_price": 1.39,
+      "total_price": 1.39,
+      "item_type": "standard",
+      "confidence": 0.91431,
+      "local_score": 5.7143,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0007",
+      "start_line": 24,
+      "end_line": 24,
+      "source_line_ids": [
+        24
+      ],
+      "raw_name": "PUREE MOUSLINE 520G",
+      "normalized_name": "PUREE MOUSLINE 520G",
+      "quantity": 1.0,
+      "unit_price": 3.1,
+      "total_price": 3.1,
+      "item_type": "standard",
+      "confidence": 0.96003,
+      "local_score": 5.76,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0008",
+      "start_line": 24,
+      "end_line": 25,
+      "source_line_ids": [
+        24,
+        25
+      ],
+      "raw_name": "PUREE MOUSLINE 520G",
+      "normalized_name": "PUREE MOUSLINE 520G",
+      "quantity": 1.0,
+      "unit_price": 3.1,
+      "total_price": 3.1,
+      "item_type": "multibuy",
+      "confidence": 0.92094,
+      "local_score": 9.2209,
+      "evidence": [
+        "description_then_detail",
+        "description_line_total"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0009",
+      "start_line": 27,
+      "end_line": 27,
+      "source_line_ids": [
+        27
+      ],
+      "raw_name": "PETIT BENARE 150G",
+      "normalized_name": "PETIT BENARE 150G",
+      "quantity": 1.0,
+      "unit_price": 2.89,
+      "total_price": 2.89,
+      "item_type": "standard",
+      "confidence": 0.96043,
+      "local_score": 5.7604,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0010",
+      "start_line": 27,
+      "end_line": 28,
+      "source_line_ids": [
+        27,
+        28
+      ],
+      "raw_name": "PETIT BENARE 150G",
+      "normalized_name": "PETIT BENARE 150G",
+      "quantity": 1.0,
+      "unit_price": 2.89,
+      "total_price": 2.89,
+      "item_type": "multibuy",
+      "confidence": 0.62943,
+      "local_score": 8.9294,
+      "evidence": [
+        "description_then_detail",
+        "description_line_total"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0011",
+      "start_line": 30,
+      "end_line": 30,
+      "source_line_ids": [
+        30
+      ],
+      "raw_name": "BOP BOURBON HUILE TOURNESOL L",
+      "normalized_name": "BOP BOURBON HUILE TOURNESOL L",
+      "quantity": 1.0,
+      "unit_price": 2.44,
+      "total_price": 2.44,
+      "item_type": "standard",
+      "confidence": 0.89056,
+      "local_score": 5.6906,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0012",
+      "start_line": 33,
+      "end_line": 33,
+      "source_line_ids": [
+        33
+      ],
+      "raw_name": "LAIT UHT 1/2EC LAIT D'ICI BK1L",
+      "normalized_name": "LAIT UHT 1/2EC LAIT D'ICI BK1L",
+      "quantity": 1.0,
+      "unit_price": 4.76,
+      "total_price": 4.76,
+      "item_type": "standard",
+      "confidence": 0.95494,
+      "local_score": 5.7549,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0013",
+      "start_line": 33,
+      "end_line": 34,
+      "source_line_ids": [
+        33,
+        34
+      ],
+      "raw_name": "LAIT UHT 1/2EC LAIT D'ICI BK1L",
+      "normalized_name": "LAIT UHT 1/2EC LAIT D'ICI BK1L",
+      "quantity": 4.0,
+      "unit_price": 1.19,
+      "total_price": 4.76,
+      "item_type": "multibuy",
+      "confidence": 0.70514,
+      "local_score": 9.0051,
+      "evidence": [
+        "description_then_detail",
+        "description_line_total"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 4
+    },
+    {
+      "candidate_id": "c0014",
+      "start_line": 35,
+      "end_line": 36,
+      "source_line_ids": [
+        35,
+        36
+      ],
+      "raw_name": "SP.LAIT.FLUIDE UHT58MG U3X20CL",
+      "normalized_name": "SP.LAIT.FLUIDE UHT58MG U3X20CL",
+      "quantity": 1.0,
+      "unit_price": 2.59,
+      "total_price": 2.59,
+      "item_type": "multibuy",
+      "confidence": 0.79058,
+      "local_score": 8.5866,
+      "evidence": [
+        "description_then_detail",
+        "detail_row_amount"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0015",
+      "start_line": 38,
+      "end_line": 38,
+      "source_line_ids": [
+        38
+      ],
+      "raw_name": "BOP DOUPLI MOUCH POCK 3P X10",
+      "normalized_name": "BOP DOUPLI MOUCH POCK 3P X10",
+      "quantity": 1.0,
+      "unit_price": 1.0,
+      "total_price": 1.0,
+      "item_type": "standard",
+      "confidence": 0.86728,
+      "local_score": 5.6673,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0016",
+      "start_line": 38,
+      "end_line": 39,
+      "source_line_ids": [
+        38,
+        39
+      ],
+      "raw_name": "BOP DOUPLI MOUCH POCK 3P X10",
+      "normalized_name": "BOP DOUPLI MOUCH POCK 3P X10",
+      "quantity": 1.0,
+      "unit_price": 1.0,
+      "total_price": 1.0,
+      "item_type": "multibuy",
+      "confidence": 0.80228,
+      "local_score": 9.1023,
+      "evidence": [
+        "description_then_detail",
+        "description_line_total"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0017",
+      "start_line": 40,
+      "end_line": 40,
+      "source_line_ids": [
+        40
+      ],
+      "raw_name": "BROSSE GLAMOUR DEMELAGE FACILE PARFUMERTE e",
+      "normalized_name": "BROSSE GLAMOUR DEMELAGE FACILE PARFUMERTE E",
+      "quantity": 1.0,
+      "unit_price": 5.99,
+      "total_price": 5.99,
+      "item_type": "standard",
+      "confidence": 0.86094,
+      "local_score": 5.6609,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0018",
+      "start_line": 40,
+      "end_line": 41,
+      "source_line_ids": [
+        40,
+        41
+      ],
+      "raw_name": "BROSSE GLAMOUR DEMELAGE FACILE PARFUMERTE e",
+      "normalized_name": "BROSSE GLAMOUR DEMELAGE FACILE PARFUMERTE E",
+      "quantity": 1.0,
+      "unit_price": 5.99,
+      "total_price": 5.99,
+      "item_type": "multibuy",
+      "confidence": 0.86094,
+      "local_score": 9.1609,
+      "evidence": [
+        "description_then_detail",
+        "description_line_total"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0019",
+      "start_line": 42,
+      "end_line": 43,
+      "source_line_ids": [
+        42,
+        43
+      ],
+      "raw_name": "GL DCH.BAMBOU&ALOE VER.U 75OML",
+      "normalized_name": "GL DCH.BAMBOU&ALOE VER.U 75OML",
+      "quantity": 1.0,
+      "unit_price": 3.25,
+      "total_price": 3.25,
+      "item_type": "multibuy",
+      "confidence": 0.74894,
+      "local_score": 8.5449,
+      "evidence": [
+        "description_then_detail",
+        "detail_row_amount"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0020",
+      "start_line": 44,
+      "end_line": 44,
+      "source_line_ids": [
+        44
+      ],
+      "raw_name": "COOUILLETTES Q.SUP.U CELLO 1KG PATES",
+      "normalized_name": "COOUILLETTES Q.SUP.U CELLO 1KG PATES",
+      "quantity": 1.0,
+      "unit_price": 1.75,
+      "total_price": 1.75,
+      "item_type": "standard",
+      "confidence": 0.95132,
+      "local_score": 5.7513,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0021",
+      "start_line": 44,
+      "end_line": 45,
+      "source_line_ids": [
+        44,
+        45
+      ],
+      "raw_name": "COOUILLETTES Q.SUP.U CELLO 1KG PATES",
+      "normalized_name": "COOUILLETTES Q.SUP.U CELLO 1KG PATES",
+      "quantity": 1.0,
+      "unit_price": 1.75,
+      "total_price": 1.75,
+      "item_type": "multibuy",
+      "confidence": 0.84197,
+      "local_score": 9.142,
+      "evidence": [
+        "description_then_detail",
+        "description_line_total"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0022",
+      "start_line": 47,
+      "end_line": 47,
+      "source_line_ids": [
+        47
+      ],
+      "raw_name": "SAUCE TOMATE FRAICHES U 2X190U",
+      "normalized_name": "SAUCE TOMATE FRAICHES U 2X190U",
+      "quantity": 1.0,
+      "unit_price": 1.85,
+      "total_price": 1.85,
+      "item_type": "standard",
+      "confidence": 0.88685,
+      "local_score": 5.6868,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0023",
+      "start_line": 47,
+      "end_line": 48,
+      "source_line_ids": [
+        47,
+        48
+      ],
+      "raw_name": "SAUCE TOMATE FRAICHES U 2X190U",
+      "normalized_name": "SAUCE TOMATE FRAICHES U 2X190U",
+      "quantity": 1.0,
+      "unit_price": 1.85,
+      "total_price": 1.85,
+      "item_type": "multibuy",
+      "confidence": 0.70224,
+      "local_score": 9.0022,
+      "evidence": [
+        "description_then_detail",
+        "description_line_total"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0024",
+      "start_line": 51,
+      "end_line": 51,
+      "source_line_ids": [
+        51
+      ],
+      "raw_name": "Q.CREU TROP DEU 13/15 VANNAMEI",
+      "normalized_name": "Q.CREU TROP DEU 13/15 VANNAMEI",
+      "quantity": 1.0,
+      "unit_price": 5.1,
+      "total_price": 5.1,
+      "item_type": "standard",
+      "confidence": 0.92898,
+      "local_score": 5.729,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0025",
+      "start_line": 51,
+      "end_line": 52,
+      "source_line_ids": [
+        51,
+        52
+      ],
+      "raw_name": "Q.CREU TROP DEU 13/15 VANNAMEI",
+      "normalized_name": "Q.CREU TROP DEU 13/15 VANNAMEI",
+      "quantity": 2.0,
+      "unit_price": 2.55,
+      "total_price": 5.1,
+      "item_type": "multibuy",
+      "confidence": 0.8769,
+      "local_score": 9.1769,
+      "evidence": [
+        "description_then_detail",
+        "description_line_total"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 2
+    },
+    {
+      "candidate_id": "c0026",
+      "start_line": 53,
+      "end_line": 53,
+      "source_line_ids": [
+        53
+      ],
+      "raw_name": "SAUMON SAUUAGE PAVE S/P 2X125G",
+      "normalized_name": "SAUMON SAUUAGE PAVE S/P 2X125G",
+      "quantity": 1.0,
+      "unit_price": 3.85,
+      "total_price": 3.85,
+      "item_type": "standard",
+      "confidence": 0.9024,
+      "local_score": 5.7024,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0027",
+      "start_line": 53,
+      "end_line": 54,
+      "source_line_ids": [
+        53,
+        54
+      ],
+      "raw_name": "SAUMON SAUUAGE PAVE S/P 2X125G",
+      "normalized_name": "SAUMON SAUUAGE PAVE S/P 2X125G",
+      "quantity": 1.0,
+      "unit_price": 3.85,
+      "total_price": 3.85,
+      "item_type": "multibuy",
+      "confidence": 0.87852,
+      "local_score": 9.1785,
+      "evidence": [
+        "description_then_detail",
+        "description_line_total"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0028",
+      "start_line": 55,
+      "end_line": 55,
+      "source_line_ids": [
+        55
+      ],
+      "raw_name": "SURGELE SUCRE BAT.SORB.MULTIFRUIT.OASIS 400G",
+      "normalized_name": "SURGELE SUCRE BAT.SORB.MULTIFRUIT.OASIS 400G",
+      "quantity": 1.0,
+      "unit_price": 5.5,
+      "total_price": 5.5,
+      "item_type": "standard",
+      "confidence": 0.97739,
+      "local_score": 5.7774,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0029",
+      "start_line": 55,
+      "end_line": 56,
+      "source_line_ids": [
+        55,
+        56
+      ],
+      "raw_name": "SURGELE SUCRE BAT.SORB.MULTIFRUIT.OASIS 400G",
+      "normalized_name": "SURGELE SUCRE BAT.SORB.MULTIFRUIT.OASIS 400G",
+      "quantity": 1.0,
+      "unit_price": 5.5,
+      "total_price": 5.5,
+      "item_type": "multibuy",
+      "confidence": 0.73789,
+      "local_score": 9.0379,
+      "evidence": [
+        "description_then_detail",
+        "description_line_total"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0030",
+      "start_line": 57,
+      "end_line": 57,
+      "source_line_ids": [
+        57
+      ],
+      "raw_name": "ULTRA FRAIS",
+      "normalized_name": "ULTRA FRAIS",
+      "quantity": 1.0,
+      "unit_price": 4.29,
+      "total_price": 4.29,
+      "item_type": "standard",
+      "confidence": 0.89734,
+      "local_score": 5.6973,
+      "evidence": [
+        "same_line_name_and_right_price"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0031",
+      "start_line": 58,
+      "end_line": 59,
+      "source_line_ids": [
+        58,
+        59
+      ],
+      "raw_name": "BQP YOPLAIT AROM/ILES 12X125G",
+      "normalized_name": "BQP YOPLAIT AROM/ILES 12X125G",
+      "quantity": 1.0,
+      "unit_price": 4.29,
+      "total_price": 4.29,
+      "item_type": "multibuy",
+      "confidence": 0.69888,
+      "local_score": 8.4949,
+      "evidence": [
+        "description_then_detail",
+        "detail_row_amount"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    },
+    {
+      "candidate_id": "c0032",
+      "start_line": 60,
+      "end_line": 61,
+      "source_line_ids": [
+        60,
+        61
+      ],
+      "raw_name": "BUP CALIN 20%MG 500G NAT",
+      "normalized_name": "BUP CALIN 20%MG 500G NAT",
+      "quantity": 1.0,
+      "unit_price": 2.79,
+      "total_price": 2.79,
+      "item_type": "multibuy",
+      "confidence": 0.81584,
+      "local_score": 8.6118,
+      "evidence": [
+        "description_then_detail",
+        "detail_row_amount"
+      ],
+      "arithmetic_ok": true,
+      "counted_quantity": 1
+    }
+  ],
+  "lines": [
+    {
+      "line_id": 0,
+      "text": "SUPERU",
+      "normalized_text": "SUPERU",
+      "center_y": 39.5,
+      "y_min": 0.0,
+      "y_max": 79.0,
+      "confidence": 0.99844,
+      "source_segment": "top",
+      "money": [],
+      "role_scores": {
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.55,
+        "tax": 0.0,
+        "total": 0.0,
+        "detail": 0.0,
+        "product": 0.25
+      },
+      "strongest_role": "section",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 1,
+      "text": "PITON ST LEU",
+      "normalized_text": "PITON ST LEU",
+      "center_y": 103.5,
+      "y_min": 86.0,
+      "y_max": 121.0,
+      "confidence": 0.95758,
+      "source_segment": "top",
+      "money": [],
+      "role_scores": {
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.55,
+        "tax": 0.0,
+        "total": 0.0,
+        "detail": 0.0,
+        "product": 0.25
+      },
+      "strongest_role": "section",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 2,
+      "text": "Mauagin 99807",
+      "normalized_text": "MAUAGIN 99807",
+      "center_y": 123.0,
+      "y_min": 107.0,
+      "y_max": 139.0,
+      "confidence": 0.79104,
+      "source_segment": "top",
+      "money": [],
+      "role_scores": {
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "tax": 0.0,
+        "total": 0.0,
+        "header": 0.0,
+        "footer": 0.0,
+        "product": 0.25
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 3,
+      "text": "149 Cd li Piton St Leu",
+      "normalized_text": "149 CD LI PITON ST LEU",
+      "center_y": 141.5,
+      "y_min": 120.0,
+      "y_max": 163.0,
+      "confidence": 0.76069,
+      "source_segment": "top",
+      "money": [],
+      "role_scores": {
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "tax": 0.0,
+        "total": 0.0,
+        "header": 0.0,
+        "footer": 0.0,
+        "product": 0.25
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 4,
+      "text": "97424 ST LEU",
+      "normalized_text": "97424 ST LEU",
+      "center_y": 161.5,
+      "y_min": 146.0,
+      "y_max": 177.0,
+      "confidence": 0.98205,
+      "source_segment": "top",
+      "money": [],
+      "role_scores": {
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.55,
+        "tax": 0.0,
+        "total": 0.0,
+        "detail": 0.0,
+        "product": 0.25
+      },
+      "strongest_role": "section",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 5,
+      "text": "France",
+      "normalized_text": "FRANCE",
+      "center_y": 181.5,
+      "y_min": 169.0,
+      "y_max": 194.0,
+      "confidence": 0.99905,
+      "source_segment": "top",
+      "money": [],
+      "role_scores": {
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "tax": 0.0,
+        "total": 0.0,
+        "header": 0.0,
+        "footer": 0.0,
+        "product": 0.25
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 6,
+      "text": "Télephone 0262342222",
+      "normalized_text": "TELEPHONE 0262342222",
+      "center_y": 199.0,
+      "y_min": 184.0,
+      "y_max": 214.0,
+      "confidence": 0.94163,
+      "source_segment": "top",
+      "money": [],
+      "role_scores": {
+        "header": 0.7,
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "tax": 0.0,
+        "total": 0.0,
+        "footer": 0.0,
+        "product": 0.25
+      },
+      "strongest_role": "header",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 7,
+      "text": "TUA: FR00018634040",
+      "normalized_text": "TUA: FR00018634040",
+      "center_y": 225.5,
+      "y_min": 212.0,
+      "y_max": 239.0,
+      "confidence": 0.96137,
+      "source_segment": "top",
+      "money": [],
+      "role_scores": {
+        "tax": 0.8,
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.0,
+        "detail": 0.0
+      },
+      "strongest_role": "tax",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 8,
+      "text": "*** VENTE ***",
+      "normalized_text": "*** VENTE ***",
+      "center_y": 259.0,
+      "y_min": 244.0,
+      "y_max": 274.0,
+      "confidence": 0.78404,
+      "source_segment": "top",
+      "money": [],
+      "role_scores": {
+        "header": 0.7,
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "tax": 0.0,
+        "total": 0.0,
+        "footer": 0.0,
+        "product": 0.25
+      },
+      "strongest_role": "header",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 9,
+      "text": "CAFE | TORREFIE/SOLUBLE",
+      "normalized_text": "CAFE TORREFIE/SOLUBLE",
+      "center_y": 275.75,
+      "y_min": 256.0,
+      "y_max": 298.0,
+      "confidence": 0.97938,
+      "source_segment": "top",
+      "money": [],
+      "role_scores": {
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.55,
+        "tax": 0.0,
+        "total": 0.0,
+        "detail": 0.0,
+        "product": 0.72
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 10,
+      "text": "CAFE EXT.FILT.LVOPHILISE U100G | 5.39 € 11",
+      "normalized_text": "CAFE EXT.FILT.LVOPHILISE U100G 5.39 € 11",
+      "center_y": 299.25,
+      "y_min": 276.0,
+      "y_max": 324.0,
+      "confidence": 0.94597,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 5.39,
+          "token_index": 12,
+          "x_center": 652.0,
+          "score": 0.94597,
+          "raw_text": "5.39 € 11"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 11,
+      "text": "5,39 EUR",
+      "normalized_text": "5,39 EUR",
+      "center_y": 324.5,
+      "y_min": 309.0,
+      "y_max": 340.0,
+      "confidence": 0.89517,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 5.39,
+          "token_index": 13,
+          "x_center": 417.0,
+          "score": 0.89517,
+          "raw_text": "5,39 EUR"
+        }
+      ],
+      "role_scores": {
+        "unknown": 1.0
+      },
+      "strongest_role": "unknown",
+      "has_letters": false,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 12,
+      "text": "CEREALES ET POUDRES CHOCOLAT",
+      "normalized_text": "CEREALES ET POUDRES CHOCOLAT",
+      "center_y": 339.5,
+      "y_min": 319.0,
+      "y_max": 360.0,
+      "confidence": 0.98769,
+      "source_segment": "top",
+      "money": [],
+      "role_scores": {
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.55,
+        "tax": 0.0,
+        "total": 0.0,
+        "detail": 0.0,
+        "product": 0.72
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 13,
+      "text": "MUESLI CROUSTIL.3 CHOCO.U 500G | 3,75€ 0",
+      "normalized_text": "MUESLI CROUSTIL.3 CHOCO.U 500G 3,75€ 0",
+      "center_y": 361.5,
+      "y_min": 343.0,
+      "y_max": 380.0,
+      "confidence": 0.87843,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 3.75,
+          "token_index": 16,
+          "x_center": 649.0,
+          "score": 0.88454,
+          "raw_text": "3,75€ 0"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 14,
+      "text": "3,75 EUR",
+      "normalized_text": "3,75 EUR",
+      "center_y": 384.5,
+      "y_min": 371.0,
+      "y_max": 398.0,
+      "confidence": 0.97094,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 3.75,
+          "token_index": 17,
+          "x_center": 419.5,
+          "score": 0.97094,
+          "raw_text": "3,75 EUR"
+        }
+      ],
+      "role_scores": {
+        "unknown": 1.0
+      },
+      "strongest_role": "unknown",
+      "has_letters": false,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 15,
+      "text": "ICROUST CHOCO.LTU 500G | 3,85 € 0",
+      "normalized_text": "ICROUST CHOCO.LTU 500G 3,85 € 0",
+      "center_y": 402.5,
+      "y_min": 379.0,
+      "y_max": 424.0,
+      "confidence": 0.82475,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 3.85,
+          "token_index": 19,
+          "x_center": 650.0,
+          "score": 0.82475,
+          "raw_text": "3,85 € 0"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 16,
+      "text": "3.85 EUR",
+      "normalized_text": "3.85 EUR",
+      "center_y": 425.0,
+      "y_min": 411.0,
+      "y_max": 439.0,
+      "confidence": 0.95988,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 3.85,
+          "token_index": 20,
+          "x_center": 421.5,
+          "score": 0.95988,
+          "raw_text": "3.85 EUR"
+        }
+      ],
+      "role_scores": {
+        "unknown": 1.0
+      },
+      "strongest_role": "unknown",
+      "has_letters": false,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 17,
+      "text": "CHARCT.LS UUCI",
+      "normalized_text": "CHARCT.LS UUCI",
+      "center_y": 441.5,
+      "y_min": 422.0,
+      "y_max": 461.0,
+      "confidence": 0.98675,
+      "source_segment": "top",
+      "money": [],
+      "role_scores": {
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.55,
+        "tax": 0.0,
+        "total": 0.0,
+        "detail": 0.0,
+        "product": 0.72
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 18,
+      "text": "KNACK IER PRIX X20 | 3,95 € 0",
+      "normalized_text": "KNACK IER PRIX X20 3,95 € 0",
+      "center_y": 464.5,
+      "y_min": 445.0,
+      "y_max": 483.0,
+      "confidence": 0.90678,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 3.95,
+          "token_index": 23,
+          "x_center": 651.5,
+          "score": 0.90678,
+          "raw_text": "3,95 € 0"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 19,
+      "text": "1x | 3.95 EUR",
+      "normalized_text": "1X 3.95 EUR",
+      "center_y": 484.5,
+      "y_min": 468.0,
+      "y_max": 501.0,
+      "confidence": 0.81478,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 3.95,
+          "token_index": 25,
+          "x_center": 423.5,
+          "score": 0.9877,
+          "raw_text": "3.95 EUR"
+        }
+      ],
+      "role_scores": {
+        "detail": 1.0,
+        "product": -0.6,
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0
+      },
+      "strongest_role": "detail",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": true,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 20,
+      "text": "CONFISERTE",
+      "normalized_text": "CONFISERTE",
+      "center_y": 506.5,
+      "y_min": 487.0,
+      "y_max": 526.0,
+      "confidence": 0.97975,
+      "source_segment": "top",
+      "money": [],
+      "role_scores": {
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.55,
+        "tax": 0.0,
+        "total": 0.0,
+        "detail": 0.0,
+        "product": 0.72
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 21,
+      "text": "TIC TAC BERRY MIX 18G | 1,39 € | 13",
+      "normalized_text": "TIC TAC BERRY MIX 18G 1,39 € 13",
+      "center_y": 526.5,
+      "y_min": 507.0,
+      "y_max": 546.0,
+      "confidence": 0.91431,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 1.39,
+          "token_index": 28,
+          "x_center": 647.0,
+          "score": 0.91431,
+          "raw_text": "1,39 €"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 22,
+      "text": "1.39 EUR",
+      "normalized_text": "1.39 EUR",
+      "center_y": 547.0,
+      "y_min": 531.0,
+      "y_max": 563.0,
+      "confidence": 0.98054,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 1.39,
+          "token_index": 30,
+          "x_center": 425.0,
+          "score": 0.98054,
+          "raw_text": "1.39 EUR"
+        }
+      ],
+      "role_scores": {
+        "unknown": 1.0
+      },
+      "strongest_role": "unknown",
+      "has_letters": false,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 23,
+      "text": "COUSCOUS PUREE LEG SECS BLE",
+      "normalized_text": "COUSCOUS PUREE LEG SECS BLE",
+      "center_y": 568.5,
+      "y_min": 551.0,
+      "y_max": 586.0,
+      "confidence": 0.98461,
+      "source_segment": "top",
+      "money": [],
+      "role_scores": {
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.55,
+        "tax": 0.0,
+        "total": 0.0,
+        "detail": 0.0,
+        "product": 0.72
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 24,
+      "text": "PUREE MOUSLINE 520G | 3,10€",
+      "normalized_text": "PUREE MOUSLINE 520G 3,10€",
+      "center_y": 590.0,
+      "y_min": 572.0,
+      "y_max": 608.0,
+      "confidence": 0.96003,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 3.1,
+          "token_index": 33,
+          "x_center": 642.0,
+          "score": 0.98598,
+          "raw_text": "3,10€"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 25,
+      "text": "1x | 3.10 EUR",
+      "normalized_text": "1X 3.10 EUR",
+      "center_y": 612.0,
+      "y_min": 595.0,
+      "y_max": 627.0,
+      "confidence": 0.92094,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 3.1,
+          "token_index": 35,
+          "x_center": 427.0,
+          "score": 0.9805,
+          "raw_text": "3.10 EUR"
+        }
+      ],
+      "role_scores": {
+        "detail": 1.0,
+        "product": -0.6,
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0
+      },
+      "strongest_role": "detail",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": true,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 26,
+      "text": "FROMAGE LS",
+      "normalized_text": "FROMAGE LS",
+      "center_y": 636.0,
+      "y_min": 619.0,
+      "y_max": 653.0,
+      "confidence": 0.94944,
+      "source_segment": "top",
+      "money": [],
+      "role_scores": {
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.55,
+        "tax": 0.0,
+        "total": 0.0,
+        "detail": 0.0,
+        "product": 0.72
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 27,
+      "text": "PETIT BENARE 150G | 2,89 € 0",
+      "normalized_text": "PETIT BENARE 150G 2,89 € 0",
+      "center_y": 654.0,
+      "y_min": 634.0,
+      "y_max": 675.0,
+      "confidence": 0.96043,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 2.89,
+          "token_index": 38,
+          "x_center": 659.0,
+          "score": 0.96043,
+          "raw_text": "2,89 € 0"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 28,
+      "text": "1X | 2.89 EUR",
+      "normalized_text": "1X 2.89 EUR",
+      "center_y": 677.0,
+      "y_min": 658.0,
+      "y_max": 693.0,
+      "confidence": 0.62943,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 2.89,
+          "token_index": 40,
+          "x_center": 429.0,
+          "score": 0.98196,
+          "raw_text": "2.89 EUR"
+        }
+      ],
+      "role_scores": {
+        "detail": 1.0,
+        "product": -0.6,
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0
+      },
+      "strongest_role": "detail",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": true,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 29,
+      "text": "HUILES",
+      "normalized_text": "HUILES",
+      "center_y": 698.5,
+      "y_min": 683.0,
+      "y_max": 714.0,
+      "confidence": 0.99306,
+      "source_segment": "top",
+      "money": [],
+      "role_scores": {
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.55,
+        "tax": 0.0,
+        "total": 0.0,
+        "detail": 0.0,
+        "product": 0.72
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 30,
+      "text": "BOP BOURBON HUILE TOURNESOL L | 2,44 € 0",
+      "normalized_text": "BOP BOURBON HUILE TOURNESOL L 2,44 € 0",
+      "center_y": 715.25,
+      "y_min": 695.0,
+      "y_max": 737.0,
+      "confidence": 0.89056,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 2.44,
+          "token_index": 43,
+          "x_center": 661.0,
+          "score": 0.89056,
+          "raw_text": "2,44 € 0"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 31,
+      "text": "Ix | 2.,44 EUR",
+      "normalized_text": "IX 2.,44 EUR",
+      "center_y": 740.25,
+      "y_min": 719.0,
+      "y_max": 757.0,
+      "confidence": 0.53682,
+      "source_segment": "top",
+      "money": [],
+      "role_scores": {
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "tax": 0.0,
+        "total": 0.0,
+        "header": 0.0,
+        "footer": 0.0,
+        "product": 0.25
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 32,
+      "text": "LAITS ET DERIVES",
+      "normalized_text": "LAITS ET DERIVES",
+      "center_y": 759.0,
+      "y_min": 743.0,
+      "y_max": 775.0,
+      "confidence": 0.98871,
+      "source_segment": "top",
+      "money": [],
+      "role_scores": {
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.55,
+        "tax": 0.0,
+        "total": 0.0,
+        "detail": 0.0,
+        "product": 0.72
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 33,
+      "text": "LAIT UHT 1/2EC LAIT D'ICI BK1L | 4.76 € | 0",
+      "normalized_text": "LAIT UHT 1/2EC LAIT D'ICI BK1L 4.76 € 0",
+      "center_y": 773.5,
+      "y_min": 758.0,
+      "y_max": 795.0,
+      "confidence": 0.95494,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 4.76,
+          "token_index": 48,
+          "x_center": 645.0,
+          "score": 0.98747,
+          "raw_text": "4.76 €"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 34,
+      "text": "4 X | 1.19 EUR | 2,59 € | 11",
+      "normalized_text": "4 X 1.19 EUR 2,59 € 11",
+      "center_y": 808.0,
+      "y_min": 787.0,
+      "y_max": 830.0,
+      "confidence": 0.70514,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 1.19,
+          "token_index": 51,
+          "x_center": 431.5,
+          "score": 0.98964,
+          "raw_text": "1.19 EUR"
+        },
+        {
+          "amount": 2.59,
+          "token_index": 53,
+          "x_center": 644.5,
+          "score": 0.9847,
+          "raw_text": "2,59 €"
+        }
+      ],
+      "role_scores": {
+        "detail": 1.0,
+        "product": -0.6,
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0
+      },
+      "strongest_role": "detail",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": true,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 35,
+      "text": "SP.LAIT.FLUIDE UHT58MG U3X20CL",
+      "normalized_text": "SP.LAIT.FLUIDE UHT58MG U3X20CL",
+      "center_y": 821.5,
+      "y_min": 804.0,
+      "y_max": 839.0,
+      "confidence": 0.94488,
+      "source_segment": "top",
+      "money": [],
+      "role_scores": {
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.55,
+        "tax": 0.0,
+        "total": 0.0,
+        "detail": 0.0,
+        "product": 0.72
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 36,
+      "text": "1 x | 2,59 EUR",
+      "normalized_text": "1 X 2,59 EUR",
+      "center_y": 844.25,
+      "y_min": 826.0,
+      "y_max": 860.0,
+      "confidence": 0.79058,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 2.59,
+          "token_index": 56,
+          "x_center": 431.0,
+          "score": 0.96765,
+          "raw_text": "2,59 EUR"
+        }
+      ],
+      "role_scores": {
+        "detail": 1.0,
+        "product": -0.6,
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0
+      },
+      "strongest_role": "detail",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": true,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 37,
+      "text": "MOUCHOIRS",
+      "normalized_text": "MOUCHOIRS",
+      "center_y": 862.5,
+      "y_min": 845.0,
+      "y_max": 880.0,
+      "confidence": 0.95593,
+      "source_segment": "top",
+      "money": [],
+      "role_scores": {
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.55,
+        "tax": 0.0,
+        "total": 0.0,
+        "detail": 0.0,
+        "product": 0.72
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 38,
+      "text": "BOP DOUPLI MOUCH POCK 3P X10 | 1,00 € | 0",
+      "normalized_text": "BOP DOUPLI MOUCH POCK 3P X10 1,00 € 0",
+      "center_y": 878.0,
+      "y_min": 864.0,
+      "y_max": 904.0,
+      "confidence": 0.86728,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 1.0,
+          "token_index": 59,
+          "x_center": 648.0,
+          "score": 0.86728,
+          "raw_text": "1,00 €"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 39,
+      "text": "1 x | 1.00 EUR",
+      "normalized_text": "1 X 1.00 EUR",
+      "center_y": 906.5,
+      "y_min": 887.0,
+      "y_max": 922.0,
+      "confidence": 0.80228,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 1.0,
+          "token_index": 62,
+          "x_center": 430.5,
+          "score": 0.91148,
+          "raw_text": "1.00 EUR"
+        }
+      ],
+      "role_scores": {
+        "detail": 1.0,
+        "product": -0.6,
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0
+      },
+      "strongest_role": "detail",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": true,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 40,
+      "text": "BROSSE GLAMOUR DEMELAGE FACILE | PARFUMERTE | 5,99 e | 13",
+      "normalized_text": "BROSSE GLAMOUR DEMELAGE FACILE PARFUMERTE 5,99 E 13",
+      "center_y": 937.25,
+      "y_min": 913.0,
+      "y_max": 965.0,
+      "confidence": 0.86094,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 5.99,
+          "token_index": 64,
+          "x_center": 647.0,
+          "score": 0.86094,
+          "raw_text": "5,99 e"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 41,
+      "text": "1 x | 5,99 EUR | 3,25 € | 13",
+      "normalized_text": "1 X 5,99 EUR 3,25 € 13",
+      "center_y": 969.5,
+      "y_min": 950.0,
+      "y_max": 995.0,
+      "confidence": 0.87774,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 5.99,
+          "token_index": 69,
+          "x_center": 429.0,
+          "score": 0.95242,
+          "raw_text": "5,99 EUR"
+        },
+        {
+          "amount": 3.25,
+          "token_index": 70,
+          "x_center": 648.0,
+          "score": 0.9132,
+          "raw_text": "3,25 €"
+        }
+      ],
+      "role_scores": {
+        "detail": 1.0,
+        "product": -0.6,
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0
+      },
+      "strongest_role": "detail",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": true,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 42,
+      "text": "GL DCH.BAMBOU&ALOE VER.U 75OML",
+      "normalized_text": "GL DCH.BAMBOU&ALOE VER.U 75OML",
+      "center_y": 983.0,
+      "y_min": 965.0,
+      "y_max": 1001.0,
+      "confidence": 0.88919,
+      "source_segment": "top",
+      "money": [],
+      "role_scores": {
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "tax": 0.0,
+        "total": 0.0,
+        "header": 0.0,
+        "footer": 0.0,
+        "product": 0.72
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 43,
+      "text": "1 x | 3.25 EUR",
+      "normalized_text": "1 X 3.25 EUR",
+      "center_y": 1001.75,
+      "y_min": 987.0,
+      "y_max": 1016.0,
+      "confidence": 0.74894,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 3.25,
+          "token_index": 73,
+          "x_center": 427.0,
+          "score": 0.9798,
+          "raw_text": "3.25 EUR"
+        }
+      ],
+      "role_scores": {
+        "detail": 1.0,
+        "product": -0.6,
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0
+      },
+      "strongest_role": "detail",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": true,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 44,
+      "text": "COOUILLETTES Q.SUP.U CELLO 1KG | PATES | 1,75 € | 11",
+      "normalized_text": "COOUILLETTES Q.SUP.U CELLO 1KG PATES 1,75 € 11",
+      "center_y": 1033.25,
+      "y_min": 1008.0,
+      "y_max": 1061.0,
+      "confidence": 0.95132,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 1.75,
+          "token_index": 76,
+          "x_center": 654.5,
+          "score": 0.96189,
+          "raw_text": "1,75 €"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 45,
+      "text": "1 x | 1,75 EUR",
+      "normalized_text": "1 X 1,75 EUR",
+      "center_y": 1066.75,
+      "y_min": 1050.0,
+      "y_max": 1084.0,
+      "confidence": 0.84197,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 1.75,
+          "token_index": 79,
+          "x_center": 426.0,
+          "score": 0.96302,
+          "raw_text": "1,75 EUR"
+        }
+      ],
+      "role_scores": {
+        "detail": 1.0,
+        "product": -0.6,
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0
+      },
+      "strongest_role": "detail",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": true,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 46,
+      "text": "SAUCES CHAUDES",
+      "normalized_text": "SAUCES CHAUDES",
+      "center_y": 1087.0,
+      "y_min": 1070.0,
+      "y_max": 1104.0,
+      "confidence": 0.99798,
+      "source_segment": "top",
+      "money": [],
+      "role_scores": {
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.55,
+        "tax": 0.0,
+        "total": 0.0,
+        "detail": 0.0,
+        "product": 0.72
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 47,
+      "text": "SAUCE TOMATE FRAICHES U 2X190U | 1,85 € 0",
+      "normalized_text": "SAUCE TOMATE FRAICHES U 2X190U 1,85 € 0",
+      "center_y": 1106.5,
+      "y_min": 1084.0,
+      "y_max": 1129.0,
+      "confidence": 0.88685,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 1.85,
+          "token_index": 82,
+          "x_center": 674.5,
+          "score": 0.88685,
+          "raw_text": "1,85 € 0"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 48,
+      "text": "1 x | 1,85 EUR",
+      "normalized_text": "1 X 1,85 EUR",
+      "center_y": 1135.75,
+      "y_min": 1120.0,
+      "y_max": 1151.0,
+      "confidence": 0.70224,
+      "source_segment": "top",
+      "money": [
+        {
+          "amount": 1.85,
+          "token_index": 84,
+          "x_center": 423.5,
+          "score": 0.97768,
+          "raw_text": "1,85 EUR"
+        }
+      ],
+      "role_scores": {
+        "detail": 1.0,
+        "product": -0.6,
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0
+      },
+      "strongest_role": "detail",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": true,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 49,
+      "text": "1 x | 1,85 EUR",
+      "normalized_text": "1 X 1,85 EUR",
+      "center_y": 1212.25,
+      "y_min": 1196.0,
+      "y_max": 1228.0,
+      "confidence": 0.80013,
+      "source_segment": "bottom",
+      "money": [
+        {
+          "amount": 1.85,
+          "token_index": 86,
+          "x_center": 424.0,
+          "score": 0.97408,
+          "raw_text": "1,85 EUR"
+        }
+      ],
+      "role_scores": {
+        "detail": 1.0,
+        "product": -0.6,
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0
+      },
+      "strongest_role": "detail",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": true,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 50,
+      "text": "SURGELE SALE",
+      "normalized_text": "SURGELE SALE",
+      "center_y": 1232.5,
+      "y_min": 1216.0,
+      "y_max": 1249.0,
+      "confidence": 0.99928,
+      "source_segment": "bottom",
+      "money": [],
+      "role_scores": {
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.55,
+        "tax": 0.0,
+        "total": 0.0,
+        "detail": 0.0,
+        "product": 0.72
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 51,
+      "text": "Q.CREU TROP DEU 13/15 VANNAMEI | 5,10 € 0",
+      "normalized_text": "Q.CREU TROP DEU 13/15 VANNAMEI 5,10 € 0",
+      "center_y": 1253.0,
+      "y_min": 1231.0,
+      "y_max": 1273.0,
+      "confidence": 0.92898,
+      "source_segment": "bottom",
+      "money": [
+        {
+          "amount": 5.1,
+          "token_index": 89,
+          "x_center": 677.5,
+          "score": 0.92898,
+          "raw_text": "5,10 € 0"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 52,
+      "text": "2x | 2,55 EUR",
+      "normalized_text": "2X 2,55 EUR",
+      "center_y": 1279.5,
+      "y_min": 1262.0,
+      "y_max": 1296.0,
+      "confidence": 0.8769,
+      "source_segment": "bottom",
+      "money": [
+        {
+          "amount": 2.55,
+          "token_index": 91,
+          "x_center": 419.5,
+          "score": 0.98073,
+          "raw_text": "2,55 EUR"
+        }
+      ],
+      "role_scores": {
+        "detail": 1.0,
+        "product": -0.6,
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0
+      },
+      "strongest_role": "detail",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": true,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 53,
+      "text": "SAUMON SAUUAGE PAVE S/P 2X125G | 3,85 € | 11",
+      "normalized_text": "SAUMON SAUUAGE PAVE S/P 2X125G 3,85 € 11",
+      "center_y": 1296.0,
+      "y_min": 1279.0,
+      "y_max": 1319.0,
+      "confidence": 0.9024,
+      "source_segment": "bottom",
+      "money": [
+        {
+          "amount": 3.85,
+          "token_index": 93,
+          "x_center": 657.5,
+          "score": 0.9024,
+          "raw_text": "3,85 €"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 54,
+      "text": "1x | 3.85 EUR",
+      "normalized_text": "1X 3.85 EUR",
+      "center_y": 1327.25,
+      "y_min": 1310.0,
+      "y_max": 1343.0,
+      "confidence": 0.87852,
+      "source_segment": "bottom",
+      "money": [
+        {
+          "amount": 3.85,
+          "token_index": 96,
+          "x_center": 419.0,
+          "score": 0.952,
+          "raw_text": "3.85 EUR"
+        }
+      ],
+      "role_scores": {
+        "detail": 1.0,
+        "product": -0.6,
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0
+      },
+      "strongest_role": "detail",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": true,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 55,
+      "text": "SURGELE SUCRE | BAT.SORB.MULTIFRUIT.OASIS 400G | 5,50 € | 11",
+      "normalized_text": "SURGELE SUCRE BAT.SORB.MULTIFRUIT.OASIS 400G 5,50 € 11",
+      "center_y": 1360.5,
+      "y_min": 1331.0,
+      "y_max": 1386.0,
+      "confidence": 0.97739,
+      "source_segment": "bottom",
+      "money": [
+        {
+          "amount": 5.5,
+          "token_index": 99,
+          "x_center": 658.5,
+          "score": 0.97739,
+          "raw_text": "5,50 €"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 56,
+      "text": "1 x | 5,50 EUR",
+      "normalized_text": "1 X 5,50 EUR",
+      "center_y": 1395.25,
+      "y_min": 1379.0,
+      "y_max": 1412.0,
+      "confidence": 0.73789,
+      "source_segment": "bottom",
+      "money": [
+        {
+          "amount": 5.5,
+          "token_index": 102,
+          "x_center": 423.0,
+          "score": 0.9238,
+          "raw_text": "5,50 EUR"
+        }
+      ],
+      "role_scores": {
+        "detail": 1.0,
+        "product": -0.6,
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0
+      },
+      "strongest_role": "detail",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": true,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 57,
+      "text": "ULTRA FRAIS | 4.29 € | 11",
+      "normalized_text": "ULTRA FRAIS 4.29 € 11",
+      "center_y": 1423.5,
+      "y_min": 1394.0,
+      "y_max": 1448.0,
+      "confidence": 0.89734,
+      "source_segment": "bottom",
+      "money": [
+        {
+          "amount": 4.29,
+          "token_index": 106,
+          "x_center": 661.0,
+          "score": 0.89734,
+          "raw_text": "4.29 €"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 58,
+      "text": "BQP YOPLAIT | AROM/ILES 12X125G",
+      "normalized_text": "BQP YOPLAIT AROM/ILES 12X125G",
+      "center_y": 1439.5,
+      "y_min": 1420.0,
+      "y_max": 1458.0,
+      "confidence": 0.96714,
+      "source_segment": "bottom",
+      "money": [],
+      "role_scores": {
+        "header": 0.0,
+        "footer": 0.0,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.55,
+        "tax": 0.0,
+        "total": 0.0,
+        "detail": 0.0,
+        "product": 0.72
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 59,
+      "text": "1 X | 4,29 EUR | 2,79 € | 0",
+      "normalized_text": "1 X 4,29 EUR 2,79 € 0",
+      "center_y": 1467.75,
+      "y_min": 1445.0,
+      "y_max": 1493.0,
+      "confidence": 0.69888,
+      "source_segment": "bottom",
+      "money": [
+        {
+          "amount": 4.29,
+          "token_index": 109,
+          "x_center": 426.5,
+          "score": 0.96364,
+          "raw_text": "4,29 EUR"
+        },
+        {
+          "amount": 2.79,
+          "token_index": 111,
+          "x_center": 661.5,
+          "score": 0.96523,
+          "raw_text": "2,79 €"
+        }
+      ],
+      "role_scores": {
+        "detail": 1.0,
+        "product": -0.6,
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0
+      },
+      "strongest_role": "detail",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": true,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 60,
+      "text": "BUP CALIN 20%MG 500G NAT",
+      "normalized_text": "BUP CALIN 20%MG 500G NAT",
+      "center_y": 1484.5,
+      "y_min": 1459.0,
+      "y_max": 1510.0,
+      "confidence": 0.95484,
+      "source_segment": "bottom",
+      "money": [],
+      "role_scores": {
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "tax": 0.0,
+        "total": 0.0,
+        "header": 0.0,
+        "footer": 0.0,
+        "product": 0.72
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 61,
+      "text": "1 x | 2.79 EUR",
+      "normalized_text": "1 X 2.79 EUR",
+      "center_y": 1508.0,
+      "y_min": 1489.0,
+      "y_max": 1529.0,
+      "confidence": 0.81584,
+      "source_segment": "bottom",
+      "money": [
+        {
+          "amount": 2.79,
+          "token_index": 114,
+          "x_center": 428.5,
+          "score": 0.97792,
+          "raw_text": "2.79 EUR"
+        }
+      ],
+      "role_scores": {
+        "detail": 1.0,
+        "product": -0.6,
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0
+      },
+      "strongest_role": "detail",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": true,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 62,
+      "text": "Nanbre de | lignes d'article 20 | 69,48 €",
+      "normalized_text": "NANBRE DE LIGNES D'ARTICLE 20 69,48 €",
+      "center_y": 1543.0,
+      "y_min": 1518.0,
+      "y_max": 1590.0,
+      "confidence": 0.914,
+      "source_segment": "bottom",
+      "money": [
+        {
+          "amount": 69.48,
+          "token_index": 117,
+          "x_center": 711.5,
+          "score": 0.914,
+          "raw_text": "69,48 €"
+        }
+      ],
+      "role_scores": {
+        "count": 1.0,
+        "product": 0.2,
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "footer": 0.85
+      },
+      "strongest_role": "count",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 63,
+      "text": "TOTAL [24] Articles | 68,11 €",
+      "normalized_text": "TOTAL [24] ARTICLES 68,11 €",
+      "center_y": 1597.25,
+      "y_min": 1552.0,
+      "y_max": 1630.0,
+      "confidence": 0.8894,
+      "source_segment": "bottom",
+      "money": [
+        {
+          "amount": 68.11,
+          "token_index": 119,
+          "x_center": 713.0,
+          "score": 0.8894,
+          "raw_text": "68,11 €"
+        }
+      ],
+      "role_scores": {
+        "total": 0.85,
+        "count": 1.0,
+        "product": -0.8,
+        "footer": 0.85
+      },
+      "strongest_role": "count",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": 24
+    },
+    {
+      "line_id": 64,
+      "text": "SOUS-TOTAL | 1.37 €",
+      "normalized_text": "SOUS-TOTAL 1.37 €",
+      "center_y": 1631.5,
+      "y_min": 1603.0,
+      "y_max": 1659.0,
+      "confidence": 0.85877,
+      "source_segment": "bottom",
+      "money": [
+        {
+          "amount": 1.37,
+          "token_index": 121,
+          "x_center": 717.5,
+          "score": 0.85877,
+          "raw_text": "1.37 €"
+        }
+      ],
+      "role_scores": {
+        "subtotal": 1.0,
+        "total": -0.9,
+        "footer": 0.85
+      },
+      "strongest_role": "subtotal",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 65,
+      "text": "TOTAL TUA | Dont articles éligibles TR | 57,85 €",
+      "normalized_text": "TOTAL TUA DONT ARTICLES ELIGIBLES TR 57,85 €",
+      "center_y": 1661.5,
+      "y_min": 1628.0,
+      "y_max": 1694.0,
+      "confidence": 0.82742,
+      "source_segment": "bottom",
+      "money": [
+        {
+          "amount": 57.85,
+          "token_index": 124,
+          "x_center": 715.0,
+          "score": 0.82742,
+          "raw_text": "57,85 €"
+        }
+      ],
+      "role_scores": {
+        "total": -0.05,
+        "subtotal": 1.0,
+        "tax": 0.8,
+        "footer": 0.85
+      },
+      "strongest_role": "subtotal",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 66,
+      "text": "70,00 €",
+      "normalized_text": "70,00 €",
+      "center_y": 1689.5,
+      "y_min": 1667.0,
+      "y_max": 1712.0,
+      "confidence": 0.92058,
+      "source_segment": "bottom",
+      "money": [
+        {
+          "amount": 70.0,
+          "token_index": 125,
+          "x_center": 716.0,
+          "score": 0.92058,
+          "raw_text": "70,00 €"
+        }
+      ],
+      "role_scores": {
+        "unknown": 1.0,
+        "footer": 0.85
+      },
+      "strongest_role": "unknown",
+      "has_letters": false,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 67,
+      "text": "ESPECES | 0.52 €",
+      "normalized_text": "ESPECES 0.52 €",
+      "center_y": 1718.0,
+      "y_min": 1688.0,
+      "y_max": 1752.0,
+      "confidence": 0.87855,
+      "source_segment": "bottom",
+      "money": [
+        {
+          "amount": 0.52,
+          "token_index": 126,
+          "x_center": 720.0,
+          "score": 0.87855,
+          "raw_text": "0.52 €"
+        }
+      ],
+      "role_scores": {
+        "payment": 1.0,
+        "total": -0.8,
+        "subtotal": 0.0,
+        "footer": 0.85
+      },
+      "strongest_role": "payment",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 68,
+      "text": "Rendu | ÉSPECES | TUA | HT | TTC",
+      "normalized_text": "RENDU ESPECES TUA HT TTC",
+      "center_y": 1749.5,
+      "y_min": 1711.0,
+      "y_max": 1772.0,
+      "confidence": 0.9211,
+      "source_segment": "bottom",
+      "money": [],
+      "role_scores": {
+        "change": 1.0,
+        "total": -1.0,
+        "tax": 0.8,
+        "detail": 0.0,
+        "section": 0.0,
+        "discount": 0.0,
+        "footer": 0.85
+      },
+      "strongest_role": "change",
+      "has_letters": true,
+      "has_digits": false,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 69,
+      "text": "0.00 € | 32,38 | 32,38€",
+      "normalized_text": "0.00 € 32,38 32,38€",
+      "center_y": 1773.5,
+      "y_min": 1743.0,
+      "y_max": 1795.0,
+      "confidence": 0.94392,
+      "source_segment": "bottom",
+      "money": [
+        {
+          "amount": 0.0,
+          "token_index": 134,
+          "x_center": 387.0,
+          "score": 0.94392,
+          "raw_text": "0.00 €"
+        },
+        {
+          "amount": 32.38,
+          "token_index": 131,
+          "x_center": 503.5,
+          "score": 0.96105,
+          "raw_text": "32,38"
+        },
+        {
+          "amount": 32.38,
+          "token_index": 136,
+          "x_center": 626.0,
+          "score": 0.95272,
+          "raw_text": "32,38€"
+        }
+      ],
+      "role_scores": {
+        "unknown": 1.0,
+        "footer": 0.85
+      },
+      "strongest_role": "unknown",
+      "has_letters": false,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 70,
+      "text": "0 | 0.00 | 0.54 C | 25,93 € | 9.80 | 26,47 €",
+      "normalized_text": "0 0.00 0.54 C 25,93 € 9.80 26,47 €",
+      "center_y": 1799.5,
+      "y_min": 1767.0,
+      "y_max": 1824.0,
+      "confidence": 0.81456,
+      "source_segment": "bottom",
+      "money": [
+        {
+          "amount": 0.0,
+          "token_index": 138,
+          "x_center": 256.5,
+          "score": 0.99983,
+          "raw_text": "0.00"
+        },
+        {
+          "amount": 0.54,
+          "token_index": 139,
+          "x_center": 389.0,
+          "score": 0.81456,
+          "raw_text": "0.54 C"
+        },
+        {
+          "amount": 25.93,
+          "token_index": 135,
+          "x_center": 504.5,
+          "score": 0.91048,
+          "raw_text": "25,93 €"
+        },
+        {
+          "amount": 9.8,
+          "token_index": 140,
+          "x_center": 500.0,
+          "score": 0.86354,
+          "raw_text": "9.80"
+        },
+        {
+          "amount": 26.47,
+          "token_index": 141,
+          "x_center": 628.0,
+          "score": 0.87449,
+          "raw_text": "26,47 €"
+        }
+      ],
+      "role_scores": {
+        "total": 0.0,
+        "subtotal": 0.0,
+        "payment": 0.0,
+        "change": 0.0,
+        "tax": 0.0,
+        "header": 0.0,
+        "detail": 0.0,
+        "discount": 0.0,
+        "product": 1.0,
+        "footer": 0.85
+      },
+      "strongest_role": "product",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 71,
+      "text": "11 | 2.10 | 0,83 € | 10.63 €",
+      "normalized_text": "11 2.10 0,83 € 10.63 €",
+      "center_y": 1822.75,
+      "y_min": 1797.0,
+      "y_max": 1844.0,
+      "confidence": 0.84381,
+      "source_segment": "bottom",
+      "money": [
+        {
+          "amount": 2.1,
+          "token_index": 144,
+          "x_center": 256.5,
+          "score": 0.99394,
+          "raw_text": "2.10"
+        },
+        {
+          "amount": 0.83,
+          "token_index": 145,
+          "x_center": 390.0,
+          "score": 0.88657,
+          "raw_text": "0,83 €"
+        },
+        {
+          "amount": 10.63,
+          "token_index": 142,
+          "x_center": 628.0,
+          "score": 0.84381,
+          "raw_text": "10.63 €"
+        }
+      ],
+      "role_scores": {
+        "unknown": 1.0,
+        "footer": 0.85
+      },
+      "strongest_role": "unknown",
+      "has_letters": false,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 72,
+      "text": "13 | 8,50 | 60.11€ | 69,48 €",
+      "normalized_text": "13 8,50 60.11€ 69,48 €",
+      "center_y": 1849.75,
+      "y_min": 1829.0,
+      "y_max": 1868.0,
+      "confidence": 0.88397,
+      "source_segment": "bottom",
+      "money": [
+        {
+          "amount": 8.5,
+          "token_index": 147,
+          "x_center": 257.0,
+          "score": 0.90678,
+          "raw_text": "8,50"
+        },
+        {
+          "amount": 60.11,
+          "token_index": 148,
+          "x_center": 507.0,
+          "score": 0.88397,
+          "raw_text": "60.11€"
+        },
+        {
+          "amount": 69.48,
+          "token_index": 149,
+          "x_center": 629.0,
+          "score": 0.98632,
+          "raw_text": "69,48 €"
+        }
+      ],
+      "role_scores": {
+        "unknown": 1.0,
+        "footer": 0.85
+      },
+      "strongest_role": "unknown",
+      "has_letters": false,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 73,
+      "text": "1,37 €",
+      "normalized_text": "1,37 €",
+      "center_y": 1870.0,
+      "y_min": 1845.0,
+      "y_max": 1895.0,
+      "confidence": 0.98387,
+      "source_segment": "bottom",
+      "money": [
+        {
+          "amount": 1.37,
+          "token_index": 150,
+          "x_center": 395.0,
+          "score": 0.98387,
+          "raw_text": "1,37 €"
+        }
+      ],
+      "role_scores": {
+        "unknown": 1.0,
+        "footer": 0.85
+      },
+      "strongest_role": "unknown",
+      "has_letters": false,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 74,
+      "text": "TOTAL | 26005",
+      "normalized_text": "TOTAL 26005",
+      "center_y": 1890.25,
+      "y_min": 1873.0,
+      "y_max": 1915.0,
+      "confidence": 0.99938,
+      "source_segment": "bottom",
+      "money": [],
+      "role_scores": {
+        "total": 0.85,
+        "header": 0.0,
+        "footer": 0.85,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.0,
+        "tax": 0.0,
+        "detail": 0.0,
+        "product": 0.7
+      },
+      "strongest_role": "total",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    },
+    {
+      "line_id": 75,
+      "text": "0872818600011 NAF | 4711E",
+      "normalized_text": "0872818600011 NAF 4711E",
+      "center_y": 1971.5,
+      "y_min": 1950.0,
+      "y_max": 1995.0,
+      "confidence": 0.98572,
+      "source_segment": "bottom",
+      "money": [],
+      "role_scores": {
+        "header": 0.0,
+        "footer": 0.85,
+        "count": 0.0,
+        "discount": 0.0,
+        "section": 0.55,
+        "tax": 0.0,
+        "total": 0.0,
+        "detail": 0.0,
+        "product": 0.25
+      },
+      "strongest_role": "footer",
+      "has_letters": true,
+      "has_digits": true,
+      "has_multibuy": false,
+      "has_weight": false,
+      "declared_count": null
+    }
+  ],
+  "legacy_receipt": {
+    "store_name": "Super U",
+    "store_location": "Piton Saint-Leu",
+    "receipt_date": null,
+    "receipt_time": null,
+    "declared_item_count": 24,
+    "product_line_count": 20,
+    "counted_quantity": 24.0,
+    "items_total": 69.48,
+    "total": 69.48,
+    "article_total": 69.48,
+    "immediate_discount_total": null,
+    "payable_total": null,
+    "warning_count": 0,
+    "warnings": []
+  },
+  "comparison": {
+    "legacy_total": 69.48,
+    "legacy_article_total": 69.48,
+    "legacy_items_total": 69.48,
+    "legacy_product_line_count": 20,
+    "legacy_counted_quantity": 24.0,
+    "v2_total": 69.48,
+    "v2_items_total": 69.48,
+    "v2_product_line_count": 20,
+    "v2_counted_quantity": 24,
+    "v2_reasons": [
+      "exact_total_match",
+      "exact_declared_count_match"
+    ]
+  }
+}

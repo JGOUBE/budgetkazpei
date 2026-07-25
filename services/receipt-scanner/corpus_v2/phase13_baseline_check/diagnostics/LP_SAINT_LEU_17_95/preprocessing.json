@@ -1,0 +1,12 @@
+{
+  "source_path": "C:\\Users\\Jack.LAPTOP-2USDKF0K\\Downloads\\lp_saint_leu_17_95.jpg",
+  "output_path": "C:\\Users\\Jack.LAPTOP-2USDKF0K\\budgetkazpei\\services\\receipt-scanner\\corpus_v2\\phase13_baseline_check\\diagnostics\\LP_SAINT_LEU_17_95\\preprocessed.jpg",
+  "original_width": 1536,
+  "original_height": 2048,
+  "output_width": 1200,
+  "output_height": 1600,
+  "scale": 0.78125,
+  "resized": true,
+  "rotation_degrees": 0,
+  "orientation_reason": "portrait_or_square"
+}

@@ -1,0 +1,35 @@
+{
+  "repair_count": 3,
+  "repairs": [
+    {
+      "mode": "description_before_price",
+      "source_segment": "bottom",
+      "original_line_ids": [
+        62,
+        63
+      ],
+      "center_gap": 29.75,
+      "result_text": "Nanbre de | lignes d'article 20 | 69,48 €"
+    },
+    {
+      "mode": "description_before_price",
+      "source_segment": "bottom",
+      "original_line_ids": [
+        64,
+        65
+      ],
+      "center_gap": 24.5,
+      "result_text": "TOTAL [24] Articles | 68,11 €"
+    },
+    {
+      "mode": "price_before_description",
+      "source_segment": "bottom",
+      "original_line_ids": [
+        69,
+        70
+      ],
+      "center_gap": 15.0,
+      "result_text": "ESPECES | 0.52 €"
+    }
+  ]
+}

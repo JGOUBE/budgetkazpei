@@ -1,0 +1,54 @@
+{
+    "phase":  12,
+    "functional_contract":  {
+                                "automatic_pass":  4,
+                                "pass_with_review":  2,
+                                "fail":  0,
+                                "error":  0,
+                                "total_cases":  6
+                            },
+    "cases":  {
+                  "LP_SAINT_LEU_17_95":  {
+                                             "verdict":  "PASS",
+                                             "v2_total":  17.95,
+                                             "v2_product_lines":  9,
+                                             "v2_quantity":  9
+                                         },
+                  "LP_CILAOS_15_07":  {
+                                          "verdict":  "PASS",
+                                          "v2_total":  15.07,
+                                          "v2_product_lines":  5,
+                                          "v2_quantity":  7
+                                      },
+                  "LP_SAINT_LEU_39_30":  {
+                                             "verdict":  "PASS_WITH_REVIEW",
+                                             "v2_total":  39.3,
+                                             "v2_product_lines":  11,
+                                             "v2_quantity":  11,
+                                             "review_reasons":  [
+                                                                    "date_requires_review"
+                                                                ]
+                                         },
+                  "LECLERC_LE_PORTAIL_109_27":  {
+                                                    "verdict":  "PASS",
+                                                    "v2_total":  109.27,
+                                                    "v2_product_lines":  24,
+                                                    "v2_quantity":  26
+                                                },
+                  "LP_SAINT_LEU_27_22":  {
+                                             "verdict":  "PASS",
+                                             "v2_total":  27.22,
+                                             "v2_product_lines":  14,
+                                             "v2_quantity":  14
+                                         },
+                  "SUPER_U_PITON_SAINT_LEU_69_48":  {
+                                                        "verdict":  "PASS_WITH_REVIEW",
+                                                        "v2_total":  69.48,
+                                                        "v2_product_lines":  20,
+                                                        "v2_quantity":  24,
+                                                        "review_reasons":  [
+                                                                               "date_requires_review"
+                                                                           ]
+                                                    }
+              }
+}

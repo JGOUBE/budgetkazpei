@@ -1,0 +1,187 @@
+{
+  "run_id": "LP_SAINT_LEU_27_22",
+  "top_source": "C:\\Users\\Jack.LAPTOP-2USDKF0K\\budgetkazpei\\services\\receipt-scanner\\corpus_v2\\images\\lp_saint_leu_27_22_haut.jpg",
+  "bottom_source": "C:\\Users\\Jack.LAPTOP-2USDKF0K\\budgetkazpei\\services\\receipt-scanner\\corpus_v2\\images\\lp_saint_leu_27_22_bas.jpg",
+  "preprocessing": {
+    "top": {
+      "source_path": "C:\\Users\\Jack.LAPTOP-2USDKF0K\\budgetkazpei\\services\\receipt-scanner\\corpus_v2\\images\\lp_saint_leu_27_22_haut.jpg",
+      "output_path": "C:\\Users\\Jack.LAPTOP-2USDKF0K\\budgetkazpei\\services\\receipt-scanner\\corpus_v2\\phase13_baseline_check\\diagnostics\\LP_SAINT_LEU_27_22\\top_preprocessed.jpg",
+      "original_width": 1536,
+      "original_height": 2048,
+      "output_width": 1200,
+      "output_height": 1600,
+      "scale": 0.78125,
+      "resized": true,
+      "rotation_degrees": 0,
+      "orientation_reason": "portrait_or_square"
+    },
+    "bottom": {
+      "source_path": "C:\\Users\\Jack.LAPTOP-2USDKF0K\\budgetkazpei\\services\\receipt-scanner\\corpus_v2\\images\\lp_saint_leu_27_22_bas.jpg",
+      "output_path": "C:\\Users\\Jack.LAPTOP-2USDKF0K\\budgetkazpei\\services\\receipt-scanner\\corpus_v2\\phase13_baseline_check\\diagnostics\\LP_SAINT_LEU_27_22\\bottom_preprocessed.jpg",
+      "original_width": 1536,
+      "original_height": 2048,
+      "output_width": 1200,
+      "output_height": 1600,
+      "scale": 0.78125,
+      "resized": true,
+      "rotation_degrees": 0,
+      "orientation_reason": "portrait_or_square"
+    }
+  },
+  "ocr": {
+    "top_token_count": 58,
+    "bottom_token_count": 59,
+    "merged_token_count": 95,
+    "elapsed_seconds_total": 26.307,
+    "staggered_repair_count": 0,
+    "multibuy_repair_count": 0
+  },
+  "overlap": {
+    "bottom_cut_line": 9,
+    "matched_anchor_count": 9,
+    "average_similarity": 0.7941,
+    "top_trailing_line_count": 0,
+    "bottom_leading_line_count": 0,
+    "matches": [
+      {
+        "top_line_index": 18,
+        "bottom_line_index": 0,
+        "top_text": "(1)3263853183468 | *CACAHUETES GRILLEES 500G | 2.83 EUR",
+        "bottom_text": "(1)3263853183468 | *CACAHUETES GRILLEES 500G | 2.83 EUR",
+        "similarity": 1.0
+      },
+      {
+        "top_line_index": 20,
+        "bottom_line_index": 1,
+        "top_text": "JEUDI 10% MDD",
+        "bottom_text": "JEUDI 10% MDD | -0.28 EUR",
+        "similarity": 0.7963
+      },
+      {
+        "top_line_index": 22,
+        "bottom_line_index": 2,
+        "top_text": "(1)3222477013445 | SERPENTINI 500G CO",
+        "bottom_text": "(1)3222477013445 | SERPENIINI 500G CO | 1.80 EUR",
+        "similarity": 0.7522
+      },
+      {
+        "top_line_index": 24,
+        "bottom_line_index": 3,
+        "top_text": "JEUDI 10% MDD",
+        "bottom_text": "JEUDI 10% MDD | -0.18 EUR",
+        "similarity": 0.7963
+      },
+      {
+        "top_line_index": 26,
+        "bottom_line_index": 4,
+        "top_text": "(1)3222475104336 | GALETTE MAIS 115G CO DIO",
+        "bottom_text": "(1)3222475104336 | GALETTE MAIS 115G CO BIO | 1.64 EUR",
+        "similarity": 0.8151
+      },
+      {
+        "top_line_index": 28,
+        "bottom_line_index": 5,
+        "top_text": "JEUDI 10% MDD",
+        "bottom_text": "JEUDI 10% MDD | -0.16 EUR",
+        "similarity": 0.7963
+      },
+      {
+        "top_line_index": 30,
+        "bottom_line_index": 6,
+        "top_text": "(1)3263853107815 | CHIPS A L ANCIENNE 150GR",
+        "bottom_text": "(1)3263853107815 | CHIPS A L ANCIENNE 150GR | 2.04 EUR",
+        "similarity": 0.9037
+      },
+      {
+        "top_line_index": 32,
+        "bottom_line_index": 7,
+        "top_text": "JEUDI 10% MDD",
+        "bottom_text": "JEUDI 10% MOD | -0.20 EUR",
+        "similarity": 0.6352
+      },
+      {
+        "top_line_index": 33,
+        "bottom_line_index": 8,
+        "top_text": "FOICERTE SALEE | 15.73 | EUT",
+        "bottom_text": "EPICERIE SALEE | 15.73 EUH",
+        "similarity": 0.6525
+      }
+    ],
+    "bottom_lines_removed_as_overlap": 9
+  },
+  "layout": {
+    "top": {
+      "price_anchor_x": 804.0,
+      "vat_anchor_x": 888.0,
+      "price_vat_boundary_x": 858.6,
+      "description_price_boundary_x": 720.0,
+      "source": "ratio_fallback",
+      "header_line_id": null
+    },
+    "bottom": {
+      "price_anchor_x": 804.0,
+      "vat_anchor_x": 888.0,
+      "price_vat_boundary_x": 858.6,
+      "description_price_boundary_x": 720.0,
+      "source": "ratio_fallback",
+      "header_line_id": null
+    }
+  },
+  "receipt": {
+    "store_name": "Leader Price",
+    "store_location": "Saint Leu",
+    "receipt_date": "2026-07-23",
+    "receipt_time": null,
+    "declared_item_count": 14,
+    "product_line_count": 24,
+    "counted_quantity": 24.0,
+    "items_total": 53.42,
+    "total": null,
+    "article_total": null,
+    "immediate_discount_total": null,
+    "payable_total": null,
+    "warning_count": 8,
+    "warnings": [
+      "Description remplacée sans prix: JEUDI 10% MDD",
+      "Description remplacée sans prix: SERPENTINI 500G CO",
+      "Description remplacée sans prix: JEUDI 10% MDD",
+      "Description remplacée sans prix: GALETTE MAIS 115G CO DIO",
+      "Description remplacée sans prix: JEUDI 10% MDD",
+      "Description remplacée sans prix: CHIPS A L ANCIENNE 150GR",
+      "Description sans ligne secondaire: JEUDI 10% MDD",
+      "Quantité reconstruite 24 != nombre déclaré 14"
+    ]
+  },
+  "quality": {
+    "status": "needs_review",
+    "exploitable": true,
+    "budget_amount": null,
+    "unattributed_amount": null,
+    "should_feed_courses": false,
+    "should_feed_market_database": false,
+    "requires_user_validation": true,
+    "reasons": [
+      "final_total_not_proven",
+      "reconstructed_quantity_differs_from_declared",
+      "items_marked_for_review",
+      "parser_warnings_present"
+    ]
+  },
+  "files": {
+    "top_preprocessed": "C:\\Users\\Jack.LAPTOP-2USDKF0K\\budgetkazpei\\services\\receipt-scanner\\corpus_v2\\phase13_baseline_check\\diagnostics\\LP_SAINT_LEU_27_22\\top_preprocessed.jpg",
+    "bottom_preprocessed": "C:\\Users\\Jack.LAPTOP-2USDKF0K\\budgetkazpei\\services\\receipt-scanner\\corpus_v2\\phase13_baseline_check\\diagnostics\\LP_SAINT_LEU_27_22\\bottom_preprocessed.jpg",
+    "top_ocr": "C:\\Users\\Jack.LAPTOP-2USDKF0K\\budgetkazpei\\services\\receipt-scanner\\corpus_v2\\phase13_baseline_check\\diagnostics\\LP_SAINT_LEU_27_22\\top_ocr.json",
+    "bottom_ocr": "C:\\Users\\Jack.LAPTOP-2USDKF0K\\budgetkazpei\\services\\receipt-scanner\\corpus_v2\\phase13_baseline_check\\diagnostics\\LP_SAINT_LEU_27_22\\bottom_ocr.json",
+    "merged_preprocessed": "C:\\Users\\Jack.LAPTOP-2USDKF0K\\budgetkazpei\\services\\receipt-scanner\\corpus_v2\\phase13_baseline_check\\diagnostics\\LP_SAINT_LEU_27_22\\merged_preprocessed.jpg",
+    "merged_ocr": "C:\\Users\\Jack.LAPTOP-2USDKF0K\\budgetkazpei\\services\\receipt-scanner\\corpus_v2\\phase13_baseline_check\\diagnostics\\LP_SAINT_LEU_27_22\\merged_ocr.json",
+    "overlap_report": "C:\\Users\\Jack.LAPTOP-2USDKF0K\\budgetkazpei\\services\\receipt-scanner\\corpus_v2\\phase13_baseline_check\\diagnostics\\LP_SAINT_LEU_27_22\\overlap_report.json",
+    "raw_reconstructed_lines": "C:\\Users\\Jack.LAPTOP-2USDKF0K\\budgetkazpei\\services\\receipt-scanner\\corpus_v2\\phase13_baseline_check\\diagnostics\\LP_SAINT_LEU_27_22\\raw_reconstructed_lines.json",
+    "staggered_repairs": "C:\\Users\\Jack.LAPTOP-2USDKF0K\\budgetkazpei\\services\\receipt-scanner\\corpus_v2\\phase13_baseline_check\\diagnostics\\LP_SAINT_LEU_27_22\\staggered_repairs.json",
+    "multibuy_repairs": "C:\\Users\\Jack.LAPTOP-2USDKF0K\\budgetkazpei\\services\\receipt-scanner\\corpus_v2\\phase13_baseline_check\\diagnostics\\LP_SAINT_LEU_27_22\\multibuy_repairs.json",
+    "reconstructed_lines": "C:\\Users\\Jack.LAPTOP-2USDKF0K\\budgetkazpei\\services\\receipt-scanner\\corpus_v2\\phase13_baseline_check\\diagnostics\\LP_SAINT_LEU_27_22\\reconstructed_lines.json",
+    "columnized_ocr": "C:\\Users\\Jack.LAPTOP-2USDKF0K\\budgetkazpei\\services\\receipt-scanner\\corpus_v2\\phase13_baseline_check\\diagnostics\\LP_SAINT_LEU_27_22\\columnized_ocr.json",
+    "parsed_receipt": "C:\\Users\\Jack.LAPTOP-2USDKF0K\\budgetkazpei\\services\\receipt-scanner\\corpus_v2\\phase13_baseline_check\\diagnostics\\LP_SAINT_LEU_27_22\\parsed_receipt.json",
+    "quality_decision": "C:\\Users\\Jack.LAPTOP-2USDKF0K\\budgetkazpei\\services\\receipt-scanner\\corpus_v2\\phase13_baseline_check\\diagnostics\\LP_SAINT_LEU_27_22\\quality_decision.json",
+    "summary": "C:\\Users\\Jack.LAPTOP-2USDKF0K\\budgetkazpei\\services\\receipt-scanner\\corpus_v2\\phase13_baseline_check\\diagnostics\\LP_SAINT_LEU_27_22\\summary.json"
+  }
+}

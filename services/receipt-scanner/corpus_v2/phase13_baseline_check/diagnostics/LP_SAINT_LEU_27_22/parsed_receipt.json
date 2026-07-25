@@ -1,0 +1,483 @@
+{
+  "store_name": "Leader Price",
+  "store_location": "Saint Leu",
+  "receipt_date": "2026-07-23",
+  "receipt_time": null,
+  "declared_item_count": 14,
+  "total": null,
+  "items": [
+    {
+      "raw_name": "BETTERAVE ROUGE 1/2 400G",
+      "quantity": 1.0,
+      "unit_price": 1.3,
+      "total_price": 1.3,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.97664,
+      "source_line_ids": [
+        8
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "JEUDI 10% MDD",
+      "quantity": 1.0,
+      "unit_price": 0.13,
+      "total_price": 0.13,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.94132,
+      "source_line_ids": [
+        9
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "*HARICOTS RG 1/2 250G LP",
+      "quantity": 1.0,
+      "unit_price": 1.37,
+      "total_price": 1.37,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.98432,
+      "source_line_ids": [
+        10
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "JEUDI 10% MDD",
+      "quantity": 1.0,
+      "unit_price": 0.14,
+      "total_price": 0.14,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.9627,
+      "source_line_ids": [
+        11
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "GARNITUR.PR.VOL AU VENT4O",
+      "quantity": 1.0,
+      "unit_price": 2.55,
+      "total_price": 2.55,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.95939,
+      "source_line_ids": [
+        12
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "JEUDI 10% MDD",
+      "quantity": 1.0,
+      "unit_price": 0.26,
+      "total_price": 0.26,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.99018,
+      "source_line_ids": [
+        13
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "//THON AILBACORE 1/4 140G",
+      "quantity": 1.0,
+      "unit_price": 2.34,
+      "total_price": 2.34,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.98342,
+      "source_line_ids": [
+        14
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "JEUDI 10% MDO",
+      "quantity": 1.0,
+      "unit_price": 0.23,
+      "total_price": 0.23,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.94121,
+      "source_line_ids": [
+        15
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "CRAKERS SS SEL 25GX10 LP",
+      "quantity": 1.0,
+      "unit_price": 1.6,
+      "total_price": 1.6,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.97801,
+      "source_line_ids": [
+        16
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "JEUDI 10% MDD",
+      "quantity": 1.0,
+      "unit_price": 0.16,
+      "total_price": 0.16,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.97522,
+      "source_line_ids": [
+        17
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "*CACAHUETES GRILLEES 500G",
+      "quantity": 1.0,
+      "unit_price": 2.83,
+      "total_price": 2.83,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.9948,
+      "source_line_ids": [
+        18
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "FOICERTE SALEE 15.73 EUT",
+      "quantity": 1.0,
+      "unit_price": 15.73,
+      "total_price": 15.73,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.74865,
+      "source_line_ids": [
+        33
+      ],
+      "needs_review": true,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "JUS DE RAISIN 6X20 CL LP",
+      "quantity": 1.0,
+      "unit_price": 3.7,
+      "total_price": 3.7,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.93851,
+      "source_line_ids": [
+        34
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "JEUDI 10% MDD",
+      "quantity": 1.0,
+      "unit_price": 0.37,
+      "total_price": 0.37,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.99132,
+      "source_line_ids": [
+        35
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "CERES JUS COCKTAIL DETE 1",
+      "quantity": 1.0,
+      "unit_price": 2.95,
+      "total_price": 2.95,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.99331,
+      "source_line_ids": [
+        36
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "BOISSONS SANS ALCOOL 6.20 EUR",
+      "quantity": 1.0,
+      "unit_price": 6.2,
+      "total_price": 6.2,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.95047,
+      "source_line_ids": [
+        37
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "GAUFRETTE CHOCOLAT 110G L",
+      "quantity": 1.0,
+      "unit_price": 1.7,
+      "total_price": 1.7,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.94749,
+      "source_line_ids": [
+        38
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "JEUDI 10% MDD",
+      "quantity": 1.0,
+      "unit_price": 0.17,
+      "total_price": 0.17,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.94032,
+      "source_line_ids": [
+        39
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "*BISC.CHOCO LAIT X20 200G",
+      "quantity": 1.0,
+      "unit_price": 2.04,
+      "total_price": 2.04,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.97261,
+      "source_line_ids": [
+        40
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "JEUDI 10% MDD",
+      "quantity": 1.0,
+      "unit_price": 0.2,
+      "total_price": 0.2,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.98416,
+      "source_line_ids": [
+        41
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "EPICERIE SUCREE 3.37 EUI",
+      "quantity": 1.0,
+      "unit_price": 3.37,
+      "total_price": 3.37,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.9218,
+      "source_line_ids": [
+        42
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "MOUCHOIR ETUI STD 15X9 CO",
+      "quantity": 1.0,
+      "unit_price": 2.04,
+      "total_price": 2.04,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.98138,
+      "source_line_ids": [
+        43
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "JEUDI 10% MDD",
+      "quantity": 1.0,
+      "unit_price": 0.2,
+      "total_price": 0.2,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.97278,
+      "source_line_ids": [
+        44
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    },
+    {
+      "raw_name": "HYGIENE 1.84",
+      "quantity": 1.0,
+      "unit_price": 1.84,
+      "total_price": 1.84,
+      "vat_code": null,
+      "item_type": "standard",
+      "raw_detail": null,
+      "weight_kg": null,
+      "price_per_kg": null,
+      "ocr_confidence": 0.99806,
+      "source_line_ids": [
+        45
+      ],
+      "needs_review": false,
+      "canonical_name": null,
+      "match_type": null,
+      "match_confidence": null
+    }
+  ],
+  "excluded_sections": [],
+  "warnings": [
+    "Description remplacée sans prix: JEUDI 10% MDD",
+    "Description remplacée sans prix: SERPENTINI 500G CO",
+    "Description remplacée sans prix: JEUDI 10% MDD",
+    "Description remplacée sans prix: GALETTE MAIS 115G CO DIO",
+    "Description remplacée sans prix: JEUDI 10% MDD",
+    "Description remplacée sans prix: CHIPS A L ANCIENNE 150GR",
+    "Description sans ligne secondaire: JEUDI 10% MDD",
+    "Quantité reconstruite 24 != nombre déclaré 14"
+  ],
+  "article_total": null,
+  "immediate_discount_total": null,
+  "payable_total": null,
+  "items_total": 53.42,
+  "counted_quantity": 24.0,
+  "product_line_count": 24
+}

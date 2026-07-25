@@ -1,0 +1,73 @@
+{
+  "bottom_cut_line": 9,
+  "matched_anchor_count": 9,
+  "average_similarity": 0.7941,
+  "top_trailing_line_count": 0,
+  "bottom_leading_line_count": 0,
+  "matches": [
+    {
+      "top_line_index": 18,
+      "bottom_line_index": 0,
+      "top_text": "(1)3263853183468 | *CACAHUETES GRILLEES 500G | 2.83 EUR",
+      "bottom_text": "(1)3263853183468 | *CACAHUETES GRILLEES 500G | 2.83 EUR",
+      "similarity": 1.0
+    },
+    {
+      "top_line_index": 20,
+      "bottom_line_index": 1,
+      "top_text": "JEUDI 10% MDD",
+      "bottom_text": "JEUDI 10% MDD | -0.28 EUR",
+      "similarity": 0.7963
+    },
+    {
+      "top_line_index": 22,
+      "bottom_line_index": 2,
+      "top_text": "(1)3222477013445 | SERPENTINI 500G CO",
+      "bottom_text": "(1)3222477013445 | SERPENIINI 500G CO | 1.80 EUR",
+      "similarity": 0.7522
+    },
+    {
+      "top_line_index": 24,
+      "bottom_line_index": 3,
+      "top_text": "JEUDI 10% MDD",
+      "bottom_text": "JEUDI 10% MDD | -0.18 EUR",
+      "similarity": 0.7963
+    },
+    {
+      "top_line_index": 26,
+      "bottom_line_index": 4,
+      "top_text": "(1)3222475104336 | GALETTE MAIS 115G CO DIO",
+      "bottom_text": "(1)3222475104336 | GALETTE MAIS 115G CO BIO | 1.64 EUR",
+      "similarity": 0.8151
+    },
+    {
+      "top_line_index": 28,
+      "bottom_line_index": 5,
+      "top_text": "JEUDI 10% MDD",
+      "bottom_text": "JEUDI 10% MDD | -0.16 EUR",
+      "similarity": 0.7963
+    },
+    {
+      "top_line_index": 30,
+      "bottom_line_index": 6,
+      "top_text": "(1)3263853107815 | CHIPS A L ANCIENNE 150GR",
+      "bottom_text": "(1)3263853107815 | CHIPS A L ANCIENNE 150GR | 2.04 EUR",
+      "similarity": 0.9037
+    },
+    {
+      "top_line_index": 32,
+      "bottom_line_index": 7,
+      "top_text": "JEUDI 10% MDD",
+      "bottom_text": "JEUDI 10% MOD | -0.20 EUR",
+      "similarity": 0.6352
+    },
+    {
+      "top_line_index": 33,
+      "bottom_line_index": 8,
+      "top_text": "FOICERTE SALEE | 15.73 | EUT",
+      "bottom_text": "EPICERIE SALEE | 15.73 EUH",
+      "similarity": 0.6525
+    }
+  ],
+  "bottom_lines_removed_as_overlap": 9
+}

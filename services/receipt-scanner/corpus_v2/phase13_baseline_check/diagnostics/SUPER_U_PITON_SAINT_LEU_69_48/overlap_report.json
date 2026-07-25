@@ -1,0 +1,73 @@
+{
+  "bottom_cut_line": 14,
+  "matched_anchor_count": 9,
+  "average_similarity": 0.9916,
+  "top_trailing_line_count": 1,
+  "bottom_leading_line_count": 0,
+  "matches": [
+    {
+      "top_line_index": 33,
+      "bottom_line_index": 0,
+      "top_text": "LAIT UHT 1/2EC LAIT D'ICI BK1L | 4.76 € | 0",
+      "bottom_text": "LAIT UHT 1/2EC LAIT D'ICI BK1L | 4.76 €",
+      "similarity": 1.0
+    },
+    {
+      "top_line_index": 35,
+      "bottom_line_index": 2,
+      "top_text": "SP.LAIT.FLUIDE UHT58MG U3X20CL",
+      "bottom_text": "SP.LAIT.FLUIDE UHT58MG U3X20CL",
+      "similarity": 1.0
+    },
+    {
+      "top_line_index": 37,
+      "bottom_line_index": 4,
+      "top_text": "MOUCHOIRS",
+      "bottom_text": "MOUCHOIRS",
+      "similarity": 1.0
+    },
+    {
+      "top_line_index": 38,
+      "bottom_line_index": 5,
+      "top_text": "BOP DOUPLI MOUCH POCK 3P X10 | 1,00 € | 0",
+      "bottom_text": "BOP DOUPLI MOUCH POCK 3P X10 | 1,00 € | 0",
+      "similarity": 1.0
+    },
+    {
+      "top_line_index": 40,
+      "bottom_line_index": 7,
+      "top_text": "BROSSE GLAMOUR DEMELAGE FACILE | PARFUMERTE | 5,99 e | 13",
+      "bottom_text": "BROSSE GLAMOUR DEMELAGE FACILE | PARFUMERTE | 5,99 e | 13",
+      "similarity": 1.0
+    },
+    {
+      "top_line_index": 42,
+      "bottom_line_index": 8,
+      "top_text": "GL DCH.BAMBOU&ALOE VER.U 75OML",
+      "bottom_text": "GL DCH.BAMBOU&ALOE VER.U 75OML | 5,99 EUR | 3,25 € | 13",
+      "similarity": 0.9245
+    },
+    {
+      "top_line_index": 44,
+      "bottom_line_index": 10,
+      "top_text": "COOUILLETTES Q.SUP.U CELLO 1KG | PATES | 1,75 € | 11",
+      "bottom_text": "COOUILLETTES Q.SUP.U CELLO 1KG | PATES | 1,75 € | 11",
+      "similarity": 1.0
+    },
+    {
+      "top_line_index": 46,
+      "bottom_line_index": 12,
+      "top_text": "SAUCES CHAUDES",
+      "bottom_text": "SAUCES CHAUDES",
+      "similarity": 1.0
+    },
+    {
+      "top_line_index": 47,
+      "bottom_line_index": 13,
+      "top_text": "SAUCE TOMATE FRAICHES U 2X190U | 1,85 € 0",
+      "bottom_text": "SAUCE TOMATE FRAICHES U 2X190U | 1,85 € 0",
+      "similarity": 1.0
+    }
+  ],
+  "bottom_lines_removed_as_overlap": 14
+}

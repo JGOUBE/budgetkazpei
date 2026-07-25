@@ -1,0 +1,86 @@
+{
+  "created_at": "2026-07-24T21:23:36",
+  "source_folder": "C:\\Users\\Jack.LAPTOP-2USDKF0K\\Downloads\\Tickets_aveugles_V2",
+  "status": "BLIND_UNSCORED",
+  "case_count": 11,
+  "cases": [
+    {
+      "case_id": "BLIND_001_auchan_stalingrad_12_13_webp",
+      "mode": "single",
+      "sha256": [
+        "47b88ab42df886c63f9ddc2b892924320a1c3a443870955fad46b2f0539ffc8c"
+      ]
+    },
+    {
+      "case_id": "BLIND_002_carrefour_contact_st_sauveur_webp",
+      "mode": "single",
+      "sha256": [
+        "e1bb7497b435eb6ac45de0cc1c212193b884b23a260fd303fcdde7a2ac8daeef"
+      ]
+    },
+    {
+      "case_id": "BLIND_003_fr_auchan_grenoble_2024_10_17",
+      "mode": "single",
+      "sha256": [
+        "177b558da68e14f5725423918efc4b41525dc7f4c159c95cffd117f4ef677a09"
+      ]
+    },
+    {
+      "case_id": "BLIND_004_fr_carrefour_market_paris_2024_10_28",
+      "mode": "single",
+      "sha256": [
+        "b8fb14d72bee90dfd9f07ddbf263186b80eb93f51166b4bfe4ab9d917a9e75f6"
+      ]
+    },
+    {
+      "case_id": "BLIND_005_fr_super_u_la_madeleine_2024_01_20",
+      "mode": "single",
+      "sha256": [
+        "20fac65d4405524834f4dd3529349503f4b8480458ca6f4fb5d42be71dc07b72"
+      ]
+    },
+    {
+      "case_id": "BLIND_006_re_eleclerc_les_casernes_2026_07_21_8_",
+      "mode": "single",
+      "sha256": [
+        "61eb91129d67f97a042e5cf32aeee82f71376ccb90824d2ff2dc1a03f828b06d"
+      ]
+    },
+    {
+      "case_id": "BLIND_007_re_eleclerc_les_casernes_2026_07_24_10",
+      "mode": "single",
+      "sha256": [
+        "12c003f31c94f074f2406cce64f090c79fc43de2c1ceea043722896d22de2f8b"
+      ]
+    },
+    {
+      "case_id": "BLIND_008_re_eleclerc_les_casernes_2026_07_24_54",
+      "mode": "long",
+      "sha256": [
+        "2108bd04ec0a5d21ed38cc499da9d59ce097de3529d7ebd45151a2da03ebdc5e",
+        "52876807208fff14329264b80ecc29c7f5912f7de9867a2cb1433fe39de97027"
+      ]
+    },
+    {
+      "case_id": "BLIND_009_re_eleclerc_les_casernes_2026_07_24_66",
+      "mode": "single",
+      "sha256": [
+        "612bd5f3b804c7aebae3901657ef28422cf7d41265868be726b1a2ec376a3002"
+      ]
+    },
+    {
+      "case_id": "BLIND_010_re_eleclerc_les_casernes_2026_07_24_du",
+      "mode": "single",
+      "sha256": [
+        "654619d7a365261fdca9cc14d63c1c169e45076a253deb58fff190ff134cb76e"
+      ]
+    },
+    {
+      "case_id": "BLIND_011_re_eleclerc_les_casernes_2026_07_24_du",
+      "mode": "single",
+      "sha256": [
+        "5ea40ddf7fa25154a4541b57b79b5c3924ec6e0e2429d4bd9077f68ac4679796"
+      ]
+    }
+  ]
+}
