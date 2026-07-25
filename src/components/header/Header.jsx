@@ -16,11 +16,16 @@ export default function Header({ activeNav, onAdd, lang, onToggleLang, t, commun
     aides: { section: "nav", key: "aides" },
     abonnements: { section: "nav", key: "abonnements" },
   }
+
   const current = titles[activeNav] || titles.dashboard
   const now = new Date()
   const mois = now.toLocaleDateString("fr-FR", { month: "long", year: "numeric" })
   const moisFormate = mois.charAt(0).toUpperCase() + mois.slice(1)
   const lieu = commune ? `${commune}, La Reunion` : t("header", "location")
+  const title = activeNav === "contact"
+    ? (lang === "fr" ? "Contactez-nous" : "Contacte a nou")
+    : t(current.section, current.key)
+  const showSubtitle = activeNav !== "contact"
 
   return (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28, gap: 16, flexWrap: "wrap" }}>
@@ -30,14 +35,16 @@ export default function Header({ activeNav, onAdd, lang, onToggleLang, t, commun
           <span style={{ color: ds.textPrimary, fontWeight: 950, fontSize: 20, letterSpacing: 0, lineHeight: 1 }}>BudgetKazPei</span>
         </div>
         <h1 style={{ margin: 0, fontSize: 24, fontFamily: "'DM Serif Display', serif", fontWeight: 400, color: ds.textPrimary }}>
-          {t(current.section, current.key)}
+          {title}
         </h1>
-        <p style={{ margin: "5px 0 0", color: ds.textSecondary, fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}>
-          {moisFormate}
-          <span>·</span>
-          <LocationIcon size={14} />
-          {lieu}
-        </p>
+        {showSubtitle && (
+          <p style={{ margin: "5px 0 0", color: ds.textSecondary, fontSize: 13, display: "flex", alignItems: "center", gap: 6 }}>
+            {moisFormate}
+            <span>·</span>
+            <LocationIcon size={14} />
+            {lieu}
+          </p>
+        )}
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>

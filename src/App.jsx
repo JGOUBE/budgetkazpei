@@ -40,6 +40,7 @@ import SavingsPage from "./pages/SavingsPage"
 import ShoppingListPage from "./pages/ShoppingListPage"
 import FinanceAssistantPage from "./pages/FinanceAssistantPage"
 import RewardsPage from "./pages/RewardsPage"
+import GoodDealsPage from "./pages/GoodDealsPage"
 import PremiumLandingPage from "./pages/PremiumLandingPage"
 import PublicHomePage from "./pages/PublicHomePage"
 import PrivacyPage from "./pages/PrivacyPage"
@@ -165,6 +166,15 @@ function BudgetKazPeiApp({ auth, initialAuthPage = "login", next = "/app" }) {
 
   const isMobile = useIsMobile()
   const { lang, toggleLang, t } = useLanguage()
+
+  const appT = (section, key) => {
+    if (section === "nav" && key === "goodDeals") {
+      return lang === "fr" ? "Mes bons plans" : "Mon bann bon plan"
+    }
+
+    return t(section, key)
+  }
+  appT.lang = lang
 
   const {
     transactions,
@@ -515,7 +525,7 @@ function BudgetKazPeiApp({ auth, initialAuthPage = "login", next = "/app" }) {
             isPremium={isPremium}
             isPremiumPlus={isPremiumPlus}
             lang={lang}
-            t={t}
+            t={appT}
           />
         </div>
       ) : (
@@ -535,7 +545,7 @@ function BudgetKazPeiApp({ auth, initialAuthPage = "login", next = "/app" }) {
             isPremium={isPremium}
             isPremiumPlus={isPremiumPlus}
             lang={lang}
-            t={t}
+            t={appT}
           />
         </div>
       )}
@@ -557,7 +567,7 @@ function BudgetKazPeiApp({ auth, initialAuthPage = "login", next = "/app" }) {
             onAdd={() => setShowModal(true)}
             lang={lang}
             onToggleLang={toggleLang}
-            t={t}
+            t={appT}
             commune={profile?.commune || ""}
           />
         )}
@@ -589,6 +599,7 @@ function BudgetKazPeiApp({ auth, initialAuthPage = "login", next = "/app" }) {
               {activeNav === "contact" && (lang === "fr" ? "Contactez-nous" : "Contacte a nou")}
               {activeNav === "abonnements" && t("nav", "abonnements")}
               {activeNav === "opportunites" && t("nav", "opportunites")}
+              {activeNav === "goodDeals" && (lang === "fr" ? "Mes bons plans" : "Mon bann bon plan")}
               {activeNav === "historique" && t("nav", "monthlyHistory")}
               {activeNav === "profil" && t("nav", "profil")}
               {activeNav === "premium" && t("nav", "premium")}
@@ -786,6 +797,15 @@ function BudgetKazPeiApp({ auth, initialAuthPage = "login", next = "/app" }) {
           />
         )}
 
+        {activeNav === "goodDeals" && (
+          <GoodDealsPage
+            user={user}
+            profile={profile}
+            isMobile={isMobile}
+            language={lang}
+          />
+        )}
+
         {activeNav === "statistics" && (
           <StatisticsPage
             user={user}
@@ -917,32 +937,33 @@ function BudgetKazPeiApp({ auth, initialAuthPage = "login", next = "/app" }) {
           ].map(item => {
             const Icon = item.icon
             return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => handleNavChange(item.id)}
-              style={{
-                border: "none",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                gap: 3,
-                cursor: "pointer",
-                minHeight: 52,
-                minWidth: 58,
-                padding: "6px 8px",
-                borderRadius: 14,
-                color: activeNav === item.id ? COLORS.accent : COLORS.muted,
-                background: activeNav === item.id ? "rgba(249,115,22,.14)" : "transparent",
-                transition: "transform .18s ease, background .18s ease, color .18s ease",
-              }}
-            >
-              <Icon size={20} />
-              <span style={{ fontSize: 9, fontFamily: "inherit" }}>
-                {item.label}
-              </span>
-            </button>
-          )})}
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => handleNavChange(item.id)}
+                style={{
+                  border: "none",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 3,
+                  cursor: "pointer",
+                  minHeight: 52,
+                  minWidth: 58,
+                  padding: "6px 8px",
+                  borderRadius: 14,
+                  color: activeNav === item.id ? COLORS.accent : COLORS.muted,
+                  background: activeNav === item.id ? "rgba(249,115,22,.14)" : "transparent",
+                  transition: "transform .18s ease, background .18s ease, color .18s ease",
+                }}
+              >
+                <Icon size={20} />
+                <span style={{ fontSize: 9, fontFamily: "inherit" }}>
+                  {item.label}
+                </span>
+              </button>
+            )
+          })}
         </div>
       )}
 
@@ -977,10 +998,7 @@ function BudgetKazPeiApp({ auth, initialAuthPage = "login", next = "/app" }) {
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #1E3A5F; border-radius: 99px; }
-        select option { background: #0F1E38; }
       `}</style>
     </div>
   )
 }
-
-
