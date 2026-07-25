@@ -84,12 +84,9 @@ Parseurs reels actifs:
 - Magasins U Reunion
 - Run Market Reunion
 - Auchan Saint-Louis
+- E.Leclerc Reunion
 - Ville de Saint-Paul (evenements)
 - Ville du Port (loisirs permanents)
-
-Sources enregistrees mais laissees `pending`:
-
-- E.Leclerc Reunion
 
 ## Validation d'un candidat
 
@@ -131,22 +128,41 @@ echo -n "<service-role-key>" | gcloud secrets create SUPABASE_SERVICE_ROLE_KEY -
 
 ## Deploiement Cloud Run Job
 
-Preparation uniquement:
+Premier deploiement securise en dry-run:
 
 ```powershell
-.\deploy-job.ps1
+.\deploy-job.ps1 -DryRun $true -MaxSources 10 -OcrEnabled $false
 ```
 
 Le script:
 
 - verifie le projet Google Cloud actif
 - active les APIs necessaires
+- cree automatiquement le depot Artifact Registry `budgetkazpei-jobs` dans `europe-west9` s'il n'existe pas encore
 - construit l'image
 - cree ou met a jour le job
 - connecte les secrets
+- fixe `COLLECTOR_DRY_RUN=true` par defaut pour le premier deploiement
+- fixe `COLLECTOR_MAX_SOURCES=10` par defaut
+- fixe `COLLECTOR_OCR_ENABLED=false` par defaut
 - fixe CPU, RAM et timeout
+- n'execute jamais le job automatiquement
+
+Execution manuelle apres validation du deploiement:
+
+```powershell
+gcloud run jobs execute budgetkazpei-good-deals-collector --project budgetkazpei --region europe-west9 --wait
+```
+
+Lecture des logs:
+
+```powershell
+gcloud logging read "resource.type=cloud_run_job AND labels.\"run.googleapis.com/job_name\"=\"budgetkazpei-good-deals-collector\"" --project budgetkazpei --limit 100 --format json
+```
 
 ## Creation du Scheduler
+
+Ne creer le Scheduler qu'apres validation manuelle du Job en dry-run.
 
 ```powershell
 .\deploy-scheduler.ps1
