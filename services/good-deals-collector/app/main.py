@@ -15,7 +15,7 @@ from app.db.repositories import DryRunRepositories, InMemoryRepositories, Reposi
 from app.db.supabase_client import SupabaseAdminClient
 from app.logging_config import configure_logging
 from app.models.document import SourceDocument
-from app.models.result import RunSummary, SourceProcessingResult
+from app.models.result import ApprovedPublicationResult, RunSummary, SourceProcessingResult
 from app.parsers.auchan_saint_louis import AuchanSaintLouisParser
 from app.parsers.carrefour_reunion import CarrefourReunionParser
 from app.parsers.eleclerc_reunion import EleclercReunionParser
@@ -139,6 +139,16 @@ def run(settings: Settings, *, requested_max_sources: int | None = None) -> RunS
     repositories.start_run(run_key, "manual", settings.collector_mode)
 
     summary = RunSummary(run_key=run_key, status="running", sources_total=len(sources))
+    expiration_result = repositories.expire_stale_records(dry_run=settings.collector_dry_run)
+    summary.metrics.update(expiration_result.as_metrics())
+    LOGGER.info(
+        "Expiration maintenance completed",
+        extra={
+            "action": "expiration_maintenance",
+            "result": "counted" if settings.collector_dry_run else "applied",
+            **expiration_result.as_metrics(),
+        },
+    )
     for source in sources:
         result = process_source(source, settings, repositories, collectors, parsers, publisher)
         summary.sources_checked += 1
@@ -163,6 +173,16 @@ def run(settings: Settings, *, requested_max_sources: int | None = None) -> RunS
                 summary.rejected_count += 1
             elif candidate.status == "expired":
                 summary.expired_count += 1
+    approved_publication = process_pending_approved_candidates(settings, repositories, publisher, summary)
+    summary.metrics.update(approved_publication.as_metrics())
+    LOGGER.info(
+        "Approved candidate publication completed",
+        extra={
+            "action": "approved_publication",
+            "result": "counted" if settings.collector_dry_run else "processed",
+            **approved_publication.as_metrics(),
+        },
+    )
     summary.status = "completed_with_errors" if summary.errors_count else "completed"
     repositories.finish_run(summary)
     return summary
@@ -234,6 +254,42 @@ def process_source(source, settings, repositories, collectors, parsers, publishe
         )
         LOGGER.exception("Source processing failed", extra={"source_slug": source.slug, "action": "process_source", "result": "failed", "error_type": exc.__class__.__name__})
         return SourceProcessingResult(source_slug=source.slug, changed=False, error_message=str(exc))
+
+
+def process_pending_approved_candidates(settings, repositories, publisher, summary: RunSummary) -> ApprovedPublicationResult:
+    result = ApprovedPublicationResult()
+    for candidate in repositories.list_candidates_pending_publication():
+        if is_expired(candidate):
+            if not settings.collector_dry_run:
+                repositories.mark_candidate(candidate, status="expired")
+            continue
+
+        result.pending += 1
+        if settings.collector_dry_run:
+            continue
+
+        try:
+            published_id = publisher.publish_candidate(candidate)
+            if published_id:
+                result.published += 1
+                summary.candidates_published += 1
+            else:
+                result.failed += 1
+        except Exception as exc:  # pragma: no cover - defensive logging path
+            result.failed += 1
+            summary.errors_count += 1
+            summary.error_summary.append({"source_slug": candidate.source_slug, "error": str(exc)})
+            LOGGER.exception(
+                "Approved candidate publication failed",
+                extra={
+                    "source_slug": candidate.source_slug,
+                    "action": "approved_publication",
+                    "result": "failed",
+                    "candidate_external_key": candidate.external_key,
+                    "error_type": exc.__class__.__name__,
+                },
+            )
+    return result
 
 
 def _build_error_document(source) -> SourceDocument:

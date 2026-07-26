@@ -41,6 +41,7 @@ import ShoppingListPage from "./pages/ShoppingListPage"
 import FinanceAssistantPage from "./pages/FinanceAssistantPage"
 import RewardsPage from "./pages/RewardsPage"
 import GoodDealsPage from "./pages/GoodDealsPage"
+import GoodDealsReviewPage from "./pages/admin/GoodDealsReviewPage"
 import PremiumLandingPage from "./pages/PremiumLandingPage"
 import PublicHomePage from "./pages/PublicHomePage"
 import PrivacyPage from "./pages/PrivacyPage"
@@ -54,6 +55,8 @@ import AppLogo from "./components/AppLogo"
 import ThemeToggle from "./components/ThemeToggle"
 import { getPlanFlags, normalizePlan } from "./config/plans"
 import {
+  APP_ROUTE,
+  GOOD_DEALS_REVIEW_ADMIN_ROUTE,
   LOGIN_ROUTE,
   REGISTER_ROUTE,
   ROUTE_CHANGE_EVENT,
@@ -108,7 +111,19 @@ export default function App() {
   }
 
   if (route.page === "app") {
-    return <BudgetKazPeiApp auth={auth} initialAuthPage="login" next="/app" />
+    return <BudgetKazPeiApp auth={auth} initialAuthPage="login" next={APP_ROUTE} initialPathname={location.pathname} />
+  }
+
+  if (route.page === "admin-good-deals-review") {
+    return (
+      <BudgetKazPeiApp
+        auth={auth}
+        initialAuthPage="login"
+        next={GOOD_DEALS_REVIEW_ADMIN_ROUTE}
+        initialAppSection="goodDealsAdminReview"
+        initialPathname={location.pathname}
+      />
+    )
   }
 
   return <PublicHomePage isAuthenticated={Boolean(auth.user)} />
@@ -140,7 +155,13 @@ function RouteRedirect({ to, replace = true }) {
   return <AuthLoadingScreen />
 }
 
-function BudgetKazPeiApp({ auth, initialAuthPage = "login", next = "/app" }) {
+function BudgetKazPeiApp({
+  auth,
+  initialAuthPage = "login",
+  next = APP_ROUTE,
+  initialAppSection = "dashboard",
+  initialPathname = APP_ROUTE,
+}) {
   const contextAuth = useAuth()
   const {
     user,
@@ -155,7 +176,7 @@ function BudgetKazPeiApp({ auth, initialAuthPage = "login", next = "/app" }) {
   } = auth || contextAuth
 
   const authPage = initialAuthPage
-  const [activeNav, setActiveNav] = useState("dashboard")
+  const [activeNav, setActiveNav] = useState(initialAppSection)
   const [showModal, setShowModal] = useState(false)
   const [showSidebar, setShowSidebar] = useState(false)
   const [mounted, setMounted] = useState(false)
@@ -184,7 +205,7 @@ function BudgetKazPeiApp({ auth, initialAuthPage = "login", next = "/app" }) {
     deleteTransaction,
   } = useTransactions(user?.id)
 
-  const { profile } = useProfile(user?.id)
+  const { profile, loading: profileLoading } = useProfile(user?.id)
 
   useEffect(() => {
     async function loadSubscriptionPlan() {
@@ -360,6 +381,9 @@ function BudgetKazPeiApp({ auth, initialAuthPage = "login", next = "/app" }) {
             : nav
 
     setActiveNav(normalizedNav)
+    if (initialPathname === GOOD_DEALS_REVIEW_ADMIN_ROUTE && normalizedNav !== "goodDealsAdminReview") {
+      navigate(APP_ROUTE, { replace: true })
+    }
     setShowSidebar(false)
   }
 
@@ -600,6 +624,7 @@ function BudgetKazPeiApp({ auth, initialAuthPage = "login", next = "/app" }) {
               {activeNav === "abonnements" && t("nav", "abonnements")}
               {activeNav === "opportunites" && t("nav", "opportunites")}
               {activeNav === "goodDeals" && (lang === "fr" ? "Mes bons plans" : "Mon bann bon plan")}
+              {activeNav === "goodDealsAdminReview" && "Validation bons plans"}
               {activeNav === "historique" && t("nav", "monthlyHistory")}
               {activeNav === "profil" && t("nav", "profil")}
               {activeNav === "premium" && t("nav", "premium")}
@@ -803,6 +828,22 @@ function BudgetKazPeiApp({ auth, initialAuthPage = "login", next = "/app" }) {
             profile={profile}
             isMobile={isMobile}
             language={lang}
+          />
+        )}
+
+        {activeNav === "goodDealsAdminReview" && (
+          <GoodDealsReviewPage
+            user={user}
+            profile={profile}
+            profileLoading={profileLoading}
+            onGoBack={() => {
+              setActiveNav("dashboard")
+              navigate(APP_ROUTE, { replace: true })
+            }}
+            onAccessDenied={() => {
+              setActiveNav("dashboard")
+              navigate(APP_ROUTE, { replace: true })
+            }}
           />
         )}
 

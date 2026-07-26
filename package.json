@@ -10,6 +10,7 @@
     "test:scanner": "node scripts/run-scanner-regression.mjs",
     "test:landing": "node scripts/run-landing-tests.mjs",
     "test:auth-ui": "node scripts/run-auth-ui-tests.mjs",
+    "test:good-deals-admin": "node scripts/run-good-deals-admin-tests.mjs",
     "test:plans-routing": "node scripts/run-plans-routing-tests.mjs",
     "test:plans-quota-e2e": "node scripts/run-plans-quota-e2e.mjs",
     "test:receipt-scanner-front": "node scripts/run-receipt-scanner-front-regression.mjs",

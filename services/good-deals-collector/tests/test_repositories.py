@@ -1,4 +1,5 @@
 import unittest
+from datetime import datetime, timedelta, timezone
 
 from app.db.repositories import DryRunRepositories, InMemoryRepositories
 from app.models.candidate import Candidate
@@ -107,6 +108,97 @@ class RepositoryTests(unittest.TestCase):
         self.assertEqual(len(technical.snapshots), 1)
         self.assertEqual(len(technical.candidates), 0)
         self.assertEqual(len(technical.good_deals), 0)
+
+    def test_expiration_is_idempotent_after_first_real_pass(self):
+        repositories = InMemoryRepositories()
+        now = datetime(2026, 7, 26, 12, 0, tzinfo=timezone.utc)
+        repositories.good_deals["deal:1"] = {
+            "collector_source_slug": "source",
+            "is_active": True,
+            "content_kind": "promotion",
+            "ends_at": (now - timedelta(days=1)).isoformat(),
+            "source_still_available": True,
+        }
+        repositories.promotions["promo:1"] = {
+            "collector_source_slug": "source",
+            "is_active": True,
+            "ends_at": (now - timedelta(days=1)).isoformat(),
+        }
+        repositories.catalogs["catalog:1"] = {
+            "collector_source_slug": "source",
+            "is_active": True,
+            "ends_at": (now - timedelta(days=1)).isoformat(),
+        }
+        candidate = Candidate(
+            source_slug="source",
+            external_key="candidate:1",
+            content_family="shopping",
+            content_kind="promotion",
+            title="Promo",
+            description="Promo",
+            source_url="https://example.com",
+            scope_type="island",
+            ends_at=now - timedelta(days=1),
+            status="approved",
+        )
+        repositories.save_candidate("source:1", "snapshot:1", candidate)
+
+        first = repositories.expire_stale_records(dry_run=False, now=now)
+        second = repositories.expire_stale_records(dry_run=False, now=now)
+
+        self.assertEqual(first.good_deals, 1)
+        self.assertEqual(first.promotions, 1)
+        self.assertEqual(first.catalogs, 1)
+        self.assertEqual(first.candidates, 1)
+        self.assertEqual(second.good_deals, 0)
+        self.assertEqual(second.promotions, 0)
+        self.assertEqual(second.catalogs, 0)
+        self.assertEqual(second.candidates, 0)
+
+    def test_pending_publication_lists_only_unpublished_approved_candidates(self):
+        repositories = InMemoryRepositories()
+        approved = Candidate(
+            source_slug="source",
+            external_key="approved:1",
+            content_family="shopping",
+            content_kind="promotion",
+            title="Approved",
+            description="Approved",
+            source_url="https://example.com/a",
+            scope_type="island",
+            status="approved",
+        )
+        published = Candidate(
+            source_slug="source",
+            external_key="published:1",
+            content_family="shopping",
+            content_kind="promotion",
+            title="Published",
+            description="Published",
+            source_url="https://example.com/p",
+            scope_type="island",
+            status="published",
+            published_good_deal_id="deal:published",
+        )
+        review = Candidate(
+            source_slug="source",
+            external_key="review:1",
+            content_family="shopping",
+            content_kind="promotion",
+            title="Review",
+            description="Review",
+            source_url="https://example.com/r",
+            scope_type="island",
+            status="needs_review",
+        )
+
+        repositories.save_candidate("source:1", "snapshot:1", approved)
+        repositories.save_candidate("source:1", "snapshot:1", published)
+        repositories.save_candidate("source:1", "snapshot:1", review)
+
+        pending = repositories.list_candidates_pending_publication()
+
+        self.assertEqual([candidate.external_key for candidate in pending], ["approved:1"])
 
 
 if __name__ == "__main__":

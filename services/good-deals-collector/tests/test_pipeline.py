@@ -1,4 +1,5 @@
 import unittest
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from unittest.mock import patch
 
@@ -552,6 +553,98 @@ class PipelineTests(unittest.TestCase):
 
         self.assertEqual(summary.sources_checked, 1)
         self.assertEqual(summary.candidates_detected, 2)
+        self.assertEqual(len(technical.good_deals), 0)
+
+    def test_dry_run_counts_expirations_without_modifying_business_tables(self):
+        technical = InMemoryRepositories()
+        repository = DryRunRepositories(technical)
+        technical.good_deals["deal:1"] = {
+            "collector_source_slug": "source",
+            "is_active": True,
+            "content_kind": "promotion",
+            "ends_at": datetime(2026, 7, 25, 12, 0, tzinfo=timezone.utc).isoformat(),
+            "source_still_available": True,
+        }
+        technical.promotions["promotion:1"] = {
+            "collector_source_slug": "source",
+            "is_active": True,
+            "ends_at": datetime(2026, 7, 25, 12, 0, tzinfo=timezone.utc).isoformat(),
+        }
+        technical.catalogs["catalog:1"] = {
+            "collector_source_slug": "source",
+            "is_active": True,
+            "ends_at": datetime(2026, 7, 25, 12, 0, tzinfo=timezone.utc).isoformat(),
+        }
+
+        with patch("app.main.get_repository", return_value=repository):
+            summary = run(self.settings.with_overrides(collector_max_sources=0))
+
+        self.assertEqual(summary.sources_checked, 0)
+        self.assertTrue(summary.metrics["expiration_dry_run"])
+        self.assertEqual(summary.metrics["good_deals_would_expire"], 1)
+        self.assertEqual(summary.metrics["promotions_would_expire"], 1)
+        self.assertEqual(summary.metrics["catalogs_would_expire"], 1)
+        self.assertTrue(technical.good_deals["deal:1"]["is_active"])
+        self.assertTrue(technical.promotions["promotion:1"]["is_active"])
+        self.assertTrue(technical.catalogs["catalog:1"]["is_active"])
+
+    def test_real_run_publishes_preapproved_candidates_even_without_source_changes(self):
+        settings = self.settings.with_overrides(collector_mode="full", collector_dry_run=False, collector_max_sources=0)
+        repositories = InMemoryRepositories()
+        candidate = Candidate(
+            source_slug="carrefour-reunion-catalogues",
+            external_key="approved:1",
+            content_family="shopping",
+            content_kind="promotion",
+            title="Tomates 0,99 EUR",
+            description="Tomates promo",
+            source_url="https://www.carrefour-reunion.com/catalogues/carrefour",
+            scope_type="island",
+            business_name="Carrefour Reunion",
+            retailer_slug="carrefour-reunion",
+            product_name="Tomates",
+            normalized_product_name="tomates",
+            category="shopping",
+            promo_price=0.99,
+            starts_at=datetime(2026, 7, 20, tzinfo=timezone.utc),
+            ends_at=datetime(2026, 7, 30, tzinfo=timezone.utc),
+            status="approved",
+        )
+        repositories.save_candidate("source:1", "snapshot:1", candidate)
+
+        with patch("app.main.get_repository", return_value=repositories):
+            summary = run(settings)
+
+        self.assertEqual(summary.sources_checked, 0)
+        self.assertEqual(summary.candidates_published, 1)
+        self.assertEqual(summary.metrics["approved_candidates_pending"], 1)
+        self.assertEqual(summary.metrics["approved_candidates_published"], 1)
+        self.assertEqual(candidate.status, "published")
+        self.assertEqual(len(repositories.good_deals), 1)
+
+    def test_dry_run_counts_preapproved_candidates_without_publishing(self):
+        technical = InMemoryRepositories()
+        repository = DryRunRepositories(technical)
+        candidate = Candidate(
+            source_slug="carrefour-reunion-catalogues",
+            external_key="approved:1",
+            content_family="shopping",
+            content_kind="promotion",
+            title="Tomates 0,99 EUR",
+            description="Tomates promo",
+            source_url="https://www.carrefour-reunion.com/catalogues/carrefour",
+            scope_type="island",
+            status="approved",
+            ends_at=datetime(2026, 7, 30, tzinfo=timezone.utc),
+        )
+        technical.save_candidate("source:1", "snapshot:1", candidate)
+
+        with patch("app.main.get_repository", return_value=repository):
+            summary = run(self.settings.with_overrides(collector_max_sources=0))
+
+        self.assertEqual(summary.candidates_published, 0)
+        self.assertEqual(summary.metrics["approved_candidates_pending"], 1)
+        self.assertEqual(summary.metrics["approved_candidates_published"], 0)
         self.assertEqual(len(technical.good_deals), 0)
 
 
