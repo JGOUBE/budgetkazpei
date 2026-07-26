@@ -1,3 +1,4 @@
+import { learnManualMarketAliasFromReceiptItem } from "../../../services/scan/marketManualAliasService"
 import { supabase } from "../../../services/supabase"
 
 export const RECEIPT_BUCKET = "receipt-images"
@@ -72,6 +73,171 @@ function resolveReceiptDateForDb(value = "") {
     dateStatus: fallbackUsed ? "estimated" : "detected",
     fallbackUsed,
   }
+}
+
+function shouldLearnManualAlias(item = {}, previousItem = null) {
+  const corrected = normalizeProductLabel(item.corrected_name || item.name || "")
+  const raw = normalizeProductLabel(item.ocr_name || previousItem?.ocr_name || previousItem?.raw_name || "")
+  const previousCorrected = normalizeProductLabel(previousItem?.corrected_name || previousItem?.name || "")
+  const status = String(item.item_status || previousItem?.item_status || item.review_status || previousItem?.review_status || "")
+  if (!corrected || !raw) return false
+  if (corrected === raw) return false
+  if (previousCorrected && previousCorrected === corrected) return false
+  return status === "user_validated" || status === "trusted"
+}
+
+export function buildManualAliasLearningCandidate({ itemId, previousItem = null, item = null }) {
+  const previousCorrectedName = String(
+    previousItem?.corrected_name
+    || previousItem?.ocr_name
+    || previousItem?.raw_name
+    || previousItem?.name
+    || "",
+  ).trim()
+  const nextCorrectedName = String(item?.corrected_name || item?.name || "").trim()
+  const rawName = String(
+    previousItem?.raw_name
+    || previousItem?.ocr_name
+    || item?.raw_name
+    || item?.ocr_name
+    || previousItem?.name
+    || "",
+  ).trim()
+  const status = String(
+    item?.item_status
+    || previousItem?.item_status
+    || item?.review_status
+    || previousItem?.review_status
+    || "",
+  ).trim()
+
+  const normalizedPrevious = normalizeProductLabel(previousCorrectedName)
+  const normalizedNext = normalizeProductLabel(nextCorrectedName)
+  const normalizedRaw = normalizeProductLabel(rawName)
+
+  let skipReason = ""
+  if (!String(itemId || "").trim()) skipReason = "missing_item_id"
+  else if (!normalizedRaw) skipReason = "missing_raw_name"
+  else if (!normalizedNext) skipReason = "missing_next_corrected_name"
+  else if (normalizedNext === normalizedRaw) skipReason = "corrected_matches_raw"
+  else if (normalizedPrevious && normalizedPrevious === normalizedNext) skipReason = "no_change"
+  else if (!(status === "user_validated" || status === "trusted")) skipReason = "status_not_validated"
+
+  return {
+    itemId: String(itemId || "").trim(),
+    rawName,
+    previousCorrectedName,
+    nextCorrectedName,
+    status,
+    shouldAttempt: !skipReason,
+    skipReason,
+  }
+}
+
+async function attemptManualAliasLearning({
+  itemId,
+  userId,
+  item,
+  previousItem = null,
+  candidate = null,
+  dependencies = {},
+}) {
+  const learnAliasRpcImpl = dependencies.learnAliasRpcImpl || learnManualMarketAliasFromReceiptItem
+  const refreshReceiptItemImpl = dependencies.refreshReceiptItemImpl || refreshReceiptItem
+  const resolvedCandidate = candidate || buildManualAliasLearningCandidate({
+    itemId,
+    previousItem,
+    item,
+  })
+
+  console.info("[scanner] alias_learning_candidate", {
+    receipt_item_id: resolvedCandidate.itemId,
+    raw_name: resolvedCandidate.rawName || null,
+    previous_corrected_name: resolvedCandidate.previousCorrectedName || null,
+    next_corrected_name: resolvedCandidate.nextCorrectedName || null,
+    status: resolvedCandidate.status || null,
+    should_attempt: resolvedCandidate.shouldAttempt,
+    skip_reason: resolvedCandidate.skipReason || "",
+  })
+
+  if (!resolvedCandidate.shouldAttempt) {
+    console.info("[scanner] alias_learning_skipped", {
+      receipt_item_id: resolvedCandidate.itemId,
+      reason: resolvedCandidate.skipReason || "unknown",
+      raw_name: resolvedCandidate.rawName || null,
+      previous_corrected_name: resolvedCandidate.previousCorrectedName || null,
+      next_corrected_name: resolvedCandidate.nextCorrectedName || null,
+      status: resolvedCandidate.status || null,
+    })
+    return {
+      item,
+      attempted: false,
+      skipped: true,
+      skipReason: resolvedCandidate.skipReason || "unknown",
+      candidate: resolvedCandidate,
+    }
+  }
+
+  console.info("[scanner] alias_learning_rpc_started", {
+    receipt_item_id: resolvedCandidate.itemId,
+  })
+
+  try {
+    const learning = await learnAliasRpcImpl(resolvedCandidate.itemId)
+    console.info("[scanner] alias_learning_rpc_succeeded", {
+      receipt_item_id: resolvedCandidate.itemId,
+      learned: learning?.learned === true,
+      reason: learning?.reason || "",
+      alias_id: learning?.alias_id || null,
+      validation_count: learning?.validation_count ?? null,
+      scope: learning?.scope || null,
+    })
+    if (learning?.learned === true) {
+      return {
+        item: await refreshReceiptItemImpl({ itemId: resolvedCandidate.itemId, userId }),
+        attempted: true,
+        skipped: false,
+        learning,
+        candidate: resolvedCandidate,
+      }
+    }
+
+    return {
+      item,
+      attempted: true,
+      skipped: false,
+      learning,
+      candidate: resolvedCandidate,
+    }
+  } catch (learningError) {
+    console.warn("[scanner] alias_learning_rpc_failed", {
+      receipt_item_id: resolvedCandidate.itemId,
+      code: learningError?.code || null,
+      message: learningError?.message || "",
+      details: learningError?.details || "",
+      hint: learningError?.hint || "",
+    })
+    return {
+      item,
+      attempted: true,
+      skipped: false,
+      failed: true,
+      error: learningError,
+      candidate: resolvedCandidate,
+    }
+  }
+}
+
+async function refreshReceiptItem({ itemId, userId }) {
+  const { data, error } = await supabase
+    .from("receipt_items")
+    .select("*")
+    .eq("id", itemId)
+    .eq("user_id", userId)
+    .single()
+
+  if (error) throw error
+  return data
 }
 
 export async function uploadReceiptImage({ userId, file }) {
@@ -266,6 +432,298 @@ export async function saveReceiptItems({ receiptId, userId, items }) {
 function isMissingColumnError(error) {
   const message = String(error?.message || error?.details || "")
   return error?.code === "PGRST204" || message.includes("Could not find") || message.includes("column")
+}
+
+const RECEIPT_UPDATE_COLUMNS = new Set([
+  "store_name",
+  "purchase_date",
+  "total_amount",
+  "currency",
+  "image_path",
+  "ocr_text",
+  "ocr_status",
+  "ai_used",
+  "validation_status",
+  "transaction_id",
+  "updated_at",
+  "merchant_name",
+  "merchant_confidence",
+  "date_status",
+  "ticket_type",
+  "budget_category",
+  "normalized_store_name",
+  "store_location",
+  "is_food_ticket",
+  "scan_level_used",
+  "scan_duration_ms",
+  "confidence_score",
+  "escalation_reason",
+  "scan_status",
+  "duplicate_confirmed",
+  "duplicate_of_receipt_id",
+  "hidden_at",
+  "image_deleted_at",
+  "removed_from_history_at",
+  "removal_type",
+  "image_deleted_reason",
+  "image_url",
+  "storage_path",
+])
+
+const RECEIPT_ITEM_UPDATE_COLUMNS = new Set([
+  "name",
+  "corrected_name",
+  "normalized_name",
+  "brand",
+  "quantity",
+  "unit",
+  "unit_price",
+  "total_price",
+  "category",
+  "subcategory",
+  "department",
+  "ticket_section",
+  "promotion",
+  "confidence_score",
+  "item_status",
+  "line_type",
+  "item_source",
+  "market_product_id",
+  "market_matched",
+  "market_match_type",
+  "market_match_confidence",
+  "market_canonical_name",
+  "market_brand",
+  "market_category",
+  "market_subcategory",
+  "market_package_format",
+])
+
+function sanitizeReceiptHeaderUpdates(updates = {}) {
+  const cleanUpdates = {}
+
+  for (const [key, value] of Object.entries(updates || {})) {
+    if (!RECEIPT_UPDATE_COLUMNS.has(key) || value === undefined) continue
+    cleanUpdates[key] = value
+  }
+
+  if ("purchase_date" in cleanUpdates) {
+    const normalizedDate = normalizeReceiptDateForDb(cleanUpdates.purchase_date)
+    cleanUpdates.purchase_date = normalizedDate || cleanUpdates.purchase_date || null
+  }
+
+  if ("total_amount" in cleanUpdates) {
+    cleanUpdates.total_amount = cleanUpdates.total_amount === "" || cleanUpdates.total_amount == null
+      ? null
+      : Number(cleanUpdates.total_amount)
+  }
+
+  if ("merchant_confidence" in cleanUpdates) {
+    cleanUpdates.merchant_confidence = cleanUpdates.merchant_confidence === "" || cleanUpdates.merchant_confidence == null
+      ? null
+      : Number(cleanUpdates.merchant_confidence)
+  }
+
+  if ("scan_level_used" in cleanUpdates) {
+    cleanUpdates.scan_level_used = cleanUpdates.scan_level_used === "" || cleanUpdates.scan_level_used == null
+      ? null
+      : Number(cleanUpdates.scan_level_used)
+  }
+
+  if ("scan_duration_ms" in cleanUpdates) {
+    cleanUpdates.scan_duration_ms = cleanUpdates.scan_duration_ms === "" || cleanUpdates.scan_duration_ms == null
+      ? null
+      : Number(cleanUpdates.scan_duration_ms)
+  }
+
+  if ("confidence_score" in cleanUpdates) {
+    cleanUpdates.confidence_score = cleanUpdates.confidence_score === "" || cleanUpdates.confidence_score == null
+      ? null
+      : Number(cleanUpdates.confidence_score)
+  }
+
+  return cleanUpdates
+}
+
+function sanitizeReceiptItemUpdates(updates = {}) {
+  const cleanUpdates = {}
+
+  for (const [key, value] of Object.entries(updates || {})) {
+    if (!RECEIPT_ITEM_UPDATE_COLUMNS.has(key) || value === undefined) continue
+    cleanUpdates[key] = value
+  }
+
+  for (const key of [
+    "name",
+    "corrected_name",
+    "normalized_name",
+    "brand",
+    "unit",
+    "category",
+    "subcategory",
+    "department",
+    "ticket_section",
+    "item_status",
+    "line_type",
+    "item_source",
+    "market_match_type",
+    "market_canonical_name",
+    "market_brand",
+    "market_category",
+    "market_subcategory",
+    "market_package_format",
+  ]) {
+    if (key in cleanUpdates) {
+      cleanUpdates[key] = cleanUpdates[key] == null ? null : String(cleanUpdates[key] || "").trim()
+      if (cleanUpdates[key] === "") cleanUpdates[key] = null
+    }
+  }
+
+  for (const key of ["quantity", "unit_price", "total_price", "confidence_score", "market_match_confidence"]) {
+    if (key in cleanUpdates) {
+      cleanUpdates[key] = cleanUpdates[key] === "" || cleanUpdates[key] == null
+        ? null
+        : Number(cleanUpdates[key])
+    }
+  }
+
+  if ("promotion" in cleanUpdates) cleanUpdates.promotion = Boolean(cleanUpdates.promotion)
+  if ("market_matched" in cleanUpdates) cleanUpdates.market_matched = Boolean(cleanUpdates.market_matched)
+
+  return cleanUpdates
+}
+
+function buildReceiptItemDbUpdates(safeUpdates = {}, previousItem = null) {
+  const draftUpdates = {}
+  const previousItemStatus = previousItem?.item_status || previousItem?.status || "user_validated"
+  const previousReviewStatus = previousItem?.review_status || "trusted"
+
+  if ("name" in safeUpdates) {
+    draftUpdates.name = String(safeUpdates.name || "").trim()
+  }
+
+  if ("corrected_name" in safeUpdates || "name" in safeUpdates) {
+    const cleanCorrectedName = "corrected_name" in safeUpdates
+      ? String(safeUpdates.corrected_name || "").trim()
+      : String(draftUpdates.name || "").trim()
+    draftUpdates.corrected_name = cleanCorrectedName
+    draftUpdates.normalized_name = normalizeProductLabel(
+      safeUpdates.normalized_name || cleanCorrectedName || draftUpdates.name || previousItem?.corrected_name || previousItem?.name,
+    )
+  } else if ("normalized_name" in safeUpdates) {
+    draftUpdates.normalized_name = normalizeProductLabel(
+      safeUpdates.normalized_name || previousItem?.corrected_name || previousItem?.name,
+    )
+  }
+
+  if ("total_price" in safeUpdates) {
+    draftUpdates.total_price = safeUpdates.total_price === "" || safeUpdates.total_price == null
+      ? null
+      : Number(safeUpdates.total_price)
+  }
+  if ("category" in safeUpdates) draftUpdates.category = safeUpdates.category || previousItem?.category || "alimentaire"
+  if ("item_status" in safeUpdates) {
+    draftUpdates.item_status = safeUpdates.item_status || previousItemStatus
+  } else if ("review_status" in safeUpdates) {
+    draftUpdates.item_status = safeUpdates.review_status === "needs_review" ? "a_verifier" : previousItemStatus
+  }
+  if ("quantity" in safeUpdates) draftUpdates.quantity = Number(safeUpdates.quantity || 1)
+  if ("unit_price" in safeUpdates) draftUpdates.unit_price = safeUpdates.unit_price === "" || safeUpdates.unit_price == null ? null : Number(safeUpdates.unit_price)
+  if ("unit" in safeUpdates) draftUpdates.unit = safeUpdates.unit || null
+  if ("brand" in safeUpdates) draftUpdates.brand = safeUpdates.brand || null
+  if ("subcategory" in safeUpdates) draftUpdates.subcategory = safeUpdates.subcategory || null
+  if ("department" in safeUpdates) draftUpdates.department = safeUpdates.department || null
+  if ("ticket_section" in safeUpdates) draftUpdates.ticket_section = safeUpdates.ticket_section || null
+  if ("promotion" in safeUpdates) draftUpdates.promotion = Boolean(safeUpdates.promotion)
+  if ("confidence_score" in safeUpdates) draftUpdates.confidence_score = safeUpdates.confidence_score
+
+  if ("needs_review" in safeUpdates && !("item_status" in draftUpdates)) {
+    const nextNeedsReview = Boolean(safeUpdates.needs_review)
+    draftUpdates.item_status = nextNeedsReview
+      ? "a_verifier"
+      : previousReviewStatus === "needs_review"
+        ? previousItemStatus
+        : previousItemStatus
+  }
+
+  return sanitizeReceiptItemUpdates(draftUpdates)
+}
+
+async function persistReceiptItemUpdate({
+  itemId,
+  userId,
+  updates,
+  previousItem = null,
+  learnAlias = true,
+  dependencies = {},
+}) {
+  const supabaseClient = dependencies.supabaseClient || supabase
+  const learnAliasImpl = dependencies.learnAliasImpl || maybeLearnManualAliasForReceiptItem
+  const missingColumnErrorImpl = dependencies.isMissingColumnErrorImpl || isMissingColumnError
+
+  let { data, error } = await supabaseClient
+    .from("receipt_items")
+    .update(updates)
+    .eq("id", itemId)
+    .eq("user_id", userId)
+    .select()
+    .single()
+
+  if (error && missingColumnErrorImpl(error)) {
+    const legacyUpdates = sanitizeReceiptItemUpdates({
+      name: updates.name,
+      corrected_name: updates.corrected_name,
+      normalized_name: updates.normalized_name,
+      total_price: updates.total_price,
+      category: updates.category,
+    })
+
+    const retry = await supabaseClient
+      .from("receipt_items")
+      .update(legacyUpdates)
+      .eq("id", itemId)
+      .eq("user_id", userId)
+      .select()
+      .single()
+
+    data = retry.data
+    error = retry.error
+  }
+
+  if (error) {
+    console.error("[scanner] Update receipt_item: ERREUR", {
+      item_id: itemId,
+      payload: updates,
+      error: {
+        code: error?.code || null,
+        message: error?.message || "",
+        details: error?.details || "",
+        hint: error?.hint || "",
+      },
+    })
+    throw error
+  }
+
+  console.info("[scanner] receipt_item_update_succeeded", {
+    receipt_item_id: itemId,
+    payload: updates,
+    persisted_corrected_name: data?.corrected_name ?? null,
+    persisted_raw_name: data?.ocr_name || data?.name || null,
+    item_status: data?.item_status || data?.review_status || null,
+  })
+
+  const nextItem = { ...(previousItem || {}), ...(data || {}), ...updates }
+
+  if (!learnAlias) {
+    return data
+  }
+
+  return await learnAliasImpl({
+    itemId,
+    userId,
+    item: nextItem,
+    previousItem,
+  })
 }
 
 function normalizeComparableText(value = "") {
@@ -576,9 +1034,13 @@ export async function validateReceipt({ receiptId, userId, draft, items, transac
 }
 
 export async function updateReceipt({ receiptId, userId, updates }) {
-  const cleanUpdates = {
-    ...updates,
+  const cleanUpdates = sanitizeReceiptHeaderUpdates({
+    ...(updates && typeof updates === "object" ? updates : {}),
     updated_at: new Date().toISOString(),
+  })
+
+  if (!Object.keys(cleanUpdates).length) {
+    return null
   }
 
   let { data, error } = await supabase
@@ -630,57 +1092,50 @@ export async function updateReceipt({ receiptId, userId, updates }) {
   return data
 }
 
-export async function updateReceiptItem({ itemId, userId, updates }) {
-  const cleanUpdates = {
-    name: String(updates.name || "").trim(),
-    corrected_name: String(updates.corrected_name || updates.name || "").trim(),
-    total_price: updates.total_price === "" || updates.total_price == null ? null : Number(updates.total_price),
-    category: updates.category || "alimentaire",
-    item_status: updates.item_status || "user_validated",
-    review_status: updates.review_status || "trusted",
+export async function maybeLearnManualAliasForReceiptItem({
+  itemId,
+  userId,
+  item,
+  previousItem = null,
+  candidate = null,
+  dependencies = {},
+}) {
+  const result = await attemptManualAliasLearning({
+    itemId,
+    userId,
+    item,
+    previousItem,
+    candidate,
+    dependencies,
+  })
+  return result.item
+}
+
+export async function updateReceiptItem({ itemId, userId, updates, previousItem = null, learnAlias = true }) {
+  const safeUpdates = updates && typeof updates === "object" ? updates : {}
+  const cleanUpdates = buildReceiptItemDbUpdates(safeUpdates, previousItem)
+
+  if (!Object.keys(cleanUpdates).length) {
+    return previousItem
   }
+  return await persistReceiptItemUpdate({
+    itemId,
+    userId,
+    updates: cleanUpdates,
+    previousItem,
+    learnAlias,
+  })
+}
 
-  if (updates.quantity !== undefined) cleanUpdates.quantity = Number(updates.quantity || 1)
-  if (updates.unit_price !== undefined) cleanUpdates.unit_price = updates.unit_price === "" || updates.unit_price == null ? null : Number(updates.unit_price)
-  if (updates.unit !== undefined) cleanUpdates.unit = updates.unit || null
-  cleanUpdates.normalized_name = normalizeProductLabel(updates.normalized_name || cleanUpdates.corrected_name || cleanUpdates.name)
-  if (updates.brand !== undefined) cleanUpdates.brand = updates.brand || null
-  if (updates.subcategory !== undefined) cleanUpdates.subcategory = updates.subcategory || null
-  if (updates.department !== undefined) cleanUpdates.department = updates.department || null
-  if (updates.ticket_section !== undefined) cleanUpdates.ticket_section = updates.ticket_section || null
-  if (updates.promotion !== undefined) cleanUpdates.promotion = Boolean(updates.promotion)
-
-  // Ne pas envoyer au hasard status / needs_review / updated_at si ces colonnes
-  // n'existent pas dans receipt_items. item_status + review_status suffisent.
-  let { data, error } = await supabase
-    .from("receipt_items")
-    .update(cleanUpdates)
-    .eq("id", itemId)
-    .eq("user_id", userId)
-    .select()
-    .single()
-
-  if (error && isMissingColumnError(error)) {
-    const legacyUpdates = {
-      name: cleanUpdates.name,
-      total_price: cleanUpdates.total_price,
-      category: cleanUpdates.category,
-    }
-
-    const retry = await supabase
-      .from("receipt_items")
-      .update(legacyUpdates)
-      .eq("id", itemId)
-      .eq("user_id", userId)
-      .select()
-      .single()
-
-    data = retry.data
-    error = retry.error
-  }
-
-  if (error) throw error
-  return data
+export const __receiptServiceTestUtils = {
+  normalizeProductLabel,
+  sanitizeReceiptHeaderUpdates,
+  sanitizeReceiptItemUpdates,
+  buildReceiptItemDbUpdates,
+  buildManualAliasLearningCandidate,
+  attemptManualAliasLearning,
+  persistReceiptItemUpdate,
+  shouldLearnManualAlias,
 }
 
 export async function deleteReceiptItem({ itemId, userId }) {

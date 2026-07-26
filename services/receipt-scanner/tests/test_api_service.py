@@ -198,6 +198,32 @@ class FakeQuotaProvider(ScanQuotaProvider):
         self.release_calls.append((reservation, reason))
 
 
+class FakeMarketResolver:
+    def __init__(self, canonical_name: str = "Riz local long grain 1 kg") -> None:
+        self.canonical_name = canonical_name
+        self.calls: list[dict[str, object]] = []
+
+    def enrich(
+        self,
+        receipt: ParsedReceipt,
+        *,
+        access_token: str | None,
+    ) -> dict[str, object]:
+        self.calls.append(
+            {
+                "access_token": access_token,
+                "items": len(receipt.items),
+            }
+        )
+        if receipt.items:
+            receipt.items[0].canonical_name = self.canonical_name
+        return {
+            "requested": len(receipt.items),
+            "resolved": 1 if receipt.items else 0,
+            "skipped": False,
+        }
+
+
 class ReceiptScanServiceTest(unittest.TestCase):
     def settings(self, **overrides) -> ScannerSettings:
         values = {
@@ -214,12 +240,14 @@ class ReceiptScanServiceTest(unittest.TestCase):
         self,
         runner: FakeRunner | None = None,
         quota_provider: ScanQuotaProvider | None = None,
+        market_resolver: FakeMarketResolver | None = None,
         **settings,
     ) -> ReceiptScanService:
         return ReceiptScanService(
             settings=self.settings(**settings),
             runner=runner or FakeRunner(),
             quota_provider=quota_provider,
+            market_resolver=market_resolver,
         )
 
     def test_rejects_invalid_mime(self) -> None:
@@ -256,6 +284,14 @@ class ReceiptScanServiceTest(unittest.TestCase):
         svc = self.service(runner)
         response = svc.scan_single(upload=upload(), user_id="u1")
         self.assertEqual(response["status"], "trusted")
+        self.assertEqual(
+            response["diagnostics"]["parser"]["requested_mode"],
+            "legacy",
+        )
+        self.assertEqual(
+            response["diagnostics"]["parser"]["used_mode"],
+            "legacy",
+        )
         self.assertFalse(runner.work_dirs[0].exists())
 
     def test_reserves_and_completes_quota_after_valid_upload(self) -> None:
@@ -272,6 +308,22 @@ class ReceiptScanServiceTest(unittest.TestCase):
         self.assertEqual(quota.reserve_calls[0]["access_token"], "user-token")
         self.assertEqual(len(quota.complete_calls), 1)
         self.assertEqual(quota.release_calls, [])
+
+    def test_market_resolver_keeps_access_token_and_canonical_name_in_api_response(self) -> None:
+        resolver = FakeMarketResolver(
+            canonical_name="Tarama aux oeufs de cabillaud 100 g"
+        )
+        response = self.service(market_resolver=resolver).scan_single(
+            upload=upload(),
+            user_id="u1",
+            access_token="user-token",
+            scan_id="scan-market-1",
+        )
+        self.assertEqual(resolver.calls[0]["access_token"], "user-token")
+        self.assertEqual(
+            response["items"][0]["canonical_name"],
+            "Tarama aux oeufs de cabillaud 100 g",
+        )
 
     def test_invalid_upload_does_not_reserve_quota(self) -> None:
         quota = FakeQuotaProvider()

@@ -89,6 +89,7 @@ def create_app(
             ready=not resolved_settings.auth_disabled_in_production,
             auth_mode=resolved_settings.auth_mode,
             quota_mode=resolved_settings.quota_mode,
+            parser_mode=resolved_settings.parser_mode,
             max_concurrent_scans=resolved_settings.max_concurrent_scans,
             diagnostics_enabled=resolved_settings.diagnostics_enabled,
         )

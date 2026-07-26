@@ -11,7 +11,7 @@ export function isTechnicalPythonScannerError(error: unknown) {
 }
 
 export function canOfferLegacyFallback(_error: unknown) {
-  return false
+  return isTechnicalPythonScannerError(_error)
 }
 function scanStatusForApi(status: ReceiptScanResponse["status"]) {
   if (status === "trusted") return "budget_ok_articles_ok"
@@ -166,23 +166,56 @@ function metricsForPython(response: ReceiptScanResponse) {
   }
 }
 
-export async function scanWithPythonEngine(file: File, options: ReceiptScannerApiOptions = {}): Promise<ReceiptScannerResult> {
+export async function scanWithPythonEngine(
+  file: File,
+  options: ScanEngineOptions & ReceiptScannerApiOptions = {},
+): Promise<ReceiptScannerResult & { optimizedFile: File; validation: { issues: string[] } }> {
+  options.onProgress?.({
+    step: "reading",
+    label: "Lecture du ticket par le moteur Python...",
+    progress: 20,
+  })
   const response = await scanSingleReceiptWithApi(file, options)
+  options.onProgress?.({
+    step: "finalizing",
+    label: "Analyse terminée.",
+    progress: 90,
+  })
   return {
     engine_used: "python",
     receipt: mapPythonScanToDraft(response),
     metrics: metricsForPython(response),
     apiResponse: response,
+    optimizedFile: file,
+    validation: {
+      issues: response.reasons || [],
+    },
   }
 }
 
-export async function scanLongWithPythonEngine(files: { top: File; bottom: File }, options: ReceiptScannerApiOptions = {}): Promise<ReceiptScannerResult> {
+export async function scanLongWithPythonEngine(
+  files: { top: File; bottom: File },
+  options: ScanEngineOptions & ReceiptScannerApiOptions = {},
+): Promise<ReceiptScannerResult & { validation: { issues: string[] } }> {
+  options.onProgress?.({
+    step: "reading",
+    label: "Lecture et raccord des deux photos...",
+    progress: 20,
+  })
   const response = await scanLongReceiptWithApi(files, options)
+  options.onProgress?.({
+    step: "finalizing",
+    label: "Analyse terminée.",
+    progress: 90,
+  })
   return {
     engine_used: "python",
     receipt: mapPythonScanToDraft(response),
     metrics: metricsForPython(response),
     apiResponse: response,
+    validation: {
+      issues: response.reasons || [],
+    },
   }
 }
 

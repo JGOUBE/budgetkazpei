@@ -1,11 +1,51 @@
 import { resolveMarketProducts, __marketProductResolverTestUtils } from "./marketProductResolver"
+import {
+  buildExternalCandidatePromotion,
+  choosePreferredExternalCandidate,
+  dedupeExternalCandidates,
+  evaluateExternalCandidateMatch,
+  EXTERNAL_CANDIDATE_THRESHOLDS,
+  sanitizeExternalCandidateRecord,
+} from "./marketExternalCandidateService.js"
 import { resolveMarketDisplayName } from "./marketDisplay"
 import { sanitizeFinalReceiptItems } from "./scanEngine"
 import { validateParsedReceipt } from "./receiptValidator"
 import {
+  applyReceiptItemDraftToItem,
+  applyValidatedReceiptItemDraft,
+  buildReceiptItemPersistenceUpdates,
+  buildReceiptItemDraftMap,
+  buildReceiptItemUpdatePayload,
+  createReceiptItemDraft,
+  getReceiptItemVisibleName,
+  hasReceiptItemDraftChanges,
+  hasReceiptItemPendingPersistence,
+} from "../../features/receipts/utils/receiptItemEditor"
+import {
+  buildReceiptHistorySummary,
+  buildReceiptSaveFailureUiState,
+  buildReceiptSaveSuccessUiState,
+  RECEIPT_DETAIL_BUTTON_LABELS,
+  RECEIPT_DETAIL_CONFIRMATION_LABELS,
+  splitReceiptDetailSavePayload,
+} from "../../features/receipts/utils/receiptDetailUx"
+import { __receiptServiceTestUtils } from "../../features/receipts/services/receiptService"
+import {
   isEligibleMarketReceiptItem,
   isResolvedMarketProduct,
 } from "../../../supabase/functions/market-record-observations/marketRules"
+import {
+  buildEvaluatedCandidateRows,
+  buildExternalCandidateUpsertPath,
+  buildOfficialSourceCandidate,
+  collectExternalCandidates,
+  collectExternalCandidatesWithReport,
+  runCli as runExternalCandidateCli,
+  } from "../../../scripts/enrich_market_alias_candidates.mjs"
+import {
+  buildCandidateReviewUpdatePayload,
+  buildMarketProductAliasUpsertPath,
+} from "../../../scripts/review_market_alias_candidates.mjs"
 
 type RegressionResult = {
   id: string
@@ -20,6 +60,19 @@ function assertEqual(id: string, actual: unknown, expected: unknown): Regression
     passed: JSON.stringify(actual) === JSON.stringify(expected),
     expected,
     actual,
+  }
+}
+
+function createJsonResponse(status: number, payload: unknown) {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    async json() {
+      return payload
+    },
+    async text() {
+      return JSON.stringify(payload)
+    },
   }
 }
 
@@ -40,8 +93,20 @@ function pickProtectedItemFields(item: any) {
   }
 }
 
+function pickSuggestionFields(item: any) {
+  return {
+    market_suggested: item.market_suggested ?? false,
+    market_suggestion_product_id: item.market_suggestion_product_id ?? null,
+    market_suggestion_canonical_name: item.market_suggestion_canonical_name ?? null,
+    market_suggestion_confidence: item.market_suggestion_confidence ?? null,
+    market_suggestion_scope: item.market_suggestion_scope ?? null,
+    market_suggestion_reason: item.market_suggestion_reason ?? null,
+  }
+}
+
 function baseItem(overrides: Record<string, unknown> = {}) {
   return {
+    raw_name: "HUILE LESIEUR TOURNESOL",
     name: "HUILE LESIEUR TOURNESOL",
     ocr_name: "3265471000110 *HUILE LESIEUR TOURNESOL",
     corrected_name: "HUILE LESIEUR TOURNESOL",
@@ -68,6 +133,7 @@ function productItem(
   overrides: Record<string, unknown> = {},
 ) {
   return {
+    raw_name: name,
     name,
     ocr_name: name,
     corrected_name: name,
@@ -93,6 +159,23 @@ function pouletItem(overrides: Record<string, unknown> = {}) {
     source_line: "POULET LE JAUNE 7.69 2",
     ...overrides,
   })
+}
+
+function receiptEditorItem(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "receipt-item-1",
+    raw_name: "TARAMA DEUFS CABIL,IOOG",
+    ocr_name: "TARAMA DEUFS CABIL,IOOG",
+    name: "TARAMA DEUFS CABIL,IOOG",
+    corrected_name: "",
+    market_canonical_name: "",
+    total_price: 2.01,
+    category: "alimentaire",
+    item_status: "a_verifier",
+    review_status: "needs_review",
+    needs_review: true,
+    ...overrides,
+  }
 }
 
 function mockDeps({
@@ -186,7 +269,18 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
     applyMarketResolutions,
     buildLocalOcrNameCandidates,
     buildMarketResolvePayload,
+    buildOcrAliasAlternateNames,
+    normalizeCandidateText,
   } = __marketProductResolverTestUtils
+  const {
+    attemptManualAliasLearning,
+    buildManualAliasLearningCandidate,
+    sanitizeReceiptHeaderUpdates,
+    sanitizeReceiptItemUpdates,
+    buildReceiptItemDbUpdates,
+    persistReceiptItemUpdate,
+    shouldLearnManualAlias,
+  } = __receiptServiceTestUtils
 
   const originalItem = baseItem()
   const matchedItems = applyMarketResolutions([originalItem], [{
@@ -240,6 +334,17 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
     index: 0,
     market_matched: false,
     market_unmatched_reason: "not_found",
+  })
+
+  const suggestionResult = await resolveFixture({
+    index: 0,
+    market_matched: false,
+    market_suggested: true,
+    market_suggestion_product_id: "55555555-5555-4555-8555-555555555555",
+    market_suggestion_canonical_name: "Huile Lesieur tournesol 1 l",
+    market_suggestion_confidence: 0.87,
+    market_suggestion_scope: "chain",
+    market_suggestion_reason: "manual_alias_review_required",
   })
 
   const ticketItems = [
@@ -376,6 +481,780 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
     ["negative_quantity", isEligibleMarketReceiptItem(baseItem({ quantity: -1 })), false],
   ]
 
+  const taramaCorrection = "Tarama aux oeufs de cabillaud 100 g"
+  const taramaItem = receiptEditorItem()
+  const taramaNormalizedVariants = [
+    normalizeCandidateText("TARAMA DEUFS CABIL,I00G"),
+    normalizeCandidateText("TARAMA OEUFS CABIL,100G"),
+    normalizeCandidateText("TARAMA DEUFS CABIL,IOOG"),
+  ]
+  const taramaPayload = buildMarketResolvePayload(
+    [taramaItem],
+    { store_name: "E.Leclerc" },
+  )[0]
+  const taramaDraft = {
+    ...createReceiptItemDraft(taramaItem),
+    corrected_name: taramaCorrection,
+  }
+  const taramaDbUpdates = buildReceiptItemDbUpdates({
+    corrected_name: taramaCorrection,
+    total_price: 2.01,
+    category: "alimentaire",
+    item_status: "user_validated",
+    review_status: "trusted",
+    needs_review: false,
+    unknown_frontend_only: "ignored",
+  }, taramaItem)
+  const taramaApplied = applyReceiptItemDraftToItem(taramaItem, taramaDraft)
+  const taramaValidatedLocally = applyValidatedReceiptItemDraft(taramaItem, taramaDraft)
+  const taramaPersisted = {
+    ...taramaValidatedLocally,
+    corrected_name: taramaCorrection,
+  }
+  const priceOnlyDraft = {
+    ...createReceiptItemDraft(receiptEditorItem({ market_canonical_name: "Tarama canonique 100 g" })),
+    total_price: 2.5,
+  }
+  const receiptTotalBefore = 66.19
+  const receiptTotalAfter = receiptTotalBefore
+
+  const multiItems = [
+    receiptEditorItem(),
+    receiptEditorItem({
+      id: "receipt-item-2",
+      raw_name: "RIZ LOCAL 1KG",
+      ocr_name: "RIZ LOCAL 1KG",
+      name: "RIZ LOCAL 1KG",
+      total_price: 4.2,
+    }),
+  ]
+  const multiDrafts = buildReceiptItemDraftMap(multiItems)
+  multiDrafts["receipt-item-1"].corrected_name = taramaCorrection
+  multiDrafts["receipt-item-2"].corrected_name = "Riz local long grain 1 kg"
+  const cancelledDraft = createReceiptItemDraft(multiItems[1])
+  const cancelledAfterLocalValidate = createReceiptItemDraft(multiItems[0])
+
+  const firstValidatedState = receiptEditorItem({
+    corrected_name: "",
+    item_status: "user_validated",
+    review_status: "trusted",
+    needs_review: false,
+  })
+  const firstValidatedSaved = {
+    ...firstValidatedState,
+    corrected_name: taramaCorrection,
+    item_status: "user_validated",
+  }
+  const unchangedValidatedSaved = {
+    ...firstValidatedSaved,
+    total_price: 2.01,
+  }
+  const saveSuccessUi = buildReceiptSaveSuccessUiState({
+    rows: [{ id: "receipt-item-1" }, { id: "receipt-item-2" }],
+    updatedReceipt: {
+      id: "receipt-item-1",
+      store_name: "E.Leclerc",
+      purchase_date: "2026-07-24",
+      total_amount: 66.19,
+    },
+    confirmationMessage: RECEIPT_DETAIL_CONFIRMATION_LABELS.fr,
+  })
+  const saveFailureUi = buildReceiptSaveFailureUiState({
+    mode: "detail",
+    detail: { id: "receipt-item-1" },
+    detailImageUrl: "image-url",
+    message: "Enregistrement impossible : network_down",
+  })
+  const splitSavePayload = splitReceiptDetailSavePayload({
+    receiptUpdates: null,
+    itemUpdates: [{
+      itemId: "receipt-item-1",
+      updates: { corrected_name: taramaCorrection },
+    }],
+  })
+  const sanitizedReceiptHeaderUpdates = sanitizeReceiptHeaderUpdates({
+    store_name: "E.Leclerc",
+    purchase_date: "24/07/2026",
+    total_amount: "66.19",
+    itemUpdates: splitSavePayload.itemUpdates,
+    item_updates: splitSavePayload.itemUpdates,
+    corrected_name: taramaCorrection,
+    raw_name: "TARAMA DEUFS CABIL,IOOG",
+    total_price: 2.01,
+    category: "alimentaire",
+  })
+  const sanitizedReceiptItemUpdates = sanitizeReceiptItemUpdates({
+    corrected_name: taramaCorrection,
+    review_status: "trusted",
+    needs_review: false,
+    item_status: "user_validated",
+    total_price: 2.01,
+    category: "alimentaire",
+    unknown_frontend_only: "ignored",
+  })
+
+  function createReceiptItemPersistenceDependencies({
+    responses = [],
+  }: {
+    responses?: Array<{ data?: any, error?: any }>
+  } = {}) {
+    const updateCalls: any[] = []
+    const learnCalls: any[] = []
+    let responseIndex = 0
+
+    const builder = {
+      eq(key: string, value: unknown) {
+        const currentCall = updateCalls[updateCalls.length - 1]
+        currentCall.filters.push([key, value])
+        return builder
+      },
+      select() {
+        return builder
+      },
+      async single() {
+        const next = responses[Math.min(responseIndex, Math.max(0, responses.length - 1))] || { data: null, error: null }
+        responseIndex += 1
+        return {
+          data: next.data ?? null,
+          error: next.error ?? null,
+        }
+      },
+    }
+
+    return {
+      dependencies: {
+        supabaseClient: {
+          from(table: string) {
+            return {
+              update(payload: any) {
+                updateCalls.push({ table, payload, filters: [] as Array<[string, unknown]> })
+                return builder
+              },
+            }
+          },
+        },
+        learnAliasImpl: async (args: any) => {
+          learnCalls.push(args)
+          return { ...args.item, alias_rpc_triggered: true }
+        },
+      },
+      getState() {
+        return { updateCalls, learnCalls }
+      },
+    }
+  }
+
+  const persistenceSuccessDeps = createReceiptItemPersistenceDependencies({
+    responses: [{
+      data: {
+        id: "receipt-item-1",
+        corrected_name: taramaCorrection,
+        total_price: 2.01,
+        category: "alimentaire",
+        item_status: "user_validated",
+      },
+      error: null,
+    }],
+  })
+  const persistedAfterSuccess = await persistReceiptItemUpdate({
+    itemId: "receipt-item-1",
+    userId: "user-1",
+    updates: taramaDbUpdates,
+    previousItem: taramaItem,
+    dependencies: persistenceSuccessDeps.dependencies,
+  })
+
+  let persistenceFailureErrorCode = ""
+  const persistenceFailureDeps = createReceiptItemPersistenceDependencies({
+    responses: [{
+      data: null,
+      error: {
+        code: "PGRST400",
+        message: "Bad Request",
+        details: "Unknown column payload",
+        hint: "",
+      },
+    }],
+  })
+  try {
+    await persistReceiptItemUpdate({
+      itemId: "receipt-item-1",
+      userId: "user-1",
+      updates: taramaDbUpdates,
+      previousItem: taramaItem,
+      dependencies: {
+        ...persistenceFailureDeps.dependencies,
+        isMissingColumnErrorImpl: () => false,
+      },
+    })
+  } catch (error: any) {
+    persistenceFailureErrorCode = String(error?.code || "")
+  }
+
+  const aliasRpcCalls: string[] = []
+  const aliasLearningCandidate = buildManualAliasLearningCandidate({
+    itemId: "receipt-item-1",
+    previousItem: taramaItem,
+    item: {
+      ...taramaItem,
+      corrected_name: taramaCorrection,
+      item_status: "user_validated",
+      review_status: "trusted",
+      needs_review: false,
+    },
+  })
+  const aliasLearningFirstSave = await attemptManualAliasLearning({
+    itemId: "receipt-item-1",
+    userId: "user-1",
+    item: {
+      ...taramaItem,
+      corrected_name: taramaCorrection,
+      item_status: "user_validated",
+      review_status: "trusted",
+      needs_review: false,
+    },
+    previousItem: taramaItem,
+    candidate: aliasLearningCandidate,
+    dependencies: {
+      learnAliasRpcImpl: async (itemId: string) => {
+        aliasRpcCalls.push(itemId)
+        return { ok: true, learned: true, alias_id: "alias-1" }
+      },
+      refreshReceiptItemImpl: async () => ({
+        ...taramaItem,
+        corrected_name: taramaCorrection,
+        item_status: "user_validated",
+      }),
+    },
+  })
+  const aliasLearningSecondCandidate = buildManualAliasLearningCandidate({
+    itemId: "receipt-item-1",
+    previousItem: {
+      ...taramaItem,
+      corrected_name: taramaCorrection,
+      item_status: "user_validated",
+    },
+    item: {
+      ...taramaItem,
+      corrected_name: taramaCorrection,
+      item_status: "user_validated",
+    },
+  })
+  const aliasLearningSecondSave = await attemptManualAliasLearning({
+    itemId: "receipt-item-1",
+    userId: "user-1",
+    item: {
+      ...taramaItem,
+      corrected_name: taramaCorrection,
+      item_status: "user_validated",
+    },
+    previousItem: {
+      ...taramaItem,
+      corrected_name: taramaCorrection,
+      item_status: "user_validated",
+    },
+    candidate: aliasLearningSecondCandidate,
+    dependencies: {
+      learnAliasRpcImpl: async (itemId: string) => {
+        aliasRpcCalls.push(itemId)
+        return { ok: true, learned: true, alias_id: "alias-2" }
+      },
+      refreshReceiptItemImpl: async () => ({
+        ...taramaItem,
+        corrected_name: taramaCorrection,
+        item_status: "user_validated",
+      }),
+    },
+  })
+
+  const externalArgs = {
+    rawLabel: "TARAMA DEUFS CABIL,IOOG",
+    brand: "Coraya",
+    packageFormat: "100 g",
+    barcode: "3270190207900",
+    observedPrice: 2.01,
+    storeName: "E.Leclerc Les Casernes",
+    storeCity: "Saint-Pierre",
+    purchaseDate: "2026-07-24",
+  }
+  const exactBarcodeCandidate = evaluateExternalCandidateMatch({
+    raw_label: "Tarama aux oeufs de cabillaud 100 g",
+    brand: externalArgs.brand,
+    package_format: externalArgs.packageFormat,
+    barcode: externalArgs.barcode,
+    observed_price: externalArgs.observedPrice,
+    store_name: externalArgs.storeName,
+    store_city: externalArgs.storeCity,
+    candidate: {
+      source_type: "open_food_facts",
+      source_name: "open_food_facts",
+      source_identifier: externalArgs.barcode,
+      raw_label: externalArgs.rawLabel,
+      candidate_canonical_name: "Tarama aux oeufs de cabillaud 100 g",
+      brand: "Coraya",
+      package_format: "100 g",
+      barcode: externalArgs.barcode,
+      observed_price: 2.01,
+      store_name: externalArgs.storeName,
+      store_city: externalArgs.storeCity,
+      source_confidence: 0.86,
+      matching_evidence: {
+        official_api: "https://world.openfoodfacts.org/api/v2/product/{barcode}.json",
+      },
+    },
+  })
+  const packageConflictCandidate = evaluateExternalCandidateMatch({
+    raw_label: "Tarama aux oeufs de cabillaud 100 g",
+    brand: "Coraya",
+    package_format: "100 g",
+    observed_price: 2.01,
+    store_name: externalArgs.storeName,
+    store_city: externalArgs.storeCity,
+    candidate: {
+      source_type: "open_food_facts",
+      source_name: "open_food_facts",
+      source_identifier: "pkg-conflict",
+      raw_label: externalArgs.rawLabel,
+      candidate_canonical_name: "Tarama aux oeufs de cabillaud 100 g",
+      brand: "Coraya",
+      package_format: "250 g",
+      observed_price: 2.01,
+      store_name: externalArgs.storeName,
+      store_city: externalArgs.storeCity,
+      source_confidence: 0.84,
+    },
+  })
+  const reunionCandidate = evaluateExternalCandidateMatch({
+    raw_label: "Tarama aux oeufs de cabillaud 100 g",
+    brand: "Coraya",
+    package_format: "100 g",
+    barcode: externalArgs.barcode,
+    observed_price: 2.01,
+    store_name: externalArgs.storeName,
+    store_city: externalArgs.storeCity,
+    candidate: {
+      source_type: "open_prices",
+      source_name: "open_prices",
+      source_identifier: "reunion-price-1",
+      raw_label: externalArgs.rawLabel,
+      candidate_canonical_name: "Tarama aux oeufs de cabillaud 100 g",
+      brand: "Coraya",
+      package_format: "100 g",
+      barcode: externalArgs.barcode,
+      observed_price: 2.19,
+      store_name: "E.Leclerc Les Casernes",
+      store_city: "Saint-Pierre",
+      source_confidence: 0.69,
+      matching_evidence: {
+        is_reunion: true,
+      },
+    },
+  })
+  const mainlandCandidate = evaluateExternalCandidateMatch({
+    raw_label: "Tarama aux oeufs de cabillaud 100 g",
+    brand: "Coraya",
+    package_format: "100 g",
+    barcode: externalArgs.barcode,
+    observed_price: 2.01,
+    store_name: "E.Leclerc",
+    store_city: "Paris",
+    candidate: {
+      source_type: "open_prices",
+      source_name: "open_prices",
+      source_identifier: "mainland-price-1",
+      raw_label: externalArgs.rawLabel,
+      candidate_canonical_name: "Tarama aux oeufs de cabillaud 100 g",
+      brand: "Coraya",
+      package_format: "100 g",
+      barcode: externalArgs.barcode,
+      observed_price: 2.01,
+      store_name: "E.Leclerc",
+      store_city: "Paris",
+      source_confidence: 0.91,
+      matching_evidence: {
+        is_reunion: false,
+      },
+    },
+  })
+  const preferredRegionalCandidate = choosePreferredExternalCandidate([
+    mainlandCandidate,
+    reunionCandidate,
+  ])
+  const validatedConflictCandidate = evaluateExternalCandidateMatch({
+    raw_label: externalArgs.rawLabel,
+    brand: externalArgs.brand,
+    package_format: externalArgs.packageFormat,
+    observed_price: externalArgs.observedPrice,
+    store_name: externalArgs.storeName,
+    store_city: externalArgs.storeCity,
+    candidate: {
+      source_type: "open_food_facts",
+      source_name: "open_food_facts",
+      source_identifier: "validated-conflict",
+      raw_label: externalArgs.rawLabel,
+      candidate_canonical_name: "Tarama aperitif 100 g",
+      brand: "Coraya",
+      package_format: "100 g",
+      observed_price: 2.01,
+      source_confidence: 0.7,
+    },
+    context: {
+      validated_user_correction: "Tarama aux oeufs de cabillaud 100 g",
+    },
+  })
+  const ambiguousExternalCandidate = evaluateExternalCandidateMatch({
+    raw_label: "YAOURT VANILLE",
+    brand: "Danone",
+    package_format: "125 g",
+    observed_price: 1.99,
+    candidate: {
+      source_type: "open_food_facts",
+      source_name: "open_food_facts",
+      source_identifier: "ambiguous-1",
+      raw_label: "YAOURT VANILLE",
+      candidate_canonical_name: "Yaourt vanille",
+      brand: "Danone",
+      package_format: "",
+      observed_price: 1.99,
+      source_confidence: 0.63,
+    },
+  })
+  const lowConfidenceCandidate = evaluateExternalCandidateMatch({
+    raw_label: "BISCUIT CHOCO",
+    brand: "",
+    package_format: "",
+    observed_price: 1.49,
+    candidate: {
+      source_type: "open_food_facts",
+      source_name: "open_food_facts",
+      source_identifier: "low-score-1",
+      raw_label: "BISCUIT CHOCO",
+      candidate_canonical_name: "Lessive ocean 3 l",
+      brand: "",
+      package_format: "",
+      observed_price: 1.49,
+      source_confidence: 0.4,
+    },
+  })
+  const manualAliasPriorityCandidate = evaluateExternalCandidateMatch({
+    raw_label: externalArgs.rawLabel,
+    candidate: {
+      source_type: "open_food_facts",
+      source_name: "open_food_facts",
+      source_identifier: "manual-priority-1",
+      raw_label: externalArgs.rawLabel,
+      candidate_canonical_name: "Tarama aux oeufs de cabillaud 100 g",
+      source_confidence: 0.9,
+    },
+    context: {
+      manual_alias_priority: true,
+    },
+  })
+  const dedupedCandidates = dedupeExternalCandidates([
+    sanitizeExternalCandidateRecord({
+      source_type: "open_prices",
+      source_name: "open_prices",
+      source_identifier: "dup-1",
+      raw_label: externalArgs.rawLabel,
+      candidate_canonical_name: "Tarama aux oeufs de cabillaud 100 g",
+      package_format: "100 g",
+      source_confidence: 0.62,
+      store_name: externalArgs.storeName,
+      store_city: externalArgs.storeCity,
+    }),
+    sanitizeExternalCandidateRecord({
+      source_type: "open_prices",
+      source_name: "open_prices",
+      source_identifier: "dup-1",
+      raw_label: externalArgs.rawLabel,
+      candidate_canonical_name: "Tarama aux oeufs de cabillaud 100 g",
+      package_format: "100 g",
+      source_confidence: 0.88,
+      store_name: externalArgs.storeName,
+      store_city: externalArgs.storeCity,
+    }),
+  ])
+  const sanitizedProvenanceCandidate = sanitizeExternalCandidateRecord({
+    source_type: "open_prices",
+    source_name: "open_prices",
+    source_identifier: "proof-1",
+    source_url: "https://prices.openfoodfacts.org/api/v1/prices/1",
+    raw_label: externalArgs.rawLabel,
+    candidate_canonical_name: "Tarama aux oeufs de cabillaud 100 g",
+    brand: "Coraya",
+    package_format: "100 g",
+    observed_price: 2.01,
+    matching_evidence: {
+      proof_id: "proof-1",
+      official_api: "https://prices.openfoodfacts.org/api/v1/prices",
+      user_id: "secret-user",
+      email: "secret@example.com",
+      receipt_number: "123456",
+      receipt_image_url: "https://private.example.com/ticket.jpg",
+    },
+  })
+  const promotedAliasPayload = buildExternalCandidatePromotion({
+    candidate: sanitizedProvenanceCandidate,
+    product_id: "99999999-9999-4999-8999-999999999999",
+  })
+  const reviewRejectedPayload = buildCandidateReviewUpdatePayload({
+    candidate: sanitizedProvenanceCandidate,
+    status: "rejected",
+    notes: "package mismatch",
+    productId: "99999999-9999-4999-8999-999999999999",
+    now: "2026-07-25T10:00:00.000Z",
+  })
+  const officialSourceCandidates = buildOfficialSourceCandidate({
+    ...externalArgs,
+    officialSourceName: "Coraya",
+    officialSourceUrl: "https://www.coraya.fr/tarama-cabillaud-100g",
+    officialSourceId: "coraya-tarama-100g",
+    officialProductName: "Tarama aux oeufs de cabillaud 100 g",
+  })
+  const candidateRows = buildEvaluatedCandidateRows(externalArgs, [
+    {
+      source_type: "open_prices",
+      source_name: "open_prices",
+      source_identifier: "dup-build-1",
+      raw_label: externalArgs.rawLabel,
+      candidate_canonical_name: "Tarama aux oeufs de cabillaud 100 g",
+      brand: "Coraya",
+      package_format: "100 g",
+      barcode: externalArgs.barcode,
+      observed_price: 2.01,
+      store_name: externalArgs.storeName,
+      store_city: externalArgs.storeCity,
+      source_confidence: 0.75,
+    },
+    {
+      source_type: "open_prices",
+      source_name: "open_prices",
+      source_identifier: "dup-build-1",
+      raw_label: externalArgs.rawLabel,
+      candidate_canonical_name: "Tarama aux oeufs de cabillaud 100 g",
+      brand: "Coraya",
+      package_format: "100 g",
+      barcode: externalArgs.barcode,
+      observed_price: 2.01,
+      store_name: externalArgs.storeName,
+      store_city: externalArgs.storeCity,
+      source_confidence: 0.92,
+    },
+  ])
+  const immediateTimer = (callback: () => void) => {
+    callback()
+    return 0 as any
+  }
+  const collectedMissingCandidates = await collectExternalCandidates(externalArgs, {
+    fetchImpl: async (url: any) => {
+      const asString = String(url)
+      if (asString.includes("/api/v2/product/")) {
+        return createJsonResponse(200, { status: 0, product: null }) as any
+      }
+      if (asString.includes("/cgi/search.pl")) {
+        return createJsonResponse(200, { products: [] }) as any
+      }
+      if (asString.includes("/api/v1/prices")) {
+        return createJsonResponse(200, { results: [] }) as any
+      }
+      throw new Error(`unexpected_test_url:${asString}`)
+    },
+  })
+  const exactStrongArgs = {
+    rawLabel: "TARAMA AU SAUMON FUME 100G",
+    barcode: "3256224193012",
+    brand: "U",
+    packageFormat: "100 g",
+    category: "alimentaire",
+    pageSize: 4,
+  }
+  const exactBarcodeUrls: string[] = []
+  const exactBarcodeCollection = await collectExternalCandidatesWithReport(exactStrongArgs, {
+    fetchImpl: async (url: any, init: any) => {
+      const asString = String(url)
+      exactBarcodeUrls.push(asString)
+      if (!String(init?.headers?.["User-Agent"] || "").includes("BudgetKazPei/market-external-candidates")) {
+        throw new Error("missing_budgetkazpei_user_agent")
+      }
+      if (asString.includes("/api/v2/product/")) {
+        return createJsonResponse(200, {
+          status: 1,
+          product: {
+            code: "3256224193012",
+            product_name: "Tarama au saumon fume 100 g",
+            brands: "U",
+            quantity: "100 g",
+            categories_tags: ["en:tarama"],
+            url: "https://world.openfoodfacts.org/product/3256224193012",
+          },
+        }) as any
+      }
+      if (asString.includes("/cgi/search.pl")) {
+        throw new Error("cgi_search_should_not_run_for_exact_barcode")
+      }
+      if (asString.includes("/api/v1/prices")) {
+        return createJsonResponse(200, { results: [] }) as any
+      }
+      throw new Error(`unexpected_test_url:${asString}`)
+    },
+  })
+  const exactBarcodeRows = buildEvaluatedCandidateRows(exactStrongArgs, exactBarcodeCollection.candidates)
+  const barcode404Urls: string[] = []
+  const barcode404Collection = await collectExternalCandidatesWithReport(exactStrongArgs, {
+    fetchImpl: async (url: any) => {
+      const asString = String(url)
+      barcode404Urls.push(asString)
+      if (asString.includes("/api/v2/product/")) {
+        return createJsonResponse(404, { error: "not found" }) as any
+      }
+      if (asString.includes("/cgi/search.pl")) {
+        return createJsonResponse(200, {
+          products: [{
+            code: "3256224193012",
+            product_name: "Tarama au saumon fume 100 g",
+            brands: "U",
+            quantity: "100 g",
+            categories_tags: ["en:tarama"],
+            url: "https://world.openfoodfacts.org/product/3256224193012",
+          }],
+        }) as any
+      }
+      if (asString.includes("/api/v1/prices")) {
+        return createJsonResponse(200, { results: [] }) as any
+      }
+      throw new Error(`unexpected_test_url:${asString}`)
+    },
+  })
+  let retryAttemptCount = 0
+  const barcodeRetryCollection = await collectExternalCandidatesWithReport(exactStrongArgs, {
+    fetchImpl: async (url: any) => {
+      const asString = String(url)
+      if (asString.includes("/api/v2/product/")) {
+        retryAttemptCount += 1
+        if (retryAttemptCount < 3) {
+          return createJsonResponse(503, { error: "temporarily_unavailable" }) as any
+        }
+        return createJsonResponse(200, {
+          status: 1,
+          product: {
+            code: "3256224193012",
+            product_name: "Tarama au saumon fume 100 g",
+            brands: "U",
+            quantity: "100 g",
+            categories_tags: ["en:tarama"],
+            url: "https://world.openfoodfacts.org/product/3256224193012",
+          },
+        }) as any
+      }
+      if (asString.includes("/cgi/search.pl")) {
+        throw new Error("cgi_search_should_not_run_after_retry_success")
+      }
+      if (asString.includes("/api/v1/prices")) {
+        return createJsonResponse(200, { results: [] }) as any
+      }
+      throw new Error(`unexpected_test_url:${asString}`)
+    },
+    setTimeoutImpl: immediateTimer as any,
+  })
+  let unavailableBarcodeAttempts = 0
+  const degradedSourceCollection = await collectExternalCandidatesWithReport(exactStrongArgs, {
+    fetchImpl: async (url: any) => {
+      const asString = String(url)
+      if (asString.includes("/api/v2/product/")) {
+        unavailableBarcodeAttempts += 1
+        return createJsonResponse(503, { error: "temporarily_unavailable" }) as any
+      }
+      if (asString.includes("/cgi/search.pl")) {
+        return createJsonResponse(503, { error: "temporarily_unavailable" }) as any
+      }
+      if (asString.includes("/api/v1/prices")) {
+        return createJsonResponse(200, {
+          results: [{
+            id: "open-price-1",
+            product_name: "Tarama au saumon fume 100 g",
+            product_code: "3256224193012",
+            price: 2.35,
+            product: {
+              code: "3256224193012",
+              brands: "U",
+              product_quantity: "100",
+              product_quantity_unit: "g",
+              categories_tags: ["en:tarama"],
+            },
+            location: {
+              osm_name: "Hyper U",
+              osm_address_city: "Saint-Pierre",
+              osm_address_country: "RE",
+            },
+          }],
+        }) as any
+      }
+      throw new Error(`unexpected_test_url:${asString}`)
+    },
+    setTimeoutImpl: immediateTimer as any,
+  })
+  const dryRunUrls: string[] = []
+  const dryRunResult = await runExternalCandidateCli([
+    "--raw-label", "TARAMA AU SAUMON FUME 100G",
+    "--barcode", "3256224193012",
+    "--brand", "U",
+    "--package-format", "100 g",
+    "--category", "alimentaire",
+    "--page-size", "4",
+    "--dry-run",
+  ], {
+    fetchImpl: async (url: any) => {
+      const asString = String(url)
+      dryRunUrls.push(asString)
+      if (asString.includes("/api/v2/product/")) {
+        return createJsonResponse(200, {
+          status: 1,
+          product: {
+            code: "3256224193012",
+            product_name: "Tarama au saumon fume 100 g",
+            brands: "U",
+            quantity: "100 g",
+            categories_tags: ["en:tarama"],
+            url: "https://world.openfoodfacts.org/product/3256224193012",
+          },
+        }) as any
+      }
+      if (asString.includes("/api/v1/prices")) {
+        return createJsonResponse(200, { results: [] }) as any
+      }
+      if (asString.includes("/rest/v1/market_external_product_candidates")) {
+        throw new Error("dry_run_should_not_write")
+      }
+      throw new Error(`unexpected_test_url:${asString}`)
+    },
+  })
+  const mismatchedBarcodeCollection = await collectExternalCandidatesWithReport(exactStrongArgs, {
+    fetchImpl: async (url: any) => {
+      const asString = String(url)
+      if (asString.includes("/api/v2/product/")) {
+        return createJsonResponse(200, {
+          status: 1,
+          product: {
+            code: "9999999999999",
+            product_name: "Tarama au saumon fume 100 g",
+            brands: "U",
+            quantity: "100 g",
+            categories_tags: ["en:tarama"],
+            url: "https://world.openfoodfacts.org/product/9999999999999",
+          },
+        }) as any
+      }
+      if (asString.includes("/cgi/search.pl")) {
+        return createJsonResponse(200, { products: [] }) as any
+      }
+      if (asString.includes("/api/v1/prices")) {
+        return createJsonResponse(200, { results: [] }) as any
+      }
+      throw new Error(`unexpected_test_url:${asString}`)
+    },
+  })
+  const mismatchedBarcodeRows = buildEvaluatedCandidateRows(exactStrongArgs, mismatchedBarcodeCollection.candidates)
+
   return [
     assertEqual(
       "market-resolver-canonical-replacement-preserves-ocr-and-financial-fields",
@@ -438,6 +1317,30 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
       },
     ),
     assertEqual(
+      "market-resolver-suggestion-preserves-user-visible-fields",
+      {
+        matched: suggestionResult.items[0].market_matched,
+        name: suggestionResult.items[0].name,
+        corrected_name: suggestionResult.items[0].corrected_name,
+        suggestion: pickSuggestionFields(suggestionResult.items[0]),
+        protected: pickProtectedItemFields(suggestionResult.items[0]),
+      },
+      {
+        matched: false,
+        name: originalItem.name,
+        corrected_name: originalItem.corrected_name,
+        suggestion: {
+          market_suggested: true,
+          market_suggestion_product_id: "55555555-5555-4555-8555-555555555555",
+          market_suggestion_canonical_name: "Huile Lesieur tournesol 1 l",
+          market_suggestion_confidence: 0.87,
+          market_suggestion_scope: "chain",
+          market_suggestion_reason: "manual_alias_review_required",
+        },
+        protected: pickProtectedItemFields(originalItem),
+      },
+    ),
+    assertEqual(
       "market-resolver-basic-payload-excludes-context-price-and-alternate-names",
       {
         payload: buildMarketResolvePayload([originalItem]),
@@ -456,6 +1359,34 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
             barcode: "3265471000110",
           }],
         },
+      },
+    ),
+    assertEqual(
+      "market-resolver-manual-alias-normalization-converges-ocr-variants",
+      taramaNormalizedVariants,
+      [
+        "tarama oeufs cabil 100g",
+        "tarama oeufs cabil 100g",
+        "tarama oeufs cabil 100g",
+      ],
+    ),
+    assertEqual(
+      "market-resolver-manual-alias-payload-keeps-raw-name-and-safe-ocr-alternates",
+      {
+        raw_name: taramaPayload.raw_name,
+        observed_price: taramaPayload.observed_price,
+        alternate_names: taramaPayload.alternate_names,
+        helper_alternates: buildOcrAliasAlternateNames("TARAMA DEUFS CABIL,I00G"),
+      },
+      {
+        raw_name: "TARAMA DEUFS CABIL,IOOG",
+        observed_price: 2.01,
+        alternate_names: [],
+        helper_alternates: [
+          "TARAMA DEUFS CABIL,100G",
+          "TARAMA OEUFS CABIL,I00G",
+          "TARAMA OEUFS CABIL,100G",
+        ],
       },
     ),
     assertEqual(
@@ -691,6 +1622,661 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
         unknown: false,
         ambiguous: false,
         resolved: true,
+      },
+    ),
+    assertEqual(
+      "receipt-editor-visible-name-priority",
+      [
+        getReceiptItemVisibleName(receiptEditorItem({ corrected_name: taramaCorrection })),
+        getReceiptItemVisibleName(receiptEditorItem({ corrected_name: "", market_canonical_name: "Tarama canonique 100 g" })),
+        getReceiptItemVisibleName(receiptEditorItem({ corrected_name: "", market_canonical_name: "", name: "Tarama saisie" })),
+        getReceiptItemVisibleName(receiptEditorItem({ corrected_name: "", market_canonical_name: "", name: "", raw_name: "RAW ONLY", ocr_name: "OCR ONLY" })),
+      ],
+      [
+        taramaCorrection,
+        "Tarama canonique 100 g",
+        "Tarama saisie",
+        "RAW ONLY",
+      ],
+    ),
+    assertEqual(
+      "receipt-editor-name-change-keeps-raw-price-and-ticket-total",
+      {
+        payload: buildReceiptItemUpdatePayload(taramaItem, taramaDraft),
+        visibleAfterReload: getReceiptItemVisibleName(taramaApplied),
+        raw_name: taramaApplied.raw_name,
+        ocr_name: taramaApplied.ocr_name,
+        total_price: taramaApplied.total_price,
+        receipt_total_before: receiptTotalBefore,
+        receipt_total_after: receiptTotalAfter,
+      },
+      {
+        payload: {
+          corrected_name: taramaCorrection,
+          total_price: 2.01,
+          category: "alimentaire",
+        },
+        visibleAfterReload: taramaCorrection,
+        raw_name: "TARAMA DEUFS CABIL,IOOG",
+        ocr_name: "TARAMA DEUFS CABIL,IOOG",
+        total_price: 2.01,
+        receipt_total_before: 66.19,
+        receipt_total_after: 66.19,
+      },
+    ),
+    assertEqual(
+      "receipt-editor-local-validate-keeps-corrected-name-visible-without-touching-raw",
+      {
+        visible_name: getReceiptItemVisibleName(taramaValidatedLocally),
+        corrected_name: taramaValidatedLocally.corrected_name,
+        raw_name: taramaValidatedLocally.raw_name,
+        item_status: taramaValidatedLocally.item_status,
+        review_status: taramaValidatedLocally.review_status,
+        needs_review: taramaValidatedLocally.needs_review,
+      },
+      {
+        visible_name: taramaCorrection,
+        corrected_name: taramaCorrection,
+        raw_name: "TARAMA DEUFS CABIL,IOOG",
+        item_status: "user_validated",
+        review_status: "trusted",
+        needs_review: false,
+      },
+    ),
+    assertEqual(
+      "receipt-editor-global-save-payload-comes-only-from-local-validated-state",
+      {
+        pending: hasReceiptItemPendingPersistence(taramaItem, taramaValidatedLocally),
+        payload: buildReceiptItemPersistenceUpdates(taramaItem, taramaValidatedLocally),
+      },
+      {
+        pending: true,
+        payload: {
+          corrected_name: taramaCorrection,
+          item_status: "user_validated",
+          review_status: "trusted",
+          needs_review: false,
+        },
+      },
+    ),
+    assertEqual(
+      "receipt-editor-save-payload-with-null-header-keeps-item-updates-outside-receipt-update",
+      splitSavePayload,
+      {
+        receiptUpdates: null,
+        itemUpdates: [{
+          itemId: "receipt-item-1",
+          updates: { corrected_name: taramaCorrection },
+        }],
+      },
+    ),
+    assertEqual(
+      "receipt-service-sanitizes-receipt-header-updates-without-item-payload-fields",
+      sanitizedReceiptHeaderUpdates,
+      {
+        store_name: "E.Leclerc",
+        purchase_date: "2026-07-24",
+        total_amount: 66.19,
+      },
+    ),
+    assertEqual(
+      "receipt-service-sanitizes-receipt-item-updates-with-real-columns-only",
+      {
+        dbUpdates: taramaDbUpdates,
+        sanitized: sanitizedReceiptItemUpdates,
+      },
+      {
+        dbUpdates: {
+          corrected_name: taramaCorrection,
+          normalized_name: "tarama aux oeufs de cabillaud",
+          total_price: 2.01,
+          category: "alimentaire",
+          item_status: "user_validated",
+        },
+        sanitized: {
+          corrected_name: taramaCorrection,
+          item_status: "user_validated",
+          total_price: 2.01,
+          category: "alimentaire",
+        },
+      },
+    ),
+    assertEqual(
+      "receipt-service-update-receipt-items-succeeds-before-alias-rpc",
+      {
+        table: persistenceSuccessDeps.getState().updateCalls[0]?.table,
+        payload: persistenceSuccessDeps.getState().updateCalls[0]?.payload,
+        filters: persistenceSuccessDeps.getState().updateCalls[0]?.filters,
+        rpcCount: persistenceSuccessDeps.getState().learnCalls.length,
+        visible_name: getReceiptItemVisibleName(persistedAfterSuccess),
+      },
+      {
+        table: "receipt_items",
+        payload: {
+          corrected_name: taramaCorrection,
+          normalized_name: "tarama aux oeufs de cabillaud",
+          total_price: 2.01,
+          category: "alimentaire",
+          item_status: "user_validated",
+        },
+        filters: [["id", "receipt-item-1"], ["user_id", "user-1"]],
+        rpcCount: 1,
+        visible_name: taramaCorrection,
+      },
+    ),
+    assertEqual(
+      "receipt-service-no-alias-rpc-when-receipt-item-update-returns-400",
+      {
+        errorCode: persistenceFailureErrorCode,
+        updateCount: persistenceFailureDeps.getState().updateCalls.length,
+        rpcCount: persistenceFailureDeps.getState().learnCalls.length,
+      },
+      {
+        errorCode: "PGRST400",
+        updateCount: 1,
+        rpcCount: 0,
+      },
+    ),
+    assertEqual(
+      "receipt-service-alias-learning-rpc-runs-exactly-once-after-first-successful-save",
+      {
+        rpcCalls: aliasRpcCalls,
+        firstAttempted: aliasLearningFirstSave.attempted,
+        firstSkipped: aliasLearningFirstSave.skipped ?? false,
+        firstCandidate: aliasLearningCandidate,
+      },
+      {
+        rpcCalls: ["receipt-item-1"],
+        firstAttempted: true,
+        firstSkipped: false,
+        firstCandidate: {
+          itemId: "receipt-item-1",
+          rawName: "TARAMA DEUFS CABIL,IOOG",
+          previousCorrectedName: "TARAMA DEUFS CABIL,IOOG",
+          nextCorrectedName: taramaCorrection,
+          status: "user_validated",
+          shouldAttempt: true,
+          skipReason: "",
+        },
+      },
+    ),
+    assertEqual(
+      "receipt-service-alias-learning-second-identical-save-is-skipped",
+      {
+        secondAttempted: aliasLearningSecondSave.attempted,
+        secondSkipped: aliasLearningSecondSave.skipped,
+        secondSkipReason: aliasLearningSecondSave.skipReason,
+        totalRpcCalls: aliasRpcCalls,
+      },
+      {
+        secondAttempted: false,
+        secondSkipped: true,
+        secondSkipReason: "no_change",
+        totalRpcCalls: ["receipt-item-1"],
+      },
+    ),
+    assertEqual(
+      "receipt-editor-price-only-save-does-not-invent-corrected-name",
+      buildReceiptItemUpdatePayload(
+        receiptEditorItem({ market_canonical_name: "Tarama canonique 100 g" }),
+        priceOnlyDraft,
+      ),
+      {
+        corrected_name: "",
+        total_price: 2.5,
+        category: "alimentaire",
+      },
+    ),
+    assertEqual(
+      "receipt-editor-multi-change-and-cancel",
+      {
+        dirtyIds: multiItems
+          .filter(item => hasReceiptItemDraftChanges(item, multiDrafts[item.id]))
+          .map(item => item.id),
+        cancelledDirty: hasReceiptItemDraftChanges(multiItems[1], cancelledDraft),
+        cancelledValidatedVisible: getReceiptItemVisibleName(applyReceiptItemDraftToItem(multiItems[0], cancelledAfterLocalValidate)),
+      },
+      {
+        dirtyIds: ["receipt-item-1", "receipt-item-2"],
+        cancelledDirty: false,
+        cancelledValidatedVisible: "TARAMA DEUFS CABIL,IOOG",
+      },
+    ),
+    assertEqual(
+      "receipt-editor-persistence-uses-corrected-name-and-preserves-raw",
+      {
+        corrected_name: taramaApplied.corrected_name,
+        visible_name: getReceiptItemVisibleName(taramaApplied),
+        raw_name: taramaApplied.raw_name,
+        reopened_name: buildReceiptItemDraftMap([taramaPersisted])["receipt-item-1"].corrected_name,
+      },
+      {
+        corrected_name: taramaCorrection,
+        visible_name: taramaCorrection,
+        raw_name: "TARAMA DEUFS CABIL,IOOG",
+        reopened_name: taramaCorrection,
+      },
+    ),
+    assertEqual(
+      "receipt-editor-success-save-collapses-to-compact-history-row",
+      {
+        nextMode: saveSuccessUi.nextMode,
+        nextDetail: saveSuccessUi.nextDetail,
+        nextDetailImageUrl: saveSuccessUi.nextDetailImageUrl,
+        nextMessage: saveSuccessUi.nextMessage,
+        compactRow: buildReceiptHistorySummary(saveSuccessUi.nextRows[0], (amount: number) => `${amount.toFixed(2).replace(".", ",")} €`),
+      },
+      {
+        nextMode: "history",
+        nextDetail: null,
+        nextDetailImageUrl: "",
+        nextMessage: RECEIPT_DETAIL_CONFIRMATION_LABELS.fr,
+        compactRow: "E.Leclerc · 24/07/2026 · 66,19 €",
+      },
+    ),
+    assertEqual(
+      "receipt-editor-failed-save-keeps-editor-open-and-drafts-intact",
+      saveFailureUi,
+      {
+        nextMode: "detail",
+        nextDetail: { id: "receipt-item-1" },
+        nextDetailImageUrl: "image-url",
+        nextMessage: "Enregistrement impossible : network_down",
+      },
+    ),
+    assertEqual(
+      "receipt-editor-failed-save-does-not-show-contradictory-success-copy",
+      {
+        failureMessage: saveFailureUi.nextMessage,
+        successMessage: RECEIPT_DETAIL_CONFIRMATION_LABELS.fr,
+      },
+      {
+        failureMessage: "Enregistrement impossible : network_down",
+        successMessage: "Modifications du ticket enregistrées.",
+      },
+    ),
+    assertEqual(
+      "receipt-editor-fr-and-kreol-copy",
+      {
+        frButton: RECEIPT_DETAIL_BUTTON_LABELS.fr,
+        krButton: RECEIPT_DETAIL_BUTTON_LABELS.kr,
+        frConfirm: RECEIPT_DETAIL_CONFIRMATION_LABELS.fr,
+        krConfirm: RECEIPT_DETAIL_CONFIRMATION_LABELS.kr,
+      },
+      {
+        frButton: "Enregistrer les modifications du ticket",
+        krButton: "Anrezistre bann modifikasion lo tiké",
+        frConfirm: "Modifications du ticket enregistrées.",
+        krConfirm: "Bann modifikasion lo tiké inn anrezistré.",
+      },
+    ),
+    assertEqual(
+      "manual-alias-learning-triggers-once-for-real-validated-change",
+      {
+        firstSave: shouldLearnManualAlias(firstValidatedSaved, firstValidatedState),
+        repeatedSave: shouldLearnManualAlias(unchangedValidatedSaved, firstValidatedSaved),
+      },
+      {
+        firstSave: true,
+        repeatedSave: false,
+      },
+    ),
+    assertEqual(
+      "manual-alias-learning-skips-unchanged-empty-and-needs-review",
+      {
+        unchanged: shouldLearnManualAlias(
+          receiptEditorItem({
+            corrected_name: "TARAMA DEUFS CABIL,IOOG",
+            item_status: "user_validated",
+            review_status: "trusted",
+            needs_review: false,
+          }),
+          receiptEditorItem({
+            corrected_name: "",
+            item_status: "user_validated",
+            review_status: "trusted",
+            needs_review: false,
+          }),
+        ),
+        empty: shouldLearnManualAlias(
+          receiptEditorItem({
+            corrected_name: "",
+            item_status: "user_validated",
+            review_status: "trusted",
+            needs_review: false,
+          }),
+          receiptEditorItem({
+            corrected_name: "",
+            item_status: "user_validated",
+            review_status: "trusted",
+            needs_review: false,
+          }),
+        ),
+        needsReview: shouldLearnManualAlias(
+          receiptEditorItem({
+            corrected_name: taramaCorrection,
+            item_status: "a_verifier",
+            review_status: "needs_review",
+            needs_review: true,
+          }),
+          receiptEditorItem(),
+        ),
+      },
+      {
+        unchanged: false,
+        empty: false,
+        needsReview: false,
+      },
+    ),
+    assertEqual(
+      "market-external-barcode-exact-can-auto-promote-and-apply",
+      {
+        match_level: exactBarcodeCandidate.match_level,
+        confidence: exactBarcodeCandidate.source_confidence,
+        should_auto_promote: exactBarcodeCandidate.should_auto_promote,
+        should_apply_automatic_replacement: exactBarcodeCandidate.should_apply_automatic_replacement,
+        barcode_match: exactBarcodeCandidate.matching_evidence.barcode_match,
+      },
+      {
+        match_level: "exact_strong",
+        confidence: 0.995,
+        should_auto_promote: true,
+        should_apply_automatic_replacement: true,
+        barcode_match: true,
+      },
+    ),
+    assertEqual(
+      "market-external-package-conflict-stays-ambiguous",
+      {
+        match_level: packageConflictCandidate.match_level,
+        should_auto_promote: packageConflictCandidate.should_auto_promote,
+        should_apply_automatic_replacement: packageConflictCandidate.should_apply_automatic_replacement,
+        skip_reason: packageConflictCandidate.skip_reason,
+      },
+      {
+        match_level: "ambiguous",
+        should_auto_promote: false,
+        should_apply_automatic_replacement: false,
+        skip_reason: "package_conflict",
+      },
+    ),
+    assertEqual(
+      "market-external-reunion-price-variant-keeps-strong-match-and-regional-priority",
+      {
+        reunion_match_level: reunionCandidate.match_level,
+        reunion_price_score: reunionCandidate.matching_evidence.price_score,
+        reunion_priority: reunionCandidate.matching_evidence.reunion_priority,
+        preferred_source_identifier: preferredRegionalCandidate?.source_identifier ?? null,
+      },
+      {
+        reunion_match_level: "exact_strong",
+        reunion_price_score: 0.8,
+        reunion_priority: true,
+        preferred_source_identifier: "reunion-price-1",
+      },
+    ),
+    assertEqual(
+      "market-external-validated-user-correction-remains-priority",
+      {
+        match_level: validatedConflictCandidate.match_level,
+        should_auto_promote: validatedConflictCandidate.should_auto_promote,
+        skip_reason: validatedConflictCandidate.skip_reason,
+      },
+      {
+        match_level: "rejected",
+        should_auto_promote: false,
+        skip_reason: "validated_user_correction_conflict",
+      },
+    ),
+    assertEqual(
+      "market-external-ambiguous-source-is-suggestion-only",
+      {
+        confidence: ambiguousExternalCandidate.source_confidence,
+        match_level: ambiguousExternalCandidate.match_level,
+        should_auto_promote: ambiguousExternalCandidate.should_auto_promote,
+        should_apply_automatic_replacement: ambiguousExternalCandidate.should_apply_automatic_replacement,
+      },
+      {
+        confidence: 0.87,
+        match_level: "ambiguous",
+        should_auto_promote: false,
+        should_apply_automatic_replacement: false,
+      },
+    ),
+    assertEqual(
+      "market-external-missing-open-food-facts-product-keeps-empty-collection",
+      collectedMissingCandidates,
+      [],
+    ),
+    assertEqual(
+      "market-external-review-can-reject-candidate-with-notes",
+      reviewRejectedPayload,
+      {
+        status: "rejected",
+        validation_notes: "package mismatch",
+        updated_at: "2026-07-25T10:00:00.000Z",
+        last_seen_at: "2026-07-25T10:00:00.000Z",
+        matched_product_id: "99999999-9999-4999-8999-999999999999",
+      },
+    ),
+    assertEqual(
+      "market-external-dedupe-keeps-highest-confidence-candidate",
+      {
+        count: dedupedCandidates.length,
+        best_confidence: dedupedCandidates[0]?.source_confidence ?? null,
+      },
+      {
+        count: 1,
+        best_confidence: 0.88,
+      },
+    ),
+    assertEqual(
+      "market-external-promotion-builds-active-alias-payload",
+      promotedAliasPayload,
+      {
+        product_id: "99999999-9999-4999-8999-999999999999",
+        raw_label: "TARAMA DEUFS CABIL,IOOG",
+        normalized_raw_label: "tarama oeufs cabil 100g",
+        source: "external_validated:open_prices",
+        confidence: 0,
+      },
+    ),
+    assertEqual(
+      "market-external-provenance-is-kept-without-personal-data",
+      {
+        source_type: sanitizedProvenanceCandidate.source_type,
+        source_name: sanitizedProvenanceCandidate.source_name,
+        source_identifier: sanitizedProvenanceCandidate.source_identifier,
+        source_url: sanitizedProvenanceCandidate.source_url,
+        matching_evidence: sanitizedProvenanceCandidate.matching_evidence,
+      },
+      {
+        source_type: "open_prices",
+        source_name: "open_prices",
+        source_identifier: "proof-1",
+        source_url: "https://prices.openfoodfacts.org/api/v1/prices/1",
+        matching_evidence: {
+          proof_id: "proof-1",
+          official_api: "https://prices.openfoodfacts.org/api/v1/prices",
+        },
+      },
+    ),
+    assertEqual(
+      "market-external-low-confidence-never-auto-replaces",
+      {
+        threshold: EXTERNAL_CANDIDATE_THRESHOLDS.SUGGESTION_THRESHOLD,
+        confidence: lowConfidenceCandidate.source_confidence,
+        match_level: lowConfidenceCandidate.match_level,
+        skip_reason: lowConfidenceCandidate.skip_reason,
+        should_apply_automatic_replacement: lowConfidenceCandidate.should_apply_automatic_replacement,
+      },
+      {
+        threshold: 0.78,
+        confidence: 0.15,
+        match_level: "rejected",
+        skip_reason: "below_threshold",
+        should_apply_automatic_replacement: false,
+      },
+    ),
+    assertEqual(
+      "market-external-manual-alias-priority-beats-external-sources",
+      {
+        match_level: manualAliasPriorityCandidate.match_level,
+        skip_reason: manualAliasPriorityCandidate.skip_reason,
+        should_auto_promote: manualAliasPriorityCandidate.should_auto_promote,
+      },
+      {
+        match_level: "rejected",
+        skip_reason: "manual_alias_priority",
+        should_auto_promote: false,
+      },
+    ),
+    assertEqual(
+      "market-external-official-source-builder-adds-controlled-candidate",
+      officialSourceCandidates,
+      [{
+        source_type: "official_product_page",
+        source_name: "Coraya",
+        source_identifier: "coraya-tarama-100g",
+        source_url: "https://www.coraya.fr/tarama-cabillaud-100g",
+        raw_label: "TARAMA DEUFS CABIL,IOOG",
+        candidate_canonical_name: "Tarama aux oeufs de cabillaud 100 g",
+        brand: "Coraya",
+        category: "",
+        package_format: "100 g",
+        barcode: "3270190207900",
+        observed_price: 2.01,
+        store_name: "E.Leclerc Les Casernes",
+        store_city: "Saint-Pierre",
+        source_confidence: 0.74,
+        matching_evidence: {
+          source: "official_precise_product_page",
+          observed_date: "2026-07-24",
+          exact_reference_identified: true,
+        },
+      }],
+    ),
+    assertEqual(
+      "market-external-barcode-direct-lookup-does-not-require-cgi-search",
+      {
+        source_strategy: exactBarcodeCollection.report.source_strategy,
+        exact_candidate_found: exactBarcodeCollection.report.exact_candidate_found,
+        search_called: exactBarcodeUrls.some(url => url.includes("/cgi/search.pl")),
+        succeeded_sources: exactBarcodeCollection.report.sources_succeeded,
+      },
+      {
+        source_strategy: "exact_barcode_lookup",
+        exact_candidate_found: true,
+        search_called: false,
+        succeeded_sources: ["open_food_facts_barcode", "open_prices"],
+      },
+    ),
+    assertEqual(
+      "market-external-direct-barcode-result-builds-exact-strong-row",
+      {
+        match_level: exactBarcodeRows[0]?.match_level ?? null,
+        confidence: exactBarcodeRows[0]?.source_confidence ?? null,
+        barcode_match: exactBarcodeRows[0]?.matching_evidence?.barcode_match ?? false,
+      },
+      {
+        match_level: "exact_strong",
+        confidence: 0.995,
+        barcode_match: true,
+      },
+    ),
+    assertEqual(
+      "market-external-barcode-404-falls-back-to-text-search",
+      {
+        barcode_lookup_not_found: barcode404Collection.report.barcode_lookup_not_found,
+        source_strategy: barcode404Collection.report.source_strategy,
+        search_called: barcode404Urls.some(url => url.includes("/cgi/search.pl")),
+        candidate_count: barcode404Collection.candidates.length,
+      },
+      {
+        barcode_lookup_not_found: true,
+        source_strategy: "full_text_fallback",
+        search_called: true,
+        candidate_count: 1,
+      },
+    ),
+    assertEqual(
+      "market-external-barcode-retries-on-503-before-success",
+      {
+        attempts: retryAttemptCount,
+        report_attempts: barcodeRetryCollection.report.attempts_by_source.open_food_facts_barcode,
+        exact_candidate_found: barcodeRetryCollection.report.exact_candidate_found,
+      },
+      {
+        attempts: 3,
+        report_attempts: 3,
+        exact_candidate_found: true,
+      },
+    ),
+    assertEqual(
+      "market-external-unavailable-direct-source-does-not-block-other-sources",
+      {
+        exact_candidate_found: degradedSourceCollection.report.exact_candidate_found,
+        unavailable_sources: degradedSourceCollection.report.sources_unavailable.map(source => source.source),
+        succeeded_sources: degradedSourceCollection.report.sources_succeeded,
+        barcode_attempts: unavailableBarcodeAttempts,
+        candidate_sources: degradedSourceCollection.candidates.map(candidate => candidate.source_name),
+      },
+      {
+        exact_candidate_found: false,
+        unavailable_sources: ["open_food_facts_barcode", "open_food_facts_search"],
+        succeeded_sources: ["open_prices"],
+        barcode_attempts: 3,
+        candidate_sources: ["open_prices"],
+      },
+    ),
+    assertEqual(
+      "market-external-dry-run-never-writes-to-supabase",
+      {
+        dry_run_rows: dryRunResult?.rows?.length ?? 0,
+        attempted_write: dryRunUrls.some(url => url.includes("/rest/v1/market_external_product_candidates")),
+      },
+      {
+        dry_run_rows: 1,
+        attempted_write: false,
+      },
+    ),
+    assertEqual(
+      "market-external-mismatched-barcode-never-becomes-exact-strong",
+      {
+        source_strategy: mismatchedBarcodeCollection.report.source_strategy,
+        exact_candidate_found: mismatchedBarcodeCollection.report.exact_candidate_found,
+        match_level: mismatchedBarcodeRows[0]?.match_level ?? null,
+        barcode_match: mismatchedBarcodeRows[0]?.matching_evidence?.barcode_match ?? false,
+      },
+      {
+        source_strategy: "full_text_fallback",
+        exact_candidate_found: false,
+        match_level: "ambiguous",
+        barcode_match: false,
+      },
+    ),
+    assertEqual(
+      "market-external-evaluated-rows-dedupe-before-staging",
+      {
+        count: candidateRows.length,
+        match_level: candidateRows[0]?.match_level ?? null,
+        confidence: candidateRows[0]?.source_confidence ?? null,
+      },
+      {
+        count: 1,
+        match_level: "exact_strong",
+        confidence: 0.995,
+      },
+    ),
+    assertEqual(
+      "market-external-supabase-paths-use-real-conflict-targets",
+      {
+        candidate_upsert_path: buildExternalCandidateUpsertPath(),
+        alias_upsert_path: buildMarketProductAliasUpsertPath(),
+      },
+      {
+        candidate_upsert_path: "market_external_product_candidates?on_conflict=source_name,source_identifier,normalized_raw_label,normalized_candidate_name,barcode,store_name,store_city",
+        alias_upsert_path: "market_product_aliases?on_conflict=product_id,normalized_raw_label,source",
       },
     ),
   ]

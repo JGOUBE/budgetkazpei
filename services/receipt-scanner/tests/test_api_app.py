@@ -62,6 +62,13 @@ def scan_response(mode: str = "single") -> dict[str, object]:
             "token_count": 12,
             "rotation_degrees": 0,
             "overlap": {"used": mode == "long_receipt"},
+            "parser": {
+                "requested_mode": "shadow",
+                "used_mode": "legacy",
+                "production_output_changed": False,
+                "fallback_reasons": [],
+                "v2_reasons": [],
+            },
         },
     }
 
@@ -96,6 +103,7 @@ class ApiAppTest(unittest.TestCase):
         self.assertTrue(ready["ready"])
         self.assertEqual(ready["auth_mode"], "disabled")
         self.assertEqual(ready["quota_mode"], "supabase")
+        self.assertEqual(ready["parser_mode"], "shadow")
 
     def test_scan_single_endpoint(self) -> None:
         response = self.client().post(

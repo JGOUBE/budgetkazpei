@@ -5,6 +5,13 @@ import {
   mapPythonScanToDraft,
 } from "./receiptScannerEngine"
 import {
+  buildAnalysisSteps,
+  buildScanPreviewSummary,
+  countItemsNeedingReview,
+  getReceiptScanValidationView,
+  resolveAnalysisProgressContent,
+} from "../../features/receipts/utils/receiptScanUx"
+import {
   shouldIncrementClientScanUsage,
   shouldRefreshQuotaAfterPythonScan,
 } from "./receiptScannerQuotaPolicy"
@@ -190,6 +197,32 @@ function createPersistenceMocks(options: { failAt?: string, delayCreate?: boolea
 
 export async function runReceiptScannerFrontRegressionFixtures(): Promise<RegressionResult[]> {
   const results: RegressionResult[] = []
+  const previewTextFr = {
+    detectedItemsCount: (count: number) => `${count} article${count > 1 ? "s" : ""} détecté${count > 1 ? "s" : ""}`,
+    reviewItemsCount: (count: number) => `${count} article${count > 1 ? "s" : ""} à vérifier`,
+    noMandatoryCorrection: "Aucune correction obligatoire",
+    progressOptimizing: "Optimisation de l'image",
+    progressReading: "Lecture du ticket",
+    progressStore: "Détection du magasin",
+    progressProducts: "Extraction des articles",
+    progressTotal: "Vérification du total",
+    progressFinalizing: "Finalisation du ticket",
+    analysisPreparing: "Analyse terminée. Encore un instant, nous préparons votre ticket...",
+    finalizingTicket: "Finalisation du ticket en cours...",
+    ticketReady: "Ticket prêt",
+    loaded: "Image chargée. Vérifiez les informations détectées.",
+    analysisFootnote: "Optimisation, OCR, magasin, produits, total et vérification.",
+  }
+  const previewTextKr = {
+    detectedItemsCount: (count: number) => `${count} lartik détecté${count > 1 ? "s" : ""}`,
+    reviewItemsCount: (count: number) => `${count} lartik pou vérifié`,
+    noMandatoryCorrection: "Oken korèksyon obligatwar",
+    analysisPreparing: "Analiz fini. Ankor in ti moman, nou pe prepar out tiké...",
+    finalizingTicket: "Finalizasyon tiké-la an kour...",
+    ticketReady: "Tiké paré",
+    loaded: "Zimaz-la la chargé. Vérifié bann zinformasyon.",
+    analysisFootnote: "Optimización, OCR, magazin, bann lartik, total ek vérifikasyon.",
+  }
 
   const freeQuota = resolveReceiptQuotaState({
     usage: { used: 1, aiUsed: 1, manualUsed: 0, plan: "free" },
@@ -197,7 +230,29 @@ export async function runReceiptScannerFrontRegressionFixtures(): Promise<Regres
     source: "scan_usage",
   })
   results.push(assertEqual("quota-free-server-plan", freeQuota.plan, "free"))
-  results.push(assertEqual("quota-free-1-on-1-label", formatReceiptQuotaLabelFr(freeQuota), "Scans utilisés ce mois-ci : 1 sur 1 — Gratuit"))
+  results.push(assertEqual("quota-free-1-on-1-label", formatReceiptQuotaLabelFr(freeQuota), "Analyses IA : 1 / 1 — Gratuit"))
+  const premiumQuota = resolveReceiptQuotaState({
+    usage: { used: 9, aiUsed: 9, manualUsed: 0, plan: "premium" },
+    fallbackPlan: "free",
+    source: "scan_usage",
+  })
+  results.push(assertEqual("quota-premium-9-on-10-label", formatReceiptQuotaLabelFr(premiumQuota), "Analyses IA : 9 / 10 — Premium"))
+  const premiumPlusQuota = resolveReceiptQuotaState({
+    usage: { used: 27, aiUsed: 27, manualUsed: 0, plan: "premium_plus" },
+    fallbackPlan: "free",
+    source: "scan_usage",
+  })
+  const premiumPlusLabel = formatReceiptQuotaLabelFr(premiumPlusQuota)
+  results.push(assertEqual("quota-premium-plus-unlimited-label", premiumPlusLabel, "Analyses IA illimitées — Premium+"))
+  results.push(assertFalse("quota-premium-plus-label-hides-digits", /\d/.test(premiumPlusLabel)))
+  results.push(assertFalse("quota-premium-plus-label-hides-safety-limit", premiumPlusLabel.includes("50")))
+  const premiumPlusSafetyQuota = resolveReceiptQuotaState({
+    usage: { used: 50, aiUsed: 50, manualUsed: 0, plan: "premium_plus" },
+    fallbackPlan: "free",
+    source: "scan_usage",
+  })
+  results.push(assertTrue("quota-premium-plus-safety-flag", premiumPlusSafetyQuota.safetyLimitReached))
+  results.push(assertEqual("quota-premium-plus-safety-label-stays-commercial", formatReceiptQuotaLabelFr(premiumPlusSafetyQuota), "Analyses IA illimitées — Premium+"))
   results.push(assertTrue("quota-refresh-after-python-success", shouldRefreshQuotaAfterPythonScan({ engineUsed: "python" })))
 
   const quotaApiError = new ReceiptScannerApiError({
@@ -485,11 +540,36 @@ export async function runReceiptScannerFrontRegressionFixtures(): Promise<Regres
   results.push(assertEqual("trusted-status-map", trusted.scan_status, "budget_ok_articles_ok"))
   results.push(assertEqual("trusted-local-pending", trusted.python_scan_pending_save, true))
   results.push(assertEqual("trusted-courses-feed", trusted.smart_shopping_safe, true))
+  results.push(assertEqual("trusted-preview-view", getReceiptScanValidationView({
+    isPendingSave: Boolean(trusted.python_scan_pending_save),
+    reviewItemsCount: countItemsNeedingReview(trusted.items),
+    totalNeedsReview: Boolean(trusted.total_needs_review),
+  }), "preview"))
+  results.push(assertEqual("trusted-preview-summary-fr", buildScanPreviewSummary({
+    detectedItemsCount: trusted.items.length,
+    reviewItemsCount: countItemsNeedingReview(trusted.items),
+    txt: previewTextFr,
+  }), "1 article détecté — Aucune correction obligatoire"))
+  results.push(assertEqual("trusted-preview-summary-kr", buildScanPreviewSummary({
+    detectedItemsCount: trusted.items.length,
+    reviewItemsCount: countItemsNeedingReview(trusted.items),
+    txt: previewTextKr,
+  }), "1 lartik détecté — Oken korèksyon obligatwar"))
+  const finalizingProgress = resolveAnalysisProgressContent({ step: "finalizing" }, previewTextFr)
+  results.push(assertEqual("progress-finalizing-title", finalizingProgress.title, "Analyse terminée. Encore un instant, nous préparons votre ticket..."))
+  results.push(assertEqual("progress-finalizing-subtitle", finalizingProgress.subtitle, "Finalisation du ticket en cours..."))
+  results.push(assertEqual("progress-steps-ready-label", buildAnalysisSteps(previewTextFr)[6]?.[1], "Ticket prêt"))
 
   const partial = mapPythonScanToDraft(responseFor("budget_ok_articles_partial"))
   results.push(assertEqual("partial-status-map", partial.scan_status, "budget_ok_articles_partial"))
   results.push(assertEqual("partial-courses-blocked", partial.smart_shopping_safe, false))
   results.push(assertEqual("partial-unattributed", partial.python_scan_decision.unattributed_amount, 1.11))
+  results.push(assertEqual("partial-preview-view-stays-editor", getReceiptScanValidationView({
+    isPendingSave: Boolean(partial.python_scan_pending_save),
+    reviewItemsCount: countItemsNeedingReview(partial.items),
+    totalNeedsReview: Boolean(partial.total_needs_review),
+    requiresQuickReview: true,
+  }), "editor"))
 
   const discountedLongResponse: ReceiptScanResponse = {
     ...responseFor("budget_ok_articles_partial"),

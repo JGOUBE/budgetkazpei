@@ -334,7 +334,7 @@ Deno.serve(async (req) => {
       observed_date: contextValidation.context.observed_date,
     }));
 
-    const { data, error } = await supabaseAdmin.rpc("market_resolve_exact_products", {
+    const { data, error } = await supabaseAdmin.rpc("market_resolve_products_with_learned_aliases", {
       p_items: rpcItems,
     });
 
@@ -350,15 +350,19 @@ Deno.serve(async (req) => {
     const alternate = items.filter((item: Record<string, unknown>) =>
       String(item.market_match_input_source || "") === "alternate_ocr"
     ).length;
+    const suggested = items.filter((item: Record<string, unknown>) =>
+      item.market_suggested === true
+    ).length;
     const exact = resolved - contextual;
-    const unresolved = items.length - resolved;
+    const unresolved = Math.max(0, items.length - resolved - suggested);
 
     console.info(
-      "[market-resolve] resolved=%s exact=%s contextual=%s alternate=%s unresolved=%s",
+      "[market-resolve] resolved=%s exact=%s contextual=%s alternate=%s suggested=%s unresolved=%s",
       resolved,
       exact,
       contextual,
       alternate,
+      suggested,
       unresolved,
     );
 
@@ -369,6 +373,7 @@ Deno.serve(async (req) => {
       exact,
       contextual,
       alternate,
+      suggested,
       unresolved,
     });
   } catch (error) {

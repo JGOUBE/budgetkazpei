@@ -44,6 +44,7 @@ class ScannerSettings:
     scanner_busy_timeout_seconds: float = 2.0
     processing_timeout_seconds: float = 90.0
     diagnostics_enabled: bool = True
+    parser_mode: str = "shadow"
     temp_parent_dir: str | None = None
     quota_mode: str = "supabase"
     quota_rpc_name: str = "reserve_receipt_scan"
@@ -106,6 +107,10 @@ class ScannerSettings:
             raise ValueError(
                 "Configure RECEIPT_SCANNER_EXPECTED_ISSUER or "
                 "RECEIPT_SCANNER_SUPABASE_URL when auth is required"
+            )
+        if self.parser_mode not in {"legacy", "shadow", "v2_safe"}:
+            raise ValueError(
+                "RECEIPT_SCANNER_PARSER_MODE must be legacy, shadow or v2_safe"
             )
         if self.quota_mode not in {"supabase", "disabled"}:
             raise ValueError("RECEIPT_SCANNER_QUOTA_MODE must be supabase or disabled")
@@ -171,6 +176,10 @@ def load_settings(*, validate: bool = True) -> ScannerSettings:
             "RECEIPT_SCANNER_DIAGNOSTICS_ENABLED",
             "true",
         ).strip().lower() not in {"0", "false", "no"},
+        parser_mode=os.environ.get(
+            "RECEIPT_SCANNER_PARSER_MODE",
+            "shadow",
+        ).strip().lower() or "shadow",
         temp_parent_dir=os.environ.get("RECEIPT_SCANNER_TEMP_DIR"),
         quota_mode=os.environ.get(
             "RECEIPT_SCANNER_QUOTA_MODE",

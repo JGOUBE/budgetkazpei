@@ -35,6 +35,7 @@ class ReadyResponse(HealthResponse):
     ready: bool = True
     auth_mode: str
     quota_mode: str
+    parser_mode: Literal["legacy", "shadow", "v2_safe"]
     max_concurrent_scans: int
     diagnostics_enabled: bool
 
@@ -76,12 +77,31 @@ class OverlapDiagnostics(BaseModel):
     average_similarity: float | None = None
 
 
+class ParserDiagnostics(BaseModel):
+    requested_mode: Literal["legacy", "shadow", "v2_safe"]
+    used_mode: Literal["legacy", "v2_safe"]
+    production_output_changed: bool
+    fallback_reasons: list[str] = Field(default_factory=list)
+    v2_total: float | None = None
+    v2_total_kind: str | None = None
+    v2_items_total: float | None = None
+    v2_product_line_count: int | None = None
+    v2_counted_quantity: int | None = None
+    v2_declared_count: int | None = None
+    v2_score: float | None = None
+    v2_reasons: list[str] = Field(default_factory=list)
+    comparison: dict[str, object] | None = None
+
+
 class ScanDiagnostics(BaseModel):
     engine: str
     elapsed_seconds: float
     token_count: int
     rotation_degrees: int | None = None
-    overlap: OverlapDiagnostics = Field(default_factory=lambda: OverlapDiagnostics(used=False))
+    overlap: OverlapDiagnostics = Field(
+        default_factory=lambda: OverlapDiagnostics(used=False)
+    )
+    parser: ParserDiagnostics
 
 
 class ScanResponse(BaseModel):

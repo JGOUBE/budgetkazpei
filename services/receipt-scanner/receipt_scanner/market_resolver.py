@@ -15,6 +15,23 @@ logger = logging.getLogger("receipt_scanner.api")
 
 MAX_ITEMS = 120
 MAX_NAME_LENGTH = 180
+OCR_FOOD_CONTEXT_TOKENS = {
+    "tarama",
+    "cabillaud",
+    "oeuf",
+    "oeufs",
+    "nouille",
+    "nouilles",
+    "pate",
+    "pates",
+    "ravioli",
+    "quiche",
+    "cake",
+    "surimi",
+    "thon",
+    "mayonnaise",
+    "poisson",
+}
 
 
 class MarketProductResolver(Protocol):
@@ -65,7 +82,7 @@ class SupabaseMarketProductResolver:
 
         for index, item in enumerate(receipt.items[:MAX_ITEMS]):
             raw_name = _clean_text(
-                item.canonical_name or item.raw_name,
+                item.raw_name,
                 MAX_NAME_LENGTH,
             )
             if not raw_name:
@@ -85,7 +102,7 @@ class SupabaseMarketProductResolver:
                     "observed_price": observed_price,
                     "brand": "",
                     "package_format": "",
-                    "alternate_names": [],
+                    "alternate_names": _build_ocr_alias_alternate_names(raw_name),
                 }
             )
 
@@ -251,3 +268,56 @@ def _positive_price(value: object) -> float | None:
         return None
 
     return round(price, 2)
+
+
+def _build_ocr_alias_alternate_names(value: object) -> list[str]:
+    raw = _clean_text(value, MAX_NAME_LENGTH)
+    if not raw:
+        return []
+
+    variants: list[str] = []
+
+    normalized_unit_variant = re.sub(
+        r"\b([iIlL1][oO0]{2})(kg|gr|g|ml|cl|l)\b",
+        lambda match: f"100{match.group(2).upper()}",
+        raw,
+        flags=re.IGNORECASE,
+    )
+    if normalized_unit_variant != raw:
+        variants.append(normalized_unit_variant)
+
+    has_food_context = any(
+        token in OCR_FOOD_CONTEXT_TOKENS
+        for token in re.findall(r"[a-z0-9]+", raw.lower())
+    )
+    if has_food_context:
+        oeufs_variant = re.sub(
+            r"\b(?:DEUFS|CEUFS|0EUFS)\b",
+            "OEUFS",
+            raw,
+            flags=re.IGNORECASE,
+        )
+        if oeufs_variant != raw:
+            variants.append(oeufs_variant)
+
+        combined_variant = re.sub(
+            r"\b([iIlL1][oO0]{2})(kg|gr|g|ml|cl|l)\b",
+            lambda match: f"100{match.group(2).upper()}",
+            oeufs_variant,
+            flags=re.IGNORECASE,
+        )
+        if combined_variant != raw and combined_variant != oeufs_variant:
+            variants.append(combined_variant)
+
+    unique_variants: list[str] = []
+    seen: set[str] = set()
+    for candidate in variants:
+        key = _clean_text(candidate, MAX_NAME_LENGTH).lower()
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        unique_variants.append(candidate[:MAX_NAME_LENGTH])
+        if len(unique_variants) >= 4:
+            break
+
+    return unique_variants

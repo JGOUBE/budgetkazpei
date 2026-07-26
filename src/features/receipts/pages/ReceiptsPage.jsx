@@ -3,12 +3,38 @@ import { CATEGORIES } from "../../../data/categories"
 import { formatMontant } from "../../../utils/format"
 import { createManualReceiptDraft } from "../utils/receiptParser"
 import {
+  applyValidatedReceiptItemDraft,
+  buildReceiptItemPersistenceUpdates,
+  buildReceiptItemDraftMap,
+  createReceiptItemDraft,
+  getReceiptItemVisibleName,
+  hasReceiptItemPendingPersistence,
+  hasReceiptItemDraftChanges,
+} from "../utils/receiptItemEditor"
+import {
+  buildReceiptHistorySummary,
+  buildReceiptSaveFailureUiState,
+  buildReceiptSaveSuccessUiState,
+  RECEIPT_DETAIL_BUTTON_LABELS,
+  RECEIPT_DETAIL_CONFIRMATION_LABELS,
+  splitReceiptDetailSavePayload,
+} from "../utils/receiptDetailUx"
+import {
+  buildAnalysisSteps,
+  buildScanPreviewSummary,
+  countItemsNeedingReview,
+  getReceiptScanValidationView,
+  resolveAnalysisProgressContent,
+} from "../utils/receiptScanUx"
+import {
+  buildManualAliasLearningCandidate,
   createReceipt,
   deleteReceipt,
   deleteReceiptItem,
   getReceiptDetail,
   getReceiptImageUrl,
   listReceipts,
+  maybeLearnManualAliasForReceiptItem,
   uploadReceiptImage,
   updateReceipt,
   updateReceiptItem,
@@ -16,7 +42,11 @@ import {
   validateReceipt,
 } from "../services/receiptService"
 import { useReceiptQuota } from "../hooks/useReceiptQuota"
-import { clearLastScanDraft, getLastScanDraft, runSmartScan } from "../../../services/scan/scanEngine"
+import { clearLastScanDraft, getLastScanDraft } from "../../../services/scan/scanEngine"
+import {
+  scanLongReceiptWithConfiguredEngine,
+  scanReceiptWithConfiguredEngine,
+} from "../../../services/scan/receiptScannerEngine"
 import { findDuplicateReceipt, getConfidenceColor, getConfidenceIcon } from "../../../services/scan/receiptValidator"
 import { importValidatedReceipt } from "../../../services/scan/receiptImporter"
 import { isItemEligibleForSmartShopping, normalizeItemQualityStatus } from "../../../services/scan/receiptRules"
@@ -53,12 +83,27 @@ const TEXT = {
     longTicketModeOpened: "Ajoutez le haut puis le bas du ticket.",
     longTicketMerging: "Fusion des deux photos du ticket...",
     quota: quota => quota.plan === "premium_plus"
-      ? `Analyses IA : ${quota.used} / illimité`
-      : `Analyses IA : ${quota.used} / ${quota.limit}`,
+      ? `Analyses IA illimitées — ${quota.planLabel}`
+      : `Analyses IA : ${quota.used} / ${quota.limit} — ${quota.planLabel}`,
     methodTitle: "Choisissez une méthode",
     privacy: "Vos tickets restent privés. Ils servent uniquement à mettre à jour votre budget.",
     foodHint: "Ajoutez vos courses automatiquement ou manuellement. L'analyse automatique sert surtout aux tickets alimentaires, pour comprendre vos habitudes et recevoir des conseils utiles.",
     loaded: "Image chargée. Vérifiez les informations détectées.",
+    saveTicket: "Enregistrer le ticket",
+    reviewOrImproveArticles: "Vérifier ou améliorer les articles",
+    finalizingTicket: "Finalisation du ticket en cours...",
+    analysisPreparing: "Analyse terminée. Encore un instant, nous préparons votre ticket...",
+    ticketReady: "Ticket prêt",
+    noMandatoryCorrection: "Aucune correction obligatoire",
+    detectedItemsCount: count => `${count} article${count > 1 ? "s" : ""} détecté${count > 1 ? "s" : ""}`,
+    reviewItemsCount: count => `${count} article${count > 1 ? "s" : ""} à vérifier`,
+    progressOptimizing: "Optimisation de l'image",
+    progressReading: "Lecture du ticket",
+    progressStore: "Détection du magasin",
+    progressProducts: "Extraction des articles",
+    progressTotal: "Vérification du total",
+    progressFinalizing: "Finalisation du ticket",
+    analysisFootnote: "Optimisation, OCR, magasin, produits, total et vérification.",
     manualReady: "OCR indisponible : vous pouvez remplir le ticket manuellement.",
     store: "Magasin",
     date: "Date",
@@ -87,6 +132,8 @@ const TEXT = {
     budgetTransactionPossible: "Transaction possible : oui",
     smartShoppingNotFed: "Courses intelligentes : non alimentées",
     blockedSaveNotice: "Ce ticket sera enregistré pour votre budget, mais ses articles ne seront pas utilisés pour vos Courses intelligentes.",
+    saveTicketChanges: RECEIPT_DETAIL_BUTTON_LABELS.fr,
+    ticketChangesSaved: RECEIPT_DETAIL_CONFIRMATION_LABELS.fr,
     showDetectedLines: "Voir les lignes détectées",
     hideDetectedLines: "Masquer les lignes détectées",
     itemNeedsReview: "À vérifier",
@@ -126,12 +173,27 @@ const TEXT = {
     longTicketModeOpened: "Azout lao tiké-la, apre anba tiké-la.",
     longTicketMerging: "Nou pe kol 2 foto tiké-la...",
     quota: quota => quota.plan === "premium_plus"
-      ? `Analiz IA : ${quota.used} / san limit`
-      : `Analiz IA : ${quota.used} / ${quota.limit}`,
+      ? `Analiz IA san limit — ${quota.planLabel}`
+      : `Analiz IA : ${quota.used} / ${quota.limit} — ${quota.planLabel}`,
     methodTitle: "Swazi in fason",
     privacy: "Bann tiké a ou i reste privé. Nou i servi azot zis pou met out bidzé à jour.",
     foodHint: "Azout out courses otomatikman ou amain. Analiz otomatik-la lé surtout pou bann tiké manzé, pou konprann out labitid ek gagn bann konsey itil.",
     loaded: "Zimaz-la la chargé. Vérifié bann zinformasyon.",
+    saveTicket: "Anrezistre lo tiké",
+    reviewOrImproveArticles: "Vérifie ousa amelyor bann lartik",
+    finalizingTicket: "Finalizasyon tiké-la an kour...",
+    analysisPreparing: "Analiz fini. Ankor in ti moman, nou pe prepar out tiké...",
+    ticketReady: "Tiké paré",
+    noMandatoryCorrection: "Oken korèksyon obligatwar",
+    detectedItemsCount: count => `${count} lartik détecté${count > 1 ? "s" : ""}`,
+    reviewItemsCount: count => `${count} lartik pou vérifié`,
+    progressOptimizing: "Optimización zimaz-la",
+    progressReading: "Lecture tiké-la",
+    progressStore: "Déteksyon magazin-la",
+    progressProducts: "Ekstraksyon bann lartik",
+    progressTotal: "Vérifikasyon total-la",
+    progressFinalizing: "Finalizasyon tiké-la",
+    analysisFootnote: "Optimización, OCR, magazin, bann lartik, total ek vérifikasyon.",
     manualReady: "OCR lé pa disponib : ou pé ranpli tiké-la amain.",
     store: "Magazin",
     date: "Dat",
@@ -160,6 +222,8 @@ const TEXT = {
     budgetTransactionPossible: "Tranzaksyon posib : wi",
     smartShoppingNotFed: "Courses intelligentes : pa alimante",
     blockedSaveNotice: "Tiké-la va anrezistré pou out bidzé, mé bann lartik-la pa va servi pou out Courses intelligentes.",
+    saveTicketChanges: RECEIPT_DETAIL_BUTTON_LABELS.kr,
+    ticketChangesSaved: RECEIPT_DETAIL_CONFIRMATION_LABELS.kr,
     showDetectedLines: "War bann lign trouvé",
     hideDetectedLines: "Kasiet bann lign trouvé",
     itemNeedsReview: "Pou vérifié",
@@ -944,6 +1008,7 @@ export default function ReceiptsPage({
   const [mode, setMode] = useState("history")
   const [draft, setDraft] = useState(null)
   const [receipt, setReceipt] = useState(null)
+  const [validationView, setValidationView] = useState("editor")
   const [receipts, setReceipts] = useState([])
   const [detail, setDetail] = useState(null)
   const [detailImageUrl, setDetailImageUrl] = useState("")
@@ -965,7 +1030,7 @@ export default function ReceiptsPage({
 
   const globalCategory = draft?.items?.[0]?.category || "alimentaire"
   const receiptRows = useMemo(() => Array.isArray(receipts) ? receipts : [], [receipts])
-  const showMethodActions = mode === "history" || mode === "validate"
+  const showMethodActions = mode === "history"
 
   useEffect(() => {
     if (!draft || !isBudgetOkArticlesBlocked(draft)) {
@@ -987,6 +1052,19 @@ export default function ReceiptsPage({
     if (!resumeDraft) return
     const items = Array.isArray(resumeDraft.items) && resumeDraft.items.length ? resumeDraft.items : [emptyItem()]
     setDraft({ ...resumeDraft, items })
+    const nextValidationView = getReceiptScanValidationView({
+      isPendingSave: Boolean(resumeDraft.python_scan_pending_save),
+      reviewItemsCount: countItemsNeedingReview(items),
+      totalNeedsReview: Boolean(resumeDraft.total_needs_review),
+    })
+    setValidationView(nextValidationView)
+    if (nextValidationView === "preview") {
+      setMessage(buildScanPreviewSummary({
+        detectedItemsCount: getValidDraftItems({ ...resumeDraft, items }).length,
+        reviewItemsCount: countItemsNeedingReview(items),
+        txt,
+      }))
+    }
     setResumeDraft(null)
     setScanError(null)
     setMode("validate")
@@ -1053,27 +1131,203 @@ export default function ReceiptsPage({
     setMessage(`${txt.longTicketTopReady}. ${txt.longTicketBottomReady}.`)
   }
 
+  async function processCompletedScan(scan, sourceFile) {
+    const parsed = scan.receipt
+    setScanProgress({
+      step: "finalizing",
+      label: txt.analysisPreparing,
+      progress: 92,
+    })
+    const dateDiagnostic = getTicketMonthDiagnostic(parsed.purchase_date)
+    console.info("[scanner] ticket_date_month_check", dateDiagnostic)
+    if (!dateDiagnostic.date_in_current_month) {
+      setReceipt(null)
+      setPendingImagePath(null)
+      setScanMetrics(scan.metrics || null)
+      setDraft(null)
+      setDuplicateReceipt(null)
+      setAllowDuplicateImport(false)
+      setMode("history")
+      setMessage(getTicketOutsideCurrentMonthMessage(isKreol))
+      console.info("SCANNER_SUMMARY", buildScannerSummary({
+        parsed,
+        items: getValidDraftItems(parsed),
+        metrics: scan.metrics || null,
+        importResult: {
+          receiptSaved: false,
+          receiptItemsCreated: 0,
+          transactionCreated: false,
+          transactionUpdated: false,
+          transactionSkipReason: "ticket_outside_current_month",
+        },
+      }))
+      return
+    }
+
+    const imageToUpload = scan.optimizedFile || sourceFile
+    const { imagePath } = await uploadReceiptImage({
+      userId: user?.id,
+      file: imageToUpload,
+    })
+    const scanStatus = String(parsed.scan_status || "")
+    const requiresManualCorrection = ["partial_low_items", "manual_review_required", "long_manual_review"].some(status => scanStatus.includes(status)) || parsed.total_needs_review
+    const requiresQuickReview = scanStatus.includes("usable_review") || scanStatus.includes("long_usable_review")
+    if (requiresManualCorrection || requiresQuickReview) {
+      setReceipt(null)
+      setPendingImagePath(imagePath)
+      setScanMetrics(scan.metrics || null)
+      setDraft({ ...parsed, items: parsed.items.length ? parsed.items : [emptyItem()] })
+      setValidationView("editor")
+      setDuplicateReceipt(null)
+      setAllowDuplicateImport(false)
+      setMode("validate")
+      const splitRetryUsed = Boolean(scan.metrics?.splitRetryUsed)
+      const splitStillNeedsReview = splitRetryUsed && (String(parsed.scan_status || "").includes("manual_review_required") || String(parsed.scan_status || "").includes("long_manual_review"))
+      const longUsableReview = String(parsed.scan_status || "").includes("long_usable_review")
+      setMessage(isKreol
+        ? splitStillNeedsReview
+          ? "Tike-la ankor difisil pou lir. Korize bann zinformasyon avan anrezistre."
+          : splitRetryUsed
+            ? "Lektir renforcee Premium+ fini. Verifie bann zinfo avan anrezistre."
+          : longUsableReview
+            ? "Tike long-la le lir an parti. Verifie bann lalinn avan anrezistre."
+          : requiresQuickReview
+            ? "Tiké-la lé lir, vérifié vitman bann zinfo avan anrezistré."
+            : "BudgetKazPei la pa reisi lir total-la bien. Verifie ousa rant montan-la avan anrezistre."
+        : splitStillNeedsReview
+          ? "Le ticket reste difficile à lire. Corrigez les informations avant d'enregistrer."
+          : splitRetryUsed
+            ? "Lecture renforcée Premium+ terminée. Vérifiez les informations avant d'enregistrer."
+          : longUsableReview
+            ? "Ticket long lu partiellement. Vérifiez les lignes avant d'enregistrer."
+          : requiresQuickReview
+            ? "Ticket lu, vérifiez rapidement les informations avant d'enregistrer."
+            : "BudgetKazPei n'a pas pu lire le total avec certitude. Vérifiez ou saisissez le montant avant d'enregistrer.")
+      return
+    }
+
+    const validationError = getDraftValidationError(parsed)
+    if (validationError) {
+      throw new ScanError("SCAN_PARSE_FAILED", validationError)
+    }
+
+    const duplicate = findDuplicateReceipt(parsed, receipts)
+    if (duplicate) {
+      setReceipt(null)
+      setPendingImagePath(imagePath)
+      setScanMetrics(scan.metrics || null)
+      setDraft({ ...parsed, items: parsed.items.length ? parsed.items : [emptyItem()] })
+      setValidationView("editor")
+      setDuplicateReceipt(duplicate)
+      setAllowDuplicateImport(false)
+      setMode("validate")
+      setMessage(isKreol
+        ? "Sa tiké-la i semble déjà anrezistré. Ou pé anilé ou azout ali kan même."
+        : "Ce ticket semble déjà enregistré. Vous pouvez annuler ou l'ajouter quand même.")
+      return
+    }
+
+    const items = parsed.items.length ? parsed.items : [emptyItem()]
+    const detectedItemsCount = getValidDraftItems({ ...parsed, items }).length
+    const reviewItemsCount = countItemsNeedingReview(items)
+
+    setReceipt(null)
+    setPendingImagePath(imagePath)
+    setScanMetrics(scan.metrics || null)
+    setDraft({ ...parsed, items })
+    setValidationView(getReceiptScanValidationView({
+      isPendingSave: Boolean(parsed.python_scan_pending_save),
+      reviewItemsCount,
+      totalNeedsReview: Boolean(parsed.total_needs_review),
+      hasValidationError: Boolean(validationError),
+    }))
+    setDuplicateReceipt(null)
+    setAllowDuplicateImport(false)
+    setMode("validate")
+    setMessage(buildScanPreviewSummary({
+      detectedItemsCount,
+      reviewItemsCount,
+      txt,
+    }))
+  }
+
   async function handleLongTicketScan() {
     if (!longTicketFiles.top || !longTicketFiles.bottom) {
       setMessage(txt.longTicketMissing)
       return
     }
 
+    if (!user?.id) {
+      setMessage(txt.noUser)
+      return
+    }
+
+    if (quota.reached) {
+      setMessage(quota.plan === "premium_plus" ? txt.intensiveUsage : txt.quotaReached)
+      startManual({ keepError: true })
+      return
+    }
+
     setBusy(true)
-    setMessage(txt.longTicketMerging)
+    setMessage("")
     setScanError(null)
 
+    const inputBytes =
+      Number(longTicketFiles.top?.size || 0)
+      + Number(longTicketFiles.bottom?.size || 0)
+
     try {
+      setMode("analysis")
+      setScanProgress({
+        step: "optimizing",
+        label: "Préparation des deux photos...",
+        progress: 5,
+      })
+
+      const scan = await scanLongReceiptWithConfiguredEngine(
+        {
+          top: longTicketFiles.top,
+          bottom: longTicketFiles.bottom,
+        },
+        {
+          onProgress: progress => setScanProgress(progress),
+          plan: quota.plan,
+        },
+      )
+
+      setScanProgress({
+        step: "finalizing",
+        label: txt.analysisPreparing,
+        progress: 95,
+      })
+
       const mergedFile = await mergeReceiptImagesVertically([
         longTicketFiles.top,
         longTicketFiles.bottom,
       ])
 
-      await handleFile(mergedFile)
+      await processCompletedScan(scan, mergedFile)
       resetLongTicketScan()
     } catch (error) {
-      console.error("[scanner] Fusion ticket long impossible:", error)
-      setMessage(error.message || txt.error)
+      console.error("Erreur scanner ticket long:", error)
+      const details = getScanErrorDetails(error)
+      const technicalMessage = String(details.technicalMessage || error.message || "")
+      const isDateError = /date\/time field value out of range|invalid_ocr_date|date invalide/i.test(technicalMessage)
+      setScanError(details)
+      setMessage(isDateError
+        ? "Ticket lu, mais la date a été estimée automatiquement. Réessayez l'enregistrement."
+        : details.userMessage || txt.error)
+      try {
+        await createScanMetric({
+          userId: user?.id,
+          metrics: { imageInitialBytes: inputBytes, scanMode: "long_receipt" },
+          status: "error",
+          error: { code: details.code, message: details.technicalMessage },
+        })
+      } catch (metricError) {
+        console.warn("Metrique scanner indisponible:", metricError)
+      }
+      startManual({ keepError: true })
     } finally {
       setBusy(false)
     }
@@ -1099,117 +1353,18 @@ export default function ReceiptsPage({
 
     try {
       setMode("analysis")
-      setScanProgress({ label: "Preparation...", progress: 5 })
+      setScanProgress({
+        step: "optimizing",
+        label: "Préparation...",
+        progress: 5,
+      })
 
-      const scan = await runSmartScan(file, {
+      const scan = await scanReceiptWithConfiguredEngine(file, {
         onProgress: progress => setScanProgress(progress),
         plan: quota.plan,
       })
 
-      const parsed = scan.receipt
-      const dateDiagnostic = getTicketMonthDiagnostic(parsed.purchase_date)
-      console.info("[scanner] ticket_date_month_check", dateDiagnostic)
-      if (!dateDiagnostic.date_in_current_month) {
-        setReceipt(null)
-        setPendingImagePath(null)
-        setScanMetrics(scan.metrics || null)
-        setDraft(null)
-        setDuplicateReceipt(null)
-        setAllowDuplicateImport(false)
-        setMode("history")
-        setMessage(getTicketOutsideCurrentMonthMessage(isKreol))
-        console.info("SCANNER_SUMMARY", buildScannerSummary({
-          parsed,
-          items: getValidDraftItems(parsed),
-          metrics: scan.metrics || null,
-          importResult: {
-            receiptSaved: false,
-            receiptItemsCreated: 0,
-            transactionCreated: false,
-            transactionUpdated: false,
-            transactionSkipReason: "ticket_outside_current_month",
-          },
-        }))
-        return
-      }
-
-      const { imagePath } = await uploadReceiptImage({ userId: user?.id, file: scan.optimizedFile })
-      const scanStatus = String(parsed.scan_status || "")
-      const requiresManualCorrection = ["partial_low_items", "manual_review_required", "long_manual_review"].some(status => scanStatus.includes(status)) || parsed.total_needs_review
-      const requiresQuickReview = scanStatus.includes("usable_review") || scanStatus.includes("long_usable_review")
-      if (requiresManualCorrection || requiresQuickReview) {
-        setReceipt(null)
-        setPendingImagePath(imagePath)
-        setScanMetrics(scan.metrics || null)
-        setDraft({ ...parsed, items: parsed.items.length ? parsed.items : [emptyItem()] })
-        setDuplicateReceipt(null)
-        setAllowDuplicateImport(false)
-        setMode("validate")
-        const splitRetryUsed = Boolean(scan.metrics?.splitRetryUsed)
-        const splitStillNeedsReview = splitRetryUsed && (String(parsed.scan_status || "").includes("manual_review_required") || String(parsed.scan_status || "").includes("long_manual_review"))
-        const longUsableReview = String(parsed.scan_status || "").includes("long_usable_review")
-        setMessage(isKreol
-          ? splitStillNeedsReview
-            ? "Tike-la ankor difisil pou lir. Korize bann zinformasyon avan anrezistre."
-            : splitRetryUsed
-              ? "Lektir renforcee Premium+ fini. Verifie bann zinfo avan anrezistre."
-            : longUsableReview
-              ? "Tike long-la le lir an parti. Verifie bann lalinn avan anrezistre."
-            : requiresQuickReview
-              ? "Tiké-la lé lir, vérifié vitman bann zinfo avan anrezistré."
-              : "BudgetKazPei la pa reisi lir total-la bien. Verifie ousa rant montan-la avan anrezistre."
-          : splitStillNeedsReview
-            ? "Le ticket reste difficile à lire. Corrigez les informations avant d'enregistrer."
-            : splitRetryUsed
-              ? "Lecture renforcée Premium+ terminée. Vérifiez les informations avant d'enregistrer."
-            : longUsableReview
-              ? "Ticket long lu partiellement. Vérifiez les lignes avant d'enregistrer."
-            : requiresQuickReview
-              ? "Ticket lu, vérifiez rapidement les informations avant d'enregistrer."
-              : "BudgetKazPei n'a pas pu lire le total avec certitude. Vérifiez ou saisissez le montant avant d'enregistrer.")
-        return
-      }
-
-      const validationError = getDraftValidationError(parsed)
-      if (validationError) {
-        throw new ScanError("SCAN_PARSE_FAILED", validationError)
-      }
-
-      const duplicate = findDuplicateReceipt(parsed, receipts)
-      if (duplicate) {
-        setReceipt(null)
-        setPendingImagePath(imagePath)
-        setScanMetrics(scan.metrics || null)
-        setDraft({ ...parsed, items: parsed.items.length ? parsed.items : [emptyItem()] })
-        setDuplicateReceipt(duplicate)
-        setAllowDuplicateImport(false)
-        setMode("validate")
-        setMessage(isKreol
-          ? "Sa tiké-la i semble déjà anrezistré. Ou pé anilé ou azout ali kan même."
-          : "Ce ticket semble déjà enregistré. Vous pouvez annuler ou l'ajouter quand même.")
-        return
-      }
-
-      await autoSaveScan({
-        parsed,
-        imagePath,
-        metrics: scan.metrics || null,
-      })
-      const detectedItemsCount = getValidDraftItems(parsed).length
-
-      setReceipt(null)
-      setPendingImagePath(null)
-      setScanMetrics(scan.metrics || null)
-      setDraft(null)
-      setDuplicateReceipt(null)
-      setAllowDuplicateImport(false)
-      setMode("history")
-      setMessage(getScanResultMessage({
-        parsed,
-        detectedItemsCount,
-        issues: scan.validation?.issues || [],
-        isKreol,
-      }))
+      await processCompletedScan(scan, file)
     } catch (error) {
       console.error("Erreur scanner ticket:", error)
       const details = getScanErrorDetails(error)
@@ -1238,6 +1393,7 @@ export default function ReceiptsPage({
   function startManual(options = {}) {
     setReceipt(null)
     setDraft({ ...createManualReceiptDraft(), items: [emptyItem()] })
+    setValidationView("editor")
     setDuplicateReceipt(null)
     setAllowDuplicateImport(false)
     setScanProgress(null)
@@ -1404,6 +1560,7 @@ export default function ReceiptsPage({
     try {
       console.info("[scanner] Enregistrement centralise", { items: validItems.length })
       const currentReceipt = receipt || await createReceipt({ userId: user?.id, draft, imagePath: pendingImagePath })
+      setReceipt(currentReceipt)
       const importStartedAt = performance.now()
       const importResult = await importValidatedReceipt({
         userId: user?.id,
@@ -1437,6 +1594,7 @@ export default function ReceiptsPage({
       setMessage(txt.saved)
       setDraft(null)
       setReceipt(null)
+      setValidationView("editor")
       setPendingImagePath(null)
       setMode("history")
       await refreshReceipts()
@@ -1495,6 +1653,7 @@ export default function ReceiptsPage({
         ? { ...draft, duplicate_confirmed: true, duplicate_of_receipt_id: duplicate.id }
         : draft
       const currentReceipt = receipt || await createReceipt({ userId: user?.id, draft: draftToSave, imagePath: pendingImagePath })
+      setReceipt(currentReceipt)
       const importStartedAt = performance.now()
       const importResult = await importValidatedReceipt({
         userId: user?.id,
@@ -1548,6 +1707,7 @@ export default function ReceiptsPage({
       setDuplicateReceipt(null)
       setAllowDuplicateImport(false)
       setScanMetrics(null)
+      setValidationView("editor")
       setPendingImagePath(null)
       setMode("history")
       clearLastScanDraft()
@@ -1628,7 +1788,7 @@ export default function ReceiptsPage({
     }
   }
 
-  async function handleUpdateReceipt(updates) {
+  async function handleUpdateReceipt(payload = {}) {
     if (!detail || !user?.id) return
     if (isLockedScannedReceipt(detail)) {
       setMessage("Ce ticket est issu d'un scan fiable. Il est verrouille pour proteger vos Courses intelligentes.")
@@ -1637,7 +1797,7 @@ export default function ReceiptsPage({
 
     setBusy(true)
     try {
-      const next = await updateReceipt({ receiptId: detail.id, userId: user?.id, updates })
+      const next = await updateReceipt({ receiptId: detail.id, userId: user?.id, updates: payload })
       const mergedReceipt = { ...detail, ...next }
       const transactionResult = await upsertReceiptTransaction({
         userId: user?.id,
@@ -1668,7 +1828,7 @@ export default function ReceiptsPage({
     }
   }
 
-  async function handleUpdateReceiptItem(itemId, updates) {
+  async function handleUpdateReceiptItem(itemId, updates, previousItem = null) {
     if (!detail || !user?.id) return
     if (isLockedScannedReceipt(detail)) {
       setMessage("Ce ticket est issu d'un scan fiable. Ses articles ne sont plus modifiables.")
@@ -1731,6 +1891,217 @@ export default function ReceiptsPage({
     }
   }
 
+  const handleReceiptDetailSave = async (payload = {}) => {
+    if (!detail || !user?.id) return
+    if (isLockedScannedReceipt(detail)) {
+      setMessage("Ce ticket est issu d'un scan fiable. Il est verrouille pour proteger vos Courses intelligentes.")
+      return
+    }
+
+    const { receiptUpdates, itemUpdates } = splitReceiptDetailSavePayload(payload)
+    const hasReceiptUpdates = Boolean(receiptUpdates && Object.keys(receiptUpdates).length > 0)
+    const hasItemUpdates = itemUpdates.length > 0
+
+    if (!hasReceiptUpdates && !hasItemUpdates) {
+      setMessage("Aucune modification a enregistrer.")
+      return
+    }
+
+    console.info("[scanner] receipt_detail_save_requested", {
+      receipt_id: detail.id,
+      receipt_updates_present: hasReceiptUpdates,
+      receipt_update_keys: Object.keys(receiptUpdates || {}),
+      item_updates_count: itemUpdates.length,
+      item_update_ids: itemUpdates.map(change => change?.itemId).filter(Boolean),
+    })
+
+    setBusy(true)
+    try {
+      let nextDetail = detail
+      let transactionResult = null
+
+      if (hasReceiptUpdates) {
+        const nextReceipt = await updateReceipt({ receiptId: detail.id, userId: user?.id, updates: receiptUpdates })
+        nextDetail = { ...nextDetail, ...nextReceipt }
+        transactionResult = await upsertReceiptTransaction({
+          userId: user?.id,
+          receipt: nextDetail,
+          draft: {
+            ...nextDetail,
+            total_needs_review: false,
+            is_food_ticket: nextDetail.is_food_ticket ?? true,
+          },
+          transactionId: nextDetail.transaction_id,
+        })
+        nextDetail = {
+          ...nextDetail,
+          transaction_id: transactionResult?.transaction?.id || nextDetail.transaction_id,
+        }
+        console.info("[scanner] receipt_update_transaction", {
+          receipt_id: detail.id,
+          transaction_created: Boolean(transactionResult?.created),
+          transaction_updated: Boolean(transactionResult?.updated),
+          transaction_skip_reason: transactionResult?.skipReason || "",
+          transaction_id: transactionResult?.transaction?.id || null,
+        })
+      }
+
+      const syncedItems = []
+      const aliasCandidates = []
+
+      for (const change of itemUpdates) {
+        const currentItem = (nextDetail.receipt_items || []).find(item => item.id === change.itemId) || change.previousItem || null
+        const aliasCandidate = buildManualAliasLearningCandidate({
+          itemId: change.itemId,
+          previousItem: currentItem,
+          item: { ...(currentItem || {}), ...(change.updates || {}) },
+        })
+        const nextItem = await updateReceiptItem({
+          itemId: change.itemId,
+          userId: user?.id,
+          updates: change.updates,
+          previousItem: currentItem,
+          learnAlias: false,
+        })
+        const updatedItem = { ...(currentItem || {}), ...change.updates, ...(nextItem || {}) }
+        nextDetail = {
+          ...nextDetail,
+          receipt_items: (nextDetail.receipt_items || []).map(item => item.id === change.itemId ? updatedItem : item),
+        }
+        aliasCandidates.push({
+          itemId: change.itemId,
+          previousItem: currentItem,
+          item: updatedItem,
+          candidate: aliasCandidate,
+        })
+
+        if (nextDetail.is_food_ticket && nextDetail.transaction_id && isItemEligibleForSmartShopping(updatedItem)) {
+          syncedItems.push(updatedItem)
+        }
+      }
+
+      if (syncedItems.length > 0) {
+        await syncShoppingItemsFromReceipt({
+          userId: user?.id,
+          transactionId: nextDetail.transaction_id,
+          receipt: {
+            id: nextDetail.id,
+            store_name: nextDetail.store_name,
+            purchase_date: nextDetail.purchase_date,
+            scan_status: nextDetail.scan_status,
+          },
+          items: syncedItems,
+        })
+      }
+
+      if (aliasCandidates.length > 0) {
+        console.info("[scanner] alias_learning_candidate_count", {
+          receipt_id: nextDetail.id,
+          count: aliasCandidates.length,
+        })
+        for (const aliasCandidate of aliasCandidates) {
+          console.info("[scanner] alias_learning_candidate", {
+            receipt_item_id: aliasCandidate.candidate?.itemId || aliasCandidate.itemId,
+            raw_name: aliasCandidate.candidate?.rawName || null,
+            previous_corrected_name: aliasCandidate.candidate?.previousCorrectedName || null,
+            next_corrected_name: aliasCandidate.candidate?.nextCorrectedName || null,
+            status: aliasCandidate.candidate?.status || null,
+            should_attempt: Boolean(aliasCandidate.candidate?.shouldAttempt),
+            skip_reason: aliasCandidate.candidate?.skipReason || "",
+          })
+        }
+
+        const learnedItems = new Map()
+
+        for (const candidate of aliasCandidates) {
+          const learnedItem = await maybeLearnManualAliasForReceiptItem({
+            itemId: candidate.itemId,
+            userId: user?.id,
+            item: candidate.item,
+            previousItem: candidate.previousItem,
+            candidate: candidate.candidate,
+          })
+          learnedItems.set(candidate.itemId, learnedItem || candidate.item)
+        }
+
+        nextDetail = {
+          ...nextDetail,
+          receipt_items: (nextDetail.receipt_items || []).map(item => learnedItems.get(item.id) || item),
+        }
+      }
+
+      const successUiState = buildReceiptSaveSuccessUiState({
+        rows: receiptRows,
+        updatedReceipt: nextDetail,
+        confirmationMessage: txt.ticketChangesSaved,
+      })
+      setReceipts(successUiState.nextRows)
+      setDetail(successUiState.nextDetail)
+      setDetailImageUrl(successUiState.nextDetailImageUrl)
+      setMode(successUiState.nextMode)
+      setMessage(successUiState.nextMessage)
+      refreshReceipts()
+      if (hasReceiptUpdates || syncedItems.length > 0) {
+        window.dispatchEvent(new CustomEvent("budgetkazpei:transactions-updated"))
+      }
+    } catch (error) {
+      console.error("Erreur modification ticket:", error)
+      const failureUiState = buildReceiptSaveFailureUiState({
+        mode,
+        detail,
+        detailImageUrl,
+        message: `Enregistrement impossible : ${error?.message || txt.error}`,
+      })
+      setMode(failureUiState.nextMode)
+      setDetail(failureUiState.nextDetail)
+      setDetailImageUrl(failureUiState.nextDetailImageUrl)
+      setMessage(failureUiState.nextMessage)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const handleReceiptDetailItemUpdate = async (itemId, updates, previousItem = null) => {
+    if (!detail || !user?.id) return
+    if (isLockedScannedReceipt(detail)) {
+      setMessage("Ce ticket est issu d'un scan fiable. Ses articles ne sont plus modifiables.")
+      return
+    }
+
+    setBusy(true)
+    try {
+      const currentItem = previousItem || (detail.receipt_items || []).find(item => item.id === itemId) || null
+      const next = await updateReceiptItem({ itemId, userId: user?.id, updates, previousItem: currentItem })
+      const updatedItem = { ...(currentItem || {}), ...updates, ...(next || {}) }
+      setDetail(prev => ({
+        ...prev,
+        receipt_items: (prev.receipt_items || []).map(item => item.id === itemId ? { ...item, ...updatedItem } : item),
+      }))
+
+      if (detail.is_food_ticket && detail.transaction_id && isItemEligibleForSmartShopping(updatedItem)) {
+        await syncShoppingItemsFromReceipt({
+          userId: user?.id,
+          transactionId: detail.transaction_id,
+          receipt: {
+            id: detail.id,
+            store_name: detail.store_name,
+            purchase_date: detail.purchase_date,
+            scan_status: detail.scan_status,
+          },
+          items: [updatedItem],
+        })
+        window.dispatchEvent(new CustomEvent("budgetkazpei:transactions-updated"))
+      }
+
+      setMessage("Ligne mise a jour.")
+    } catch (error) {
+      console.error("Erreur modification ligne ticket:", error)
+      setMessage(txt.error)
+    } finally {
+      setBusy(false)
+    }
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 18, paddingBottom: isMobile ? 24 : 0 }}>
       <div style={cardStyle({ padding: isMobile ? 18 : 24 })}>
@@ -1747,7 +2118,7 @@ export default function ReceiptsPage({
           {txt.foodHint}
         </p>
         <div style={{ color: COLORS.yellow, fontSize: 13, fontWeight: 900 }}>
-          {quota.loading ? "" : `${txt.quota(quota)} - ${quota.planLabel}`}
+          {quota.loading ? "" : txt.quota(quota)}
         </div>
       </div>
 
@@ -1951,6 +2322,7 @@ export default function ReceiptsPage({
           txt={txt}
           draft={draft}
           busy={busy}
+          validationView={validationView}
           duplicateReceipt={duplicateReceipt}
           allowDuplicateImport={allowDuplicateImport}
           setAllowDuplicateImport={setAllowDuplicateImport}
@@ -1959,8 +2331,20 @@ export default function ReceiptsPage({
           setDraft={setDraft}
           updateItem={updateItem}
           removeItem={removeItem}
+          onOpenEditor={() => setValidationView("editor")}
           onSave={handleSmartImport}
-          onCancel={() => setMode("history")}
+          onCancel={() => {
+            setDraft(null)
+            setReceipt(null)
+            setValidationView("editor")
+            setDuplicateReceipt(null)
+            setAllowDuplicateImport(false)
+            setPendingImagePath(null)
+            setScanMetrics(null)
+            setScanProgress(null)
+            clearLastScanDraft()
+            setMode("history")
+          }}
         />
       )}
 
@@ -1982,8 +2366,8 @@ export default function ReceiptsPage({
           busy={busy}
           onBack={() => setMode("history")}
           onDelete={handleDelete}
-          onUpdateReceipt={handleUpdateReceipt}
-          onUpdateItem={handleUpdateReceiptItem}
+          onUpdateReceipt={handleReceiptDetailSave}
+          onUpdateItem={handleReceiptDetailItemUpdate}
           onDeleteItem={handleDeleteReceiptItem}
           onScanAnother={() => {
             setDetail(null)
@@ -2091,14 +2475,9 @@ function ActionButton({
 
 function AnalysisScreen({ progress, txt }) {
   const value = progress.progress || 8
-  const steps = [
-    ["optimizing", "Optimisation de l'image"],
-    ["reading", "Lecture du ticket"],
-    ["store", "Detection du magasin"],
-    ["products", "Extraction des articles"],
-    ["total", "Verification du total"],
-  ]
-  const currentIndex = Math.max(0, steps.findIndex(([step]) => step === progress.step))
+  const steps = buildAnalysisSteps(txt)
+  const progressContent = resolveAnalysisProgressContent(progress, txt)
+  const currentIndex = Math.max(0, steps.findIndex(([step]) => step === progressContent.step))
 
   return (
     <div style={{
@@ -2124,12 +2503,12 @@ function AnalysisScreen({ progress, txt }) {
           }} />
         </div>
         <div style={{ color: COLORS.text, fontWeight: 950, marginTop: 18 }}>
-          {progress.label || "Lecture..."}
+          {progressContent.title || progress.label || "Lecture..."}
         </div>
         <div style={{ display: "grid", gap: 8, marginTop: 16, textAlign: "left" }}>
           {steps.map(([step, label], index) => {
             const done = value >= 100 || index < currentIndex
-            const active = step === progress.step
+            const active = step === progressContent.step
             return (
               <div key={step} style={{ color: done ? COLORS.green : active ? COLORS.cyan : COLORS.muted, fontSize: 13, fontWeight: 900 }}>
                 {done ? "OK" : active ? "..." : "--"} {label}
@@ -2149,6 +2528,7 @@ function ValidationForm({
   txt,
   draft,
   busy,
+  validationView,
   duplicateReceipt,
   allowDuplicateImport,
   setAllowDuplicateImport,
@@ -2157,6 +2537,7 @@ function ValidationForm({
   setDraft,
   updateItem,
   removeItem,
+  onOpenEditor,
   onSave,
   onCancel,
 }) {
@@ -2167,6 +2548,87 @@ function ValidationForm({
   const visibleDraftItems = (draft.items || [])
     .map((item, index) => ({ item, index }))
     .filter(row => !isBlockedReceiptItem(row.item))
+  const detectedItemsCount = visibleDraftItems.length
+  const reviewItemsCount = countItemsNeedingReview(visibleDraftItems.map(row => row.item))
+  const previewSummary = buildScanPreviewSummary({
+    detectedItemsCount,
+    reviewItemsCount,
+    txt,
+  })
+
+  if (validationView === "preview") {
+    return (
+      <div style={cardStyle()}>
+        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: 10, alignItems: "center", marginBottom: 14 }}>
+          <div>
+            <div style={{ color: COLORS.cyan, fontSize: 13, fontWeight: 950 }}>
+              {txt.ticketReady}
+            </div>
+            <div style={{ color: COLORS.text, fontSize: 20, fontWeight: 950, marginTop: 4 }}>
+              {txt.scanTitle}
+            </div>
+          </div>
+          <MetaChip label={previewSummary} strong />
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12 }}>
+          <Field label={txt.store}>
+            <div style={readOnlyFieldStyle()}>{draft.store_name || "—"}</div>
+          </Field>
+          <Field label={txt.date}>
+            <div style={readOnlyFieldStyle()}>{draft.purchase_date || "—"}</div>
+          </Field>
+          <Field label={txt.total}>
+            <div style={readOnlyFieldStyle()}>{formatMontant(Number(draft.total_amount || 0))}</div>
+          </Field>
+          <Field label={txt.items}>
+            <div style={readOnlyFieldStyle()}>{txt.detectedItemsCount(detectedItemsCount)}</div>
+          </Field>
+        </div>
+
+        <div style={{ marginTop: 16, color: COLORS.text, fontWeight: 950 }}>
+          {txt.reviewItemsCount(reviewItemsCount)}
+        </div>
+        {reviewItemsCount === 0 && (
+          <div style={{ color: COLORS.cyan, fontSize: 13, fontWeight: 850, marginTop: 6 }}>
+            {txt.noMandatoryCorrection}
+          </div>
+        )}
+
+        <div style={{ marginTop: 18, color: COLORS.text, fontWeight: 950 }}>
+          {txt.showDetectedLines}
+        </div>
+        <div style={{ display: "grid", gap: 10, marginTop: 10 }}>
+          {visibleDraftItems.map(({ item, index }) => {
+            const visibleName = getReceiptItemVisibleName(item)
+            return (
+              <div key={`${visibleName}-${index}`} style={{ background: COLORS.cardLight, border: `1px solid ${COLORS.border}`, borderRadius: 16, padding: 12 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start" }}>
+                  <div style={{ color: COLORS.text, fontWeight: 900, lineHeight: 1.4 }}>
+                    {visibleName}
+                  </div>
+                  <div style={{ color: COLORS.muted, fontSize: 13, whiteSpace: "nowrap" }}>
+                    {formatMontant(Number(item.total_price || item.unit_price || 0))}
+                  </div>
+                </div>
+                {item.ocr_name && item.ocr_name !== visibleName && (
+                  <div style={{ color: COLORS.muted, fontSize: 12, marginTop: 6, lineHeight: 1.4 }}>
+                    OCR : {item.ocr_name}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10, marginTop: 18 }}>
+          <ActionButton label={txt.saveTicket} onClick={onSave} disabled={busy || Boolean(validationError)} />
+          <ActionButton label={txt.reviewOrImproveArticles} onClick={onOpenEditor} disabled={busy} variant="secondary" />
+          <ActionButton label={txt.cancel} onClick={onCancel} disabled={busy} variant="neutral" />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div style={cardStyle()}>
@@ -2380,6 +2842,21 @@ function Field({ label, children }) {
   )
 }
 
+function readOnlyFieldStyle() {
+  return {
+    minHeight: 48,
+    borderRadius: 14,
+    border: `1px solid ${COLORS.border}`,
+    background: COLORS.cardLight,
+    color: COLORS.text,
+    padding: "12px 14px",
+    display: "flex",
+    alignItems: "center",
+    fontWeight: 800,
+    lineHeight: 1.4,
+  }
+}
+
 function MetaChip({ label, strong = false }) {
   return (
     <span style={{
@@ -2420,11 +2897,10 @@ function HistoryList({ txt, rows, busy, onOpen, onDelete }) {
               alignItems: "center",
             }}>
               <span>
-                <strong>{row.store_name || txt.scanTitle}</strong>
+                <strong>{buildReceiptHistorySummary(row, formatMontant)}</strong>
                 <span style={{ display: "block", color: COLORS.muted, fontSize: 12, marginTop: 4 }}>
-                  {row.purchase_date || ""} - {getReceiptArticleCountLabel(row, txt)}
+                  {getReceiptArticleCountLabel(row, txt)}
                 </span>
-                <strong style={{ color: COLORS.accent, display: "block", marginTop: 5 }}>{formatMontant(Number(row.total_amount || 0))}</strong>
               </span>
               <span style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: 8 }}>
                 <button type="button" disabled={busy} onClick={() => onOpen(row)} style={{ minHeight: 40, borderRadius: 12, border: "none", background: COLORS.accent, color: "#fff", fontWeight: 950, padding: "0 12px" }}>
@@ -2461,22 +2937,18 @@ function ReceiptDetail({
   onOpenShoppingList,
 }) {
   const [showOriginal, setShowOriginal] = useState(false)
+  const persistedItems = receipt.receipt_items || []
+  const persistedItemMap = useMemo(
+    () => Object.fromEntries(persistedItems.map(item => [item.id, item])),
+    [persistedItems],
+  )
+  const [workingItems, setWorkingItems] = useState(() => persistedItems.map(item => ({ ...item })))
   const [receiptDraft, setReceiptDraft] = useState({
     store_name: receipt.store_name || "",
     purchase_date: receipt.purchase_date || "",
     total_amount: receipt.total_amount || "",
   })
-  const [itemDrafts, setItemDrafts] = useState(() => {
-    const entries = {}
-    ;(receipt.receipt_items || []).forEach(item => {
-      entries[item.id] = {
-        name: item.name || "",
-        total_price: item.total_price ?? "",
-        category: item.category || "alimentaire",
-      }
-    })
-    return entries
-  })
+  const [itemDrafts, setItemDrafts] = useState(() => buildReceiptItemDraftMap(receipt.receipt_items || []))
 
   useEffect(() => {
     setReceiptDraft({
@@ -2484,29 +2956,69 @@ function ReceiptDetail({
       purchase_date: receipt.purchase_date || "",
       total_amount: receipt.total_amount || "",
     })
-    const entries = {}
-    ;(receipt.receipt_items || []).forEach(item => {
-      entries[item.id] = {
-        name: item.name || "",
-        total_price: item.total_price ?? "",
-        category: item.category || "alimentaire",
-      }
-    })
-    setItemDrafts(entries)
+    setWorkingItems(persistedItems.map(item => ({ ...item })))
+    setItemDrafts(buildReceiptItemDraftMap(persistedItems))
   }, [receipt])
 
   const lockedReceipt = isLockedScannedReceipt(receipt)
   const partialReceipt = isBudgetOkArticlesPartial(receipt)
   const headerLocked = lockedReceipt || isBudgetReliableScannedReceipt(receipt)
+  const visibleItems = workingItems.filter(item => !isBlockedReceiptItem(item))
+  const pendingItemUpdates = visibleItems
+    .filter(item => hasReceiptItemPendingPersistence(persistedItemMap[item.id] || {}, item))
+    .map(item => ({
+      itemId: item.id,
+      updates: buildReceiptItemPersistenceUpdates(persistedItemMap[item.id] || {}, item),
+      previousItem: persistedItemMap[item.id] || item,
+    }))
+  const hasHeaderChanges = !headerLocked && (
+    String(receiptDraft.store_name || "") !== String(receipt.store_name || "")
+    || String(receiptDraft.purchase_date || "") !== String(receipt.purchase_date || "")
+    || Number(receiptDraft.total_amount || 0) !== Number(receipt.total_amount || 0)
+  )
+  const canPersistHeader = !headerLocked && Number(receiptDraft.total_amount || 0) > 0
+  const receiptUpdatePayload = hasHeaderChanges && canPersistHeader
+    ? {
+        store_name: receiptDraft.store_name || "Enseigne non reconnue",
+        merchant_name: receiptDraft.store_name || "Enseigne non reconnue",
+        purchase_date: receiptDraft.purchase_date || new Date().toISOString().slice(0, 10),
+        date_status: receiptDraft.date_status || "detected",
+        total_amount: Number(receiptDraft.total_amount || 0),
+      }
+    : null
+  const showSaveButton = !lockedReceipt && (hasHeaderChanges || pendingItemUpdates.length > 0)
+  const saveDisabled = busy || (pendingItemUpdates.length === 0 && !receiptUpdatePayload)
+
+  function handleLocalValidate(item) {
+    const currentItem = item || null
+    if (!currentItem) return
+
+    const draft = itemDrafts[currentItem.id] || createReceiptItemDraft(currentItem)
+    const validatedItem = applyValidatedReceiptItemDraft(currentItem, draft)
+
+    setWorkingItems(prev => prev.map(entry => entry.id === currentItem.id ? validatedItem : entry))
+    setItemDrafts(prev => ({
+      ...prev,
+      [currentItem.id]: createReceiptItemDraft(validatedItem),
+    }))
+  }
+
+  function handleLocalCancel(itemId) {
+    const persistedItem = persistedItemMap[itemId]
+    if (!persistedItem) return
+
+    setWorkingItems(prev => prev.map(entry => entry.id === itemId ? { ...persistedItem } : entry))
+    setItemDrafts(prev => ({
+      ...prev,
+      [itemId]: createReceiptItemDraft(persistedItem),
+    }))
+  }
 
   return (
     <div style={cardStyle()}>
       <button type="button" onClick={onBack} style={{ minHeight: 44, background: "transparent", border: "none", color: COLORS.cyan, fontWeight: 900, cursor: "pointer" }}>
         ← {txt.title}
       </button>
-      <div style={{ marginTop: 6, color: COLORS.green, fontSize: 13, fontWeight: 950 }}>
-        Ticket enregistré avec succès
-      </div>
       {receipt.scan_status === "partial" && (
         <div style={{ marginTop: 8, color: COLORS.yellow, fontSize: 13, fontWeight: 900, lineHeight: 1.45 }}>
           L'analyse complete n'a pas pu etre terminee. Les donnees disponibles ont ete sauvegardees.
@@ -2538,15 +3050,12 @@ function ReceiptDetail({
         <input style={inputStyle()} value={receiptDraft.store_name} readOnly={headerLocked} onChange={event => !headerLocked && setReceiptDraft(prev => ({ ...prev, store_name: event.target.value }))} />
         <input style={inputStyle()} type="date" value={receiptDraft.purchase_date || ""} readOnly={headerLocked} onChange={event => !headerLocked && setReceiptDraft(prev => ({ ...prev, purchase_date: event.target.value, date_status: "detected" }))} />
         <input style={inputStyle()} type="number" min="0" step="0.01" value={receiptDraft.total_amount} readOnly={headerLocked} onChange={event => !headerLocked && setReceiptDraft(prev => ({ ...prev, total_amount: event.target.value }))} />
-        {!headerLocked && (
-          <button type="button" disabled={busy || Number(receiptDraft.total_amount || 0) <= 0} onClick={() => onUpdateReceipt({
-            store_name: receiptDraft.store_name || "Enseigne non reconnue",
-            merchant_name: receiptDraft.store_name || "Enseigne non reconnue",
-            purchase_date: receiptDraft.purchase_date || new Date().toISOString().slice(0, 10),
-            date_status: receiptDraft.date_status || "detected",
-            total_amount: Number(receiptDraft.total_amount || 0),
+        {showSaveButton && (
+          <button type="button" disabled={saveDisabled} onClick={() => onUpdateReceipt({
+            receiptUpdates: receiptUpdatePayload,
+            itemUpdates: pendingItemUpdates,
           })} style={{ minHeight: 44, borderRadius: 12, border: "none", background: COLORS.cyan, color: "#06101F", fontWeight: 950 }}>
-            Mettre à jour le ticket
+            {txt.saveTicketChanges}
           </button>
         )}
       </div>
@@ -2562,13 +3071,17 @@ function ReceiptDetail({
         Lignes d'articles
       </div>
       <div style={{ display: "grid", gap: 8, marginTop: 10 }}>
-        {(receipt.receipt_items || []).filter(item => !isBlockedReceiptItem(item)).map(item => {
+        {visibleItems.map(item => {
+          const itemDraft = itemDrafts[item.id] || createReceiptItemDraft(item)
           const itemUsedForSmartShopping = isItemEligibleForSmartShopping(item)
-          const itemEditable = !lockedReceipt && !itemUsedForSmartShopping
+          const itemEditable = !lockedReceipt
+          const draftDirty = hasReceiptItemDraftChanges(item, itemDraft)
+          const pendingPersistence = hasReceiptItemPendingPersistence(persistedItemMap[item.id] || {}, item)
+          const displayName = itemDraft.corrected_name ?? getReceiptItemVisibleName(item)
 
           return (
           <div key={item.id} style={{ display: "grid", gap: 8, color: COLORS.text, borderBottom: `1px solid ${COLORS.border}`, paddingBottom: 10 }}>
-            {item.ocr_name && item.ocr_name !== item.name && (
+            {item.ocr_name && item.ocr_name !== displayName && (
               <div style={{ color: COLORS.muted, fontSize: 12 }}>OCR : {item.ocr_name}</div>
             )}
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -2578,9 +3091,9 @@ function ReceiptDetail({
             </div>
             <input
               style={inputStyle()}
-                    value={itemDrafts[item.id]?.name ?? item.name ?? ""}
+              value={displayName}
               readOnly={!itemEditable}
-              onChange={event => itemEditable && setItemDrafts(prev => ({ ...prev, [item.id]: { ...(prev[item.id] || {}), name: event.target.value } }))}
+              onChange={event => itemEditable && setItemDrafts(prev => ({ ...prev, [item.id]: { ...(prev[item.id] || createReceiptItemDraft(item)), corrected_name: event.target.value } }))}
             />
             <div style={{ display: "grid", gridTemplateColumns: "1fr auto auto", gap: 8 }}>
               <input
@@ -2588,20 +3101,12 @@ function ReceiptDetail({
                 type="number"
                 min="0"
                 step="0.01"
-                    value={itemDrafts[item.id]?.total_price ?? item.total_price ?? ""}
+                value={itemDraft.total_price ?? item.total_price ?? ""}
                 readOnly={!itemEditable}
-                onChange={event => itemEditable && setItemDrafts(prev => ({ ...prev, [item.id]: { ...(prev[item.id] || {}), total_price: event.target.value } }))}
+                onChange={event => itemEditable && setItemDrafts(prev => ({ ...prev, [item.id]: { ...(prev[item.id] || createReceiptItemDraft(item)), total_price: event.target.value } }))}
               />
               {itemEditable && (
-                <button type="button" disabled={busy} onClick={() => onUpdateItem(item.id, {
-                  name: itemDrafts[item.id].name || item.name,
-                  corrected_name: itemDrafts[item.id].name || item.name,
-                  total_price: Number(itemDrafts[item.id]?.total_price ?? item.total_price ?? 0),
-                  category: itemDrafts[item.id].category || item.category || "alimentaire",
-                  item_status: "user_validated",
-                  review_status: "trusted",
-                  needs_review: false,
-                })} style={{ minHeight: 44, borderRadius: 12, border: "none", background: COLORS.green, color: "#06101F", fontWeight: 950, padding: "0 12px" }}>
+                <button type="button" disabled={busy} onClick={() => handleLocalValidate(item)} style={{ minHeight: 44, borderRadius: 12, border: "none", background: COLORS.green, color: "#06101F", fontWeight: 950, padding: "0 12px" }}>
                   Valider
                 </button>
               )}
@@ -2611,11 +3116,16 @@ function ReceiptDetail({
                 </button>
               )}
             </div>
+            {itemEditable && (draftDirty || pendingPersistence) && (
+              <button type="button" disabled={busy} onClick={() => handleLocalCancel(item.id)} style={{ minHeight: 40, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "transparent", color: COLORS.muted, fontWeight: 900 }}>
+                Annuler la modification
+              </button>
+            )}
             <select
               style={inputStyle()}
-              value={itemDrafts[item.id]?.category || item.category || "alimentaire"}
+              value={itemDraft.category || item.category || "alimentaire"}
               disabled={!itemEditable}
-              onChange={event => itemEditable && setItemDrafts(prev => ({ ...prev, [item.id]: { ...(prev[item.id] || {}), category: event.target.value } }))}
+              onChange={event => itemEditable && setItemDrafts(prev => ({ ...prev, [item.id]: { ...(prev[item.id] || createReceiptItemDraft(item)), category: event.target.value } }))}
             >
               {CATEGORIES.map(category => (
                 <option key={category.id} value={category.id}>{category.id}</option>
@@ -2634,5 +3144,3 @@ function ReceiptDetail({
     </div>
   )
 }
-
-

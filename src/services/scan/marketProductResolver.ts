@@ -19,6 +19,15 @@ const MARKET_ENRICHMENT_FIELDS = [
   "market_match_input_source",
 ] as const
 
+const MARKET_SUGGESTION_FIELDS = [
+  "market_suggested",
+  "market_suggestion_product_id",
+  "market_suggestion_canonical_name",
+  "market_suggestion_confidence",
+  "market_suggestion_scope",
+  "market_suggestion_reason",
+] as const
+
 type MarketResolution = {
   index: number
   market_matched?: boolean
@@ -91,16 +100,68 @@ function cleanContext(context: MarketResolveContext = {}) {
   }
 }
 
-function normalizeCandidateText(value: unknown) {
-  return String(value || "")
+const OCR_FOOD_CONTEXT_TOKENS = new Set([
+  "tarama",
+  "cabillaud",
+  "oeuf",
+  "oeufs",
+  "nouille",
+  "nouilles",
+  "pate",
+  "pates",
+  "ravioli",
+  "quiche",
+  "cake",
+  "surimi",
+  "thon",
+  "mayonnaise",
+  "poisson",
+])
+
+function normalizeOcrMeasurementToken(token: string) {
+  const match = token.match(/^([ilo0-9]{1,4})(kg|gr|g|ml|cl|l)$/)
+  if (!match) return token
+
+  const digits = match[1]
+    .replace(/[il]/g, "1")
+    .replace(/o/g, "0")
+  return `${digits}${match[2]}`
+}
+
+function normalizeFoodOcrTokens(tokens: string[]) {
+  const hasFoodContext = tokens.some(token => OCR_FOOD_CONTEXT_TOKENS.has(token))
+  if (!hasFoodContext) return tokens
+
+  return tokens.map(token => {
+    if (["deufs", "ceufs", "0eufs", "oeufs"].includes(token)) return "oeufs"
+    if (["0euf", "oeuf"].includes(token)) return "oeuf"
+    return token
+  })
+}
+
+function normalizeAliasLikeText(value: unknown) {
+  const base = String(value || "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
-    .replace(/0/g, "o")
-    .replace(/1/g, "i")
     .replace(/[^a-z0-9]+/g, " ")
     .replace(/\s+/g, " ")
     .trim()
+
+  if (!base) return ""
+
+  const normalizedTokens = normalizeFoodOcrTokens(
+    base
+      .split(" ")
+      .filter(Boolean)
+      .map(normalizeOcrMeasurementToken),
+  )
+
+  return normalizedTokens.join(" ").trim()
+}
+
+function normalizeCandidateText(value: unknown) {
+  return normalizeAliasLikeText(value)
 }
 
 function normalizeCandidateForSimilarity(value: unknown) {
@@ -200,6 +261,31 @@ function cleanLocalCandidateName(value: unknown) {
   if (!raw || isNonProductCandidateLine(raw)) return ""
   const letters = raw.replace(/[^\p{L}]/gu, "")
   return letters.length >= 4 ? raw.slice(0, 180) : ""
+}
+
+function buildOcrAliasAlternateNames(value: unknown) {
+  const raw = cleanText(value, 180)
+  if (!raw) return []
+
+  const variants = new Set<string>()
+  const normalizedUnitVariant = raw.replace(/\b([iIlL1][oO0]{2})(kg|gr|g|ml|cl|l)\b/gi, (_match, _digits, unit) => `100${unit.toUpperCase()}`)
+  if (normalizedUnitVariant && normalizedUnitVariant !== raw) {
+    variants.add(normalizedUnitVariant)
+  }
+
+  const hasFoodContext = /\b(tarama|cabillaud|nouille|nouilles|pate|pates|ravioli|quiche|cake|surimi|thon|mayonnaise|poisson)\b/i.test(raw)
+  if (hasFoodContext) {
+    const oeufsVariant = raw.replace(/\b(?:DEUFS|CEUFS|0EUFS)\b/gi, "OEUFS")
+    if (oeufsVariant && oeufsVariant !== raw) {
+      variants.add(oeufsVariant)
+    }
+    const combinedVariant = oeufsVariant.replace(/\b([iIlL1][oO0]{2})(kg|gr|g|ml|cl|l)\b/gi, (_match, _digits, unit) => `100${unit.toUpperCase()}`)
+    if (combinedVariant && combinedVariant !== raw) {
+      variants.add(combinedVariant)
+    }
+  }
+
+  return Array.from(variants).slice(0, MARKET_RESOLVE_MAX_ALTERNATE_NAMES)
 }
 
 function simplifyLocalCandidateName(value: unknown) {
@@ -348,12 +434,13 @@ export function buildMarketResolvePayload(
 
   return (items || []).slice(0, MARKET_RESOLVE_MAX_ITEMS).map((item, index) => {
     const primaryName = cleanText(
-      item?.corrected_name || item?.name || item?.ocr_name,
+      item?.raw_name || item?.ocr_name || item?.corrected_name || item?.name,
       180,
     )
     const explicitAlternateNames = cleanAlternateNames(item?.market_alternate_names)
     const alternateNames = cleanAlternateNames([
       ...explicitAlternateNames,
+      ...buildOcrAliasAlternateNames(primaryName),
       ...(localCandidates[index] || []),
     ]).filter(name => normalizeCandidateText(name) !== normalizeCandidateText(primaryName))
 
@@ -391,7 +478,15 @@ export function applyMarketResolutions(
   return (items || []).map((item, index) => {
     const resolution = byIndex.get(index)
     if (!resolution) return { ...item, market_matched: false }
-    if (resolution.market_matched !== true) return { ...item, market_matched: false }
+    if (resolution.market_matched !== true) {
+      const next = { ...item, market_matched: false }
+      for (const field of MARKET_SUGGESTION_FIELDS) {
+        if (Object.prototype.hasOwnProperty.call(resolution, field)) {
+          next[field] = resolution[field]
+        }
+      }
+      return next
+    }
 
     const next = { ...item }
     for (const field of MARKET_ENRICHMENT_FIELDS) {
@@ -517,6 +612,7 @@ export async function resolveMarketProducts(
       exact: Number(data?.exact || 0),
       contextual: Number(data?.contextual || 0),
       alternate: Number(data?.alternate || 0),
+      suggested: Number(data?.suggested || 0),
       ...(timing || {}),
     }
 
@@ -527,6 +623,7 @@ export async function resolveMarketProducts(
         exact: diagnostics.exact,
         contextual: diagnostics.contextual,
         alternate: diagnostics.alternate,
+        suggested: diagnostics.suggested,
         unmatched: diagnostics.unresolved,
         session_ms: diagnostics.session_ms ?? null,
         request_ms: diagnostics.request_ms ?? null,
@@ -564,5 +661,7 @@ export const __marketProductResolverTestUtils = {
   applyMarketResolutions,
   buildLocalOcrNameCandidates,
   buildMarketResolvePayload,
+  buildOcrAliasAlternateNames,
+  normalizeCandidateText,
   postMarketResolve,
 }

@@ -8,7 +8,7 @@ import tempfile
 import threading
 import time
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from decimal import Decimal, ROUND_HALF_UP
 from pathlib import Path
 from typing import BinaryIO, Protocol
@@ -18,14 +18,16 @@ from PIL import Image, UnidentifiedImageError
 from .api.errors import ScannerApiError
 from .api.settings import ScannerSettings
 from .column_detector import ColumnDetector
-from .geometry_types import OCRDocument
+from .geometry_types import OCRDocument, OCRToken
 from .image_preprocessor import PreprocessResult, ImagePreprocessor
-from .line_reconstructor import LineReconstructor
+from .line_reconstructor import LineReconstructor, ReconstructedLine
 from .long_receipt_pipeline import run_two_photo_pipeline
 from .market_resolver import MarketProductResolver, build_market_product_resolver
 from .quality_gate import QualityDecision, ReceiptQualityGate
 from .quota import QuotaReservation, ScanQuotaProvider, build_quota_provider
 from .receipt_parser_fr import ParsedReceipt, ParsedReceiptItem, ReceiptParserFR
+from .v2.activation import build_v2_safe_candidate
+from .v2.shadow_parser import GenericReceiptParserV2
 
 
 logger = logging.getLogger("receipt_scanner.api")
@@ -62,6 +64,10 @@ class PipelineResult:
     token_count: int
     rotation_degrees: int | None
     overlap: dict[str, object] | None = None
+    parser_mode_requested: str = "legacy"
+    parser_mode_used: str = "legacy"
+    v2_fallback_reasons: list[str] = field(default_factory=list)
+    v2_diagnostics: dict[str, object] | None = None
 
 
 @dataclass(slots=True)
@@ -109,8 +115,15 @@ class DefaultPipelineRunner:
         self,
         *,
         engine_provider: RapidOCREngineProvider | None = None,
+        parser_mode: str = "shadow",
     ) -> None:
+        normalized_mode = parser_mode.strip().lower()
+        if normalized_mode not in {"legacy", "shadow", "v2_safe"}:
+            raise ValueError(
+                "parser_mode must be legacy, shadow or v2_safe"
+            )
         self.engine_provider = engine_provider or RapidOCREngineProvider()
+        self.parser_mode = normalized_mode
 
     @property
     def model_loaded(self) -> bool:
@@ -128,18 +141,35 @@ class DefaultPipelineRunner:
         lines = LineReconstructor().reconstruct(document)
         if document.tokens:
             ColumnDetector().assign_columns(document, lines)
-        receipt = ReceiptParserFR().parse(document, lines)
-        quality = ReceiptQualityGate().evaluate(preprocessed, document, receipt)
+        legacy_receipt = ReceiptParserFR().parse(document, lines)
+        legacy_quality = ReceiptQualityGate().evaluate(
+            preprocessed,
+            document,
+            legacy_receipt,
+        ).to_dict()
+        receipt, quality, used_mode, fallback_reasons, v2_diagnostics = (
+            self._apply_parser_mode(
+                image_path=preprocessed,
+                document=document,
+                lines=lines,
+                legacy_receipt=legacy_receipt,
+                legacy_quality=legacy_quality,
+            )
+        )
         elapsed = max(document.elapsed_seconds, time.monotonic() - started)
 
         return PipelineResult(
             receipt=receipt,
-            quality=quality.to_dict(),
+            quality=quality,
             engine=document.engine,
             elapsed_seconds=elapsed,
             token_count=len(document.tokens),
             rotation_degrees=preprocessing.rotation_degrees,
             overlap=None,
+            parser_mode_requested=self.parser_mode,
+            parser_mode_used=used_mode,
+            v2_fallback_reasons=fallback_reasons,
+            v2_diagnostics=v2_diagnostics,
         )
 
     def run_long_receipt(
@@ -157,10 +187,23 @@ class DefaultPipelineRunner:
             ocr_engine=self.engine_provider.get(),
         )
         files = summary["files"]
-        receipt = _parsed_receipt_from_dict(
+        legacy_receipt = _parsed_receipt_from_dict(
             json.loads(Path(files["parsed_receipt"]).read_text(encoding="utf-8"))
         )
-        quality = json.loads(Path(files["quality_decision"]).read_text(encoding="utf-8"))
+        legacy_quality = json.loads(
+            Path(files["quality_decision"]).read_text(encoding="utf-8")
+        )
+        document = OCRDocument.load_json(files["columnized_ocr"])
+        lines = _load_reconstructed_lines(files["reconstructed_lines"])
+        receipt, quality, used_mode, fallback_reasons, v2_diagnostics = (
+            self._apply_parser_mode(
+                image_path=Path(files["merged_preprocessed"]),
+                document=document,
+                lines=lines,
+                legacy_receipt=legacy_receipt,
+                legacy_quality=legacy_quality,
+            )
+        )
         overlap = summary.get("overlap")
         preprocessing = summary.get("preprocessing", {})
         top_rotation = preprocessing.get("top", {}).get("rotation_degrees")
@@ -182,6 +225,97 @@ class DefaultPipelineRunner:
                 int(bottom_rotation or 0),
             ),
             overlap=overlap if isinstance(overlap, dict) else None,
+            parser_mode_requested=self.parser_mode,
+            parser_mode_used=used_mode,
+            v2_fallback_reasons=fallback_reasons,
+            v2_diagnostics=v2_diagnostics,
+        )
+
+    def _apply_parser_mode(
+        self,
+        *,
+        image_path: Path,
+        document: OCRDocument,
+        lines: list[ReconstructedLine],
+        legacy_receipt: ParsedReceipt,
+        legacy_quality: dict[str, object],
+    ) -> tuple[
+        ParsedReceipt,
+        dict[str, object],
+        str,
+        list[str],
+        dict[str, object] | None,
+    ]:
+        if self.parser_mode == "legacy":
+            return legacy_receipt, legacy_quality, "legacy", [], None
+
+        try:
+            v2_result = GenericReceiptParserV2().analyze(
+                document,
+                lines,
+                legacy_receipt=legacy_receipt,
+            )
+        except Exception as exc:
+            logger.warning(
+                "v2_parser_failed",
+                extra={"error_type": type(exc).__name__},
+            )
+            return (
+                legacy_receipt,
+                legacy_quality,
+                "legacy",
+                ["v2_parser_exception"],
+                None,
+            )
+
+        selected = v2_result.get("selected_hypothesis") or {}
+        comparison = v2_result.get("comparison") or {}
+        v2_diagnostics: dict[str, object] = {
+            "v2_total": (selected.get("target_total") or {}).get("amount"),
+            "v2_items_total": selected.get("items_total"),
+            "v2_product_line_count": len(selected.get("items") or []),
+            "v2_counted_quantity": selected.get("counted_quantity"),
+            "v2_reasons": list(selected.get("reasons") or []),
+            "comparison": comparison,
+        }
+
+        if self.parser_mode == "shadow":
+            return legacy_receipt, legacy_quality, "legacy", [], v2_diagnostics
+
+        candidate = build_v2_safe_candidate(
+            legacy_receipt=legacy_receipt,
+            v2_result=v2_result,
+        )
+        v2_diagnostics.update(candidate.diagnostics)
+        if not candidate.accepted or candidate.receipt is None:
+            return (
+                legacy_receipt,
+                legacy_quality,
+                "legacy",
+                list(candidate.fallback_reasons),
+                v2_diagnostics,
+            )
+
+        candidate_quality = ReceiptQualityGate().evaluate(
+            image_path,
+            document,
+            candidate.receipt,
+        ).to_dict()
+        if not bool(candidate_quality.get("should_record_budget")):
+            return (
+                legacy_receipt,
+                legacy_quality,
+                "legacy",
+                ["v2_quality_did_not_authorize_budget"],
+                v2_diagnostics,
+            )
+
+        return (
+            candidate.receipt,
+            candidate_quality,
+            "v2_safe",
+            [],
+            v2_diagnostics,
         )
 
 
@@ -195,7 +329,9 @@ class ReceiptScanService:
         market_resolver: MarketProductResolver | None = None,
     ) -> None:
         self.settings = settings
-        self.runner = runner or DefaultPipelineRunner()
+        self.runner = runner or DefaultPipelineRunner(
+            parser_mode=settings.parser_mode
+        )
         self.quota_provider = quota_provider or build_quota_provider(settings)
         self.market_resolver = (
             market_resolver or build_market_product_resolver(settings)
@@ -644,6 +780,15 @@ class ReceiptScanService:
                         "0.0001",
                     ),
                 },
+                "parser": {
+                    "requested_mode": result.parser_mode_requested,
+                    "used_mode": result.parser_mode_used,
+                    "production_output_changed": (
+                        result.parser_mode_used == "v2_safe"
+                    ),
+                    "fallback_reasons": list(result.v2_fallback_reasons),
+                    **(result.v2_diagnostics or {}),
+                },
             }
 
         status = str(quality["status"])
@@ -721,6 +866,18 @@ class ReceiptScanService:
                     else None
                 ),
                 "should_record_budget": response.get("should_record_budget"),
+                "parser_mode_requested": (
+                    diagnostics.get("parser", {}).get("requested_mode")
+                    if isinstance(diagnostics, dict)
+                    and isinstance(diagnostics.get("parser"), dict)
+                    else None
+                ),
+                "parser_mode_used": (
+                    diagnostics.get("parser", {}).get("used_mode")
+                    if isinstance(diagnostics, dict)
+                    and isinstance(diagnostics.get("parser"), dict)
+                    else None
+                ),
             },
         )
 
@@ -766,6 +923,23 @@ def _item_to_api(
         "eligible_for_courses": eligible_courses,
         "eligible_for_market_database": eligible_market,
     }
+
+
+def _load_reconstructed_lines(path: str | Path) -> list[ReconstructedLine]:
+    payload = json.loads(Path(path).read_text(encoding="utf-8"))
+    lines: list[ReconstructedLine] = []
+    for row in payload.get("lines", []):
+        tokens = [OCRToken.from_dict(item) for item in row.get("tokens", [])]
+        lines.append(
+            ReconstructedLine(
+                line_id=int(row["line_id"]),
+                tokens=tokens,
+                center_y=float(row["center_y"]),
+                y_min=float(row["y_min"]),
+                y_max=float(row["y_max"]),
+            )
+        )
+    return lines
 
 
 def _parsed_receipt_from_dict(data: dict[str, object]) -> ParsedReceipt:

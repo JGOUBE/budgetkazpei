@@ -64,6 +64,12 @@ class ApiSecurityTest(unittest.TestCase):
         self.assertEqual(user.user_id, "local-dev")
         self.assertIsNone(user.access_token)
 
+    def test_disabled_auth_mode_preserves_optional_bearer_token(self) -> None:
+        verifier = SupabaseJwtVerifier(ScannerSettings(auth_mode="disabled"))
+        user = verifier.verify_authorization("Bearer local-user-token")
+        self.assertEqual(user.user_id, "local-dev")
+        self.assertEqual(user.access_token, "local-user-token")
+
     def test_missing_authentication_is_rejected(self) -> None:
         verifier = SupabaseJwtVerifier(
             settings(supabase_jwt_secret="secret")
@@ -187,6 +193,14 @@ class ApiSecurityTest(unittest.TestCase):
         )
         with self.assertRaisesRegex(ScannerApiError, "authentication_invalid"):
             verifier.verify_authorization(f"Bearer {token}")
+
+
+    def test_invalid_parser_mode_is_rejected(self) -> None:
+        with self.assertRaises(ValueError):
+            ScannerSettings(
+                auth_mode="disabled",
+                parser_mode="experimental",
+            ).validate()
 
     def test_disabled_auth_is_rejected_in_production_validation(self) -> None:
         with self.assertRaises(RuntimeError):

@@ -118,7 +118,16 @@ class SupabaseJwtVerifier:
 
     def verify_authorization(self, authorization: str | None) -> AuthenticatedUser:
         if self.settings.auth_mode == "disabled":
-            return AuthenticatedUser(user_id="local-dev", role="service", access_token=None)
+            token = None
+            if authorization:
+                scheme, _, raw_token = authorization.partition(" ")
+                if scheme.lower() == "bearer" and raw_token.strip():
+                    token = raw_token.strip()
+            return AuthenticatedUser(
+                user_id="local-dev",
+                role="service",
+                access_token=token,
+            )
 
         token = self._extract_bearer_token(authorization)
         header = self._read_untrusted_header(token)
