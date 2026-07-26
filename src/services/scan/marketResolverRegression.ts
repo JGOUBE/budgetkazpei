@@ -46,6 +46,12 @@ import {
   buildCandidateReviewUpdatePayload,
   buildMarketProductAliasUpsertPath,
 } from "../../../scripts/review_market_alias_candidates.mjs"
+import {
+  buildAuditSnapshot,
+  buildHistoricalAliasBackfillPlan,
+  runCli as runHistoricalAliasBackfillCli,
+  sanitizeBackfillReport,
+} from "../../../scripts/backfill_market_manual_aliases.mjs"
 
 type RegressionResult = {
   id: string
@@ -1255,6 +1261,147 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
   })
   const mismatchedBarcodeRows = buildEvaluatedCandidateRows(exactStrongArgs, mismatchedBarcodeCollection.candidates)
 
+  const taramaHistoricalBase = {
+    receipt_item_id: "hist-1",
+    user_id: "user-1",
+    raw_label: "TARAMA DEUFS CABIL,IOOG",
+    corrected_label: "Tarama aux oeufs de cabillaud 100 g",
+    normalized_raw_label: "tarama oeufs cabil 100g",
+    normalized_corrected_label: "tarama aux oeufs de cabillaud 100 g",
+    scope_kind: "chain",
+    store_chain_key: "e.leclerc",
+    store_id: null,
+    market_product_id: "product-1",
+    market_canonical_name: "Tarama aux oeufs de cabillaud 100 g",
+    created_at: "2026-07-25T10:00:00.000Z",
+  }
+  const taramaHistoricalRows = [
+    taramaHistoricalBase,
+    {
+      ...taramaHistoricalBase,
+      receipt_item_id: "hist-2",
+      user_id: "user-2",
+      created_at: "2026-07-24T10:00:00.000Z",
+    },
+  ]
+  const uniqueHistoricalRows = [{
+    receipt_item_id: "hist-3",
+    user_id: "user-3",
+    raw_label: "PATE CAMPAGNE DEMOULE GENERIQU",
+    corrected_label: "Pate campagne demoule generique",
+    normalized_raw_label: "pate campagne demoule generiqu",
+    normalized_corrected_label: "pate campagne demoule generique",
+    scope_kind: "chain",
+    store_chain_key: "e.leclerc",
+    store_id: null,
+    market_product_id: "",
+    market_canonical_name: "",
+    created_at: "2026-07-25T11:00:00.000Z",
+  }]
+  const conflictHistoricalRows = [
+    {
+      receipt_item_id: "hist-4",
+      user_id: "user-4",
+      raw_label: "CAM PAY 250G CROISES",
+      corrected_label: "Camembert Pei 250G CROISES",
+      normalized_raw_label: "cam pay 250g croises",
+      normalized_corrected_label: "camembert pei 250g croises",
+      scope_kind: "chain",
+      store_chain_key: "e.leclerc",
+      store_id: null,
+      market_product_id: "",
+      market_canonical_name: "",
+      created_at: "2026-07-25T12:00:00.000Z",
+    },
+    {
+      receipt_item_id: "hist-5",
+      user_id: "user-5",
+      raw_label: "CAM PAY 250G CROISES",
+      corrected_label: "CAMEMBERT PAY 250G CROISES",
+      normalized_raw_label: "cam pay 250g croises",
+      normalized_corrected_label: "camembert pay 250g croises",
+      scope_kind: "chain",
+      store_chain_key: "e.leclerc",
+      store_id: null,
+      market_product_id: "",
+      market_canonical_name: "",
+      created_at: "2026-07-24T12:00:00.000Z",
+    },
+  ]
+  const exactHistoricalAlias = {
+    id: "alias-1",
+    product_id: "product-1",
+    raw_label: "TARAMA DEUFS CABIL,IOOG",
+    corrected_label: "Tarama aux oeufs de cabillaud 100 g",
+    normalized_raw_label: "tarama oeufs cabil 100g",
+    normalized_corrected_label: "tarama aux oeufs de cabillaud 100 g",
+    scope: "chain",
+    store_id: null,
+    store_chain_key: "e.leclerc",
+    source: "historical_manual_correction",
+    status: "active",
+    validation_count: 1,
+    confidence: 0.92,
+    canonical_name: "Tarama aux oeufs de cabillaud 100 g",
+  }
+  const duplicateHistoricalPlan = buildHistoricalAliasBackfillPlan({
+    historicalRows: taramaHistoricalRows,
+    manualAliasRows: [],
+  })
+  const strengthenedHistoricalPlan = buildHistoricalAliasBackfillPlan({
+    historicalRows: taramaHistoricalRows,
+    manualAliasRows: [exactHistoricalAlias],
+  })
+  const idempotentHistoricalPlan = buildHistoricalAliasBackfillPlan({
+    historicalRows: taramaHistoricalRows,
+    manualAliasRows: [{
+      ...exactHistoricalAlias,
+      validation_count: 2,
+      confidence: 0.995,
+    }],
+  })
+  const conflictHistoricalPlan = buildHistoricalAliasBackfillPlan({
+    historicalRows: conflictHistoricalRows,
+    manualAliasRows: [],
+  })
+  const uniqueHistoricalPlan = buildHistoricalAliasBackfillPlan({
+    historicalRows: uniqueHistoricalRows,
+    manualAliasRows: [],
+  })
+  const backfillAudit = buildAuditSnapshot({
+    receiptItemsTotal: 25,
+    correctedNameTotal: 5,
+    historicalRows: [...taramaHistoricalRows, ...uniqueHistoricalRows, ...conflictHistoricalRows],
+    manualAliasRows: [exactHistoricalAlias],
+    marketProductAliasesTotal: 7,
+    externalCandidates: [],
+  })
+  const sanitizedBackfillJson = JSON.stringify(sanitizeBackfillReport({
+    items: duplicateHistoricalPlan.planItems,
+    userId: "hidden-user",
+    receiptItemId: "hidden-item",
+  }))
+  let historicalDryRunApplyCalls = 0
+  const originalConsoleLog = console.log
+  console.log = () => {}
+  try {
+    await runHistoricalAliasBackfillCli(["--dry-run"], {
+      loadHistoricalRows: () => taramaHistoricalRows,
+      loadManualAliasRows: () => [],
+      loadExternalCandidates: () => [],
+      loadReceiptItemsTotal: () => 10,
+      loadCorrectedNameTotal: () => 2,
+      loadMarketProductAliasesTotal: () => 5,
+      applyPlanItemsImpl: async () => {
+        historicalDryRunApplyCalls += 1
+        return []
+      },
+      writeReportImpl: () => {},
+    })
+  } finally {
+    console.log = originalConsoleLog
+  }
+
   return [
     assertEqual(
       "market-resolver-canonical-replacement-preserves-ocr-and-financial-fields",
@@ -1966,6 +2113,93 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
         unchanged: false,
         empty: false,
         needsReview: false,
+      },
+    ),
+    assertEqual(
+      "historical-backfill-unique-correction-is-created",
+      {
+        action: uniqueHistoricalPlan.planItems[0]?.action ?? null,
+        occurrences: uniqueHistoricalPlan.planItems[0]?.occurrences ?? null,
+        raw_label: uniqueHistoricalPlan.planItems[0]?.raw_label ?? null,
+      },
+      {
+        action: "created",
+        occurrences: 1,
+        raw_label: "PATE CAMPAGNE DEMOULE GENERIQU",
+      },
+    ),
+    assertEqual(
+      "historical-backfill-repeated-same-raw-label-collapses-to-one-create",
+      {
+        total_pairs: duplicateHistoricalPlan.summary.total_pairs,
+        action: duplicateHistoricalPlan.planItems[0]?.action ?? null,
+        occurrences: duplicateHistoricalPlan.planItems[0]?.occurrences ?? null,
+      },
+      {
+        total_pairs: 1,
+        action: "created",
+        occurrences: 2,
+      },
+    ),
+    assertEqual(
+      "historical-backfill-existing-alias-is-strengthened-before-idempotent-rerun",
+      {
+        first_action: strengthenedHistoricalPlan.planItems[0]?.action ?? null,
+        second_action: idempotentHistoricalPlan.planItems[0]?.action ?? null,
+        second_reason: idempotentHistoricalPlan.planItems[0]?.reason ?? null,
+      },
+      {
+        first_action: "strengthened",
+        second_action: "skipped",
+        second_reason: "alias_already_covers_historical_count",
+      },
+    ),
+    assertEqual(
+      "historical-backfill-conflicting-corrections-stay-in-review",
+      {
+        action: conflictHistoricalPlan.planItems[0]?.action ?? null,
+        reason: conflictHistoricalPlan.planItems[0]?.reason ?? null,
+        variants: conflictHistoricalPlan.planItems[0]?.variants?.length ?? 0,
+      },
+      {
+        action: "conflict",
+        reason: "multiple_historical_corrections",
+        variants: 2,
+      },
+    ),
+    assertEqual(
+      "historical-backfill-report-excludes-personal-data-and-price-mutations",
+      {
+        has_user_id: sanitizedBackfillJson.includes("user_id") || sanitizedBackfillJson.includes("userId"),
+        has_receipt_item_id: sanitizedBackfillJson.includes("receipt_item_id") || sanitizedBackfillJson.includes("receiptItemId"),
+        has_total_price: sanitizedBackfillJson.includes("total_price"),
+        has_observed_price: sanitizedBackfillJson.includes("observed_price"),
+      },
+      {
+        has_user_id: false,
+        has_receipt_item_id: false,
+        has_total_price: false,
+        has_observed_price: false,
+      },
+    ),
+    assertEqual(
+      "historical-backfill-dry-run-never-calls-apply",
+      historicalDryRunApplyCalls,
+      0,
+    ),
+    assertEqual(
+      "historical-backfill-audit-counts-manual-coverage-without-external-candidates",
+      backfillAudit,
+      {
+        receipt_items_total: 25,
+        receipt_items_corrected_name_non_null: 5,
+        distinct_raw_to_corrected_pairs: 4,
+        market_manual_product_aliases_total: 1,
+        market_product_aliases_total: 7,
+        market_external_product_candidates_total: 0,
+        market_external_product_candidates_by_status: {},
+        corrected_pairs_without_active_manual_alias: 3,
+        raw_labels_with_conflicting_corrections: 1,
       },
     ),
     assertEqual(
