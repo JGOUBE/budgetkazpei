@@ -69,6 +69,7 @@ class PublicationTests(unittest.TestCase):
         self.assertEqual(len(repositories.aliases), 0)
         self.assertEqual(len(repositories.promotions), 0)
         self.assertEqual(len(repositories.good_deals), 1)
+        self.assertEqual(repositories.good_deals[published_id]["verification_status"], "published")
 
     def test_event_candidate_keeps_event_deal_type(self):
         repositories = InMemoryRepositories()
@@ -97,6 +98,7 @@ class PublicationTests(unittest.TestCase):
 
         self.assertEqual(good_deal["deal_type"], "event")
         self.assertEqual(good_deal["content_kind"], "event")
+        self.assertEqual(good_deal["verification_status"], "published")
 
     def test_permanent_leisure_candidate_stays_open_without_next_check(self):
         repositories = InMemoryRepositories()
@@ -113,7 +115,6 @@ class PublicationTests(unittest.TestCase):
             organizer_name="Ville du Port",
             commune="Le Port",
             category="leisure",
-            is_free=True,
             status="approved",
         )
         repositories.save_candidate("source:1", "snapshot:1", candidate)
@@ -122,8 +123,73 @@ class PublicationTests(unittest.TestCase):
         good_deal = repositories.good_deals[published_id]
 
         self.assertEqual(good_deal["availability_status"], "open")
-        self.assertEqual(good_deal["deal_type"], "free_activity")
+        self.assertEqual(good_deal["deal_type"], "local_service")
         self.assertIsNone(good_deal["next_check_at"])
+        self.assertEqual(good_deal["content_kind"], "permanent_leisure")
+
+    def test_product_promotion_candidate_creates_catalog_and_promotion(self):
+        repositories = InMemoryRepositories()
+        publisher = PublisherService(repositories)
+        candidate = Candidate(
+            source_slug="run-market-reunion-home",
+            external_key="promo:run-market:cafe",
+            content_family="shopping",
+            content_kind="promotion",
+            title="Cafe 250 g a prix reduit",
+            description="Offre valable cette semaine",
+            source_url="https://www.run-market.re/catalogue/cafe",
+            scope_type="local",
+            business_name="Run Market Reunion",
+            retailer_slug="run-market-reunion",
+            product_name="Cafe moulu 250 g",
+            normalized_product_name="cafe moulu 250 g",
+            brand="Maison",
+            size_label="250g",
+            category="shopping",
+            promo_price=3.49,
+            original_price=4.59,
+            status="approved",
+        )
+        repositories.save_candidate("source:1", "snapshot:1", candidate)
+
+        published_id = publisher.publish_candidate(candidate)
+
+        self.assertIsNotNone(published_id)
+        self.assertEqual(len(repositories.catalogs), 1)
+        self.assertEqual(len(repositories.products), 1)
+        self.assertEqual(len(repositories.promotions), 1)
+        self.assertEqual(repositories.good_deals[published_id]["scope_type"], "local")
+        self.assertEqual(repositories.good_deals[published_id]["deal_type"], "promotion")
+
+    def test_invalid_scope_type_is_rejected_without_partial_publication(self):
+        repositories = InMemoryRepositories()
+        publisher = PublisherService(repositories)
+        candidate = Candidate(
+            source_slug="carrefour-reunion-catalogues",
+            external_key="catalog:invalid-scope",
+            content_family="shopping",
+            content_kind="promotion",
+            title="Catalogue invalide",
+            description="Scope invalide",
+            source_url="https://www.carrefour-reunion.com/catalogues/carrefour/invalid",
+            scope_type="store",
+            business_name="Carrefour Reunion",
+            retailer_slug="carrefour-reunion",
+            tags=["catalogue"],
+            status="approved",
+        )
+        repositories.save_candidate("source:1", "snapshot:1", candidate)
+
+        with self.assertRaisesRegex(ValueError, "invalid scope_type for good deal publication: store"):
+            publisher.publish_candidate(candidate)
+
+        self.assertEqual(candidate.status, "approved")
+        self.assertIsNone(candidate.published_good_deal_id)
+        self.assertEqual(len(repositories.businesses), 0)
+        self.assertEqual(len(repositories.catalogs), 0)
+        self.assertEqual(len(repositories.products), 0)
+        self.assertEqual(len(repositories.promotions), 0)
+        self.assertEqual(len(repositories.good_deals), 0)
 
     def test_already_published_candidate_returns_existing_id(self):
         repositories = InMemoryRepositories()

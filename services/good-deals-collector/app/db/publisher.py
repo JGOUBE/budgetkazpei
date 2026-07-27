@@ -7,6 +7,10 @@ from app.services.normalization import normalize_text
 
 from .repositories import RepositoryProtocol
 
+ALLOWED_SCOPE_TYPES = {"local", "commune", "nearby", "micro_region", "island", "online"}
+ALLOWED_CONTENT_KINDS = {"event", "permanent_leisure", "other", "promotion", "observed_price"}
+ALLOWED_DEAL_TYPES = {"event", "free_activity", "promotion", "commercial_offer", "local_service", "observed_price"}
+
 
 class PublisherService:
     def __init__(self, repositories: RepositoryProtocol) -> None:
@@ -17,6 +21,8 @@ class PublisherService:
             return None
         if candidate.status == "published" and candidate.published_good_deal_id:
             return candidate.published_good_deal_id
+
+        self._validate_candidate(candidate)
 
         now = datetime.now(timezone.utc).isoformat()
         business_id = self.repositories.upsert_business(
@@ -189,3 +195,15 @@ class PublisherService:
             and not cls._is_catalog_candidate(candidate)
             and bool(candidate.product_name or candidate.normalized_product_name)
         )
+
+    @classmethod
+    def _validate_candidate(cls, candidate: Candidate) -> None:
+        if candidate.scope_type not in ALLOWED_SCOPE_TYPES:
+            raise ValueError(f"invalid scope_type for good deal publication: {candidate.scope_type}")
+
+        if candidate.content_kind not in ALLOWED_CONTENT_KINDS:
+            raise ValueError(f"invalid content_kind for good deal publication: {candidate.content_kind}")
+
+        deal_type = cls._resolve_deal_type(candidate)
+        if deal_type not in ALLOWED_DEAL_TYPES:
+            raise ValueError(f"invalid deal_type for good deal publication: {deal_type}")
