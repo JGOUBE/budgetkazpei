@@ -1217,12 +1217,21 @@ function buildApplyLibraryRpcPayload(report = {}) {
     .filter(item => item.recommended_action === "library")
     .filter(item => APPLY_LIBRARY_ALLOWED_CLASSIFICATIONS.has(item.classification))
     .filter(item => item.proposed_alias && typeof item.proposed_alias === "object")
-    .map(item => ({
-      recommended_action: item.recommended_action,
-      classification: item.classification,
-      proposed_new_product: item.proposed_new_product || null,
-      proposed_alias: item.proposed_alias,
-    }))
+    .map(item => {
+      const rpcItem = {
+        recommended_action: item.recommended_action,
+        classification: item.classification,
+        proposed_alias: item.proposed_alias,
+      }
+      if (
+        item.proposed_new_product
+        && typeof item.proposed_new_product === "object"
+        && !Array.isArray(item.proposed_new_product)
+      ) {
+        rpcItem.proposed_new_product = item.proposed_new_product
+      }
+      return rpcItem
+    })
 }
 
 function normalizeApplyLibraryResult(result = {}) {

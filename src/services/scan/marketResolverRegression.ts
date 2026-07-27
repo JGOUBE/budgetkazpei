@@ -1590,6 +1590,59 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
     ],
   }
   const atomicApplyPayload = buildApplyLibraryRpcPayload(atomicApplyReport)
+  const excludedAtomicApplyPayload = buildApplyLibraryRpcPayload({
+    items: [
+      {
+        recommended_action: "library",
+        classification: "ambiguous",
+        proposed_new_product: null,
+        proposed_alias: {
+          raw_label: "AMBIGUOUS",
+        },
+      },
+      {
+        recommended_action: "library",
+        classification: "rejected",
+        proposed_new_product: null,
+        proposed_alias: {
+          raw_label: "REJECTED",
+        },
+      },
+      {
+        recommended_action: "library",
+        classification: "not_found",
+        proposed_new_product: null,
+        proposed_alias: {
+          raw_label: "NOT_FOUND",
+        },
+      },
+      {
+        recommended_action: "library",
+        classification: "source_unavailable",
+        proposed_new_product: null,
+        proposed_alias: {
+          raw_label: "SOURCE_UNAVAILABLE",
+        },
+      },
+    ],
+  } as any)
+  const missingAliasAtomicApplyPayload = buildApplyLibraryRpcPayload({
+    items: [
+      {
+        recommended_action: "library",
+        classification: "exact_strong",
+        proposed_new_product: {
+          canonical_name: "Produit sans alias",
+        },
+      },
+      {
+        recommended_action: "library",
+        classification: "exact_strong",
+        proposed_new_product: null,
+        proposed_alias: null,
+      },
+    ],
+  } as any)
   const normalizedApplyLibraryResult = normalizeApplyLibraryResult({
     products_created: null,
     products_reused: [{ id: "reuse-1" }],
@@ -3599,7 +3652,7 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
       },
     ),
     assertEqual(
-      "market-alias-atomic-apply-script-builds-four-e-leclerc-rpc-items-and-excludes-ambiguous",
+      "market-alias-atomic-apply-script-builds-four-e-leclerc-rpc-items",
       {
         count: atomicApplyPayload.length,
         labels: atomicApplyPayload.map(item => item.proposed_alias.raw_label),
@@ -3628,20 +3681,77 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
       },
     ),
     assertEqual(
-      "market-alias-atomic-apply-script-keeps-partial-state-products-addressable",
+      "market-alias-atomic-apply-script-omits-null-proposed-new-product-for-reused-products",
       {
-        cilaos_product_key: atomicApplyPayload[0]?.proposed_new_product?.product_key ?? null,
-        cilaos_alias_product_id: atomicApplyPayload[0]?.proposed_alias?.product_id ?? null,
+        assortiment_has_key: Object.prototype.hasOwnProperty.call(atomicApplyPayload[1] || {}, "proposed_new_product"),
+        camembert_has_key: Object.prototype.hasOwnProperty.call(atomicApplyPayload[2] || {}, "proposed_new_product"),
         assortiment_product_id: atomicApplyPayload[1]?.proposed_alias?.product_id ?? null,
+        camembert_product_id: atomicApplyPayload[2]?.proposed_alias?.product_id ?? null,
+      },
+      {
+        assortiment_has_key: false,
+        camembert_has_key: false,
+        assortiment_product_id: "11111111-1111-4111-8111-111111111111",
+        camembert_product_id: "22222222-2222-4222-8222-222222222222",
+      },
+    ),
+    assertEqual(
+      "market-alias-atomic-apply-script-keeps-proposed-new-product-for-new-products",
+      {
+        cilaos_has_key: Object.prototype.hasOwnProperty.call(atomicApplyPayload[0] || {}, "proposed_new_product"),
+        cilaos_product_key: atomicApplyPayload[0]?.proposed_new_product?.product_key ?? null,
+        lentilles_has_key: Object.prototype.hasOwnProperty.call(atomicApplyPayload[3] || {}, "proposed_new_product"),
+        cilaos_alias_product_id: atomicApplyPayload[0]?.proposed_alias?.product_id ?? null,
         lentilles_product_key: atomicApplyPayload[3]?.proposed_new_product?.product_key ?? null,
         lentilles_alias_product_id: atomicApplyPayload[3]?.proposed_alias?.product_id ?? null,
       },
       {
+        cilaos_has_key: true,
         cilaos_product_key: "eau cilaos pack 6 x 1 25 l::cilaos::6 x 1 25 l",
+        lentilles_has_key: true,
         cilaos_alias_product_id: null,
-        assortiment_product_id: "11111111-1111-4111-8111-111111111111",
         lentilles_product_key: "lentilles cuisinees a la graisse d oie 400 g::notre jardin::400 g",
         lentilles_alias_product_id: null,
+      },
+    ),
+    assertEqual(
+      "market-alias-atomic-apply-script-cleans-legacy-cache-null-product-payloads",
+      {
+        payload_keys: atomicApplyPayload.map(item => Object.keys(item).sort()),
+        reused_entries_without_key: atomicApplyPayload
+          .filter(item => item.proposed_alias.product_id)
+          .every(item => !Object.prototype.hasOwnProperty.call(item, "proposed_new_product")),
+      },
+      {
+        payload_keys: [
+          ["classification", "proposed_alias", "proposed_new_product", "recommended_action"],
+          ["classification", "proposed_alias", "recommended_action"],
+          ["classification", "proposed_alias", "recommended_action"],
+          ["classification", "proposed_alias", "proposed_new_product", "recommended_action"],
+        ],
+        reused_entries_without_key: true,
+      },
+    ),
+    assertEqual(
+      "market-alias-atomic-apply-script-excludes-non-library-classifications-before-rpc",
+      {
+        count: excludedAtomicApplyPayload.length,
+        labels: excludedAtomicApplyPayload.map(item => item.proposed_alias?.raw_label ?? null),
+      },
+      {
+        count: 0,
+        labels: [],
+      },
+    ),
+    assertEqual(
+      "market-alias-atomic-apply-script-excludes-missing-proposed-alias-before-rpc",
+      {
+        count: missingAliasAtomicApplyPayload.length,
+        payload: missingAliasAtomicApplyPayload,
+      },
+      {
+        count: 0,
+        payload: [],
       },
     ),
     assertEqual(
@@ -3651,6 +3761,8 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
         url: applyLibraryRpcCalls[0]?.url ?? null,
         body_key: Object.keys(applyLibraryRpcCalls[0]?.body || {}),
         transmitted_labels: (applyLibraryRpcCalls[0]?.body?.p_items || []).map((item: any) => item.proposed_alias.raw_label),
+        transmitted_product_payload_presence: (applyLibraryRpcCalls[0]?.body?.p_items || []).map((item: any) =>
+          Object.prototype.hasOwnProperty.call(item, "proposed_new_product")),
       },
       {
         call_count: 1,
@@ -3662,6 +3774,7 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
           "Camembert Pei 250G CROISES",
           "LENT ILE GRA OIE NOTRE JARDEN",
         ],
+        transmitted_product_payload_presence: [true, false, false, true],
       },
     ),
     assertEqual(
