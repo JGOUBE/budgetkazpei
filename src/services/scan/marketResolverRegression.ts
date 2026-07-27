@@ -293,6 +293,8 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
     shouldLearnManualAlias,
   } = __receiptServiceTestUtils
   const {
+    applyLibraryPlan,
+    buildApplyLibraryRpcPayload,
     buildDatabaseSelectionSql,
     buildCuratedProofAuditEntries,
     buildCuratedProofCandidates,
@@ -305,6 +307,7 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
     ensureSafeReportValue,
     findReusableProduct,
     inferAliasScope,
+    normalizeApplyLibraryResult,
     normalizeInputBatchRow,
     partitionCoverageRows,
     summarizeBatchResults,
@@ -1436,6 +1439,198 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
     "supabase/migrations/202607260002_market_product_alias_scoped_library.sql",
     "utf8",
   )
+  const atomicApplyMigrationSql = fs.readFileSync(
+    "supabase/migrations/202607270004_market_alias_library_atomic_apply.sql",
+    "utf8",
+  )
+  const atomicApplyReport = {
+    items: [
+      {
+        recommended_action: "library",
+        classification: "active_library_ready",
+        proposed_new_product: {
+          canonical_name: "Eau Cilaos pack 6 x 1,25 L",
+          normalized_name: "eau cilaos pack 6 x 1 25 l",
+          brand: "Cilaos",
+          normalized_brand: "cilaos",
+          category: "boissons",
+          package_format: "6 x 1,25 l",
+          barcode: null,
+          product_key: "eau cilaos pack 6 x 1 25 l::cilaos::6 x 1 25 l",
+        },
+        proposed_alias: {
+          product_id: null,
+          raw_label: "EAU CILAOS PACK 1L.25 X6",
+          normalized_raw_label: "eau cilaos pack 1l 25 x6",
+          source: "external_library:curated_web_proof",
+          confidence: 0.9912,
+          scope: "chain",
+          store_id: null,
+          store_chain_key: "e leclerc",
+          status: "active",
+          evidence: {
+            candidate_canonical_name: "Eau Cilaos pack 6 x 1,25 L",
+            source_name: "curated_web_proof",
+          },
+        },
+      },
+      {
+        recommended_action: "library",
+        classification: "active_library_ready",
+        proposed_new_product: null,
+        proposed_alias: {
+          product_id: "11111111-1111-4111-8111-111111111111",
+          raw_label: "Assortiment FRAISE BANANES 25OG",
+          normalized_raw_label: "assortiment fraise bananes 25og",
+          source: "derived_from_manual_alias_family",
+          confidence: 0.9444,
+          scope: "chain",
+          store_id: null,
+          store_chain_key: "e leclerc",
+          status: "active",
+          evidence: {
+            candidate_canonical_name: "Assortiment fraise-banane 250 g",
+            source_name: "derived_from_manual_alias_family",
+          },
+        },
+      },
+      {
+        recommended_action: "library",
+        classification: "exact_strong",
+        proposed_new_product: null,
+        proposed_alias: {
+          product_id: "22222222-2222-4222-8222-222222222222",
+          raw_label: "Camembert Pei 250G CROISES",
+          normalized_raw_label: "camembert pei 250g croises",
+          source: "external_library:official_product_page",
+          confidence: 0.9721,
+          scope: "chain",
+          store_id: null,
+          store_chain_key: "e leclerc",
+          status: "active",
+          evidence: {
+            candidate_canonical_name: "Camembert Pei 250 g Croises",
+            source_name: "official_product_page",
+          },
+        },
+      },
+      {
+        recommended_action: "library",
+        classification: "strong_without_barcode",
+        proposed_new_product: {
+          canonical_name: "Lentilles cuisinees a la graisse d'oie 400 g",
+          normalized_name: "lentilles cuisinees a la graisse d oie 400 g",
+          brand: "Notre Jardin",
+          normalized_brand: "notre jardin",
+          category: "epicerie",
+          package_format: "400 g",
+          barcode: null,
+          product_key: "lentilles cuisinees a la graisse d oie 400 g::notre jardin::400 g",
+        },
+        proposed_alias: {
+          product_id: null,
+          raw_label: "LENT ILE GRA OIE NOTRE JARDEN",
+          normalized_raw_label: "lent ile gra oie notre jarden",
+          source: "external_library:curated_web_proof",
+          confidence: 0.9567,
+          scope: "chain",
+          store_id: null,
+          store_chain_key: "e leclerc",
+          status: "active",
+          evidence: {
+            candidate_canonical_name: "Lentilles cuisinees a la graisse d'oie 400 g",
+            source_name: "curated_web_proof",
+          },
+        },
+      },
+      {
+        recommended_action: "library",
+        classification: "ambiguous",
+        proposed_new_product: null,
+        proposed_alias: {
+          product_id: "33333333-3333-4333-8333-333333333333",
+          raw_label: "NEVER SENT AMBIGUOUS",
+          normalized_raw_label: "never sent ambiguous",
+          source: "external_library:curated_web_proof",
+          confidence: 0.8,
+          scope: "chain",
+          store_id: null,
+          store_chain_key: "e leclerc",
+          status: "active",
+          evidence: {
+            candidate_canonical_name: "Ambiguous Product",
+            source_name: "curated_web_proof",
+          },
+        },
+      },
+      {
+        recommended_action: "review",
+        classification: "source_unavailable",
+        proposed_new_product: null,
+        proposed_alias: {
+          product_id: "44444444-4444-4444-8444-444444444444",
+          raw_label: "NEVER SENT REVIEW",
+          normalized_raw_label: "never sent review",
+          source: "external_library:curated_web_proof",
+          confidence: 0.7,
+          scope: "chain",
+          store_id: null,
+          store_chain_key: "e leclerc",
+          status: "active",
+          evidence: {
+            candidate_canonical_name: "Review Product",
+            source_name: "curated_web_proof",
+          },
+        },
+      },
+    ],
+  }
+  const atomicApplyPayload = buildApplyLibraryRpcPayload(atomicApplyReport)
+  const normalizedApplyLibraryResult = normalizeApplyLibraryResult({
+    products_created: null,
+    products_reused: [{ id: "reuse-1" }],
+    aliases_created: { invalid: true },
+    aliases_updated: undefined,
+    skipped: "invalid",
+    errors: [{ code: "noop" }],
+  } as any)
+  const applyLibraryRpcCalls: Array<{ url: string, body: any }> = []
+  const applyLibraryRpcResult = await applyLibraryPlan(atomicApplyReport, {}, {
+    baseUrl: "https://example.test",
+    serviceRoleKey: "service-role-test-key",
+    fetchImpl: async (url: any, init: any) => {
+      applyLibraryRpcCalls.push({
+        url: String(url),
+        body: JSON.parse(String(init?.body || "{}")),
+      })
+      return createJsonResponse(200, {
+        products_created: [{ id: "created-1" }],
+        products_reused: [{ id: "reused-1" }],
+        aliases_created: [{ normalized_raw_label: "eau cilaos pack 1l 25 x6" }],
+        aliases_updated: [{ normalized_raw_label: "camembert pei 250g croises" }],
+        skipped: [{ raw_label: "EAU CILAOS PACK 1L.25 X6", reason: "duplicate_scoped_alias_in_batch" }],
+        errors: [],
+      }) as any
+    },
+  })
+  let emptyApplyLibraryFetches = 0
+  const emptyApplyLibraryResult = await applyLibraryPlan({
+    items: [
+      {
+        recommended_action: "review",
+        classification: "ambiguous",
+        proposed_new_product: null,
+        proposed_alias: null,
+      },
+    ],
+  } as any, {}, {
+    baseUrl: "https://example.test",
+    serviceRoleKey: "service-role-test-key",
+    fetchImpl: async () => {
+      emptyApplyLibraryFetches += 1
+      return createJsonResponse(200, {}) as any
+    },
+  })
   const collectedMissingCandidates = await collectExternalCandidates(externalArgs, {
     fetchImpl: async (url: any) => {
       const asString = String(url)
@@ -3330,6 +3525,182 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
         backfills_status_active: true,
         default_scope_global: true,
         default_status_active: true,
+      },
+    ),
+    assertEqual(
+      "market-alias-atomic-apply-migration-defines-secure-service-role-rpc",
+      {
+        creates_rpc: atomicApplyMigrationSql.includes("create or replace function public.market_apply_scoped_alias_library(p_items jsonb)"),
+        security_definer: atomicApplyMigrationSql.includes("security definer"),
+        fixed_search_path: atomicApplyMigrationSql.includes("set search_path = public, extensions"),
+        owner_postgres: atomicApplyMigrationSql.includes("alter function public.market_apply_scoped_alias_library(jsonb) owner to postgres"),
+        revokes_public: atomicApplyMigrationSql.includes("revoke all on function public.market_apply_scoped_alias_library(jsonb) from public"),
+        revokes_anon: atomicApplyMigrationSql.includes("revoke execute on function public.market_apply_scoped_alias_library(jsonb) from anon"),
+        revokes_authenticated: atomicApplyMigrationSql.includes("revoke execute on function public.market_apply_scoped_alias_library(jsonb) from authenticated"),
+        grants_service_role: atomicApplyMigrationSql.includes("grant execute on function public.market_apply_scoped_alias_library(jsonb) to service_role"),
+      },
+      {
+        creates_rpc: true,
+        security_definer: true,
+        fixed_search_path: true,
+        owner_postgres: true,
+        revokes_public: true,
+        revokes_anon: true,
+        revokes_authenticated: true,
+        grants_service_role: true,
+      },
+    ),
+    assertEqual(
+      "market-alias-atomic-apply-migration-validates-library-payload-before-write",
+      {
+        array_required: atomicApplyMigrationSql.includes("p_items must be a jsonb array"),
+        alias_object_required: atomicApplyMigrationSql.includes("each item must include proposed_alias as an object"),
+        library_only: atomicApplyMigrationSql.includes("recommended_action must be library"),
+        classification_guard: atomicApplyMigrationSql.includes("classification is not eligible for apply-library"),
+        active_status_guard: atomicApplyMigrationSql.includes("status must be active for apply-library"),
+        scope_guard: atomicApplyMigrationSql.includes("scope payload is incoherent"),
+        normalized_label_guard: atomicApplyMigrationSql.includes("normalized_raw_label must match market_normalize_text(raw_label)"),
+        product_guard: atomicApplyMigrationSql.includes("each alias must reference an existing product_id or a proposed_new_product"),
+      },
+      {
+        array_required: true,
+        alias_object_required: true,
+        library_only: true,
+        classification_guard: true,
+        active_status_guard: true,
+        scope_guard: true,
+        normalized_label_guard: true,
+        product_guard: true,
+      },
+    ),
+    assertEqual(
+      "market-alias-atomic-apply-migration-reuses-products-and-targets-real-active-scope-uniqueness",
+      {
+        stages_items: atomicApplyMigrationSql.includes("create temp table pg_temp.market_apply_items"),
+        stages_products: atomicApplyMigrationSql.includes("create temp table pg_temp.market_apply_products"),
+        reuses_product_key: atomicApplyMigrationSql.includes("where products.product_key = payloads.product_key"),
+        inserts_missing_products_only: atomicApplyMigrationSql.includes("on conflict (product_key) do nothing"),
+        checks_existing_alias_target: atomicApplyMigrationSql.includes("active scoped alias already points to another product"),
+        uses_partial_unique_index_target: atomicApplyMigrationSql.includes("on conflict (\n    normalized_raw_label,\n    scope,\n    (coalesce(store_id, '00000000-0000-0000-0000-000000000000'::uuid)),\n    (coalesce(store_chain_key, ''))\n  )\n  where status = 'active'"),
+        returns_result_buckets: atomicApplyMigrationSql.includes("'products_created'") && atomicApplyMigrationSql.includes("'aliases_updated'") && atomicApplyMigrationSql.includes("'errors'"),
+      },
+      {
+        stages_items: true,
+        stages_products: true,
+        reuses_product_key: true,
+        inserts_missing_products_only: true,
+        checks_existing_alias_target: true,
+        uses_partial_unique_index_target: true,
+        returns_result_buckets: true,
+      },
+    ),
+    assertEqual(
+      "market-alias-atomic-apply-script-builds-four-e-leclerc-rpc-items-and-excludes-ambiguous",
+      {
+        count: atomicApplyPayload.length,
+        labels: atomicApplyPayload.map(item => item.proposed_alias.raw_label),
+        scopes: atomicApplyPayload.map(item => item.proposed_alias.scope),
+        chain_keys: atomicApplyPayload.map(item => item.proposed_alias.store_chain_key),
+        actions: atomicApplyPayload.map(item => item.recommended_action),
+        classifications: atomicApplyPayload.map(item => item.classification),
+      },
+      {
+        count: 4,
+        labels: [
+          "EAU CILAOS PACK 1L.25 X6",
+          "Assortiment FRAISE BANANES 25OG",
+          "Camembert Pei 250G CROISES",
+          "LENT ILE GRA OIE NOTRE JARDEN",
+        ],
+        scopes: ["chain", "chain", "chain", "chain"],
+        chain_keys: ["e leclerc", "e leclerc", "e leclerc", "e leclerc"],
+        actions: ["library", "library", "library", "library"],
+        classifications: [
+          "active_library_ready",
+          "active_library_ready",
+          "exact_strong",
+          "strong_without_barcode",
+        ],
+      },
+    ),
+    assertEqual(
+      "market-alias-atomic-apply-script-keeps-partial-state-products-addressable",
+      {
+        cilaos_product_key: atomicApplyPayload[0]?.proposed_new_product?.product_key ?? null,
+        cilaos_alias_product_id: atomicApplyPayload[0]?.proposed_alias?.product_id ?? null,
+        assortiment_product_id: atomicApplyPayload[1]?.proposed_alias?.product_id ?? null,
+        lentilles_product_key: atomicApplyPayload[3]?.proposed_new_product?.product_key ?? null,
+        lentilles_alias_product_id: atomicApplyPayload[3]?.proposed_alias?.product_id ?? null,
+      },
+      {
+        cilaos_product_key: "eau cilaos pack 6 x 1 25 l::cilaos::6 x 1 25 l",
+        cilaos_alias_product_id: null,
+        assortiment_product_id: "11111111-1111-4111-8111-111111111111",
+        lentilles_product_key: "lentilles cuisinees a la graisse d oie 400 g::notre jardin::400 g",
+        lentilles_alias_product_id: null,
+      },
+    ),
+    assertEqual(
+      "market-alias-atomic-apply-script-posts-a-single-rpc-call",
+      {
+        call_count: applyLibraryRpcCalls.length,
+        url: applyLibraryRpcCalls[0]?.url ?? null,
+        body_key: Object.keys(applyLibraryRpcCalls[0]?.body || {}),
+        transmitted_labels: (applyLibraryRpcCalls[0]?.body?.p_items || []).map((item: any) => item.proposed_alias.raw_label),
+      },
+      {
+        call_count: 1,
+        url: "https://example.test/rest/v1/rpc/market_apply_scoped_alias_library",
+        body_key: ["p_items"],
+        transmitted_labels: [
+          "EAU CILAOS PACK 1L.25 X6",
+          "Assortiment FRAISE BANANES 25OG",
+          "Camembert Pei 250G CROISES",
+          "LENT ILE GRA OIE NOTRE JARDEN",
+        ],
+      },
+    ),
+    assertEqual(
+      "market-alias-atomic-apply-script-normalizes-rpc-result-buckets",
+      {
+        normalized: normalizedApplyLibraryResult,
+        live_result: applyLibraryRpcResult,
+      },
+      {
+        normalized: {
+          products_created: [],
+          products_reused: [{ id: "reuse-1" }],
+          aliases_created: [],
+          aliases_updated: [],
+          skipped: [],
+          errors: [{ code: "noop" }],
+        },
+        live_result: {
+          products_created: [{ id: "created-1" }],
+          products_reused: [{ id: "reused-1" }],
+          aliases_created: [{ normalized_raw_label: "eau cilaos pack 1l 25 x6" }],
+          aliases_updated: [{ normalized_raw_label: "camembert pei 250g croises" }],
+          skipped: [{ raw_label: "EAU CILAOS PACK 1L.25 X6", reason: "duplicate_scoped_alias_in_batch" }],
+          errors: [],
+        },
+      },
+    ),
+    assertEqual(
+      "market-alias-atomic-apply-script-skips-rpc-when-no-library-items-remain",
+      {
+        fetches: emptyApplyLibraryFetches,
+        result: emptyApplyLibraryResult,
+      },
+      {
+        fetches: 0,
+        result: {
+          products_created: [],
+          products_reused: [],
+          aliases_created: [],
+          aliases_updated: [],
+          skipped: [],
+          errors: [],
+        },
       },
     ),
   ]

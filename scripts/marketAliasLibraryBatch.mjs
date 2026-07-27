@@ -1,6 +1,6 @@
 import fs from "node:fs"
 import path from "node:path"
-import { randomUUID, createHash } from "node:crypto"
+import { createHash } from "node:crypto"
 import { spawnSync } from "node:child_process"
 import { fileURLToPath } from "node:url"
 import {
@@ -20,6 +20,11 @@ const DEFAULT_DELAY_MS = 250
 const DEFAULT_MAX_RETRIES = 3
 const DEFAULT_SUB_BATCH_SIZE = 10
 const BATCH_CACHE_VERSION = 4
+const APPLY_LIBRARY_ALLOWED_CLASSIFICATIONS = new Set([
+  "exact_strong",
+  "strong_without_barcode",
+  "active_library_ready",
+])
 
 const CHAIN_PRIORITY = new Map([
   ["e leclerc", 1],
@@ -1196,6 +1201,41 @@ function buildLibraryAliasPayload(item = {}, candidate = {}, reusableProduct = n
   }
 }
 
+function emptyApplyLibraryResult() {
+  return {
+    products_created: [],
+    products_reused: [],
+    aliases_created: [],
+    aliases_updated: [],
+    skipped: [],
+    errors: [],
+  }
+}
+
+function buildApplyLibraryRpcPayload(report = {}) {
+  return (report.items || [])
+    .filter(item => item.recommended_action === "library")
+    .filter(item => APPLY_LIBRARY_ALLOWED_CLASSIFICATIONS.has(item.classification))
+    .filter(item => item.proposed_alias && typeof item.proposed_alias === "object")
+    .map(item => ({
+      recommended_action: item.recommended_action,
+      classification: item.classification,
+      proposed_new_product: item.proposed_new_product || null,
+      proposed_alias: item.proposed_alias,
+    }))
+}
+
+function normalizeApplyLibraryResult(result = {}) {
+  return {
+    products_created: Array.isArray(result?.products_created) ? result.products_created : [],
+    products_reused: Array.isArray(result?.products_reused) ? result.products_reused : [],
+    aliases_created: Array.isArray(result?.aliases_created) ? result.aliases_created : [],
+    aliases_updated: Array.isArray(result?.aliases_updated) ? result.aliases_updated : [],
+    skipped: Array.isArray(result?.skipped) ? result.skipped : [],
+    errors: Array.isArray(result?.errors) ? result.errors : [],
+  }
+}
+
 function buildStagingPayload(item = {}, candidate = {}) {
   return {
     source_type: cleanText(candidate.source_type || "structured_external", 40),
@@ -1613,53 +1653,19 @@ function chunkItems(items = [], chunkSize = DEFAULT_SUB_BATCH_SIZE) {
 }
 
 async function applyLibraryPlan(report, args, dependencies = {}) {
-  const libraryItems = (report.items || []).filter(item => item.recommended_action === "library")
-  if (!libraryItems.length) {
-    return { products_created: [], aliases_created: [] }
+  const payload = buildApplyLibraryRpcPayload(report)
+  if (!payload.length) {
+    return emptyApplyLibraryResult()
   }
 
-  const productsToCreate = libraryItems
-    .map(item => item.proposed_new_product)
-    .filter(Boolean)
-
-  const aliasesToCreate = libraryItems
-    .map(item => item.proposed_alias)
-    .filter(Boolean)
-
-  const createdProducts = []
-  for (const product of productsToCreate) {
-    const payload = {
-      id: product.id || randomUUID(),
-      ...product,
-    }
-    const rows = await fetchJsonRest("market_products?on_conflict=product_key", {
-      method: "POST",
-      headers: {
-        Prefer: "resolution=merge-duplicates,return=representation",
-      },
-      body: [payload],
-    }, dependencies)
-    createdProducts.push(...(Array.isArray(rows) ? rows : []))
-  }
-
-  const productByCanonical = new Map(createdProducts.map(product => [normalizeText(product.canonical_name), product.id]))
-  const aliasPayloads = aliasesToCreate.map(alias => ({
-    ...alias,
-    product_id: alias.product_id || productByCanonical.get(normalizeText(alias.evidence?.candidate_canonical_name || "")) || alias.product_id,
-  }))
-
-  const createdAliases = await fetchJsonRest("market_product_aliases?on_conflict=normalized_raw_label,scope,store_id,store_chain_key,status", {
+  const rpcResult = await fetchJsonRest("rpc/market_apply_scoped_alias_library", {
     method: "POST",
-    headers: {
-      Prefer: "resolution=merge-duplicates,return=representation",
+    body: {
+      p_items: payload,
     },
-    body: aliasPayloads,
   }, dependencies)
 
-  return {
-    products_created: createdProducts,
-    aliases_created: Array.isArray(createdAliases) ? createdAliases : [],
-  }
+  return normalizeApplyLibraryResult(rpcResult)
 }
 
 async function applyStagingPlan(report, dependencies = {}) {
@@ -1837,6 +1843,8 @@ export async function runMarketAliasLibraryBatchCli(args, dependencies = {}, run
 }
 
 export const __marketAliasLibraryBatchTestUtils = {
+  applyLibraryPlan,
+  buildApplyLibraryRpcPayload,
   buildCoverageByChainSql,
   buildDatabaseSelectionSql,
   buildCuratedProofCandidates,
@@ -1851,6 +1859,7 @@ export const __marketAliasLibraryBatchTestUtils = {
   ensureSafeReportValue,
   findReusableProduct,
   inferAliasScope,
+  normalizeApplyLibraryResult,
   normalizeInputBatchRow,
   partitionCoverageRows,
   parseBatchFile,
