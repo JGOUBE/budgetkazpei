@@ -42,18 +42,20 @@ class PublisherService:
         if candidate.content_kind == "promotion":
             catalog_candidate = self._is_catalog_candidate(candidate)
             product_promotion_candidate = self._is_product_promotion_candidate(candidate)
-            store_location_id = self.repositories.upsert_store_location(
-                {
-                    "retailer_slug": candidate.retailer_slug,
-                    "retailer_name": candidate.business_name,
-                    "store_name": candidate.business_name or candidate.retailer_slug,
-                    "commune": candidate.commune,
-                    "locality": candidate.locality,
-                    "website_url": candidate.source_url,
-                    "is_active": True,
-                    "updated_at": now,
-                }
-            )
+            store_location_id = None
+            if product_promotion_candidate and candidate.commune:
+                store_location_id = self.repositories.upsert_store_location(
+                    {
+                        "retailer_slug": candidate.retailer_slug,
+                        "retailer_name": candidate.business_name,
+                        "store_name": candidate.business_name or candidate.retailer_slug,
+                        "commune": candidate.commune,
+                        "locality": candidate.locality,
+                        "website_url": candidate.source_url,
+                        "is_active": True,
+                        "updated_at": now,
+                    }
+                )
 
             product_id = None
             if product_promotion_candidate:

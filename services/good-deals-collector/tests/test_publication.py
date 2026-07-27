@@ -65,6 +65,7 @@ class PublicationTests(unittest.TestCase):
 
         self.assertIsNotNone(published_id)
         self.assertEqual(len(repositories.catalogs), 1)
+        self.assertEqual(len(repositories.stores), 0)
         self.assertEqual(len(repositories.products), 0)
         self.assertEqual(len(repositories.aliases), 0)
         self.assertEqual(len(repositories.promotions), 0)
@@ -158,6 +159,7 @@ class PublicationTests(unittest.TestCase):
         self.assertEqual(len(repositories.catalogs), 1)
         self.assertEqual(len(repositories.products), 1)
         self.assertEqual(len(repositories.promotions), 1)
+        self.assertEqual(len(repositories.stores), 0)
         self.assertEqual(repositories.good_deals[published_id]["scope_type"], "local")
         self.assertEqual(repositories.good_deals[published_id]["deal_type"], "promotion")
 
