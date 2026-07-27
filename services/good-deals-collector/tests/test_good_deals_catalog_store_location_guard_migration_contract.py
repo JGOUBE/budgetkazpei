@@ -7,7 +7,7 @@ MIGRATION_PATH = (
     Path(__file__).resolve().parents[3]
     / "supabase"
     / "migrations"
-    / "202607270004_good_deals_catalog_store_location_guard.sql"
+    / "202607270005_good_deals_catalog_store_location_guard.sql"
 )
 
 

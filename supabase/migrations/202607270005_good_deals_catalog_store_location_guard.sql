@@ -18,16 +18,16 @@ declare
 begin
   foreach required_table in array required_tables loop
     if to_regclass(required_table) is null then
-      raise exception 'Migration 202607270004_good_deals_catalog_store_location_guard requires table % to exist before execution.', required_table;
+      raise exception 'Migration 202607270005_good_deals_catalog_store_location_guard requires table % to exist before execution.', required_table;
     end if;
   end loop;
 
   if to_regprocedure('public.good_deals_is_admin()') is null then
-    raise exception 'Migration 202607270004_good_deals_catalog_store_location_guard requires public.good_deals_is_admin() to exist before execution.';
+    raise exception 'Migration 202607270005_good_deals_catalog_store_location_guard requires public.good_deals_is_admin() to exist before execution.';
   end if;
 
   if to_regprocedure('public.good_deals_normalize_text(text)') is null then
-    raise exception 'Migration 202607270004_good_deals_catalog_store_location_guard requires public.good_deals_normalize_text(text) to exist before execution.';
+    raise exception 'Migration 202607270005_good_deals_catalog_store_location_guard requires public.good_deals_normalize_text(text) to exist before execution.';
   end if;
 end $$;
 
