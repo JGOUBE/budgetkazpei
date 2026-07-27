@@ -34,6 +34,8 @@ class PublisherService:
 
         published_good_deal_id: str | None
         if candidate.content_kind == "promotion":
+            catalog_candidate = self._is_catalog_candidate(candidate)
+            product_promotion_candidate = self._is_product_promotion_candidate(candidate)
             store_location_id = self.repositories.upsert_store_location(
                 {
                     "retailer_slug": candidate.retailer_slug,
@@ -46,76 +48,85 @@ class PublisherService:
                     "updated_at": now,
                 }
             )
-            product_id = self.repositories.upsert_product(
-                {
-                    "normalized_name": candidate.normalized_product_name,
-                    "display_name": candidate.product_name,
-                    "brand": candidate.brand,
-                    "size_label": candidate.size_label,
-                    "category": candidate.category or "shopping",
-                    "is_active": True,
-                    "updated_at": now,
-                }
-            )
-            if product_id and candidate.product_name:
-                self.repositories.upsert_product_alias(
+
+            product_id = None
+            if product_promotion_candidate:
+                product_id = self.repositories.upsert_product(
                     {
-                        "product_id": product_id,
-                        "alias_text": candidate.product_name,
-                        "normalized_alias": normalize_text(candidate.product_name),
-                        "source_kind": "collector",
-                        "retailer_slug": candidate.retailer_slug,
-                        "confidence_score": min(candidate.confidence_score / 100, 1),
+                        "normalized_name": candidate.normalized_product_name,
+                        "display_name": candidate.product_name,
+                        "brand": candidate.brand,
+                        "size_label": candidate.size_label,
+                        "category": candidate.category or "shopping",
+                        "is_active": True,
+                        "updated_at": now,
                     }
                 )
-            catalog_id = self.repositories.upsert_catalog(
-                {
-                    "external_key": f"catalog:{candidate.source_slug}:{candidate.starts_at.date().isoformat() if candidate.starts_at else 'undated'}",
-                    "collector_source_slug": candidate.source_slug,
-                    "retailer_slug": candidate.retailer_slug,
-                    "retailer_name": candidate.business_name,
-                    "title": candidate.title,
-                    "description": candidate.description,
-                    "scope_type": candidate.scope_type,
-                    "commune": candidate.commune,
-                    "micro_region": candidate.micro_region,
-                    "store_location_id": store_location_id,
-                    "starts_at": candidate.starts_at.isoformat() if candidate.starts_at else None,
-                    "ends_at": candidate.ends_at.isoformat() if candidate.ends_at else None,
-                    "source_url": candidate.source_url,
-                    "source_kind": "collector",
-                    "verification_status": "published",
-                    "is_featured": False,
-                    "is_active": True,
-                    "updated_at": now,
-                }
-            )
-            self.repositories.upsert_promotion(
-                {
-                    "external_key": candidate.external_key,
-                    "collector_source_slug": candidate.source_slug,
-                    "catalog_id": catalog_id,
-                    "product_id": product_id,
-                    "store_location_id": store_location_id,
-                    "retailer_slug": candidate.retailer_slug,
-                    "title": candidate.title,
-                    "offer_text": candidate.description,
-                    "promo_price": candidate.promo_price,
-                    "original_price": candidate.original_price,
-                    "discount_percent": candidate.discount_percent,
-                    "unit_price": candidate.unit_price,
-                    "unit_label": candidate.unit_label,
-                    "conditions": candidate.price_note,
-                    "starts_at": candidate.starts_at.isoformat() if candidate.starts_at else None,
-                    "ends_at": candidate.ends_at.isoformat() if candidate.ends_at else None,
-                    "source_url": candidate.source_url,
-                    "source_page": candidate.source_page,
-                    "verification_status": "published",
-                    "is_featured": False,
-                    "is_active": True,
-                    "updated_at": now,
-                }
-            )
+
+                if product_id and candidate.product_name:
+                    self.repositories.upsert_product_alias(
+                        {
+                            "product_id": product_id,
+                            "alias_text": candidate.product_name,
+                            "normalized_alias": normalize_text(candidate.product_name),
+                            "source_kind": "collector",
+                            "retailer_slug": candidate.retailer_slug,
+                            "confidence_score": min(candidate.confidence_score / 100, 1),
+                        }
+                    )
+
+            catalog_id = None
+            if catalog_candidate or product_promotion_candidate:
+                catalog_id = self.repositories.upsert_catalog(
+                    {
+                        "external_key": candidate.external_key,
+                        "collector_source_slug": candidate.source_slug,
+                        "retailer_slug": candidate.retailer_slug,
+                        "retailer_name": candidate.business_name,
+                        "title": candidate.title,
+                        "description": candidate.description,
+                        "scope_type": candidate.scope_type,
+                        "commune": candidate.commune,
+                        "micro_region": candidate.micro_region,
+                        "store_location_id": store_location_id,
+                        "starts_at": candidate.starts_at.isoformat() if candidate.starts_at else None,
+                        "ends_at": candidate.ends_at.isoformat() if candidate.ends_at else None,
+                        "source_url": candidate.source_url,
+                        "source_kind": "collector",
+                        "verification_status": "published",
+                        "is_featured": False,
+                        "is_active": True,
+                        "updated_at": now,
+                    }
+                )
+
+            if product_promotion_candidate:
+                self.repositories.upsert_promotion(
+                    {
+                        "external_key": candidate.external_key,
+                        "collector_source_slug": candidate.source_slug,
+                        "catalog_id": catalog_id,
+                        "product_id": product_id,
+                        "store_location_id": store_location_id,
+                        "retailer_slug": candidate.retailer_slug,
+                        "title": candidate.title,
+                        "offer_text": candidate.description,
+                        "promo_price": candidate.promo_price,
+                        "original_price": candidate.original_price,
+                        "discount_percent": candidate.discount_percent,
+                        "unit_price": candidate.unit_price,
+                        "unit_label": candidate.unit_label,
+                        "conditions": candidate.price_note,
+                        "starts_at": candidate.starts_at.isoformat() if candidate.starts_at else None,
+                        "ends_at": candidate.ends_at.isoformat() if candidate.ends_at else None,
+                        "source_url": candidate.source_url,
+                        "source_page": candidate.source_page,
+                        "verification_status": "published",
+                        "is_featured": False,
+                        "is_active": True,
+                        "updated_at": now,
+                    }
+                )
 
         published_good_deal_id = self.repositories.upsert_good_deal(
             {
@@ -136,14 +147,15 @@ class PublisherService:
                 "deal_type": self._resolve_deal_type(candidate),
                 "tags": candidate.tags,
                 "is_free": candidate.is_free,
+                "conditions": candidate.price_note,
                 "price_note": candidate.price_note,
                 "content_kind": candidate.content_kind,
                 "locality": candidate.locality,
                 "territory_name": candidate.territory_name,
-                "availability_status": "active",
+                "availability_status": self._resolve_availability_status(candidate),
                 "last_verified_at": candidate.detected_at.isoformat() if candidate.detected_at else None,
                 "source_still_available": True,
-                "next_check_at": candidate.ends_at.isoformat() if candidate.ends_at else None,
+                "next_check_at": None if candidate.content_kind == "permanent_leisure" else candidate.ends_at.isoformat() if candidate.ends_at else None,
                 "is_active": True,
                 "updated_at": now,
             }
@@ -158,3 +170,22 @@ class PublisherService:
         if candidate.content_kind == "event":
             return "event"
         return "free_activity" if candidate.is_free else "local_service"
+
+    @staticmethod
+    def _resolve_availability_status(candidate: Candidate) -> str:
+        if candidate.content_kind == "permanent_leisure":
+            return "open"
+        return "active"
+
+    @staticmethod
+    def _is_catalog_candidate(candidate: Candidate) -> bool:
+        tags = {normalize_text(tag) for tag in candidate.tags if tag}
+        return candidate.content_kind == "promotion" and ("catalog" in tags or "catalogue" in tags)
+
+    @classmethod
+    def _is_product_promotion_candidate(cls, candidate: Candidate) -> bool:
+        return (
+            candidate.content_kind == "promotion"
+            and not cls._is_catalog_candidate(candidate)
+            and bool(candidate.product_name or candidate.normalized_product_name)
+        )

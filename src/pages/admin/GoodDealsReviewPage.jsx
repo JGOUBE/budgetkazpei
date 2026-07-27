@@ -89,7 +89,9 @@ export default function GoodDealsReviewPage({
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [publishing, setPublishing] = useState(false)
   const [error, setError] = useState("")
+  const [successMessage, setSuccessMessage] = useState("")
   const [selectedId, setSelectedId] = useState(null)
   const [draft, setDraft] = useState(null)
   const [filters, setFilters] = useState({
@@ -150,6 +152,7 @@ export default function GoodDealsReviewPage({
     () => filteredItems.find(item => item.id === selectedId) || filteredItems[0] || null,
     [filteredItems, selectedId],
   )
+  const busy = saving || publishing
 
   useEffect(() => {
     if (!selectedItem) {
@@ -183,15 +186,13 @@ export default function GoodDealsReviewPage({
     [items],
   )
 
-  async function saveChanges(nextStatus = null) {
+  function buildPayload(nextStatus = null) {
     if (!selectedItem || !draft) return
     if (nextStatus === "rejected" && !textOrNull(draft.rejection_reason)) {
       setError("Une raison de rejet est obligatoire pour rejeter un candidat.")
-      return
+      return null
     }
 
-    setSaving(true)
-    setError("")
     const payload = {
       title: String(draft.title || "").trim(),
       description: String(draft.description || "").trim(),
@@ -209,14 +210,25 @@ export default function GoodDealsReviewPage({
     }
 
     if (!payload.title || !payload.description || !payload.source_url) {
-      setSaving(false)
       setError("Le titre, la description et l'URL source sont obligatoires.")
-      return
+      return null
     }
 
     if (nextStatus) {
       payload.status = nextStatus
     }
+
+    return payload
+  }
+
+  async function saveChanges(nextStatus = null, options = {}) {
+    const { reload = true } = options
+    const payload = buildPayload(nextStatus)
+    if (!selectedItem || !payload) return false
+
+    setSaving(true)
+    setError("")
+    setSuccessMessage("")
 
     try {
       const { error: updateError } = await supabase
@@ -225,12 +237,43 @@ export default function GoodDealsReviewPage({
         .eq("id", selectedItem.id)
 
       if (updateError) throw updateError
-      await loadQueue()
+      if (reload) {
+        await loadQueue()
+      }
+      return true
     } catch (saveError) {
       console.error("Erreur sauvegarde validation bons plans:", saveError)
       setError(saveError?.message || "review_queue_save_failed")
+      return false
     } finally {
       setSaving(false)
+    }
+  }
+
+  async function publishCandidate() {
+    if (!selectedItem || busy) return
+
+    const saved = await saveChanges(null, { reload: false })
+    if (!saved) return
+
+    setPublishing(true)
+    setError("")
+    setSuccessMessage("")
+
+    try {
+      const { error: publishError } = await supabase.rpc("good_deals_publish_candidate", {
+        p_candidate_id: selectedItem.id,
+      })
+
+      if (publishError) throw publishError
+
+      await loadQueue()
+      setSuccessMessage("Bon plan publié dans l'application.")
+    } catch (publishError) {
+      console.error("Erreur publication immédiate bon plan:", publishError)
+      setError(publishError?.message || "review_queue_publish_failed")
+    } finally {
+      setPublishing(false)
     }
   }
 
@@ -337,6 +380,12 @@ export default function GoodDealsReviewPage({
       {error && (
         <div style={{ border: `1px solid ${ds.danger}44`, background: "rgba(239,68,68,.12)", color: ds.danger, padding: "12px 14px", borderRadius: 16, fontWeight: 700 }}>
           {error}
+        </div>
+      )}
+
+      {successMessage && (
+        <div style={{ border: `1px solid ${ds.success}44`, background: "rgba(34,197,94,.12)", color: ds.success, padding: "12px 14px", borderRadius: 16, fontWeight: 700 }}>
+          {successMessage}
         </div>
       )}
 
@@ -505,14 +554,14 @@ export default function GoodDealsReviewPage({
                 <button
                   type="button"
                   onClick={() => saveChanges(null)}
-                  disabled={saving}
+                  disabled={busy}
                   style={{
                     padding: "12px 16px",
                     borderRadius: 14,
                     border: `1px solid ${ds.border}`,
                     background: ds.elevated,
                     color: ds.textPrimary,
-                    cursor: saving ? "wait" : "pointer",
+                    cursor: busy ? "wait" : "pointer",
                     fontWeight: 900,
                     fontFamily: "inherit",
                   }}
@@ -521,32 +570,32 @@ export default function GoodDealsReviewPage({
                 </button>
                 <button
                   type="button"
-                  onClick={() => saveChanges("approved")}
-                  disabled={saving}
+                  onClick={publishCandidate}
+                  disabled={busy}
                   style={{
                     padding: "12px 16px",
                     borderRadius: 14,
                     border: `1px solid ${ds.success}55`,
                     background: "rgba(34,197,94,.16)",
                     color: ds.success,
-                    cursor: saving ? "wait" : "pointer",
+                    cursor: busy ? "wait" : "pointer",
                     fontWeight: 900,
                     fontFamily: "inherit",
                   }}
                 >
-                  Valider pour publication
+                  {publishing ? "Publication en cours..." : "Valider pour publication"}
                 </button>
                 <button
                   type="button"
                   onClick={() => saveChanges("rejected")}
-                  disabled={saving}
+                  disabled={busy}
                   style={{
                     padding: "12px 16px",
                     borderRadius: 14,
                     border: `1px solid ${ds.danger}55`,
                     background: "rgba(239,68,68,.14)",
                     color: ds.danger,
-                    cursor: saving ? "wait" : "pointer",
+                    cursor: busy ? "wait" : "pointer",
                     fontWeight: 900,
                     fontFamily: "inherit",
                   }}
