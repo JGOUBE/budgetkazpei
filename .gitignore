@@ -30,3 +30,9 @@ dist-ssr
 # Python caches
 __pycache__/
 *.py[cod]
+
+# Market alias batch reports and caches
+reports/market-alias-*.json
+reports/market-alias-*.md
+.market-alias-cache/
+.market-alias-checkpoints/

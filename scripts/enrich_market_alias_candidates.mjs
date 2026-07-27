@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto"
+import { spawnSync } from "node:child_process"
 import { pathToFileURL } from "node:url"
 import {
   EXTERNAL_CANDIDATE_THRESHOLDS,
@@ -6,6 +7,7 @@ import {
   evaluateExternalCandidateMatch,
   sanitizeExternalCandidateRecord,
 } from "../src/services/scan/marketExternalCandidateService.js"
+import { runMarketAliasLibraryBatchCli } from "./marketAliasLibraryBatch.mjs"
 
 const OFF_PRODUCT_FIELDS = [
   "code",
@@ -30,6 +32,11 @@ export function parseArgs(argv) {
   const args = {
     dryRun: false,
     pageSize: 8,
+    limit: 50,
+    offset: 0,
+    concurrency: 2,
+    delayMs: DEFAULT_RETRY_BASE_DELAY_MS,
+    maxRetries: DEFAULT_RETRY_ATTEMPTS,
   }
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -59,12 +66,47 @@ export function parseArgs(argv) {
     } else if (current === "--store-city" && next) {
       args.storeCity = next
       index += 1
+    } else if (current === "--store-chain" && next) {
+      args.storeChain = next
+      index += 1
     } else if (current === "--purchase-date" && next) {
       args.purchaseDate = next
       index += 1
     } else if (current === "--page-size" && next) {
       args.pageSize = Math.max(1, Math.min(20, Number(next) || 8))
       index += 1
+    } else if (current === "--limit" && next) {
+      args.limit = Math.max(1, Number(next) || 50)
+      index += 1
+    } else if (current === "--offset" && next) {
+      args.offset = Math.max(0, Number(next) || 0)
+      index += 1
+    } else if (current === "--batch-id" && next) {
+      args.batchId = next
+      index += 1
+    } else if (current === "--report" && next) {
+      args.report = next
+      index += 1
+    } else if (current === "--from-database") {
+      args.fromDatabase = true
+    } else if (current === "--from-file" && next) {
+      args.fromFile = next
+      index += 1
+    } else if (current === "--resume") {
+      args.resume = true
+    } else if (current === "--delay-ms" && next) {
+      args.delayMs = Math.max(0, Number(next) || DEFAULT_RETRY_BASE_DELAY_MS)
+      index += 1
+    } else if (current === "--max-retries" && next) {
+      args.maxRetries = Math.max(1, Number(next) || DEFAULT_RETRY_ATTEMPTS)
+      index += 1
+    } else if (current === "--concurrency" && next) {
+      args.concurrency = Math.max(1, Math.min(2, Number(next) || 2))
+      index += 1
+    } else if (current === "--apply-library") {
+      args.applyLibrary = true
+    } else if (current === "--apply-staging") {
+      args.applyStaging = true
     } else if (current === "--official-source-name" && next) {
       args.officialSourceName = next
       index += 1
@@ -92,6 +134,7 @@ export function parseArgs(argv) {
 function printHelp() {
   console.log(`Usage:
 node scripts/enrich_market_alias_candidates.mjs --raw-label <text> [options]
+node scripts/enrich_market_alias_candidates.mjs --from-database --limit 50 --batch-id reunion-aliases-001 --dry-run --report reports/market-alias-library-001.json
 
 Options:
   --barcode <digits>              Barcode exact when available.
@@ -101,12 +144,25 @@ Options:
   --observed-price <number>       Observed receipt price.
   --store-name <text>             Store or chain hint.
   --store-city <text>             City hint.
+  --store-chain <text>            Explicit chain filter for batch mode.
   --purchase-date <date>          Observed date YYYY-MM-DD.
   --page-size <n>                 External result limit per source (default: 8).
   --official-source-name <text>   Precise manufacturer or store source label.
   --official-source-url <url>     Official product page URL.
   --official-source-id <text>     Optional stable official source identifier.
   --official-product-name <text>  Canonical label from the official page.
+  --from-database                 Select a batch of unknown labels from receipt_items.
+  --from-file <json|csv>          Load a batch of labels from disk.
+  --limit <n>                     Batch size limit (default: 50).
+  --offset <n>                    Batch offset for --from-database or --from-file.
+  --batch-id <text>               Stable batch identifier for reports and checkpoints.
+  --report <file>                 JSON report path. A markdown report is written next to it.
+  --resume                        Reuse cached item results for the same batch-id.
+  --delay-ms <n>                  Delay between labels in batch mode (default: 250).
+  --max-retries <n>               Network retry budget in batch mode (default: 3).
+  --concurrency <n>               Max concurrent labels in batch mode (default: 2, max: 2).
+  --apply-library                 Apply library-ready products and aliases to Supabase.
+  --apply-staging                 Apply only suggestion or ambiguous rows to staging.
   --dry-run                       Do not write to Supabase staging.
   --help                          Show this help.
 `)
@@ -130,8 +186,10 @@ function cleanBarcode(value) {
   return barcode.length >= 8 && barcode.length <= 14 ? barcode : ""
 }
 
-function transientDelayMs(attempt, baseDelayMs = DEFAULT_RETRY_BASE_DELAY_MS) {
-  return baseDelayMs * (2 ** Math.max(0, attempt - 1))
+function transientDelayMs(attempt, baseDelayMs = DEFAULT_RETRY_BASE_DELAY_MS, randomImpl = Math.random) {
+  const baseDelay = baseDelayMs * (2 ** Math.max(0, attempt - 1))
+  const jitter = baseDelay * 0.25 * Math.max(0, Math.min(1, Number(randomImpl()) || 0))
+  return Math.round(baseDelay + jitter)
 }
 
 function sleep(ms, dependencies = {}) {
@@ -139,6 +197,130 @@ function sleep(ms, dependencies = {}) {
   return new Promise(resolve => {
     setTimeoutImpl(resolve, ms)
   })
+}
+
+function certificateErrorMessage(error) {
+  const message = String(error?.message || "")
+  const cause = String(error?.cause?.message || error?.cause || "")
+  return `${message} ${cause}`.trim().toLowerCase()
+}
+
+function isCertificateChainError(error) {
+  const message = certificateErrorMessage(error)
+  return message.includes("unable to verify the first certificate")
+    || message.includes("self-signed certificate")
+    || message.includes("unable to get local issuer certificate")
+}
+
+function normalizePowerShellFetchError(error, sourceKey, url, attempt) {
+  if (error?.name === "ExternalFetchError") {
+    return error
+  }
+  return createExternalFetchError({
+    sourceKey,
+    status: error?.status ?? null,
+    url,
+    attempt,
+    reason: error?.message || "powershell_fetch_failed",
+  })
+}
+
+export async function fetchJsonWithPowerShell(url, dependencies = {}, options = {}) {
+  if (typeof dependencies.fetchJsonCliImpl === "function") {
+    return dependencies.fetchJsonCliImpl(url, options)
+  }
+
+  if (process.platform !== "win32") {
+    throw new Error("powershell_fetch_unsupported")
+  }
+
+  const envMap = {
+    ...process.env,
+    BKP_FETCH_URL: url,
+    BKP_FETCH_USER_AGENT: MARKET_ENRICHMENT_USER_AGENT,
+    BKP_FETCH_ACCEPT: "application/json",
+  }
+
+  const command = [
+    "$ProgressPreference='SilentlyContinue'",
+    "$headers=@{'User-Agent'=$env:BKP_FETCH_USER_AGENT;'Accept'=$env:BKP_FETCH_ACCEPT}",
+    "try {",
+    "  $response = Invoke-WebRequest -Uri $env:BKP_FETCH_URL -Headers $headers -UseBasicParsing",
+    "  [pscustomobject]@{ ok = $true; status = [int]$response.StatusCode; contentType = [string]$response.Headers['Content-Type']; body = [string]$response.Content } | ConvertTo-Json -Compress -Depth 6",
+    "} catch {",
+    "  $webResponse = $_.Exception.Response",
+    "  if ($null -eq $webResponse) { throw }",
+    "  $stream = $webResponse.GetResponseStream()",
+    "  $reader = New-Object System.IO.StreamReader($stream)",
+    "  $body = $reader.ReadToEnd()",
+    "  $reader.Close()",
+    "  if ($null -ne $stream) { $stream.Close() }",
+    "  [pscustomobject]@{ ok = $false; status = [int]$webResponse.StatusCode; contentType = [string]$webResponse.ContentType; body = [string]$body; error = [string]$_.Exception.Message } | ConvertTo-Json -Compress -Depth 6",
+    "}",
+  ].join("; ")
+
+  const result = spawnSync(
+    "powershell.exe",
+    ["-NoProfile", "-Command", command],
+    {
+      cwd: process.cwd(),
+      env: envMap,
+      encoding: "utf8",
+      timeout: Number(options.commandTimeoutMs || 30_000),
+      windowsHide: true,
+    },
+  )
+
+  if (result.error) {
+    throw result.error
+  }
+
+  const stdout = String(result.stdout || "").trim()
+  if (result.status !== 0 && !stdout) {
+    throw new Error(`powershell_fetch_failed:${result.status ?? "unknown"}`)
+  }
+
+  let payload
+  try {
+    payload = JSON.parse(stdout)
+  } catch {
+    throw new Error("powershell_fetch_invalid_json")
+  }
+
+  const status = Number(payload?.status)
+  const contentType = String(payload?.contentType || "")
+  const body = String(payload?.body || "")
+  const bodyLooksJson = /^\s*[\[{]/.test(body)
+  const isJsonResponse = /json/i.test(contentType) || bodyLooksJson
+  const unavailableHtml = /temporarily unavailable|not available to anonymous users/i.test(body)
+
+  if (!payload?.ok) {
+    throw createExternalFetchError({
+      sourceKey: options.sourceKey || "external_source",
+      status: Number.isFinite(status) ? status : null,
+      url,
+      attempt: 1,
+      body,
+      reason: String(payload?.error || `http_${status || "unknown"}`),
+    })
+  }
+
+  if (!isJsonResponse) {
+    throw createExternalFetchError({
+      sourceKey: options.sourceKey || "external_source",
+      status: unavailableHtml ? 503 : (Number.isFinite(status) ? status : null),
+      url,
+      attempt: 1,
+      body,
+      reason: unavailableHtml ? "temporary_unavailable_html" : "unexpected_non_json_response",
+    })
+  }
+
+  return {
+    payload: JSON.parse(body),
+    attempts: 1,
+    status: Number.isFinite(status) ? status : 200,
+  }
 }
 
 function createExternalFetchError({
@@ -231,6 +413,24 @@ export async function fetchJsonWithRetry(url, dependencies = {}, options = {}) {
         throw lastError
       }
     } catch (error) {
+      if (!options.disableCliFallback && isCertificateChainError(error)) {
+        try {
+          const fallback = await fetchJsonWithPowerShell(url, dependencies, options)
+          return {
+            payload: fallback.payload,
+            attempts: attempt,
+            status: fallback.status,
+          }
+        } catch (fallbackError) {
+          lastError = normalizePowerShellFetchError(fallbackError, sourceKey, url, attempt)
+          if (!isTransientStatus(lastError.status) || attempt >= maxAttempts) {
+            throw lastError
+          }
+          await sleep(transientDelayMs(attempt, baseDelayMs, dependencies.randomImpl), dependencies)
+          continue
+        }
+      }
+
       const normalizedError = error?.name === "ExternalFetchError"
         ? error
         : createExternalFetchError({
@@ -247,7 +447,7 @@ export async function fetchJsonWithRetry(url, dependencies = {}, options = {}) {
       }
     }
 
-    await sleep(transientDelayMs(attempt, baseDelayMs), dependencies)
+    await sleep(transientDelayMs(attempt, baseDelayMs, dependencies.randomImpl), dependencies)
   }
 
   throw lastError || createExternalFetchError({
@@ -280,6 +480,8 @@ export async function fetchOpenFoodFactsBarcodeCandidate(args, dependencies = {}
   const url = `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcode)}.json?fields=${encodeURIComponent(OFF_PRODUCT_FIELDS)}`
   const { payload, attempts, status } = await fetchJsonWithRetry(url, dependencies, {
     sourceKey: OFF_BARCODE_SOURCE,
+    maxAttempts: args.maxRetries,
+    baseDelayMs: args.retryBaseDelayMs || args.delayMs,
   })
   const product = payload?.product
   const productBarcode = cleanBarcode(product?.code || barcode)
@@ -342,6 +544,8 @@ export async function fetchOpenFoodFactsTextCandidates(args, dependencies = {}) 
   const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(args.rawLabel)}&search_simple=1&action=process&json=1&page_size=${args.pageSize}`
   const { payload, attempts, status } = await fetchJsonWithRetry(url, dependencies, {
     sourceKey: OFF_TEXT_SOURCE,
+    maxAttempts: args.maxRetries,
+    baseDelayMs: args.retryBaseDelayMs || args.delayMs,
   })
   const candidates = []
 
@@ -406,7 +610,11 @@ export async function fetchOpenPrices(args, dependencies = {}) {
   const { payload, attempts, status } = await fetchJsonWithRetry(
     `https://prices.openfoodfacts.org/api/v1/prices?${params.toString()}`,
     dependencies,
-    { sourceKey: OPEN_PRICES_SOURCE },
+    {
+      sourceKey: OPEN_PRICES_SOURCE,
+      maxAttempts: args.maxRetries,
+      baseDelayMs: args.retryBaseDelayMs || args.delayMs,
+    },
   )
   const results = Array.isArray(payload?.results) ? payload.results : []
 
@@ -617,11 +825,39 @@ export async function upsertCandidates(rows, dependencies = {}) {
 
 export async function runCli(argv = process.argv.slice(2), dependencies = {}) {
   const args = parseArgs(argv)
-  if (args.help || !args.rawLabel) {
+  const isBatchMode = Boolean(args.fromDatabase || args.fromFile)
+  if (args.help) {
     printHelp()
-    if (!args.help) {
+    return null
+  }
+
+  if (isBatchMode) {
+    if (!args.batchId) {
+      printHelp()
       process.exitCode = 1
+      return null
     }
+
+    const batchReport = await runMarketAliasLibraryBatchCli(
+      args,
+      {
+        ...dependencies,
+        baseUrl: dependencies.baseUrl || baseUrl(),
+        serviceRoleKey: dependencies.serviceRoleKey || serviceRoleKey(),
+      },
+      {
+        collectExternalCandidatesWithReport,
+        buildEvaluatedCandidateRows,
+      },
+    )
+
+    console.log(JSON.stringify(batchReport, null, 2))
+    return batchReport
+  }
+
+  if (!args.rawLabel) {
+    printHelp()
+    process.exitCode = 1
     return null
   }
 

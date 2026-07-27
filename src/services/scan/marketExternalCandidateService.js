@@ -71,6 +71,7 @@ function normalizeAliasTokens(tokens = []) {
 export function normalizeExternalAliasText(value = "") {
   const tokens = stripDiacritics(value)
     .toLowerCase()
+    .replace(/\b(\d+)og\b/g, "$10g")
     .replace(/[^a-z0-9]+/g, " ")
     .trim()
     .split(/\s+/)
@@ -252,6 +253,9 @@ export function sanitizeExternalCandidateRecord(input = {}) {
       : "candidate",
     matched_product_id: input.matched_product_id || input.matchedProductId || null,
     match_level: input.match_level || input.matchLevel || null,
+    skip_reason: cleanOptionalText(input.skip_reason || input.skipReason, 120),
+    should_auto_promote: input.should_auto_promote === true,
+    should_apply_automatic_replacement: input.should_apply_automatic_replacement === true,
     promoted_alias_id: input.promoted_alias_id || input.promotedAliasId || null,
     validation_notes: cleanOptionalText(input.validation_notes || input.validationNotes, 500),
     first_seen_at: input.first_seen_at || input.firstSeenAt || null,
@@ -269,6 +273,14 @@ function conflictWithValidatedUserCorrection(candidate = {}, context = {}) {
   )
   if (!userCanonical) return false
   return normalizeExternalAliasText(userCanonical) !== candidate.normalized_candidate_name
+}
+
+function rawBrandConflict(candidate = {}, rawLabel = "") {
+  const rawBrandHint = cleanText(candidate?.matching_evidence?.raw_brand_hint || "", 80)
+  const candidateBrand = cleanText(candidate?.brand || "", 80)
+  if (!rawBrandHint || !candidateBrand) return false
+  return normalizeBrand(rawBrandHint) !== normalizeBrand(candidateBrand)
+    && normalizeExternalAliasText(rawLabel).includes(normalizeBrand(rawBrandHint))
 }
 
 export function evaluateExternalCandidateMatch({
@@ -317,6 +329,21 @@ export function evaluateExternalCandidateMatch({
     }
   }
 
+  if (rawBrandConflict(safeCandidate, raw_label)) {
+    return {
+      ...safeCandidate,
+      source_confidence: 0.12,
+      match_level: "rejected",
+      should_auto_promote: false,
+      should_apply_automatic_replacement: false,
+      skip_reason: "brand_conflict",
+      matching_evidence: {
+        ...safeCandidate.matching_evidence,
+        priority_source: "raw_label_brand_signal",
+      },
+    }
+  }
+
   const barcodeMatch = cleanBarcode(barcode) && cleanBarcode(barcode) === safeCandidate.barcode
   const barcodeLookupMismatch = Boolean(
     cleanBarcode(barcode)
@@ -324,7 +351,23 @@ export function evaluateExternalCandidateMatch({
     && safeCandidate.barcode
     && cleanBarcode(barcode) !== safeCandidate.barcode,
   )
-  const nameScore = lexicalSimilarity(raw_label, safeCandidate.candidate_canonical_name)
+  const proofLabels = Array.isArray(safeCandidate.matching_evidence?.proof_labels)
+    ? safeCandidate.matching_evidence.proof_labels.filter(entry => typeof entry === "string" && entry.trim() !== "")
+    : []
+  const sourceTitle = cleanText(safeCandidate.matching_evidence?.source_title || "", 180)
+  const manualFamilyMatch = safeCandidate.matching_evidence?.source === "manual_alias_family"
+  const manualFamilySimilarity = Math.max(0, Math.min(1, Number(safeCandidate.matching_evidence?.manual_family_similarity || 0) || 0))
+  const proofLabelScore = proofLabels.reduce(
+    (best, label) => Math.max(best, lexicalSimilarity(raw_label, label)),
+    0,
+  )
+  const sourceTitleScore = sourceTitle ? lexicalSimilarity(raw_label, sourceTitle) : 0
+  const nameScore = Math.max(
+    lexicalSimilarity(raw_label, safeCandidate.candidate_canonical_name),
+    proofLabelScore,
+    sourceTitleScore,
+    manualFamilySimilarity,
+  )
   const exactName = normalizeExternalAliasText(raw_label) === safeCandidate.normalized_candidate_name
   const computedBrandScore = brandScore(brand, safeCandidate.brand)
   const exactBrand = normalizeBrand(brand) !== "" && normalizeBrand(brand) === normalizeBrand(safeCandidate.brand)
@@ -337,16 +380,27 @@ export function evaluateExternalCandidateMatch({
     store_name: safeCandidate.store_name || store_name,
     store_city: safeCandidate.store_city || store_city,
   })
+  const sourceKind = String(safeCandidate.matching_evidence?.source_kind || "")
+  const exactReferenceIdentified = safeCandidate.matching_evidence?.exact_reference_identified === true
+  const proofExactLabel = exactReferenceIdentified && proofLabelScore >= 0.995
+  const uniqueManualFamilyProduct = safeCandidate.matching_evidence?.unique_product === true
+  const safeManualFamilyPackage = safeCandidate.matching_evidence?.safe_package_match !== false
+  const sourceTrustBonus = exactReferenceIdentified
+    ? (sourceKind === "official_exact_page" ? 0.19 : sourceKind === "commercial_exact_page" ? 0.15 : 0.08)
+    : (manualFamilyMatch && uniqueManualFamilyProduct && safeManualFamilyPackage ? 0.16 : 0)
 
   let confidence = 0.42 * nameScore
     + 0.18 * computedBrandScore
     + 0.18 * computedPackageScore
     + 0.12 * computedPriceScore
     + (reunionPriority ? 0.05 : 0)
+    + sourceTrustBonus
 
   if (exactName) confidence += 0.1
   if (exactBrand) confidence += 0.05
   if (exactPackage) confidence += 0.06
+  if (proofExactLabel) confidence += 0.12
+  if (manualFamilyMatch && uniqueManualFamilyProduct && safeManualFamilyPackage) confidence += 0.11
   if (barcodeMatch) confidence = 0.995
 
   confidence = Math.max(0, Math.min(1, Number(confidence.toFixed(4))))
@@ -361,20 +415,41 @@ export function evaluateExternalCandidateMatch({
     shouldAutoPromote = false
     shouldApplyAutomaticReplacement = false
     skipReason = "barcode_mismatch"
+  } else if (manualFamilyMatch && !safeManualFamilyPackage) {
+    matchLevel = "ambiguous"
+    shouldAutoPromote = false
+    shouldApplyAutomaticReplacement = false
+    skipReason = "package_conflict"
+  } else if (manualFamilyMatch && uniqueManualFamilyProduct && manualFamilySimilarity >= 0.9) {
+    matchLevel = "strong_without_barcode"
+    shouldAutoPromote = confidence >= AUTO_PROMOTE_STRONG_THRESHOLD
+    shouldApplyAutomaticReplacement = false
   } else if (barcodeMatch) {
     matchLevel = "exact_strong"
     shouldAutoPromote = confidence >= AUTO_PROMOTE_BARCODE_THRESHOLD
     shouldApplyAutomaticReplacement = shouldAutoPromote
   } else if (exactName && exactBrand && exactPackage) {
-    matchLevel = "exact_strong"
+    matchLevel = exactReferenceIdentified && sourceKind === "commercial_exact_page"
+      ? "strong_without_barcode"
+      : "exact_strong"
     shouldAutoPromote = confidence >= AUTO_PROMOTE_STRONG_THRESHOLD
     shouldApplyAutomaticReplacement = shouldAutoPromote
+  } else if (exactReferenceIdentified && nameScore >= 0.76 && computedPackageScore >= 0.85 && !rawBrandConflict(safeCandidate, raw_label)) {
+    matchLevel = "strong_without_barcode"
+    shouldAutoPromote = confidence >= AUTO_PROMOTE_STRONG_THRESHOLD
+    shouldApplyAutomaticReplacement = false
+  } else if (proofExactLabel && (exactBrand || computedBrandScore >= 0.9)) {
+    matchLevel = "strong_without_barcode"
+    shouldAutoPromote = confidence >= AUTO_PROMOTE_STRONG_THRESHOLD
+    shouldApplyAutomaticReplacement = false
+  } else if (exactReferenceIdentified && nameScore >= 0.62 && computedPackageScore >= 0.70) {
+    matchLevel = "suggestion"
   } else if (nameScore >= 0.9 && computedBrandScore >= 0.85 && computedPackageScore >= 0.85) {
     matchLevel = "strong_without_barcode"
     shouldAutoPromote = confidence >= AUTO_PROMOTE_STRONG_THRESHOLD
     shouldApplyAutomaticReplacement = false
   } else if (nameScore < SUGGESTION_THRESHOLD) {
-    matchLevel = "rejected"
+    matchLevel = "ambiguous"
     skipReason = "below_threshold"
   }
 
@@ -383,6 +458,27 @@ export function evaluateExternalCandidateMatch({
     shouldAutoPromote = false
     shouldApplyAutomaticReplacement = false
     skipReason = "package_conflict"
+  }
+
+  if (safeCandidate.matching_evidence?.manual_review_reason === "generic_label") {
+    matchLevel = "ambiguous"
+    shouldAutoPromote = false
+    shouldApplyAutomaticReplacement = false
+    skipReason = "generic_label"
+  }
+
+  if (safeCandidate.matching_evidence?.manual_review_reason === "chain_private_label_without_ticket_brand") {
+    matchLevel = "suggestion"
+    shouldAutoPromote = false
+    shouldApplyAutomaticReplacement = false
+    skipReason = "chain_private_label_without_ticket_brand"
+  }
+
+  if (safeCandidate.matching_evidence?.manual_review_reason === "brand_conflict") {
+    matchLevel = "rejected"
+    shouldAutoPromote = false
+    shouldApplyAutomaticReplacement = false
+    skipReason = "brand_conflict"
   }
 
   return {

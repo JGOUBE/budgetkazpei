@@ -1,3 +1,4 @@
+import fs from "node:fs"
 import { resolveMarketProducts, __marketProductResolverTestUtils } from "./marketProductResolver"
 import {
   buildExternalCandidatePromotion,
@@ -52,6 +53,10 @@ import {
   runCli as runHistoricalAliasBackfillCli,
   sanitizeBackfillReport,
 } from "../../../scripts/backfill_market_manual_aliases.mjs"
+import {
+  __marketAliasLibraryBatchTestUtils,
+  runMarketAliasLibraryBatchCli,
+} from "../../../scripts/marketAliasLibraryBatch.mjs"
 
 type RegressionResult = {
   id: string
@@ -287,6 +292,23 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
     persistReceiptItemUpdate,
     shouldLearnManualAlias,
   } = __receiptServiceTestUtils
+  const {
+    buildDatabaseSelectionSql,
+    buildCuratedProofAuditEntries,
+    buildCuratedProofCandidates,
+    buildDerivedManualAliasFamilyCandidates,
+    buildLibraryAliasPayload,
+    buildNewProductProposal,
+    buildWebQueries,
+    classifyCandidateRows,
+    consolidateSourceErrors,
+    ensureSafeReportValue,
+    findReusableProduct,
+    inferAliasScope,
+    normalizeInputBatchRow,
+    partitionCoverageRows,
+    summarizeBatchResults,
+  } = __marketAliasLibraryBatchTestUtils
 
   const originalItem = baseItem()
   const matchedItems = applyMarketResolutions([originalItem], [{
@@ -1047,10 +1069,373 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
       source_confidence: 0.92,
     },
   ])
+  const batchFileRow = normalizeInputBatchRow({
+    raw_label: "CAM PAY 250G CROISES",
+    frequency: "4",
+    store_chain_key: "e leclerc",
+    package_format_hint: "250 g",
+    category_hint: "cremerie",
+  })
+  const batchSelectionSql = buildDatabaseSelectionSql({ storeChain: "e leclerc" })
+  const coveragePartition = partitionCoverageRows([
+    {
+      raw_label: "ASSORT FRAISE BANANES 25OG COP",
+      normalized_raw_label: "assort fraise bananes 250g cop",
+      selection_status: "excluded_already_covered",
+      coverage_type: "manual_alias",
+      coverage_source: "market_manual_product_aliases",
+      coverage_scope: "chain",
+      canonical_product: "Assortiment fraise bananes 250 g",
+      exclusion_reason: "active_manual_alias_already_covers_label_in_scope",
+    },
+    {
+      raw_label: "CAM PAY 250G CROISES",
+      normalized_raw_label: "cam pay 250g croises",
+      selection_status: "excluded_already_covered",
+      coverage_type: "manual_alias",
+      coverage_source: "market_manual_product_aliases",
+      coverage_scope: "chain",
+      canonical_product: "Camembert Pei 250 g Croises",
+      exclusion_reason: "active_manual_alias_already_covers_label_in_scope",
+    },
+    {
+      raw_label: "EAU CILAOS PACK 1L.25 X6",
+      normalized_raw_label: "eau cilaos pack 1l 25 x6",
+      frequency: 3,
+      distinct_receipts: 3,
+      distinct_chains: 1,
+      store_chain_key: "e leclerc",
+      store_name: "E.Leclerc Le Portail",
+      store_city: "Saint-Leu",
+      category_hint: "boissons",
+      brand_hint: "CILAOS",
+      package_format_hint: "6 x 1,25 l",
+      observed_price_min: 5.3,
+      observed_price_max: 5.5,
+      first_observed_at: "2026-07-01",
+      last_observed_at: "2026-07-24",
+      selection_status: "selected_unknown",
+    },
+  ], { limit: 50, offset: 0 })
+  const exactLibraryAliasPayload = buildLibraryAliasPayload({
+    raw_label: "CAM PAY 250G CROISES",
+    normalized_raw_label: "cam pay 250g croises",
+    distinct_chains: 3,
+    store_chain_key: "e leclerc",
+  }, {
+    source_name: "official_product_page",
+    source_type: "official_product_page",
+    source_url: "https://example.test/camembert",
+    source_confidence: 0.9721,
+    match_level: "exact_strong",
+    classification: "exact_strong",
+    candidate_canonical_name: "Camembert Pei Croises 250 g",
+  }, {
+    product: {
+      id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    },
+  })
+  const reusableProduct = findReusableProduct({
+    barcode: "3270190207900",
+    candidate_canonical_name: "Tarama aux oeufs de cabillaud 100 g",
+    brand: "Coraya",
+    package_format: "100 g",
+  }, [{
+    id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+    canonical_name: "Tarama aux oeufs de cabillaud 100 g",
+    normalized_name: "tarama aux oeufs de cabillaud 100 g",
+    brand: "Coraya",
+    normalized_brand: "coraya",
+    package_format: "100 g",
+    barcode: "3270190207900",
+  }])
+  const libraryReadyClassification = classifyCandidateRows([{
+    raw_label: "CAM PAY 250G CROISES",
+    candidate_canonical_name: "Camembert Pei Croises 250 g",
+    source_confidence: 0.93,
+    match_level: "ambiguous",
+  }])
+  const ambiguousClassification = classifyCandidateRows([
+    {
+      raw_label: "OEUFS FRAIS",
+      candidate_canonical_name: "Oeufs frais plein air 6",
+      source_confidence: 0.84,
+      match_level: "ambiguous",
+      skip_reason: "",
+    },
+    {
+      raw_label: "OEUFS FRAIS",
+      candidate_canonical_name: "Oeufs frais bio 6",
+      source_confidence: 0.83,
+      match_level: "ambiguous",
+      skip_reason: "",
+    },
+  ])
+  const curatedCilaosCandidates = buildCuratedProofCandidates({
+    raw_label: "EAU CILAOS PACK 1L.25 X6",
+    normalized_raw_label: "eau cilaos pack 1l 25 x6",
+    store_name: "E.Leclerc Le Portail",
+    store_chain_key: "e leclerc",
+    observed_price_min: 5.3,
+  })
+  const curatedCilaosRows = buildEvaluatedCandidateRows({
+    rawLabel: "EAU CILAOS PACK 1L.25 X6",
+    brand: "CILAOS",
+    packageFormat: "6 x 1,25 l",
+    observedPrice: 5.3,
+    storeName: "E.Leclerc Le Portail",
+    storeCity: "Saint-Leu",
+  }, curatedCilaosCandidates)
+  const curatedCilaosClassification = classifyCandidateRows(curatedCilaosRows)
+  const curatedCilaosAudit = buildCuratedProofAuditEntries({
+    raw_label: "EAU CILAOS PACK 1L.25 X6",
+    package_format_hint: "6 x 1,25 l",
+    brand_hint: "CILAOS",
+  }, curatedCilaosRows, curatedCilaosClassification.classification)
+  const curatedLentillesCandidates = buildCuratedProofCandidates({
+    raw_label: "LENT ILE GRA OIE NOTRE JARDEN",
+    normalized_raw_label: "lent ile gra oie notre jarden",
+    store_name: "E.Leclerc Les Terrass",
+    store_chain_key: "e leclerc",
+    observed_price_min: 2.65,
+  })
+  const curatedLentillesRows = buildEvaluatedCandidateRows({
+    rawLabel: "LENT ILE GRA OIE NOTRE JARDEN",
+    brand: "Notre Jardin",
+    observedPrice: 2.65,
+    storeName: "E.Leclerc Les Terrass",
+    storeCity: "Le Tampon",
+  }, curatedLentillesCandidates)
+  const curatedLentillesClassification = classifyCandidateRows(curatedLentillesRows)
+  const curatedCilaosProposal = buildNewProductProposal({
+    raw_label: "EAU CILAOS PACK 1L.25 X6",
+    category_hint: "alimentaire",
+  }, curatedCilaosRows[0] || {})
+  let curatedCilaosProposalError = ""
+  try {
+    ensureSafeReportValue({ proposed_new_product: curatedCilaosProposal }, "batch_item")
+  } catch (error: any) {
+    curatedCilaosProposalError = error?.message || ""
+  }
+  const derivedManualAliasCandidates = buildDerivedManualAliasFamilyCandidates({
+    raw_label: "Assortiment FRAISE BANANES 25OG",
+    normalized_raw_label: "assortiment fraise bananes 25og",
+    store_chain_key: "e leclerc",
+    package_format_hint: "250 g",
+    category_hint: "alimentaire",
+  }, [{
+    id: "manual-assort-1",
+    product_id: "406f0400-5bc7-419c-a698-56b4ff73062a",
+    raw_label: "ASSORT FRAISE BANANES 25OG COP",
+    corrected_label: "Assortiment fraise-banane 250 g",
+    normalized_raw_label: "assort fraise bananes 25og cop",
+    normalized_corrected_label: "assortiment fraise banane 250 g",
+    scope: "chain",
+    store_id: null,
+    store_chain_key: "e leclerc",
+    status: "active",
+    confidence: 0.9,
+    canonical_name: "Assortiment fraise-banane 250 g",
+    package_format: "250 g",
+    brand: null,
+  }])
+  const derivedManualAliasRows = buildEvaluatedCandidateRows({
+    rawLabel: "Assortiment FRAISE BANANES 25OG",
+    packageFormat: "250 g",
+    storeName: "E.Leclerc",
+  }, derivedManualAliasCandidates)
+  const derivedManualAliasClassification = classifyCandidateRows(derivedManualAliasRows)
+  const derivedManualAliasConflictCandidates = buildDerivedManualAliasFamilyCandidates({
+    raw_label: "Assortiment FRAISE BANANES 25OG",
+    normalized_raw_label: "assortiment fraise bananes 25og",
+    store_chain_key: "e leclerc",
+    package_format_hint: "250 g",
+    category_hint: "alimentaire",
+  }, [
+    {
+      id: "manual-assort-1",
+      product_id: "product-a",
+      raw_label: "ASSORT FRAISE BANANES 25OG COP",
+      corrected_label: "Assortiment fraise-banane 250 g",
+      normalized_raw_label: "assort fraise bananes 25og cop",
+      normalized_corrected_label: "assortiment fraise banane 250 g",
+      scope: "chain",
+      store_id: null,
+      store_chain_key: "e leclerc",
+      status: "active",
+      confidence: 0.9,
+      canonical_name: "Assortiment fraise-banane 250 g",
+      package_format: "250 g",
+      brand: null,
+    },
+    {
+      id: "manual-assort-2",
+      product_id: "product-b",
+      raw_label: "ASSORT FRAISE BANANES 25OG CPK",
+      corrected_label: "Assortiment fraise-banane 250 g premium",
+      normalized_raw_label: "assort fraise bananes 25og cpk",
+      normalized_corrected_label: "assortiment fraise banane 250 g premium",
+      scope: "chain",
+      store_id: null,
+      store_chain_key: "e leclerc",
+      status: "active",
+      confidence: 0.9,
+      canonical_name: "Assortiment fraise-banane 250 g premium",
+      package_format: "250 g",
+      brand: null,
+    },
+  ])
+  const derivedManualAliasConflictRows = buildEvaluatedCandidateRows({
+    rawLabel: "Assortiment FRAISE BANANES 25OG",
+    packageFormat: "250 g",
+    storeName: "E.Leclerc",
+  }, derivedManualAliasConflictCandidates)
+  const derivedManualAliasConflictClassification = classifyCandidateRows(derivedManualAliasConflictRows)
+  const derivedManualAliasPackageConflictCandidates = buildDerivedManualAliasFamilyCandidates({
+    raw_label: "Assortiment FRAISE BANANES 25OG",
+    normalized_raw_label: "assortiment fraise bananes 25og",
+    store_chain_key: "e leclerc",
+    package_format_hint: "250 g",
+    category_hint: "alimentaire",
+  }, [{
+    id: "manual-assort-3",
+    product_id: "product-c",
+    raw_label: "ASSORT FRAISE BANANES 50OG COP",
+    corrected_label: "Assortiment fraise-banane 500 g",
+    normalized_raw_label: "assort fraise bananes 50og cop",
+    normalized_corrected_label: "assortiment fraise banane 500 g",
+    scope: "chain",
+    store_id: null,
+    store_chain_key: "e leclerc",
+    status: "active",
+    confidence: 0.9,
+    canonical_name: "Assortiment fraise-banane 500 g",
+    package_format: "500 g",
+    brand: null,
+  }])
+  const derivedManualAliasPackageConflictRows = buildEvaluatedCandidateRows({
+    rawLabel: "Assortiment FRAISE BANANES 25OG",
+    packageFormat: "250 g",
+    storeName: "E.Leclerc",
+  }, derivedManualAliasPackageConflictCandidates)
+  const derivedManualAliasPackageConflictClassification = classifyCandidateRows(derivedManualAliasPackageConflictRows)
+  let missingStoreChainError = ""
+  try {
+    await runMarketAliasLibraryBatchCli({
+      fromDatabase: true,
+      batchId: "missing-chain-regression",
+      limit: 5,
+      offset: 0,
+      dryRun: true,
+      delayMs: 0,
+      maxRetries: 1,
+      concurrency: 1,
+    })
+  } catch (error: any) {
+    missingStoreChainError = error?.message || ""
+  }
+  const curatedChamonixCandidates = buildCuratedProofCandidates({
+    raw_label: "CHAMONIX BELIN 250G",
+    normalized_raw_label: "chamonix belin 250g",
+    store_name: "E.Leclerc",
+    store_chain_key: "e leclerc",
+  })
+  const curatedChamonixRows = buildEvaluatedCandidateRows({
+    rawLabel: "CHAMONIX BELIN 250G",
+    brand: "Belin",
+    packageFormat: "250 g",
+    storeName: "E.Leclerc",
+  }, curatedChamonixCandidates)
+  const curatedChamonixClassification = classifyCandidateRows(curatedChamonixRows)
+  const genericLabelClassification = classifyCandidateRows([
+    {
+      raw_label: "STICKS SALES",
+      candidate_canonical_name: "Sticks sales 250 g Eco +",
+      brand: "ECO +",
+      package_format: "250 g",
+      source_confidence: 0.89,
+      match_level: "ambiguous",
+      skip_reason: "generic_label",
+    },
+    {
+      raw_label: "STICKS SALES",
+      candidate_canonical_name: "Sticks d'Alsace 200 g",
+      brand: "Ancel",
+      package_format: "200 g",
+      source_confidence: 0.88,
+      match_level: "ambiguous",
+      skip_reason: "",
+    },
+  ])
+  let unsafeReportError = ""
+  try {
+    ensureSafeReportValue({
+      user_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    }, "report")
+  } catch (error: any) {
+    unsafeReportError = error?.message || ""
+  }
+  let safeProductIdentifierError = ""
+  try {
+    ensureSafeReportValue({
+      proposed_alias: exactLibraryAliasPayload,
+      reusable_product: {
+        id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        canonical_name: "Tarama aux oeufs de cabillaud 100 g",
+      },
+    }, "batch_item")
+  } catch (error: any) {
+    safeProductIdentifierError = error?.message || ""
+  }
+  const webQueries = buildWebQueries({
+    raw_label: "TARAMA DEUFS CABIL,IOOG",
+    brand_hint: "Coraya",
+    package_format_hint: "100 g",
+    store_name: "E.Leclerc Les Casernes",
+    store_chain_key: "e leclerc",
+  })
+  const batchSummary = summarizeBatchResults([
+    { classification: "exact_strong", sources_unavailable: [] },
+    { classification: "strong_without_barcode", sources_unavailable: [{ source: "open_food_facts_search" }] },
+    { classification: "active_library_ready", sources_unavailable: [] },
+    { classification: "suggestion", sources_unavailable: [] },
+    { classification: "ambiguous", sources_unavailable: [{ source: "open_prices" }] },
+    { classification: "rejected", sources_unavailable: [] },
+    { classification: "not_found", sources_unavailable: [] },
+    { classification: "source_unavailable", sources_unavailable: [{ source: "open_prices" }] },
+  ])
+  const consolidatedSourceErrors = consolidateSourceErrors([
+    {
+      raw_label: "LENT ILE GRA OIE NOTRE JARDEN",
+      cache_hit: false,
+      attempts_by_source: {
+        open_food_facts_search: 3,
+        open_prices: 2,
+      },
+      sources_unavailable: [
+        { source: "open_food_facts_search", status: null, reason: "fetch failed", attempts: 3 },
+        { source: "open_prices", status: null, reason: "fetch failed", attempts: 2 },
+      ],
+    },
+    {
+      raw_label: "Macédoine de légumes 265 g",
+      cache_hit: true,
+      attempts_by_source: {
+        open_food_facts_search: 1,
+      },
+      sources_unavailable: [
+        { source: "open_food_facts_search", status: null, reason: "fetch failed", attempts: 1 },
+      ],
+    },
+  ])
   const immediateTimer = (callback: () => void) => {
     callback()
     return 0 as any
   }
+  const scopedMigrationSql = fs.readFileSync(
+    "supabase/migrations/202607260002_market_product_alias_scoped_library.sql",
+    "utf8",
+  )
   const collectedMissingCandidates = await collectExternalCandidates(externalArgs, {
     fetchImpl: async (url: any) => {
       const asString = String(url)
@@ -1161,6 +1546,42 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
       throw new Error(`unexpected_test_url:${asString}`)
     },
     setTimeoutImpl: immediateTimer as any,
+  })
+  const certificateFallbackUrls: string[] = []
+  const certificateFallbackCollection = await collectExternalCandidatesWithReport(exactStrongArgs, {
+    fetchImpl: async () => {
+      const error: any = new TypeError("fetch failed")
+      error.cause = new Error("unable to verify the first certificate")
+      throw error
+    },
+    fetchJsonCliImpl: async (url: string) => {
+      certificateFallbackUrls.push(String(url))
+      if (String(url).includes("/api/v2/product/")) {
+        return {
+          payload: {
+            status: 1,
+            product: {
+              code: "3256224193012",
+              product_name: "Tarama au saumon fume 100 g",
+              brands: "U",
+              quantity: "100 g",
+              categories_tags: ["en:tarama"],
+              url: "https://world.openfoodfacts.org/product/3256224193012",
+            },
+          },
+          attempts: 1,
+          status: 200,
+        }
+      }
+      if (String(url).includes("/api/v1/prices")) {
+        return {
+          payload: { results: [] },
+          attempts: 1,
+          status: 200,
+        }
+      }
+      throw new Error(`unexpected_cli_fallback_url:${String(url)}`)
+    },
   })
   let unavailableBarcodeAttempts = 0
   const degradedSourceCollection = await collectExternalCandidatesWithReport(exactStrongArgs, {
@@ -2347,7 +2768,7 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
       {
         threshold: 0.78,
         confidence: 0.15,
-        match_level: "rejected",
+        match_level: "ambiguous",
         skip_reason: "below_threshold",
         should_apply_automatic_replacement: false,
       },
@@ -2447,6 +2868,25 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
       },
     ),
     assertEqual(
+      "market-external-certificate-fallback-uses-cli-json-fetch",
+      {
+        exact_candidate_found: certificateFallbackCollection.report.exact_candidate_found,
+        source_strategy: certificateFallbackCollection.report.source_strategy,
+        barcode_lookup_attempts: certificateFallbackCollection.report.attempts_by_source.open_food_facts_barcode,
+        fallback_urls: certificateFallbackUrls.map(url => {
+          if (url.includes("/api/v2/product/")) return "barcode"
+          if (url.includes("/api/v1/prices")) return "prices"
+          return "other"
+        }),
+      },
+      {
+        exact_candidate_found: true,
+        source_strategy: "exact_barcode_lookup",
+        barcode_lookup_attempts: 1,
+        fallback_urls: ["barcode", "prices"],
+      },
+    ),
+    assertEqual(
       "market-external-unavailable-direct-source-does-not-block-other-sources",
       {
         exact_candidate_found: degradedSourceCollection.report.exact_candidate_found,
@@ -2511,6 +2951,385 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
       {
         candidate_upsert_path: "market_external_product_candidates?on_conflict=source_name,source_identifier,normalized_raw_label,normalized_candidate_name,barcode,store_name,store_city",
         alias_upsert_path: "market_product_aliases?on_conflict=product_id,normalized_raw_label,source",
+      },
+    ),
+    assertEqual(
+      "market-alias-batch-selection-sql-keeps-coverage-filters-and-chain-normalization",
+      {
+        has_chain_filter: batchSelectionSql.includes("where aggregated.store_chain_key = 'e leclerc'"),
+        excludes_manual_aliases: batchSelectionSql.includes("from public.market_manual_product_aliases"),
+        checks_manual_scope: batchSelectionSql.includes("aliases.scope = 'store'")
+          && batchSelectionSql.includes("aliases.scope = 'chain'")
+          && batchSelectionSql.includes("aliases.scope = 'global'"),
+        checks_manual_corrected_label: batchSelectionSql.includes("normalized_corrected_label"),
+        normalizes_manual_chain_key: batchSelectionSql.includes("public.market_store_chain_key(aliases.store_chain_key) = aggregated.store_chain_key"),
+        safe_store_uuid_aggregate: batchSelectionSql.includes("max(stores.id::text)::uuid"),
+        safe_selected_store_uuid_aggregate: batchSelectionSql.includes("max(store_id::text) filter (where chain_rank = 1)::uuid"),
+        excludes_standard_aliases: batchSelectionSql.includes("from public.market_product_aliases"),
+        excludes_validated_candidates: batchSelectionSql.includes("from public.market_external_product_candidates"),
+        exposes_selection_status: batchSelectionSql.includes("as selection_status"),
+      },
+      {
+        has_chain_filter: true,
+        excludes_manual_aliases: true,
+        checks_manual_scope: true,
+        checks_manual_corrected_label: true,
+        normalizes_manual_chain_key: true,
+        safe_store_uuid_aggregate: true,
+        safe_selected_store_uuid_aggregate: true,
+        excludes_standard_aliases: true,
+        excludes_validated_candidates: true,
+        exposes_selection_status: true,
+      },
+    ),
+    assertEqual(
+      "market-alias-batch-explicitly-excludes-already-covered-labels",
+      {
+        excluded_labels: coveragePartition.excludedAlreadyCovered.map(entry => entry.raw_label),
+        excluded_scopes: coveragePartition.excludedAlreadyCovered.map(entry => entry.scope),
+        selected_labels: coveragePartition.selectedItems.map(entry => entry.raw_label),
+      },
+      {
+        excluded_labels: [
+          "ASSORT FRAISE BANANES 25OG COP",
+          "CAM PAY 250G CROISES",
+        ],
+        excluded_scopes: ["chain", "chain"],
+        selected_labels: ["EAU CILAOS PACK 1L.25 X6"],
+      },
+    ),
+    assertEqual(
+      "market-alias-batch-from-database-requires-explicit-store-chain",
+      missingStoreChainError,
+      "store_chain_required_for_database_batch",
+    ),
+    assertEqual(
+      "market-alias-batch-normalizes-imported-file-rows",
+      batchFileRow,
+      {
+        raw_label: "CAM PAY 250G CROISES",
+        normalized_raw_label: "cam pay 250g croises",
+        frequency: 4,
+        distinct_receipts: 4,
+        store_chain_key: "e leclerc",
+        store_name: null,
+        store_city: null,
+        category_hint: "cremerie",
+        brand_hint: null,
+        package_format_hint: "250 g",
+        observed_price_min: null,
+        observed_price_max: null,
+        first_observed_at: null,
+        last_observed_at: null,
+        receipts_observed: 1,
+        chain_rank: 1,
+        source_mode: "file",
+      },
+    ),
+    assertEqual(
+      "market-alias-batch-scope-stays-prudent",
+      {
+        global_scope: inferAliasScope({ distinct_chains: 3, store_chain_key: "e leclerc" }),
+        chain_scope: inferAliasScope({ distinct_chains: 1, store_chain_key: "e leclerc" }),
+        store_scope: inferAliasScope({ distinct_chains: 0, store_chain_key: "" }),
+      },
+      {
+        global_scope: "global",
+        chain_scope: "chain",
+        store_scope: "store",
+      },
+    ),
+    assertEqual(
+      "market-alias-batch-reuses-existing-product-on-exact-barcode",
+      reusableProduct,
+      {
+        product: {
+          id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+          canonical_name: "Tarama aux oeufs de cabillaud 100 g",
+          normalized_name: "tarama aux oeufs de cabillaud 100 g",
+          brand: "Coraya",
+          normalized_brand: "coraya",
+          package_format: "100 g",
+          barcode: "3270190207900",
+        },
+        reason: "barcode_exact",
+      },
+    ),
+    assertEqual(
+      "market-alias-batch-builds-scoped-library-alias-payload",
+      {
+        product_id: exactLibraryAliasPayload.product_id,
+        raw_label: exactLibraryAliasPayload.raw_label,
+        normalized_raw_label: exactLibraryAliasPayload.normalized_raw_label,
+        source: exactLibraryAliasPayload.source,
+        confidence: exactLibraryAliasPayload.confidence,
+        scope: exactLibraryAliasPayload.scope,
+        store_id: exactLibraryAliasPayload.store_id,
+        store_chain_key: exactLibraryAliasPayload.store_chain_key,
+        status: exactLibraryAliasPayload.status,
+        evidence: {
+          candidate_canonical_name: exactLibraryAliasPayload.evidence.candidate_canonical_name,
+          source_type: exactLibraryAliasPayload.evidence.source_type,
+          source_name: exactLibraryAliasPayload.evidence.source_name,
+          source_url: exactLibraryAliasPayload.evidence.source_url,
+          match_level: exactLibraryAliasPayload.evidence.match_level,
+          classification: exactLibraryAliasPayload.evidence.classification,
+        },
+      },
+      {
+        product_id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        raw_label: "CAM PAY 250G CROISES",
+        normalized_raw_label: "cam pay 250g croises",
+        source: "external_library:official_product_page",
+        confidence: 0.9721,
+        scope: "global",
+        store_id: null,
+        store_chain_key: null,
+        status: "active",
+        evidence: {
+          candidate_canonical_name: "Camembert Pei Croises 250 g",
+          source_type: "official_product_page",
+          source_name: "official_product_page",
+          source_url: "https://example.test/camembert",
+          match_level: "exact_strong",
+          classification: "exact_strong",
+        },
+      },
+    ),
+    assertEqual(
+      "market-alias-batch-upgrades-unique-high-confidence-suggestion-to-library-ready",
+      {
+        classification: libraryReadyClassification.classification,
+        ambiguity_reasons: libraryReadyClassification.ambiguityReasons,
+      },
+      {
+        classification: "active_library_ready",
+        ambiguity_reasons: [],
+      },
+    ),
+    assertEqual(
+      "market-alias-batch-keeps-close-conflicting-candidates-ambiguous",
+      {
+        classification: ambiguousClassification.classification,
+        ambiguity_reasons: ambiguousClassification.ambiguityReasons,
+      },
+      {
+        classification: "ambiguous",
+        ambiguity_reasons: ["multiple_plausible_products"],
+      },
+    ),
+    assertEqual(
+      "market-alias-batch-curated-commercial-proof-can-become-library-ready",
+      {
+        candidate_count: curatedCilaosRows.length,
+        match_level: curatedCilaosRows[0]?.match_level ?? null,
+        classification: curatedCilaosClassification.classification,
+        source_kind: curatedCilaosRows[0]?.matching_evidence?.source_kind ?? null,
+        audit_domain: curatedCilaosAudit[0]?.domain ?? null,
+        report_safe: curatedCilaosProposalError,
+      },
+      {
+        candidate_count: 1,
+        match_level: "strong_without_barcode",
+        classification: "active_library_ready",
+        source_kind: "commercial_exact_page",
+        audit_domain: "drivezeclerc.re",
+        report_safe: "",
+      },
+    ),
+    assertEqual(
+      "market-alias-batch-curated-lentilles-proof-promotes-to-library-ready",
+      {
+        candidate_count: curatedLentillesRows.length,
+        match_level: curatedLentillesRows[0]?.match_level ?? null,
+        classification: curatedLentillesClassification.classification,
+        brand_score: curatedLentillesRows[0]?.matching_evidence?.brand_score ?? null,
+        proof_match_key: curatedLentillesRows[0]?.matching_evidence?.proof_match_key ?? null,
+      },
+      {
+        candidate_count: 1,
+        match_level: "strong_without_barcode",
+        classification: "active_library_ready",
+        brand_score: 1,
+        proof_match_key: "lent ile gra oie notre jarden",
+      },
+    ),
+    assertEqual(
+      "market-alias-batch-derived-manual-alias-family-can-become-library-ready",
+      {
+        source_name: derivedManualAliasRows[0]?.source_name ?? null,
+        match_level: derivedManualAliasRows[0]?.match_level ?? null,
+        justification: derivedManualAliasRows[0]?.matching_evidence?.justification ?? null,
+        classification: derivedManualAliasClassification.classification,
+      },
+      {
+        source_name: "derived_from_manual_alias_family",
+        match_level: "strong_without_barcode",
+        justification: "derived_from_manual_alias_family",
+        classification: "active_library_ready",
+      },
+    ),
+    assertEqual(
+      "market-alias-batch-derived-manual-alias-family-conflict-stays-ambiguous",
+      {
+        candidate_count: derivedManualAliasConflictRows.length,
+        classification: derivedManualAliasConflictClassification.classification,
+      },
+      {
+        candidate_count: 2,
+        classification: "ambiguous",
+      },
+    ),
+    assertEqual(
+      "market-alias-batch-derived-manual-alias-family-package-divergence-stays-ambiguous",
+      {
+        match_level: derivedManualAliasPackageConflictRows[0]?.match_level ?? null,
+        skip_reason: derivedManualAliasPackageConflictRows[0]?.skip_reason ?? null,
+        classification: derivedManualAliasPackageConflictClassification.classification,
+      },
+      {
+        match_level: "ambiguous",
+        skip_reason: "package_conflict",
+        classification: "ambiguous",
+      },
+    ),
+    assertEqual(
+      "market-alias-batch-curated-brand-conflict-never-becomes-library-ready",
+      {
+        match_level: curatedChamonixRows[0]?.match_level ?? null,
+        skip_reason: curatedChamonixRows[0]?.skip_reason ?? null,
+        classification: curatedChamonixClassification.classification,
+      },
+      {
+        match_level: "rejected",
+        skip_reason: "brand_conflict",
+        classification: "rejected",
+      },
+    ),
+    assertEqual(
+      "market-alias-batch-generic-label-stays-ambiguous",
+      {
+        classification: genericLabelClassification.classification,
+        ambiguity_reasons: genericLabelClassification.ambiguityReasons,
+      },
+      {
+        classification: "ambiguous",
+        ambiguity_reasons: ["multiple_plausible_products", "generic_label"],
+      },
+    ),
+    assertEqual(
+      "market-alias-batch-report-guard-rejects-personal-identifiers",
+      unsafeReportError,
+      "forbidden_report_key:report.user_id",
+    ),
+    assertEqual(
+      "market-alias-batch-report-guard-allows-product-identifiers-for-scoped-simulation",
+      safeProductIdentifierError,
+      "",
+    ),
+    assertEqual(
+      "market-alias-batch-builds-progressive-web-queries",
+      webQueries,
+      [
+        "TARAMA DEUFS CABIL,IOOG",
+        "tarama deufs cabil ioog",
+        "TARAMA OEUFS CABIL,IOOG",
+        "Coraya tarama deufs cabil ioog 100 g",
+        "Coraya tarama deufs cabil ioog",
+        "tarama deufs cabil ioog 100 g",
+        "E.Leclerc Les Casernes Coraya tarama deufs cabil ioog 100 g",
+        "Coraya tarama deufs cabil ioog 100 g reunion",
+      ],
+    ),
+    assertEqual(
+      "market-alias-batch-summary-counts-classifications-and-source-unavailable-bucket",
+      batchSummary,
+      {
+        exact_strong: 1,
+        strong_without_barcode: 1,
+        active_library_ready: 1,
+        suggestions: 1,
+        ambiguous: 1,
+        rejected: 1,
+        not_found: 1,
+        source_unavailable: 1,
+        network_errors: 0,
+      },
+    ),
+    assertEqual(
+      "market-alias-batch-consolidates-duplicate-source-errors",
+      consolidatedSourceErrors,
+      [
+        {
+          source: "open_food_facts_search",
+          status: null,
+          reason: "fetch failed",
+          products_affected: 2,
+          attempts: 4,
+          source_event_count: 2,
+          cache_hits: 1,
+          raw_labels: [
+            "LENT ILE GRA OIE NOTRE JARDEN",
+            "Macédoine de légumes 265 g",
+          ],
+        },
+        {
+          source: "open_prices",
+          status: null,
+          reason: "fetch failed",
+          products_affected: 1,
+          attempts: 2,
+          source_event_count: 1,
+          cache_hits: 0,
+          raw_labels: [
+            "LENT ILE GRA OIE NOTRE JARDEN",
+          ],
+        },
+      ],
+    ),
+    assertEqual(
+      "market-alias-batch-selection-sql-excludes-manually-covered-corrected-labels",
+      {
+        excludes_assortiment_corrected_label: batchSelectionSql.includes("normalized_corrected_label"),
+        scopes_store_chain_global: batchSelectionSql.includes("aliases.scope = 'store'")
+          && batchSelectionSql.includes("aliases.scope = 'chain'")
+          && batchSelectionSql.includes("aliases.scope = 'global'"),
+      },
+      {
+        excludes_assortiment_corrected_label: true,
+        scopes_store_chain_global: true,
+      },
+    ),
+    assertEqual(
+      "market-alias-scoped-migration-updates-resolver-with-scope-priority",
+      {
+        replaces_exact_resolver: scopedMigrationSql.includes("create or replace function public.market_resolve_exact_products"),
+        reads_alias_status: scopedMigrationSql.includes("coalesce(aliases.status, 'active') = 'active'"),
+        prefers_store_scope: scopedMigrationSql.includes("aliases.scope = 'store'"),
+        prefers_chain_scope: scopedMigrationSql.includes("aliases.scope = 'chain'"),
+        keeps_global_scope: scopedMigrationSql.includes("aliases.scope = 'global'"),
+      },
+      {
+        replaces_exact_resolver: true,
+        reads_alias_status: true,
+        prefers_store_scope: true,
+        prefers_chain_scope: true,
+        keeps_global_scope: true,
+      },
+    ),
+    assertEqual(
+      "market-alias-scoped-migration-keeps-legacy-aliases-compatible",
+      {
+        backfills_scope_global: scopedMigrationSql.includes("scope = coalesce(nullif(scope, ''), 'global')"),
+        backfills_status_active: scopedMigrationSql.includes("status = coalesce(nullif(status, ''), 'active')"),
+        default_scope_global: scopedMigrationSql.includes("add column if not exists scope text not null default 'global'"),
+        default_status_active: scopedMigrationSql.includes("add column if not exists status text not null default 'active'"),
+      },
+      {
+        backfills_scope_global: true,
+        backfills_status_active: true,
+        default_scope_global: true,
+        default_status_active: true,
       },
     ),
   ]
