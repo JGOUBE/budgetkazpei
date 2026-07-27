@@ -1443,6 +1443,10 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
     "supabase/migrations/202607270004_market_alias_library_atomic_apply.sql",
     "utf8",
   )
+  const atomicApplyActiveConflictTargetPattern = new RegExp(
+    String.raw`on\s+conflict\s*\(\s*normalized_raw_label\s*,\s*scope\s*,\s*\(?\s*coalesce\s*\(\s*store_id\s*,\s*'00000000-0000-0000-0000-000000000000'\s*::uuid\s*\)\s*\)?\s*,\s*\(?\s*coalesce\s*\(\s*store_chain_key\s*,\s*''\s*\)\s*\)?\s*\)\s*where\s+status\s*=\s*'active'\s*do\s+update`,
+    "i",
+  )
   const atomicApplyReport = {
     items: [
       {
@@ -3581,7 +3585,7 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
         reuses_product_key: atomicApplyMigrationSql.includes("where products.product_key = payloads.product_key"),
         inserts_missing_products_only: atomicApplyMigrationSql.includes("on conflict (product_key) do nothing"),
         checks_existing_alias_target: atomicApplyMigrationSql.includes("active scoped alias already points to another product"),
-        uses_partial_unique_index_target: atomicApplyMigrationSql.includes("on conflict (\n    normalized_raw_label,\n    scope,\n    (coalesce(store_id, '00000000-0000-0000-0000-000000000000'::uuid)),\n    (coalesce(store_chain_key, ''))\n  )\n  where status = 'active'"),
+        uses_partial_unique_index_target: atomicApplyActiveConflictTargetPattern.test(atomicApplyMigrationSql),
         returns_result_buckets: atomicApplyMigrationSql.includes("'products_created'") && atomicApplyMigrationSql.includes("'aliases_updated'") && atomicApplyMigrationSql.includes("'errors'"),
       },
       {
