@@ -13,6 +13,7 @@ from typing import Protocol
 from urllib.parse import urlsplit
 
 from app.collectors.eleclerc_reunion import CatalogReference, discover_catalogs
+from app.collectors.leader_price_reunion import LeaderPriceReadonlyRunReport, run_leader_price_readonly
 from app.db.repositories import InMemoryPageSnapshotRepository, PageSnapshotRepository, build_repository
 from app.extractors.catalog_page_regions import PageRegion, detect_regions
 from app.extractors.catalog_product_ocr import CatalogProductOcr, OcrPage, RapidOcrCliClient
@@ -226,6 +227,8 @@ def build_argument_parser() -> argparse.ArgumentParser:
     parser.add_argument("--write-metadata", action="store_true", help="Persist page metadata instead of dry-run.")
     parser.add_argument("--classify-layouts", action="store_true", help="Classify page layouts for sampling.")
     parser.add_argument("--extract-products", action="store_true", help="Run the local product extraction prototype.")
+    parser.add_argument("--leader-price-readonly", action="store_true", help="Run the readonly Leader Price structured collector.")
+    parser.add_argument("--leader-max-products", type=int, default=100, help="Maximum Leader Price products to inspect.")
     parser.add_argument("--benchmark-vision", action="store_true", help="Run the three-page vision benchmark.")
     parser.add_argument("--report-path", default=None, help="Override the local JSON report output path.")
     parser.add_argument("--layout-report-path", default=None, help="Override the local layout JSON report output path.")
@@ -651,6 +654,11 @@ def main() -> int:
         print(json.dumps(_promotion_report_to_json(report), ensure_ascii=False, indent=2))
         return 0
 
+    if args.leader_price_readonly:
+        report = run_leader_price_readonly(settings, fetcher=HttpFetcher(), max_products=args.leader_max_products)
+        print(json.dumps(_leader_price_report_to_json(report), ensure_ascii=False, indent=2))
+        return 0
+
     if args.benchmark_vision:
         report = run_vision_benchmark(settings)
         print(json.dumps(_vision_benchmark_report_to_json(report), ensure_ascii=False, indent=2))
@@ -728,6 +736,10 @@ def _layout_report_to_json(report: LayoutClassificationRunReport) -> dict[str, o
 
 
 def _vision_benchmark_report_to_json(report: VisionBenchmarkRunReport) -> dict[str, object]:
+    return report.to_dict()
+
+
+def _leader_price_report_to_json(report: LeaderPriceReadonlyRunReport) -> dict[str, object]:
     return report.to_dict()
 
 
