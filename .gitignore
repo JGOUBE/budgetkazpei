@@ -34,5 +34,6 @@ __pycache__/
 # Market alias batch reports and caches
 reports/market-alias-*.json
 reports/market-alias-*.md
+reports/promo-products-*.json
 .market-alias-cache/
 .market-alias-checkpoints/

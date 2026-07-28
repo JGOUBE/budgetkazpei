@@ -36,11 +36,18 @@ class Settings:
     domain_delay_seconds: float
     user_agent: str
     extraction_version: str
+    extraction_mode: str
+    vision_enabled: bool
+    report_path: Path
+    ocr_python_executable: Path
     temp_dir: Path
 
     @classmethod
     def from_env(cls) -> "Settings":
+        repo_root = Path(__file__).resolve().parents[3]
         temp_dir = Path(os.getenv("PROMO_COLLECTOR_TEMP_DIR", tempfile.gettempdir())) / "budgetkazpei-promo-products"
+        default_report_path = repo_root / "reports" / "promo-products-eleclerc-26runrdc-pages-1-3.json"
+        max_pages = _env_int("PROMO_MAX_PAGES", _env_int("PROMO_COLLECTOR_MAX_PAGES", 0))
         return cls(
             supabase_url=os.getenv("SUPABASE_URL"),
             supabase_service_role_key=os.getenv("SUPABASE_SERVICE_ROLE_KEY"),
@@ -51,10 +58,10 @@ class Settings:
             ),
             official_domain=os.getenv("PROMO_COLLECTOR_OFFICIAL_DOMAIN", "e-leclerc.re"),
             retailer_slug=os.getenv("PROMO_COLLECTOR_RETAILER_SLUG", "eleclerc-reunion"),
-            target_catalog_slug=os.getenv("PROMO_COLLECTOR_TARGET_CATALOG", "26runRDC"),
+            target_catalog_slug=os.getenv("PROMO_COLLECTOR_TARGET_CATALOG", os.getenv("PROMO_TARGET_CATALOG", "26runRDC")),
             dry_run=_env_bool("PROMO_COLLECTOR_DRY_RUN", True),
             max_catalogs=_env_int("PROMO_COLLECTOR_MAX_CATALOGS", 1),
-            max_pages=_env_int("PROMO_COLLECTOR_MAX_PAGES", 0),
+            max_pages=max_pages,
             request_timeout_seconds=_env_int("PROMO_COLLECTOR_REQUEST_TIMEOUT_SECONDS", 30),
             domain_delay_seconds=float(os.getenv("PROMO_COLLECTOR_DOMAIN_DELAY_SECONDS", "1.0")),
             user_agent=os.getenv(
@@ -62,6 +69,15 @@ class Settings:
                 "BudgetKazPeiPromoProductsCollector/0.1 (+https://budgetkazpei.app)",
             ),
             extraction_version=os.getenv("PROMO_COLLECTOR_EXTRACTION_VERSION", "fliphtml5_pages_v1"),
+            extraction_mode=os.getenv("PROMO_EXTRACTION_MODE", "local").strip().lower(),
+            vision_enabled=_env_bool("PROMO_VISION_ENABLED", False),
+            report_path=Path(os.getenv("PROMO_REPORT_PATH", str(default_report_path))),
+            ocr_python_executable=Path(
+                os.getenv(
+                    "PROMO_OCR_PYTHON",
+                    str(repo_root / "services" / "receipt-scanner" / ".venv" / "Scripts" / "python.exe"),
+                )
+            ),
             temp_dir=temp_dir,
         )
 
@@ -72,6 +88,7 @@ class Settings:
         max_catalogs: int | None = None,
         max_pages: int | None = None,
         target_catalog_slug: str | None = None,
+        report_path: Path | None = None,
     ) -> "Settings":
         return replace(
             self,
@@ -79,4 +96,5 @@ class Settings:
             max_catalogs=self.max_catalogs if max_catalogs is None else max_catalogs,
             max_pages=self.max_pages if max_pages is None else max_pages,
             target_catalog_slug=self.target_catalog_slug if target_catalog_slug is None else target_catalog_slug,
+            report_path=self.report_path if report_path is None else report_path,
         )

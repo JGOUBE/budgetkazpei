@@ -14,9 +14,14 @@ from urllib.parse import urlsplit
 
 from app.collectors.eleclerc_reunion import CatalogReference, discover_catalogs
 from app.db.repositories import InMemoryPageSnapshotRepository, PageSnapshotRepository, build_repository
-from app.extractors.fliphtml5_pages import FlipHtml5Viewer, PageAsset, discover_viewer, extract_page_assets
-from app.services.hashing import StreamHashResult, hash_chunks
-from app.services.page_fingerprint import PageAssetMetadata, PageDecision, plan_page_snapshot
+from app.extractors.catalog_page_regions import PageRegion, detect_regions
+from app.extractors.catalog_product_ocr import CatalogProductOcr, OcrPage, RapidOcrCliClient
+from app.extractors.fliphtml5_pages import discover_viewer, extract_page_assets
+from app.models.promotion_candidate import PromotionCandidate
+from app.services.hashing import hash_chunks
+from app.services.page_fingerprint import PageAssetMetadata, plan_page_snapshot
+from app.services.promotion_deduplication import DeduplicationSummary, annotate_duplicates
+from app.services.promotion_scoring import extract_promotion_candidates
 from app.settings import Settings
 
 
@@ -25,6 +30,13 @@ class TextDocument:
     url: str
     content_type: str | None
     text: str
+
+
+@dataclass(frozen=True)
+class BinaryDocument:
+    url: str
+    content_type: str | None
+    content: bytes
 
 
 @dataclass(frozen=True)
@@ -78,9 +90,47 @@ class RunReport:
     duration_seconds: float
 
 
+@dataclass(frozen=True)
+class PageExtractionReport:
+    page_number: int
+    page_dimensions: tuple[int, int]
+    zone_count: int
+    candidate_count: int
+    reliable_count: int
+    needs_review_count: int
+    rejected_count: int
+    examples: list[dict[str, object]]
+
+
+@dataclass(frozen=True)
+class PromotionExtractionRunReport:
+    source_url: str
+    catalog_slug: str
+    catalog_title: str
+    viewer_url: str
+    config_url: str
+    total_detected_pages: int
+    processed_pages: list[PageExtractionReport]
+    detected_catalogs: list[CatalogDiscoveryReport]
+    zones_detected: int
+    candidates_extracted: int
+    candidates_complete: int
+    candidates_needs_review: int
+    candidates_rejected: int
+    duplicate_same_page: int
+    duplicate_cross_page: int
+    ai_consumption: int
+    temporary_files_remaining: int
+    duration_seconds: float
+    report_path: str
+    errors: list[str]
+    candidates: list[PromotionCandidate]
+
+
 class Fetcher(Protocol):
     def fetch_text(self, url: str, *, allowed_hosts: set[str], settings: Settings) -> TextDocument: ...
     def fetch_asset_metadata(self, url: str, *, allowed_hosts: set[str], settings: Settings) -> PageHashMetadata: ...
+    def fetch_binary(self, url: str, *, allowed_hosts: set[str], settings: Settings) -> BinaryDocument: ...
 
 
 class HttpFetcher:
@@ -105,6 +155,10 @@ class HttpFetcher:
             content_type=content_type,
             last_modified=last_modified,
         )
+
+    def fetch_binary(self, url: str, *, allowed_hosts: set[str], settings: Settings) -> BinaryDocument:
+        content, content_type, _ = self._read(url, allowed_hosts=allowed_hosts, settings=settings)
+        return BinaryDocument(url=url, content_type=content_type, content=content)
 
     def _read(self, url: str, *, allowed_hosts: set[str], settings: Settings) -> tuple[bytes, str | None, str | None]:
         chunks, content_type, last_modified = self._read_stream(url, allowed_hosts=allowed_hosts, settings=settings)
@@ -147,8 +201,10 @@ def build_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="BudgetKazPei promo products collector")
     parser.add_argument("--target-catalog", default=None, help="Catalog slug to process, defaults to 26runRDC.")
     parser.add_argument("--max-catalogs", type=int, default=None, help="Maximum number of catalogs to process.")
-    parser.add_argument("--max-pages", type=int, default=None, help="Maximum number of pages to hash.")
+    parser.add_argument("--max-pages", type=int, default=None, help="Maximum number of pages to hash or extract.")
     parser.add_argument("--write-metadata", action="store_true", help="Persist page metadata instead of dry-run.")
+    parser.add_argument("--extract-products", action="store_true", help="Run the local product extraction prototype.")
+    parser.add_argument("--report-path", default=None, help="Override the local JSON report output path.")
     return parser
 
 
@@ -168,36 +224,9 @@ def run(
     detected_reports: list[CatalogDiscoveryReport] = []
     processed_catalogs: list[ProcessedCatalogReport] = []
     try:
-        official_page = fetcher.fetch_text(settings.source_url, allowed_hosts=allowed_hosts, settings=settings)
-        catalogs = discover_catalogs(official_page.text, official_page.url, settings.official_domain)
-
-        selected_catalogs: list[CatalogReference] = []
-        for catalog in catalogs:
-            selected = catalog.catalog_slug == settings.target_catalog_slug
-            ignored_reason = None
-            if not selected:
-                ignored_reason = "outside_mvp_target"
-            elif settings.max_catalogs > 0 and len(selected_catalogs) >= settings.max_catalogs:
-                selected = False
-                ignored_reason = "max_catalogs_reached"
-
-            detected_reports.append(
-                CatalogDiscoveryReport(
-                    catalog_slug=catalog.catalog_slug,
-                    title=catalog.title,
-                    viewer_url=catalog.viewer_url,
-                    selected=selected,
-                    ignored_reason=ignored_reason,
-                )
-            )
-            if selected:
-                selected_catalogs.append(catalog)
-
+        detected_reports, selected_catalogs = _discover_catalog_selection(settings, fetcher, allowed_hosts=allowed_hosts)
         for catalog in selected_catalogs:
-            viewer_page = fetcher.fetch_text(catalog.viewer_url, allowed_hosts=allowed_hosts, settings=settings)
-            viewer = discover_viewer(viewer_page.text, catalog.viewer_url, allowed_hosts)
-            config_js = fetcher.fetch_text(viewer.config_url, allowed_hosts=allowed_hosts, settings=settings)
-            page_assets = extract_page_assets(config_js.text, viewer.config_url, allowed_hosts)
+            viewer, page_assets = _fetch_catalog_assets(catalog, settings, fetcher, allowed_hosts=allowed_hosts)
             limited_assets = page_assets[: settings.max_pages] if settings.max_pages > 0 else page_assets
             catalog_external_key = f"{settings.source_slug}:{catalog.external_key_suffix}"
             catalog_id = repository.resolve_catalog_id(
@@ -265,6 +294,196 @@ def run(
     )
 
 
+def run_product_extraction(
+    settings: Settings,
+    *,
+    fetcher: Fetcher | None = None,
+    ocr_client: CatalogProductOcr | None = None,
+) -> PromotionExtractionRunReport:
+    if settings.extraction_mode != "local":
+        raise RuntimeError(f"unsupported_extraction_mode:{settings.extraction_mode}")
+    if settings.vision_enabled:
+        raise RuntimeError("vision_enabled_not_allowed_in_phase_2a")
+
+    started = time.perf_counter()
+    fetcher = fetcher or HttpFetcher()
+    ocr_client = ocr_client or RapidOcrCliClient(python_executable=settings.ocr_python_executable)
+    allowed_hosts = {settings.official_domain.lower(), f"www.{settings.official_domain.lower()}"}
+    errors: list[str] = []
+    detected_reports: list[CatalogDiscoveryReport] = []
+    page_reports: list[PageExtractionReport] = []
+    all_candidates: list[PromotionCandidate] = []
+    zones_detected = 0
+    total_detected_pages = 0
+    viewer_url = ""
+    config_url = ""
+    catalog_title = ""
+    catalog_slug = settings.target_catalog_slug
+
+    _cleanup_temp_dir(settings.temp_dir)
+    settings.temp_dir.mkdir(parents=True, exist_ok=True)
+
+    try:
+        detected_reports, selected_catalogs = _discover_catalog_selection(settings, fetcher, allowed_hosts=allowed_hosts)
+        if not selected_catalogs:
+            raise RuntimeError(f"catalog_not_found:{settings.target_catalog_slug}")
+
+        catalog = selected_catalogs[0]
+        catalog_slug = catalog.catalog_slug
+        catalog_title = catalog.title
+        viewer, page_assets = _fetch_catalog_assets(catalog, settings, fetcher, allowed_hosts=allowed_hosts)
+        viewer_url = catalog.viewer_url
+        config_url = viewer.config_url
+        total_detected_pages = len(page_assets)
+        limited_assets = page_assets[: settings.max_pages] if settings.max_pages > 0 else page_assets
+
+        for page in limited_assets:
+            try:
+                binary = fetcher.fetch_binary(page.asset_url, allowed_hosts=allowed_hosts, settings=settings)
+                image_path = _write_temp_page_asset(settings.temp_dir, page.page_number, page.asset_url, binary.content_type, binary.content)
+                ocr_page = ocr_client.analyze_image(image_path, page_number=page.page_number)
+                regions = detect_regions(ocr_page)
+                zones_detected += len(regions)
+                candidates = extract_promotion_candidates(regions, catalog=catalog)
+                all_candidates.extend(candidates)
+                page_reports.append(
+                    PageExtractionReport(
+                        page_number=page.page_number,
+                        page_dimensions=(ocr_page.image_width, ocr_page.image_height),
+                        zone_count=len(regions),
+                        candidate_count=len(candidates),
+                        reliable_count=len([candidate for candidate in candidates if candidate.candidate_status == "reliable"]),
+                        needs_review_count=len([candidate for candidate in candidates if candidate.candidate_status == "needs_review"]),
+                        rejected_count=len([candidate for candidate in candidates if candidate.candidate_status == "rejected"]),
+                        examples=[candidate.to_dict() for candidate in candidates[:3]],
+                    )
+                )
+            except Exception as exc:  # pragma: no cover - exercised in real run only
+                errors.append(f"page_{page.page_number}:{exc}")
+
+        dedupe = annotate_duplicates(all_candidates)
+        _write_report_json(settings.report_path, _promotion_report_to_json_object(
+            settings=settings,
+            detected_reports=detected_reports,
+            page_reports=page_reports,
+            candidates=all_candidates,
+            zones_detected=zones_detected,
+            dedupe=dedupe,
+            duration_seconds=round(time.perf_counter() - started, 3),
+            temporary_files_remaining=0,
+            errors=errors,
+            catalog_slug=catalog_slug,
+            catalog_title=catalog_title,
+            viewer_url=viewer_url,
+            config_url=config_url,
+            total_detected_pages=total_detected_pages,
+        ))
+    finally:
+        _cleanup_temp_dir(settings.temp_dir)
+
+    temporary_files_remaining = len(list(settings.temp_dir.iterdir())) if settings.temp_dir.exists() else 0
+    return PromotionExtractionRunReport(
+        source_url=settings.source_url,
+        catalog_slug=catalog_slug,
+        catalog_title=catalog_title,
+        viewer_url=viewer_url,
+        config_url=config_url,
+        total_detected_pages=total_detected_pages,
+        processed_pages=page_reports,
+        detected_catalogs=detected_reports,
+        zones_detected=zones_detected,
+        candidates_extracted=len(all_candidates),
+        candidates_complete=len([candidate for candidate in all_candidates if not candidate.is_duplicate and candidate.candidate_status == "reliable"]),
+        candidates_needs_review=len([candidate for candidate in all_candidates if candidate.candidate_status == "needs_review"]),
+        candidates_rejected=len([candidate for candidate in all_candidates if candidate.candidate_status == "rejected"]),
+        duplicate_same_page=dedupe.duplicate_same_page if 'dedupe' in locals() else 0,
+        duplicate_cross_page=dedupe.duplicate_cross_page if 'dedupe' in locals() else 0,
+        ai_consumption=0,
+        temporary_files_remaining=temporary_files_remaining,
+        duration_seconds=round(time.perf_counter() - started, 3),
+        report_path=str(settings.report_path),
+        errors=errors,
+        candidates=all_candidates,
+    )
+
+
+def _discover_catalog_selection(
+    settings: Settings,
+    fetcher: Fetcher,
+    *,
+    allowed_hosts: set[str],
+) -> tuple[list[CatalogDiscoveryReport], list[CatalogReference]]:
+    official_page = fetcher.fetch_text(settings.source_url, allowed_hosts=allowed_hosts, settings=settings)
+    catalogs = discover_catalogs(official_page.text, official_page.url, settings.official_domain)
+
+    detected_reports: list[CatalogDiscoveryReport] = []
+    selected_catalogs: list[CatalogReference] = []
+    for catalog in catalogs:
+        selected = catalog.catalog_slug == settings.target_catalog_slug
+        ignored_reason = None
+        if not selected:
+            ignored_reason = "outside_mvp_target"
+        elif settings.max_catalogs > 0 and len(selected_catalogs) >= settings.max_catalogs:
+            selected = False
+            ignored_reason = "max_catalogs_reached"
+
+        detected_reports.append(
+            CatalogDiscoveryReport(
+                catalog_slug=catalog.catalog_slug,
+                title=catalog.title,
+                viewer_url=catalog.viewer_url,
+                selected=selected,
+                ignored_reason=ignored_reason,
+            )
+        )
+        if selected:
+            selected_catalogs.append(catalog)
+    return detected_reports, selected_catalogs
+
+
+def _fetch_catalog_assets(
+    catalog: CatalogReference,
+    settings: Settings,
+    fetcher: Fetcher,
+    *,
+    allowed_hosts: set[str],
+):
+    viewer_page = fetcher.fetch_text(catalog.viewer_url, allowed_hosts=allowed_hosts, settings=settings)
+    viewer = discover_viewer(viewer_page.text, catalog.viewer_url, allowed_hosts)
+    config_js = fetcher.fetch_text(viewer.config_url, allowed_hosts=allowed_hosts, settings=settings)
+    page_assets = extract_page_assets(config_js.text, viewer.config_url, allowed_hosts)
+    return viewer, page_assets
+
+
+def _write_temp_page_asset(
+    temp_dir: Path,
+    page_number: int,
+    asset_url: str,
+    content_type: str | None,
+    content: bytes,
+) -> Path:
+    suffix = _guess_file_suffix(asset_url, content_type)
+    image_path = temp_dir / f"page-{page_number:03d}{suffix}"
+    image_path.write_bytes(content)
+    return image_path
+
+
+def _guess_file_suffix(asset_url: str, content_type: str | None) -> str:
+    path = urlsplit(asset_url).path.lower()
+    if path.endswith(".webp") or (content_type or "").lower().startswith("image/webp"):
+        return ".webp"
+    if path.endswith(".png"):
+        return ".png"
+    if path.endswith(".jpg") or path.endswith(".jpeg"):
+        return ".jpg"
+    return ".img"
+
+
+def _write_report_json(path: Path, payload: dict[str, object]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
 def main() -> int:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
@@ -274,7 +493,14 @@ def main() -> int:
         max_catalogs=args.max_catalogs,
         max_pages=args.max_pages,
         target_catalog_slug=args.target_catalog,
+        report_path=Path(args.report_path) if args.report_path else None,
     )
+
+    if args.extract_products:
+        report = run_product_extraction(settings)
+        print(json.dumps(_promotion_report_to_json(report), ensure_ascii=False, indent=2))
+        return 0
+
     report = run(settings)
     print(json.dumps(_report_to_json(report), ensure_ascii=False, indent=2))
     return 0
@@ -299,6 +525,76 @@ def _report_to_json(report: RunReport) -> dict[str, object]:
             }
             for item in report.processed_catalogs
         ],
+    }
+
+
+def _promotion_report_to_json(report: PromotionExtractionRunReport) -> dict[str, object]:
+    return {
+        "source_url": report.source_url,
+        "catalog_slug": report.catalog_slug,
+        "catalog_title": report.catalog_title,
+        "viewer_url": report.viewer_url,
+        "config_url": report.config_url,
+        "total_detected_pages": report.total_detected_pages,
+        "processed_pages": [asdict(item) for item in report.processed_pages],
+        "detected_catalogs": [asdict(item) for item in report.detected_catalogs],
+        "zones_detected": report.zones_detected,
+        "candidates_extracted": report.candidates_extracted,
+        "candidates_complete": report.candidates_complete,
+        "candidates_needs_review": report.candidates_needs_review,
+        "candidates_rejected": report.candidates_rejected,
+        "duplicate_same_page": report.duplicate_same_page,
+        "duplicate_cross_page": report.duplicate_cross_page,
+        "ai_consumption": report.ai_consumption,
+        "temporary_files_remaining": report.temporary_files_remaining,
+        "duration_seconds": report.duration_seconds,
+        "report_path": report.report_path,
+        "errors": list(report.errors),
+        "candidates": [candidate.to_dict() for candidate in report.candidates],
+    }
+
+
+def _promotion_report_to_json_object(
+    *,
+    settings: Settings,
+    detected_reports: list[CatalogDiscoveryReport],
+    page_reports: list[PageExtractionReport],
+    candidates: list[PromotionCandidate],
+    zones_detected: int,
+    dedupe: DeduplicationSummary,
+    duration_seconds: float,
+    temporary_files_remaining: int,
+    errors: list[str],
+    catalog_slug: str,
+    catalog_title: str,
+    viewer_url: str,
+    config_url: str,
+    total_detected_pages: int,
+) -> dict[str, object]:
+    return {
+        "catalogue": {
+            "source_url": settings.source_url,
+            "catalog_slug": catalog_slug,
+            "catalog_title": catalog_title,
+            "viewer_url": viewer_url,
+            "config_url": config_url,
+            "total_detected_pages": total_detected_pages,
+            "pages_processed": [page.page_number for page in page_reports],
+        },
+        "duration_seconds": duration_seconds,
+        "zones_detected": zones_detected,
+        "candidates_extracted": len(candidates),
+        "candidates_complete": len([candidate for candidate in candidates if not candidate.is_duplicate and candidate.candidate_status == "reliable"]),
+        "candidates_needs_review": len([candidate for candidate in candidates if candidate.candidate_status == "needs_review"]),
+        "candidates_rejected": len([candidate for candidate in candidates if candidate.candidate_status == "rejected"]),
+        "duplicate_same_page": dedupe.duplicate_same_page,
+        "duplicate_cross_page": dedupe.duplicate_cross_page,
+        "ai_consumption": 0,
+        "temporary_files_remaining": temporary_files_remaining,
+        "errors": list(errors),
+        "detected_catalogs": [asdict(item) for item in detected_reports],
+        "pages": [asdict(item) for item in page_reports],
+        "candidates": [candidate.to_dict() for candidate in candidates],
     }
 
 
