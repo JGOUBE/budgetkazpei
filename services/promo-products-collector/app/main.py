@@ -23,6 +23,7 @@ from app.services.page_fingerprint import PageAssetMetadata, plan_page_snapshot
 from app.services.page_layout_classifier import PageLayoutAnalysis, classify_page_layout, select_representative_pages
 from app.services.promotion_deduplication import DeduplicationSummary, annotate_duplicates
 from app.services.promotion_scoring import extract_promotion_candidates
+from app.services.vision_benchmark import VisionBenchmarkRunReport, run_vision_benchmark
 from app.settings import Settings
 
 
@@ -225,8 +226,10 @@ def build_argument_parser() -> argparse.ArgumentParser:
     parser.add_argument("--write-metadata", action="store_true", help="Persist page metadata instead of dry-run.")
     parser.add_argument("--classify-layouts", action="store_true", help="Classify page layouts for sampling.")
     parser.add_argument("--extract-products", action="store_true", help="Run the local product extraction prototype.")
+    parser.add_argument("--benchmark-vision", action="store_true", help="Run the three-page vision benchmark.")
     parser.add_argument("--report-path", default=None, help="Override the local JSON report output path.")
     parser.add_argument("--layout-report-path", default=None, help="Override the local layout JSON report output path.")
+    parser.add_argument("--vision-report-path", default=None, help="Override the local vision benchmark JSON report path.")
     return parser
 
 
@@ -634,6 +637,7 @@ def main() -> int:
         target_catalog_slug=args.target_catalog,
         report_path=Path(args.report_path) if args.report_path else None,
         layout_report_path=Path(args.layout_report_path) if args.layout_report_path else None,
+        vision_report_path=Path(args.vision_report_path) if args.vision_report_path else None,
         selected_page_numbers=parsed_page_numbers,
     )
 
@@ -645,6 +649,11 @@ def main() -> int:
     if args.extract_products:
         report = run_product_extraction(settings)
         print(json.dumps(_promotion_report_to_json(report), ensure_ascii=False, indent=2))
+        return 0
+
+    if args.benchmark_vision:
+        report = run_vision_benchmark(settings)
+        print(json.dumps(_vision_benchmark_report_to_json(report), ensure_ascii=False, indent=2))
         return 0
 
     report = run(settings)
@@ -716,6 +725,10 @@ def _layout_report_to_json(report: LayoutClassificationRunReport) -> dict[str, o
         "report_path": report.report_path,
         "errors": list(report.errors),
     }
+
+
+def _vision_benchmark_report_to_json(report: VisionBenchmarkRunReport) -> dict[str, object]:
+    return report.to_dict()
 
 
 def _promotion_report_to_json_object(

@@ -20,6 +20,13 @@ def _env_int(name: str, default: int) -> int:
     return int(raw)
 
 
+def _env_float(name: str, default: float | None = None) -> float | None:
+    raw = os.getenv(name)
+    if raw is None or raw.strip() == "":
+        return default
+    return float(raw)
+
+
 @dataclass(frozen=True)
 class Settings:
     supabase_url: str | None
@@ -38,8 +45,21 @@ class Settings:
     extraction_version: str
     extraction_mode: str
     vision_enabled: bool
+    vision_provider: str
+    vision_model: str
+    vision_max_pages: int
+    vision_max_calls: int
+    vision_max_cost_eur: float | None
+    vision_tile_overlap_percent: int
+    vision_input_price_eur_per_1m_tokens: float | None
+    vision_output_price_eur_per_1m_tokens: float | None
+    vision_checkpoint_backend: str
+    vision_checkpoint_local_root: Path
+    vision_checkpoint_bucket: str | None
+    vision_checkpoint_prefix: str
     report_path: Path
     layout_report_path: Path
+    vision_report_path: Path
     ocr_python_executable: Path
     classification_max_dimension: int
     selected_page_numbers: tuple[int, ...]
@@ -51,6 +71,8 @@ class Settings:
         temp_dir = Path(os.getenv("PROMO_COLLECTOR_TEMP_DIR", tempfile.gettempdir())) / "budgetkazpei-promo-products"
         default_report_path = repo_root / "reports" / "promo-products-eleclerc-26runrdc-pages-1-3.json"
         default_layout_report_path = repo_root / "reports" / "promo-products-eleclerc-26runrdc-layouts.json"
+        default_vision_report_path = repo_root / "reports" / "promo-products-eleclerc-vision-benchmark.json"
+        default_vision_checkpoint_root = repo_root / "reports" / "promo-products-eleclerc-vision-benchmark-checkpoints"
         max_pages = _env_int("PROMO_MAX_PAGES", _env_int("PROMO_COLLECTOR_MAX_PAGES", 0))
         return cls(
             supabase_url=os.getenv("SUPABASE_URL"),
@@ -75,8 +97,23 @@ class Settings:
             extraction_version=os.getenv("PROMO_COLLECTOR_EXTRACTION_VERSION", "fliphtml5_pages_v1"),
             extraction_mode=os.getenv("PROMO_EXTRACTION_MODE", "local").strip().lower(),
             vision_enabled=_env_bool("PROMO_VISION_ENABLED", False),
+            vision_provider=os.getenv("PROMO_VISION_PROVIDER", "").strip().lower(),
+            vision_model=os.getenv("PROMO_VISION_MODEL", "").strip(),
+            vision_max_pages=_env_int("PROMO_VISION_MAX_PAGES", 3),
+            vision_max_calls=_env_int("PROMO_VISION_MAX_CALLS", 20),
+            vision_max_cost_eur=_env_float("PROMO_VISION_MAX_COST_EUR"),
+            vision_tile_overlap_percent=_env_int("PROMO_VISION_TILE_OVERLAP_PERCENT", 10),
+            vision_input_price_eur_per_1m_tokens=_env_float("PROMO_VISION_PRICE_INPUT_EUR_PER_1M_TOKENS"),
+            vision_output_price_eur_per_1m_tokens=_env_float("PROMO_VISION_PRICE_OUTPUT_EUR_PER_1M_TOKENS"),
+            vision_checkpoint_backend=os.getenv("PROMO_VISION_CHECKPOINT_BACKEND", "local").strip().lower(),
+            vision_checkpoint_local_root=Path(
+                os.getenv("PROMO_VISION_CHECKPOINT_LOCAL_ROOT", str(default_vision_checkpoint_root))
+            ),
+            vision_checkpoint_bucket=os.getenv("PROMO_VISION_CHECKPOINT_BUCKET"),
+            vision_checkpoint_prefix=os.getenv("PROMO_VISION_CHECKPOINT_PREFIX", "promo-products-vision-benchmark").strip("/"),
             report_path=Path(os.getenv("PROMO_REPORT_PATH", str(default_report_path))),
             layout_report_path=Path(os.getenv("PROMO_LAYOUT_REPORT_PATH", str(default_layout_report_path))),
+            vision_report_path=Path(os.getenv("PROMO_VISION_REPORT_PATH", str(default_vision_report_path))),
             ocr_python_executable=Path(
                 os.getenv(
                     "PROMO_OCR_PYTHON",
@@ -97,6 +134,7 @@ class Settings:
         target_catalog_slug: str | None = None,
         report_path: Path | None = None,
         layout_report_path: Path | None = None,
+        vision_report_path: Path | None = None,
         selected_page_numbers: tuple[int, ...] | None = None,
     ) -> "Settings":
         return replace(
@@ -107,6 +145,7 @@ class Settings:
             target_catalog_slug=self.target_catalog_slug if target_catalog_slug is None else target_catalog_slug,
             report_path=self.report_path if report_path is None else report_path,
             layout_report_path=self.layout_report_path if layout_report_path is None else layout_report_path,
+            vision_report_path=self.vision_report_path if vision_report_path is None else vision_report_path,
             selected_page_numbers=self.selected_page_numbers if selected_page_numbers is None else selected_page_numbers,
         )
 
