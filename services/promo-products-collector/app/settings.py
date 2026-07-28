@@ -67,12 +67,12 @@ class Settings:
 
     @classmethod
     def from_env(cls) -> "Settings":
-        repo_root = Path(__file__).resolve().parents[3]
-        temp_dir = Path(os.getenv("PROMO_COLLECTOR_TEMP_DIR", tempfile.gettempdir())) / "budgetkazpei-promo-products"
-        default_report_path = repo_root / "reports" / "promo-products-eleclerc-26runrdc-pages-1-3.json"
-        default_layout_report_path = repo_root / "reports" / "promo-products-eleclerc-26runrdc-layouts.json"
-        default_vision_report_path = repo_root / "reports" / "promo-products-eleclerc-vision-benchmark.json"
-        default_vision_checkpoint_root = repo_root / "reports" / "promo-products-eleclerc-vision-benchmark-checkpoints"
+        runtime_root = _resolve_runtime_root(Path(__file__))
+        temp_dir = Path(os.getenv("PROMO_COLLECTOR_TEMP_DIR", str(runtime_root / "tmp")))
+        default_report_path = runtime_root / "reports" / "promo-products-eleclerc-26runrdc-pages-1-3.json"
+        default_layout_report_path = runtime_root / "reports" / "promo-products-eleclerc-26runrdc-layouts.json"
+        default_vision_report_path = runtime_root / "reports" / "promo-products-eleclerc-vision-benchmark.json"
+        default_vision_checkpoint_root = runtime_root / "reports" / "promo-products-eleclerc-vision-benchmark-checkpoints"
         max_pages = _env_int("PROMO_MAX_PAGES", _env_int("PROMO_COLLECTOR_MAX_PAGES", 0))
         return cls(
             supabase_url=os.getenv("SUPABASE_URL"),
@@ -117,7 +117,7 @@ class Settings:
             ocr_python_executable=Path(
                 os.getenv(
                     "PROMO_OCR_PYTHON",
-                    str(repo_root / "services" / "receipt-scanner" / ".venv" / "Scripts" / "python.exe"),
+                    str(runtime_root / "services" / "receipt-scanner" / ".venv" / "Scripts" / "python.exe"),
                 )
             ),
             classification_max_dimension=_env_int("PROMO_CLASSIFICATION_MAX_DIMENSION", 480),
@@ -160,3 +160,32 @@ def _env_page_numbers(name: str) -> tuple[int, ...]:
         if cleaned:
             values.append(int(cleaned))
     return tuple(values)
+
+
+def _resolve_runtime_root(module_path: Path) -> Path:
+    explicit_root = os.getenv("PROMO_RUNTIME_ROOT")
+    if explicit_root and explicit_root.strip():
+        return Path(explicit_root).expanduser()
+
+    resolved_module_path = module_path.resolve()
+    for candidate in _candidate_runtime_roots(resolved_module_path):
+        if _looks_like_repo_root(candidate):
+            return candidate
+
+    return Path(tempfile.gettempdir()) / "budgetkazpei-promo-products"
+
+
+def _candidate_runtime_roots(module_path: Path) -> list[Path]:
+    candidates: list[Path] = []
+    current = module_path.parent
+    candidates.append(current)
+    candidates.extend(current.parents)
+    return candidates
+
+
+def _looks_like_repo_root(candidate: Path) -> bool:
+    return (
+        (candidate / ".git").exists()
+        or (candidate / "services" / "promo-products-collector" / "app").is_dir()
+        or (candidate / "services" / "receipt-scanner").is_dir()
+    )
