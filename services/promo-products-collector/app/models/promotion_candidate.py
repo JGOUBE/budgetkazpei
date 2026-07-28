@@ -93,6 +93,11 @@ class PromotionCandidate:
     starts_at: str | None
     ends_at: str | None
     extraction_confidence: int
+    segmentation_confidence: int | None = None
+    price_product_distance: float | None = None
+    price_anchor_count: int = 0
+    overlapping_region_count: int = 0
+    layout_type: str = "unknown"
     validation_errors: list[str] = field(default_factory=list)
     candidate_status: str = "needs_review"
     is_duplicate: bool = False
@@ -131,6 +136,11 @@ class PromotionCandidate:
             "starts_at": self.starts_at,
             "ends_at": self.ends_at,
             "extraction_confidence": self.extraction_confidence,
+            "segmentation_confidence": self.segmentation_confidence,
+            "price_product_distance": self.price_product_distance,
+            "price_anchor_count": self.price_anchor_count,
+            "overlapping_region_count": self.overlapping_region_count,
+            "layout_type": self.layout_type,
             "validation_errors": list(self.validation_errors),
             "candidate_status": self.candidate_status,
             "is_duplicate": self.is_duplicate,

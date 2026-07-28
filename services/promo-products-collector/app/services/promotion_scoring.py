@@ -84,6 +84,7 @@ def _extract_candidate(region: PageRegion, *, catalog: CatalogReference) -> Prom
         offer_mechanism=offer_mechanism,
         price_mentions=price_mentions,
         product_line_count=len(product_lines),
+        region=region,
     )
     extraction_confidence = _compute_confidence(
         region=region,
@@ -123,6 +124,11 @@ def _extract_candidate(region: PageRegion, *, catalog: CatalogReference) -> Prom
         starts_at=starts_at,
         ends_at=ends_at,
         extraction_confidence=extraction_confidence,
+        segmentation_confidence=region.segmentation_confidence,
+        price_product_distance=region.price_product_distance,
+        price_anchor_count=region.price_anchor_count,
+        overlapping_region_count=region.overlapping_region_count,
+        layout_type=region.layout_type,
         validation_errors=validation_errors,
         candidate_status=candidate_status,
     )
@@ -263,6 +269,7 @@ def _collect_validation_errors(
     offer_mechanism: str,
     price_mentions: list[MoneyMention],
     product_line_count: int,
+    region: PageRegion,
 ) -> list[str]:
     errors: list[str] = []
     if not product_name:
@@ -274,12 +281,20 @@ def _collect_validation_errors(
     promo_amounts = sorted({mention.amount for mention in price_mentions if mention.role == "promo"})
     if len(promo_amounts) > 1:
         errors.append("ambiguous_multiple_prices")
+    if region.price_anchor_count > 1:
+        errors.append("multiple_price_anchors")
     if product_line_count >= 4 or (product_line_count >= 2 and len(promo_amounts) > 1):
         errors.append("multiple_products_in_region")
+    if region.overlapping_region_count > 0:
+        errors.append("overlapping_region")
+    if region.price_product_distance is not None and region.price_product_distance > 220:
+        errors.append("price_too_far_from_product")
     if offer_mechanism == "starting_from":
         errors.append("starting_from_offer")
     if offer_mechanism == "loyalty_credit" and promo_price is None:
         errors.append("loyalty_without_immediate_price")
+    if region.layout_type == "dense_list":
+        errors.append("dense_list_layout")
     return errors
 
 
@@ -318,15 +333,25 @@ def _compute_confidence(
         score += 5
     if 2 <= len(region.lines) <= 7:
         score += 5
+    if region.segmentation_confidence >= 85:
+        score += 8
+    elif region.segmentation_confidence >= 70:
+        score += 4
+    elif region.segmentation_confidence <= 45:
+        score -= 8
 
     penalties = {
         "missing_product_name": 28,
         "missing_price": 26,
         "missing_package_format": 10,
         "ambiguous_multiple_prices": 18,
+        "multiple_price_anchors": 18,
         "multiple_products_in_region": 18,
         "starting_from_offer": 12,
         "loyalty_without_immediate_price": 10,
+        "overlapping_region": 14,
+        "price_too_far_from_product": 14,
+        "dense_list_layout": 10,
         "duplicate_same_page": 8,
         "duplicate_cross_page": 6,
     }

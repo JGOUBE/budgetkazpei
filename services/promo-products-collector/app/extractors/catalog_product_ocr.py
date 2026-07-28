@@ -86,7 +86,7 @@ class OcrPage:
 
 
 class CatalogProductOcr(Protocol):
-    def analyze_image(self, image_path: Path, *, page_number: int) -> OcrPage: ...
+    def analyze_image(self, image_path: Path, *, page_number: int, max_dimension: int | None = None) -> OcrPage: ...
 
 
 class RapidOcrCliClient:
@@ -99,7 +99,7 @@ class RapidOcrCliClient:
         self.python_executable = Path(python_executable)
         self.service_root = service_root or Path(__file__).resolve().parents[2]
 
-    def analyze_image(self, image_path: Path, *, page_number: int) -> OcrPage:
+    def analyze_image(self, image_path: Path, *, page_number: int, max_dimension: int | None = None) -> OcrPage:
         if not self.python_executable.is_file():
             raise RuntimeError(
                 "Local OCR runtime is unavailable: expected receipt-scanner venv python "
@@ -124,6 +124,8 @@ class RapidOcrCliClient:
             "--page-number",
             str(page_number),
         ]
+        if max_dimension is not None and max_dimension > 0:
+            command.extend(["--max-dimension", str(max_dimension)])
 
         try:
             completed = subprocess.run(
@@ -202,19 +204,33 @@ def item_box(item: dict[str, object]) -> BoundingBox:
     return item["box"]  # type: ignore[return-value]
 
 
-def _cli_analyze_image(image_path: Path, *, page_number: int) -> OcrPage:
+def _cli_analyze_image(image_path: Path, *, page_number: int, max_dimension: int | None = None) -> OcrPage:
     from PIL import Image
     from rapidocr import RapidOCR
 
     if not image_path.is_file():
         raise FileNotFoundError(f"Image not found: {image_path}")
 
+    ocr_input_path = image_path
+    temp_resized_path: Path | None = None
     with Image.open(image_path) as image:
         image_width, image_height = image.size
+        if max_dimension is not None and max_dimension > 0 and max(image_width, image_height) > max_dimension:
+            working = image.copy()
+            working.thumbnail((max_dimension, max_dimension))
+            image_width, image_height = working.size
+            with tempfile.NamedTemporaryFile(suffix=image_path.suffix or ".png", delete=False, dir=image_path.parent) as handle:
+                temp_resized_path = Path(handle.name)
+            working.save(temp_resized_path)
+            ocr_input_path = temp_resized_path
 
     engine = RapidOCR()
     started_at = time.perf_counter()
-    result = engine(str(image_path), use_cls=False)
+    try:
+        result = engine(str(ocr_input_path), use_cls=False)
+    finally:
+        if temp_resized_path is not None:
+            temp_resized_path.unlink(missing_ok=True)
     elapsed_seconds = round(time.perf_counter() - started_at, 3)
 
     fragments: list[dict[str, object]] = []
@@ -261,12 +277,13 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--image", required=True, help="Input image path.")
     parser.add_argument("--output", required=False, help="Optional output JSON path.")
     parser.add_argument("--page-number", type=int, default=0, help="Catalog page number.")
+    parser.add_argument("--max-dimension", type=int, default=None, help="Optional max image dimension before OCR.")
     return parser
 
 
 def main() -> int:
     args = _build_parser().parse_args()
-    page = _cli_analyze_image(Path(args.image), page_number=args.page_number)
+    page = _cli_analyze_image(Path(args.image), page_number=args.page_number, max_dimension=args.max_dimension)
     payload = json.dumps(page.to_dict(), ensure_ascii=False, indent=2)
     if args.output:
         Path(args.output).write_text(payload, encoding="utf-8")

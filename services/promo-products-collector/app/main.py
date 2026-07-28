@@ -20,6 +20,7 @@ from app.extractors.fliphtml5_pages import discover_viewer, extract_page_assets
 from app.models.promotion_candidate import PromotionCandidate
 from app.services.hashing import hash_chunks
 from app.services.page_fingerprint import PageAssetMetadata, plan_page_snapshot
+from app.services.page_layout_classifier import PageLayoutAnalysis, classify_page_layout, select_representative_pages
 from app.services.promotion_deduplication import DeduplicationSummary, annotate_duplicates
 from app.services.promotion_scoring import extract_promotion_candidates
 from app.settings import Settings
@@ -94,12 +95,30 @@ class RunReport:
 class PageExtractionReport:
     page_number: int
     page_dimensions: tuple[int, int]
+    layout_type: str
     zone_count: int
     candidate_count: int
     reliable_count: int
     needs_review_count: int
     rejected_count: int
     examples: list[dict[str, object]]
+
+
+@dataclass(frozen=True)
+class LayoutClassificationRunReport:
+    source_url: str
+    catalog_slug: str
+    catalog_title: str
+    viewer_url: str
+    config_url: str
+    total_detected_pages: int
+    analyzed_pages: list[PageLayoutAnalysis]
+    selected_pages: list[PageLayoutAnalysis]
+    detected_catalogs: list[CatalogDiscoveryReport]
+    temporary_files_remaining: int
+    duration_seconds: float
+    report_path: str
+    errors: list[str]
 
 
 @dataclass(frozen=True)
@@ -202,9 +221,12 @@ def build_argument_parser() -> argparse.ArgumentParser:
     parser.add_argument("--target-catalog", default=None, help="Catalog slug to process, defaults to 26runRDC.")
     parser.add_argument("--max-catalogs", type=int, default=None, help="Maximum number of catalogs to process.")
     parser.add_argument("--max-pages", type=int, default=None, help="Maximum number of pages to hash or extract.")
+    parser.add_argument("--page-numbers", default=None, help="Comma-separated catalog page numbers to process.")
     parser.add_argument("--write-metadata", action="store_true", help="Persist page metadata instead of dry-run.")
+    parser.add_argument("--classify-layouts", action="store_true", help="Classify page layouts for sampling.")
     parser.add_argument("--extract-products", action="store_true", help="Run the local product extraction prototype.")
     parser.add_argument("--report-path", default=None, help="Override the local JSON report output path.")
+    parser.add_argument("--layout-report-path", default=None, help="Override the local layout JSON report output path.")
     return parser
 
 
@@ -335,14 +357,15 @@ def run_product_extraction(
         viewer_url = catalog.viewer_url
         config_url = viewer.config_url
         total_detected_pages = len(page_assets)
-        limited_assets = page_assets[: settings.max_pages] if settings.max_pages > 0 else page_assets
+        limited_assets = _select_page_assets(page_assets, settings)
 
         for page in limited_assets:
             try:
                 binary = fetcher.fetch_binary(page.asset_url, allowed_hosts=allowed_hosts, settings=settings)
                 image_path = _write_temp_page_asset(settings.temp_dir, page.page_number, page.asset_url, binary.content_type, binary.content)
                 ocr_page = ocr_client.analyze_image(image_path, page_number=page.page_number)
-                regions = detect_regions(ocr_page)
+                layout_analysis = classify_page_layout(ocr_page)
+                regions = detect_regions(ocr_page, layout_type=layout_analysis.layout_type)
                 zones_detected += len(regions)
                 candidates = extract_promotion_candidates(regions, catalog=catalog)
                 all_candidates.extend(candidates)
@@ -350,6 +373,7 @@ def run_product_extraction(
                     PageExtractionReport(
                         page_number=page.page_number,
                         page_dimensions=(ocr_page.image_width, ocr_page.image_height),
+                        layout_type=layout_analysis.layout_type,
                         zone_count=len(regions),
                         candidate_count=len(candidates),
                         reliable_count=len([candidate for candidate in candidates if candidate.candidate_status == "reliable"]),
@@ -407,6 +431,100 @@ def run_product_extraction(
     )
 
 
+def run_layout_classification(
+    settings: Settings,
+    *,
+    fetcher: Fetcher | None = None,
+    ocr_client: CatalogProductOcr | None = None,
+) -> LayoutClassificationRunReport:
+    if settings.extraction_mode != "local":
+        raise RuntimeError(f"unsupported_extraction_mode:{settings.extraction_mode}")
+    if settings.vision_enabled:
+        raise RuntimeError("vision_enabled_not_allowed_in_phase_2b")
+
+    started = time.perf_counter()
+    fetcher = fetcher or HttpFetcher()
+    ocr_client = ocr_client or RapidOcrCliClient(python_executable=settings.ocr_python_executable)
+    allowed_hosts = {settings.official_domain.lower(), f"www.{settings.official_domain.lower()}"}
+    errors: list[str] = []
+    detected_reports: list[CatalogDiscoveryReport] = []
+    analyzed_pages: list[PageLayoutAnalysis] = []
+    total_detected_pages = 0
+    viewer_url = ""
+    config_url = ""
+    catalog_title = ""
+    catalog_slug = settings.target_catalog_slug
+
+    _cleanup_temp_dir(settings.temp_dir)
+    settings.temp_dir.mkdir(parents=True, exist_ok=True)
+
+    try:
+        detected_reports, selected_catalogs = _discover_catalog_selection(settings, fetcher, allowed_hosts=allowed_hosts)
+        if not selected_catalogs:
+            raise RuntimeError(f"catalog_not_found:{settings.target_catalog_slug}")
+
+        catalog = selected_catalogs[0]
+        catalog_slug = catalog.catalog_slug
+        catalog_title = catalog.title
+        viewer, page_assets = _fetch_catalog_assets(catalog, settings, fetcher, allowed_hosts=allowed_hosts)
+        viewer_url = catalog.viewer_url
+        config_url = viewer.config_url
+        total_detected_pages = len(page_assets)
+        assets_to_analyze = _select_page_assets(page_assets, settings)
+
+        for page in assets_to_analyze:
+            try:
+                source_url = page.thumbnail_url or page.asset_url
+                binary = fetcher.fetch_binary(source_url, allowed_hosts=allowed_hosts, settings=settings)
+                image_path = _write_temp_page_asset(settings.temp_dir, page.page_number, source_url, binary.content_type, binary.content)
+                ocr_page = ocr_client.analyze_image(
+                    image_path,
+                    page_number=page.page_number,
+                    max_dimension=settings.classification_max_dimension,
+                )
+                analyzed_pages.append(classify_page_layout(ocr_page))
+            except Exception as exc:  # pragma: no cover - exercised in real run only
+                errors.append(f"page_{page.page_number}:{exc}")
+
+        selected_pages = select_representative_pages(analyzed_pages)
+        _write_report_json(
+            settings.layout_report_path,
+            _layout_report_to_json_object(
+                settings=settings,
+                detected_reports=detected_reports,
+                analyzed_pages=analyzed_pages,
+                selected_pages=selected_pages,
+                duration_seconds=round(time.perf_counter() - started, 3),
+                temporary_files_remaining=0,
+                errors=errors,
+                catalog_slug=catalog_slug,
+                catalog_title=catalog_title,
+                viewer_url=viewer_url,
+                config_url=config_url,
+                total_detected_pages=total_detected_pages,
+            ),
+        )
+    finally:
+        _cleanup_temp_dir(settings.temp_dir)
+
+    temporary_files_remaining = len(list(settings.temp_dir.iterdir())) if settings.temp_dir.exists() else 0
+    return LayoutClassificationRunReport(
+        source_url=settings.source_url,
+        catalog_slug=catalog_slug,
+        catalog_title=catalog_title,
+        viewer_url=viewer_url,
+        config_url=config_url,
+        total_detected_pages=total_detected_pages,
+        analyzed_pages=analyzed_pages,
+        selected_pages=select_representative_pages(analyzed_pages),
+        detected_catalogs=detected_reports,
+        temporary_files_remaining=temporary_files_remaining,
+        duration_seconds=round(time.perf_counter() - started, 3),
+        report_path=str(settings.layout_report_path),
+        errors=errors,
+    )
+
+
 def _discover_catalog_selection(
     settings: Settings,
     fetcher: Fetcher,
@@ -455,6 +573,15 @@ def _fetch_catalog_assets(
     return viewer, page_assets
 
 
+def _select_page_assets(page_assets, settings: Settings):
+    if settings.selected_page_numbers:
+        selected = set(settings.selected_page_numbers)
+        return [page for page in page_assets if page.page_number in selected]
+    if settings.max_pages > 0:
+        return page_assets[: settings.max_pages]
+    return page_assets
+
+
 def _write_temp_page_asset(
     temp_dir: Path,
     page_number: int,
@@ -484,17 +611,36 @@ def _write_report_json(path: Path, payload: dict[str, object]) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+def _parse_page_numbers_arg(value: str | None) -> tuple[int, ...] | None:
+    if value is None:
+        return None
+    numbers: list[int] = []
+    for token in value.split(","):
+        cleaned = token.strip()
+        if cleaned:
+            numbers.append(int(cleaned))
+    return tuple(numbers)
+
+
 def main() -> int:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
     args = build_argument_parser().parse_args()
+    parsed_page_numbers = _parse_page_numbers_arg(args.page_numbers)
     settings = Settings.from_env().with_overrides(
         dry_run=False if args.write_metadata else None,
         max_catalogs=args.max_catalogs,
         max_pages=args.max_pages,
         target_catalog_slug=args.target_catalog,
         report_path=Path(args.report_path) if args.report_path else None,
+        layout_report_path=Path(args.layout_report_path) if args.layout_report_path else None,
+        selected_page_numbers=parsed_page_numbers,
     )
+
+    if args.classify_layouts:
+        report = run_layout_classification(settings)
+        print(json.dumps(_layout_report_to_json(report), ensure_ascii=False, indent=2))
+        return 0
 
     if args.extract_products:
         report = run_product_extraction(settings)
@@ -554,6 +700,24 @@ def _promotion_report_to_json(report: PromotionExtractionRunReport) -> dict[str,
     }
 
 
+def _layout_report_to_json(report: LayoutClassificationRunReport) -> dict[str, object]:
+    return {
+        "source_url": report.source_url,
+        "catalog_slug": report.catalog_slug,
+        "catalog_title": report.catalog_title,
+        "viewer_url": report.viewer_url,
+        "config_url": report.config_url,
+        "total_detected_pages": report.total_detected_pages,
+        "analyzed_pages": [item.to_dict() for item in report.analyzed_pages],
+        "selected_pages": [item.to_dict() for item in report.selected_pages],
+        "detected_catalogs": [asdict(item) for item in report.detected_catalogs],
+        "temporary_files_remaining": report.temporary_files_remaining,
+        "duration_seconds": report.duration_seconds,
+        "report_path": report.report_path,
+        "errors": list(report.errors),
+    }
+
+
 def _promotion_report_to_json_object(
     *,
     settings: Settings,
@@ -595,6 +759,39 @@ def _promotion_report_to_json_object(
         "detected_catalogs": [asdict(item) for item in detected_reports],
         "pages": [asdict(item) for item in page_reports],
         "candidates": [candidate.to_dict() for candidate in candidates],
+    }
+
+
+def _layout_report_to_json_object(
+    *,
+    settings: Settings,
+    detected_reports: list[CatalogDiscoveryReport],
+    analyzed_pages: list[PageLayoutAnalysis],
+    selected_pages: list[PageLayoutAnalysis],
+    duration_seconds: float,
+    temporary_files_remaining: int,
+    errors: list[str],
+    catalog_slug: str,
+    catalog_title: str,
+    viewer_url: str,
+    config_url: str,
+    total_detected_pages: int,
+) -> dict[str, object]:
+    return {
+        "catalogue": {
+            "source_url": settings.source_url,
+            "catalog_slug": catalog_slug,
+            "catalog_title": catalog_title,
+            "viewer_url": viewer_url,
+            "config_url": config_url,
+            "total_detected_pages": total_detected_pages,
+        },
+        "duration_seconds": duration_seconds,
+        "temporary_files_remaining": temporary_files_remaining,
+        "errors": list(errors),
+        "detected_catalogs": [asdict(item) for item in detected_reports],
+        "pages": [item.to_dict() for item in analyzed_pages],
+        "selected_pages": [item.to_dict() for item in selected_pages],
     }
 
 

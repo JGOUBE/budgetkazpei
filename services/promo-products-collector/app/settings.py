@@ -39,7 +39,10 @@ class Settings:
     extraction_mode: str
     vision_enabled: bool
     report_path: Path
+    layout_report_path: Path
     ocr_python_executable: Path
+    classification_max_dimension: int
+    selected_page_numbers: tuple[int, ...]
     temp_dir: Path
 
     @classmethod
@@ -47,6 +50,7 @@ class Settings:
         repo_root = Path(__file__).resolve().parents[3]
         temp_dir = Path(os.getenv("PROMO_COLLECTOR_TEMP_DIR", tempfile.gettempdir())) / "budgetkazpei-promo-products"
         default_report_path = repo_root / "reports" / "promo-products-eleclerc-26runrdc-pages-1-3.json"
+        default_layout_report_path = repo_root / "reports" / "promo-products-eleclerc-26runrdc-layouts.json"
         max_pages = _env_int("PROMO_MAX_PAGES", _env_int("PROMO_COLLECTOR_MAX_PAGES", 0))
         return cls(
             supabase_url=os.getenv("SUPABASE_URL"),
@@ -72,12 +76,15 @@ class Settings:
             extraction_mode=os.getenv("PROMO_EXTRACTION_MODE", "local").strip().lower(),
             vision_enabled=_env_bool("PROMO_VISION_ENABLED", False),
             report_path=Path(os.getenv("PROMO_REPORT_PATH", str(default_report_path))),
+            layout_report_path=Path(os.getenv("PROMO_LAYOUT_REPORT_PATH", str(default_layout_report_path))),
             ocr_python_executable=Path(
                 os.getenv(
                     "PROMO_OCR_PYTHON",
                     str(repo_root / "services" / "receipt-scanner" / ".venv" / "Scripts" / "python.exe"),
                 )
             ),
+            classification_max_dimension=_env_int("PROMO_CLASSIFICATION_MAX_DIMENSION", 480),
+            selected_page_numbers=_env_page_numbers("PROMO_SELECTED_PAGE_NUMBERS"),
             temp_dir=temp_dir,
         )
 
@@ -89,6 +96,8 @@ class Settings:
         max_pages: int | None = None,
         target_catalog_slug: str | None = None,
         report_path: Path | None = None,
+        layout_report_path: Path | None = None,
+        selected_page_numbers: tuple[int, ...] | None = None,
     ) -> "Settings":
         return replace(
             self,
@@ -97,4 +106,18 @@ class Settings:
             max_pages=self.max_pages if max_pages is None else max_pages,
             target_catalog_slug=self.target_catalog_slug if target_catalog_slug is None else target_catalog_slug,
             report_path=self.report_path if report_path is None else report_path,
+            layout_report_path=self.layout_report_path if layout_report_path is None else layout_report_path,
+            selected_page_numbers=self.selected_page_numbers if selected_page_numbers is None else selected_page_numbers,
         )
+
+
+def _env_page_numbers(name: str) -> tuple[int, ...]:
+    raw = os.getenv(name)
+    if raw is None or raw.strip() == "":
+        return ()
+    values: list[int] = []
+    for token in raw.split(","):
+        cleaned = token.strip()
+        if cleaned:
+            values.append(int(cleaned))
+    return tuple(values)

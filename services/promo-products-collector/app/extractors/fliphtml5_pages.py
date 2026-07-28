@@ -10,7 +10,11 @@ CONFIG_SCRIPT_RE = re.compile(
     flags=re.IGNORECASE,
 )
 PAGE_ASSET_RE = re.compile(
-    r'(?:(?:https?:)?//[^\s"\'\\]+?/files/large/[^\s"\'\\]+?\.webp(?:\?[^\s"\'\\]+)?)|(?:\.{0,2}/)?files/large/[^\s"\'\\]+?\.webp(?:\?[^\s"\'\\]+)?',
+    r'(?:(?:https?:)?//[^\s"\'\\]+?/files/(?:large|thumb)/[^\s"\'\\]+?\.webp(?:\?[^\s"\'\\]+)?)|(?:\.{0,2}/)?files/(?:large|thumb)/[^\s"\'\\]+?\.webp(?:\?[^\s"\'\\]+)?',
+    flags=re.IGNORECASE,
+)
+PAGE_OBJECT_RE = re.compile(
+    r'\{"n":\["([^"]+?\.webp)"\],"t":"([^"]+?\.webp)"\}',
     flags=re.IGNORECASE,
 )
 
@@ -25,6 +29,7 @@ class FlipHtml5Viewer:
 class PageAsset:
     page_number: int
     asset_url: str
+    thumbnail_url: str | None = None
 
 
 def discover_viewer(viewer_html: str, viewer_url: str, allowed_hosts: set[str]) -> FlipHtml5Viewer:
@@ -40,21 +45,57 @@ def discover_viewer(viewer_html: str, viewer_url: str, allowed_hosts: set[str]) 
 
 
 def extract_page_assets(config_js: str, base_url: str, allowed_hosts: set[str]) -> list[PageAsset]:
-    ordered_urls: list[str] = []
-    seen: set[str] = set()
+    page_assets: dict[int, dict[str, str | None]] = {}
     for match in PAGE_ASSET_RE.finditer(config_js):
         resolved = _resolve_asset_url(match.group(0), base_url)
         if not _is_allowed_url(resolved, allowed_hosts):
             continue
-        dedupe_key = _dedupe_key(resolved)
-        if dedupe_key in seen:
+        page_number = _extract_page_number(resolved)
+        if page_number is None:
             continue
-        seen.add(dedupe_key)
-        ordered_urls.append(resolved)
-    return [
-        PageAsset(page_number=index + 1, asset_url=asset_url)
-        for index, asset_url in enumerate(ordered_urls)
-    ]
+        record = page_assets.setdefault(page_number, {"asset_url": None, "thumbnail_url": None})
+        if "/files/thumb/" in resolved.lower():
+            if record["thumbnail_url"] is None:
+                record["thumbnail_url"] = resolved
+        else:
+            if record["asset_url"] is None:
+                record["asset_url"] = resolved
+    ordered: list[PageAsset] = []
+    for page_number in sorted(page_assets):
+        record = page_assets[page_number]
+        asset_url = record["asset_url"] or record["thumbnail_url"]
+        if asset_url is None:
+            continue
+        ordered.append(
+            PageAsset(
+                page_number=page_number,
+                asset_url=asset_url,
+                thumbnail_url=record["thumbnail_url"],
+            )
+        )
+    if ordered:
+        return ordered
+
+    fallback: list[PageAsset] = []
+    for index, match in enumerate(PAGE_OBJECT_RE.finditer(config_js), start=1):
+        large_name = match.group(1)
+        thumb_value = match.group(2)
+        asset_url = _resolve_asset_url(f"./files/large/{large_name}", base_url)
+        thumb_url = _resolve_asset_url(thumb_value, base_url)
+        if not _is_allowed_url(asset_url, allowed_hosts):
+            continue
+        if not _is_allowed_url(thumb_url, allowed_hosts):
+            thumb_url = None
+        fallback.append(
+            PageAsset(
+                page_number=index,
+                asset_url=asset_url,
+                thumbnail_url=thumb_url,
+            )
+        )
+    if fallback:
+        return fallback
+    return ordered
 
 
 def _resolve_url(value: str, base_url: str) -> str:
@@ -92,6 +133,11 @@ def _catalog_root_url(base_url: str) -> str:
 def _dedupe_key(value: str) -> str:
     split = urlsplit(value)
     return urlunsplit((split.scheme.lower(), split.netloc.lower(), split.path, "", ""))
+
+
+def _extract_page_number(value: str) -> int | None:
+    match = re.search(r"page[-_]?(\d+)\.webp", urlsplit(value).path, flags=re.IGNORECASE)
+    return int(match.group(1)) if match else None
 
 
 def _is_allowed_url(value: str, allowed_hosts: set[str]) -> bool:

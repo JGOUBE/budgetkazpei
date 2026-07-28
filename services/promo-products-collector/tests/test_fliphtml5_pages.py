@@ -36,6 +36,14 @@ class FlipHtml5PagesTests(unittest.TestCase):
             ],
         )
         self.assertEqual([page.page_number for page in pages], [1, 2, 3])
+        self.assertEqual(
+            [page.thumbnail_url for page in pages],
+            [
+                "https://www.e-leclerc.re/public/catalogues/26runRDC/files/thumb/page-001.webp",
+                None,
+                None,
+            ],
+        )
 
 
 if __name__ == "__main__":

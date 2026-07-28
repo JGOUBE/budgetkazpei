@@ -34,7 +34,7 @@ class _FakeFetcher:
 
 
 class _FakeOcrClient:
-    def analyze_image(self, image_path: Path, *, page_number: int) -> OcrPage:
+    def analyze_image(self, image_path: Path, *, page_number: int, max_dimension: int | None = None) -> OcrPage:
         examples = {
             1: ["PATES 500 g", "1,29"],
             2: ["JUS ORANGE 1 l", "1,89", "0,40 ticket E.Leclerc"],
@@ -88,6 +88,34 @@ class ProductExtractionPipelineTests(unittest.TestCase):
         self.assertEqual(report.ai_consumption, 0)
         self.assertEqual(report.temporary_files_remaining, 0)
         self.assertEqual(report.duplicate_cross_page, 1)
+        self.assertFalse(temp_dir.exists())
+
+    def test_can_target_explicit_page_numbers(self):
+        temp_root = Path(tempfile.gettempdir()) / "budgetkazpei-promo-products-selection-tests"
+        report_path = temp_root / "report.json"
+        temp_dir = temp_root / "runtime"
+        if temp_root.exists():
+            for item in sorted(temp_root.rglob("*"), reverse=True):
+                if item.is_file():
+                    item.unlink()
+                elif item.is_dir():
+                    item.rmdir()
+
+        settings = Settings.from_env().with_overrides(
+            max_catalogs=1,
+            max_pages=50,
+            report_path=report_path,
+            selected_page_numbers=(2, 3),
+        )
+        object.__setattr__(settings, "temp_dir", temp_dir)
+
+        report = run_product_extraction(
+            settings,
+            fetcher=_FakeFetcher(),
+            ocr_client=_FakeOcrClient(),
+        )
+
+        self.assertEqual([page.page_number for page in report.processed_pages], [2, 3])
         self.assertFalse(temp_dir.exists())
 
 
