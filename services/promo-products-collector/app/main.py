@@ -25,6 +25,11 @@ from app.services.page_layout_classifier import PageLayoutAnalysis, classify_pag
 from app.services.promotion_deduplication import DeduplicationSummary, annotate_duplicates
 from app.services.promotion_scoring import extract_promotion_candidates
 from app.services.leader_price_importer import LeaderPriceImportSummary, import_leader_price_report
+from app.services.leader_price_validation_job import (
+    LeaderPriceValidationJobReport,
+    build_validation_job_smoke_report,
+    run_leader_price_validation_job,
+)
 from app.services.vision_benchmark import VisionBenchmarkRunReport, run_vision_benchmark
 from app.settings import Settings
 
@@ -230,6 +235,8 @@ def build_argument_parser() -> argparse.ArgumentParser:
     parser.add_argument("--extract-products", action="store_true", help="Run the local product extraction prototype.")
     parser.add_argument("--leader-price-readonly", action="store_true", help="Run the readonly Leader Price structured collector.")
     parser.add_argument("--leader-price-import", action="store_true", help="Import the local Leader Price readonly report into Supabase staging.")
+    parser.add_argument("--leader-price-validation-job", action="store_true", help="Run the one-shot Leader Price import validation job.")
+    parser.add_argument("--leader-price-validation-job-smoke", action="store_true", help="Run the offline smoke for the Leader Price validation job.")
     parser.add_argument("--leader-max-products", type=int, default=100, help="Maximum Leader Price products to inspect.")
     parser.add_argument("--leader-report-path", default=None, help="Override the local Leader Price readonly report path.")
     parser.add_argument("--benchmark-vision", action="store_true", help="Run the three-page vision benchmark.")
@@ -671,6 +678,17 @@ def main() -> int:
         print(json.dumps(_leader_price_import_to_json(report), ensure_ascii=False, indent=2))
         return 0
 
+    if args.leader_price_validation_job:
+        report = run_leader_price_validation_job(settings, fetcher=HttpFetcher())
+        print(json.dumps(_leader_price_validation_job_to_json(report), ensure_ascii=False, indent=2))
+        return 0
+
+    if args.leader_price_validation_job_smoke:
+        report = build_validation_job_smoke_report(settings)
+        print(json.dumps(_leader_price_validation_job_to_json(report), ensure_ascii=False, indent=2))
+        print("VALIDATION_JOB_SMOKE_OK")
+        return 0
+
     if args.benchmark_vision:
         report = run_vision_benchmark(settings)
         print(json.dumps(_vision_benchmark_report_to_json(report), ensure_ascii=False, indent=2))
@@ -756,6 +774,10 @@ def _leader_price_report_to_json(report: LeaderPriceReadonlyRunReport) -> dict[s
 
 
 def _leader_price_import_to_json(report: LeaderPriceImportSummary) -> dict[str, object]:
+    return report.to_dict()
+
+
+def _leader_price_validation_job_to_json(report: LeaderPriceValidationJobReport) -> dict[str, object]:
     return report.to_dict()
 
 

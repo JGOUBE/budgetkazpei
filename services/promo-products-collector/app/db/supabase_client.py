@@ -45,6 +45,30 @@ class SupabaseAdminClient:
             query.update(filters)
         return self._request("GET", table, query=query)
 
+    def count(self, table: str, *, filters: dict[str, str] | None = None) -> int:
+        query = {"select": "id", "limit": "1"}
+        if filters:
+            query.update(filters)
+        url = f"{self.base_url}/rest/v1/{table.lstrip('/')}"
+        url = f"{url}?{urllib.parse.urlencode(query)}"
+        request = urllib.request.Request(
+            url,
+            headers={
+                "apikey": self.service_role_key,
+                "Authorization": f"Bearer {self.service_role_key}",
+                "Prefer": "count=exact",
+            },
+            method="GET",
+        )
+        with urllib.request.urlopen(request, timeout=30) as response:
+            content_range = response.headers.get("Content-Range", "")
+            if "/" in content_range:
+                return int(content_range.rsplit("/", 1)[1])
+            data = response.read().decode("utf-8")
+            if not data:
+                return 0
+            return len(json.loads(data))
+
     def upsert(self, table: str, rows: list[dict[str, object]], *, on_conflict: str) -> list[dict[str, object]]:
         return self._request(
             "POST",
