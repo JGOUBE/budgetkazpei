@@ -1,6 +1,7 @@
 export const APP_ROUTE = "/app"
 export const DASHBOARD_ROUTE = "/dashboard"
 export const GOOD_DEALS_REVIEW_ADMIN_ROUTE = "/admin/bons-plans-validation"
+export const RETAIL_PRICE_VALIDATION_ADMIN_ROUTE = "/admin/prix-promotions-validation"
 export const LOGIN_ROUTE = "/login"
 export const REGISTER_ROUTE = "/register"
 export const DISCOVER_ROUTE = "/decouvrir"
@@ -41,7 +42,7 @@ export function isPremiumPath(pathname) {
 
 export function isProtectedPath(pathname) {
   const path = normalizePath(pathname)
-  return path === APP_ROUTE || path === DASHBOARD_ROUTE || path === GOOD_DEALS_REVIEW_ADMIN_ROUTE
+  return path === APP_ROUTE || path === DASHBOARD_ROUTE || path === GOOD_DEALS_REVIEW_ADMIN_ROUTE || path === RETAIL_PRICE_VALIDATION_ADMIN_ROUTE
 }
 
 export function isPublicOnlyPath(pathname) {
@@ -64,7 +65,7 @@ export function sanitizeNextPath(nextPath) {
     if (url.origin !== "https://budgetkazpei.local") return APP_ROUTE
 
     const path = normalizePath(url.pathname)
-    if (path === APP_ROUTE || path === GOOD_DEALS_REVIEW_ADMIN_ROUTE) return path
+    if (path === APP_ROUTE || path === GOOD_DEALS_REVIEW_ADMIN_ROUTE || path === RETAIL_PRICE_VALIDATION_ADMIN_ROUTE) return path
     if (path === DASHBOARD_ROUTE) return APP_ROUTE
   } catch {
     return APP_ROUTE
@@ -140,6 +141,14 @@ export function resolveAuthRoute({
     }
   }
 
+  if (!isAuthenticated && path === RETAIL_PRICE_VALIDATION_ADMIN_ROUTE) {
+    return {
+      type: "redirect",
+      to: buildLoginPath(RETAIL_PRICE_VALIDATION_ADMIN_ROUTE),
+      replace: true,
+    }
+  }
+
   if (path === LOGIN_ROUTE) {
     return { type: "render", page: "login", next: getNextFromSearch(search) }
   }
@@ -154,6 +163,10 @@ export function resolveAuthRoute({
 
   if (path === GOOD_DEALS_REVIEW_ADMIN_ROUTE) {
     return { type: "render", page: "admin-good-deals-review" }
+  }
+
+  if (path === RETAIL_PRICE_VALIDATION_ADMIN_ROUTE) {
+    return { type: "render", page: "admin-retail-price-review" }
   }
 
   if (isPremiumPath(path)) {

@@ -42,6 +42,7 @@ import FinanceAssistantPage from "./pages/FinanceAssistantPage"
 import RewardsPage from "./pages/RewardsPage"
 import GoodDealsPage from "./pages/GoodDealsPage"
 import GoodDealsReviewPage from "./pages/admin/GoodDealsReviewPage"
+import RetailPriceValidationPage from "./pages/admin/RetailPriceValidationPage"
 import PremiumLandingPage from "./pages/PremiumLandingPage"
 import PublicHomePage from "./pages/PublicHomePage"
 import PrivacyPage from "./pages/PrivacyPage"
@@ -58,6 +59,7 @@ import {
   APP_ROUTE,
   GOOD_DEALS_REVIEW_ADMIN_ROUTE,
   LOGIN_ROUTE,
+  RETAIL_PRICE_VALIDATION_ADMIN_ROUTE,
   REGISTER_ROUTE,
   ROUTE_CHANGE_EVENT,
   getCurrentLocation,
@@ -121,6 +123,18 @@ export default function App() {
         initialAuthPage="login"
         next={GOOD_DEALS_REVIEW_ADMIN_ROUTE}
         initialAppSection="goodDealsAdminReview"
+        initialPathname={location.pathname}
+      />
+    )
+  }
+
+  if (route.page === "admin-retail-price-review") {
+    return (
+      <BudgetKazPeiApp
+        auth={auth}
+        initialAuthPage="login"
+        next={RETAIL_PRICE_VALIDATION_ADMIN_ROUTE}
+        initialAppSection="retailPriceAdminReview"
         initialPathname={location.pathname}
       />
     )
@@ -381,7 +395,10 @@ function BudgetKazPeiApp({
             : nav
 
     setActiveNav(normalizedNav)
-    if (initialPathname === GOOD_DEALS_REVIEW_ADMIN_ROUTE && normalizedNav !== "goodDealsAdminReview") {
+    if (
+      (initialPathname === GOOD_DEALS_REVIEW_ADMIN_ROUTE && normalizedNav !== "goodDealsAdminReview")
+      || (initialPathname === RETAIL_PRICE_VALIDATION_ADMIN_ROUTE && normalizedNav !== "retailPriceAdminReview")
+    ) {
       navigate(APP_ROUTE, { replace: true })
     }
     setShowSidebar(false)
@@ -625,6 +642,7 @@ function BudgetKazPeiApp({
               {activeNav === "opportunites" && t("nav", "opportunites")}
               {activeNav === "goodDeals" && (lang === "fr" ? "Mes bons plans" : "Mon bann bon plan")}
               {activeNav === "goodDealsAdminReview" && "Validation bons plans"}
+              {activeNav === "retailPriceAdminReview" && "Validation prix et promotions"}
               {activeNav === "historique" && t("nav", "monthlyHistory")}
               {activeNav === "profil" && t("nav", "profil")}
               {activeNav === "premium" && t("nav", "premium")}
@@ -833,6 +851,22 @@ function BudgetKazPeiApp({
 
         {activeNav === "goodDealsAdminReview" && (
           <GoodDealsReviewPage
+            user={user}
+            profile={profile}
+            profileLoading={profileLoading}
+            onGoBack={() => {
+              setActiveNav("dashboard")
+              navigate(APP_ROUTE, { replace: true })
+            }}
+            onAccessDenied={() => {
+              setActiveNav("dashboard")
+              navigate(APP_ROUTE, { replace: true })
+            }}
+          />
+        )}
+
+        {activeNav === "retailPriceAdminReview" && (
+          <RetailPriceValidationPage
             user={user}
             profile={profile}
             profileLoading={profileLoading}

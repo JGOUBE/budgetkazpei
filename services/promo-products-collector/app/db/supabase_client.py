@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import urllib.parse
 import urllib.request
+from urllib.error import HTTPError
 
 
 class SupabaseAdminClient:
@@ -52,3 +53,14 @@ class SupabaseAdminClient:
             payload=rows,
             headers={"Prefer": "resolution=merge-duplicates,return=representation"},
         )
+
+    def rpc(self, function_name: str, payload: dict[str, object] | None = None) -> object:
+        try:
+            rows = self._request("POST", f"rpc/{function_name}", payload=payload or {})
+        except HTTPError as exc:  # pragma: no cover - defensive network path
+            body = exc.read().decode("utf-8", errors="ignore")
+            raise RuntimeError(f"supabase_rpc_failed:{function_name}:{exc.code}:{body}") from exc
+
+        if isinstance(rows, list):
+            return rows
+        return rows

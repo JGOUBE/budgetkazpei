@@ -24,6 +24,10 @@ export default function Header({ activeNav, onAdd, lang, onToggleLang, t, commun
   const lieu = commune ? `${commune}, La Reunion` : t("header", "location")
   const title = activeNav === "contact"
     ? (lang === "fr" ? "Contactez-nous" : "Contacte a nou")
+    : activeNav === "goodDealsAdminReview"
+      ? "Validation bons plans"
+      : activeNav === "retailPriceAdminReview"
+        ? "Validation prix et promotions"
     : t(current.section, current.key)
   const showSubtitle = activeNav !== "contact"
 

@@ -1,4 +1,5 @@
 from .hashing import StreamHashResult, sha256_bytes, sha256_text
+from .leader_price_importer import LeaderPriceImportSummary, build_source_run_id, import_leader_price_report
 from .page_fingerprint import PageAssetMetadata, PageDecision, PageSnapshotRecord, plan_page_snapshot
 from .page_layout_classifier import PageLayoutAnalysis, classify_page_layout, select_representative_pages
 from .promotion_deduplication import DeduplicationSummary, annotate_duplicates
@@ -20,12 +21,15 @@ __all__ = [
     "PageLayoutAnalysis",
     "PageSnapshotRecord",
     "DeduplicationSummary",
+    "LeaderPriceImportSummary",
     "StreamHashResult",
     "annotate_duplicates",
+    "build_source_run_id",
     "build_duplicate_key",
     "classify_page_layout",
     "deduplicate_observations",
     "extract_promotion_candidates",
+    "import_leader_price_report",
     "MatchingSummary",
     "normalize_lookup_key",
     "normalize_product_name",
