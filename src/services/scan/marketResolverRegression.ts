@@ -74,6 +74,22 @@ function assertEqual(id: string, actual: unknown, expected: unknown): Regression
   }
 }
 
+function countLiteralOccurrences(haystack: string, needle: string): number {
+  if (!needle) return 0
+  return haystack.split(needle).length - 1
+}
+
+function countRegexMatches(haystack: string, pattern: RegExp): number {
+  const flags = pattern.flags.includes("g") ? pattern.flags : `${pattern.flags}g`
+  return [...haystack.matchAll(new RegExp(pattern.source, flags))].length
+}
+
+function resolveUniqueUuidStoreMatch(ids: string[]): string | null {
+  if (ids.length !== 1) return null
+  const [selectedId] = [...ids].sort()
+  return selectedId ?? null
+}
+
 function createJsonResponse(status: number, payload: unknown) {
   return {
     ok: status >= 200 && status < 300,
@@ -1439,9 +1455,21 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
     "supabase/migrations/202607260002_market_product_alias_scoped_library.sql",
     "utf8",
   )
+  const marketResolverUuidFixMigrationSql = fs.readFileSync(
+    "supabase/migrations/202607290002_market_resolver_uuid_store_lookup_fix.sql",
+    "utf8",
+  )
   const atomicApplyMigrationSql = fs.readFileSync(
     "supabase/migrations/202607270004_market_alias_library_atomic_apply.sql",
     "utf8",
+  )
+  const marketResolverUuidStoreLookupByNamePattern = new RegExp(
+    String.raw`select\s+case\s+when\s+count\(\*\)\s*=\s*1\s+then\s+\(array_agg\(id\s+order\s+by\s+id\)\)\[1\]\s+else\s+null\s+end\s+into\s+v_store_id\s+from\s+public\.market_stores\s+where\s+normalized_store_name\s*=\s*v_normalized_store_name\s+and\s*\(\s*v_normalized_store_city\s*=\s*''\s+or\s+normalized_city\s*=\s*v_normalized_store_city\s*\);`,
+    "i",
+  )
+  const marketResolverUuidStoreLookupByChainPattern = new RegExp(
+    String.raw`select\s+case\s+when\s+count\(\*\)\s*=\s*1\s+then\s+\(array_agg\(id\s+order\s+by\s+id\)\)\[1\]\s+else\s+null\s+end\s+into\s+v_store_id\s+from\s+public\.market_stores\s+where\s+public\.market_store_chain_key\(store_name\)\s*=\s*v_store_chain\s+and\s+normalized_city\s*=\s*v_normalized_store_city;`,
+    "i",
   )
   const atomicApplyActiveConflictTargetPattern = new RegExp(
     String.raw`on\s+conflict\s*\(\s*normalized_raw_label\s*,\s*scope\s*,\s*\(?\s*coalesce\s*\(\s*store_id\s*,\s*'00000000-0000-0000-0000-000000000000'\s*::uuid\s*\)\s*\)?\s*,\s*\(?\s*coalesce\s*\(\s*store_chain_key\s*,\s*''\s*\)\s*\)?\s*\)\s*where\s+status\s*=\s*'active'\s*do\s+update`,
@@ -3582,6 +3610,60 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
         backfills_status_active: true,
         default_scope_global: true,
         default_status_active: true,
+      },
+    ),
+    assertEqual(
+      "market-resolver-uuid-store-lookup-fix-preserves-function-contract",
+      {
+        targets_exact_signature: marketResolverUuidFixMigrationSql.includes(
+          "pg_get_functiondef('public.market_resolve_exact_products(jsonb)'::regprocedure)",
+        ),
+        base_function_security_invoker: scopedMigrationSql.includes("security invoker"),
+        base_function_fixed_search_path: scopedMigrationSql.includes("set search_path = public, extensions"),
+        no_min_uuid_lookup: !marketResolverUuidFixMigrationSql.includes("min(id)"),
+        name_city_lookup_uses_array_agg: marketResolverUuidStoreLookupByNamePattern.test(
+          marketResolverUuidFixMigrationSql,
+        ),
+        chain_city_lookup_uses_array_agg: marketResolverUuidStoreLookupByChainPattern.test(
+          marketResolverUuidFixMigrationSql,
+        ),
+        lookup_block_occurrences: countRegexMatches(
+          marketResolverUuidFixMigrationSql,
+          /when count\(\*\) = 1 then \(array_agg\(id order by id\)\)\[1\]/i,
+        ),
+        keeps_grants_unchanged: !marketResolverUuidFixMigrationSql.includes("grant execute on function public.market_resolve_exact_products")
+          && !marketResolverUuidFixMigrationSql.includes("revoke execute on function public.market_resolve_exact_products")
+          && !marketResolverUuidFixMigrationSql.includes("security definer"),
+      },
+      {
+        targets_exact_signature: true,
+        base_function_security_invoker: true,
+        base_function_fixed_search_path: true,
+        no_min_uuid_lookup: true,
+        name_city_lookup_uses_array_agg: true,
+        chain_city_lookup_uses_array_agg: true,
+        lookup_block_occurrences: 2,
+        keeps_grants_unchanged: true,
+      },
+    ),
+    assertEqual(
+      "market-resolver-uuid-store-lookup-fix-keeps-singleton-semantics-without-min-uuid",
+      {
+        zero_matches: resolveUniqueUuidStoreMatch([]),
+        one_match: resolveUniqueUuidStoreMatch([
+          "5f0f8a74-3664-4db0-bde0-7d0d6d9c2145",
+        ]),
+        many_matches: resolveUniqueUuidStoreMatch([
+          "9f84b4cf-d5d5-4fcf-b11e-cb4be28a99c9",
+          "0e4e9a65-c1b8-4dbf-b9f3-4cb35ec84f3a",
+        ]),
+        migration_avoids_min_uuid_call: !marketResolverUuidFixMigrationSql.includes("min(id)"),
+      },
+      {
+        zero_matches: null,
+        one_match: "5f0f8a74-3664-4db0-bde0-7d0d6d9c2145",
+        many_matches: null,
+        migration_avoids_min_uuid_call: true,
       },
     ),
     assertEqual(
