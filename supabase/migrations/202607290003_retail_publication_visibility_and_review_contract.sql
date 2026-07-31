@@ -1044,13 +1044,13 @@ select
   candidates.reviewed_at,
   candidates.published_price_observation_id,
   candidates.published_promotion_id,
-  candidates.published_market_observation_id,
   candidates.duplicate_key,
   candidates.extraction_confidence,
   candidates.first_seen_at,
   candidates.last_seen_at,
   candidates.created_at,
-  candidates.updated_at
+  candidates.updated_at,
+  candidates.published_market_observation_id
 from public.retail_price_candidates as candidates
 left join public.market_products
   on market_products.id = candidates.matched_market_product_id
