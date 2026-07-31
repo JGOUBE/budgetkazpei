@@ -1,6 +1,17 @@
 import { useEffect, useMemo, useState } from "react"
 import { supabase } from "../../services/supabase"
 import { ds } from "../../styles/designSystem"
+import {
+  canCandidateBeApproved,
+  candidateReadyToPublish,
+  getRetailAdminBucket,
+  getRetailAdminBucketLabel,
+  getRetailApprovalStatusForItem,
+  getRetailProductStateLabel,
+  getRetailPublishFunctionName,
+  getRetailPublishMode,
+  hasReferenceProduct,
+} from "./retailPriceValidationState"
 
 function toNumberOrNull(value) {
   if (value === "" || value === null || value === undefined) return null
@@ -18,6 +29,22 @@ function toLocalDate(value) {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return ""
   return date.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })
+}
+
+function createDraftFromItem(item) {
+  if (!item) return null
+  return {
+    candidateId: item.id,
+    product_name: item.product_name || "",
+    brand: item.brand || "",
+    package_format: item.package_format || "",
+    current_price: item.current_price ?? "",
+    original_price: item.original_price ?? "",
+    unit_price: item.unit_price ?? "",
+    unit_price_unit: item.unit_price_unit || "",
+    review_notes: item.review_notes || "",
+    matched_market_product_id: item.matched_market_product_id || "",
+  }
 }
 
 function Badge({ children, tone = "neutral" }) {
@@ -74,11 +101,122 @@ function inputStyle(multiline = false) {
   }
 }
 
-function statusTone(status) {
-  if (status === "published") return "success"
-  if (status === "approved_price" || status === "approved_promotion" || status === "matched") return "warning"
-  if (status === "rejected" || status === "duplicate") return "danger"
+function buttonStyle({ primary = false, disabled = false } = {}) {
+  return {
+    minHeight: 46,
+    padding: "0 14px",
+    borderRadius: 14,
+    border: `1px solid ${primary ? `${ds.primary}55` : ds.border}`,
+    background: primary ? ds.primary : ds.surface,
+    color: primary ? "#fff" : ds.textPrimary,
+    cursor: disabled ? "not-allowed" : "pointer",
+    fontWeight: 800,
+    fontFamily: "inherit",
+    opacity: disabled ? 0.6 : 1,
+  }
+}
+
+function tabButtonStyle(active) {
+  return {
+    minHeight: 44,
+    padding: "0 14px",
+    borderRadius: 999,
+    border: `1px solid ${active ? `${ds.primary}44` : ds.border}`,
+    background: active ? "rgba(249,115,22,.12)" : ds.surface,
+    color: active ? ds.primary : ds.textPrimary,
+    cursor: "pointer",
+    fontWeight: 900,
+    fontFamily: "inherit",
+  }
+}
+
+function stageTone(stage) {
+  if (stage === "published") return "success"
+  if (stage === "ready") return "warning"
+  if (stage === "rejected") return "danger"
   return "neutral"
+}
+
+function createApprovalMessage(item, approvalStatus) {
+  const productLabel = item?.matched_market_product_name || item?.product_name || "Produit associe"
+
+  if (approvalStatus === "approved_promotion") {
+    return [
+      "Promotion prete a publier.",
+      "- Aucune publication publique n'a encore ete creee.",
+      `- Produit associe : ${productLabel}`,
+    ].join("\n")
+  }
+
+  return [
+    "Prix observe pret a publier.",
+    "- Aucune publication publique n'a encore ete creee.",
+    `- Produit associe : ${productLabel}`,
+  ].join("\n")
+}
+
+function createPublishFeedback({ mode, ids, result, itemsById }) {
+  const created = Array.isArray(result?.created) ? result.created : []
+  const updated = Array.isArray(result?.updated) ? result.updated : []
+  const ignored = Array.isArray(result?.ignored) ? result.ignored : []
+  const rejected = Array.isArray(result?.rejected) ? result.rejected : []
+  const succeeded = [...created, ...updated, ...ignored]
+
+  if (!succeeded.length) {
+    const rejectedItem = ids.map(id => itemsById[id]).find(Boolean)
+    const rejectionReason = !rejectedItem || !hasReferenceProduct(rejectedItem)
+      ? "produit de reference manquant."
+      : mode === "promotion"
+        ? "promotion non prete a publier."
+        : "prix observe non pret a publier."
+
+    return {
+      kind: "error",
+      text: [
+        "Publication impossible.",
+        "Aucune publication publique n'a ete creee.",
+        `Motif : ${rejectionReason}`,
+      ].join("\n"),
+    }
+  }
+
+  if (ids.length === 1) {
+    const candidate = itemsById[ids[0]] || {}
+    const productLabel = candidate.matched_market_product_name || candidate.product_name || "Produit associe"
+
+    if (mode === "promotion") {
+      return {
+        kind: "success",
+        text: [
+          "Promotion publiee avec succes.",
+          "- Visible dans Promos produits",
+          "- Prix promotionnel ajoute a la base anonymisee",
+          `- Produit associe : ${productLabel}`,
+        ].join("\n"),
+      }
+    }
+
+    return {
+      kind: "success",
+      text: [
+        "Prix observe publie avec succes.",
+        "- Visible dans Bons prix reperes",
+        "- Prix ajoute a la base anonymisee",
+        `- Produit associe : ${productLabel}`,
+      ].join("\n"),
+    }
+  }
+
+  const label = mode === "promotion" ? "promotions" : "prix observes"
+  return {
+    kind: "success",
+    text: [
+      `${succeeded.length} ${label} publies avec succes.`,
+      `- ${created.length} creation(s) et ${updated.length} mise(s) a jour`,
+      `- ${ignored.length} deja publie(s)`,
+      `- ${rejected.length} rejet(s) sans ecriture publique`,
+    ].join("\n"),
+  }
 }
 
 export default function RetailPriceValidationPage({
@@ -89,7 +227,6 @@ export default function RetailPriceValidationPage({
 }) {
   const [runs, setRuns] = useState([])
   const [items, setItems] = useState([])
-  const [loadingRuns, setLoadingRuns] = useState(true)
   const [loadingItems, setLoadingItems] = useState(true)
   const [saving, setSaving] = useState(false)
   const [publishing, setPublishing] = useState(false)
@@ -103,15 +240,14 @@ export default function RetailPriceValidationPage({
   const [marketResults, setMarketResults] = useState([])
   const [marketLoading, setMarketLoading] = useState(false)
   const [filters, setFilters] = useState({
-    bucket: "all",
-    status: "all",
+    bucket: "needs_review",
+    type: "all",
   })
 
   const isAdmin = profile?.is_admin === true
   const busy = saving || publishing
 
   async function loadRuns(preferredRunId = null) {
-    setLoadingRuns(true)
     setError("")
     try {
       const { data, error: queryError } = await supabase
@@ -129,8 +265,6 @@ export default function RetailPriceValidationPage({
       console.error("Erreur chargement collectes retail:", loadError)
       setError(loadError?.message || "retail_runs_load_failed")
       return null
-    } finally {
-      setLoadingRuns(false)
     }
   }
 
@@ -155,8 +289,8 @@ export default function RetailPriceValidationPage({
       if (queryError) throw queryError
       const nextItems = data || []
       setItems(nextItems)
-      setSelectedIds([])
-      setSelectedId(nextItems[0]?.id || null)
+      setSelectedIds(current => current.filter(id => nextItems.some(item => item.id === id)))
+      setSelectedId(current => nextItems.some(item => item.id === current) ? current : nextItems[0]?.id || null)
     } catch (loadError) {
       console.error("Erreur chargement candidats retail:", loadError)
       setError(loadError?.message || "retail_candidates_load_failed")
@@ -183,29 +317,37 @@ export default function RetailPriceValidationPage({
         setLoadingItems(false)
       }
     })()
-  }, [profileLoading, isAdmin])
+  }, [isAdmin, onAccessDenied, profileLoading])
 
   useEffect(() => {
     if (!selectedRunId || !isAdmin || profileLoading) return
-    loadItems(selectedRunId)
-  }, [selectedRunId])
+    ;(async () => {
+      await loadItems(selectedRunId)
+    })()
+  }, [isAdmin, profileLoading, selectedRunId])
 
   const selectedRun = useMemo(
     () => runs.find(run => run.source_run_id === selectedRunId) || runs[0] || null,
     [runs, selectedRunId],
   )
 
+  const stageCounts = useMemo(() => {
+    return items.reduce((counts, item) => {
+      const bucket = getRetailAdminBucket(item)
+      counts[bucket] += 1
+      return counts
+    }, {
+      needs_review: 0,
+      ready: 0,
+      published: 0,
+      rejected: 0,
+    })
+  }, [items])
+
   const filteredItems = useMemo(() => {
     return items.filter(item => {
-      if (filters.status !== "all" && item.status !== filters.status) return false
-      if (filters.bucket === "observed_price" && item.price_type !== "observed_price") return false
-      if (filters.bucket === "promotion" && !(item.price_type === "promotion" && item.promotion_proven)) return false
-      if (filters.bucket === "matched" && !item.matched_market_product_id) return false
-      if (filters.bucket === "needs_review" && item.status !== "needs_review") return false
-      if (filters.bucket === "unmatched" && item.matched_market_product_id) return false
-      if (filters.bucket === "rejected" && item.status !== "rejected") return false
-      if (filters.bucket === "published" && item.status !== "published") return false
-      return true
+      if (filters.type !== "all" && item.price_type !== filters.type) return false
+      return getRetailAdminBucket(item) === filters.bucket
     })
   }, [filters, items])
 
@@ -214,32 +356,65 @@ export default function RetailPriceValidationPage({
     [filteredItems, selectedId],
   )
 
-  useEffect(() => {
-    if (!selectedItem) {
-      setDraft(null)
-      return
-    }
+  const activeDraft = useMemo(() => {
+    if (!selectedItem) return null
+    if (draft?.candidateId === selectedItem.id) return draft
+    return createDraftFromItem(selectedItem)
+  }, [draft, selectedItem])
 
-    setDraft({
-      product_name: selectedItem.product_name || "",
-      brand: selectedItem.brand || "",
-      package_format: selectedItem.package_format || "",
-      current_price: selectedItem.current_price ?? "",
-      original_price: selectedItem.original_price ?? "",
-      unit_price: selectedItem.unit_price ?? "",
-      unit_price_unit: selectedItem.unit_price_unit || "",
-      review_notes: selectedItem.review_notes || "",
-      matched_market_product_id: selectedItem.matched_market_product_id || "",
-      status: selectedItem.status || "needs_review",
-    })
-    setSelectedId(selectedItem.id)
-  }, [selectedItem?.id])
+  const selectedItems = useMemo(
+    () => items.filter(item => selectedIds.includes(item.id)),
+    [items, selectedIds],
+  )
+
+  const selectedObservedApprovalIds = useMemo(
+    () => selectedItems
+      .filter(item => item.price_type === "observed_price" && canCandidateBeApproved(item, "approved_price"))
+      .map(item => item.id),
+    [selectedItems],
+  )
+
+  const selectedPromotionApprovalIds = useMemo(
+    () => selectedItems
+      .filter(item => item.price_type === "promotion" && canCandidateBeApproved(item, "approved_promotion"))
+      .map(item => item.id),
+    [selectedItems],
+  )
+
+  const selectedObservedPublishIds = useMemo(
+    () => selectedItems
+      .filter(item => item.price_type === "observed_price" && candidateReadyToPublish(item))
+      .map(item => item.id),
+    [selectedItems],
+  )
+
+  const selectedPromotionPublishIds = useMemo(
+    () => selectedItems
+      .filter(item => item.price_type === "promotion" && candidateReadyToPublish(item))
+      .map(item => item.id),
+    [selectedItems],
+  )
+
+  const draftMatchId = textOrNull(activeDraft?.matched_market_product_id)
+  const selectedMatchId = textOrNull(selectedItem?.matched_market_product_id)
+  const referenceSelectionPending = Boolean(draftMatchId && draftMatchId !== selectedMatchId)
+
+  const stagedSelectedItem = useMemo(() => {
+    if (!selectedItem || !activeDraft) return selectedItem
+    return {
+      ...selectedItem,
+      matched_market_product_id: draftMatchId || selectedItem.matched_market_product_id,
+      current_price: toNumberOrNull(activeDraft.current_price) ?? selectedItem.current_price,
+      original_price: toNumberOrNull(activeDraft.original_price) ?? selectedItem.original_price,
+      unit_price: toNumberOrNull(activeDraft.unit_price) ?? selectedItem.unit_price,
+    }
+  }, [selectedItem, activeDraft, draftMatchId])
 
   function toggleSelection(candidateId) {
     setSelectedIds(current =>
       current.includes(candidateId)
         ? current.filter(id => id !== candidateId)
-        : [...current, candidateId]
+        : [...current, candidateId],
     )
   }
 
@@ -252,24 +427,33 @@ export default function RetailPriceValidationPage({
   }
 
   function buildPayload(statusOverride = null) {
-    if (!selectedItem || !draft) return null
-    return {
-      product_name: String(draft.product_name || "").trim(),
-      brand: textOrNull(draft.brand),
-      package_format: textOrNull(draft.package_format),
-      current_price: toNumberOrNull(draft.current_price),
-      original_price: toNumberOrNull(draft.original_price),
-      unit_price: toNumberOrNull(draft.unit_price),
-      unit_price_unit: textOrNull(draft.unit_price_unit),
-      review_notes: textOrNull(draft.review_notes),
-      matched_market_product_id: textOrNull(draft.matched_market_product_id),
-      status: statusOverride || draft.status,
+    if (!selectedItem || !activeDraft) return null
+
+    const payload = {
+      product_name: String(activeDraft.product_name || "").trim(),
+      brand: textOrNull(activeDraft.brand),
+      package_format: textOrNull(activeDraft.package_format),
+      current_price: toNumberOrNull(activeDraft.current_price),
+      original_price: toNumberOrNull(activeDraft.original_price),
+      unit_price: toNumberOrNull(activeDraft.unit_price),
+      unit_price_unit: textOrNull(activeDraft.unit_price_unit),
+      review_notes: textOrNull(activeDraft.review_notes),
+      matched_market_product_id: draftMatchId,
     }
+
+    if (statusOverride) payload.status = statusOverride
+    return payload
   }
 
-  async function saveChanges(statusOverride = null) {
+  async function saveChanges(statusOverride = null, messageOverride = "") {
     const payload = buildPayload(statusOverride)
     if (!selectedItem || !payload) return false
+
+    if (statusOverride && !canCandidateBeApproved({ ...selectedItem, ...payload }, statusOverride)) {
+      setError("Impossible de preparer ce candidat sans produit de reference associe et sans prix valide.")
+      setSuccessMessage("")
+      return false
+    }
 
     setSaving(true)
     setError("")
@@ -282,7 +466,15 @@ export default function RetailPriceValidationPage({
 
       if (updateError) throw updateError
       await loadItems(selectedRunId)
-      setSuccessMessage("Candidat retail mis a jour.")
+
+      if (messageOverride) {
+        setSuccessMessage(messageOverride)
+      } else if (statusOverride) {
+        setSuccessMessage(createApprovalMessage({ ...selectedItem, ...payload }, statusOverride))
+      } else {
+        setSuccessMessage("Corrections retail enregistrees.")
+      }
+
       return true
     } catch (saveError) {
       console.error("Erreur sauvegarde candidat retail:", saveError)
@@ -293,7 +485,7 @@ export default function RetailPriceValidationPage({
     }
   }
 
-  async function updateStatusForSelection(nextStatus, ids = selectedIds) {
+  async function updateStatusForSelection(nextStatus, ids) {
     if (!ids.length) return
     setSaving(true)
     setError("")
@@ -306,7 +498,11 @@ export default function RetailPriceValidationPage({
 
       if (updateError) throw updateError
       await loadItems(selectedRunId)
-      setSuccessMessage("Selection retail mise a jour.")
+      setSuccessMessage(
+        nextStatus === "approved_promotion"
+          ? `${ids.length} promotion(s) sont maintenant pretes a publier.`
+          : `${ids.length} prix observe(s) sont maintenant prets a publier.`,
+      )
     } catch (updateError) {
       console.error("Erreur mise a jour retail batch:", updateError)
       setError(updateError?.message || "retail_batch_update_failed")
@@ -315,19 +511,32 @@ export default function RetailPriceValidationPage({
     }
   }
 
-  async function publishSelection(functionName, ids) {
+  async function publishSelection(functionName, ids, itemsById, mode) {
     if (!ids.length || busy) return
     setPublishing(true)
     setError("")
     setSuccessMessage("")
     try {
-      const { error: publishError } = await supabase.rpc(functionName, {
+      const { data: publishResult, error: publishError } = await supabase.rpc(functionName, {
         p_candidate_ids: ids,
       })
 
       if (publishError) throw publishError
+
+      const feedback = createPublishFeedback({
+        mode,
+        ids,
+        result: publishResult,
+        itemsById,
+      })
+
       await loadItems(selectedRunId)
-      setSuccessMessage("Publication retail terminee.")
+
+      if (feedback.kind === "error") {
+        setError(feedback.text)
+      } else {
+        setSuccessMessage(feedback.text)
+      }
     } catch (publishError) {
       console.error("Erreur publication retail:", publishError)
       setError(publishError?.message || "retail_publish_failed")
@@ -373,7 +582,7 @@ export default function RetailPriceValidationPage({
 
       if (rpcError) throw rpcError
       await loadItems(selectedRunId)
-      setSuccessMessage("Produit de reference cree et rattache.")
+      setSuccessMessage("Produit de reference cree et associe. Le candidat peut maintenant etre prepare pour publication.")
     } catch (rpcError) {
       console.error("Erreur creation produit reference retail:", rpcError)
       setError(rpcError?.message || "retail_reference_product_failed")
@@ -382,13 +591,40 @@ export default function RetailPriceValidationPage({
     }
   }
 
-  const reliableObservedIds = filteredItems
-    .filter(item => item.price_type === "observed_price" && item.matched_market_product_id && item.status !== "published")
-    .map(item => item.id)
+  async function attachSelectedReferenceProduct() {
+    if (!referenceSelectionPending || busy) return
 
-  const reliablePromotionIds = filteredItems
-    .filter(item => item.price_type === "promotion" && item.promotion_proven && item.matched_market_product_id && item.status !== "published")
-    .map(item => item.id)
+    const nextStatus = selectedItem?.status === "imported" || selectedItem?.status === "needs_review"
+      ? "matched"
+      : selectedItem?.status
+
+    await saveChanges(
+      nextStatus,
+      "Produit de reference associe. Le candidat peut maintenant etre prepare pour publication.",
+    )
+  }
+
+  async function markSelectedItemReady() {
+    if (!selectedItem) return
+    const approvalStatus = getRetailApprovalStatusForItem(stagedSelectedItem)
+    await saveChanges(approvalStatus)
+  }
+
+  async function publishSelectedItem() {
+    if (!selectedItem) return
+
+    const mode = getRetailPublishMode(selectedItem)
+    const functionName = getRetailPublishFunctionName(selectedItem)
+
+    await publishSelection(
+      functionName,
+      [selectedItem.id],
+      {
+        [selectedItem.id]: selectedItem,
+      },
+      mode,
+    )
+  }
 
   if (profileLoading || !isAdmin) {
     return (
@@ -416,27 +652,17 @@ export default function RetailPriceValidationPage({
               Administration privee
             </div>
             <h2 style={{ margin: "6px 0 4px", color: ds.textPrimary, fontSize: 28, lineHeight: 1.05 }}>
-              Validation prix et promotions retail
+              Publication des promotions et prix observes retail
             </h2>
             <p style={{ margin: 0, color: ds.textSecondary, maxWidth: 820 }}>
-              File privee reservee a Jacques pour la collecte Leader Price. Les prix observes restent separes des promotions prouvees et aucune publication n'est automatique.
+              Validation privee reservee a Jacques. Un candidat n'est considere publie que lorsqu'il est visible publiquement et rattache a un produit de reference.
             </p>
           </div>
 
           <button
             type="button"
             onClick={() => onGoBack?.()}
-            style={{
-              alignSelf: "start",
-              padding: "11px 14px",
-              borderRadius: 14,
-              border: `1px solid ${ds.border}`,
-              background: ds.surface,
-              color: ds.textPrimary,
-              cursor: "pointer",
-              fontWeight: 800,
-              fontFamily: "inherit",
-            }}
+            style={buttonStyle()}
           >
             Retour au tableau de bord
           </button>
@@ -457,40 +683,33 @@ export default function RetailPriceValidationPage({
             </select>
           </LabeledField>
 
-          <LabeledField label="Vue">
+          <LabeledField label="Type">
             <select
-              value={filters.bucket}
-              onChange={event => setFilters(current => ({ ...current, bucket: event.target.value }))}
+              value={filters.type}
+              onChange={event => setFilters(current => ({ ...current, type: event.target.value }))}
               style={inputStyle()}
             >
               <option value="all">Tous</option>
+              <option value="promotion">Promotions</option>
               <option value="observed_price">Prix observes</option>
-              <option value="promotion">Promotions prouvees</option>
-              <option value="matched">Matches</option>
-              <option value="needs_review">A verifier</option>
-              <option value="unmatched">Non reconnus</option>
-              <option value="rejected">Rejetes</option>
-              <option value="published">Publies</option>
             </select>
           </LabeledField>
+        </div>
 
-          <LabeledField label="Statut">
-            <select
-              value={filters.status}
-              onChange={event => setFilters(current => ({ ...current, status: event.target.value }))}
-              style={inputStyle()}
-            >
-              <option value="all">Tous</option>
-              <option value="imported">Imported</option>
-              <option value="matched">Matched</option>
-              <option value="needs_review">Needs review</option>
-              <option value="approved_price">Approved price</option>
-              <option value="approved_promotion">Approved promotion</option>
-              <option value="rejected">Rejected</option>
-              <option value="duplicate">Duplicate</option>
-              <option value="published">Published</option>
-            </select>
-          </LabeledField>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          {["needs_review", "ready", "published", "rejected"].map(bucket => {
+            const active = filters.bucket === bucket
+            return (
+              <button
+                key={bucket}
+                type="button"
+                onClick={() => setFilters(current => ({ ...current, bucket }))}
+                style={tabButtonStyle(active)}
+              >
+                {`${getRetailAdminBucketLabel(bucket)} (${stageCounts[bucket] || 0})`}
+              </button>
+            )
+          })}
         </div>
 
         {selectedRun && (
@@ -498,38 +717,63 @@ export default function RetailPriceValidationPage({
             <Badge>{`${selectedRun.candidates_total} produits`}</Badge>
             <Badge tone="success">{`${selectedRun.observed_prices_total} prix observes`}</Badge>
             <Badge tone="warning">{`${selectedRun.promotions_total} promotions prouvees`}</Badge>
-            <Badge>{`${selectedRun.matched_total} matches`}</Badge>
-            <Badge tone="danger">{`${selectedRun.unmatched_total} non reconnus`}</Badge>
+            <Badge>{`${selectedRun.matched_total} produits associes`}</Badge>
+            <Badge tone="danger">{`${selectedRun.unmatched_total} produits a associer`}</Badge>
           </div>
         )}
       </div>
 
       {error && (
-        <div style={{ border: `1px solid ${ds.danger}44`, background: "rgba(239,68,68,.12)", color: ds.danger, padding: "12px 14px", borderRadius: 16, fontWeight: 700 }}>
+        <div style={{ border: `1px solid ${ds.danger}44`, background: "rgba(239,68,68,.12)", color: ds.danger, padding: "12px 14px", borderRadius: 16, fontWeight: 700, whiteSpace: "pre-line" }}>
           {error}
         </div>
       )}
 
       {successMessage && (
-        <div style={{ border: `1px solid ${ds.success}44`, background: "rgba(34,197,94,.12)", color: ds.success, padding: "12px 14px", borderRadius: 16, fontWeight: 700 }}>
+        <div style={{ border: `1px solid ${ds.success}44`, background: "rgba(34,197,94,.12)", color: ds.success, padding: "12px 14px", borderRadius: 16, fontWeight: 700, whiteSpace: "pre-line" }}>
           {successMessage}
         </div>
       )}
 
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-        <button type="button" onClick={() => updateStatusForSelection("approved_price", reliableObservedIds)} disabled={!reliableObservedIds.length || busy} style={inputStyle()}>
-          Valider tous les prix fiables
-        </button>
-        <button type="button" onClick={() => updateStatusForSelection("approved_promotion", reliablePromotionIds)} disabled={!reliablePromotionIds.length || busy} style={inputStyle()}>
-          Valider toutes les promotions fiables
-        </button>
-        <button type="button" onClick={() => publishSelection("retail_publish_price_candidates", selectedIds)} disabled={!selectedIds.length || busy} style={inputStyle()}>
-          Publier les prix selectionnes
-        </button>
-        <button type="button" onClick={() => publishSelection("retail_publish_promotion_candidates", selectedIds)} disabled={!selectedIds.length || busy} style={inputStyle()}>
-          Publier les promotions selectionnees
-        </button>
-      </div>
+      {selectedIds.length > 0 && (
+        <div style={{ display: "grid", gap: 10, border: `1px solid ${ds.border}`, borderRadius: 18, background: ds.surface, padding: 16 }}>
+          <div style={{ color: ds.textPrimary, fontWeight: 900 }}>
+            {`${selectedIds.length} element(s) selectionnes`}
+          </div>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            {selectedObservedApprovalIds.length > 0 && (
+              <button type="button" onClick={() => updateStatusForSelection("approved_price", selectedObservedApprovalIds)} disabled={busy} style={buttonStyle()}>
+                {`Marquer ${selectedObservedApprovalIds.length} prix observe(s) pret(s)`}
+              </button>
+            )}
+            {selectedPromotionApprovalIds.length > 0 && (
+              <button type="button" onClick={() => updateStatusForSelection("approved_promotion", selectedPromotionApprovalIds)} disabled={busy} style={buttonStyle()}>
+                {`Marquer ${selectedPromotionApprovalIds.length} promotion(s) prete(s)`}
+              </button>
+            )}
+            {selectedObservedPublishIds.length > 0 && (
+              <button
+                type="button"
+                onClick={() => publishSelection("retail_publish_price_candidates", selectedObservedPublishIds, Object.fromEntries(selectedItems.map(item => [item.id, item])), "observed_price")}
+                disabled={busy}
+                style={buttonStyle({ primary: true, disabled: busy })}
+              >
+                {publishing ? "Publication en cours..." : `Publier ${selectedObservedPublishIds.length} prix observe(s)`}
+              </button>
+            )}
+            {selectedPromotionPublishIds.length > 0 && (
+              <button
+                type="button"
+                onClick={() => publishSelection("retail_publish_promotion_candidates", selectedPromotionPublishIds, Object.fromEntries(selectedItems.map(item => [item.id, item])), "promotion")}
+                disabled={busy}
+                style={buttonStyle({ primary: true, disabled: busy })}
+              >
+                {publishing ? "Publication en cours..." : `Publier ${selectedPromotionPublishIds.length} promotion(s)`}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
 
       <div style={{ display: "grid", gap: 18, gridTemplateColumns: "minmax(320px, 1fr) minmax(380px, 1.15fr)" }}>
         <div style={{ border: `1px solid ${ds.border}`, borderRadius: 22, background: ds.surface, overflow: "hidden" }}>
@@ -537,7 +781,7 @@ export default function RetailPriceValidationPage({
             <span>{loadingItems ? "Chargement..." : `${filteredItems.length} candidat(s)`}</span>
             {filteredItems.length > 0 && (
               <button type="button" onClick={toggleSelectAll} style={{ border: 0, background: "transparent", color: ds.primary, cursor: "pointer", fontWeight: 800 }}>
-                {selectedIds.length === filteredItems.length ? "Tout deselec." : "Tout selectionner"}
+                {selectedIds.length === filteredItems.length ? "Tout deselectionner" : "Tout selectionner"}
               </button>
             )}
           </div>
@@ -546,6 +790,7 @@ export default function RetailPriceValidationPage({
             {filteredItems.map(item => {
               const active = item.id === selectedItem?.id
               const checked = selectedIds.includes(item.id)
+              const bucket = getRetailAdminBucket(item)
               return (
                 <div
                   key={item.id}
@@ -576,7 +821,7 @@ export default function RetailPriceValidationPage({
                     >
                       <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>
                         <strong style={{ color: ds.textPrimary }}>{item.product_name}</strong>
-                        <Badge tone={statusTone(item.status)}>{item.status}</Badge>
+                        <Badge tone={stageTone(bucket)}>{getRetailAdminBucketLabel(bucket)}</Badge>
                       </div>
                       <div style={{ color: ds.textSecondary, fontSize: 13 }}>
                         {[item.brand, item.package_format, item.store_name].filter(Boolean).join(" · ")}
@@ -585,8 +830,8 @@ export default function RetailPriceValidationPage({
                         <Badge tone={item.price_type === "promotion" ? "warning" : "neutral"}>
                           {item.price_type === "promotion" ? "Promotion" : "Prix observe"}
                         </Badge>
-                        <Badge tone={item.matched_market_product_id ? "success" : "danger"}>
-                          {item.matched_market_product_id ? "Produit reconnu" : "Non reconnu"}
+                        <Badge tone={hasReferenceProduct(item) ? "success" : "danger"}>
+                          {getRetailProductStateLabel(item)}
                         </Badge>
                       </div>
                     </button>
@@ -598,7 +843,7 @@ export default function RetailPriceValidationPage({
         </div>
 
         <div style={{ border: `1px solid ${ds.border}`, borderRadius: 22, background: ds.surface, padding: 18, display: "grid", gap: 14 }}>
-          {!selectedItem || !draft ? (
+          {!selectedItem || !activeDraft ? (
             <div style={{ color: ds.textSecondary }}>Selectionnez un candidat pour le corriger ou le valider.</div>
           ) : (
             <>
@@ -610,63 +855,66 @@ export default function RetailPriceValidationPage({
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  <Badge tone={statusTone(selectedItem.status)}>{selectedItem.status}</Badge>
-                  {selectedItem.matched_market_product_name && (
-                    <Badge tone="success">{selectedItem.matched_market_product_name}</Badge>
-                  )}
+                  <Badge tone={stageTone(getRetailAdminBucket(selectedItem))}>{getRetailAdminBucketLabel(getRetailAdminBucket(selectedItem))}</Badge>
+                  <Badge tone={hasReferenceProduct(stagedSelectedItem) ? "success" : "danger"}>
+                    {getRetailProductStateLabel(stagedSelectedItem)}
+                  </Badge>
                 </div>
               </div>
 
               <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
+                <LabeledField label="Type">
+                  <div style={{ ...inputStyle(), display: "flex", alignItems: "center" }}>
+                    {selectedItem.price_type === "promotion" ? "Promotion" : "Prix observe"}
+                  </div>
+                </LabeledField>
                 <LabeledField label="Produit">
-                  <input value={draft.product_name} onChange={event => setDraft(current => ({ ...current, product_name: event.target.value }))} style={inputStyle()} />
+                  <input value={activeDraft.product_name} onChange={event => setDraft(current => ({ ...(current?.candidateId === selectedItem.id ? current : createDraftFromItem(selectedItem)), candidateId: selectedItem.id, product_name: event.target.value }))} style={inputStyle()} />
                 </LabeledField>
                 <LabeledField label="Marque">
-                  <input value={draft.brand} onChange={event => setDraft(current => ({ ...current, brand: event.target.value }))} style={inputStyle()} />
+                  <input value={activeDraft.brand} onChange={event => setDraft(current => ({ ...(current?.candidateId === selectedItem.id ? current : createDraftFromItem(selectedItem)), candidateId: selectedItem.id, brand: event.target.value }))} style={inputStyle()} />
                 </LabeledField>
                 <LabeledField label="Format">
-                  <input value={draft.package_format} onChange={event => setDraft(current => ({ ...current, package_format: event.target.value }))} style={inputStyle()} />
+                  <input value={activeDraft.package_format} onChange={event => setDraft(current => ({ ...(current?.candidateId === selectedItem.id ? current : createDraftFromItem(selectedItem)), candidateId: selectedItem.id, package_format: event.target.value }))} style={inputStyle()} />
                 </LabeledField>
                 <LabeledField label="Prix courant">
-                  <input value={draft.current_price} onChange={event => setDraft(current => ({ ...current, current_price: event.target.value }))} style={inputStyle()} />
+                  <input value={activeDraft.current_price} onChange={event => setDraft(current => ({ ...(current?.candidateId === selectedItem.id ? current : createDraftFromItem(selectedItem)), candidateId: selectedItem.id, current_price: event.target.value }))} style={inputStyle()} />
                 </LabeledField>
                 <LabeledField label="Ancien prix">
-                  <input value={draft.original_price} onChange={event => setDraft(current => ({ ...current, original_price: event.target.value }))} style={inputStyle()} />
+                  <input value={activeDraft.original_price} onChange={event => setDraft(current => ({ ...(current?.candidateId === selectedItem.id ? current : createDraftFromItem(selectedItem)), candidateId: selectedItem.id, original_price: event.target.value }))} style={inputStyle()} />
                 </LabeledField>
                 <LabeledField label="Prix unitaire">
-                  <input value={draft.unit_price} onChange={event => setDraft(current => ({ ...current, unit_price: event.target.value }))} style={inputStyle()} />
+                  <input value={activeDraft.unit_price} onChange={event => setDraft(current => ({ ...(current?.candidateId === selectedItem.id ? current : createDraftFromItem(selectedItem)), candidateId: selectedItem.id, unit_price: event.target.value }))} style={inputStyle()} />
                 </LabeledField>
                 <LabeledField label="Unite prix">
-                  <input value={draft.unit_price_unit} onChange={event => setDraft(current => ({ ...current, unit_price_unit: event.target.value }))} style={inputStyle()} />
-                </LabeledField>
-                <LabeledField label="Statut">
-                  <select value={draft.status} onChange={event => setDraft(current => ({ ...current, status: event.target.value }))} style={inputStyle()}>
-                    <option value="matched">Matched</option>
-                    <option value="needs_review">Needs review</option>
-                    <option value="approved_price">Approved price</option>
-                    <option value="approved_promotion">Approved promotion</option>
-                    <option value="rejected">Rejected</option>
-                  </select>
+                  <input value={activeDraft.unit_price_unit} onChange={event => setDraft(current => ({ ...(current?.candidateId === selectedItem.id ? current : createDraftFromItem(selectedItem)), candidateId: selectedItem.id, unit_price_unit: event.target.value }))} style={inputStyle()} />
                 </LabeledField>
               </div>
 
               <LabeledField label="Notes de revue">
-                <textarea value={draft.review_notes} onChange={event => setDraft(current => ({ ...current, review_notes: event.target.value }))} style={inputStyle(true)} />
+                <textarea value={activeDraft.review_notes} onChange={event => setDraft(current => ({ ...(current?.candidateId === selectedItem.id ? current : createDraftFromItem(selectedItem)), candidateId: selectedItem.id, review_notes: event.target.value }))} style={inputStyle(true)} />
               </LabeledField>
 
               <div style={{ display: "grid", gap: 10 }}>
                 <div style={{ color: ds.textSecondary, fontSize: 13, fontWeight: 700 }}>
-                  Matching propose
+                  Produit de reference
                 </div>
                 <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  <Badge tone={selectedItem.matched_market_product_id ? "success" : "danger"}>
-                    {selectedItem.matched_market_product_id ? `Produit matché: ${selectedItem.matched_market_product_name || selectedItem.matched_market_product_id}` : "Aucun produit reconnu"}
+                  <Badge tone={hasReferenceProduct(selectedItem) ? "success" : "danger"}>
+                    {hasReferenceProduct(selectedItem)
+                      ? `Produit associe : ${selectedItem.matched_market_product_name || selectedItem.matched_market_product_id}`
+                      : "Produit de reference a associer"}
                   </Badge>
                   {selectedItem.match_method && <Badge>{selectedItem.match_method}</Badge>}
                   {selectedItem.match_confidence !== null && selectedItem.match_confidence !== undefined && (
                     <Badge>{`Confiance ${(Number(selectedItem.match_confidence) * 100).toFixed(0)}%`}</Badge>
                   )}
                 </div>
+                {!hasReferenceProduct(stagedSelectedItem) && (
+                  <div style={{ color: ds.warning, fontSize: 13, lineHeight: 1.5 }}>
+                    Publication bloquee tant qu'aucun produit de reference n'est associe.
+                  </div>
+                )}
               </div>
 
               <div style={{ display: "grid", gap: 10, gridTemplateColumns: "1fr auto" }}>
@@ -676,7 +924,7 @@ export default function RetailPriceValidationPage({
                   placeholder="Rechercher un produit market existant"
                   style={inputStyle()}
                 />
-                <button type="button" onClick={searchMarketProducts} style={inputStyle()}>
+                <button type="button" onClick={searchMarketProducts} style={buttonStyle()}>
                   {marketLoading ? "Recherche..." : "Chercher"}
                 </button>
               </div>
@@ -687,10 +935,10 @@ export default function RetailPriceValidationPage({
                     <button
                       key={product.id}
                       type="button"
-                      onClick={() => setDraft(current => ({ ...current, matched_market_product_id: product.id, status: "matched" }))}
+                      onClick={() => setDraft(current => ({ ...(current?.candidateId === selectedItem.id ? current : createDraftFromItem(selectedItem)), candidateId: selectedItem.id, matched_market_product_id: product.id }))}
                       style={{
-                        border: `1px solid ${ds.border}`,
-                        background: ds.elevated,
+                        border: `1px solid ${draftMatchId === product.id ? `${ds.primary}55` : ds.border}`,
+                        background: draftMatchId === product.id ? "rgba(249,115,22,.08)" : ds.elevated,
                         color: ds.textPrimary,
                         borderRadius: 14,
                         padding: 12,
@@ -708,29 +956,44 @@ export default function RetailPriceValidationPage({
                 </div>
               )}
 
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                <button type="button" onClick={() => saveChanges("approved_price")} disabled={busy} style={inputStyle()}>
-                  Valider comme prix observe
-                </button>
-                <button type="button" onClick={() => saveChanges("approved_promotion")} disabled={busy} style={inputStyle()}>
-                  Valider comme promotion
-                </button>
-                <button type="button" onClick={saveChanges} disabled={busy} style={inputStyle()}>
-                  Corriger
-                </button>
-                <button type="button" onClick={createReferenceProduct} disabled={busy} style={inputStyle()}>
-                  Creer un produit de reference
-                </button>
-                <button type="button" onClick={() => updateStatusForSelection("rejected", [selectedItem.id])} disabled={busy} style={inputStyle()}>
-                  Rejeter
-                </button>
-                <button
-                  type="button"
-                  onClick={() => window.open(selectedItem.source_url, "_blank", "noopener,noreferrer")}
-                  style={inputStyle()}
-                >
-                  Ouvrir la source
-                </button>
+              <div style={{ display: "grid", gap: 10 }}>
+                {referenceSelectionPending ? (
+                  <button type="button" onClick={attachSelectedReferenceProduct} disabled={busy} style={buttonStyle({ primary: true, disabled: busy })}>
+                    Associer le produit selectionne
+                  </button>
+                ) : !hasReferenceProduct(selectedItem) ? (
+                  <button type="button" onClick={createReferenceProduct} disabled={busy} style={buttonStyle({ primary: true, disabled: busy })}>
+                    Associer ou creer le produit
+                  </button>
+                ) : candidateReadyToPublish(selectedItem) ? (
+                  <button type="button" onClick={publishSelectedItem} disabled={busy} style={buttonStyle({ primary: true, disabled: busy })}>
+                    {publishing ? "Publication en cours..." : "Valider et publier"}
+                  </button>
+                ) : canCandidateBeApproved(stagedSelectedItem, getRetailApprovalStatusForItem(stagedSelectedItem)) ? (
+                  <button type="button" onClick={markSelectedItemReady} disabled={busy} style={buttonStyle({ primary: true, disabled: busy })}>
+                    {selectedItem.price_type === "promotion" ? "Marquer promotion prete a publier" : "Marquer prix observe pret a publier"}
+                  </button>
+                ) : (
+                  <button type="button" disabled style={buttonStyle({ primary: true, disabled: true })}>
+                    Preparation incomplete
+                  </button>
+                )}
+
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <button type="button" onClick={() => saveChanges(null, "Corrections retail enregistrees.")} disabled={busy} style={buttonStyle()}>
+                    Corriger
+                  </button>
+                  <button type="button" onClick={() => updateStatusForSelection("rejected", [selectedItem.id])} disabled={busy} style={buttonStyle()}>
+                    Rejeter
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => window.open(selectedItem.source_url, "_blank", "noopener,noreferrer")}
+                    style={buttonStyle()}
+                  >
+                    Ouvrir la source
+                  </button>
+                </div>
               </div>
             </>
           )}
