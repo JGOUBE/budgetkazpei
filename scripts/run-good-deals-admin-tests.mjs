@@ -185,6 +185,7 @@ assert.equal(getRetailPublishFunctionName({ price_type: "observed_price" }), "re
 
 const retailMigration = read("supabase/migrations/202607290003_retail_publication_visibility_and_review_contract.sql")
 const retailSourceConstraintMigration = read("supabase/migrations/202607290004_market_seed_batches_retail_source.sql")
+const retailBatchIdFixMigration = read("supabase/migrations/202607290005_retail_market_batch_id_ambiguity_fix.sql")
 const normalizedRetailMigration = normalizeSql(retailMigration)
 const retailReviewViewContractMatch = retailMigration.match(/create or replace view public\.retail_price_candidates_review[\s\S]*?left join public\.shopping_products[\s\S]*?;/)
 assert.ok(retailReviewViewContractMatch, "Retail migration must still define the retail_price_candidates_review view contract")
@@ -273,6 +274,11 @@ assert.match(retailSourceConstraintMigration, /'bqp_reunion_2026'::text/, "Retai
 assert.match(retailSourceConstraintMigration, /'open_prices'::text/, "Retail source constraint migration must preserve open_prices")
 assert.match(retailSourceConstraintMigration, /'retail_publication'::text/, "Retail source constraint migration must add retail_publication")
 assert.doesNotMatch(retailSourceConstraintMigration, /'manual_seed'::text[\s\S]*'receipt_scan_anonymized'::text[\s\S]*'open_prices'::text(?![\s\S]*'retail_publication'::text)/, "Retail source constraint migration must not drop any historical source when adding retail_publication")
+assert.match(retailBatchIdFixMigration, /create or replace function public\.retail_sync_market_price_observation\(/, "Retail batch_id fix migration must replace the affected retail market sync function")
+assert.match(retailBatchIdFixMigration, /from public\.market_price_observations as observations\s+where observations\.batch_id = v_batch_id\s+and observations\.batch_item_key = v_batch_item_key/s, "Retail batch_id fix migration must qualify the market_price_observations batch_id lookup")
+assert.doesNotMatch(retailBatchIdFixMigration, /where batch_id = v_batch_id/, "Retail batch_id fix migration must not keep an ambiguous bare batch_id lookup")
+assert.doesNotMatch(retailBatchIdFixMigration, /#variable_conflict use_column/, "Retail batch_id fix migration must not use a global variable_conflict workaround")
+assert.doesNotMatch(retailBatchIdFixMigration, /on conflict\s*\(\s*batch_id\s*\)/i, "Retail batch_id fix migration must not introduce a new ambiguous ON CONFLICT target on batch_id")
 
 const provenMarketStoreId = "29ae25ce-eb77-4d8e-9f88-0b4b5c5b4eb3"
 const mappingRows = [
