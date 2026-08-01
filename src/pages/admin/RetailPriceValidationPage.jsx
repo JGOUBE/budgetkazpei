@@ -7,16 +7,24 @@ import {
   getRetailAdminBucket,
   getRetailAdminBucketLabel,
   getRetailApprovalStatusForItem,
+  getRetailQuantityValidationErrors,
   getRetailProductStateLabel,
   getRetailPublishFunctionName,
   getRetailPublishMode,
   hasReferenceProduct,
+  RETAIL_UNIT_OPTIONS,
 } from "./retailPriceValidationState"
 
 function toNumberOrNull(value) {
   if (value === "" || value === null || value === undefined) return null
   const number = Number(value)
   return Number.isFinite(number) ? number : null
+}
+
+function toIntegerOrNull(value) {
+  if (value === "" || value === null || value === undefined) return null
+  const number = Number(value)
+  return Number.isInteger(number) ? number : null
 }
 
 function textOrNull(value) {
@@ -38,6 +46,11 @@ function createDraftFromItem(item) {
     product_name: item.product_name || "",
     brand: item.brand || "",
     package_format: item.package_format || "",
+    quantity_value: item.quantity_value ?? "",
+    quantity_unit: item.quantity_unit || "",
+    pack_count: item.pack_count ?? "",
+    total_quantity_value: item.total_quantity_value ?? "",
+    total_quantity_unit: item.total_quantity_unit || "",
     current_price: item.current_price ?? "",
     original_price: item.original_price ?? "",
     unit_price: item.unit_price ?? "",
@@ -403,12 +416,24 @@ export default function RetailPriceValidationPage({
     if (!selectedItem || !activeDraft) return selectedItem
     return {
       ...selectedItem,
+      package_format: textOrNull(activeDraft.package_format) ?? selectedItem.package_format,
+      quantity_value: toNumberOrNull(activeDraft.quantity_value),
+      quantity_unit: textOrNull(activeDraft.quantity_unit),
+      pack_count: toIntegerOrNull(activeDraft.pack_count),
+      total_quantity_value: toNumberOrNull(activeDraft.total_quantity_value),
+      total_quantity_unit: textOrNull(activeDraft.total_quantity_unit),
       matched_market_product_id: draftMatchId || selectedItem.matched_market_product_id,
       current_price: toNumberOrNull(activeDraft.current_price) ?? selectedItem.current_price,
       original_price: toNumberOrNull(activeDraft.original_price) ?? selectedItem.original_price,
       unit_price: toNumberOrNull(activeDraft.unit_price) ?? selectedItem.unit_price,
+      unit_price_unit: textOrNull(activeDraft.unit_price_unit),
     }
   }, [selectedItem, activeDraft, draftMatchId])
+
+  const quantityValidationErrors = useMemo(
+    () => getRetailQuantityValidationErrors(stagedSelectedItem || {}),
+    [stagedSelectedItem],
+  )
 
   function toggleSelection(candidateId) {
     setSelectedIds(current =>
@@ -433,6 +458,11 @@ export default function RetailPriceValidationPage({
       product_name: String(activeDraft.product_name || "").trim(),
       brand: textOrNull(activeDraft.brand),
       package_format: textOrNull(activeDraft.package_format),
+      quantity_value: toNumberOrNull(activeDraft.quantity_value),
+      quantity_unit: textOrNull(activeDraft.quantity_unit),
+      pack_count: toIntegerOrNull(activeDraft.pack_count),
+      total_quantity_value: toNumberOrNull(activeDraft.total_quantity_value),
+      total_quantity_unit: textOrNull(activeDraft.total_quantity_unit),
       current_price: toNumberOrNull(activeDraft.current_price),
       original_price: toNumberOrNull(activeDraft.original_price),
       unit_price: toNumberOrNull(activeDraft.unit_price),
@@ -448,6 +478,14 @@ export default function RetailPriceValidationPage({
   async function saveChanges(statusOverride = null, messageOverride = "") {
     const payload = buildPayload(statusOverride)
     if (!selectedItem || !payload) return false
+
+    const nextStructuredItem = { ...selectedItem, ...payload }
+    const structuredErrors = getRetailQuantityValidationErrors(nextStructuredItem)
+    if (structuredErrors.length > 0) {
+      setError(`Correction retail incoherente.\n- ${structuredErrors.join("\n- ")}`)
+      setSuccessMessage("")
+      return false
+    }
 
     if (statusOverride && !canCandidateBeApproved({ ...selectedItem, ...payload }, statusOverride)) {
       setError("Impossible de preparer ce candidat sans produit de reference associe et sans prix valide.")
@@ -877,6 +915,29 @@ export default function RetailPriceValidationPage({
                 <LabeledField label="Format">
                   <input value={activeDraft.package_format} onChange={event => setDraft(current => ({ ...(current?.candidateId === selectedItem.id ? current : createDraftFromItem(selectedItem)), candidateId: selectedItem.id, package_format: event.target.value }))} style={inputStyle()} />
                 </LabeledField>
+                <LabeledField label="Quantite">
+                  <input value={activeDraft.quantity_value} onChange={event => setDraft(current => ({ ...(current?.candidateId === selectedItem.id ? current : createDraftFromItem(selectedItem)), candidateId: selectedItem.id, quantity_value: event.target.value }))} style={inputStyle()} />
+                </LabeledField>
+                <LabeledField label="Unite quantite">
+                  <select value={activeDraft.quantity_unit} onChange={event => setDraft(current => ({ ...(current?.candidateId === selectedItem.id ? current : createDraftFromItem(selectedItem)), candidateId: selectedItem.id, quantity_unit: event.target.value }))} style={inputStyle()}>
+                    {RETAIL_UNIT_OPTIONS.map(option => (
+                      <option key={`quantity-${option.value || "blank"}`} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </LabeledField>
+                <LabeledField label="Nombre d'unites du lot">
+                  <input value={activeDraft.pack_count} onChange={event => setDraft(current => ({ ...(current?.candidateId === selectedItem.id ? current : createDraftFromItem(selectedItem)), candidateId: selectedItem.id, pack_count: event.target.value }))} style={inputStyle()} />
+                </LabeledField>
+                <LabeledField label="Quantite totale">
+                  <input value={activeDraft.total_quantity_value} onChange={event => setDraft(current => ({ ...(current?.candidateId === selectedItem.id ? current : createDraftFromItem(selectedItem)), candidateId: selectedItem.id, total_quantity_value: event.target.value }))} style={inputStyle()} />
+                </LabeledField>
+                <LabeledField label="Unite quantite totale">
+                  <select value={activeDraft.total_quantity_unit} onChange={event => setDraft(current => ({ ...(current?.candidateId === selectedItem.id ? current : createDraftFromItem(selectedItem)), candidateId: selectedItem.id, total_quantity_unit: event.target.value }))} style={inputStyle()}>
+                    {RETAIL_UNIT_OPTIONS.map(option => (
+                      <option key={`total-quantity-${option.value || "blank"}`} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
+                </LabeledField>
                 <LabeledField label="Prix courant">
                   <input value={activeDraft.current_price} onChange={event => setDraft(current => ({ ...(current?.candidateId === selectedItem.id ? current : createDraftFromItem(selectedItem)), candidateId: selectedItem.id, current_price: event.target.value }))} style={inputStyle()} />
                 </LabeledField>
@@ -887,9 +948,19 @@ export default function RetailPriceValidationPage({
                   <input value={activeDraft.unit_price} onChange={event => setDraft(current => ({ ...(current?.candidateId === selectedItem.id ? current : createDraftFromItem(selectedItem)), candidateId: selectedItem.id, unit_price: event.target.value }))} style={inputStyle()} />
                 </LabeledField>
                 <LabeledField label="Unite prix">
-                  <input value={activeDraft.unit_price_unit} onChange={event => setDraft(current => ({ ...(current?.candidateId === selectedItem.id ? current : createDraftFromItem(selectedItem)), candidateId: selectedItem.id, unit_price_unit: event.target.value }))} style={inputStyle()} />
+                  <select value={activeDraft.unit_price_unit} onChange={event => setDraft(current => ({ ...(current?.candidateId === selectedItem.id ? current : createDraftFromItem(selectedItem)), candidateId: selectedItem.id, unit_price_unit: event.target.value }))} style={inputStyle()}>
+                    {RETAIL_UNIT_OPTIONS.map(option => (
+                      <option key={`unit-price-${option.value || "blank"}`} value={option.value}>{option.label}</option>
+                    ))}
+                  </select>
                 </LabeledField>
               </div>
+
+              {quantityValidationErrors.length > 0 && (
+                <div style={{ border: `1px solid ${ds.warning}55`, background: "rgba(245,158,11,.12)", color: ds.warning, padding: "12px 14px", borderRadius: 16, fontWeight: 700, whiteSpace: "pre-line" }}>
+                  {`Verification quantite requise.\n- ${quantityValidationErrors.join("\n- ")}`}
+                </div>
+              )}
 
               <LabeledField label="Notes de revue">
                 <textarea value={activeDraft.review_notes} onChange={event => setDraft(current => ({ ...(current?.candidateId === selectedItem.id ? current : createDraftFromItem(selectedItem)), candidateId: selectedItem.id, review_notes: event.target.value }))} style={inputStyle(true)} />

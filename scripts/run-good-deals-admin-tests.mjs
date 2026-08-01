@@ -17,8 +17,10 @@ import {
   getRetailAdminBucket,
   getRetailAdminBucketLabel,
   getRetailApprovalStatusForItem,
+  getRetailQuantityValidationErrors,
   getRetailProductStateLabel,
   getRetailPublishFunctionName,
+  RETAIL_UNIT_OPTIONS,
 } from "../src/pages/admin/retailPriceValidationState.js"
 
 const root = process.cwd()
@@ -114,6 +116,18 @@ assert.match(retailPage, /Associer ou creer le produit/, "Retail admin page must
 assert.match(retailPage, /Prix observe pret a publier\./, "Retail admin page must distinguish ready-to-publish from published success")
 assert.match(retailPage, /Promotion publiee avec succes\./, "Retail admin page must confirm promotion publication precisely")
 assert.match(retailPage, /Prix observe publie avec succes\./, "Retail admin page must confirm observed-price publication precisely")
+assert.match(retailPage, /quantity_value: item\.quantity_value \?\? ""/, "Retail admin page must hydrate the structured quantity value into the draft")
+assert.match(retailPage, /quantity_unit: item\.quantity_unit \|\| ""/, "Retail admin page must hydrate the structured quantity unit into the draft")
+assert.match(retailPage, /pack_count: item\.pack_count \?\? ""/, "Retail admin page must hydrate the structured pack_count into the draft")
+assert.match(retailPage, /total_quantity_value: item\.total_quantity_value \?\? ""/, "Retail admin page must hydrate the structured total quantity into the draft")
+assert.match(retailPage, /total_quantity_unit: item\.total_quantity_unit \|\| ""/, "Retail admin page must hydrate the structured total quantity unit into the draft")
+assert.match(retailPage, /quantity_value: toNumberOrNull\(activeDraft\.quantity_value\)/, "Retail admin page must persist quantity_value when saving corrections")
+assert.match(retailPage, /quantity_unit: textOrNull\(activeDraft\.quantity_unit\)/, "Retail admin page must persist quantity_unit when saving corrections")
+assert.match(retailPage, /pack_count: toIntegerOrNull\(activeDraft\.pack_count\)/, "Retail admin page must persist pack_count when saving corrections")
+assert.match(retailPage, /total_quantity_value: toNumberOrNull\(activeDraft\.total_quantity_value\)/, "Retail admin page must persist total_quantity_value when saving corrections")
+assert.match(retailPage, /total_quantity_unit: textOrNull\(activeDraft\.total_quantity_unit\)/, "Retail admin page must persist total_quantity_unit when saving corrections")
+assert.match(retailPage, /RETAIL_UNIT_OPTIONS\.map\(option => \(/, "Retail admin page must expose controlled unit options instead of a free-text unit field")
+assert.doesNotMatch(retailPage, /<LabeledField label="Unite prix">\s*<input/s, "Retail admin page must not keep Unite prix as an opaque free-text input")
 assert.doesNotMatch(retailPage, /service_role|SUPABASE_SERVICE_ROLE_KEY|VITE_SUPABASE_SERVICE_ROLE_KEY/i, "Retail admin page must never embed the service role")
 assert.doesNotMatch(retailPage, /Approved price|Approved promotion|Needs review/, "Retail admin page must hide the technical English status labels")
 
@@ -182,10 +196,75 @@ assert.equal(getRetailAdminBucket({
 }), "published")
 assert.equal(getRetailPublishFunctionName({ price_type: "promotion" }), "retail_publish_promotion_candidates")
 assert.equal(getRetailPublishFunctionName({ price_type: "observed_price" }), "retail_publish_price_candidates")
+assert.deepEqual(RETAIL_UNIT_OPTIONS.map(option => option.value), ["", "unite", "bloc", "piece", "kg", "g", "l", "cl", "ml"])
+assert.deepEqual(getRetailQuantityValidationErrors({
+  package_format: "2 blocs",
+  quantity_value: null,
+  quantity_unit: null,
+  pack_count: null,
+  total_quantity_value: null,
+  total_quantity_unit: null,
+  unit_price: 1.56,
+  unit_price_unit: "bloc",
+}), [], "Harpic 2 blocs must support 1.56 EUR per bloc without liquid units")
+assert.notEqual(getRetailQuantityValidationErrors({
+  package_format: "2 blocs",
+  quantity_value: 75,
+  quantity_unit: "cl",
+  pack_count: null,
+  total_quantity_value: 75,
+  total_quantity_unit: "cl",
+  unit_price: 1.56,
+  unit_price_unit: "l",
+}).length, 0, "A bloc format must reject stale cl/l structured fields")
+assert.deepEqual(getRetailQuantityValidationErrors({
+  package_format: "75 cl",
+  quantity_value: 75,
+  quantity_unit: "cl",
+  pack_count: null,
+  total_quantity_value: 75,
+  total_quantity_unit: "cl",
+  unit_price: 1.4,
+  unit_price_unit: "l",
+}), [], "A liquid product must preserve litre pricing")
+assert.deepEqual(getRetailQuantityValidationErrors({
+  package_format: "Contenu : 175 g",
+  quantity_value: 175,
+  quantity_unit: "g",
+  pack_count: null,
+  total_quantity_value: 175,
+  total_quantity_unit: "g",
+  unit_price: 34,
+  unit_price_unit: "kg",
+}), [], "A mass product must preserve kilogram pricing")
+assert.deepEqual(getRetailQuantityValidationErrors({
+  package_format: "Lot de 4 pieces",
+  quantity_value: null,
+  quantity_unit: null,
+  pack_count: 4,
+  total_quantity_value: null,
+  total_quantity_unit: null,
+  unit_price: 0.5,
+  unit_price_unit: "piece",
+}), [], "A lot of pieces must preserve a piece or unite unit price")
+assert.equal(canCandidateBeApproved({
+  price_type: "observed_price",
+  status: "matched",
+  current_price: 3.12,
+  matched_market_product_id: "product-harpic",
+  package_format: "2 blocs",
+  quantity_value: 75,
+  quantity_unit: "cl",
+  total_quantity_value: 75,
+  total_quantity_unit: "cl",
+  unit_price: 1.56,
+  unit_price_unit: "l",
+}, "approved_price"), false, "A bloc format with litre pricing must be blocked before publication")
 
 const retailMigration = read("supabase/migrations/202607290003_retail_publication_visibility_and_review_contract.sql")
 const retailSourceConstraintMigration = read("supabase/migrations/202607290004_market_seed_batches_retail_source.sql")
 const retailBatchIdFixMigration = read("supabase/migrations/202607290005_retail_market_batch_id_ambiguity_fix.sql")
+const retailQuantityContractMigration = read("supabase/migrations/202607290006_retail_quantity_contract_and_harpic_fix.sql")
 const normalizedRetailMigration = normalizeSql(retailMigration)
 const retailReviewViewContractMatch = retailMigration.match(/create or replace view public\.retail_price_candidates_review[\s\S]*?left join public\.shopping_products[\s\S]*?;/)
 assert.ok(retailReviewViewContractMatch, "Retail migration must still define the retail_price_candidates_review view contract")
@@ -279,6 +358,22 @@ assert.match(retailBatchIdFixMigration, /from public\.market_price_observations 
 assert.doesNotMatch(retailBatchIdFixMigration, /where batch_id = v_batch_id/, "Retail batch_id fix migration must not keep an ambiguous bare batch_id lookup")
 assert.doesNotMatch(retailBatchIdFixMigration, /#variable_conflict use_column/, "Retail batch_id fix migration must not use a global variable_conflict workaround")
 assert.doesNotMatch(retailBatchIdFixMigration, /on conflict\s*\(\s*batch_id\s*\)/i, "Retail batch_id fix migration must not introduce a new ambiguous ON CONFLICT target on batch_id")
+assert.match(retailQuantityContractMigration, /create or replace function public\.retail_quantity_contract_error\(/, "Retail quantity contract migration must add a reusable server-side validator")
+assert.match(retailQuantityContractMigration, /create or replace function public\.retail_price_candidates_apply_review_audit\(/, "Retail quantity contract migration must harden the review audit trigger")
+assert.match(retailQuantityContractMigration, /create or replace function public\.retail_upsert_price_observation\(/, "Retail quantity contract migration must harden retail observation publication")
+assert.match(retailQuantityContractMigration, /create or replace function public\.retail_sync_market_price_observation\(/, "Retail quantity contract migration must harden market observation publication")
+assert.match(retailQuantityContractMigration, /new\.quantity_value is distinct from old\.quantity_value/, "Retail quantity contract migration must mark structured quantity corrections as reviewed")
+assert.match(retailQuantityContractMigration, /v_quantity_contract_error := public\.retail_quantity_contract_error\(/, "Retail quantity contract migration must validate structured quantity server-side")
+assert.match(retailQuantityContractMigration, /package_format bloc\(s\) requires unit_price_unit bloc/, "Retail quantity contract migration must reject bloc formats paired with litre or weight units")
+assert.match(retailQuantityContractMigration, /2d4f7a3a-cdb3-4698-9da7-bed74cbd2a7c/, "Retail quantity contract migration must target the Harpic candidate explicitly")
+assert.match(retailQuantityContractMigration, /package_format = '2 blocs'/, "Retail quantity contract migration must correct Harpic to 2 blocs")
+assert.match(retailQuantityContractMigration, /quantity_value = null,\s+quantity_unit = null,\s+pack_count = null,\s+total_quantity_value = null,\s+total_quantity_unit = null,\s+unit_price = 1\.56,\s+unit_price_unit = 'bloc'/s, "Retail quantity contract migration must clear Harpic cl/l structured fields")
+assert.match(retailQuantityContractMigration, /where id = v_candidate\.published_price_observation_id/, "Retail quantity contract migration must update the linked retail observation by published_price_observation_id")
+assert.match(retailQuantityContractMigration, /where id = v_candidate\.published_market_observation_id/, "Retail quantity contract migration must update the linked market observation by published_market_observation_id")
+assert.doesNotMatch(retailQuantityContractMigration, /where .*product_name/i, "Retail quantity contract migration must not target Harpic by product name")
+const harpicFixBlockMatch = retailQuantityContractMigration.match(/do \$\$[\s\S]*?end;\s*\$\$;/i)
+assert.ok(harpicFixBlockMatch, "Retail quantity contract migration must contain the targeted Harpic reconciliation block")
+assert.doesNotMatch(harpicFixBlockMatch[0], /insert into public\.retail_price_observations|insert into public\.market_price_observations/i, "Retail quantity contract migration must not duplicate published observations inside the Harpic reconciliation block")
 
 const provenMarketStoreId = "29ae25ce-eb77-4d8e-9f88-0b4b5c5b4eb3"
 const mappingRows = [
