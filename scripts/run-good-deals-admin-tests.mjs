@@ -184,6 +184,7 @@ assert.equal(getRetailPublishFunctionName({ price_type: "promotion" }), "retail_
 assert.equal(getRetailPublishFunctionName({ price_type: "observed_price" }), "retail_publish_price_candidates")
 
 const retailMigration = read("supabase/migrations/202607290003_retail_publication_visibility_and_review_contract.sql")
+const retailSourceConstraintMigration = read("supabase/migrations/202607290004_market_seed_batches_retail_source.sql")
 const normalizedRetailMigration = normalizeSql(retailMigration)
 const retailReviewViewContractMatch = retailMigration.match(/create or replace view public\.retail_price_candidates_review[\s\S]*?left join public\.shopping_products[\s\S]*?;/)
 assert.ok(retailReviewViewContractMatch, "Retail migration must still define the retail_price_candidates_review view contract")
@@ -265,6 +266,13 @@ assert.match(retailMigration, /format\('retail_price_observation_id=%s', p_retai
 assert.doesNotMatch(retailMigration, /\b(user_id|email)\b/i, "Retail market sync migration must not persist personal identifiers")
 assert.match(normalizedRetailMigration, /retail_price_candidates_apply_review_audit\(\).*?approved retail candidates require matched_market_product_id/s, "The review audit trigger must now block approved retail candidates without a canonical market product")
 assert.doesNotMatch(retailMigration, /store_city\s*:=\s*'Saint-Paul'|store_city\s*:=\s*'Saint-Gilles Les Bains'|update public\.retail_price_candidates\s+set\s+store_city/i, "Retail store resolution must not mutate store_city")
+assert.match(retailSourceConstraintMigration, /alter table public\.market_seed_batches\s+drop constraint market_seed_batches_source_allowed;/, "Retail source constraint migration must replace the existing market_seed_batches source constraint")
+assert.match(retailSourceConstraintMigration, /'manual_seed'::text/, "Retail source constraint migration must preserve manual_seed")
+assert.match(retailSourceConstraintMigration, /'receipt_scan_anonymized'::text/, "Retail source constraint migration must preserve receipt_scan_anonymized")
+assert.match(retailSourceConstraintMigration, /'bqp_reunion_2026'::text/, "Retail source constraint migration must preserve bqp_reunion_2026")
+assert.match(retailSourceConstraintMigration, /'open_prices'::text/, "Retail source constraint migration must preserve open_prices")
+assert.match(retailSourceConstraintMigration, /'retail_publication'::text/, "Retail source constraint migration must add retail_publication")
+assert.doesNotMatch(retailSourceConstraintMigration, /'manual_seed'::text[\s\S]*'receipt_scan_anonymized'::text[\s\S]*'open_prices'::text(?![\s\S]*'retail_publication'::text)/, "Retail source constraint migration must not drop any historical source when adding retail_publication")
 
 const provenMarketStoreId = "29ae25ce-eb77-4d8e-9f88-0b4b5c5b4eb3"
 const mappingRows = [
