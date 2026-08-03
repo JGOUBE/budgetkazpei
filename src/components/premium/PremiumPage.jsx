@@ -37,52 +37,52 @@ const PLAN_META = {
 const CONTENT = {
   fr: {
     pageEyebrow: "Offres BudgetKazPei",
-    pageTitle: "Choisissez la formule adaptee a votre rythme.",
+    pageTitle: "Choisissez la formule adaptée à votre rythme.",
     pageText:
-      "Le serveur garde toujours l'autorite sur les quotas. L'application vous montre une lecture claire de votre formule, de vos scans inclus et des fonctions deja disponibles.",
+      "Le serveur garde toujours l'autorité sur les quotas. L'application vous montre une lecture claire de votre formule, de vos scans inclus et des fonctions déjà disponibles.",
     currentTitle: "Votre formule actuelle",
     currentLoading: "Chargement de votre formule...",
-    currentFree: "Mode decouverte actif",
+    currentFree: "Mode découverte actif",
     currentActive: "Statut actif",
-    currentManage: "Gerer mon offre",
+    currentManage: "Gérer mon offre",
     compareTitle: "Comparer les formules",
-    compareText: "Des cartes plus courtes, avec les benefices immediats d'abord.",
-    soonTitle: "Bientot disponibles",
-    soonText: "Ces fonctions restent separees des avantages deja utilisables pour eviter toute confusion produit.",
-    freeBadge: "Decouverte",
+    compareText: "Des cartes plus courtes, avec les bénéfices immédiats d'abord.",
+    soonTitle: "Bientôt disponibles",
+    soonText: "Ces fonctions restent séparées des avantages déjà utilisables pour éviter toute confusion produit.",
+    freeBadge: "Découverte",
     premiumBadge: "Populaire",
     premiumPlusBadge: "Accompagnement complet",
     currentBadge: "Actuel",
     freeIntro: "Pour suivre l'essentiel de votre budget sans friction.",
     premiumIntro: "Pour analyser plus de courses et garder un historique solide.",
-    premiumPlusIntro: "Pour un accompagnement plus complet, avec scans inclus et conseils renforces.",
+    premiumPlusIntro: "Pour un accompagnement plus complet, avec scans inclus et conseils renforcés.",
     freeFeatures: [
-      "Budget mensuel et categories",
-      "Revenus, depenses et historique simple",
+      "Budget mensuel et catégories",
+      "Revenus, dépenses et historique simple",
       PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.free],
       "Bons plans locaux",
     ],
     premiumFeatures: [
       "Tout le Gratuit",
       PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premium],
-      "Historique et statistiques avancees",
+      "Historique et statistiques avancées",
       "Export PDF et alertes budget",
     ],
     premiumPlusFeatures: [
       "Tout le Premium",
       PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premiumPlus],
-      "Conseiller renforce",
-      "Suivi des demarches et conseils personnalises",
+      "Conseiller renforcé",
+      "Suivi des démarches et conseils personnalisés",
     ],
     soonFeatures: [
       "Comparaisons intelligentes de promotions",
-      "Analyses plus poussees des courses",
-      "Veille personnalisee sur les aides et droits",
+      "Analyses plus poussées des courses",
+      "Veille personnalisée sur les aides et droits",
     ],
     scanInfoTitle: "Contrat scanner",
     scanInfoFree: "Gratuit affiche la vraie allocation gratuite.",
     scanInfoPremium: "Premium suit son quota commercial en clair.",
-    scanInfoPremiumPlus: "Premium+ garde un affichage commercial inclus. Le plafond interne de securite n'est pas presente comme une allocation.",
+    scanInfoPremiumPlus: "Profitez de vos scans inclus, avec une protection contre les utilisations inhabituelles.",
   },
   kr: {
     pageEyebrow: "Bann offres BudgetKazPei",
@@ -391,7 +391,7 @@ export default function PremiumPage({
               <InfoTile
                 icon={Sparkles}
                 title={resolvedPlanId === PLAN_IDS.premiumPlus ? "Premium+ actif" : resolvedPlanId === PLAN_IDS.premium ? "Premium actif" : "BudgetKazPei"}
-                text={resolvedPlanId === PLAN_IDS.premiumPlus ? "Scans, conseils et suivi renforces." : resolvedPlanId === PLAN_IDS.premium ? "Plus d'analyses, plus d'historique." : "Decouverte simple, sans engagement."}
+                text={resolvedPlanId === PLAN_IDS.premiumPlus ? "Scans, conseils et suivi renforcés." : resolvedPlanId === PLAN_IDS.premium ? "Plus d'analyses, plus d'historique." : "Découverte simple, sans engagement."}
               />
             </div>
           )}
