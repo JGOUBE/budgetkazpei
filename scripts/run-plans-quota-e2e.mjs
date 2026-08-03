@@ -1,6 +1,9 @@
 import assert from "node:assert/strict"
 import { readFileSync } from "node:fs"
 import { join } from "node:path"
+import React from "react"
+import { renderToString } from "react-dom/server"
+import { createServer } from "vite"
 import {
   FREE_OPERATIONAL_SCAN_LIMIT,
   MONTHLY_QUOTA_REACHED_CODE,
@@ -61,6 +64,49 @@ function lineNumberOf(text, pattern) {
   const match = text.match(pattern)
   if (!match || match.index == null) return -1
   return text.slice(0, match.index).split("\n").length
+}
+
+async function loadReceiptsPageComponent() {
+  const viteServer = await createServer({
+    appType: "custom",
+    logLevel: "error",
+    server: {
+      middlewareMode: true,
+    },
+  })
+
+  try {
+    const module = await viteServer.ssrLoadModule("/src/features/receipts/pages/ReceiptsPage.jsx")
+    return module.default
+  } finally {
+    await viteServer.close()
+  }
+}
+
+function createReceiptsPageProps(overrides = {}) {
+  return {
+    user: null,
+    t: key => key,
+    isMobile: false,
+    isPremium: false,
+    isPremiumPlus: false,
+    subscriptionLoading: false,
+    onAddTransaction: () => {},
+    onOpenReceipts: () => {},
+    onOpenShoppingList: () => {},
+    ...overrides,
+  }
+}
+
+const ReceiptsPageComponent = await loadReceiptsPageComponent()
+
+function renderReceiptsPageSsr(overrides = {}) {
+  return renderToString(
+    React.createElement(
+      ReceiptsPageComponent,
+      createReceiptsPageProps(overrides),
+    ),
+  )
 }
 
 function resolveReceiptQuotaStatePure({
@@ -203,6 +249,31 @@ assert.ok(busyDeclarationLine < busyFirstUsageLine, "busy must be declared befor
 assert.match(receiptsPage, /subscriptionLoading = false/, "Receipts page props must support an initial subscriptionLoading render")
 assert.match(receiptsPage, /userId: user\?\.id,[\s\S]{0,120}subscriptionLoading/, "Receipts page must pass subscriptionLoading into the quota hook during initial render")
 assert.match(receiptsPage, /const automatedScanDisabled = busy \|\| quota\.loading/, "Receipts page initial render must derive disabled state from declared busy and quota loading")
+
+assert.doesNotThrow(() => {
+  renderReceiptsPageSsr({
+    user: { id: "subscription-loading-user" },
+    subscriptionLoading: true,
+  })
+}, "Receipts page initial SSR render must not crash while subscriptionLoading is true")
+
+const premiumPlusEmptyMarkup = renderReceiptsPageSsr({
+  isPremium: true,
+  isPremiumPlus: true,
+})
+assert.match(premiumPlusEmptyMarkup, /Premium\+ actif/, "Receipts page Premium+ SSR render must stay stable when no scan_usage row exists yet")
+
+assert.doesNotThrow(() => {
+  renderReceiptsPageSsr({
+    user: { id: "transition-user" },
+    subscriptionLoading: true,
+  })
+  renderReceiptsPageSsr({
+    isPremium: true,
+    isPremiumPlus: true,
+    subscriptionLoading: false,
+  })
+}, "Receipts page SSR render sequence must stay stable when subscriptionLoading changes from true to false")
 
 assert.match(app, /\.eq\("status", "active"\)/, "subscription plan lookup must target only active subscriptions")
 assert.match(app, /setSubscriptionPlan\(profile\?\.plan \|\| "free"\)/, "expired or missing subscriptions must fall back explicitly only after the active-subscription lookup completes")
