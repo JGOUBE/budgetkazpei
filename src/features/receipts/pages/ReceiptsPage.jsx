@@ -1012,7 +1012,6 @@ export default function ReceiptsPage({
     isPremiumPlus,
     subscriptionLoading,
   })
-  const automatedScanDisabled = busy || quota.loading
   const cameraRef = useRef(null)
   const galleryRef = useRef(null)
   const longTopCameraRef = useRef(null)
@@ -1041,6 +1040,7 @@ export default function ReceiptsPage({
     top: null,
     bottom: null,
   })
+  const automatedScanDisabled = busy || quota.loading
 
   const globalCategory = draft?.items?.[0]?.category || "alimentaire"
   const receiptRows = useMemo(() => Array.isArray(receipts) ? receipts : [], [receipts])

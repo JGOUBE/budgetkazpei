@@ -57,6 +57,12 @@ const migration = read("supabase/migrations/202607180001_receipt_scan_server_quo
 const pythonQuota = read("services/receipt-scanner/receipt_scanner/quota.py")
 const pythonErrors = read("services/receipt-scanner/receipt_scanner/api/errors.py")
 
+function lineNumberOf(text, pattern) {
+  const match = text.match(pattern)
+  if (!match || match.index == null) return -1
+  return text.slice(0, match.index).split("\n").length
+}
+
 function resolveReceiptQuotaStatePure({
   usage = null,
   fallbackUsed = 0,
@@ -188,6 +194,15 @@ assert.match(receiptQuota, /fallbackPlan,\s*source: "scan_usage_error"/, "receip
 assert.match(receiptsPage, /const automatedScanDisabled = busy \|\| quota\.loading/, "Receipts page must disable automated scan buttons only while busy or still loading the subscription state")
 assert.match(receiptsPage, /if \(quota\.loading\)[\s\S]{0,160}txt\.quotaLoading/, "Receipts page must show a loading message instead of applying a default free quota")
 assert.doesNotMatch(receiptsPage, /passez à Premium\+|passer à Premium\+/i, "Receipts page must not upsell Premium+ when the safety guard is reached")
+
+const busyDeclarationLine = lineNumberOf(receiptsPage, /const \[busy,\s*setBusy\] = useState\(false\)/)
+const busyFirstUsageLine = lineNumberOf(receiptsPage, /const automatedScanDisabled = busy \|\| quota\.loading/)
+assert.ok(busyDeclarationLine > 0, "Receipts page must declare busy state")
+assert.ok(busyFirstUsageLine > 0, "Receipts page must compute automatedScanDisabled from busy")
+assert.ok(busyDeclarationLine < busyFirstUsageLine, "busy must be declared before its first use to avoid a Temporal Dead Zone crash")
+assert.match(receiptsPage, /subscriptionLoading = false/, "Receipts page props must support an initial subscriptionLoading render")
+assert.match(receiptsPage, /userId: user\?\.id,[\s\S]{0,120}subscriptionLoading/, "Receipts page must pass subscriptionLoading into the quota hook during initial render")
+assert.match(receiptsPage, /const automatedScanDisabled = busy \|\| quota\.loading/, "Receipts page initial render must derive disabled state from declared busy and quota loading")
 
 assert.match(app, /\.eq\("status", "active"\)/, "subscription plan lookup must target only active subscriptions")
 assert.match(app, /setSubscriptionPlan\(profile\?\.plan \|\| "free"\)/, "expired or missing subscriptions must fall back explicitly only after the active-subscription lookup completes")
