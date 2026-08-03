@@ -34,7 +34,7 @@ const PLAN_META = {
   },
 }
 
-const CONTENT = {
+export const PREMIUM_PAGE_COPY = {
   fr: {
     pageEyebrow: "Offres BudgetKazPei",
     pageTitle: "Choisissez la formule adaptée à votre rythme.",
@@ -79,6 +79,21 @@ const CONTENT = {
       "Analyses plus poussées des courses",
       "Veille personnalisée sur les aides et droits",
     ],
+    scanCardTitles: {
+      [PLAN_IDS.free]: PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.free],
+      [PLAN_IDS.premium]: PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premium],
+      [PLAN_IDS.premiumPlus]: "Scans inclus",
+    },
+    statusCardTitles: {
+      [PLAN_IDS.free]: "BudgetKazPei",
+      [PLAN_IDS.premium]: "Premium actif",
+      [PLAN_IDS.premiumPlus]: "Premium+ actif",
+    },
+    statusCardTexts: {
+      [PLAN_IDS.free]: "Découverte simple, sans engagement.",
+      [PLAN_IDS.premium]: "Plus d'analyses, plus d'historique.",
+      [PLAN_IDS.premiumPlus]: "Scans, conseils et suivi renforcés.",
+    },
     scanInfoTitle: "Contrat scanner",
     scanInfoFree: "Gratuit affiche la vraie allocation gratuite.",
     scanInfoPremium: "Premium suit son quota commercial en clair.",
@@ -86,52 +101,67 @@ const CONTENT = {
   },
   kr: {
     pageEyebrow: "Bann offres BudgetKazPei",
-    pageTitle: "Swazi la formule ki korespond ek out fason servi.",
+    pageTitle: "Swazi lof ki korespond ek out kotidien.",
     pageText:
-      "Serveur-la i gard l'autorite su bann quotas. L'aplikasyon i montre out formule, out scans inclus ek bann fonksyon deja disponib dan in fason pli kler.",
-    currentTitle: "Out formule actuelle",
-    currentLoading: "Nou pe charg out formule...",
-    currentFree: "Mode dekouverte actif",
-    currentActive: "Statut actif",
-    currentManage: "Ger mon offre",
-    compareTitle: "Konpar bann formules",
-    compareText: "Bann kart plis kout, avek bann benefis imedyat an premier.",
-    soonTitle: "Byento disponibles",
-    soonText: "Sa bann fonksyon-la reste a part pou pa melanz keksoz deja utilisab ek keksoz an preparasyon.",
-    freeBadge: "Dekouverte",
-    premiumBadge: "Popiler",
+      "Koumans dan Gratuit, épi pas dan Premium kan ou néna bezoin plis scans, plis analiz ek plis lakonpagnman.",
+    currentTitle: "Out formule aktiel",
+    currentLoading: "Nou pe charz out formule...",
+    currentFree: "Mode dékouvèrt aktif",
+    currentActive: "Aktif",
+    currentManage: "Gèr mon lof",
+    compareTitle: "Konpar bann offres",
+    compareText: "Bann kart pli kout, ek an prémyé sak ou kapav servi tout suite.",
+    soonTitle: "An préparasyon",
+    soonText: "Sa bann fonksyon-la lé séparé avèk bann avantaj déjà disponib pou pa mélanz sak ou kapav servi ek sak lé ankor an préparasyon.",
+    freeBadge: "Pou dékouv",
+    premiumBadge: "Nou konsey",
     premiumPlusBadge: "Lakonpagnman complet",
     currentBadge: "Aktiel",
-    freeIntro: "Pou swiv baz out bidze san komplike.",
-    premiumIntro: "Pou analiz plis courses ek gard in bon listorik.",
-    premiumPlusIntro: "Pou gagn plis lakonpagnman, avek scans inclus ek konsey renforce.",
+    freeIntro: "Pou dékouv BudgetKazPei ek koumans swiv sak lé esansyèl.",
+    premiumIntro: "Pou swiv out bidjé ek out bann labitid pli présizéman.",
+    premiumPlusIntro: "Pou gagn in lakonpagnman pli konplé.",
     freeFeatures: [
-      "Bidze mensiel ek kategori",
-      "Revenus, depans ek istorik simple",
-      "Aks scanner dekouverte",
-      "Bon plan lokal",
+      "Bidjé esansyèl",
+      "Larzan i rantre, dépans ek istorik senp",
+      "Aksé pou dékouv scanner-la",
+      "Bann Bon Plan lokal",
     ],
     premiumFeatures: [
-      "Tout le Gratuit",
+      "Tout sak lé dann Gratuit",
       "10 scans par mwa",
-      "Istorik ek statistik avanse",
-      "Export PDF ek alertes bidze",
+      "Istorik ek statistik avansé",
+      "Èksport PDF ek alèrt bidjé",
     ],
     premiumPlusFeatures: [
-      "Tout le Premium",
-      "Scans inclus",
-      "Konseye renforce",
-      "Suivi bann demars ek konsey personnalises",
+      "Tout sak lé dann Premium",
+      "Scans san limit",
+      "Konseyé ranforsé",
+      "Swivi bann demars ek konsey pèsonalizé",
     ],
     soonFeatures: [
-      "Konparaz promos pli entelizan",
-      "Analiz courses pli poussees",
-      "Veille personnalisee su bann zed ek drwa",
+      "Konparézon entélizan pou bann promos",
+      "Analiz pli poussé su out courses",
+      "Veille pèsonalizé su bann èd ek drwa",
     ],
+    scanCardTitles: {
+      [PLAN_IDS.free]: "Aksé pou dékouv scanner-la",
+      [PLAN_IDS.premium]: "10 scans par mwa",
+      [PLAN_IDS.premiumPlus]: "Scans san limit",
+    },
+    statusCardTitles: {
+      [PLAN_IDS.free]: "BudgetKazPei",
+      [PLAN_IDS.premium]: "Premium aktif",
+      [PLAN_IDS.premiumPlus]: "Premium+ aktif",
+    },
+    statusCardTexts: {
+      [PLAN_IDS.free]: "Pou dékouv sinp, san langazman.",
+      [PLAN_IDS.premium]: "Plis analiz, plis istorik.",
+      [PLAN_IDS.premiumPlus]: "Scans san limit, konsey ek swivi ranforsé.",
+    },
     scanInfoTitle: "Kontra scanner",
-    scanInfoFree: "Gratis i afis vre allocation dekouverte.",
+    scanInfoFree: "Gratuit i afis vré kantite gratuit an kler.",
     scanInfoPremium: "Premium i gard so quota komersial an kler.",
-    scanInfoPremiumPlus: "Premium+ i gard in afisaz komersial inclus. Plafon sekirite intern-la pa afise kouma in ti allocation komersiale.",
+    scanInfoPremiumPlus: "Profit out scans, ek in protéksyon si lorizaz i devien pa normal.",
   },
 }
 
@@ -259,7 +289,7 @@ export default function PremiumPage({
   t,
 }) {
   const isKreol = t("nav", "dashboard") === "Tablo débor"
-  const labels = isKreol ? CONTENT.kr : CONTENT.fr
+  const labels = isKreol ? PREMIUM_PAGE_COPY.kr : PREMIUM_PAGE_COPY.fr
   const resolvedPlanId = isPremiumPlus
     ? PLAN_IDS.premiumPlus
     : isPremium
@@ -380,7 +410,7 @@ export default function PremiumPage({
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
               <InfoTile
                 icon={ScanLine}
-                title={resolvedPlanId === PLAN_IDS.premiumPlus ? "Scans inclus" : PLAN_PUBLIC_SCAN_LABELS[resolvedPlanId]}
+                title={labels.scanCardTitles[resolvedPlanId]}
                 text={resolvedPlanId === PLAN_IDS.premiumPlus ? labels.scanInfoPremiumPlus : resolvedPlanId === PLAN_IDS.premium ? labels.scanInfoPremium : labels.scanInfoFree}
               />
               <InfoTile
@@ -390,8 +420,8 @@ export default function PremiumPage({
               />
               <InfoTile
                 icon={Sparkles}
-                title={resolvedPlanId === PLAN_IDS.premiumPlus ? "Premium+ actif" : resolvedPlanId === PLAN_IDS.premium ? "Premium actif" : "BudgetKazPei"}
-                text={resolvedPlanId === PLAN_IDS.premiumPlus ? "Scans, conseils et suivi renforcés." : resolvedPlanId === PLAN_IDS.premium ? "Plus d'analyses, plus d'historique." : "Découverte simple, sans engagement."}
+                title={labels.statusCardTitles[resolvedPlanId]}
+                text={labels.statusCardTexts[resolvedPlanId]}
               />
             </div>
           )}
