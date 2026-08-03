@@ -196,6 +196,7 @@ function BudgetKazPeiApp({
   const [mounted, setMounted] = useState(false)
   const [editingTransaction, setEditingTransaction] = useState(null)
   const [subscriptionPlan, setSubscriptionPlan] = useState("free")
+  const [subscriptionLoading, setSubscriptionLoading] = useState(true)
   const [dashboardOpportunitiesCount, setDashboardOpportunitiesCount] = useState(0)
   const { themeName } = useTheme()
 
@@ -225,25 +226,30 @@ function BudgetKazPeiApp({
     async function loadSubscriptionPlan() {
       if (!user?.id) {
         setSubscriptionPlan("free")
+        setSubscriptionLoading(false)
         return
       }
 
-      const { data, error } = await supabase
-        .from("user_subscriptions")
-        .select("plan, status, updated_at")
-        .eq("user_id", user?.id)
-        .eq("status", "active")
-        .order("updated_at", { ascending: false })
-        .limit(1)
-        .maybeSingle()
+      setSubscriptionLoading(true)
+      try {
+        const { data, error } = await supabase
+          .from("user_subscriptions")
+          .select("plan, status, updated_at")
+          .eq("user_id", user?.id)
+          .eq("status", "active")
+          .order("updated_at", { ascending: false })
+          .limit(1)
+          .maybeSingle()
 
-      if (error) {
-        console.error("Erreur chargement abonnement:", error)
-        setSubscriptionPlan(profile?.plan || "free")
-        return
+        if (error) {
+          console.error("Erreur chargement abonnement:", error)
+          setSubscriptionPlan(profile?.plan || "free")
+        } else {
+          setSubscriptionPlan(data?.plan || profile?.plan || "free")
+        }
+      } finally {
+        setSubscriptionLoading(false)
       }
-
-      setSubscriptionPlan(data?.plan || profile?.plan || "free")
     }
 
     loadSubscriptionPlan()
@@ -826,6 +832,7 @@ function BudgetKazPeiApp({
             isMobile={isMobile}
             isPremium={isPremium}
             isPremiumPlus={isPremiumPlus}
+            subscriptionLoading={profileLoading || subscriptionLoading}
             onAddTransaction={addTransaction}
             onOpenReceipts={() => setActiveNav("receipts")}
             onOpenShoppingList={() => setActiveNav("shoppingList")}
@@ -983,7 +990,14 @@ function BudgetKazPeiApp({
         )}
 
         {activeNav === "premium" && (
-          <PremiumPage user={user} isPremium={isPremium} isPremiumPlus={isPremiumPlus} t={t} />
+          <PremiumPage
+            user={user}
+            isPremium={isPremium}
+            isPremiumPlus={isPremiumPlus}
+            currentPlan={plan}
+            subscriptionLoading={profileLoading || subscriptionLoading}
+            t={t}
+          />
         )}
       </div>
 

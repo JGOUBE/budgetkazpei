@@ -6,6 +6,23 @@ function monthKey(date = new Date()) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
 }
 
+export function resolveScanUsageSnapshot(
+  data: {
+    scan_count?: number | null
+    ai_scan_count?: number | null
+    manual_count?: number | null
+    plan?: string | null
+  } | null,
+  fallbackPlan: ScanPlan = "free",
+) {
+  return {
+    used: Number(data?.ai_scan_count ?? data?.scan_count ?? 0),
+    aiUsed: Number(data?.ai_scan_count || 0),
+    manualUsed: Number(data?.manual_count || 0),
+    plan: normalizePlan(data?.plan || fallbackPlan || "free") as ScanPlan,
+  }
+}
+
 export async function getScanUsage({
   userId,
   isPremium = false,
@@ -27,12 +44,7 @@ export async function getScanUsage({
 
   if (error) throw error
 
-  return {
-    used: Number(data?.ai_scan_count ?? data?.scan_count ?? 0),
-    aiUsed: Number(data?.ai_scan_count || 0),
-    manualUsed: Number(data?.manual_count || 0),
-    plan: normalizePlan(data?.plan || "free") as ScanPlan,
-  }
+  return resolveScanUsageSnapshot(data, localPlan)
 }
 
 export async function incrementScanUsage({

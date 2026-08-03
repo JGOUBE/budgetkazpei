@@ -1,337 +1,272 @@
-import { useState } from "react"
+import {
+  BadgeCheck,
+  ChartNoAxesCombined,
+  Crown,
+  ScanLine,
+  ShieldCheck,
+  Sparkles,
+  Star,
+} from "lucide-react"
 import { createColorAliases } from "../../styles/designSystem"
-import { PLAN_IDS, PLAN_PUBLIC_SCAN_LABELS } from "../../config/plans"
+import { PLAN_IDS, PLAN_NAMES, PLAN_PRICES, PLAN_PUBLIC_SCAN_LABELS } from "../../config/plans"
 
 const COLORS = createColorAliases()
-
-const WATERMARK = "/icons-creole/palmier.png"
 const PREMIUM_URL = "https://budgetkazpei.vercel.app/premium"
 
-const FREE_FEATURES_FR = [
-  PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.free],
-  "Tableau de bord budget",
-  "Ajout des dépenses et revenus",
-  "Charges fixes",
-  "Historique simple",
-  "Profil utilisateur",
-  "Aides & droits en version simple",
-  "Interface français / créole",
-]
-
-const PREMIUM_FEATURES_FR = [
-  PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premium],
-  "Statistiques avancées",
-  "Produits et magasins",
-  "Historique complet",
-  "Dashboard enrichi",
-  "Tout le gratuit inclus",
-  "Assistant Aides Réunion 🇷🇪",
-  "Réponses en français ou créole réunionnais",
-  "Analyse personnalisée des aides",
-  "Classement : très probable, probable, à vérifier",
-  "Suivi des démarches administratives",
-  "Documents à préparer avec checklist",
-  "Alertes budget intelligentes",
-  "Bons plans locaux",
-  "Historique avancé",
-  "Export PDF mensuel",
-]
-
-const PREMIUM_PLUS_FEATURES_FR = [
-  "Votre copilote financier intelligent",
-  PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premiumPlus],
-  "Prévisions budgétaires — bientôt disponible",
-  "Résumé hebdomadaire — bientôt disponible",
-  "Tout Premium inclus",
-  "Assistant IA Personnel BudgetKazPei",
-  "Conversation libre en français ou créole",
-  "Analyse budgétaire avancée — bientôt disponible",
-  "Génération de courriers administratifs — bientôt disponible",
-  "Préparation de dossiers complets — bientôt disponible",
-  "Conseils personnalisés selon le profil",
-  "Comparateur de promotions réunionnaises — bientôt disponible",
-  "Analyse intelligente des courses — bientôt disponible",
-  "Veille automatique des droits et nouvelles aides — bientôt disponible",
-]
-
-const FREE_FEATURES_KR = [
-  PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.free],
-  "Tablo débor bidjé",
-  "Azout dépans é larzan rantre",
-  "Sarz fix",
-  "Istorik simpl",
-  "Profil itilizatèr",
-  "Zéd & drwa an version simpl",
-  "Interface fransé / kréol",
-]
-
-const PREMIUM_FEATURES_KR = [
-  PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premium],
-  "Statistik avansé",
-  "Produits ek magasins",
-  "Istorik complet",
-  "Dashboard enrichi",
-  "Tout sa lé gratis déza inclus",
-  "Asistan Zéd Rényon 🇷🇪",
-  "Répons an fransé ou kréol rényoné",
-  "Analiz personnalisée bann zéd",
-  "Klasman : tré probab, probab, pou vérifié",
-  "Suivi bann démarches administratives",
-  "Dokiman pou préparé ek checklist",
-  "Alèrt bidjé entèlizan",
-  "Bon plan lokal",
-  "Istorik avansé",
-  "Export PDF chak mwa",
-]
-
-const PREMIUM_PLUS_FEATURES_KR = [
-  "Out copilote financier entèlizan",
-  PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premiumPlus],
-  "Prévision bidjé — bientôt disponible",
-  "Résumé la semaine — bientôt disponible",
-  "Tout Premium inclus",
-  "Asistan IA Personnel BudgetKazPei",
-  "Diskision libre an fransé ou kréol",
-  "Analiz bidjé pli avansé — bientôt disponible",
-  "Kréation courrier administratif — bientôt disponible",
-  "Préparasyon dosyé konplé — bientôt disponible",
-  "Konsey personnalisés selon out profil",
-  "Comparateur promos rényoné — bientôt disponible",
-  "Analiz entèlizan des courses — bientôt disponible",
-  "Veille otomatik bann drwa é nouvo zéd — bientôt disponible",
-]
-
-const DESCRIPTIONS_FR = {
-  "Assistant Aides Réunion 🇷🇪": "Un assistant spécialisé sur les aides utiles à La Réunion : CAF, Région, Département, CCAS et dispositifs locaux.",
-  "Réponses en français ou créole réunionnais": "L’utilisateur peut comprendre les aides plus facilement, dans la langue qui lui parle le mieux.",
-  "Analyse personnalisée des aides": "L’app utilise le profil : commune, revenus, enfants, logement, CAF, situation professionnelle et autres critères.",
-  "Suivi des démarches administratives": "Chaque aide peut passer par les étapes : à vérifier, dossier à préparer, demande envoyée, en attente, acceptée ou refusée.",
-  "Documents à préparer avec checklist": "L’utilisateur sait quels justificatifs préparer et peut cocher les documents déjà prêts.",
-  "Bons plans locaux": "Une rubrique pensée pour afficher des bons plans utiles selon le profil et les besoins.",
-  "Assistant IA Personnel BudgetKazPei": "Un assistant IA personnel pour gagner du temps, identifier davantage d’aides et simplifier les démarches.",
-  "Comparateur de promotions réunionnaises — bientôt disponible": "Le futur comparateur Premium+ aidera à repérer les promotions intéressantes à La Réunion.",
-  "Analyse intelligente des courses — bientôt disponible": "Cette future fonction Premium+ aidera à analyser les courses selon les besoins et les économies possibles.",
-  "Génération de courriers administratifs — bientôt disponible": "Premium+ pourra aider à rédiger des courriers pour la CAF, le CCAS, la Région, le Département ou d’autres organismes.",
-  "Veille automatique des droits et nouvelles aides — bientôt disponible": "Premium+ préparera les futures alertes personnalisées quand une nouvelle aide peut concerner l’utilisateur.",
+const PLAN_META = {
+  [PLAN_IDS.free]: {
+    icon: Star,
+    accent: COLORS.green,
+    border: "rgba(34,197,94,.28)",
+    background: "linear-gradient(180deg, rgba(34,197,94,.08), rgba(255,255,255,0))",
+  },
+  [PLAN_IDS.premium]: {
+    icon: BadgeCheck,
+    accent: COLORS.yellow,
+    border: "rgba(250,204,21,.30)",
+    background: "linear-gradient(180deg, rgba(250,204,21,.10), rgba(255,255,255,0))",
+  },
+  [PLAN_IDS.premiumPlus]: {
+    icon: Crown,
+    accent: COLORS.purple,
+    border: "rgba(167,139,250,.30)",
+    background: "linear-gradient(180deg, rgba(167,139,250,.12), rgba(255,255,255,0))",
+  },
 }
 
-const DESCRIPTIONS_KR = {
-  "Asistan Zéd Rényon 🇷🇪": "In asistan spécial pou bann zéd itil La Rényon : CAF, Région, Département, CCAS é dispositifs lokal.",
-  "Répons an fransé ou kréol rényoné": "Lutilizatèr i pé konprann bann zéd pli fasilman, dan langaz i koz ek li.",
-  "Analiz personnalisée bann zéd": "L’app i utiliz profil : komin, revenu, marmay, kaz, CAF, sitiasyon travay é lezot kritèr.",
-  "Suivi bann démarches administratives": "Sak zéd i pé pas par bann etap : pou vérifié, dosyé pou préparé, domann envoyée, an atant, aksepté ou refizé.",
-  "Dokiman pou préparé ek checklist": "Lutilizatèr i koné ki papye pou préparé é i pé coché sak dokiman déza prêt.",
-  "Bon plan lokal": "In rubrique pou afficher bann bon plan itil selon profil é besoin.",
-  "Asistan IA Personnel BudgetKazPei": "In asistan IA personnel pou gagn tan, trouv plis zéd é simplifie bann démarches.",
-  "Comparateur promos rényoné — bientôt disponible": "Futur comparateur Premium+ la va aide trouv bann promos intéressantes La Rényon.",
-  "Analiz entèlizan des courses — bientôt disponible": "Futur fonksyon Premium+ la va aide analiz courses selon besoins é lékonomi possibles.",
-  "Kréation courrier administratif — bientôt disponible": "Premium+ va aide rédiz courrier pou CAF, CCAS, Région, Département ou lezot organismes.",
-  "Veille otomatik bann drwa é nouvo zéd — bientôt disponible": "Premium+ va prépar bann alertes personnalisées kan in nouvo zéd i pé konsern lutilizatèr.",
+const CONTENT = {
+  fr: {
+    pageEyebrow: "Offres BudgetKazPei",
+    pageTitle: "Choisissez la formule adaptee a votre rythme.",
+    pageText:
+      "Le serveur garde toujours l'autorite sur les quotas. L'application vous montre une lecture claire de votre formule, de vos scans inclus et des fonctions deja disponibles.",
+    currentTitle: "Votre formule actuelle",
+    currentLoading: "Chargement de votre formule...",
+    currentFree: "Mode decouverte actif",
+    currentActive: "Statut actif",
+    currentManage: "Gerer mon offre",
+    compareTitle: "Comparer les formules",
+    compareText: "Des cartes plus courtes, avec les benefices immediats d'abord.",
+    soonTitle: "Bientot disponibles",
+    soonText: "Ces fonctions restent separees des avantages deja utilisables pour eviter toute confusion produit.",
+    freeBadge: "Decouverte",
+    premiumBadge: "Populaire",
+    premiumPlusBadge: "Accompagnement complet",
+    currentBadge: "Actuel",
+    freeIntro: "Pour suivre l'essentiel de votre budget sans friction.",
+    premiumIntro: "Pour analyser plus de courses et garder un historique solide.",
+    premiumPlusIntro: "Pour un accompagnement plus complet, avec scans inclus et conseils renforces.",
+    freeFeatures: [
+      "Budget mensuel et categories",
+      "Revenus, depenses et historique simple",
+      PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.free],
+      "Bons plans locaux",
+    ],
+    premiumFeatures: [
+      "Tout le Gratuit",
+      PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premium],
+      "Historique et statistiques avancees",
+      "Export PDF et alertes budget",
+    ],
+    premiumPlusFeatures: [
+      "Tout le Premium",
+      PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premiumPlus],
+      "Conseiller renforce",
+      "Suivi des demarches et conseils personnalises",
+    ],
+    soonFeatures: [
+      "Comparaisons intelligentes de promotions",
+      "Analyses plus poussees des courses",
+      "Veille personnalisee sur les aides et droits",
+    ],
+    scanInfoTitle: "Contrat scanner",
+    scanInfoFree: "Gratuit affiche la vraie allocation gratuite.",
+    scanInfoPremium: "Premium suit son quota commercial en clair.",
+    scanInfoPremiumPlus: "Premium+ garde un affichage commercial inclus. Le plafond interne de securite n'est pas presente comme une allocation.",
+  },
+  kr: {
+    pageEyebrow: "Bann offres BudgetKazPei",
+    pageTitle: "Swazi la formule ki korespond ek out fason servi.",
+    pageText:
+      "Serveur-la i gard l'autorite su bann quotas. L'aplikasyon i montre out formule, out scans inclus ek bann fonksyon deja disponib dan in fason pli kler.",
+    currentTitle: "Out formule actuelle",
+    currentLoading: "Nou pe charg out formule...",
+    currentFree: "Mode dekouverte actif",
+    currentActive: "Statut actif",
+    currentManage: "Ger mon offre",
+    compareTitle: "Konpar bann formules",
+    compareText: "Bann kart plis kout, avek bann benefis imedyat an premier.",
+    soonTitle: "Byento disponibles",
+    soonText: "Sa bann fonksyon-la reste a part pou pa melanz keksoz deja utilisab ek keksoz an preparasyon.",
+    freeBadge: "Dekouverte",
+    premiumBadge: "Popiler",
+    premiumPlusBadge: "Lakonpagnman complet",
+    currentBadge: "Aktiel",
+    freeIntro: "Pou swiv baz out bidze san komplike.",
+    premiumIntro: "Pou analiz plis courses ek gard in bon listorik.",
+    premiumPlusIntro: "Pou gagn plis lakonpagnman, avek scans inclus ek konsey renforce.",
+    freeFeatures: [
+      "Bidze mensiel ek kategori",
+      "Revenus, depans ek istorik simple",
+      "Aks scanner dekouverte",
+      "Bon plan lokal",
+    ],
+    premiumFeatures: [
+      "Tout le Gratuit",
+      "10 scans par mwa",
+      "Istorik ek statistik avanse",
+      "Export PDF ek alertes bidze",
+    ],
+    premiumPlusFeatures: [
+      "Tout le Premium",
+      "Scans inclus",
+      "Konseye renforce",
+      "Suivi bann demars ek konsey personnalises",
+    ],
+    soonFeatures: [
+      "Konparaz promos pli entelizan",
+      "Analiz courses pli poussees",
+      "Veille personnalisee su bann zed ek drwa",
+    ],
+    scanInfoTitle: "Kontra scanner",
+    scanInfoFree: "Gratis i afis vre allocation dekouverte.",
+    scanInfoPremium: "Premium i gard so quota komersial an kler.",
+    scanInfoPremiumPlus: "Premium+ i gard in afisaz komersial inclus. Plafon sekirite intern-la pa afise kouma in ti allocation komersiale.",
+  },
 }
 
-function Watermark({ size = 210, right = -45, bottom = -55 }) {
+function planBadgeLabel(planId, currentPlanId, labels) {
+  if (planId === currentPlanId) return labels.currentBadge
+  if (planId === PLAN_IDS.premium) return labels.premiumBadge
+  if (planId === PLAN_IDS.premiumPlus) return labels.premiumPlusBadge
+  return labels.freeBadge
+}
+
+function planSummary(planId, labels) {
+  if (planId === PLAN_IDS.free) return labels.freeIntro
+  if (planId === PLAN_IDS.premium) return labels.premiumIntro
+  return labels.premiumPlusIntro
+}
+
+function planFeatures(planId, labels) {
+  if (planId === PLAN_IDS.free) return labels.freeFeatures
+  if (planId === PLAN_IDS.premium) return labels.premiumFeatures
+  return labels.premiumPlusFeatures
+}
+
+function PlanCard({ planId, currentPlanId, labels }) {
+  const meta = PLAN_META[planId]
+  const Icon = meta.icon
+  const badge = planBadgeLabel(planId, currentPlanId, labels)
+
   return (
-    <img
-      src={WATERMARK}
-      alt=""
+    <article
       style={{
-        position: "absolute",
-        width: size,
-        right,
-        bottom,
-        opacity: 0.06,
-        pointerEvents: "none",
-        userSelect: "none",
-        transform: "rotate(-8deg)",
-        filter: "grayscale(1) brightness(1.8)",
-      }}
-    />
-  )
-}
-
-function FeatureItem({ feature, description, color = COLORS.green }) {
-  const [open, setOpen] = useState(false)
-
-  return (
-    <div
-      style={{
-        padding: "10px 0",
-        borderBottom: `1px solid ${COLORS.border}`,
-        position: "relative",
-        zIndex: 1,
+        minHeight: "100%",
+        borderRadius: 22,
+        border: `1px solid ${meta.border}`,
+        background: `${meta.background}, ${COLORS.card}`,
+        padding: 20,
+        display: "grid",
+        gap: 16,
+        alignContent: "start",
+        boxShadow: "0 18px 36px rgba(15,23,42,.08)",
       }}
     >
-      <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
-        <span style={{ color, fontSize: 15, fontWeight: 900 }}>✓</span>
-
-        <span
-          style={{
-            flex: 1,
-            fontSize: 13,
-            color: COLORS.text,
-            fontWeight: 800,
-            lineHeight: 1.35,
-          }}
-        >
-          {feature}
-        </span>
-
-        {description && (
-          <button
-            type="button"
-            onClick={() => setOpen(!open)}
-            title={description}
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start" }}>
+        <div style={{ display: "grid", gap: 10 }}>
+          <span
             style={{
-              width: 22,
-              height: 22,
-              borderRadius: 999,
-              border: "1px solid rgba(142,164,197,.35)",
-              background: open ? `${color}22` : "rgba(15,30,56,.55)",
-              color: open ? color : COLORS.muted,
+              width: 46,
+              height: 46,
+              borderRadius: 16,
               display: "inline-flex",
               alignItems: "center",
               justifyContent: "center",
-              fontSize: 12,
-              fontWeight: 900,
-              flexShrink: 0,
-              cursor: "pointer",
-              fontFamily: "inherit",
+              background: `${meta.accent}18`,
+              border: `1px solid ${meta.border}`,
+              color: meta.accent,
             }}
           >
-            i
-          </button>
-        )}
-      </div>
+            <Icon size={22} strokeWidth={2.2} />
+          </span>
+          <div>
+            <div style={{ color: COLORS.text, fontSize: 22, fontWeight: 900 }}>{PLAN_NAMES[planId]}</div>
+            <div style={{ color: COLORS.muted, fontSize: 13, lineHeight: 1.5, marginTop: 6 }}>
+              {planSummary(planId, labels)}
+            </div>
+          </div>
+        </div>
 
-      {open && description && (
-        <div
+        <span
           style={{
-            marginTop: 8,
-            marginLeft: 24,
-            background: "rgba(10,22,40,.75)",
-            border: `1px solid ${color}33`,
-            borderRadius: 12,
-            padding: "9px 11px",
-            color: COLORS.muted,
+            whiteSpace: "nowrap",
+            borderRadius: 999,
+            padding: "6px 10px",
             fontSize: 11,
-            lineHeight: 1.45,
+            fontWeight: 900,
+            color: meta.accent,
+            background: `${meta.accent}16`,
+            border: `1px solid ${meta.border}`,
           }}
         >
-          {description}
-        </div>
-      )}
-    </div>
-  )
-}
-
-function PlanCard({ icon, title, subtitle, features, color, badge, descriptions }) {
-  return (
-    <div
-      style={{
-        position: "relative",
-        overflow: "hidden",
-        background: `linear-gradient(135deg, ${color}14, ${COLORS.card})`,
-        border: `2px solid ${color}55`,
-        borderRadius: 18,
-        padding: 22,
-        boxShadow: `0 0 30px ${color}10`,
-        minHeight: "100%",
-      }}
-    >
-      <Watermark size={190} right={-45} bottom={-60} />
-
-      <div
-        style={{
-          position: "relative",
-          zIndex: 1,
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          gap: 10,
-          marginBottom: 14,
-        }}
-      >
-        <div>
-          <div style={{ fontSize: 31, marginBottom: 6 }}>{icon}</div>
-          <div
-            style={{
-              color,
-              fontWeight: 900,
-              textTransform: "uppercase",
-              letterSpacing: "0.08em",
-              fontSize: 13,
-            }}
-          >
-            {title}
-          </div>
-          <p style={{ margin: "8px 0 0", color: COLORS.muted, fontSize: 12.5, lineHeight: 1.45 }}>
-            {subtitle}
-          </p>
-        </div>
-
-        {badge && (
-          <span
-            style={{
-              background: `${color}22`,
-              border: `1px solid ${color}55`,
-              color,
-              fontSize: 10,
-              fontWeight: 900,
-              padding: "4px 10px",
-              borderRadius: 999,
-              whiteSpace: "nowrap",
-              textTransform: "uppercase",
-              letterSpacing: "0.04em",
-            }}
-          >
-            {badge}
-          </span>
-        )}
+          {badge}
+        </span>
       </div>
 
-      {features.map((feature, index) => (
-        <FeatureItem key={`${title}-${index}`} feature={feature} description={descriptions?.[feature]} color={color} />
-      ))}
-    </div>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+        <div style={{ color: COLORS.text, fontSize: 28, fontWeight: 950 }}>{PLAN_PRICES[planId]}</div>
+      </div>
+
+      <div style={{ display: "grid", gap: 10 }}>
+        {planFeatures(planId, labels).map(feature => (
+          <div key={`${planId}-${feature}`} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+            <CheckIcon accent={meta.accent} />
+            <span style={{ color: COLORS.text, fontSize: 14, lineHeight: 1.45 }}>{feature}</span>
+          </div>
+        ))}
+      </div>
+    </article>
   )
 }
 
-export default function PremiumPage({ user, isPremium, isPremiumPlus = false, t }) {
+function CheckIcon({ accent }) {
+  return (
+    <span
+      style={{
+        width: 22,
+        height: 22,
+        borderRadius: 999,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: `${accent}16`,
+        color: accent,
+        flexShrink: 0,
+        marginTop: 1,
+      }}
+    >
+      <ShieldCheck size={14} strokeWidth={2.3} />
+    </span>
+  )
+}
+
+export default function PremiumPage({
+  isPremium,
+  isPremiumPlus = false,
+  currentPlan = PLAN_IDS.free,
+  subscriptionLoading = false,
+  t,
+}) {
   const isKreol = t("nav", "dashboard") === "Tablo débor"
-  const descriptions = isKreol ? DESCRIPTIONS_KR : DESCRIPTIONS_FR
-
-  const hasPremiumAccess = isPremium || isPremiumPlus
-  const accountLabel = isPremiumPlus
-    ? isKreol
-      ? "Ou lé Premium+"
-      : "Vous êtes Premium+"
+  const labels = isKreol ? CONTENT.kr : CONTENT.fr
+  const resolvedPlanId = isPremiumPlus
+    ? PLAN_IDS.premiumPlus
     : isPremium
-      ? isKreol
-        ? "Ou lé Premium"
-        : "Vous êtes Premium"
-      : isKreol
-        ? "Découv bann options Premium"
-        : "Découvrez les options Premium"
-
-  const headline = isKreol
-    ? "Out accompagnement BudgetKazPei lé actif"
-    : "Votre accompagnement BudgetKazPei est actif"
-
-  const subline = isKreol
-    ? "Premium i aide aou mieux suivre out courses ek out bidjé. Premium+ i devien out copilote financier intelligent pou comprendre, anticiper ek économiser."
-    : "Premium vous aide à mieux suivre vos courses et votre budget. Premium+ devient votre copilote financier intelligent pour comprendre, anticiper et économiser."
-
-  const freeFeatures = isKreol ? FREE_FEATURES_KR : FREE_FEATURES_FR
-  const premiumFeatures = isKreol ? PREMIUM_FEATURES_KR : PREMIUM_FEATURES_FR
-  const premiumPlusFeatures = isKreol ? PREMIUM_PLUS_FEATURES_KR : PREMIUM_PLUS_FEATURES_FR
-
-  const premiumBadge = isPremium && !isPremiumPlus
-    ? (isKreol ? "ACTIF" : "ACTIF")
-    : (isKreol ? "POPILÈR" : "POPULAIRE")
-
-  const premiumPlusBadge = isPremiumPlus
-    ? (isKreol ? "ACTIF" : "ACTIF")
-    : (isKreol ? "REKOMANDÉ ++" : "RECOMMANDÉ ++")
+      ? PLAN_IDS.premium
+      : currentPlan
+  const hasPremiumAccess = resolvedPlanId !== PLAN_IDS.free
+  const CurrentIcon = PLAN_META[resolvedPlanId]?.icon || Star
 
   function openPremiumOptions() {
     window.open(PREMIUM_URL, "_blank", "noopener,noreferrer")
@@ -341,154 +276,231 @@ export default function PremiumPage({ user, isPremium, isPremiumPlus = false, t 
     <div
       style={{
         width: "100%",
-        maxWidth: 1040,
+        maxWidth: 1120,
         margin: "0 auto",
-        display: "flex",
-        flexDirection: "column",
-        gap: 22,
+        display: "grid",
+        gap: 20,
       }}
     >
-      <div
+      <section
         style={{
-          position: "relative",
-          overflow: "hidden",
-          background: `linear-gradient(135deg, ${COLORS.yellow}22, ${COLORS.purple}16, ${COLORS.card})`,
-          border: `1px solid ${COLORS.yellow}44`,
-          borderRadius: 24,
-          padding: "34px 28px",
-          textAlign: "center",
+          borderRadius: 26,
+          border: `1px solid ${COLORS.border}`,
+          background: `linear-gradient(135deg, ${COLORS.card}, rgba(35,211,214,.08), rgba(167,139,250,.10))`,
+          padding: 24,
+          display: "grid",
+          gap: 18,
+          boxShadow: "0 20px 40px rgba(15,23,42,.10)",
         }}
       >
-        <Watermark size={280} right={-60} bottom={-85} />
+        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: 18 }}>
+          <div style={{ display: "grid", gap: 10, maxWidth: 680 }}>
+            <div style={{ color: COLORS.cyan, fontSize: 13, fontWeight: 900, textTransform: "uppercase", letterSpacing: ".08em" }}>
+              {labels.pageEyebrow}
+            </div>
+            <h1 style={{ margin: 0, color: COLORS.text, fontSize: 34, lineHeight: 1.02, fontWeight: 950, fontFamily: "'DM Serif Display', serif" }}>
+              {labels.pageTitle}
+            </h1>
+            <p style={{ margin: 0, color: COLORS.muted, fontSize: 15, lineHeight: 1.65 }}>
+              {labels.pageText}
+            </p>
+          </div>
 
-        <div style={{ fontSize: 46, marginBottom: 10, position: "relative", zIndex: 1 }}>🌴⭐👑</div>
-
-        <h2
-          style={{
-            margin: "0 0 10px",
-            fontSize: 31,
-            color: COLORS.yellow,
-            fontFamily: "'DM Serif Display', serif",
-            position: "relative",
-            zIndex: 1,
-          }}
-        >
-          {accountLabel}
-        </h2>
-
-        <p
-          style={{
-            color: COLORS.muted,
-            fontSize: 15,
-            margin: "0 auto",
-            lineHeight: 1.65,
-            maxWidth: 720,
-            position: "relative",
-            zIndex: 1,
-          }}
-        >
-          {hasPremiumAccess ? headline : subline}
-        </p>
-
-        {hasPremiumAccess && (
-          <div
+          <button
+            type="button"
+            onClick={openPremiumOptions}
             style={{
-              margin: "18px auto 0",
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              background: isPremiumPlus ? `${COLORS.purple}22` : `${COLORS.yellow}22`,
-              border: `1px solid ${isPremiumPlus ? COLORS.purple : COLORS.yellow}55`,
-              borderRadius: 999,
-              padding: "8px 14px",
-              color: isPremiumPlus ? COLORS.purple : COLORS.yellow,
-              fontWeight: 900,
-              fontSize: 13,
-              position: "relative",
-              zIndex: 1,
+              minHeight: 48,
+              borderRadius: 16,
+              border: "none",
+              background: `linear-gradient(135deg, ${COLORS.yellow}, ${COLORS.accent})`,
+              color: "#07111F",
+              fontWeight: 950,
+              padding: "0 18px",
+              cursor: "pointer",
+              alignSelf: "start",
+              fontFamily: "inherit",
             }}
           >
-            {isPremiumPlus ? "👑 Premium+ actif" : "⭐ Premium actif"}
+            {hasPremiumAccess ? labels.currentManage : labels.compareTitle}
+          </button>
+        </div>
+
+        <div
+          style={{
+            borderRadius: 22,
+            border: `1px solid ${PLAN_META[resolvedPlanId].border}`,
+            background: `${PLAN_META[resolvedPlanId].background}, ${COLORS.cardLight}`,
+            padding: 18,
+            display: "grid",
+            gap: 14,
+          }}
+        >
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 14, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <span
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: 16,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: `${PLAN_META[resolvedPlanId].accent}16`,
+                  color: PLAN_META[resolvedPlanId].accent,
+                }}
+              >
+                <CurrentIcon size={22} strokeWidth={2.2} />
+              </span>
+              <div>
+                <div style={{ color: COLORS.muted, fontSize: 12, fontWeight: 800 }}>{labels.currentTitle}</div>
+                <div style={{ color: COLORS.text, fontSize: 22, fontWeight: 950, marginTop: 2 }}>
+                  {subscriptionLoading ? labels.currentLoading : PLAN_NAMES[resolvedPlanId]}
+                </div>
+              </div>
+            </div>
+
+            <span
+              style={{
+                borderRadius: 999,
+                padding: "7px 11px",
+                fontSize: 11,
+                fontWeight: 900,
+                color: PLAN_META[resolvedPlanId].accent,
+                background: `${PLAN_META[resolvedPlanId].accent}14`,
+                border: `1px solid ${PLAN_META[resolvedPlanId].border}`,
+                alignSelf: "start",
+              }}
+            >
+              {subscriptionLoading ? labels.currentLoading : resolvedPlanId === PLAN_IDS.free ? labels.currentFree : labels.currentActive}
+            </span>
           </div>
-        )}
-      </div>
 
-      <div
+          {!subscriptionLoading && (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
+              <InfoTile
+                icon={ScanLine}
+                title={resolvedPlanId === PLAN_IDS.premiumPlus ? "Scans inclus" : PLAN_PUBLIC_SCAN_LABELS[resolvedPlanId]}
+                text={resolvedPlanId === PLAN_IDS.premiumPlus ? labels.scanInfoPremiumPlus : resolvedPlanId === PLAN_IDS.premium ? labels.scanInfoPremium : labels.scanInfoFree}
+              />
+              <InfoTile
+                icon={ChartNoAxesCombined}
+                title={PLAN_PRICES[resolvedPlanId]}
+                text={resolvedPlanId === PLAN_IDS.free ? labels.freeIntro : resolvedPlanId === PLAN_IDS.premium ? labels.premiumIntro : labels.premiumPlusIntro}
+              />
+              <InfoTile
+                icon={Sparkles}
+                title={resolvedPlanId === PLAN_IDS.premiumPlus ? "Premium+ actif" : resolvedPlanId === PLAN_IDS.premium ? "Premium actif" : "BudgetKazPei"}
+                text={resolvedPlanId === PLAN_IDS.premiumPlus ? "Scans, conseils et suivi renforces." : resolvedPlanId === PLAN_IDS.premium ? "Plus d'analyses, plus d'historique." : "Decouverte simple, sans engagement."}
+              />
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section style={{ display: "grid", gap: 12 }}>
+        <div>
+          <div style={{ color: COLORS.cyan, fontSize: 13, fontWeight: 900, textTransform: "uppercase", letterSpacing: ".08em", marginBottom: 6 }}>
+            {labels.compareTitle}
+          </div>
+          <div style={{ color: COLORS.muted, fontSize: 14, lineHeight: 1.55 }}>
+            {labels.compareText}
+          </div>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
+          <PlanCard planId={PLAN_IDS.free} currentPlanId={resolvedPlanId} labels={labels} />
+          <PlanCard planId={PLAN_IDS.premium} currentPlanId={resolvedPlanId} labels={labels} />
+          <PlanCard planId={PLAN_IDS.premiumPlus} currentPlanId={resolvedPlanId} labels={labels} />
+        </div>
+      </section>
+
+      <section
         style={{
+          borderRadius: 22,
+          border: `1px solid ${COLORS.border}`,
+          background: COLORS.cardLight,
+          padding: 20,
           display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-          gap: 16,
-          alignItems: "stretch",
+          gap: 12,
         }}
       >
-        <PlanCard
-          icon="🆓"
-          title={isKreol ? "Gratuit" : "Gratuit"}
-          subtitle={isKreol ? "Pou démarré ek out bidjé." : "Pour démarrer avec la gestion de votre budget."}
-          features={freeFeatures}
-          color={COLORS.green}
-          descriptions={{}}
-        />
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 14,
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              background: "rgba(35,211,214,.12)",
+              color: COLORS.cyan,
+            }}
+          >
+            <Sparkles size={20} strokeWidth={2.2} />
+          </span>
+          <div>
+            <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 900 }}>{labels.soonTitle}</div>
+            <div style={{ color: COLORS.muted, fontSize: 14, lineHeight: 1.5 }}>{labels.soonText}</div>
+          </div>
+        </div>
 
-        <PlanCard
-          icon="⭐"
-          title="Premium"
-          subtitle={
-            isKreol
-              ? "Pou mieux suivre out courses, out statistik, out produits, out magasins ek out zéd."
-              : "Pour mieux suivre vos courses, statistiques, produits, magasins et aides."
-          }
-          features={premiumFeatures}
-          color={COLORS.yellow}
-          badge={premiumBadge}
-          descriptions={descriptions}
-        />
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
+          {labels.soonFeatures.map(feature => (
+            <div
+              key={feature}
+              style={{
+                borderRadius: 18,
+                border: `1px dashed ${COLORS.border}`,
+                background: COLORS.card,
+                padding: 14,
+                display: "flex",
+                gap: 10,
+                alignItems: "flex-start",
+              }}
+            >
+              <span
+                style={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: 12,
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "rgba(167,139,250,.12)",
+                  color: COLORS.purple,
+                  flexShrink: 0,
+                }}
+              >
+                <Sparkles size={15} strokeWidth={2.2} />
+              </span>
+              <span style={{ color: COLORS.text, fontSize: 14, lineHeight: 1.45 }}>{feature}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  )
+}
 
-        <PlanCard
-          icon="👑"
-          title="Premium+"
-          subtitle={
-            isKreol
-              ? "Out copilote financier intelligent pou comprendre out dépans, anticiper ek gagn bann konsey personnalisé."
-              : "Votre copilote financier intelligent pour comprendre vos dépenses, anticiper et recevoir des conseils personnalisés."
-          }
-          features={premiumPlusFeatures}
-          color={COLORS.purple}
-          badge={premiumPlusBadge}
-          descriptions={descriptions}
-        />
+function InfoTile({ icon: Icon, title, text }) {
+  return (
+    <div
+      style={{
+        borderRadius: 18,
+        border: `1px solid ${COLORS.border}`,
+        background: COLORS.card,
+        padding: 14,
+        display: "grid",
+        gap: 8,
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <Icon size={16} strokeWidth={2.2} color={COLORS.cyan} />
+        <span style={{ color: COLORS.text, fontSize: 14, fontWeight: 900 }}>{title}</span>
       </div>
-
-      <button
-        type="button"
-        onClick={openPremiumOptions}
-        style={{
-          width: "100%",
-          background: `linear-gradient(135deg, ${COLORS.yellow}, ${COLORS.accent})`,
-          border: "none",
-          borderRadius: 16,
-          padding: "17px 0",
-          color: COLORS.card,
-          fontSize: 17,
-          fontWeight: 900,
-          fontFamily: "inherit",
-          cursor: "pointer",
-          boxShadow: `0 8px 28px ${COLORS.yellow}33`,
-        }}
-      >
-        {isPremiumPlus
-          ? (isKreol ? "Gèr mon offre Premium+" : "Gérer mon offre Premium+")
-          : isPremium
-            ? (isKreol ? "Pass Premium+" : "Passer à Premium+")
-            : (isKreol ? "Voir bann options Premium" : "Voir les options Premium")
-        }
-      </button>
-
-      <p style={{ textAlign: "center", fontSize: 11.5, color: COLORS.muted, margin: 0, lineHeight: 1.5 }}>
-        {isKreol
-          ? "Bann détails des offres i affichent su site BudgetKazPei. L’application i garde in bouton neutre pou respecter bann règles stores."
-          : "Les détails des offres sont présentés sur le site BudgetKazPei. L’application garde un bouton neutre pour respecter les règles des stores."}
-      </p>
+      <div style={{ color: COLORS.muted, fontSize: 13, lineHeight: 1.5 }}>{text}</div>
     </div>
   )
 }

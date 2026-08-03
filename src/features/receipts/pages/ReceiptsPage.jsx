@@ -41,7 +41,12 @@ import {
   upsertReceiptTransaction,
   validateReceipt,
 } from "../services/receiptService"
-import { useReceiptQuota } from "../hooks/useReceiptQuota"
+import {
+  formatReceiptQuotaTicketsLabelFr,
+  formatReceiptQuotaTicketsLabelKr,
+  getReceiptQuotaBlockingMessage,
+  useReceiptQuota,
+} from "../hooks/useReceiptQuota"
 import { clearLastScanDraft, getLastScanDraft } from "../../../services/scan/scanEngine"
 import {
   scanLongReceiptWithConfiguredEngine,
@@ -148,6 +153,7 @@ const TEXT = {
     error: "Analyse impossible. Vous pouvez réessayer ou remplir manuellement.",
     quotaReached: "Quota atteint. Vous pouvez quand même remplir manuellement.",
     intensiveUsage: "Vous utilisez BudgetKazPei de manière intensive. Contactez-nous afin que nous trouvions la formule la plus adaptée.",
+    quotaLoading: "Chargement de votre formule en cours...",
     expenseCreated: "Dépense créée",
     noUser: "Utilisateur non connecté.",
   },
@@ -238,6 +244,7 @@ const TEXT = {
     error: "Analiz-la pa marche. Ou pé réessayé ou ranpli amain.",
     quotaReached: "Quota atteint. Ou pé kan même ranpli amain.",
     intensiveUsage: "Ou pe servi BudgetKazPei souvan. Contacte a nou pou trouv formule pli adapté.",
+    quotaLoading: "Nou pe charg out formule...",
     expenseCreated: "Dépans créée",
     noUser: "Utilisateur pa connecté.",
   },
@@ -992,13 +999,20 @@ export default function ReceiptsPage({
   isMobile = false,
   isPremium = false,
   isPremiumPlus = false,
+  subscriptionLoading = false,
   onAddTransaction,
   onOpenReceipts,
   onOpenShoppingList,
 }) {
   const isKreol = getIsKreol(t)
   const txt = isKreol ? TEXT.kr : TEXT.fr
-  const quota = useReceiptQuota(user?.id, isPremium, isPremiumPlus)
+  const quota = useReceiptQuota({
+    userId: user?.id,
+    isPremium,
+    isPremiumPlus,
+    subscriptionLoading,
+  })
+  const automatedScanDisabled = busy || quota.loading
   const cameraRef = useRef(null)
   const galleryRef = useRef(null)
   const longTopCameraRef = useRef(null)
@@ -1262,8 +1276,13 @@ export default function ReceiptsPage({
       return
     }
 
+    if (quota.loading) {
+      setMessage(txt.quotaLoading)
+      return
+    }
+
     if (quota.reached) {
-      setMessage(quota.plan === "premium_plus" ? txt.intensiveUsage : txt.quotaReached)
+      setMessage(getReceiptQuotaBlockingMessage(quota, txt))
       startManual({ keepError: true })
       return
     }
@@ -1341,8 +1360,13 @@ export default function ReceiptsPage({
       return
     }
 
+    if (quota.loading) {
+      setMessage(txt.quotaLoading)
+      return
+    }
+
     if (quota.reached) {
-      setMessage(quota.plan === "premium_plus" ? txt.intensiveUsage : txt.quotaReached)
+      setMessage(getReceiptQuotaBlockingMessage(quota, txt))
       startManual({ keepError: true })
       return
     }
@@ -2118,7 +2142,9 @@ export default function ReceiptsPage({
           {txt.foodHint}
         </p>
         <div style={{ color: COLORS.yellow, fontSize: 13, fontWeight: 900 }}>
-          {quota.loading ? "" : txt.quota(quota)}
+          {quota.loading
+            ? txt.quotaLoading
+            : (isKreol ? formatReceiptQuotaTicketsLabelKr(quota) : formatReceiptQuotaTicketsLabelFr(quota))}
         </div>
       </div>
 
@@ -2173,21 +2199,21 @@ export default function ReceiptsPage({
         <ActionButton
           label={txt.camera}
           Icon={BkIcons.scan}
-          disabled={busy}
+          disabled={automatedScanDisabled}
           onClick={() => cameraRef.current.click()}
           variant="primary"
         />
         <ActionButton
           label={txt.gallery}
           Icon={BkIcons.receipts}
-          disabled={busy}
+          disabled={automatedScanDisabled}
           onClick={() => galleryRef.current.click()}
           variant="secondary"
         />
         <ActionButton
           label={txt.longTicket}
           Icon={BkIcons.receipts}
-          disabled={busy}
+          disabled={automatedScanDisabled}
           onClick={openLongTicketMode}
           variant="special"
           active={longTicketMode}
@@ -2215,7 +2241,7 @@ export default function ReceiptsPage({
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: 12 }}>
             <button
               type="button"
-              disabled={busy}
+              disabled={automatedScanDisabled}
               onClick={() => longTopCameraRef.current?.click()}
               style={{
                 minHeight: 54,
@@ -2225,7 +2251,7 @@ export default function ReceiptsPage({
                 color: COLORS.text,
                 fontWeight: 950,
                 fontFamily: "inherit",
-                cursor: busy ? "wait" : "pointer",
+                cursor: automatedScanDisabled ? "wait" : "pointer",
               }}
             >
               {longTicketFiles.top ? txt.longTicketTopReady : txt.longTicketTop}
@@ -2233,7 +2259,7 @@ export default function ReceiptsPage({
 
             <button
               type="button"
-              disabled={busy}
+              disabled={automatedScanDisabled}
               onClick={() => longBottomCameraRef.current?.click()}
               style={{
                 minHeight: 54,
@@ -2243,7 +2269,7 @@ export default function ReceiptsPage({
                 color: COLORS.text,
                 fontWeight: 950,
                 fontFamily: "inherit",
-                cursor: busy ? "wait" : "pointer",
+                cursor: automatedScanDisabled ? "wait" : "pointer",
               }}
             >
               {longTicketFiles.bottom ? txt.longTicketBottomReady : txt.longTicketBottom}
@@ -2254,7 +2280,7 @@ export default function ReceiptsPage({
             <ActionButton
               label={txt.longTicketGallery}
               Icon={BkIcons.receipts}
-              disabled={busy}
+              disabled={automatedScanDisabled}
               onClick={() => longGalleryRef.current?.click()}
               muted
             />
@@ -2262,7 +2288,7 @@ export default function ReceiptsPage({
             <ActionButton
               label={txt.longTicketAnalyze}
               Icon={BkIcons.scan}
-              disabled={busy || !longTicketFiles.top || !longTicketFiles.bottom}
+              disabled={automatedScanDisabled || !longTicketFiles.top || !longTicketFiles.bottom}
               onClick={handleLongTicketScan}
             />
 

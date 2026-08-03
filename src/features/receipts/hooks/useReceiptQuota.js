@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { countMonthlyReceipts } from "../services/receiptService"
-import { getScanPlan, getScanPlanLabel, SCAN_LIMITS } from "../../../config/scanLimits"
-import { getScanUsage } from "../../../services/scan/scanUsageService"
-import { getPlanScanPolicy, normalizePlan } from "../../../config/plans"
+import { countMonthlyReceipts } from "../services/receiptService.js"
+import { getScanPlan, getScanPlanLabel, SCAN_LIMITS } from "../../../config/scanLimits.ts"
+import { getScanUsage } from "../../../services/scan/scanUsageService.ts"
+import { getPlanScanPolicy, normalizePlan } from "../../../config/plans.js"
 
 export function resolveReceiptQuotaState({
   usage = null,
@@ -37,22 +37,66 @@ export function formatReceiptQuotaLabelFr(quota) {
     : `Analyses IA : ${quota.used} / ${quota.limit} — ${quota.planLabel}`
 }
 
-export function useReceiptQuota(userId, isPremium = false, isPremiumPlus = false) {
+export function formatReceiptQuotaLabelKr(quota) {
+  return quota?.isUnlimitedForUser
+    ? `Analiz IA san limit — ${quota.planLabel}`
+    : `Analiz IA : ${quota.used} / ${quota.limit} — ${quota.planLabel}`
+}
+
+export function formatReceiptQuotaTicketsLabelFr(quota) {
+  return quota?.isUnlimitedForUser
+    ? `Premium+ actif — Utilisation du mois : ${quota.used}`
+    : `Analyses IA : ${quota.used} / ${quota.limit} — ${quota.planLabel}`
+}
+
+export function formatReceiptQuotaTicketsLabelKr(quota) {
+  return quota?.isUnlimitedForUser
+    ? `Premium+ actif — Itilizasyon sa mwa-la : ${quota.used}`
+    : `Analiz IA : ${quota.used} / ${quota.limit} — ${quota.planLabel}`
+}
+
+export function getReceiptQuotaBlockingMessage(quota, txt) {
+  return quota?.safetyLimitReached ? txt.intensiveUsage : txt.quotaReached
+}
+
+export function useReceiptQuota({
+  userId,
+  isPremium = false,
+  isPremiumPlus = false,
+  subscriptionLoading = false,
+} = {}) {
   const localPlan = getScanPlan(isPremium, isPremiumPlus)
+  const fallbackPlan = normalizePlan(localPlan || "free")
   const fallbackState = useMemo(
-    () => resolveReceiptQuotaState({ fallbackPlan: "free", source: "scan_usage" }),
-    [],
+    () => resolveReceiptQuotaState({
+      fallbackPlan,
+      source: subscriptionLoading ? "subscription_loading" : "scan_usage",
+    }),
+    [fallbackPlan, subscriptionLoading],
   )
   const [quotaState, setQuotaState] = useState(fallbackState)
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(Boolean(subscriptionLoading || userId))
 
   const refresh = useCallback(async (options = {}) => {
     const ignore = Boolean(options.ignore)
+
     if (!userId) {
-      const emptyState = resolveReceiptQuotaState({ fallbackPlan: "free", source: "scan_usage" })
+      const emptyState = resolveReceiptQuotaState({ fallbackPlan, source: "scan_usage" })
       if (!ignore) setQuotaState(emptyState)
       setLoading(false)
       return emptyState
+    }
+
+    if (subscriptionLoading) {
+      const pendingState = resolveReceiptQuotaState({
+        fallbackPlan,
+        source: "subscription_loading",
+      })
+      if (!ignore) {
+        setQuotaState(pendingState)
+        setLoading(true)
+      }
+      return pendingState
     }
 
     setLoading(true)
@@ -62,7 +106,7 @@ export function useReceiptQuota(userId, isPremium = false, isPremiumPlus = false
         const usage = await getScanUsage({ userId, isPremium, isPremiumPlus })
         const nextState = resolveReceiptQuotaState({
           usage,
-          fallbackPlan: "free",
+          fallbackPlan,
           source: "scan_usage",
         })
         if (!ignore) {
@@ -73,7 +117,7 @@ export function useReceiptQuota(userId, isPremium = false, isPremiumPlus = false
         const count = await countMonthlyReceipts({ userId })
         const nextState = resolveReceiptQuotaState({
           fallbackUsed: count,
-          fallbackPlan: localPlan,
+          fallbackPlan,
           source: "receipts",
         })
         if (!ignore) {
@@ -83,13 +127,16 @@ export function useReceiptQuota(userId, isPremium = false, isPremiumPlus = false
       }
     } catch (error) {
       console.error("Erreur quota tickets:", error)
-      const emptyState = resolveReceiptQuotaState({ fallbackPlan: "free", source: "scan_usage" })
+      const emptyState = resolveReceiptQuotaState({
+        fallbackPlan,
+        source: "scan_usage_error",
+      })
       if (!ignore) setQuotaState(emptyState)
       return emptyState
     } finally {
       if (!ignore) setLoading(false)
     }
-  }, [userId, isPremium, isPremiumPlus, localPlan])
+  }, [userId, isPremium, isPremiumPlus, fallbackPlan, subscriptionLoading])
 
   useEffect(() => {
     let ignore = false
