@@ -26,6 +26,10 @@ const APPLY_LIBRARY_ALLOWED_CLASSIFICATIONS = new Set([
   "active_library_ready",
 ])
 
+function isApplyLibraryAllowedClassification(classification = "") {
+  return APPLY_LIBRARY_ALLOWED_CLASSIFICATIONS.has(cleanText(classification, 40))
+}
+
 const CHAIN_PRIORITY = new Map([
   ["e leclerc", 1],
   ["leader price", 2],
@@ -1175,10 +1179,14 @@ function buildNewProductProposal(item = {}, candidate = {}) {
 }
 
 function buildLibraryAliasPayload(item = {}, candidate = {}, reusableProduct = null) {
+  if (!isApplyLibraryAllowedClassification(candidate.classification)) {
+    return null
+  }
   const scope = inferAliasScope(item)
+  const explicitAliasSource = cleanOptionalText(candidate.alias_source, 80)
   const aliasSource = candidate.source_name === "derived_from_manual_alias_family"
     ? "derived_from_manual_alias_family"
-    : `external_library:${candidate.source_name}`
+    : (explicitAliasSource || `external_library:${candidate.source_name}`)
   return {
     product_id: reusableProduct?.product?.id || null,
     raw_label: cleanText(item.raw_label, 180),
@@ -1218,7 +1226,7 @@ function buildApplyLibraryRpcPayload(report = {}) {
     .filter(item => APPLY_LIBRARY_ALLOWED_CLASSIFICATIONS.has(item.classification))
     .filter(item => item.proposed_alias && typeof item.proposed_alias === "object")
     .map(item => {
-      const rpcItem = {
+      const payloadItem = {
         recommended_action: item.recommended_action,
         classification: item.classification,
         proposed_alias: item.proposed_alias,
@@ -1228,9 +1236,9 @@ function buildApplyLibraryRpcPayload(report = {}) {
         && typeof item.proposed_new_product === "object"
         && !Array.isArray(item.proposed_new_product)
       ) {
-        rpcItem.proposed_new_product = item.proposed_new_product
+        payloadItem.proposed_new_product = item.proposed_new_product
       }
-      return rpcItem
+      return payloadItem
     })
 }
 

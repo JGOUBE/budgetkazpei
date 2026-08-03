@@ -231,6 +231,7 @@ export function sanitizeExternalCandidateRecord(input = {}) {
 
   return {
     id: input.id || null,
+    alias_source: cleanOptionalText(input.alias_source || input.aliasSource, 80),
     source_type: sourceType,
     source_name: sourceName,
     source_identifier: cleanOptionalText(input.source_identifier || input.sourceIdentifier, 120),

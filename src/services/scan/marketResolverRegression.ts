@@ -317,6 +317,7 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
     buildDerivedManualAliasFamilyCandidates,
     buildLibraryAliasPayload,
     buildNewProductProposal,
+    buildStagingPayload,
     buildWebQueries,
     classifyCandidateRows,
     consolidateSourceErrors,
@@ -1226,6 +1227,235 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
     storeCity: "Le Tampon",
   }, curatedLentillesCandidates)
   const curatedLentillesClassification = classifyCandidateRows(curatedLentillesRows)
+  const curatedCompoteCandidates = buildCuratedProofCandidates({
+    raw_label: "compote de pomme 4 x 100 g",
+    normalized_raw_label: "compote de pomme 4 x 100 g",
+    store_name: "E.Leclerc Le Portail",
+    store_chain_key: "e leclerc",
+    observed_price_min: 1.99,
+  })
+  const curatedCompoteRows = buildEvaluatedCandidateRows({
+    rawLabel: "compote de pomme 4 x 100 g",
+    observedPrice: 1.99,
+    storeName: "E.Leclerc Le Portail",
+    storeCity: "Saint-Leu",
+  }, curatedCompoteCandidates)
+  const curatedCompoteClassification = classifyCandidateRows(curatedCompoteRows)
+  const curatedMacedoineCandidates = buildCuratedProofCandidates({
+    raw_label: "macedoine de legumes 265 g",
+    normalized_raw_label: "macedoine de legumes 265 g",
+    store_name: "E.Leclerc Saint-Benoit",
+    store_chain_key: "e leclerc",
+    observed_price_min: 1.49,
+  })
+  const curatedMacedoineRows = buildEvaluatedCandidateRows({
+    rawLabel: "macedoine de legumes 265 g",
+    brand: "Notre Jardin",
+    observedPrice: 1.49,
+    storeName: "E.Leclerc Saint-Benoit",
+    storeCity: "Saint-Benoit",
+  }, curatedMacedoineCandidates)
+  const curatedMacedoineClassification = classifyCandidateRows(curatedMacedoineRows)
+  const liveCilaosReusableProduct = {
+    product: {
+      id: "3f5d5944-6e50-4496-9384-9e67a9e71e9d",
+    },
+    reason: "name_brand_package_exact",
+  }
+  const liveLentillesReusableProduct = {
+    product: {
+      id: "9657b172-9fb7-4aa2-b0ac-891bd6a82edd",
+    },
+    reason: "name_brand_package_exact",
+  }
+  const liveCompoteReusableProduct = {
+    product: {
+      id: "56793641-9e34-4a32-80fb-d9b5db056881",
+    },
+    reason: "name_brand_exact_package_missing",
+  }
+  const liveMacedoineReusableProduct = {
+    product: {
+      id: "c1fa9131-3727-4d69-a160-9cac273ef3c0",
+    },
+    reason: "name_brand_package_exact",
+  }
+  const curatedEleclercOpenPricesPayloads = [
+    buildLibraryAliasPayload({
+      raw_label: "EAU CILAOS PACK 1L.25 X6",
+      normalized_raw_label: "eau cilaos pack 1l 25 x6",
+      distinct_chains: 1,
+      store_chain_key: "e leclerc",
+    }, { ...(curatedCilaosRows[0] || {}), classification: curatedCilaosClassification.classification }, liveCilaosReusableProduct),
+    buildLibraryAliasPayload({
+      raw_label: "LENT ILE GRA OIE NOTRE JARDEN",
+      normalized_raw_label: "lent ile gra oie notre jarden",
+      distinct_chains: 1,
+      store_chain_key: "e leclerc",
+    }, { ...(curatedLentillesRows[0] || {}), classification: curatedLentillesClassification.classification }, liveLentillesReusableProduct),
+    buildLibraryAliasPayload({
+      raw_label: "compote de pomme 4 x 100 g",
+      normalized_raw_label: "compote de pomme 4 x 100 g",
+      distinct_chains: 1,
+      store_chain_key: "e leclerc",
+    }, { ...(curatedCompoteRows[0] || {}), classification: curatedCompoteClassification.classification }, liveCompoteReusableProduct),
+    buildLibraryAliasPayload({
+      raw_label: "macedoine de legumes 265 g",
+      normalized_raw_label: "macedoine de legumes 265 g",
+      distinct_chains: 1,
+      store_chain_key: "e leclerc",
+    }, { ...(curatedMacedoineRows[0] || {}), classification: curatedMacedoineClassification.classification }, liveMacedoineReusableProduct),
+  ]
+  const curatedEleclercOpenPricesReport = {
+    items: [
+      {
+        raw_label: "EAU CILAOS PACK 1L.25 X6",
+        recommended_action: "library",
+        classification: curatedCilaosClassification.classification,
+        proposed_alias: buildLibraryAliasPayload({
+          raw_label: "EAU CILAOS PACK 1L.25 X6",
+          normalized_raw_label: "eau cilaos pack 1l 25 x6",
+          distinct_chains: 1,
+          store_chain_key: "e leclerc",
+        }, { ...(curatedCilaosRows[0] || {}), classification: curatedCilaosClassification.classification }, liveCilaosReusableProduct),
+        proposed_staging_candidates: [],
+        candidate_rows: curatedCilaosRows,
+      },
+      {
+        raw_label: "LENT ILE GRA OIE NOTRE JARDEN",
+        recommended_action: "library",
+        classification: curatedLentillesClassification.classification,
+        proposed_alias: buildLibraryAliasPayload({
+          raw_label: "LENT ILE GRA OIE NOTRE JARDEN",
+          normalized_raw_label: "lent ile gra oie notre jarden",
+          distinct_chains: 1,
+          store_chain_key: "e leclerc",
+        }, { ...(curatedLentillesRows[0] || {}), classification: curatedLentillesClassification.classification }, liveLentillesReusableProduct),
+        proposed_staging_candidates: [],
+        candidate_rows: curatedLentillesRows,
+      },
+      {
+        raw_label: "compote de pomme 4 x 100 g",
+        recommended_action: "staging",
+        classification: curatedCompoteClassification.classification,
+        proposed_alias: buildLibraryAliasPayload({
+          raw_label: "compote de pomme 4 x 100 g",
+          normalized_raw_label: "compote de pomme 4 x 100 g",
+          distinct_chains: 1,
+          store_chain_key: "e leclerc",
+        }, { ...(curatedCompoteRows[0] || {}), classification: curatedCompoteClassification.classification }, liveCompoteReusableProduct),
+        proposed_staging_candidates: [
+          buildStagingPayload({
+            raw_label: "compote de pomme 4 x 100 g",
+            normalized_raw_label: "compote de pomme 4 x 100 g",
+            store_name: "E.Leclerc Le Portail",
+            store_chain_key: "e leclerc",
+            observed_price_min: 1.99,
+          }, { ...(curatedCompoteRows[0] || {}), classification: curatedCompoteClassification.classification }),
+        ],
+        candidate_rows: curatedCompoteRows,
+      },
+      {
+        raw_label: "compote pomme",
+        recommended_action: "staging",
+        classification: curatedCompoteClassification.classification,
+        proposed_alias: buildLibraryAliasPayload({
+          raw_label: "compote pomme",
+          normalized_raw_label: "compote pomme",
+          distinct_chains: 1,
+          store_chain_key: "e leclerc",
+        }, { ...(curatedCompoteRows[0] || {}), classification: curatedCompoteClassification.classification }, liveCompoteReusableProduct),
+        proposed_staging_candidates: [
+          buildStagingPayload({
+            raw_label: "compote pomme",
+            normalized_raw_label: "compote pomme",
+            store_name: "E.Leclerc Le Portail",
+            store_chain_key: "e leclerc",
+            observed_price_min: 1.99,
+          }, { ...(curatedCompoteRows[0] || {}), classification: curatedCompoteClassification.classification }),
+        ],
+        candidate_rows: curatedCompoteRows,
+      },
+      {
+        raw_label: "macedoine de legumes 265 g",
+        recommended_action: "staging",
+        classification: curatedMacedoineClassification.classification,
+        proposed_alias: buildLibraryAliasPayload({
+          raw_label: "macedoine de legumes 265 g",
+          normalized_raw_label: "macedoine de legumes 265 g",
+          distinct_chains: 1,
+          store_chain_key: "e leclerc",
+        }, { ...(curatedMacedoineRows[0] || {}), classification: curatedMacedoineClassification.classification }, liveMacedoineReusableProduct),
+        proposed_staging_candidates: [
+          buildStagingPayload({
+            raw_label: "macedoine de legumes 265 g",
+            normalized_raw_label: "macedoine de legumes 265 g",
+            store_name: "E.Leclerc Saint-Benoit",
+            store_chain_key: "e leclerc",
+            observed_price_min: 1.49,
+          }, { ...(curatedMacedoineRows[0] || {}), classification: curatedMacedoineClassification.classification }),
+        ],
+        candidate_rows: curatedMacedoineRows,
+      },
+      {
+        raw_label: "maced legumes",
+        recommended_action: "staging",
+        classification: curatedMacedoineClassification.classification,
+        proposed_alias: buildLibraryAliasPayload({
+          raw_label: "maced legumes",
+          normalized_raw_label: "maced legumes",
+          distinct_chains: 1,
+          store_chain_key: "e leclerc",
+        }, { ...(curatedMacedoineRows[0] || {}), classification: curatedMacedoineClassification.classification }, liveMacedoineReusableProduct),
+        proposed_staging_candidates: [
+          buildStagingPayload({
+            raw_label: "maced legumes",
+            normalized_raw_label: "maced legumes",
+            store_name: "E.Leclerc Saint-Benoit",
+            store_chain_key: "e leclerc",
+            observed_price_min: 1.49,
+          }, { ...(curatedMacedoineRows[0] || {}), classification: curatedMacedoineClassification.classification }),
+        ],
+        candidate_rows: curatedMacedoineRows,
+      },
+    ],
+  }
+  const applyLibraryAllowedClassifications = new Set([
+    "exact_strong",
+    "strong_without_barcode",
+    "active_library_ready",
+  ])
+  const curatedEleclercOpenPricesRpcPreview = buildApplyLibraryRpcPayload(curatedEleclercOpenPricesReport)
+  const curatedEleclercExcludedReviewEntries = curatedEleclercOpenPricesReport.items
+    .filter(item => !applyLibraryAllowedClassifications.has(item.classification))
+    .map(item => ({
+      raw_label: item.raw_label,
+      recommended_action: item.recommended_action,
+      classification: item.classification,
+      match_level: item.proposed_staging_candidates?.[0]?.match_level ?? null,
+      confidence: item.proposed_staging_candidates?.[0]?.source_confidence ?? null,
+      status: item.proposed_staging_candidates?.[0]?.status ?? null,
+      source: item.proposed_staging_candidates?.[0]?.matching_evidence?.source ?? null,
+      source_url: item.proposed_staging_candidates?.[0]?.source_url ?? null,
+      candidate_canonical_name: item.proposed_staging_candidates?.[0]?.candidate_canonical_name ?? null,
+      matched_product_id: item.proposed_alias?.product_id ?? null,
+    }))
+  const curatedEleclercOpenPricesRpcPreviewRepeat = buildApplyLibraryRpcPayload(curatedEleclercOpenPricesReport)
+  const nullClassificationAliasPayload = buildLibraryAliasPayload({
+    raw_label: "NULL CLASSIFICATION",
+    normalized_raw_label: "null classification",
+    distinct_chains: 1,
+    store_chain_key: "e leclerc",
+  }, {
+    alias_source: "open_prices",
+    source_type: "commercial_product_page",
+    source_name: "drive_zeclerc_reunion",
+    source_url: "https://example.test/null-classification",
+    source_confidence: 1,
+    match_level: "strong_without_barcode",
+    classification: null,
+    candidate_canonical_name: "Null Classification Product",
+  }, liveCilaosReusableProduct)
   const curatedCilaosProposal = buildNewProductProposal({
     raw_label: "EAU CILAOS PACK 1L.25 X6",
     category_hint: "alimentaire",
@@ -1494,7 +1724,7 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
           product_id: null,
           raw_label: "EAU CILAOS PACK 1L.25 X6",
           normalized_raw_label: "eau cilaos pack 1l 25 x6",
-          source: "external_library:curated_web_proof",
+          source: "open_prices",
           confidence: 0.9912,
           scope: "chain",
           store_id: null,
@@ -1563,7 +1793,7 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
           product_id: null,
           raw_label: "LENT ILE GRA OIE NOTRE JARDEN",
           normalized_raw_label: "lent ile gra oie notre jarden",
-          source: "external_library:curated_web_proof",
+          source: "open_prices",
           confidence: 0.9567,
           scope: "chain",
           store_id: null,
@@ -3377,6 +3607,174 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
       },
     ),
     assertEqual(
+      "market-alias-batch-routes-curated-eleclerc-library-proofs-through-open-prices-only-when-classification-is-applicable",
+      curatedEleclercOpenPricesPayloads.map(payload => (payload
+        ? {
+          product_id: payload.product_id,
+          normalized_raw_label: payload.normalized_raw_label,
+          source: payload.source,
+          scope: payload.scope,
+          store_chain_key: payload.store_chain_key,
+          source_name: payload.evidence.source_name,
+          uses_external_library_prefix: payload.source.startsWith("external_library:"),
+        }
+        : null)),
+      [
+        {
+          product_id: "3f5d5944-6e50-4496-9384-9e67a9e71e9d",
+          normalized_raw_label: "eau cilaos pack 1l 25 x6",
+          source: "open_prices",
+          scope: "chain",
+          store_chain_key: "e leclerc",
+          source_name: "drive_zeclerc_reunion",
+          uses_external_library_prefix: false,
+        },
+        {
+          product_id: "9657b172-9fb7-4aa2-b0ac-891bd6a82edd",
+          normalized_raw_label: "lent ile gra oie notre jarden",
+          source: "open_prices",
+          scope: "chain",
+          store_chain_key: "e leclerc",
+          source_name: "drive_zeclerc_reunion",
+          uses_external_library_prefix: false,
+        },
+        null,
+        null,
+      ],
+    ),
+    assertEqual(
+      "market-alias-batch-previews-only-two-applicable-eleclerc-open-prices-rpc-aliases-with-live-wrapper-shape",
+      curatedEleclercOpenPricesRpcPreview.map(payload => ({
+        recommended_action: payload.recommended_action,
+        classification: payload.classification,
+        proposed_alias_exists: typeof payload.proposed_alias === "object" && payload.proposed_alias !== null,
+        has_proposed_new_product: Object.hasOwn(payload, "proposed_new_product"),
+        root_has_product_id: Object.prototype.hasOwnProperty.call(payload, "product_id"),
+        root_has_raw_label: Object.prototype.hasOwnProperty.call(payload, "raw_label"),
+        product_id: payload.proposed_alias.product_id,
+        raw_label: payload.proposed_alias.raw_label,
+        normalized_raw_label: payload.proposed_alias.normalized_raw_label,
+        source: payload.proposed_alias.source,
+        confidence: payload.proposed_alias.confidence,
+        scope: payload.proposed_alias.scope,
+        store_id: payload.proposed_alias.store_id,
+        store_chain_key: payload.proposed_alias.store_chain_key,
+        status: payload.proposed_alias.status,
+        evidence_candidate_canonical_name: payload.proposed_alias.evidence.candidate_canonical_name,
+        evidence_source_name: payload.proposed_alias.evidence.source_name,
+      })),
+      [
+        {
+          recommended_action: "library",
+          classification: "active_library_ready",
+          proposed_alias_exists: true,
+          has_proposed_new_product: false,
+          root_has_product_id: false,
+          root_has_raw_label: false,
+          product_id: "3f5d5944-6e50-4496-9384-9e67a9e71e9d",
+          raw_label: "EAU CILAOS PACK 1L.25 X6",
+          normalized_raw_label: "eau cilaos pack 1l 25 x6",
+          source: "open_prices",
+          confidence: 1,
+          scope: "chain",
+          store_id: null,
+          store_chain_key: "e leclerc",
+          status: "active",
+          evidence_candidate_canonical_name: "Eau Cilaos pack 6 x 1,25 L",
+          evidence_source_name: "drive_zeclerc_reunion",
+        },
+        {
+          recommended_action: "library",
+          classification: "active_library_ready",
+          proposed_alias_exists: true,
+          has_proposed_new_product: false,
+          root_has_product_id: false,
+          root_has_raw_label: false,
+          product_id: "9657b172-9fb7-4aa2-b0ac-891bd6a82edd",
+          raw_label: "LENT ILE GRA OIE NOTRE JARDEN",
+          normalized_raw_label: "lent ile gra oie notre jarden",
+          source: "open_prices",
+          confidence: 1,
+          scope: "chain",
+          store_id: null,
+          store_chain_key: "e leclerc",
+          status: "active",
+          evidence_candidate_canonical_name: "Lentilles cuisinees a la graisse d'oie 400 g",
+          evidence_source_name: "drive_zeclerc_reunion",
+        },
+      ],
+    ),
+    assertEqual(
+      "market-alias-batch-keeps-non-applicable-eleclerc-open-prices-candidates-in-review-output",
+      curatedEleclercExcludedReviewEntries,
+      [
+        {
+          raw_label: "compote de pomme 4 x 100 g",
+          recommended_action: "staging",
+          classification: "ambiguous",
+          match_level: "suggestion",
+          confidence: 1,
+          status: "candidate",
+          source: "curated_web_proof",
+          source_url: "https://www.e.leclerc/fp/coupelles-allegees-en-sucres-pomme-4-x-100-g-eco-3450970027847",
+          candidate_canonical_name: "Compote de pomme 4 x 100 g",
+          matched_product_id: null,
+        },
+        {
+          raw_label: "compote pomme",
+          recommended_action: "staging",
+          classification: "ambiguous",
+          match_level: "suggestion",
+          confidence: 1,
+          status: "candidate",
+          source: "curated_web_proof",
+          source_url: "https://www.e.leclerc/fp/coupelles-allegees-en-sucres-pomme-4-x-100-g-eco-3450970027847",
+          candidate_canonical_name: "Compote de pomme 4 x 100 g",
+          matched_product_id: null,
+        },
+        {
+          raw_label: "macedoine de legumes 265 g",
+          recommended_action: "staging",
+          classification: "ambiguous",
+          match_level: "ambiguous",
+          confidence: 1,
+          status: "candidate",
+          source: "curated_web_proof",
+          source_url: "https://www.drivezeclerc.re/st-benoit/epicerie-salee/8636-macedoine-de-legumes-1-2-265g-pne1058969.html",
+          candidate_canonical_name: "Macedoine de legumes 265 g",
+          matched_product_id: null,
+        },
+        {
+          raw_label: "maced legumes",
+          recommended_action: "staging",
+          classification: "ambiguous",
+          match_level: "ambiguous",
+          confidence: 1,
+          status: "candidate",
+          source: "curated_web_proof",
+          source_url: "https://www.drivezeclerc.re/st-benoit/epicerie-salee/8636-macedoine-de-legumes-1-2-265g-pne1058969.html",
+          candidate_canonical_name: "Macedoine de legumes 265 g",
+          matched_product_id: null,
+        },
+      ],
+    ),
+    assertEqual(
+      "market-alias-batch-prevents-null-classification-from-becoming-an-active-library-payload",
+      nullClassificationAliasPayload,
+      null,
+    ),
+    assertEqual(
+      "market-alias-batch-rpc-preview-is-idempotent-for-the-same-eleclerc-review-report",
+      {
+        first: curatedEleclercOpenPricesRpcPreview,
+        second: curatedEleclercOpenPricesRpcPreviewRepeat,
+      },
+      {
+        first: curatedEleclercOpenPricesRpcPreview,
+        second: curatedEleclercOpenPricesRpcPreviewRepeat,
+      },
+    ),
+    assertEqual(
       "market-alias-batch-upgrades-unique-high-confidence-suggestion-to-library-ready",
       {
         classification: libraryReadyClassification.classification,
@@ -3763,10 +4161,10 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
       },
     ),
     assertEqual(
-      "market-alias-atomic-apply-script-omits-null-proposed-new-product-for-reused-products",
+      "market-alias-atomic-apply-script-omits-proposed-new-product-for-reused-products",
       {
-        assortiment_has_key: Object.prototype.hasOwnProperty.call(atomicApplyPayload[1] || {}, "proposed_new_product"),
-        camembert_has_key: Object.prototype.hasOwnProperty.call(atomicApplyPayload[2] || {}, "proposed_new_product"),
+        assortiment_has_key: Object.hasOwn(atomicApplyPayload[1] || {}, "proposed_new_product"),
+        camembert_has_key: Object.hasOwn(atomicApplyPayload[2] || {}, "proposed_new_product"),
         assortiment_product_id: atomicApplyPayload[1]?.proposed_alias?.product_id ?? null,
         camembert_product_id: atomicApplyPayload[2]?.proposed_alias?.product_id ?? null,
       },
@@ -3802,7 +4200,7 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
         payload_keys: atomicApplyPayload.map(item => Object.keys(item).sort()),
         reused_entries_without_key: atomicApplyPayload
           .filter(item => item.proposed_alias.product_id)
-          .every(item => !Object.prototype.hasOwnProperty.call(item, "proposed_new_product")),
+          .every(item => !Object.hasOwn(item, "proposed_new_product")),
       },
       {
         payload_keys: [
@@ -3813,6 +4211,102 @@ export async function runMarketResolverRegressionFixtures(): Promise<RegressionR
         ],
         reused_entries_without_key: true,
       },
+    ),
+    assertEqual(
+      "market-alias-atomic-apply-script-rejects-non-object-proposed-new-product-values",
+      buildApplyLibraryRpcPayload({
+        items: [
+          {
+            recommended_action: "library",
+            classification: "active_library_ready",
+            proposed_new_product: null,
+            proposed_alias: {
+              product_id: "11111111-1111-4111-8111-111111111111",
+              raw_label: "NULL PRODUCT",
+            },
+          },
+          {
+            recommended_action: "library",
+            classification: "active_library_ready",
+            proposed_new_product: "bad",
+            proposed_alias: {
+              product_id: "22222222-2222-4222-8222-222222222222",
+              raw_label: "STRING PRODUCT",
+            },
+          },
+          {
+            recommended_action: "library",
+            classification: "active_library_ready",
+            proposed_new_product: ["bad"],
+            proposed_alias: {
+              product_id: "33333333-3333-4333-8333-333333333333",
+              raw_label: "ARRAY PRODUCT",
+            },
+          },
+          {
+            recommended_action: "library",
+            classification: "active_library_ready",
+            proposed_new_product: 42,
+            proposed_alias: {
+              product_id: "44444444-4444-4444-8444-444444444444",
+              raw_label: "NUMBER PRODUCT",
+            },
+          },
+          {
+            recommended_action: "library",
+            classification: "active_library_ready",
+            proposed_new_product: {
+              canonical_name: "Valid product",
+              normalized_name: "valid product",
+              brand: null,
+              normalized_brand: null,
+              category: "epicerie",
+              package_format: "1 piece",
+              barcode: null,
+              product_key: "valid product::1 piece",
+            },
+            proposed_alias: {
+              product_id: null,
+              raw_label: "VALID PRODUCT",
+            },
+          },
+        ],
+      } as any).map(item => ({
+        raw_label: item.proposed_alias?.raw_label ?? null,
+        has_proposed_new_product: Object.hasOwn(item, "proposed_new_product"),
+        proposed_new_product_type: Array.isArray(item.proposed_new_product)
+          ? "array"
+          : item.proposed_new_product === null
+            ? "null"
+            : typeof item.proposed_new_product,
+      })),
+      [
+        {
+          raw_label: "NULL PRODUCT",
+          has_proposed_new_product: false,
+          proposed_new_product_type: "undefined",
+        },
+        {
+          raw_label: "STRING PRODUCT",
+          has_proposed_new_product: false,
+          proposed_new_product_type: "undefined",
+        },
+        {
+          raw_label: "ARRAY PRODUCT",
+          has_proposed_new_product: false,
+          proposed_new_product_type: "undefined",
+        },
+        {
+          raw_label: "NUMBER PRODUCT",
+          has_proposed_new_product: false,
+          proposed_new_product_type: "undefined",
+        },
+        {
+          raw_label: "VALID PRODUCT",
+          has_proposed_new_product: true,
+          proposed_new_product_type: "object",
+        },
+      ],
     ),
     assertEqual(
       "market-alias-atomic-apply-script-excludes-non-library-classifications-before-rpc",
