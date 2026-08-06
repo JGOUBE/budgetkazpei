@@ -17,7 +17,9 @@
     "test:market": "node scripts/run-market-regression.mjs",
     "test:market:integration": "node scripts/run-market-integration.mjs",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "market:aliases:auto": "node scripts/run_market_alias_automation.mjs",
+    "test:market-alias-automation": "node scripts/run-market-alias-automation-tests.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.0",

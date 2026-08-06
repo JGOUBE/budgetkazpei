@@ -85,6 +85,34 @@ function normalizeBrand(value = "") {
   return normalizeExternalAliasText(value).slice(0, 80)
 }
 
+function containsBrandAsWholeToken(value = "", brand = "") {
+  const valueTokens = normalizeExternalAliasText(value)
+    .split(" ")
+    .filter(Boolean)
+  const brandTokens = normalizeBrand(brand)
+    .split(" ")
+    .filter(Boolean)
+
+  if (!valueTokens.length || !brandTokens.length) return false
+
+  // Une marque d'une seule lettre, comme U, ne doit jamais Ãªtre
+  // dÃ©duite de la simple prÃ©sence de ce caractÃ¨re dans un mot.
+  if (brandTokens.length === 1 && brandTokens[0].length < 2) return false
+
+  for (let start = 0; start <= valueTokens.length - brandTokens.length; start += 1) {
+    let matches = true
+    for (let offset = 0; offset < brandTokens.length; offset += 1) {
+      if (valueTokens[start + offset] !== brandTokens[offset]) {
+        matches = false
+        break
+      }
+    }
+    if (matches) return true
+  }
+
+  return false
+}
+
 function normalizePackageFormat(value = "") {
   return normalizeExternalAliasText(value)
     .replace(/\bgr\b/g, "g")
@@ -281,7 +309,7 @@ function rawBrandConflict(candidate = {}, rawLabel = "") {
   const candidateBrand = cleanText(candidate?.brand || "", 80)
   if (!rawBrandHint || !candidateBrand) return false
   return normalizeBrand(rawBrandHint) !== normalizeBrand(candidateBrand)
-    && normalizeExternalAliasText(rawLabel).includes(normalizeBrand(rawBrandHint))
+    && containsBrandAsWholeToken(rawLabel, rawBrandHint)
 }
 
 export function evaluateExternalCandidateMatch({
@@ -370,8 +398,16 @@ export function evaluateExternalCandidateMatch({
     manualFamilySimilarity,
   )
   const exactName = normalizeExternalAliasText(raw_label) === safeCandidate.normalized_candidate_name
-  const computedBrandScore = brandScore(brand, safeCandidate.brand)
-  const exactBrand = normalizeBrand(brand) !== "" && normalizeBrand(brand) === normalizeBrand(safeCandidate.brand)
+  const explicitBrandScore = brandScore(brand, safeCandidate.brand)
+  const rawLabelBrandMatch = containsBrandAsWholeToken(raw_label, safeCandidate.brand)
+  const computedBrandScore = Math.max(
+    explicitBrandScore,
+    rawLabelBrandMatch ? 1 : 0,
+  )
+  const exactBrand = (
+    normalizeBrand(brand) !== ""
+    && normalizeBrand(brand) === normalizeBrand(safeCandidate.brand)
+  ) || rawLabelBrandMatch
   const computedPackageScore = packageScore(package_format, safeCandidate.package_format)
   const exactPackage = normalizePackageFormat(package_format) !== ""
     && normalizePackageFormat(package_format) === normalizePackageFormat(safeCandidate.package_format)
