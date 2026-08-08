@@ -21,7 +21,9 @@
     "market:aliases:auto": "node scripts/run_market_alias_automation.mjs",
     "test:market-alias-automation": "node scripts/run-market-alias-automation-tests.mjs",
     "market:aliases:plan": "node scripts/prepare_market_alias_apply_plan.mjs",
-    "test:market-alias-apply-plan": "node scripts/run-market-alias-apply-plan-tests.mjs"
+    "test:market-alias-apply-plan": "node scripts/run-market-alias-apply-plan-tests.mjs",
+    "market:aliases:apply-plan": "node scripts/apply_market_alias_plan.mjs",
+    "test:market-alias-atomic-apply": "node scripts/run-market-alias-atomic-apply-tests.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.0",
