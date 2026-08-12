@@ -1,5 +1,6 @@
 import { upsertReceiptTransaction, validateReceipt } from "../../features/receipts/services/receiptService"
 import { syncShoppingItemsFromReceipt } from "../../features/shopping/services/shoppingEngine"
+import { learnManualMarketAliasFromReceiptItem } from "./marketManualAliasService"
 import { syncAnonymizedMarketReceipt } from "./marketObservationService"
 import { enrichProductDictionary } from "./productKnowledgeService"
 import { isItemEligibleForSmartShopping } from "./receiptRules"
@@ -107,14 +108,47 @@ export async function importValidatedReceipt({
       count: cleanItems.length,
       receiptId: receipt.id,
     })
-    await validateReceipt({
+    const validatedReceipt = await validateReceipt({
       receiptId: receipt.id,
       userId,
       draft,
       items: cleanItems,
       transactionId: txResult?.transaction?.id,
     })
-    scannerLog("Creation receipt_items", "OK", { count: cleanItems.length })
+    const savedReceiptItems = Array.isArray(validatedReceipt?.receipt_items)
+      ? validatedReceipt.receipt_items
+      : []
+    scannerLog("Creation receipt_items", "OK", { count: savedReceiptItems.length || cleanItems.length })
+
+    let manualAliasesAttempted = 0
+    let manualAliasesLearned = 0
+
+    for (const savedItem of savedReceiptItems) {
+      if (String(savedItem?.item_status || savedItem?.status || "") !== "user_validated") continue
+
+      manualAliasesAttempted += 1
+      try {
+        const learning = await learnManualMarketAliasFromReceiptItem(savedItem.id)
+        if (learning?.learned === true) manualAliasesLearned += 1
+        scannerLog("Apprentissage alias correction utilisateur", "OK", {
+          receipt_item_id: savedItem.id,
+          learned: learning?.learned === true,
+          reason: learning?.reason || "",
+          alias_id: learning?.alias_id || null,
+          validation_count: learning?.validation_count ?? null,
+        })
+      } catch (learningError) {
+        console.warn("[scanner] Apprentissage alias correction utilisateur indisponible", {
+          receipt_item_id: savedItem.id,
+          error: learningError,
+        })
+      }
+    }
+
+    scannerLog("Apprentissage alias corrections utilisateur", "OK", {
+      attempted: manualAliasesAttempted,
+      learned: manualAliasesLearned,
+    })
   } catch (error) {
     throw stageError("Creation receipt_items", error)
   }

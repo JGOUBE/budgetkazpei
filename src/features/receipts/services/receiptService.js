@@ -1028,9 +1028,12 @@ export async function validateReceipt({ receiptId, userId, draft, items, transac
     console.error("[scanner] Validation receipt: ERREUR", error)
     throw error
   }
-  await saveReceiptItems({ receiptId, userId, items })
+  const savedReceiptItems = await saveReceiptItems({ receiptId, userId, items })
   console.info("[scanner] Validation receipt: OK", data)
-  return data
+  return {
+    ...(data || {}),
+    receipt_items: savedReceiptItems,
+  }
 }
 
 export async function updateReceipt({ receiptId, userId, updates }) {

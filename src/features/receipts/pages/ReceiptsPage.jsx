@@ -120,7 +120,9 @@ const TEXT = {
     items: "Articles",
     addLine: "Ajouter une ligne",
     remove: "Supprimer",
-    save: "Enregistrer la course",
+    validateItem: "Valider l'article",
+    itemValidated: "Article validé",
+    save: "Enregistrer le ticket",
     saveAnyway: "Enregistrer quand même",
     cancel: "Annuler",
     empty: "Aucun ticket enregistré pour le moment.",
@@ -148,7 +150,7 @@ const TEXT = {
     correctArticles: "Corriger les articles",
     unreliableDetectedLines: "Lignes détectées non fiables",
     viewDetails: "Voir le détail",
-    saved: "Course enregistrée.",
+    saved: "Ticket enregistré.",
     deleted: "Ticket retiré de l'historique.",
     error: "Analyse impossible. Vous pouvez réessayer ou remplir manuellement.",
     quotaReached: "Quota atteint. Vous pouvez quand même remplir manuellement.",
@@ -211,7 +213,9 @@ const TEXT = {
     items: "Bann lartik",
     addLine: "Azout in lign",
     remove: "Suprim",
-    save: "Anrezistré course-la",
+    validateItem: "Valid lartik",
+    itemValidated: "Lartik validé",
+    save: "Anrezistré tiké-la",
     saveAnyway: "Anrezistré kan même",
     cancel: "Anilé",
     empty: "Nana poin tiké anrezistré pou linstan.",
@@ -239,7 +243,7 @@ const TEXT = {
     correctArticles: "Korize bann lartik",
     unreliableDetectedLines: "Bann lign trouvé pa ase sir",
     viewDetails: "War detay",
-    saved: "Course anrezistrée.",
+    saved: "Tiké anrezistré.",
     deleted: "Tiké retiré dann listwar.",
     error: "Analiz-la pa marche. Ou pé réessayé ou ranpli amain.",
     quotaReached: "Quota atteint. Ou pé kan même ranpli amain.",
@@ -331,6 +335,30 @@ function isBlockedReceiptItem(item = {}) {
   if (isClearlyNonProductReceiptLine(item.name || item.ocr_name || item.raw_text || item.source_line || "")) return true
 
   return false
+}
+
+function getReceiptItemStatusPresentation(item = {}) {
+  const rawStatus = String(item.item_status || item.status || item.review_status || "")
+    .trim()
+    .toLowerCase()
+
+  if (rawStatus === "user_validated" || rawStatus === "user validated") {
+    return { label: "✓ Article validé", color: COLORS.green }
+  }
+  if (rawStatus === "trusted") {
+    return { label: "✓ Article fiable", color: COLORS.green }
+  }
+  if (rawStatus === "needs_review" || rawStatus === "a_verifier") {
+    return { label: "À vérifier", color: COLORS.yellow }
+  }
+  if (rawStatus === "rejected") {
+    return { label: "Article non retenu", color: COLORS.red }
+  }
+  if (rawStatus === "detected") {
+    return { label: "Article détecté", color: COLORS.muted }
+  }
+
+  return { label: "Statut de l’article indisponible", color: COLORS.muted }
 }
 
 function getValidDraftItems(draft = {}) {
@@ -1558,7 +1586,44 @@ export default function ReceiptsPage({
   function updateItem(index, updates) {
     setDraft(prev => ({
       ...prev,
-      items: prev.items.map((item, itemIndex) => itemIndex === index ? { ...item, ...updates } : item),
+      items: prev.items.map((item, itemIndex) => itemIndex === index
+        ? {
+            ...item,
+            ...updates,
+            _pre_save_validated: updates?._pre_save_validated === true
+              ? true
+              : false,
+          }
+        : item),
+    }))
+  }
+
+  function validateDraftItem(index) {
+    setDraft(prev => ({
+      ...prev,
+      items: prev.items.map((item, itemIndex) => {
+        if (itemIndex !== index) return item
+
+        const correctedName = String(
+          item.corrected_name
+          || item.name
+          || item.ocr_name
+          || "",
+        ).trim()
+
+        if (!correctedName) return item
+
+        return {
+          ...item,
+          name: correctedName,
+          corrected_name: correctedName,
+          item_status: "user_validated",
+          status: "user_validated",
+          review_status: "trusted",
+          needs_review: false,
+          _pre_save_validated: true,
+        }
+      }),
     }))
   }
 
@@ -2356,6 +2421,7 @@ export default function ReceiptsPage({
           setShowBlockedDetectedLines={setShowBlockedDetectedLines}
           setDraft={setDraft}
           updateItem={updateItem}
+          validateItem={validateDraftItem}
           removeItem={removeItem}
           onOpenEditor={() => setValidationView("editor")}
           onSave={handleSmartImport}
@@ -2562,6 +2628,7 @@ function ValidationForm({
   setShowBlockedDetectedLines,
   setDraft,
   updateItem,
+  validateItem,
   removeItem,
   onOpenEditor,
   onSave,
@@ -2574,6 +2641,22 @@ function ValidationForm({
   const visibleDraftItems = (draft.items || [])
     .map((item, index) => ({ item, index }))
     .filter(row => !isBlockedReceiptItem(row.item))
+  const editableDraftItems = (draft.items || [])
+    .map((item, index) => ({ item, index }))
+    .filter(row => {
+      const ocrName = String(row.item?.ocr_name || "").trim()
+
+      // In edit mode, visibility must not depend on the text currently being typed.
+      // For scanned rows, use the immutable OCR label to decide whether the row is
+      // a real product. For manual/user-added rows, keep the row visible even when
+      // the input is temporarily empty while the user rewrites the designation.
+      if (!ocrName) return true
+
+      return !isBlockedReceiptItem({
+        ...row.item,
+        name: ocrName,
+      })
+    })
   const detectedItemsCount = visibleDraftItems.length
   const reviewItemsCount = countItemsNeedingReview(visibleDraftItems.map(row => row.item))
   const previewSummary = buildScanPreviewSummary({
@@ -2785,7 +2868,7 @@ function ValidationForm({
       )}
 
       <div style={{ display: displayDetectedLines ? "grid" : "none", gap: 12 }}>
-        {visibleDraftItems.map(({ item, index }) => {
+        {editableDraftItems.map(({ item, index }) => {
           const itemAllowed = isItemEligibleForSmartShopping(item)
           const itemNeedsReview = normalizeItemQualityStatus(item) !== "trusted" || articlesBlocked || item.needs_review === true
           return (
@@ -2835,6 +2918,21 @@ function ValidationForm({
                   <option key={category.id} value={category.id}>{category.id}</option>
                 ))}
               </select>
+              <button
+                type="button"
+                disabled={!String(item.corrected_name || item.name || item.ocr_name || "").trim()}
+                onClick={() => validateItem(index)}
+                style={{
+                  minHeight: 48,
+                  borderRadius: 12,
+                  border: `1px solid ${item._pre_save_validated ? COLORS.green : COLORS.cyan}`,
+                  background: item._pre_save_validated ? "rgba(34,197,94,.10)" : "rgba(35,211,214,.10)",
+                  color: item._pre_save_validated ? COLORS.green : COLORS.cyan,
+                  fontWeight: 950,
+                }}
+              >
+                {item._pre_save_validated ? `✓ ${txt.itemValidated}` : txt.validateItem}
+              </button>
               <button type="button" onClick={() => removeItem(index)} style={{ minHeight: 48, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "transparent", color: COLORS.muted, fontWeight: 900 }}>
                 {txt.remove}
               </button>
@@ -3104,6 +3202,7 @@ function ReceiptDetail({
           const draftDirty = hasReceiptItemDraftChanges(item, itemDraft)
           const pendingPersistence = hasReceiptItemPendingPersistence(persistedItemMap[item.id] || {}, item)
           const displayName = itemDraft.corrected_name ?? getReceiptItemVisibleName(item)
+          const statusPresentation = getReceiptItemStatusPresentation(item)
 
           return (
           <div key={item.id} style={{ display: "grid", gap: 8, color: COLORS.text, borderBottom: `1px solid ${COLORS.border}`, paddingBottom: 10 }}>
@@ -3158,7 +3257,10 @@ function ReceiptDetail({
               ))}
             </select>
             <div style={{ color: COLORS.muted, fontSize: 12 }}>
-              {formatMontant(Number(item.total_price || 0))} - {item.item_status || "detected"} - {Math.round(Number(item.confidence_score || 0))} %
+              {formatMontant(Number(item.total_price || 0))} -{" "}
+              <span style={{ color: statusPresentation.color, fontWeight: 900 }}>
+                {statusPresentation.label}
+              </span>{" "}- {Math.round(Number(item.confidence_score || 0))} %
             </div>
           </div>
           )
