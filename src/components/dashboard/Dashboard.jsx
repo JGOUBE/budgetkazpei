@@ -40,6 +40,14 @@ function normalizeText(value = "") {
     .replace(/[\u0300-\u036f]/g, "")
 }
 
+function dashboardCardContentStyle(isMobile, desktopPaddingLeft = 62) {
+  return {
+    minWidth: 0,
+    paddingLeft: isMobile ? 0 : desktopPaddingLeft,
+    textAlign: "left",
+  }
+}
+
 function getDashboardPlanFlags({ plan, status, isPremium, isPremiumPlus } = {}) {
   const cleanStatus = String(status || "").toLowerCase().trim()
   const hasInactiveStatus = ["canceled", "cancelled", "inactive", "past_due", "unpaid", "expired"].includes(cleanStatus)
@@ -409,7 +417,7 @@ function BudgetScoreCard({ t, isMobile, stats = {}, byCategory = [], gainsAides 
   const result = buildBudgetScore({ stats, byCategory, gainsAides, nbAidesObtenues, opportunitiesCount })
 
   return (
-    <TropicalCard variant="purple" emoji={BkIcons.stats} style={{ padding: isMobile ? 16 : 22 }} innerStyle={{ paddingLeft: isMobile ? 0 : 64 }}>
+    <TropicalCard variant="purple" emoji={isMobile ? null : BkIcons.stats} style={{ padding: isMobile ? 16 : 22 }} innerStyle={dashboardCardContentStyle(isMobile, 64)}>
       <div
         style={{
           display: "flex",
@@ -1549,7 +1557,7 @@ function BalanceHeroCard({ insights, stats = {}, isKreol, isMobile, onOpenRevenu
   const balance = Number(insights.monthlyBalance || 0)
 
   return (
-    <TropicalCard variant="lagoon" emoji={BkIcons.savings} style={{ padding: isMobile ? 22 : 30, borderRadius: 28 }} innerStyle={{ paddingLeft: isMobile ? 0 : 64 }}>
+    <TropicalCard variant="lagoon" emoji={isMobile ? null : BkIcons.savings} style={{ padding: isMobile ? 22 : 30, borderRadius: 28 }} innerStyle={dashboardCardContentStyle(isMobile, 64)}>
       <div style={{ color: COLORS.cyan, fontSize: 13, fontWeight: 950, marginBottom: 8 }}>
         {isKreol ? "Larzan i rantre" : "Revenus du mois"}
       </div>
@@ -1559,7 +1567,7 @@ function BalanceHeroCard({ insights, stats = {}, isKreol, isMobile, onOpenRevenu
       <div style={{ color: COLORS.muted, fontSize: 13, marginTop: 10 }}>
         {isKreol ? "Larzan disponible estimé" : "Solde disponible estimé"} <strong style={{ color: balance >= 0 ? COLORS.green : COLORS.red }}>{formatMontant(balance)}</strong>
       </div>
-      <button type="button" onClick={onOpenRevenus} style={{ marginTop: 16, minHeight: 44, border: `1px solid ${COLORS.green}66`, borderRadius: 14, background: COLORS.sageSoft, color: COLORS.text, cursor: "pointer", fontWeight: 950, padding: "0 16px" }}>
+      <button type="button" className="bkp-revenue-action" onClick={onOpenRevenus}>
         {isKreol ? "Voir / modifier revenus" : "Voir / modifier mes revenus"}
       </button>
     </TropicalCard>
@@ -1572,7 +1580,7 @@ function ExpensesSnapshotCard({ stats, isKreol, isMobile }) {
   const pct = revenus > 0 ? Math.min(100, Math.round((depenses / revenus) * 100)) : 0
 
   return (
-    <TropicalCard variant="coral" emoji={BkIcons.depenses} style={{ padding: isMobile ? 18 : 22, borderRadius: 22 }} innerStyle={{ paddingLeft: isMobile ? 0 : 62 }}>
+    <TropicalCard variant="coral" emoji={isMobile ? null : BkIcons.depenses} style={{ padding: isMobile ? 18 : 22, borderRadius: 22 }} innerStyle={dashboardCardContentStyle(isMobile)}>
       <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 950 }}>
         {isKreol ? "Dépans du mwa" : "Dépenses du mois"}
       </div>
@@ -1589,7 +1597,7 @@ function ExpensesSnapshotCard({ stats, isKreol, isMobile }) {
   )
 }
 
-function BudgetAlertCard({ alert, isKreol }) {
+function BudgetAlertCard({ alert, isKreol, isMobile }) {
   const color = alert.level === "ok" ? COLORS.green : alert.level === "warning" ? COLORS.yellow : alert.level === "alert" ? COLORS.accent : COLORS.red
   const alertText =
     alert.level === "ok"
@@ -1602,7 +1610,7 @@ function BudgetAlertCard({ alert, isKreol }) {
           : `Vigilance, ton budget atteint ${alert.percent || 0} %.`
 
   return (
-    <TropicalCard variant={alert.level === "ok" ? "green" : "gold"} emoji={BkIcons.alert} style={{ padding: 18, borderRadius: 22 }} innerStyle={{ paddingLeft: 62 }}>
+    <TropicalCard variant={alert.level === "ok" ? "green" : "gold"} emoji={isMobile ? null : BkIcons.alert} style={{ padding: 18, borderRadius: 22 }} innerStyle={dashboardCardContentStyle(isMobile)}>
       <div style={{ color, fontSize: 13, fontWeight: 950, marginBottom: 8 }}>
         {isKreol ? "Alèrt bidjé" : "Alerte budget"}
       </div>
@@ -1613,10 +1621,10 @@ function BudgetAlertCard({ alert, isKreol }) {
   )
 }
 
-function TopCategoriesV2Card({ categories = [], t, isKreol }) {
+function TopCategoriesV2Card({ categories = [], t, isKreol, isMobile }) {
   if (!categories.length) {
     return (
-      <TropicalCard variant="ocean" emoji={BkIcons.stats} style={{ padding: 18, borderRadius: 22 }} innerStyle={{ paddingLeft: 62 }}>
+      <TropicalCard variant="ocean" emoji={isMobile ? null : BkIcons.stats} style={{ padding: 18, borderRadius: 22 }} innerStyle={dashboardCardContentStyle(isMobile)}>
         <div style={{ color: COLORS.text, fontWeight: 950 }}>{isKreol ? "Top kategori" : "Top catégories"}</div>
         <div style={{ color: COLORS.muted, marginTop: 8 }}>{isKreol ? "Azout quelques dépans pou voir ousa larzan i sava." : "Ajoute quelques dépenses pour voir où part ton argent."}</div>
       </TropicalCard>
@@ -1626,7 +1634,7 @@ function TopCategoriesV2Card({ categories = [], t, isKreol }) {
   const max = Math.max(...categories.map(cat => Number(cat.depense || 0)), 1)
 
   return (
-    <TropicalCard variant="ocean" emoji={BkIcons.stats} style={{ padding: 18, borderRadius: 22 }} innerStyle={{ paddingLeft: 62 }}>
+    <TropicalCard variant="ocean" emoji={isMobile ? null : BkIcons.stats} style={{ padding: 18, borderRadius: 22 }} innerStyle={dashboardCardContentStyle(isMobile)}>
       <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 950, marginBottom: 12 }}>
         {isKreol ? "Top kategori" : "Top catégories"}
       </div>
@@ -1654,9 +1662,9 @@ function TopCategoriesV2Card({ categories = [], t, isKreol }) {
   )
 }
 
-function SavingsOpportunitiesCard({ hints = [], isKreol, onOpenConseiller }) {
+function SavingsOpportunitiesCard({ hints = [], isKreol, isMobile, onOpenConseiller }) {
   return (
-    <TropicalCard variant="gold" emoji={BkIcons.savings} style={{ padding: 18, borderRadius: 22 }} innerStyle={{ paddingLeft: 62 }}>
+    <TropicalCard variant="gold" emoji={isMobile ? null : BkIcons.savings} style={{ padding: 18, borderRadius: 22 }} innerStyle={dashboardCardContentStyle(isMobile)}>
       <div style={{ color: COLORS.yellow, fontSize: 13, fontWeight: 950, marginBottom: 8 }}>
         {isKreol ? "Pistes lékonomi" : "Opportunités d'économies"}
       </div>
@@ -1679,16 +1687,56 @@ function SavingsOpportunitiesCard({ hints = [], isKreol, onOpenConseiller }) {
   )
 }
 
-function QuickActionsV2({ isKreol, isLightTheme, onAddExpense, onOpenReceipts, onOpenAides, onOpenStats }) {
+function QuickActionsV2({ isKreol, isLightTheme, isMobile, onAddExpense, onOpenReceipts, onOpenAides, onOpenStats }) {
   const actions = [
-    { label: isKreol ? "Azout dépans" : "Ajouter dépense", onClick: onAddExpense, color: COLORS.accent, background: COLORS.peachSoft, hover: isLightTheme ? "#F8D6C4" : COLORS.hover, Icon: BkIcons.add },
-    { label: isKreol ? "Scanner tike" : "Scanner ticket", onClick: onOpenReceipts, color: COLORS.cyan, background: COLORS.pastelBlue, hover: isLightTheme ? "#C8E4FA" : COLORS.hover, Icon: BkIcons.scan },
-    { label: isKreol ? "Voir mon bann aides" : "Voir mes aides", onClick: onOpenAides, color: COLORS.yellow, background: COLORS.lavenderSoft, hover: isLightTheme ? "#E2D7F8" : COLORS.hover, Icon: BkIcons.aides },
-    { label: isKreol ? "Voir mon bann stats" : "Voir mes stats", onClick: onOpenStats, color: COLORS.green, background: COLORS.sageSoft, hover: isLightTheme ? "#D3E9DA" : COLORS.hover, Icon: BkIcons.stats },
+    {
+      label: isKreol ? "Azout dépans" : "Ajouter dépense",
+      onClick: onAddExpense,
+      color: COLORS.accent,
+      background: isLightTheme ? COLORS.peachSoft : "linear-gradient(135deg, rgba(249,115,22,.34), rgba(249,115,22,.20))",
+      hover: isLightTheme ? "#F3C3A7" : "linear-gradient(135deg, rgba(249,115,22,.44), rgba(249,115,22,.28))",
+      active: isLightTheme ? "#EFB08C" : "rgba(249,115,22,.48)",
+      border: isLightTheme ? "rgba(194,65,12,.36)" : "rgba(249,115,22,.64)",
+      shadow: isLightTheme ? "0 7px 17px rgba(20,32,51,.07)" : "0 9px 22px rgba(249,115,22,.14), inset 0 1px 0 rgba(255,255,255,.10)",
+      Icon: BkIcons.add,
+    },
+    {
+      label: isKreol ? "Scanner tike" : "Scanner ticket",
+      onClick: onOpenReceipts,
+      color: COLORS.cyan,
+      background: isLightTheme ? COLORS.pastelBlue : "linear-gradient(135deg, rgba(35,211,214,.30), rgba(35,211,214,.17))",
+      hover: isLightTheme ? "#B8DCF7" : "linear-gradient(135deg, rgba(35,211,214,.40), rgba(35,211,214,.24))",
+      active: isLightTheme ? "#A9D4F2" : "rgba(35,211,214,.44)",
+      border: isLightTheme ? "rgba(3,105,161,.34)" : "rgba(35,211,214,.58)",
+      shadow: isLightTheme ? "0 7px 17px rgba(20,32,51,.07)" : "0 9px 22px rgba(35,211,214,.12), inset 0 1px 0 rgba(255,255,255,.10)",
+      Icon: BkIcons.scan,
+    },
+    {
+      label: isKreol ? "Voir mon bann aides" : "Voir mes aides",
+      onClick: onOpenAides,
+      color: COLORS.purple,
+      background: isLightTheme ? COLORS.lavenderSoft : "linear-gradient(135deg, rgba(167,139,250,.32), rgba(167,139,250,.18))",
+      hover: isLightTheme ? "#D5C5F5" : "linear-gradient(135deg, rgba(167,139,250,.42), rgba(167,139,250,.26))",
+      active: isLightTheme ? "#C9B5F0" : "rgba(167,139,250,.46)",
+      border: isLightTheme ? "rgba(109,40,217,.32)" : "rgba(167,139,250,.60)",
+      shadow: isLightTheme ? "0 7px 17px rgba(20,32,51,.07)" : "0 9px 22px rgba(167,139,250,.12), inset 0 1px 0 rgba(255,255,255,.10)",
+      Icon: BkIcons.aides,
+    },
+    {
+      label: isKreol ? "Voir mon bann stats" : "Voir mes stats",
+      onClick: onOpenStats,
+      color: COLORS.green,
+      background: isLightTheme ? COLORS.sageSoft : "linear-gradient(135deg, rgba(34,197,94,.30), rgba(34,197,94,.17))",
+      hover: isLightTheme ? "#C7E4CF" : "linear-gradient(135deg, rgba(34,197,94,.40), rgba(34,197,94,.24))",
+      active: isLightTheme ? "#B9DAC3" : "rgba(34,197,94,.44)",
+      border: isLightTheme ? "rgba(22,101,52,.32)" : "rgba(34,197,94,.58)",
+      shadow: isLightTheme ? "0 7px 17px rgba(20,32,51,.07)" : "0 9px 22px rgba(34,197,94,.12), inset 0 1px 0 rgba(255,255,255,.10)",
+      Icon: BkIcons.stats,
+    },
   ].filter(action => action.onClick)
 
   return (
-    <TropicalCard variant="purple" emoji={BkIcons.budget} style={{ padding: 18, borderRadius: 22 }} innerStyle={{ paddingLeft: 62 }}>
+    <TropicalCard variant="purple" emoji={isMobile ? null : BkIcons.budget} style={{ padding: 18, borderRadius: 22 }} innerStyle={dashboardCardContentStyle(isMobile)}>
       <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 950, marginBottom: 12 }}>
         {isKreol ? "Aksyon rapid" : "Actions rapides"}
       </div>
@@ -1699,10 +1747,16 @@ function QuickActionsV2({ isKreol, isLightTheme, onAddExpense, onOpenReceipts, o
           <button
             key={action.label}
             type="button"
+            className="bkp-quick-action"
             onClick={action.onClick}
-            onMouseEnter={event => { event.currentTarget.style.background = action.hover }}
-            onMouseLeave={event => { event.currentTarget.style.background = action.background }}
-            style={{ minHeight: 52, border: `1px solid ${action.color}44`, borderRadius: 14, background: action.background, color: COLORS.text, fontWeight: 950, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, fontFamily: "inherit", padding: "0 12px", boxShadow: "0 8px 18px rgba(20,32,51,.05)", transition: "background .18s ease, transform .18s ease, border-color .18s ease" }}
+            style={{
+              "--bkp-action-bg": action.background,
+              "--bkp-action-hover": action.hover,
+              "--bkp-action-active": action.active,
+              "--bkp-action-color": action.color,
+              "--bkp-action-border": action.border,
+              "--bkp-action-shadow": action.shadow,
+            }}
           >
             <Icon size={18} color={action.color} />
             {action.label}
@@ -1721,7 +1775,7 @@ function ShoppingHabitsDashboardCard({ items = [], isKreol, isMobile, onOpenShop
   const colors = [COLORS.accent, COLORS.green, COLORS.cyan, COLORS.yellow]
 
   return (
-    <TropicalCard variant="ocean" emoji={BkIcons.shopping} style={{ padding: isMobile ? 18 : 22, borderRadius: 22 }} innerStyle={{ paddingLeft: isMobile ? 0 : 62 }}>
+    <TropicalCard variant="ocean" emoji={isMobile ? null : BkIcons.shopping} style={{ padding: isMobile ? 18 : 22, borderRadius: 22 }} innerStyle={dashboardCardContentStyle(isMobile)}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 10 }}>
         <div>
           <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 950 }}>
@@ -2220,7 +2274,7 @@ export default function Dashboard({
   }, [])
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 20, width: "100%", maxWidth: "100%", minWidth: 0, marginInline: "auto" }}>
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.35fr .85fr", gap: 16 }}>
         <BalanceHeroCard
           insights={dashboardInsights}
@@ -2239,6 +2293,7 @@ export default function Dashboard({
       <QuickActionsV2
         isKreol={isKreol}
         isLightTheme={themeName === "light"}
+        isMobile={isMobile}
         onAddExpense={onAddExpense}
         onOpenReceipts={() => navigateTo("receipts", onOpenReceipts)}
         onOpenAides={() => navigateTo("aides", onOpenAides)}
@@ -2248,12 +2303,14 @@ export default function Dashboard({
       <BudgetAlertCard
         alert={dashboardInsights.budgetAlert}
         isKreol={isKreol}
+        isMobile={isMobile}
       />
 
       <TopCategoriesV2Card
         categories={dashboardInsights.topCategories}
         t={t}
         isKreol={isKreol}
+        isMobile={isMobile}
       />
 
       <ShoppingHabitsDashboardCard
@@ -2266,6 +2323,7 @@ export default function Dashboard({
       <SavingsOpportunitiesCard
         hints={dashboardInsights.savingsHints}
         isKreol={isKreol}
+        isMobile={isMobile}
         onOpenConseiller={() => navigateTo("conseiller")}
       />
 

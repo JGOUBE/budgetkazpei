@@ -153,6 +153,7 @@ export default function DepensesPage({
           display: "grid",
           gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
           gap: 18,
+          alignItems: "start",
         }}
       >
         <ChartCard data={chartData} isKreol={isKreol} />

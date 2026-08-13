@@ -1511,13 +1511,17 @@ export default function AidesPage({ isMobile, t, isPremium, isPremiumPlus = fals
       )}
 
       <section
+        className="bkp-other-aides-card"
         style={{
-          background:
-            "linear-gradient(135deg, rgba(124,58,237,.22), rgba(14,165,233,.15), rgba(15,30,56,.96))",
-          border: "1px solid rgba(56,189,248,.30)",
+          background: isLightTheme
+            ? "linear-gradient(145deg, #E7F5FC 0%, #D7ECFA 52%, #F8FCFF 100%)"
+            : "linear-gradient(135deg, rgba(124,58,237,.22), rgba(14,165,233,.15), rgba(15,30,56,.96))",
+          border: isLightTheme ? "1px solid #A9D4EE" : "1px solid rgba(56,189,248,.30)",
           borderRadius: 22,
           padding: isMobile ? 18 : 22,
-          boxShadow: "0 14px 32px rgba(0,0,0,.16)",
+          boxShadow: isLightTheme
+            ? "0 12px 28px rgba(3,105,161,.09)"
+            : "0 14px 32px rgba(0,0,0,.16)",
         }}
       >
         <h3
@@ -1549,38 +1553,43 @@ export default function AidesPage({ isMobile, t, isPremium, isPremiumPlus = fals
             return (
               <div
                 key={aide.id}
+                className="bkp-other-aides-row"
                 style={{
-                  display: "flex",
-                  justifyContent: "space-between",
+                  display: "grid",
+                  gridTemplateColumns: "minmax(0, 1fr) auto",
                   alignItems: "center",
                   gap: 12,
-                  padding: "14px 14px",
+                  minHeight: 76,
+                  padding: "12px 13px",
                   borderRadius: 16,
-                  background: "rgba(255,255,255,.045)",
-                  border: "1px solid rgba(255,255,255,.08)",
+                  background: isLightTheme ? "rgba(255,255,255,.82)" : "rgba(255,255,255,.045)",
+                  border: isLightTheme ? "1px solid #C5DEEC" : "1px solid rgba(255,255,255,.08)",
                 }}
               >
                 <span
                   style={{
-                    display: "flex",
+                    display: "grid",
+                    gridTemplateColumns: "38px minmax(0, 1fr)",
                     alignItems: "center",
                     gap: 10,
+                    minWidth: 0,
                     fontSize: 14,
                     color: COLORS.text,
                     fontWeight: 700,
+                    lineHeight: 1.35,
                   }}
                 >
                   <span
                     style={{
-                      width: 34,
-                      height: 34,
+                      width: 38,
+                      height: 38,
                       borderRadius: 12,
-                      background: "rgba(56,189,248,.11)",
-                      border: "1px solid rgba(56,189,248,.20)",
+                      background: isLightTheme ? "#CFE8FB" : "rgba(56,189,248,.11)",
+                      border: isLightTheme ? "1px solid #8FC5E8" : "1px solid rgba(56,189,248,.20)",
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      color: "#7DD3FC",
+                      color: isLightTheme ? "#0369A1" : "#7DD3FC",
                       flexShrink: 0,
                     }}
                   >
@@ -1592,6 +1601,7 @@ export default function AidesPage({ isMobile, t, isPremium, isPremiumPlus = fals
 
                 <button
                   type="button"
+                  className="bkp-other-aides-verify"
                   onClick={() =>
                     openExternalLink(
                       OTHER_AIDES_LINKS[aide.id] ||
@@ -1599,19 +1609,28 @@ export default function AidesPage({ isMobile, t, isPremium, isPremiumPlus = fals
                     )
                   }
                   style={{
-                    display: "flex",
+                    display: "inline-flex",
                     alignItems: "center",
+                    justifyContent: "center",
                     gap: 6,
-                    background: "rgba(56,189,248,.10)",
-                    border: "1px solid rgba(56,189,248,.28)",
                     borderRadius: 10,
-                    padding: "7px 12px",
-                    color: "#7DD3FC",
+                    width: 104,
+                    minWidth: 104,
+                    minHeight: 40,
+                    padding: "8px 10px",
                     fontSize: 12,
                     cursor: "pointer",
                     fontFamily: "inherit",
                     fontWeight: 800,
                     whiteSpace: "nowrap",
+                    "--bkp-other-aides-button-bg": isLightTheme ? "#0369A1" : "rgba(56,189,248,.10)",
+                    "--bkp-other-aides-button-hover": isLightTheme ? "#075985" : "rgba(56,189,248,.20)",
+                    "--bkp-other-aides-button-active": isLightTheme ? "#0C4A6E" : "rgba(56,189,248,.28)",
+                    "--bkp-other-aides-button-border": isLightTheme ? "#0369A1" : "rgba(56,189,248,.28)",
+                    "--bkp-other-aides-button-text": isLightTheme ? "#FFFFFF" : "#7DD3FC",
+                    "--bkp-other-aides-button-disabled-bg": isLightTheme ? "#E2E8F0" : "#334155",
+                    "--bkp-other-aides-button-disabled-border": isLightTheme ? "#94A3B8" : "#64748B",
+                    "--bkp-other-aides-button-disabled-text": isLightTheme ? "#475569" : "#E2E8F0",
                   }}
                 >
                   <SearchCheck size={14} />

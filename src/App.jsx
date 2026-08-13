@@ -601,7 +601,7 @@ function BudgetKazPeiApp({
         style={{
           flex: 1,
           padding: isMobile
-            ? "76px 16px calc(112px + env(safe-area-inset-bottom))"
+            ? "76px 16px calc(96px + env(safe-area-inset-bottom))"
             : "32px 28px 48px",
           overflowY: "auto",
           maxHeight: isMobile ? "none" : "100vh",
@@ -1014,7 +1014,9 @@ function BudgetKazPeiApp({
             display: "flex",
             justifyContent: "space-around",
             padding: "8px 8px calc(12px + env(safe-area-inset-bottom))",
-            boxShadow: "0 -16px 36px rgba(0,0,0,.28)",
+            boxShadow: themeName === "light"
+              ? "0 -8px 24px rgba(20,32,51,.10)"
+              : "0 -16px 36px rgba(0,0,0,.28)",
           }}
         >
           {[

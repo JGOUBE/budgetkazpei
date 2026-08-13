@@ -1,6 +1,5 @@
-import budgetKazPeiLogo from "./BudgetKazPei_icon_transparent.png"
-import budgetKazPeiLogoLight from "./logo-light.png"
+import budgetKazPeiLogoLight from "./logo-light-transparent.png"
 
-export const brandLogoDark = budgetKazPeiLogo
+export const brandLogoDark = budgetKazPeiLogoLight
 export const brandLogoLight = budgetKazPeiLogoLight
 export const brandLogo = brandLogoDark
