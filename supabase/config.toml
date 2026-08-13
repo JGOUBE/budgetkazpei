@@ -32,3 +32,8 @@ enabled = true
 verify_jwt = false
 import_map = "./functions/market-record-observations/deno.json"
 entrypoint = "./functions/market-record-observations/index.ts"
+
+[functions.receipt-image-retention]
+enabled = true
+verify_jwt = false
+entrypoint = "./functions/receipt-image-retention/index.ts"

@@ -14,6 +14,7 @@
     "test:plans-routing": "node scripts/run-plans-routing-tests.mjs",
     "test:plans-quota-e2e": "node scripts/run-plans-quota-e2e.mjs",
     "test:receipt-scanner-front": "node scripts/run-receipt-scanner-front-regression.mjs",
+    "test:receipt-image-retention": "node scripts/run-receipt-image-retention-tests.mjs",
     "test:market": "node scripts/run-market-regression.mjs",
     "test:market:integration": "node scripts/run-market-integration.mjs",
     "lint": "eslint .",

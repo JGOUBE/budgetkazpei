@@ -1830,7 +1830,7 @@ export default function ReceiptsPage({
     try {
       const data = await getReceiptDetail({ receiptId: row.id, userId: user?.id })
       setDetail(data)
-      setDetailImageUrl(await getReceiptImageUrl(data.image_path))
+      setDetailImageUrl(await getReceiptImageUrl(data))
       setMode("detail")
     } catch (error) {
       console.error("Erreur detail ticket:", error)

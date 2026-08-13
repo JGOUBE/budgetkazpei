@@ -1,7 +1,18 @@
 import { learnManualMarketAliasFromReceiptItem } from "../../../services/scan/marketManualAliasService"
 import { supabase } from "../../../services/supabase"
+import { createCompatibleReceiptImageUrl } from "./receiptImageAvailability"
 
 export const RECEIPT_BUCKET = "receipt-images"
+
+export function getReceiptStoragePaths(receipt = {}) {
+  if (typeof receipt === "string") return receipt.trim() ? [receipt.trim()] : []
+
+  return [...new Set([
+    ...(Array.isArray(receipt?.image_paths) ? receipt.image_paths : []),
+    receipt?.image_path,
+    receipt?.storage_path,
+  ].map(value => String(value || "").trim()).filter(Boolean))]
+}
 
 function getReceiptId() {
   if (typeof crypto !== "undefined" && crypto.randomUUID) {
@@ -257,15 +268,26 @@ export async function uploadReceiptImage({ userId, file }) {
   return { receiptId, imagePath }
 }
 
-export async function getReceiptImageUrl(imagePath) {
-  if (!imagePath) return ""
+export async function getReceiptImageUrl(receipt) {
+  const [imagePath] = getReceiptStoragePaths(receipt)
+  if (!receipt?.id || !imagePath || receipt?.image_deleted_at) return ""
 
-  const { data, error } = await supabase.storage
-    .from(RECEIPT_BUCKET)
-    .createSignedUrl(imagePath, 60 * 10)
-
-  if (error) return ""
-  return data?.signedUrl || ""
+  return createCompatibleReceiptImageUrl({
+    receiptId: receipt.id,
+    imagePath,
+    fetchRetentionWindow: receiptId => supabase.rpc(
+      "receipt_image_remaining_seconds",
+      { p_receipt_id: receiptId },
+    ),
+    createSignedUrl: (path, expiresIn) => supabase.storage
+      .from(RECEIPT_BUCKET)
+      .createSignedUrl(path, expiresIn),
+    onLegacyFallback: ({ receiptId }) => {
+      console.info("[scanner] Retention images non deployee, URL signee legacy utilisee", {
+        receipt_id: receiptId,
+      })
+    },
+  })
 }
 
 export async function createReceipt({ userId, draft, imagePath }) {
@@ -285,6 +307,7 @@ export async function createReceipt({ userId, draft, imagePath }) {
     total_amount: Number(draft.total_amount || 0),
     currency: "EUR",
     image_path: imagePath || null,
+    image_paths: imagePath ? [imagePath] : [],
     ocr_text: draft.ocr_text || "",
     ocr_status: draft.ocr_status || "manual",
     ai_used: Boolean(draft.ai_used),
@@ -326,8 +349,10 @@ export async function createReceipt({ userId, draft, imagePath }) {
       scan_status,
       duplicate_confirmed,
       duplicate_of_receipt_id,
+      image_paths,
       ...legacyPayload
     } = payload
+    void image_paths
 
     const retry = await supabase
       .from("receipts")
@@ -440,6 +465,8 @@ const RECEIPT_UPDATE_COLUMNS = new Set([
   "total_amount",
   "currency",
   "image_path",
+  "image_paths",
+  "image_expires_at",
   "ocr_text",
   "ocr_status",
   "ai_used",
@@ -1278,13 +1305,14 @@ export async function removeReceiptFromHistory({
   if (!receipt?.id || !userId) return
 
   const now = new Date().toISOString()
-  const imagePath = receipt?.image_path || receipt?.storage_path || null
+  const imagePaths = getReceiptStoragePaths(receipt)
+  const imagePath = imagePaths[0] || null
   const linkedCleanup = removeBudget
     ? await removeTransactionLinkedToReceipt({ receipt, userId, removeLearning, reason })
     : { removed: false, transaction: null, reason: "budget_preserved" }
 
-  if (imagePath) {
-    const { error: storageError } = await supabase.storage.from(RECEIPT_BUCKET).remove([imagePath])
+  if (imagePaths.length) {
+    const { error: storageError } = await supabase.storage.from(RECEIPT_BUCKET).remove(imagePaths)
     if (storageError) {
       console.warn("[scanner] Suppression image ticket indisponible", storageError)
     }
@@ -1292,6 +1320,7 @@ export async function removeReceiptFromHistory({
 
   const payload = {
     image_path: null,
+    image_paths: [],
     image_url: null,
     storage_path: null,
     transaction_id: removeBudget ? null : receipt?.transaction_id || null,
@@ -1312,6 +1341,7 @@ export async function removeReceiptFromHistory({
   if (error && isMissingColumnError(error)) {
     const {
       image_url,
+      image_paths,
       storage_path,
       transaction_id,
       hidden_at,
@@ -1321,6 +1351,7 @@ export async function removeReceiptFromHistory({
       image_deleted_reason,
       ...legacyPayload
     } = payload
+    void image_paths
 
     const retry = await supabase
       .from("receipts")
@@ -1348,18 +1379,36 @@ export async function deleteReceipt(args) {
 }
 
 export async function expireReceiptFromHistory({ receipt, userId } = {}) {
-  return removeReceiptFromHistory({
-    receipt,
-    userId,
-    removeBudget: false,
-    removeLearning: false,
-    reason: "automatic_7_days_expiry",
-  })
+  if (!receipt?.id || !userId) return
+
+  const imagePaths = getReceiptStoragePaths(receipt)
+  if (imagePaths.length) {
+    const { error: storageError } = await supabase.storage.from(RECEIPT_BUCKET).remove(imagePaths)
+    if (storageError) throw storageError
+  }
+
+  const now = new Date().toISOString()
+  const { error } = await supabase
+    .from("receipts")
+    .update({
+      image_path: null,
+      image_paths: [],
+      image_url: null,
+      storage_path: null,
+      image_deleted_at: now,
+      image_deleted_reason: "automatic_7_days_expiry",
+      updated_at: now,
+    })
+    .eq("id", receipt.id)
+    .eq("user_id", userId)
+
+  if (error) throw error
 }
 
 export async function hardDeleteReceipt({ receipt, userId }) {
-  if (receipt?.image_path) {
-    await supabase.storage.from(RECEIPT_BUCKET).remove([receipt.image_path])
+  const imagePaths = getReceiptStoragePaths(receipt)
+  if (imagePaths.length) {
+    await supabase.storage.from(RECEIPT_BUCKET).remove(imagePaths)
   }
 
   const { error } = await supabase
