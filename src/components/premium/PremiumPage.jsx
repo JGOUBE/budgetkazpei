@@ -11,7 +11,7 @@ import { createColorAliases } from "../../styles/designSystem"
 import { PLAN_IDS, PLAN_NAMES, PLAN_PRICES, PLAN_PUBLIC_SCAN_LABELS } from "../../config/plans"
 
 const COLORS = createColorAliases()
-const PREMIUM_URL = "https://budgetkazpei.vercel.app/premium"
+const PREMIUM_URL = "/premium"
 
 const PLAN_META = {
   [PLAN_IDS.free]: {

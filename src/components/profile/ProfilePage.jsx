@@ -324,7 +324,7 @@ export default function ProfilePage({ user, t }) {
   const accountColor = isPremiumPlus ? COLORS.purple : hasPremiumAccess ? COLORS.yellow : COLORS.muted
 
   function openPremiumOptions() {
-    window.open("https://budgetkazpei.vercel.app/premium", "_blank", "noopener,noreferrer")
+    window.open("/premium", "_blank", "noopener,noreferrer")
   }
 
   async function handleSupportSubmit(e) {
