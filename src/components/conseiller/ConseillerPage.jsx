@@ -79,8 +79,8 @@ export default function ConseillerPage({
         ? "Analyse out profil gratuitement pou trouv bann aides ek démarches les plus utiles."
         : "Analyse gratuitement votre profil pour identifier les aides et démarches les plus pertinentes.",
       prompt: isKreol
-        ? "Analyse mon profil BudgetKazPei. Donne a moin bann aides, droits ek demarches les plus utiles selon ma situation. Repond en creole reunionnais simple. Pose une seule question seulement si in information essentielle i manque."
-        : "Analyse mon profil BudgetKazPei. Indique les aides, droits et demarches les plus pertinents selon ma situation. Pose une seule question uniquement si une information essentielle manque.",
+        ? "Analyse mon profil BudgetKazPéi. Donne a moin bann aides, droits ek demarches les plus utiles selon ma situation. Repond en creole reunionnais simple. Pose une seule question seulement si in information essentielle i manque."
+        : "Analyse mon profil BudgetKazPéi. Indique les aides, droits et demarches les plus pertinents selon ma situation. Pose une seule question uniquement si une information essentielle manque.",
     },
     {
       mode: "trouver_aide",
@@ -217,7 +217,7 @@ export default function ConseillerPage({
               fontWeight: 900,
             }}
           >
-            {isKreol ? "Konseye BudgetKazPei" : "Conseiller BudgetKazPei"}
+            {isKreol ? "Konseye BudgetKazPéi" : "Conseiller BudgetKazPéi"}
           </h2>
 
           <p

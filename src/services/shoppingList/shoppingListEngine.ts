@@ -102,7 +102,7 @@ export function estimateShoppingList(items: any[] = [], shoppingItems: any[] = [
   }
 }
 
-export function buildShoppingListShareText({ title = "Liste de courses BudgetKazPei", estimate }: { title?: string; estimate: any }) {
+export function buildShoppingListShareText({ title = "Liste de courses BudgetKazPéi", estimate }: { title?: string; estimate: any }) {
   const rows = Array.isArray(estimate?.items) ? estimate.items : []
   const lines = rows.map((item: any, index: number) => {
     const price = money(item.estimatedPrice)
@@ -122,7 +122,7 @@ export function buildShoppingListShareText({ title = "Liste de courses BudgetKaz
     `Produits : ${rows.length}`,
     `Prix manquants : ${missing}`,
     "",
-    "Prix basés sur mes tickets BudgetKazPei déjà scannés.",
+    "Prix basés sur mes tickets BudgetKazPéi déjà scannés.",
   ].join("\n")
 }
 

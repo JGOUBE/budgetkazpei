@@ -14,7 +14,7 @@ const COPY = {
     howTitle: "Comment ça fonctionne ?",
     steps: [
       "Ajoutez vos dépenses ou vos courses.",
-      "BudgetKazPei suit vos progrès automatiquement.",
+      "BudgetKazPéi suit vos progrès automatiquement.",
       "Vous gagnez des points.",
       "Vous débloquez des badges.",
       "Vous progressez vers le niveau suivant.",
@@ -34,7 +34,7 @@ const COPY = {
     howTitle: "Koman ça i marche ?",
     steps: [
       "Azout out dépans ou out courses.",
-      "BudgetKazPei i swiv out progrès otomatikman.",
+      "BudgetKazPéi i swiv out progrès otomatikman.",
       "Ou gagn bann points.",
       "Ou débloque bann badges.",
       "Ou avance vers nivo suivant.",

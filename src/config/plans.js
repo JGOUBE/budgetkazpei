@@ -78,7 +78,7 @@ export const PUBLIC_PLAN_CARDS = [
     tone: "cream",
     cta: "Créer mon compte",
     href: "/register",
-    intro: "Pour découvrir BudgetKazPei et commencer à suivre l'essentiel.",
+    intro: "Pour découvrir BudgetKazPéi et commencer à suivre l'essentiel.",
     items: [
       { status: PLAN_FEATURE_STATUS.included, text: "Budget essentiel" },
       { status: PLAN_FEATURE_STATUS.included, text: "Revenus et dépenses" },

@@ -15,7 +15,7 @@ function expiresAtIso() {
 function normalizeSnapshot(row = {}) {
   return {
     id: row.id,
-    title: row.title || "Liste de courses BudgetKazPei",
+    title: row.title || "Liste de courses BudgetKazPéi",
     items: Array.isArray(row.items) ? row.items : [],
     totalEstimated: Number(row.total_estimated || 0),
     missingPriceCount: Number(row.missing_price_count || 0),
@@ -62,7 +62,7 @@ export async function listShoppingListSnapshots({ userId }) {
 
 export async function saveShoppingListSnapshot({
   userId,
-  title = "Liste de courses BudgetKazPei",
+  title = "Liste de courses BudgetKazPéi",
   items = [],
   totalEstimated = 0,
   missingPriceCount = 0,

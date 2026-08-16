@@ -60,7 +60,7 @@ export default function LandingHeader({
           aria-label={copy.homeAriaLabel}
         >
           <AppLogo size={46} alt={copy.logoAlt} />
-          <span>BudgetKazPei</span>
+          <span>BudgetKazPéi</span>
         </LandingLink>
 
         <nav className="landing-nav" aria-label={copy.mainNavigationAriaLabel}>
@@ -121,7 +121,7 @@ export default function LandingHeader({
             aria-label={copy.menuDialogAriaLabel}
           >
             <div className="landing-mobile-menu__top">
-              <span>BudgetKazPei</span>
+              <span>BudgetKazPéi</span>
               <button
                 ref={closeButtonRef}
                 type="button"

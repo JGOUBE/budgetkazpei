@@ -94,8 +94,8 @@ export default function RevenusPage({
         onGoPremium={onGoPremium}
         title={isKreol ? "Analiz evolution revenus" : "Analyse evolution revenus"}
         text={
-          isKreol ? "BudgetKazPei va pouvoir analiz evolution out revenus ek prepar bann previsions."
-            : "BudgetKazPei pourra analyser l'evolution de vos revenus et preparer des previsions."
+          isKreol ? "BudgetKazPéi va pouvoir analiz evolution out revenus ek prepar bann previsions."
+            : "BudgetKazPéi pourra analyser l'evolution de vos revenus et preparer des previsions."
         }
         isKreol={isKreol}
       />

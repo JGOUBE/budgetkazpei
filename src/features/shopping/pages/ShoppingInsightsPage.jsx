@@ -154,8 +154,8 @@ export default function ShoppingInsightsPage({ user, t, isMobile = false }) {
           {isKreol ? "Courses intelligentes" : "Courses intelligentes"}
         </h1>
         <p style={{ color: COLORS.muted, margin: "10px 0 0", lineHeight: 1.55 }}>
-          {isKreol ? "BudgetKazPei i analiz bann tiké validé pou montre out magazin ek bann produits ou achète souvent."
-            : "BudgetKazPei analyse les tickets validés pour suivre vos magasins et produits récurrents."}
+          {isKreol ? "BudgetKazPéi i analiz bann tiké validé pou montre out magazin ek bann produits ou achète souvent."
+            : "BudgetKazPéi analyse les tickets validés pour suivre vos magasins et produits récurrents."}
         </p>
       </div>
 

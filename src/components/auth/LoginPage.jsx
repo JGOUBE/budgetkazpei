@@ -215,7 +215,7 @@ export default function LoginPage({
               </button>
             </p>
             <button type="button" className="auth-text-button" onClick={() => navigate(DISCOVER_ROUTE)}>
-              Découvrir BudgetKazPei
+              Découvrir BudgetKazPéi
             </button>
           </div>
         )}

@@ -25,7 +25,7 @@ export default function TermsPage() {
         <p style={{ margin: 0, color: COLORS.muted }}>Dernière mise à jour : 13 juin 2026</p>
 
         <Section title="1. Objet">
-          <p>BudgetKazPei est une application d'aide à la gestion du budget personnel et familial. Elle permet notamment de suivre ses dépenses, ses revenus, ses charges fixes, ses démarches et des pistes d'aides possibles.</p>
+          <p>BudgetKazPéi est une application d'aide à la gestion du budget personnel et familial. Elle permet notamment de suivre ses dépenses, ses revenus, ses charges fixes, ses démarches et des pistes d'aides possibles.</p>
         </Section>
 
         <Section title="2. Création de compte">
@@ -33,15 +33,15 @@ export default function TermsPage() {
         </Section>
 
         <Section title="3. Informations fournies par l'application">
-          <p>BudgetKazPei fournit des informations indicatives. Les aides, droits, montants, conditions et démarches doivent toujours être vérifiés auprès des organismes officiels compétents : CAF, mairie, CCAS, Département, Région, France Travail, services publics ou tout autre organisme concerné.</p>
+          <p>BudgetKazPéi fournit des informations indicatives. Les aides, droits, montants, conditions et démarches doivent toujours être vérifiés auprès des organismes officiels compétents : CAF, mairie, CCAS, Département, Région, France Travail, services publics ou tout autre organisme concerné.</p>
         </Section>
 
-        <Section title="4. Assistant BudgetKazPei">
+        <Section title="4. Assistant BudgetKazPéi">
           <p>L'assistant peut aider à comprendre une situation, préparer une démarche ou repérer des pistes. Il ne remplace pas un professionnel du droit, du social, de la santé, de la finance ou un organisme officiel.</p>
         </Section>
 
         <Section title="5. Offres Premium">
-          <p>Des offres Premium peuvent donner accès à des fonctionnalités supplémentaires, comme le conseiller BudgetKazPei, les échanges mensuels, les exports, les alertes ou des outils avancés. Les conditions exactes de chaque offre sont indiquées sur la page des offres.</p>
+          <p>Des offres Premium peuvent donner accès à des fonctionnalités supplémentaires, comme le conseiller BudgetKazPéi, les échanges mensuels, les exports, les alertes ou des outils avancés. Les conditions exactes de chaque offre sont indiquées sur la page des offres.</p>
         </Section>
 
         <Section title="6. Paiement et résiliation">
@@ -49,15 +49,15 @@ export default function TermsPage() {
         </Section>
 
         <Section title="7. Usage acceptable">
-          <p>L'utilisateur s'engage à ne pas utiliser BudgetKazPei pour tenter d'accéder aux données d'autres utilisateurs, perturber le service, contourner les limitations techniques ou publier des contenus illégaux, abusifs ou frauduleux.</p>
+          <p>L'utilisateur s'engage à ne pas utiliser BudgetKazPéi pour tenter d'accéder aux données d'autres utilisateurs, perturber le service, contourner les limitations techniques ou publier des contenus illégaux, abusifs ou frauduleux.</p>
         </Section>
 
         <Section title="8. Disponibilité du service">
-          <p>BudgetKazPei est fourni avec un objectif de continuité, mais des interruptions peuvent survenir pour maintenance, correction, évolution, incident technique ou indisponibilité de services tiers.</p>
+          <p>BudgetKazPéi est fourni avec un objectif de continuité, mais des interruptions peuvent survenir pour maintenance, correction, évolution, incident technique ou indisponibilité de services tiers.</p>
         </Section>
 
         <Section title="9. Responsabilité">
-          <p>L'utilisateur reste responsable de ses décisions budgétaires, administratives et financières. BudgetKazPei ne garantit pas l'obtention d'une aide, d'un droit, d'un financement ou d'une économie.</p>
+          <p>L'utilisateur reste responsable de ses décisions budgétaires, administratives et financières. BudgetKazPéi ne garantit pas l'obtention d'une aide, d'un droit, d'un financement ou d'une économie.</p>
         </Section>
 
         <Section title="10. Contact">

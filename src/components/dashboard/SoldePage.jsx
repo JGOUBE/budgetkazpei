@@ -101,8 +101,8 @@ export default function SoldePage({
           {isKreol ? "Projection fin de mois" : "Projection fin de mois"}
         </div>
         <p style={{ color: COLORS.muted, fontSize: 13, lineHeight: 1.55, marginBottom: 0 }}>
-          {isKreol ? "BudgetKazPei pourra estimer lo solde probable à la fin du mois."
-            : "BudgetKazPei pourra estimer le solde probable à la fin du mois."}
+          {isKreol ? "BudgetKazPéi pourra estimer lo solde probable à la fin du mois."
+            : "BudgetKazPéi pourra estimer le solde probable à la fin du mois."}
         </p>
         {!isPremiumPlus && onGoPremium && (
           <button

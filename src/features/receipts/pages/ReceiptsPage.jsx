@@ -114,7 +114,7 @@ const TEXT = {
     date: "Date",
     total: "Montant total",
     totalReview: "Total à vérifier",
-    totalReviewMessage: "BudgetKazPei n'a pas pu lire le total avec certitude. Vérifiez ou saisissez le montant avant d'enregistrer.",
+    totalReviewMessage: "BudgetKazPéi n'a pas pu lire le total avec certitude. Vérifiez ou saisissez le montant avant d'enregistrer.",
     estimatedLinesSum: "Somme estimée des lignes détectées :",
     category: "Catégorie globale",
     items: "Articles",
@@ -154,7 +154,7 @@ const TEXT = {
     deleted: "Ticket retiré de l'historique.",
     error: "Analyse impossible. Vous pouvez réessayer ou remplir manuellement.",
     quotaReached: "Quota atteint. Vous pouvez quand même remplir manuellement.",
-    intensiveUsage: "Vous utilisez BudgetKazPei de manière intensive. Contactez-nous afin que nous trouvions la formule la plus adaptée.",
+    intensiveUsage: "Vous utilisez BudgetKazPéi de manière intensive. Contactez-nous afin que nous trouvions la formule la plus adaptée.",
     quotaLoading: "Chargement de votre formule en cours...",
     expenseCreated: "Dépense créée",
     noUser: "Utilisateur non connecté.",
@@ -207,7 +207,7 @@ const TEXT = {
     date: "Dat",
     total: "Montan total",
     totalReview: "Total pou vérifié",
-    totalReviewMessage: "BudgetKazPei la pa réussi lir total-la bien. Vérifié ousa rant montan-la avan anrezistré.",
+    totalReviewMessage: "BudgetKazPéi la pa réussi lir total-la bien. Vérifié ousa rant montan-la avan anrezistré.",
     estimatedLinesSum: "Som bann lign détecté an estimasyon :",
     category: "Kategori",
     items: "Bann lartik",
@@ -247,7 +247,7 @@ const TEXT = {
     deleted: "Tiké retiré dann listwar.",
     error: "Analiz-la pa marche. Ou pé réessayé ou ranpli amain.",
     quotaReached: "Quota atteint. Ou pé kan même ranpli amain.",
-    intensiveUsage: "Ou pe servi BudgetKazPei souvan. Contacte a nou pou trouv formule pli adapté.",
+    intensiveUsage: "Ou pe servi BudgetKazPéi souvan. Contacte a nou pou trouv formule pli adapté.",
     quotaLoading: "Nou pe charg out formule...",
     expenseCreated: "Dépans créée",
     noUser: "Utilisateur pa connecté.",
@@ -407,7 +407,7 @@ function getValidDraftItems(draft = {}) {
 function getDraftValidationError(draft = {}) {
   if (Number(draft.total_amount || 0) <= 0) {
     return draft.total_needs_review
-      ? "BudgetKazPei n'a pas pu lire le total avec certitude. Vérifiez ou saisissez le montant avant d'enregistrer."
+      ? "BudgetKazPéi n'a pas pu lire le total avec certitude. Vérifiez ou saisissez le montant avant d'enregistrer."
       : "Montant total non détecté. Veuillez reprendre ou importer une image plus lisible du ticket."
   }
 
@@ -1235,7 +1235,7 @@ export default function ReceiptsPage({
             ? "Tike long-la le lir an parti. Verifie bann lalinn avan anrezistre."
           : requiresQuickReview
             ? "Tiké-la lé lir, vérifié vitman bann zinfo avan anrezistré."
-            : "BudgetKazPei la pa reisi lir total-la bien. Verifie ousa rant montan-la avan anrezistre."
+            : "BudgetKazPéi la pa reisi lir total-la bien. Verifie ousa rant montan-la avan anrezistre."
         : splitStillNeedsReview
           ? "Le ticket reste difficile à lire. Corrigez les informations avant d'enregistrer."
           : splitRetryUsed
@@ -1244,7 +1244,7 @@ export default function ReceiptsPage({
             ? "Ticket long lu partiellement. Vérifiez les lignes avant d'enregistrer."
           : requiresQuickReview
             ? "Ticket lu, vérifiez rapidement les informations avant d'enregistrer."
-            : "BudgetKazPei n'a pas pu lire le total avec certitude. Vérifiez ou saisissez le montant avant d'enregistrer.")
+            : "BudgetKazPéi n'a pas pu lire le total avec certitude. Vérifiez ou saisissez le montant avant d'enregistrer.")
       return
     }
 

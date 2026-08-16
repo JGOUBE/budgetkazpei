@@ -2051,7 +2051,7 @@ export default function GoodDealsPage({
         <div style={{ position: "relative", maxWidth: 760 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, color: COLORS.accent, fontSize: 12, fontWeight: 950, textTransform: "uppercase", letterSpacing: ".08em" }}>
             <BkIcons.deals size={18} />
-            BudgetKazPei local
+            BudgetKazPéi local
           </div>
 
           <h1 style={{ margin: "12px 0 8px", color: COLORS.text, fontSize: isMobile ? 30 : 42, lineHeight: 1.02, fontWeight: 950 }}>

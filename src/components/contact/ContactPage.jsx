@@ -226,8 +226,8 @@ export default function ContactPage({ user, t }) {
           >
             {tr(
               isKreol,
-              "Une question, un bug ou une idee pour ameliorer BudgetKazPei ? Remplissez le formulaire ci-dessous.",
-              "Ou nena in question, in bug ou in idee pou ameliore BudgetKazPei ? Ecris out message anba."
+              "Une question, un bug ou une idee pour ameliorer BudgetKazPéi ? Remplissez le formulaire ci-dessous.",
+              "Ou nena in question, in bug ou in idee pou ameliore BudgetKazPéi ? Ecris out message anba."
             )}
           </p>
 
@@ -386,8 +386,8 @@ export default function ContactPage({ user, t }) {
             <p style={{ margin: 0, color: pageTheme.helperText, fontSize: 11.5, lineHeight: 1.55 }}>
               {tr(
                 isKreol,
-                "Votre message est enregistre dans l'espace support puis envoye par email a BudgetKazPei.",
-                "Out message le enregistre dann l'espace support puis envoye par email a BudgetKazPei."
+                "Votre message est enregistre dans l'espace support puis envoye par email a BudgetKazPéi.",
+                "Out message le enregistre dann l'espace support puis envoye par email a BudgetKazPéi."
               )}
             </p>
           </form>

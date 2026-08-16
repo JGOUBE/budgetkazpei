@@ -142,7 +142,7 @@ const fr = {
     assistantPremiumTitle: "⭐ Assistant Personnel Premium",
     assistantPremiumIntro: "Certaines aides sont peu connues.",
     assistantPremiumDescription:
-      "BudgetKazPei analyse votre situation parmi plus de 30 aides, droits et dispositifs disponibles à La Réunion pour vous aider à identifier rapidement ceux qui pourraient vous concerner.",
+      "BudgetKazPéi analyse votre situation parmi plus de 30 aides, droits et dispositifs disponibles à La Réunion pour vous aider à identifier rapidement ceux qui pourraient vous concerner.",
     assistantPremiumBenefit1: "🎯 Analyse personnalisée",
     assistantPremiumBenefit2: "📄 Accompagnement dans les démarches",
     assistantPremiumBenefit3: "💬 Français et créole réunionnais",
@@ -266,7 +266,7 @@ const fr = {
     subscribing: "Redirection...",
     securePayment: "Paiement sécurisé par Stripe · Résiliable à tout moment",
     alreadyPremium: "Tu es Premium !",
-    alreadyPremiumSub: "Tu bénéficies déjà de toutes les fonctionnalités avancées de BudgetKazPei.",
+    alreadyPremiumSub: "Tu bénéficies déjà de toutes les fonctionnalités avancées de BudgetKazPéi.",
     activePerks: "✅ Tes avantages actifs",
     openBankingSoon: "Bientôt",
     fixedCharges: "Charges fixes prévues",

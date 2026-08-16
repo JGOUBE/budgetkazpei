@@ -821,7 +821,7 @@ export default function AssistantConseiller({
           <div className="bkp-advisor-identity">
             <span className="bkp-advisor-avatar" aria-hidden="true"><Bot size={22} /></span>
             <div>
-              <h2>{isKreol ? "Mon konseye BudgetKazPei" : "Mon conseiller BudgetKazPei"}</h2>
+              <h2>{isKreol ? "Mon konseye BudgetKazPéi" : "Mon conseiller BudgetKazPéi"}</h2>
               <p><span className="bkp-advisor-online-dot" />{isKreol ? "Disponib pou gid aou" : "Disponible pour vous guider"}</p>
             </div>
           </div>

@@ -36,7 +36,7 @@ const PLAN_META = {
 
 export const PREMIUM_PAGE_COPY = {
   fr: {
-    pageEyebrow: "Offres BudgetKazPei",
+    pageEyebrow: "Offres BudgetKazPéi",
     pageTitle: "Choisissez la formule adaptée à votre rythme.",
     pageText:
       "Le serveur garde toujours l'autorité sur les quotas. L'application vous montre une lecture claire de votre formule, de vos scans inclus et des fonctions déjà disponibles.",
@@ -85,7 +85,7 @@ export const PREMIUM_PAGE_COPY = {
       [PLAN_IDS.premiumPlus]: "Scans inclus",
     },
     statusCardTitles: {
-      [PLAN_IDS.free]: "BudgetKazPei",
+      [PLAN_IDS.free]: "BudgetKazPéi",
       [PLAN_IDS.premium]: "Premium actif",
       [PLAN_IDS.premiumPlus]: "Premium+ actif",
     },
@@ -100,7 +100,7 @@ export const PREMIUM_PAGE_COPY = {
     scanInfoPremiumPlus: "Profitez de vos scans inclus, avec une protection contre les utilisations inhabituelles.",
   },
   kr: {
-    pageEyebrow: "Bann offres BudgetKazPei",
+    pageEyebrow: "Bann offres BudgetKazPéi",
     pageTitle: "Swazi lof ki korespond ek out kotidien.",
     pageText:
       "Koumans dan Gratuit, épi pas dan Premium kan ou néna bezoin plis scans, plis analiz ek plis lakonpagnman.",
@@ -117,7 +117,7 @@ export const PREMIUM_PAGE_COPY = {
     premiumBadge: "Nou konsey",
     premiumPlusBadge: "Lakonpagnman complet",
     currentBadge: "Aktiel",
-    freeIntro: "Pou dékouv BudgetKazPei ek koumans swiv sak lé esansyèl.",
+    freeIntro: "Pou dékouv BudgetKazPéi ek koumans swiv sak lé esansyèl.",
     premiumIntro: "Pou swiv out bidjé ek out bann labitid pli présizéman.",
     premiumPlusIntro: "Pou gagn in lakonpagnman pli konplé.",
     freeFeatures: [
@@ -149,7 +149,7 @@ export const PREMIUM_PAGE_COPY = {
       [PLAN_IDS.premiumPlus]: "Scans san limit",
     },
     statusCardTitles: {
-      [PLAN_IDS.free]: "BudgetKazPei",
+      [PLAN_IDS.free]: "BudgetKazPéi",
       [PLAN_IDS.premium]: "Premium aktif",
       [PLAN_IDS.premiumPlus]: "Premium+ aktif",
     },

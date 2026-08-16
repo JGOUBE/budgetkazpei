@@ -515,7 +515,7 @@ function BudgetKazPeiApp({
             }}
           >
             <AppLogo size={36} />
-            <span style={{ fontSize: 17, fontWeight: 950, color: COLORS.text, lineHeight: 1, whiteSpace: "nowrap" }}>BudgetKazPei</span>
+            <span style={{ fontSize: 17, fontWeight: 950, color: COLORS.text, lineHeight: 1, whiteSpace: "nowrap" }}>BudgetKazPéi</span>
           </div>
 
           <button

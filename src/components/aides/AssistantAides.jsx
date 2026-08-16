@@ -9,7 +9,7 @@ import { REUNION_ORIENTATION } from "../../data/reunionOrientation"
 import { createColorAliases } from "../../styles/designSystem"
 import { useTheme } from "../../styles/ThemeProvider"
 
-// AssistantAides V108 - Branchement IA + base locale Réunion BudgetKazPei
+// AssistantAides V108 - Branchement IA + base locale Réunion BudgetKazPéi
 
 const COLORS = createColorAliases({ red: () => "#FB7185" })
 
@@ -77,7 +77,7 @@ function shouldConsumeAiExchange(message = "", isQuickPreset = false) {
   if (!normalized) return false
   if (isQuickPreset) return false
 
-  // Règle simple BudgetKazPei : 1 ou 2 mots ne décomptent pas d'échange.
+  // Règle simple BudgetKazPéi : 1 ou 2 mots ne décomptent pas d'échange.
   if (countMeaningfulWords(normalized) <= 2) return false
 
   return true
@@ -582,7 +582,7 @@ function buildDossierPrintableHtml(dossier = {}, profile = {}, isKreol = false) 
     .map(line => `<li>${escapeHtml(line)}</li>`)
     .join("")
 
-  const title = isKreol ? "Dosyé BudgetKazPei" : "Dossier BudgetKazPei"
+  const title = isKreol ? "Dosyé BudgetKazPéi" : "Dossier BudgetKazPéi"
   const subtitle = isKreol ? "Préparasyon out démars" : "Préparation de votre démarche"
   const docsTitle = isKreol ? "Bann dokiman pou préparé" : "Documents à préparer"
   const actionsTitle = isKreol ? "Kosa fo fé astèr" : "Actions immédiates"
@@ -620,7 +620,7 @@ function buildDossierPrintableHtml(dossier = {}, profile = {}, isKreol = false) 
 </head>
 <body>
   <div class="page">
-    <div class="brand">BudgetKazPei</div>
+    <div class="brand">BudgetKazPéi</div>
     <div class="subtitle">${escapeHtml(subtitle)} · ${escapeHtml(today)}</div>
     <span class="badge">${escapeHtml(dossier.level?.label || "")} ${escapeHtml(dossier.amount || "")}</span>
     <h1>${escapeHtml(aideName)}</h1>
@@ -653,7 +653,7 @@ function buildDossierPrintableHtml(dossier = {}, profile = {}, isKreol = false) 
     </div>
 
     <div class="footer">
-      ${isKreol ? "Généré automatiquement par BudgetKazPei. Sa lé in document préparasyon. Fo vérifié bann kondisyon su site officiel ou auprès organisme concerné." : "Généré automatiquement par BudgetKazPei. Ce document est une aide à la préparation. Vérifiez toujours les conditions exactes sur le site officiel ou auprès de l’organisme concerné."}
+      ${isKreol ? "Généré automatiquement par BudgetKazPéi. Sa lé in document préparasyon. Fo vérifié bann kondisyon su site officiel ou auprès organisme concerné." : "Généré automatiquement par BudgetKazPéi. Ce document est une aide à la préparation. Vérifiez toujours les conditions exactes sur le site officiel ou auprès de l’organisme concerné."}
     </div>
   </div>
   <script>
@@ -2866,7 +2866,7 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
         recommendedAides: preparedAides,
         recommended_aides: preparedAides,
 
-        // Base locale BudgetKazPei : organismes, dispositifs et orientations Réunion.
+        // Base locale BudgetKazPéi : organismes, dispositifs et orientations Réunion.
         // Elle permet à l'IA de connaître ALON, Envergure, R+, ALD, CSS, MDPH,
         // aides couches, aides alimentaires, CCAS, France Travail, AFPAR, etc.
         reunionOrientation: REUNION_ORIENTATION,
@@ -2939,8 +2939,8 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
 
         alert(
           isKreol
-            ? "L'assistant IA lé indisponib pou linstan. Mi affiche quand même l'analyse BudgetKazPei."
-            : "L'assistant IA est indisponible pour le moment. J'affiche quand même l'analyse BudgetKazPei."
+            ? "L'assistant IA lé indisponib pou linstan. Mi affiche quand même l'analyse BudgetKazPéi."
+            : "L'assistant IA est indisponible pour le moment. J'affiche quand même l'analyse BudgetKazPéi."
         )
       } else {
         aiAnswer = result.answer || ""
@@ -3170,7 +3170,7 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
 
             <div style={{ marginTop: 12, background: "rgba(34,197,94,.08)", border: "1px solid rgba(34,197,94,.22)", borderRadius: 14, padding: 12, color: COLORS.text, lineHeight: 1.55 }}>
               <DollarSign size={16} style={{ verticalAlign: "middle", marginRight: 6 }} />
-              {isKreol ? "Larzan gagné grâce à BudgetKazPei" : "Gains obtenus grâce à BudgetKazPei"} :{" "}
+              {isKreol ? "Larzan gagné grâce à BudgetKazPéi" : "Gains obtenus grâce à BudgetKazPéi"} :{" "}
               <strong style={{ color: getReadableAccent(COLORS.green) }}>{gainsTotal.toFixed(0)} €</strong>
               {dashboardStats.potentialAmount > 0 && (
                 <span style={{ color: COLORS.muted }}>

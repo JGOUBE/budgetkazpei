@@ -107,7 +107,7 @@ export default function ResetPasswordPage() {
           : "Saisissez un mot de passe, confirmez-le, puis retournez à la connexion."
       }
       sideTitle="Un accès clair, même quand le lien expire."
-      sideText="BudgetKazPei évite les erreurs techniques brutes et vous propose une nouvelle demande de lien si nécessaire."
+      sideText="BudgetKazPéi évite les erreurs techniques brutes et vous propose une nouvelle demande de lien si nécessaire."
       titleRef={titleRef}
     >
       <AuthCard busy={loading}>

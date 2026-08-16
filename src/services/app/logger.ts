@@ -1,6 +1,6 @@
 type LogLevel = "info" | "warn" | "error"
 
-const LOG_PREFIX = "[BudgetKazPei]"
+const LOG_PREFIX = "[BudgetKazPéi]"
 
 export function appLog(level: LogLevel, message: string, context: Record<string, unknown> = {}) {
   const payload = {

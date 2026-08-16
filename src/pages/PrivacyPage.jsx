@@ -25,12 +25,12 @@ export default function PrivacyPage() {
         <p style={{ margin: 0, color: COLORS.muted }}>Dernière mise à jour : 13 juin 2026</p>
 
         <Section title="1. Responsable de l'application">
-          <p>BudgetKazPei est une application destinée à aider les utilisateurs à mieux suivre leur budget, leurs dépenses, leurs charges fixes, leurs aides potentielles et leurs démarches.</p>
+          <p>BudgetKazPéi est une application destinée à aider les utilisateurs à mieux suivre leur budget, leurs dépenses, leurs charges fixes, leurs aides potentielles et leurs démarches.</p>
           <p>Contact : <strong>contact.budgetkazpei@gmail.com</strong></p>
         </Section>
 
         <Section title="2. Données collectées">
-          <p>BudgetKazPei peut collecter les informations nécessaires au fonctionnement du compte utilisateur et de l'application : adresse e-mail, nom affiché, informations de profil renseignées volontairement, revenus, dépenses, charges, abonnements, commune, situation familiale, situation professionnelle, nombre d'enfants, statuts liés aux démarches et messages envoyés au support.</p>
+          <p>BudgetKazPéi peut collecter les informations nécessaires au fonctionnement du compte utilisateur et de l'application : adresse e-mail, nom affiché, informations de profil renseignées volontairement, revenus, dépenses, charges, abonnements, commune, situation familiale, situation professionnelle, nombre d'enfants, statuts liés aux démarches et messages envoyés au support.</p>
         </Section>
 
         <Section title="3. Utilisation des données">
@@ -38,15 +38,15 @@ export default function PrivacyPage() {
         </Section>
 
         <Section title="4. Connexion Google">
-          <p>Lorsque l'utilisateur se connecte avec Google, BudgetKazPei reçoit les informations nécessaires à l'identification du compte, notamment l'adresse e-mail et le nom affiché. BudgetKazPei ne reçoit pas le mot de passe Google.</p>
+          <p>Lorsque l'utilisateur se connecte avec Google, BudgetKazPéi reçoit les informations nécessaires à l'identification du compte, notamment l'adresse e-mail et le nom affiché. BudgetKazPéi ne reçoit pas le mot de passe Google.</p>
         </Section>
 
         <Section title="5. Assistant et échanges IA">
-          <p>Les questions envoyées au conseiller BudgetKazPei peuvent être utilisées pour générer une réponse personnalisée. Les utilisateurs doivent éviter d'envoyer des informations sensibles inutiles. L'assistant ne remplace pas un organisme officiel, un conseiller juridique, social, médical ou financier.</p>
+          <p>Les questions envoyées au conseiller BudgetKazPéi peuvent être utilisées pour générer une réponse personnalisée. Les utilisateurs doivent éviter d'envoyer des informations sensibles inutiles. L'assistant ne remplace pas un organisme officiel, un conseiller juridique, social, médical ou financier.</p>
         </Section>
 
         <Section title="6. Paiements">
-          <p>Les paiements des offres Premium sont gérés par Stripe. BudgetKazPei ne stocke pas les numéros complets de carte bancaire.</p>
+          <p>Les paiements des offres Premium sont gérés par Stripe. BudgetKazPéi ne stocke pas les numéros complets de carte bancaire.</p>
         </Section>
 
         <Section title="7. Stockage et sécurité">
@@ -62,7 +62,7 @@ export default function PrivacyPage() {
         </Section>
 
         <Section title="10. Évolution de cette politique">
-          <p>Cette politique peut être mise à jour pour tenir compte des évolutions de BudgetKazPei, des fonctionnalités ou des obligations légales.</p>
+          <p>Cette politique peut être mise à jour pour tenir compte des évolutions de BudgetKazPéi, des fonctionnalités ou des obligations légales.</p>
         </Section>
       </div>
     </main>

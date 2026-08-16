@@ -67,12 +67,12 @@ const kreol = {
     expensesRatioText: "Out sarz fix ek dépans variable i reprezante",
     ofYourMonthlyIncome: "su out larzan rantre pou mwa-la.",
 
-    budgetScore: "Score BudgetKazPei",
+    budgetScore: "Score BudgetKazPéi",
     budgetScoreExcellent: "Tré bon",
     budgetScoreCorrect: "Correct",
     budgetScoreWarning: "À surveyé",
     smartWelcomeTitle: "Bonzour Jacques 👋",
-    moneyRecovered: "Larzan récupéré avèk BudgetKazPei",
+    moneyRecovered: "Larzan récupéré avèk BudgetKazPéi",
     moneyRecoveredSub: "Out démars i commence rapport aou pou vré.",
     moneyRecoveredEmpty: "Mèt in démarche an Aksepté, épi rant lo montan gagné.",
     aidsObtained: "èd obténu",
@@ -219,7 +219,7 @@ const kreol = {
     assistantPremiumTitle: "⭐ Asistan Pèsonèl Premium",
     assistantPremiumIntro: "Sertin èd lé pa vréman koné.",
     assistantPremiumDescription:
-      "BudgetKazPei analiz out sitiasyon parmi plis ki 30 èd, drwa ek dispozitif disponib La Rényon pou aide aou trouv rapidman bann èd ki kapav korespond ek out sitiasyon.",
+      "BudgetKazPéi analiz out sitiasyon parmi plis ki 30 èd, drwa ek dispozitif disponib La Rényon pou aide aou trouv rapidman bann èd ki kapav korespond ek out sitiasyon.",
     assistantPremiumBenefit1: "🎯 Analiz pèsonalizé",
     assistantPremiumBenefit2: "📄 Akonpagnman dann bann démarches",
     assistantPremiumBenefit3: "💬 An fransé ek kréol rényoné",
@@ -352,7 +352,7 @@ const kreol = {
     securePayment: "Payman sékirizé par Stripe · Ou pé arrêt kan ou vlé",
     alreadyPremium: "Ou lé Premium !",
     alreadyPremiumSub:
-      "Ou bénéfisié déza tout bann fonksionalité avansé BudgetKazPei.",
+      "Ou bénéfisié déza tout bann fonksionalité avansé BudgetKazPéi.",
     activePerks: "✅ Bann avantaj actif",
     openBankingSoon: "Biento",
     fixedCharges: "Sarz fix prévwar",

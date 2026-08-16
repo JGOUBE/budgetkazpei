@@ -17,7 +17,7 @@ function getLabels(language = "fr") {
         balance: "Larzan i reste",
         premium: "PREMIUM",
         scoreBudget: "SKOR BIDJÉ",
-        analysisTitle: "Analiz BudgetKazPei",
+        analysisTitle: "Analiz BudgetKazPéi",
         categoryBreakdown: "Répartision dépans par katégori",
         variableExpenses: "Dépans variable",
         fixedChargesTitle: "Sarz fix",
@@ -25,7 +25,7 @@ function getLabels(language = "fr") {
         noVariableExpenses: "Nana pa dépans variable anrezistré pou mwa-la.",
         noFixedCharges: "Nana pa sarz fix anrezistré.",
         noIncome: "Nana pa larzan rantre detaye anrezistré.",
-        footerMain: "Dokiman jenéré otomatikman par BudgetKazPei Premium.",
+        footerMain: "Dokiman jenéré otomatikman par BudgetKazPéi Premium.",
         footerSub: "Bidjé lokal · Swivi chak mwa · La Rényon",
         monthPositive: "Mwa positif",
         monthNoData: "Mwa san doné",
@@ -63,7 +63,7 @@ function getLabels(language = "fr") {
         balance: "Solde final",
         premium: "PREMIUM",
         scoreBudget: "SCORE BUDGET",
-        analysisTitle: "Analyse BudgetKazPei",
+        analysisTitle: "Analyse BudgetKazPéi",
         categoryBreakdown: "Répartition des dépenses par catégorie",
         variableExpenses: "Dépenses variables",
         fixedChargesTitle: "Charges fixes",
@@ -71,7 +71,7 @@ function getLabels(language = "fr") {
         noVariableExpenses: "Aucune dépense variable enregistrée pour ce mois.",
         noFixedCharges: "Aucune charge fixe enregistrée.",
         noIncome: "Aucun revenu détaillé enregistré.",
-        footerMain: "Document généré automatiquement par BudgetKazPei Premium.",
+        footerMain: "Document généré automatiquement par BudgetKazPéi Premium.",
         footerSub: "Budget local · Suivi mensuel · La Réunion",
         monthPositive: "Mois positif",
         monthNoData: "Mois sans données",
@@ -525,7 +525,7 @@ export async function generateMonthlyBudgetPDF(history, language = "fr") {
 
   doc.setTextColor(248, 250, 252)
   doc.setFontSize(23)
-  doc.text("BudgetKazPei", logoDataUrl ? 40 : 20, 26)
+  doc.text("BudgetKazPéi", logoDataUrl ? 40 : 20, 26)
 
   doc.setFillColor(249, 115, 22)
   doc.roundedRect(145, 17, 45, 12, 6, 6, "F")
@@ -563,7 +563,7 @@ export async function generateMonthlyBudgetPDF(history, language = "fr") {
     doc.addImage(logoDataUrl, "PNG", 20, 10, 18, 18)
     doc.setTextColor(248, 250, 252)
     doc.setFontSize(16)
-    doc.text("BudgetKazPei", 42, 23)
+    doc.text("BudgetKazPéi", 42, 23)
   }
 
   doc.setTextColor(248, 250, 252)
@@ -592,7 +592,7 @@ export async function generateMonthlyBudgetPDF(history, language = "fr") {
           doc.addImage(logoDataUrl, "PNG", 20, 10, 18, 18)
           doc.setTextColor(248, 250, 252)
           doc.setFontSize(16)
-          doc.text("BudgetKazPei", 42, 23)
+          doc.text("BudgetKazPéi", 42, 23)
         }
 
         doc.setTextColor(248, 250, 252)
@@ -683,5 +683,5 @@ export async function generateMonthlyBudgetPDF(history, language = "fr") {
 
   drawFooter(doc, labels)
 
-  doc.save(`BudgetKazPei-${monthLabel}.pdf`)
+  doc.save(`BudgetKazPéi-${monthLabel}.pdf`)
 }

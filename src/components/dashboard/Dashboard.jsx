@@ -320,7 +320,7 @@ function EmptyWelcomeCard({ t, isMobile, onGoProfile, onGoAides, onGoCharges }) 
   return (
     <TropicalCard variant="lagoon" texture="" style={{ padding: isMobile ? 18 : 24 }}>
       <div style={{ color: COLORS.text, fontWeight: 900, fontSize: isMobile ? 22 : 28, marginBottom: 8 }}>
-        {isKreol ? "Bienvenue su BudgetKazPei" : "Bienvenue sur BudgetKazPei"}
+        {isKreol ? "Bienvenue su BudgetKazPéi" : "Bienvenue sur BudgetKazPéi"}
       </div>
 
       <div style={{ color: COLORS.whiteSoft, fontSize: 14, lineHeight: 1.65, marginBottom: 16 }}>
@@ -386,8 +386,8 @@ function SmartWelcomeCard({ t, isMobile, stats = {}, gainsAides = 0, nbAidesObte
 
       <div style={{ color: COLORS.whiteSoft, fontSize: 14, lineHeight: 1.65 }}>
         {gains > 0
-          ? isKreol ? `Ou la déjà récupéré ${gains.toFixed(0)} EUR ek BudgetKazPei.`
-            : `Vous avez déjà récupéré ${gains.toFixed(0)} EUR grâce à BudgetKazPei.`
+          ? isKreol ? `Ou la déjà récupéré ${gains.toFixed(0)} EUR ek BudgetKazPéi.`
+            : `Vous avez déjà récupéré ${gains.toFixed(0)} EUR grâce à BudgetKazPéi.`
           : isKreol ? "Komans par azout in démarche. Kan in éd lé aksepté, mark lo gain gagné."
             : "Commencez par ajouter une démarche, puis renseignez le gain quand l'aide est acceptée."}
         {" "}
@@ -429,7 +429,7 @@ function BudgetScoreCard({ t, isMobile, stats = {}, byCategory = [], gainsAides 
       >
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ color: result.color, fontSize: 13, fontWeight: 900, marginBottom: 6 }}>
-            {isKreol ? "Score BudgetKazPei" : "Score BudgetKazPei"}
+            {isKreol ? "Score BudgetKazPéi" : "Score BudgetKazPéi"}
           </div>
 
           <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
@@ -581,7 +581,7 @@ function RecoveredMoneyCard({
         >
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ color: "#BEF264", fontWeight: 900, fontSize: 13, marginBottom: 6 }}>
-              {isKreol ? "Larzan ou la récupéré ek BudgetKazPei" : "Argent récupéré grâce à BudgetKazPei"}
+              {isKreol ? "Larzan ou la récupéré ek BudgetKazPéi" : "Argent récupéré grâce à BudgetKazPéi"}
             </div>
 
             <div
@@ -1445,7 +1445,7 @@ function CopilotHero({ profile, isKreol, isMobile, profileCompletion, attentionC
       }}
     >
       <div style={{ color: COLORS.cyan, fontSize: 12, fontWeight: 900, marginBottom: 8, textTransform: "uppercase" }}>
-        {isKreol ? "Copilote BudgetKazPei" : "Copilote BudgetKazPei"}
+        {isKreol ? "Copilote BudgetKazPéi" : "Copilote BudgetKazPéi"}
       </div>
       <div style={{ color: COLORS.text, fontWeight: 950, fontSize: isMobile ? 28 : 38, lineHeight: 1.02, marginBottom: 10 }}>
         {greeting}
@@ -1944,7 +1944,7 @@ function CopilotCards({
       />
 
       <CopilotInfoCard
-        title={isKreol ? "Konseye BudgetKazPei" : "Conseiller BudgetKazPei"}
+        title={isKreol ? "Konseye BudgetKazPéi" : "Conseiller BudgetKazPéi"}
         value={isKreol ? "Koz ek mon konseye" : "Poser une question"}
         detail={isKreol ? "Mi pé aide aou comprend in éd, prépar in démarche ou vérifie out situation."
           : "Je peux vous aider à comprendre une aide, préparer une démarche ou vérifier votre situation."}

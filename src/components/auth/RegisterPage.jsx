@@ -150,7 +150,7 @@ export default function RegisterPage({
 
   return (
     <AuthLayout
-      title="Créez votre espace BudgetKazPei."
+      title="Créez votre espace BudgetKazPéi."
       subtitle="Commencez gratuitement et complétez votre profil plus tard, à votre rythme."
       sideTitle="Un compte d'abord, le profil ensuite."
       sideText="Revenus, aides, famille ou Conseiller se complètent progressivement dans l'application, quand ces informations deviennent utiles."
@@ -244,7 +244,7 @@ export default function RegisterPage({
             </button>
           </p>
           <button type="button" className="auth-text-button" onClick={() => navigate(DISCOVER_ROUTE)}>
-            Découvrir BudgetKazPei
+            Découvrir BudgetKazPéi
           </button>
         </div>
       </AuthCard>

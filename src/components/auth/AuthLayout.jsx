@@ -9,21 +9,21 @@ export default function AuthLayout({
   children,
   titleRef,
   sideTitle = "Vos tickets, votre budget, vos démarches.",
-  sideText = "Une expérience simple pour retrouver votre espace BudgetKazPei sans rallonger la création du compte.",
+  sideText = "Une expérience simple pour retrouver votre espace BudgetKazPéi sans rallonger la création du compte.",
 }) {
   return (
     <main className="auth-page">
       <div className="auth-shell">
-        <section className="auth-side" aria-label="Présentation BudgetKazPei">
+        <section className="auth-side" aria-label="Présentation BudgetKazPéi">
           <div className="auth-brand">
-            <AppLogo size={52} alt="Logo BudgetKazPei" />
-            <span>BudgetKazPei</span>
+            <AppLogo size={52} alt="Logo BudgetKazPéi" />
+            <span>BudgetKazPéi</span>
           </div>
           <div className="auth-side__content">
             <p className="auth-eyebrow">Budget, tickets et démarches</p>
             <h2>{sideTitle}</h2>
             <p>{sideText}</p>
-            <div className="auth-proof-list" aria-label="Repères BudgetKazPei">
+            <div className="auth-proof-list" aria-label="Repères BudgetKazPéi">
               <span>Compte sécurisé</span>
               <span>Profil complété plus tard</span>
               <span>Sans carte bancaire pour démarrer</span>
@@ -39,8 +39,8 @@ export default function AuthLayout({
             <ThemeToggle compact />
           </div>
           <div className="auth-mobile-brand">
-            <AppLogo size={46} alt="Logo BudgetKazPei" />
-            <span>BudgetKazPei</span>
+            <AppLogo size={46} alt="Logo BudgetKazPéi" />
+            <span>BudgetKazPéi</span>
           </div>
           <header className="auth-heading">
             <h1 id="auth-title" ref={titleRef} tabIndex={-1}>{title}</h1>

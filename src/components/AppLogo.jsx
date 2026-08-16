@@ -4,7 +4,7 @@ import { useTheme } from "../styles/ThemeProvider"
 
 export default function AppLogo({
   size = 36,
-  alt = "BudgetKazPei",
+  alt = "BudgetKazPéi",
   style = {},
   fallbackText = "BKP",
 }) {

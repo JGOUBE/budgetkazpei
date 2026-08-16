@@ -1313,8 +1313,8 @@ function PreparationDossierPanel({ demarche, isKreol, isMobile, onClose }) {
               }}
             >
               {isKreol
-                ? "BudgetKazPei prépare une checklist simple pou ou rassembl bann pièces avant l’envoi."
-                : "BudgetKazPei prépare une checklist simple pour rassembler les pièces avant l’envoi."}
+                ? "BudgetKazPéi prépare une checklist simple pou ou rassembl bann pièces avant l’envoi."
+                : "BudgetKazPéi prépare une checklist simple pour rassembler les pièces avant l’envoi."}
             </p>
           </div>
 
@@ -1620,8 +1620,8 @@ function GeneratedEmailPanel({ demarche, isKreol, isMobile, onClose }) {
           }}
         >
           ⚠️ {isKreol
-            ? "BudgetKazPei ne rajoute aucune donnée personnelle automatiquement. Complétez uniquement ce que vous souhaitez partager et vérifiez toujours auprès de l’organisme."
-            : "BudgetKazPei n’ajoute aucune donnée personnelle automatiquement. Complétez uniquement ce que vous souhaitez partager et vérifiez toujours auprès de l’organisme."}
+            ? "BudgetKazPéi ne rajoute aucune donnée personnelle automatiquement. Complétez uniquement ce que vous souhaitez partager et vérifiez toujours auprès de l’organisme."
+            : "BudgetKazPéi n’ajoute aucune donnée personnelle automatiquement. Complétez uniquement ce que vous souhaitez partager et vérifiez toujours auprès de l’organisme."}
         </div>
 
         <div
@@ -1838,8 +1838,8 @@ function GeneratedLetterPanel({ demarche, isKreol, isMobile, onClose }) {
           }}
         >
           ⚠️ {isKreol
-            ? "BudgetKazPei ne rajoute aucune donnée personnelle automatiquement. Complétez uniquement ce que vous souhaitez partager et vérifiez toujours auprès de l’organisme."
-            : "BudgetKazPei n’ajoute aucune donnée personnelle automatiquement. Complétez uniquement ce que vous souhaitez partager et vérifiez toujours auprès de l’organisme."}
+            ? "BudgetKazPéi ne rajoute aucune donnée personnelle automatiquement. Complétez uniquement ce que vous souhaitez partager et vérifiez toujours auprès de l’organisme."
+            : "BudgetKazPéi n’ajoute aucune donnée personnelle automatiquement. Complétez uniquement ce que vous souhaitez partager et vérifiez toujours auprès de l’organisme."}
         </div>
 
         <div
@@ -2062,8 +2062,8 @@ function UnderstandRefusalPanel({ demarche, isKreol, isMobile, onClose }) {
               }}
             >
               {isKreol
-                ? "Kol isi lo kouryé reçu. BudgetKazPei i analiz sèlman sak lé écrit, san inventé."
-                : "Collez le courrier reçu. BudgetKazPei analyse uniquement ce qui est écrit, sans inventer."}
+                ? "Kol isi lo kouryé reçu. BudgetKazPéi i analiz sèlman sak lé écrit, san inventé."
+                : "Collez le courrier reçu. BudgetKazPéi analyse uniquement ce qui est écrit, sans inventer."}
             </p>
           </div>
 
@@ -2164,8 +2164,8 @@ function UnderstandRefusalPanel({ demarche, isKreol, isMobile, onClose }) {
           }}
         >
           ⚠️ {isKreol
-            ? "BudgetKazPei lé pa in conseil juridique. L\'analyse aide a konprann lo kouryé mé fo toujou vérifié avèk l\'organisme."
-            : "BudgetKazPei ne donne pas d’avis juridique. L’analyse aide à comprendre le courrier, mais il faut toujours vérifier auprès de l’organisme."}
+            ? "BudgetKazPéi lé pa in conseil juridique. L\'analyse aide a konprann lo kouryé mé fo toujou vérifié avèk l\'organisme."
+            : "BudgetKazPéi ne donne pas d’avis juridique. L’analyse aide à comprendre le courrier, mais il faut toujours vérifier auprès de l’organisme."}
         </div>
 
         <div
@@ -2439,8 +2439,8 @@ function GainObtainedPanel({ demarche, isKreol, isMobile, onSave, onClose }) {
           }}
         >
           ✅ {isKreol
-            ? "Ce montant servira pou calculer largent récupéré grâce à BudgetKazPei."
-            : "Ce montant servira à calculer l’argent récupéré grâce à BudgetKazPei."}
+            ? "Ce montant servira pou calculer largent récupéré grâce à BudgetKazPéi."
+            : "Ce montant servira à calculer l’argent récupéré grâce à BudgetKazPéi."}
         </div>
 
         {error && (
@@ -2736,8 +2736,8 @@ function AdminReminderPanel({ demarche, reminder, isKreol, isMobile, onSave, onD
           }}
         >
           ⚠️ {isKreol
-            ? "Ce rappel est enregistré dans BudgetKazPei. Vérifie toujours les délais officiels auprès de l'organisme."
-            : "Ce rappel est enregistré dans BudgetKazPei. Vérifiez toujours les délais officiels auprès de l'organisme."}
+            ? "Ce rappel est enregistré dans BudgetKazPéi. Vérifie toujours les délais officiels auprès de l'organisme."
+            : "Ce rappel est enregistré dans BudgetKazPéi. Vérifiez toujours les délais officiels auprès de l'organisme."}
         </div>
 
         {saved && (
@@ -3047,7 +3047,7 @@ function getSuggestedSteps(demarche, isKreol) {
       officialSteps,
       isKreol ? "Rassembl bann documents avant dépôt." : "Rassembler les documents avant le dépôt.",
       isKreol ? "Garde une copie de tout dossier envoyé." : "Garder une copie de tout dossier envoyé.",
-      isKreol ? "Mettre le statut à jour dans BudgetKazPei." : "Mettre le statut à jour dans BudgetKazPei.",
+      isKreol ? "Mettre le statut à jour dans BudgetKazPéi." : "Mettre le statut à jour dans BudgetKazPéi.",
     ]
   }
 
@@ -3057,14 +3057,14 @@ function getSuggestedSteps(demarche, isKreol) {
         "Rassembl les documents.",
         "Dépose la demande sur le site officiel ou auprès de l’organisme.",
         "Garde une copie du dossier.",
-        "Mets le statut à jour dans BudgetKazPei.",
+        "Mets le statut à jour dans BudgetKazPéi.",
       ]
     : [
         "Vérifier les conditions de l’aide.",
         "Rassembler les documents.",
         "Déposer la demande sur le site officiel ou auprès de l’organisme.",
         "Garder une copie du dossier.",
-        "Mettre le statut à jour dans BudgetKazPei.",
+        "Mettre le statut à jour dans BudgetKazPéi.",
       ]
 }
 
@@ -3355,8 +3355,8 @@ function PrepareAppealPanel({ demarche, isKreol, isMobile, onClose }) {
           }}
         >
           ⚠️ {isKreol
-            ? "BudgetKazPei lé pa in conseil juridique. Le modèle aide seulement à demander un réexamen. Vérifiez toujours auprès de l’organisme."
-            : "BudgetKazPei ne donne pas d’avis juridique. Ce modèle aide seulement à demander un réexamen. Vérifiez toujours auprès de l’organisme."}
+            ? "BudgetKazPéi lé pa in conseil juridique. Le modèle aide seulement à demander un réexamen. Vérifiez toujours auprès de l’organisme."
+            : "BudgetKazPéi ne donne pas d’avis juridique. Ce modèle aide seulement à demander un réexamen. Vérifiez toujours auprès de l’organisme."}
         </div>
 
         <div

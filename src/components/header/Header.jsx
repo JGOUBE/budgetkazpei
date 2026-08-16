@@ -36,7 +36,7 @@ export default function Header({ activeNav, onAdd, lang, onToggleLang, t, commun
       <div>
         <div style={{ display: "flex", alignItems: "center", gap: 9, marginBottom: 10, minHeight: 38 }}>
           <AppLogo size={36} />
-          <span style={{ color: ds.textPrimary, fontWeight: 950, fontSize: 20, letterSpacing: 0, lineHeight: 1 }}>BudgetKazPei</span>
+          <span style={{ color: ds.textPrimary, fontWeight: 950, fontSize: 20, letterSpacing: 0, lineHeight: 1 }}>BudgetKazPéi</span>
         </div>
         <h1 style={{ margin: 0, fontSize: 24, fontFamily: "'DM Serif Display', serif", fontWeight: 400, color: ds.textPrimary }}>
           {title}

@@ -1,4 +1,4 @@
-﻿import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef } from "react"
 import { useProfile } from "../../hooks/useProfile"
 import { supabase } from "../../services/supabase"
 import { syncProfileIncomeForCurrentMonth } from "../../services/income/profileIncomeService"
@@ -610,8 +610,8 @@ export default function ProfilePage({ user, t }) {
                   <strong style={{ color: COLORS.cyan }}>{tr(isKreol, "À renseigner :", "Pou renseigner :")}</strong>{" "}
                   {tr(
                     isKreol,
-                    "indiquez le revenu mensuel total du foyer. Si vous êtes deux, additionnez les revenus des deux personnes. Ajoutez aussi les aides régulières : CAF, RSA, chômage, pension, allocations ou autres revenus récurrents. Ce montant sera automatiquement ajouté aux revenus du mois pour aider BudgetKazPei à analyser votre budget et à mieux détecter les aides possibles.",
-                    "Renseigne tout larzan i rantre dann foyer chaque mois. Si zot lé deux, additionne revenus bann deux personnes. Ajoute aussi bann aides régulières : CAF, RSA, chômage, pension, allocations ou autres revenus ki revient souvent. Ce montant sera ajouté automatiquement dann revenus du mois pou aide BudgetKazPei analyse out bidjé ek détecte mieux bann éd possibles."
+                    "indiquez le revenu mensuel total du foyer. Si vous êtes deux, additionnez les revenus des deux personnes. Ajoutez aussi les aides régulières : CAF, RSA, chômage, pension, allocations ou autres revenus récurrents. Ce montant sera automatiquement ajouté aux revenus du mois pour aider BudgetKazPéi à analyser votre budget et à mieux détecter les aides possibles.",
+                    "Renseigne tout larzan i rantre dann foyer chaque mois. Si zot lé deux, additionne revenus bann deux personnes. Ajoute aussi bann aides régulières : CAF, RSA, chômage, pension, allocations ou autres revenus ki revient souvent. Ce montant sera ajouté automatiquement dann revenus du mois pou aide BudgetKazPéi analyse out bidjé ek détecte mieux bann éd possibles."
                   )}
                 </div>
               </Field>
@@ -687,7 +687,7 @@ export default function ProfilePage({ user, t }) {
             {tr(isKreol, "Nous contacter", "Contacte a nou")}
           </div>
           <div style={{ fontSize: 13, color: COLORS.muted, lineHeight: 1.6 }}>
-            {tr(isKreol, "Une question, un bug ou une idée pour améliorer BudgetKazPei ? Remplissez le message ci-dessous, il sera envoyé directement à l’équipe BudgetKazPei.", "Ou néna in question, in bug ou in idée pou améliore BudgetKazPei ? Écris out message anba, li sera envoyé directement à l’équipe BudgetKazPei.")}
+            {tr(isKreol, "Une question, un bug ou une idée pour améliorer BudgetKazPéi ? Remplissez le message ci-dessous, il sera envoyé directement à l’équipe BudgetKazPéi.", "Ou néna in question, in bug ou in idée pou améliore BudgetKazPéi ? Écris out message anba, li sera envoyé directement à l’équipe BudgetKazPéi.")}
           </div>
           <div
             style={{
@@ -798,7 +798,7 @@ export default function ProfilePage({ user, t }) {
               {tr(isKreol, "Découvrir Premium", "Découvre Premium")}
             </div>
             <div style={{ fontSize: 13, color: COLORS.muted, lineHeight: 1.6 }}>
-              {tr(isKreol, "Comparez les options Premium et Premium+ sur le site BudgetKazPei.", "Compare bann options Premium ek Premium+ su site BudgetKazPei.")}
+              {tr(isKreol, "Comparez les options Premium et Premium+ sur le site BudgetKazPéi.", "Compare bann options Premium ek Premium+ su site BudgetKazPéi.")}
             </div>
           </div>
 

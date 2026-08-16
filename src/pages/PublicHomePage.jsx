@@ -239,7 +239,7 @@ export default function PublicHomePage({ isAuthenticated = false }) {
 
       <footer className="landing-footer">
         <div className="landing-shell landing-footer__inner">
-          <span>© {new Date().getFullYear()} BudgetKazPei</span>
+          <span>© {new Date().getFullYear()} BudgetKazPéi</span>
 
           <nav aria-label={content.footer.navigationAriaLabel}>
             <LandingLink href="/privacy">{content.footer.privacy}</LandingLink>

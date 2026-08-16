@@ -7,11 +7,11 @@ margin: "0 auto",
 padding: "40px 20px",
 lineHeight: "1.6",
 }}
-> <h1>Suppression du compte BudgetKazPei</h1>
+> <h1>Suppression du compte BudgetKazPéi</h1>
 
 ```
   <p>
-    Chez BudgetKazPei, vous pouvez demander à tout moment la suppression
+    Chez BudgetKazPéi, vous pouvez demander à tout moment la suppression
     de votre compte et de vos données personnelles.
   </p>
 
@@ -25,7 +25,7 @@ lineHeight: "1.6",
 
   <p>
     Merci de préciser l'adresse email utilisée pour votre compte
-    BudgetKazPei.
+    BudgetKazPéi.
   </p>
 
   <h2>Données supprimées</h2>

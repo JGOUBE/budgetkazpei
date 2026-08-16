@@ -903,8 +903,8 @@ export default function AidesPage({ isMobile, t, isPremium, isPremiumPlus = fals
             }}
           >
             {isKreol
-              ? "BudgetKazPei affiche bann aides selon out profil, out komin, out marmay ek out sitiasyon. Ou peut ajout zot dann out démarches pou suivre zot."
-              : "BudgetKazPei affiche les aides selon votre profil, votre commune, vos enfants et votre situation. Vous pouvez les ajouter à vos démarches pour les suivre."}
+              ? "BudgetKazPéi affiche bann aides selon out profil, out komin, out marmay ek out sitiasyon. Ou peut ajout zot dann out démarches pou suivre zot."
+              : "BudgetKazPéi affiche les aides selon votre profil, votre commune, vos enfants et votre situation. Vous pouvez les ajouter à vos démarches pour les suivre."}
           </p>
         </div>
       </section>

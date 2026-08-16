@@ -1,4 +1,4 @@
-﻿import { BkIcons } from "../icons-budgetkazpei"
+import { BkIcons } from "../icons-budgetkazpei"
 import { ds } from "../../styles/designSystem"
 import { useTheme } from "../../styles/ThemeProvider"
 import AppLogo from "../AppLogo"
@@ -125,7 +125,7 @@ export default function Sidebar({
               lineHeight: 1,
             }}
           >
-            BudgetKazPei
+            BudgetKazPéi
           </div>
         </div>
 

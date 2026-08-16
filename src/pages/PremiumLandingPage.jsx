@@ -26,9 +26,9 @@ const PREMIUM_PLUS_PRICE = PLAN_PRICES[PLAN_IDS.premiumPlus].replace("/mois", ""
 const PREMIUM_CONTENT = {
   fr: {
     seo: {
-      title: "Offres BudgetKazPei — Gratuit, Premium et Premium+",
+      title: "Offres BudgetKazPéi — Gratuit, Premium et Premium+",
       description:
-        "Comparez les offres Gratuit, Premium et Premium+ de BudgetKazPei et choisissez le niveau d'accompagnement adapté à votre quotidien.",
+        "Comparez les offres Gratuit, Premium et Premium+ de BudgetKazPéi et choisissez le niveau d'accompagnement adapté à votre quotidien.",
     },
     navItems: [
       { label: "Offres", href: "#offres" },
@@ -36,7 +36,7 @@ const PREMIUM_CONTENT = {
       { label: "FAQ", href: "#faq" },
     ],
     hero: {
-      eyebrow: "BudgetKazPei Premium",
+      eyebrow: "BudgetKazPéi Premium",
       title: "Choisissez la formule adaptée à votre quotidien.",
       text:
         "Commencez gratuitement, puis passez à Premium lorsque vous avez besoin de plus de scans, d'analyses et d'accompagnement.",
@@ -65,7 +65,7 @@ const PREMIUM_CONTENT = {
           name: "Gratuit",
           tone: "cream",
           price: "0 €",
-          intro: "Pour découvrir BudgetKazPei et suivre l'essentiel.",
+          intro: "Pour découvrir BudgetKazPéi et suivre l'essentiel.",
           features: [
             "Budget mensuel",
             "Revenus et dépenses",
@@ -150,7 +150,7 @@ const PREMIUM_CONTENT = {
         ],
         [
           "Le scanner de tickets est-il obligatoire ?",
-          "Non. BudgetKazPei reste utilisable sans scanner. Vous pouvez saisir vos revenus, dépenses et courses manuellement.",
+          "Non. BudgetKazPéi reste utilisable sans scanner. Vous pouvez saisir vos revenus, dépenses et courses manuellement.",
         ],
         [
           "Comment sont protégées les photos de mes tickets ?",
@@ -171,9 +171,9 @@ const PREMIUM_CONTENT = {
   },
   kr: {
     seo: {
-      title: "Bann offres BudgetKazPei — Gratis, Premium ek Premium+",
+      title: "Bann offres BudgetKazPéi — Gratis, Premium ek Premium+",
       description:
-        "Konpar bann offres Gratis, Premium ek Premium+ BudgetKazPei é swazi lakonpagnman ki korespond ek out kotidien.",
+        "Konpar bann offres Gratis, Premium ek Premium+ BudgetKazPéi é swazi lakonpagnman ki korespond ek out kotidien.",
     },
     navItems: [
       { label: "Bann offres", href: "#offres" },
@@ -181,7 +181,7 @@ const PREMIUM_CONTENT = {
       { label: "FAQ", href: "#faq" },
     ],
     hero: {
-      eyebrow: "BudgetKazPei Premium",
+      eyebrow: "BudgetKazPéi Premium",
       title: "Swazi lof ki korespond ek out kotidien.",
       text:
         "Koumans gratis, épi pas Premium kan ou néna bezoin plis scans, plis analiz ek plis lakonpagnman.",
@@ -210,7 +210,7 @@ const PREMIUM_CONTENT = {
           name: "Gratis",
           tone: "cream",
           price: "0 €",
-          intro: "Pou dékouv BudgetKazPei ek swiv sak lé esansyèl.",
+          intro: "Pou dékouv BudgetKazPéi ek swiv sak lé esansyèl.",
           features: [
             "Bidjé chak mwa",
             "Larzan i rantre ek dépans",
@@ -260,7 +260,7 @@ const PREMIUM_CONTENT = {
     },
     comparison: {
       eyebrow: "Kèl offre swazi ?",
-      title: "Swazi selon koman ou servi BudgetKazPei.",
+      title: "Swazi selon koman ou servi BudgetKazPéi.",
       intro:
         "Ou pé koumans gratis é shanz formule kan out bezoin i évolié.",
       choices: [
@@ -295,7 +295,7 @@ const PREMIUM_CONTENT = {
         ],
         [
           "Scanner tiké-la lé obligatoire ?",
-          "Non. BudgetKazPei i marche san scanner osi. Ou pé rant out larzan, out dépans ek out courses amain.",
+          "Non. BudgetKazPéi i marche san scanner osi. Ou pé rant out larzan, out dépans ek out courses amain.",
         ],
         [
           "Koman bann foto mon tiké lé protézé ?",
@@ -544,7 +544,7 @@ export default function PremiumLandingPage({ isAuthenticated = false }) {
 
       <footer className="landing-footer">
         <div className="landing-shell landing-footer__inner">
-          <span>© {new Date().getFullYear()} BudgetKazPei</span>
+          <span>© {new Date().getFullYear()} BudgetKazPéi</span>
 
           <nav aria-label={content.footer.navigationAriaLabel}>
             <LandingLink href="/privacy">{content.footer.privacy}</LandingLink>

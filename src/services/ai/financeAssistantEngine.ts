@@ -50,7 +50,7 @@ function parseJsonAnswer(value: unknown) {
 
 function buildAiPrompt({ question, summary, language }: { question: string; summary: any; language: string }) {
   return [
-    "Tu réponds pour la rubrique Mon assistant de BudgetKazPei.",
+    "Tu réponds pour la rubrique Mon assistant de BudgetKazPéi.",
     "Retourne uniquement un JSON strict, sans Markdown et sans texte autour.",
     "Schéma obligatoire :",
     '{"fr":"...","kr":"...","actions":[{"type":"open_page","target":"statistics","label_fr":"Voir mes stats","label_kr":"War mes stats"}]}',
