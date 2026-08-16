@@ -199,7 +199,7 @@ function IncomeEditorModal({ profile = {}, isKreol = false, saving = false, onCl
                 : "Ces lignes alimentent le mois en cours et seront reprises automatiquement le mois prochain. Les aides ajoutees ici sont aussi conservees dans le profil pour le conseiller."}
             </p>
           </div>
-          <button type="button" onClick={onClose} style={{ minHeight: 38, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "rgba(255,255,255,.06)", color: COLORS.text, fontWeight: 900, padding: "0 12px" }}>{isKreol ? "Ferme" : "Fermer"}</button>
+          <button type="button" onClick={onClose} style={{ minHeight: 38, minWidth: 82, flexShrink: 0, whiteSpace: "nowrap", borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "rgba(255,255,255,.06)", color: COLORS.text, fontWeight: 900, padding: "0 12px" }}>{isKreol ? "Ferme" : "Fermer"}</button>
         </div>
 
         <div style={{ display: "grid", gap: 12, marginTop: 18 }}>
