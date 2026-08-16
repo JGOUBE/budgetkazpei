@@ -6,7 +6,9 @@ import {
   Trash2,
   Sparkles,
   MessageCircle,
+  UserRound,
 } from "lucide-react"
+import { useRef } from "react"
 
 import { supabase } from "../../services/supabase"
 import { REUNION_ORIENTATION } from "../../data/reunionOrientation"
@@ -56,6 +58,8 @@ const MODE_LABELS = {
   },
 }
 
+const advisorSessionByUser = new Map()
+
 function normalizeText(value = "") {
   return String(value || "")
     .toLowerCase()
@@ -69,7 +73,9 @@ function isTrue(value) {
 
 function isKreolLanguage(t) {
   if (typeof t !== "function") return false
-  return t("nav", "dashboard") === "Tablo debor"
+  const lang = String(t.lang || "").toLowerCase()
+  if (lang === "cr" || lang === "kreol") return true
+  return normalizeText(t("nav", "dashboard")) === "tablo debor"
 }
 
 function looksLikeKreolText(value = "") {
@@ -136,12 +142,6 @@ function getAiPlan(profile = {}, isPremium = false, isPremiumPlus = false) {
   }
 
   return "free"
-}
-
-function getAiPlanLabel(plan = "free") {
-  if (plan === "premium_plus") return "Premium+"
-  if (plan === "premium") return "Premium"
-  return "Gratuit"
 }
 
 function countMeaningfulWords(value = "") {
@@ -401,6 +401,7 @@ export default function AssistantConseiller({
   isMobile,
   t,
   user,
+  modes = [],
 }) {
   const { themeName } = useTheme()
   const isKreol = isKreolLanguage(t)
@@ -412,10 +413,15 @@ export default function AssistantConseiller({
   const [profile, setProfile] = useState(null)
   const [aiUsage, setAiUsage] = useState(null)
   const [loadingProfile, setLoadingProfile] = useState(false)
-  const [loadingAiUsage, setLoadingAiUsage] = useState(false)
   const [loadingAssistant, setLoadingAssistant] = useState(false)
-  const [history, setHistory] = useState([])
+  const [history, setHistory] = useState(() =>
+    user?.id ? advisorSessionByUser.get(user.id)?.history || [] : []
+  )
   const [errorMessage, setErrorMessage] = useState("")
+  const [pendingMessage, setPendingMessage] = useState(null)
+  const [failedMessage, setFailedMessage] = useState(null)
+  const messagesEndRef = useRef(null)
+  const textareaRef = useRef(null)
 
   const aiPlan = getAiPlan(profile, isPremium, isPremiumPlus)
   const aiLimit = AI_USAGE_LIMITS[aiPlan] || AI_USAGE_LIMITS.free
@@ -439,6 +445,18 @@ export default function AssistantConseiller({
   }, [user?.id])
 
   useEffect(() => {
+    if (!user?.id) return
+    advisorSessionByUser.set(user.id, { history })
+  }, [history, user?.id])
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "auto",
+      block: "end",
+    })
+  }, [history.length, pendingMessage, loadingAssistant, errorMessage])
+
+  useEffect(() => {
     if (profile) {
       fetchAiUsage()
     }
@@ -455,6 +473,7 @@ export default function AssistantConseiller({
       setQuestion(prompt)
       setQuickQuestionSelected(true)
       setErrorMessage("")
+      setFailedMessage(null)
 
       setTimeout(() => {
         const element = document.getElementById("budgetkazpei-assistant-zone")
@@ -500,8 +519,6 @@ export default function AssistantConseiller({
   async function fetchAiUsage() {
     if (!user?.id) return
 
-    setLoadingAiUsage(true)
-
     const currentMonth = getCurrentMonthNumber()
     const currentYear = getCurrentYearNumber()
 
@@ -510,8 +527,6 @@ export default function AssistantConseiller({
       .select("*")
       .eq("user_id", user.id)
       .maybeSingle()
-
-    setLoadingAiUsage(false)
 
     if (error) {
       console.error("Erreur chargement quota IA:", error)
@@ -564,6 +579,7 @@ export default function AssistantConseiller({
     aides,
     mode,
     recentHistory,
+    isQuickPreset,
   }) {
     const assistantIsKreol = isKreol || looksLikeKreolText(sentQuestion)
     const preparedAides = prepareAideContext(
@@ -600,7 +616,7 @@ export default function AssistantConseiller({
         modeInstruction: buildModeInstruction(mode, assistantIsKreol),
         language: assistantIsKreol ? "kreol" : "fr",
         isKreol: assistantIsKreol,
-        isQuickPreset: quickQuestionSelected || mode === "scan_profil",
+        isQuickPreset: isQuickPreset || mode === "scan_profil",
         isPremium,
         isPremiumPlus,
         subscription_plan: isPremiumPlus ? "premium_plus" : isPremium ? "premium" : "free",
@@ -631,9 +647,18 @@ export default function AssistantConseiller({
     return data || { success: false, error: "Reponse vide." }
   }
 
-  async function handleAnalyze() {
-    const sentQuestion = question.trim()
+  async function handleAnalyze(messageOverride = null) {
+    const sentQuestion = String(messageOverride?.question ?? question).trim()
     if (!sentQuestion) return
+
+    const currentMode = messageOverride?.mode || assistantMode || "general"
+    const requestedQuickPreset = Boolean(
+      messageOverride?.quickQuestionSelected ?? quickQuestionSelected
+    )
+    const requestedConsumesExchange = shouldConsumeAiExchange(
+      sentQuestion,
+      requestedQuickPreset
+    )
 
     let currentProfile
 
@@ -658,19 +683,21 @@ export default function AssistantConseiller({
       return
     }
 
-    if (currentQuestionConsumesExchange && aiQuotaReached) {
+    if (requestedConsumesExchange && aiQuotaReached) {
       setErrorMessage(
         isKreol
-          ? "Ou la utilise tout out kestions pou sa mwa-la."
-          : "Vous avez utilise tous vos echanges du mois."
+          ? "Out konseye lé temporairement indisponib. Ou pourra réutiliz ali lo prochain cycle."
+          : "Votre conseiller est temporairement indisponible. Vous pourrez à nouveau l’utiliser lors de votre prochain cycle."
       )
       return
     }
 
     setLoadingAssistant(true)
     setErrorMessage("")
-
-    const currentMode = assistantMode || "general"
+    setFailedMessage(null)
+    setPendingMessage({ question: sentQuestion, mode: currentMode })
+    setQuestion("")
+    setQuickQuestionSelected(false)
     let result
 
     try {
@@ -682,10 +709,17 @@ export default function AssistantConseiller({
         aides,
         mode: currentMode,
         recentHistory: history,
+        isQuickPreset: requestedQuickPreset,
       })
     } catch (error) {
       console.error("Erreur analyse conseiller:", error)
       setLoadingAssistant(false)
+      setPendingMessage(null)
+      setFailedMessage({
+        question: sentQuestion,
+        mode: currentMode,
+        quickQuestionSelected: requestedQuickPreset,
+      })
       setErrorMessage(
         isKreol
           ? "Le konseye le indisponib pou linstan. Reessay in pe plus tar."
@@ -697,6 +731,12 @@ export default function AssistantConseiller({
     setLoadingAssistant(false)
 
     if (!result?.success) {
+      setPendingMessage(null)
+      setFailedMessage({
+        question: sentQuestion,
+        mode: currentMode,
+        quickQuestionSelected: requestedQuickPreset,
+      })
       setErrorMessage(
         result?.error ||
           (isKreol
@@ -731,6 +771,7 @@ export default function AssistantConseiller({
       ].slice(0, 6)
     )
 
+    setPendingMessage(null)
     setQuestion("")
     setAssistantMode("general")
     setQuickQuestionSelected(false)
@@ -742,6 +783,168 @@ export default function AssistantConseiller({
     setQuickQuestionSelected(false)
     setHistory([])
     setErrorMessage("")
+    setPendingMessage(null)
+    setFailedMessage(null)
+  }
+
+  function resizeComposer() {
+    const textarea = textareaRef.current
+    if (!textarea) return
+    textarea.style.height = "auto"
+    textarea.style.height = `${Math.min(textarea.scrollHeight, 132)}px`
+  }
+
+  function selectSuggestion(mode) {
+    setAssistantMode(mode.mode)
+    setQuestion(mode.prompt)
+    setQuickQuestionSelected(true)
+    setErrorMessage("")
+    setFailedMessage(null)
+    requestAnimationFrame(() => {
+      resizeComposer()
+      textareaRef.current?.focus()
+    })
+  }
+
+  function handleComposerKeyDown(event) {
+    if (event.key !== "Enter" || event.shiftKey) return
+    event.preventDefault()
+    if (!analyzeDisabled) handleAnalyze()
+  }
+
+  const chronologicalHistory = [...history].reverse()
+
+  if (modes) {
+    return (
+      <section id="budgetkazpei-assistant-zone" className="bkp-advisor-chat">
+        <header className="bkp-advisor-header">
+          <div className="bkp-advisor-identity">
+            <span className="bkp-advisor-avatar" aria-hidden="true"><Bot size={22} /></span>
+            <div>
+              <h2>{isKreol ? "Mon konseye BudgetKazPei" : "Mon conseiller BudgetKazPei"}</h2>
+              <p><span className="bkp-advisor-online-dot" />{isKreol ? "Disponib pou gid aou" : "Disponible pour vous guider"}</p>
+            </div>
+          </div>
+
+          <div className="bkp-advisor-header-actions">
+            <button
+              type="button"
+              className="bkp-advisor-reset"
+              onClick={resetConversation}
+              disabled={loadingAssistant}
+              aria-label={isKreol ? "Nouvo kozman" : "Nouvelle conversation"}
+            >
+              <Trash2 size={16} />
+              <span>{isKreol ? "Nouvo kozman" : "Nouvelle conversation"}</span>
+            </button>
+          </div>
+        </header>
+
+        <div className="bkp-advisor-thread" aria-live="polite" aria-busy={loadingAssistant}>
+          {chronologicalHistory.length === 0 && !pendingMessage && (
+            <div className="bkp-advisor-welcome">
+              <span className="bkp-advisor-message-avatar" aria-hidden="true"><Bot size={18} /></span>
+              <div className="bkp-advisor-bubble bkp-advisor-bubble--assistant">
+                <strong>{isKreol ? "Bonzour !" : "Bonjour !"}</strong>
+                <p>{isKreol
+                  ? "Mi lé la pou aide aou ek out aides ek démarches. Choisis in suggestion ou écris out question."
+                  : "Je suis là pour vous aider avec vos aides et démarches. Choisissez une suggestion ou écrivez votre question."}</p>
+              </div>
+            </div>
+          )}
+
+          {chronologicalHistory.map(item => (
+            <div className="bkp-advisor-exchange" key={item.id}>
+              <div className="bkp-advisor-message bkp-advisor-message--user">
+                <div className="bkp-advisor-bubble bkp-advisor-bubble--user">
+                  {item.mode !== "general" && (
+                    <span className="bkp-advisor-mode-label">{getModeLabel(item.mode, isKreol)}</span>
+                  )}
+                  <p>{item.question}</p>
+                </div>
+                <span className="bkp-advisor-message-avatar bkp-advisor-message-avatar--user" aria-hidden="true"><UserRound size={17} /></span>
+              </div>
+              <div className="bkp-advisor-message bkp-advisor-message--assistant">
+                <span className="bkp-advisor-message-avatar" aria-hidden="true"><Bot size={18} /></span>
+                <div className="bkp-advisor-bubble bkp-advisor-bubble--assistant bkp-advisor-answer">{item.answer}</div>
+              </div>
+            </div>
+          ))}
+
+          {pendingMessage && (
+            <div className="bkp-advisor-exchange">
+              <div className="bkp-advisor-message bkp-advisor-message--user">
+                <div className="bkp-advisor-bubble bkp-advisor-bubble--user">
+                  {pendingMessage.mode !== "general" && (
+                    <span className="bkp-advisor-mode-label">{getModeLabel(pendingMessage.mode, isKreol)}</span>
+                  )}
+                  <p>{pendingMessage.question}</p>
+                </div>
+                <span className="bkp-advisor-message-avatar bkp-advisor-message-avatar--user" aria-hidden="true"><UserRound size={17} /></span>
+              </div>
+              <div className="bkp-advisor-message bkp-advisor-message--assistant">
+                <span className="bkp-advisor-message-avatar" aria-hidden="true"><Bot size={18} /></span>
+                <div className="bkp-advisor-bubble bkp-advisor-bubble--assistant bkp-advisor-typing">
+                  <span /><span /><span />
+                  <em>{isKreol ? "Le konseye i prépar out réponse…" : "Le conseiller prépare sa réponse…"}</em>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {errorMessage && (
+            <div className="bkp-advisor-error" role="alert">
+              <div><strong>{isKreol ? "In problèm la arrivé" : "Un problème est survenu"}</strong><p>{errorMessage}</p></div>
+              {failedMessage && (
+                <button type="button" onClick={() => handleAnalyze(failedMessage)} disabled={loadingAssistant}>
+                  {isKreol ? "Réessay" : "Réessayer"}
+                </button>
+              )}
+            </div>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        <footer className="bkp-advisor-composer-zone">
+          {chronologicalHistory.length === 0 && !pendingMessage && (
+            <div className="bkp-advisor-suggestions" aria-label={isKreol ? "Suggestions" : "Suggestions rapides"}>
+              {modes.map(mode => {
+                const Icon = mode.icon
+                return (
+                  <button type="button" key={mode.mode} onClick={() => selectSuggestion(mode)}>
+                    <Icon size={16} style={{ color: mode.color }} />
+                    <span>{mode.title}</span>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+
+          <div className="bkp-advisor-composer">
+            <div className="bkp-advisor-composer-copy">
+              {assistantMode !== "general" && <span>{activeModeLabel}</span>}
+              <textarea
+                ref={textareaRef}
+                value={question}
+                onChange={event => { setQuestion(event.target.value); setQuickQuestionSelected(false); resizeComposer() }}
+                onKeyDown={handleComposerKeyDown}
+                placeholder={isKreol ? "Écris out question isi…" : "Écrivez votre question ici…"}
+                rows={1}
+                disabled={loadingAssistant || loadingProfile}
+              />
+            </div>
+            <button type="button" className="bkp-advisor-send" onClick={() => handleAnalyze()} disabled={analyzeDisabled} aria-label={isKreol ? "Anvoy question" : "Envoyer la question"}>
+              <Send size={19} />
+            </button>
+          </div>
+          <p className="bkp-advisor-composer-hint">
+            {aiQuotaReached
+              ? (isKreol ? "Out konseye lé temporairement indisponib. Bann suggestions rapides i reste disponibles." : "Votre conseiller est temporairement indisponible. Les suggestions rapides restent disponibles.")
+              : (isKreol ? "Entrée pou anvoy • Maj + Entrée pou alé à la ligne" : "Entrée pour envoyer • Maj + Entrée pour aller à la ligne")}
+          </p>
+        </footer>
+      </section>
+    )
   }
 
   return (
@@ -769,61 +972,6 @@ export default function AssistantConseiller({
           ? "Choisis in bouton, complète si besoin, puis koz ek mon konseye. Ici, pas de liste doublon : seulement la réponse utile."
           : "Choisissez un bouton, complétez si besoin, puis discutez avec votre conseiller. Ici, pas de doublon : seulement la réponse utile."}
       </p>
-
-      <div
-        style={{
-          background: aiQuotaReached
-            ? (isLightTheme ? "#FBE4EA" : "rgba(251,113,133,.10)")
-            : (isLightTheme ? "#E2F1E7" : "rgba(34,197,94,.08)"),
-          border: aiQuotaReached
-            ? (isLightTheme ? "1px solid #F0BBCB" : "1px solid rgba(251,113,133,.35)")
-            : (isLightTheme ? "1px solid #B9DDC6" : "1px solid rgba(34,197,94,.25)"),
-          borderRadius: 14,
-          padding: 12,
-          color: COLORS.text,
-          display: "grid",
-          gap: 8,
-          marginBottom: 12,
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            gap: 10,
-            flexWrap: "wrap",
-            fontWeight: 900,
-          }}
-        >
-          <span>
-            {isKreol ? "Forfait" : "Forfait"} {getAiPlanLabel(aiPlan)}
-          </span>
-          <span style={{ color: aiQuotaReached ? COLORS.red : COLORS.green }}>
-            {loadingAiUsage
-              ? "..."
-              : `${aiUsed} / ${aiLimit} ${
-                  isKreol ? "kestions utilisees" : "echanges utilises"
-                }`}
-          </span>
-        </div>
-
-        <div
-          style={{
-            height: 8,
-            background: isLightTheme ? "#FFFFFF" : "rgba(255,255,255,.08)",
-            borderRadius: 999,
-            overflow: "hidden",
-          }}
-        >
-          <div
-            style={{
-              width: `${Math.min(100, Math.max(0, (aiUsed / aiLimit) * 100))}%`,
-              height: "100%",
-              background: aiQuotaReached ? COLORS.red : COLORS.green,
-            }}
-          />
-        </div>
-      </div>
 
       <div
         style={{
@@ -1017,4 +1165,3 @@ export default function AssistantConseiller({
     </section>
   )
 }
-

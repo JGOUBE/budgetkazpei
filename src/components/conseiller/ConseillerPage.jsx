@@ -9,6 +9,7 @@ import {
 } from "lucide-react"
 
 import AssistantConseiller from "./AssistantConseiller"
+import "./conseillerChat.css"
 import { createColorAliases } from "../../styles/designSystem"
 import { useTheme } from "../../styles/ThemeProvider"
 
@@ -156,6 +157,21 @@ export default function ConseillerPage({
   ]
 
   const isLightTheme = themeName === "light"
+
+  if (modes.length > 0) {
+    return (
+      <div className="bkp-advisor-page">
+        <AssistantConseiller
+          isPremium={isPremium}
+          isPremiumPlus={isPremiumPlus}
+          isMobile={isMobile}
+          t={t}
+          user={user}
+          modes={modes}
+        />
+      </div>
+    )
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
