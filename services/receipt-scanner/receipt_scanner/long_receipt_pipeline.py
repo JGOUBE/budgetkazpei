@@ -621,6 +621,13 @@ def _best_monotonic_anchor_sequence(
                 - 1
             )
 
+            # A repeated product much later in the second photo must not
+            # extend the seam. OCR can split a couple of rows differently,
+            # but it cannot justify deleting a long block of intervening
+            # products from only one side.
+            if max(top_gap, bottom_gap) > 4 and abs(top_gap - bottom_gap) > 2:
+                continue
+
             # OCR may split lines differently, but very large unequal gaps are
             # unlikely to represent the same overlap sequence.
             gap_penalty = 0.025 * abs(top_gap - bottom_gap)
@@ -772,6 +779,133 @@ def _clone_token(
         column=token.column,
         source_segment=source_segment,
     )
+
+
+def run_long_receipt_pipeline(
+    image_paths: list[str | Path],
+    *,
+    output_root: str | Path = "output",
+    run_id: str = "ticket_long",
+    max_side: int = 1600,
+    use_cls: bool = False,
+    ocr_engine: Any | None = None,
+) -> dict[str, Any]:
+    """Merge two or three ordered segments through the proven pairwise seam.
+
+    Three-photo receipts are joined sequentially: 1+2, then the merged result
+    +3.  Each seam therefore remains local to adjacent photos, so an identical
+    product elsewhere on the receipt is never removed merely because its name
+    and price repeat.
+    """
+    sources = [Path(path) for path in image_paths]
+    if len(sources) not in {2, 3}:
+        raise ValueError("A long receipt requires exactly two or three segments")
+    for source in sources:
+        if not source.is_file():
+            raise FileNotFoundError(f"Receipt segment not found: {source}")
+
+    if len(sources) == 2:
+        summary = run_two_photo_pipeline(
+            sources[0],
+            sources[1],
+            output_root=output_root,
+            run_id=run_id,
+            max_side=max_side,
+            use_cls=use_cls,
+            ocr_engine=ocr_engine,
+        )
+        pair = dict(summary["overlap"])
+        pair.update({"first_segment": 1, "second_segment": 2})
+        summary["segment_count"] = 2
+        summary["segment_sources"] = [str(source) for source in sources]
+        summary["overlap"] = {
+            **summary["overlap"],
+            "used": True,
+            "segment_count": 2,
+            "pairs": [pair],
+        }
+        summary["preprocessing"]["segments"] = [
+            summary["preprocessing"]["top"],
+            summary["preprocessing"]["bottom"],
+        ]
+        _write_json(Path(summary["files"]["overlap_report"]), summary["overlap"])
+        _write_json(Path(summary["files"]["summary"]), summary)
+        return summary
+
+    try:
+        first_join = run_two_photo_pipeline(
+            sources[0],
+            sources[1],
+            output_root=output_root,
+            run_id=f"{run_id}/pair-1-2",
+            max_side=max_side,
+            use_cls=use_cls,
+            ocr_engine=ocr_engine,
+        )
+        final_join = run_two_photo_pipeline(
+            first_join["files"]["merged_preprocessed"],
+            sources[2],
+            output_root=output_root,
+            run_id=f"{run_id}/final",
+            # Preserve the resolution of the already joined top+middle image;
+            # shrinking it back to one-photo height would make its text tiny.
+            max_side=max_side * 2,
+            use_cls=use_cls,
+            ocr_engine=ocr_engine,
+        )
+    except RuntimeError as exc:
+        lowered = str(exc).lower()
+        if "chevauchement" in lowered or "raccord" in lowered:
+            raise RuntimeError(
+                "long_receipt_overlap_unreliable: chevauchement adjacent "
+                "insuffisant"
+            ) from exc
+        raise
+
+    first_pair = dict(first_join["overlap"])
+    first_pair.update({"first_segment": 1, "second_segment": 2})
+    second_pair = dict(final_join["overlap"])
+    second_pair.update({"first_segment": 2, "second_segment": 3})
+    similarities = [
+        float(first_pair.get("average_similarity") or 0),
+        float(second_pair.get("average_similarity") or 0),
+    ]
+    anchor_counts = [
+        int(first_pair.get("matched_anchor_count") or 0),
+        int(second_pair.get("matched_anchor_count") or 0),
+    ]
+
+    final_join["run_id"] = run_id
+    final_join["segment_count"] = 3
+    final_join["segment_sources"] = [str(source) for source in sources]
+    final_join["overlap"] = {
+        "used": True,
+        "segment_count": 3,
+        "matched_anchor_count": min(anchor_counts),
+        "average_similarity": round(mean(similarities), 6),
+        "pairs": [first_pair, second_pair],
+    }
+    final_join["preprocessing"] = {
+        "segments": [
+            first_join["preprocessing"]["top"],
+            first_join["preprocessing"]["bottom"],
+            final_join["preprocessing"]["bottom"],
+        ],
+        # Compatibility aliases for existing diagnostics consumers.
+        "top": first_join["preprocessing"]["top"],
+        "bottom": final_join["preprocessing"]["bottom"],
+    }
+    final_join["ocr"]["elapsed_seconds_total"] = round(
+        float(first_join["ocr"].get("elapsed_seconds_total") or 0)
+        + float(final_join["ocr"].get("elapsed_seconds_total") or 0),
+        3,
+    )
+    _write_json(
+        Path(final_join["files"]["overlap_report"]),
+        final_join["overlap"],
+    )
+    _write_json(Path(final_join["files"]["summary"]), final_join)
+    return final_join
 
 
 def run_two_photo_pipeline(
@@ -1089,15 +1223,18 @@ def run_two_photo_pipeline(
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
-            "Raccorde et analyse un ticket long photographié en deux parties "
-            "avec chevauchement."
+            "Raccorde et analyse un ticket long photographié en deux ou trois "
+            "parties ordonnées avec chevauchement."
         )
     )
-    parser.add_argument("top_image", help="Photo haute du ticket")
-    parser.add_argument("bottom_image", help="Photo basse du ticket")
+    parser.add_argument(
+        "images",
+        nargs="+",
+        help="Deux ou trois photos dans l'ordre du haut vers le bas",
+    )
     parser.add_argument(
         "--run-id",
-        default="ticket_long_2_photos",
+        default="ticket_long",
         help="Nom du dossier de résultat",
     )
     parser.add_argument(
@@ -1122,9 +1259,8 @@ def _build_parser() -> argparse.ArgumentParser:
 def main() -> int:
     args = _build_parser().parse_args()
 
-    summary = run_two_photo_pipeline(
-        args.top_image,
-        args.bottom_image,
+    summary = run_long_receipt_pipeline(
+        args.images,
         output_root=args.output_root,
         run_id=args.run_id,
         max_side=args.max_side,

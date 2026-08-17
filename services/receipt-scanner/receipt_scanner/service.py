@@ -21,7 +21,7 @@ from .column_detector import ColumnDetector
 from .geometry_types import OCRDocument, OCRToken
 from .image_preprocessor import PreprocessResult, ImagePreprocessor
 from .line_reconstructor import LineReconstructor, ReconstructedLine
-from .long_receipt_pipeline import run_two_photo_pipeline
+from .long_receipt_pipeline import run_long_receipt_pipeline
 from .market_resolver import MarketProductResolver, build_market_product_resolver
 from .quality_gate import QualityDecision, ReceiptQualityGate
 from .quota import QuotaReservation, ScanQuotaProvider, build_quota_provider
@@ -84,8 +84,7 @@ class PipelineRunner(Protocol):
 
     def run_long_receipt(
         self,
-        top_image_path: Path,
-        bottom_image_path: Path,
+        image_paths: list[Path],
         work_dir: Path,
     ) -> PipelineResult:
         ...
@@ -174,14 +173,12 @@ class DefaultPipelineRunner:
 
     def run_long_receipt(
         self,
-        top_image_path: Path,
-        bottom_image_path: Path,
+        image_paths: list[Path],
         work_dir: Path,
     ) -> PipelineResult:
         started = time.monotonic()
-        summary = run_two_photo_pipeline(
-            top_image_path,
-            bottom_image_path,
+        summary = run_long_receipt_pipeline(
+            image_paths,
             output_root=work_dir,
             run_id="long-receipt",
             ocr_engine=self.engine_provider.get(),
@@ -206,8 +203,11 @@ class DefaultPipelineRunner:
         )
         overlap = summary.get("overlap")
         preprocessing = summary.get("preprocessing", {})
-        top_rotation = preprocessing.get("top", {}).get("rotation_degrees")
-        bottom_rotation = preprocessing.get("bottom", {}).get("rotation_degrees")
+        rotations = [
+            int(segment.get("rotation_degrees") or 0)
+            for segment in preprocessing.get("segments", [])
+            if isinstance(segment, dict)
+        ]
 
         return PipelineResult(
             receipt=receipt,
@@ -220,10 +220,7 @@ class DefaultPipelineRunner:
                 )
             ),
             token_count=int(summary.get("ocr", {}).get("merged_token_count", 0)),
-            rotation_degrees=max(
-                int(top_rotation or 0),
-                int(bottom_rotation or 0),
-            ),
+            rotation_degrees=max(rotations, default=0),
             overlap=overlap if isinstance(overlap, dict) else None,
             parser_mode_requested=self.parser_mode,
             parser_mode_used=used_mode,
@@ -379,8 +376,9 @@ class ReceiptScanService:
     def scan_long_receipt(
         self,
         *,
-        top_upload: ScanUpload,
-        bottom_upload: ScanUpload,
+        segment_uploads: list[ScanUpload] | None = None,
+        top_upload: ScanUpload | None = None,
+        bottom_upload: ScanUpload | None = None,
         user_id: str,
         access_token: str | None = None,
         scan_id: str | None = None,
@@ -388,6 +386,11 @@ class ReceiptScanService:
         client_version: str | None = None,
     ) -> dict[str, object]:
         del locale, client_version
+        uploads = list(segment_uploads or [])
+        if not uploads and top_upload is not None and bottom_upload is not None:
+            uploads = [top_upload, bottom_upload]
+        if len(uploads) not in {2, 3}:
+            raise ScannerApiError(code="invalid_file", retryable=False)
         resolved_scan_id = scan_id or str(uuid.uuid4())
         return self._run_idempotent(
             user_id=user_id,
@@ -397,8 +400,7 @@ class ReceiptScanService:
                 scan_id=resolved_scan_id,
                 mode="long_receipt",
                 operation=lambda work_dir: self._scan_long_in_temp(
-                    top_upload,
-                    bottom_upload,
+                    uploads,
                     work_dir,
                     resolved_scan_id,
                     user_id,
@@ -547,24 +549,21 @@ class ReceiptScanService:
 
     def _scan_long_in_temp(
         self,
-        top_upload: ScanUpload,
-        bottom_upload: ScanUpload,
+        segment_uploads: list[ScanUpload],
         work_dir: Path,
         scan_id: str,
         user_id: str,
         access_token: str | None,
     ) -> dict[str, object]:
-        top = self._persist_and_validate_upload(
-            top_upload,
-            work_dir / "top_input.bin",
-            scan_id=scan_id,
-        )
-        bottom = self._persist_and_validate_upload(
-            bottom_upload,
-            work_dir / "bottom_input.bin",
-            scan_id=scan_id,
-        )
-        if top.size_bytes + bottom.size_bytes > self.settings.max_total_file_size_bytes:
+        segments = [
+            self._persist_and_validate_upload(
+                upload,
+                work_dir / f"segment_{index + 1}_input.bin",
+                scan_id=scan_id,
+            )
+            for index, upload in enumerate(segment_uploads)
+        ]
+        if sum(segment.size_bytes for segment in segments) > self.settings.max_total_file_size_bytes:
             raise ScannerApiError(
                 code="file_too_large",
                 retryable=True,
@@ -576,8 +575,7 @@ class ReceiptScanService:
             scan_id=scan_id,
             access_token=access_token,
             operation=lambda: self.runner.run_long_receipt(
-                top.path,
-                bottom.path,
+                [segment.path for segment in segments],
                 work_dir,
             ),
         )
@@ -747,7 +745,15 @@ class ReceiptScanService:
     def _map_runtime_error(exc: RuntimeError, scan_id: str) -> ScannerApiError:
         message = str(exc)
         lowered = message.lower()
-        if "chevauchement" in lowered or "raccord" in lowered:
+        if "long_receipt_overlap_unreliable" in lowered:
+            code = "long_receipt_overlap_unreliable"
+        elif (
+            "image quality" in lowered
+            or "qualite image" in lowered
+            or "aucun texte lisible" in lowered
+        ):
+            code = "image_quality_failed"
+        elif "chevauchement" in lowered or "raccord" in lowered:
             code = "overlap_not_found"
         elif "inverse" in lowered or "commence trop bas" in lowered:
             code = "images_order_invalid"
@@ -779,6 +785,22 @@ class ReceiptScanService:
                         overlap.get("average_similarity"),
                         "0.0001",
                     ),
+                    "segment_count": overlap.get("segment_count"),
+                    "pairs": [
+                        {
+                            "first_segment": pair.get("first_segment"),
+                            "second_segment": pair.get("second_segment"),
+                            "matched_anchor_count": pair.get(
+                                "matched_anchor_count"
+                            ),
+                            "average_similarity": _round_optional(
+                                pair.get("average_similarity"),
+                                "0.0001",
+                            ),
+                        }
+                        for pair in (overlap.get("pairs") or [])
+                        if isinstance(pair, dict)
+                    ],
                 },
                 "parser": {
                     "requested_mode": result.parser_mode_requested,

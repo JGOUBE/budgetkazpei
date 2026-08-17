@@ -36,13 +36,13 @@ class ScannerSettings:
     expected_audience: str | None = "authenticated"
     expected_issuer: str | None = None
     max_file_size_mb: int = 12
-    max_total_file_size_mb: int = 24
+    max_total_file_size_mb: int = 36
     min_image_width: int = 120
     min_image_height: int = 120
     max_image_pixels: int = 45_000_000
     max_concurrent_scans: int = 1
     scanner_busy_timeout_seconds: float = 2.0
-    processing_timeout_seconds: float = 90.0
+    processing_timeout_seconds: float = 180.0
     diagnostics_enabled: bool = True
     parser_mode: str = "shadow"
     temp_parent_dir: str | None = None
@@ -152,7 +152,7 @@ def load_settings(*, validate: bool = True) -> ScannerSettings:
         max_file_size_mb=_int_env("RECEIPT_SCANNER_MAX_FILE_SIZE_MB", 12),
         max_total_file_size_mb=_int_env(
             "RECEIPT_SCANNER_MAX_TOTAL_FILE_SIZE_MB",
-            24,
+            36,
         ),
         min_image_width=_int_env("RECEIPT_SCANNER_MIN_IMAGE_WIDTH", 120),
         min_image_height=_int_env("RECEIPT_SCANNER_MIN_IMAGE_HEIGHT", 120),
@@ -170,7 +170,7 @@ def load_settings(*, validate: bool = True) -> ScannerSettings:
         ),
         processing_timeout_seconds=_float_env(
             "RECEIPT_SCANNER_PROCESSING_TIMEOUT_SECONDS",
-            90.0,
+            180.0,
         ),
         diagnostics_enabled=os.environ.get(
             "RECEIPT_SCANNER_DIAGNOSTICS_ENABLED",

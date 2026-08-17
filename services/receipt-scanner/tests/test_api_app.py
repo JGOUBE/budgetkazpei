@@ -125,6 +125,29 @@ class ApiAppTest(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["mode"], "long_receipt")
 
+    def test_scan_long_receipt_three_segments_endpoint(self) -> None:
+        response = self.client().post(
+            "/scan/long-receipt",
+            files=[
+                ("segments", ("top.jpg", image_bytes(), "image/jpeg")),
+                ("segments", ("middle.jpg", image_bytes(), "image/jpeg")),
+                ("segments", ("bottom.jpg", image_bytes(), "image/jpeg")),
+            ],
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["mode"], "long_receipt")
+
+    def test_scan_long_receipt_rejects_four_segments(self) -> None:
+        response = self.client().post(
+            "/scan/long-receipt",
+            files=[
+                ("segments", (f"segment-{index}.jpg", image_bytes(), "image/jpeg"))
+                for index in range(4)
+            ],
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["error"]["code"], "invalid_file")
+
     def test_unhandled_errors_do_not_return_stack_traces(self) -> None:
         response = self.client(ExplodingApiService()).post(
             "/scan/single",

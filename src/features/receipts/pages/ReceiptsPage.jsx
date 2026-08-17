@@ -75,18 +75,24 @@ const TEXT = {
     manual: "Remplir manuellement",
     longTicket: "Ticket long",
     longTicketTitle: "Scanner un ticket long",
-    longTicketHint: "Photo 1 : haut ou milieu du ticket. Photo 2 : bas du ticket avec total et paiement.",
-    longTicketTop: "Photo 1 : haut du ticket",
-    longTicketBottom: "Photo 2 : bas avec total",
-    longTicketGallery: "Importer 2 images",
-    longTicketAnalyze: "Analyser les 2 photos",
+    longTicketCountQuestion: "Combien de photos ?",
+    longTicketTwoPhotos: "2 photos",
+    longTicketThreePhotos: "3 photos",
+    longTicketHint: count => count === 3
+      ? "Photo 1 — Haut du ticket · Photo 2 — Milieu du ticket · Photo 3 — Bas du ticket"
+      : "Photo 1 — Haut du ticket · Photo 2 — Bas du ticket",
+    longTicketOverlapHint: "Faites chevaucher légèrement chaque photo avec la précédente pour éviter de perdre des articles.",
+    longTicketPart: (index, count) => count === 3
+      ? ["Photo 1 — Haut du ticket", "Photo 2 — Milieu du ticket", "Photo 3 — Bas du ticket"][index]
+      : ["Photo 1 — Haut du ticket", "Photo 2 — Bas du ticket"][index],
+    longTicketGallery: count => `Importer ${count} images`,
+    longTicketAnalyze: count => `Analyser les ${count} photos`,
     longTicketReset: "Recommencer",
-    longTicketTopReady: "Photo 1 prête",
-    longTicketBottomReady: "Photo 2 prête",
-    longTicketMissing: "Ajoutez les 2 photos du ticket.",
-    longTicketNeedTwo: "Sélectionnez 2 images : le haut puis le bas du ticket.",
-    longTicketModeOpened: "Ajoutez le haut puis le bas du ticket.",
-    longTicketMerging: "Fusion des deux photos du ticket...",
+    longTicketPartReady: index => `Photo ${index + 1} prête`,
+    longTicketMissing: count => `Ajoutez les ${count} photos du ticket.`,
+    longTicketNeedCount: count => `Sélectionnez exactement ${count} images dans l’ordre du haut vers le bas.`,
+    longTicketModeOpened: "Choisissez 2 ou 3 photos.",
+    longTicketMerging: count => `Analyse des ${count} parties du ticket...`,
     quota: quota => quota.plan === "premium_plus"
       ? `Analyses IA illimitées — ${quota.planLabel}`
       : `Analyses IA : ${quota.used} / ${quota.limit} — ${quota.planLabel}`,
@@ -168,18 +174,24 @@ const TEXT = {
     manual: "Ranpli amain",
     longTicket: "Tiké long",
     longTicketTitle: "Scanner in tiké long",
-    longTicketHint: "Foto 1 : lao ou milié tiké-la. Foto 2 : anba tiké-la ek total ek paiement.",
-    longTicketTop: "Foto 1 : lao tiké-la",
-    longTicketBottom: "Foto 2 : anba ek total",
-    longTicketGallery: "Import 2 zimaz",
-    longTicketAnalyze: "Analiz 2 foto-la",
+    longTicketCountQuestion: "Konbien foto ?",
+    longTicketTwoPhotos: "2 foto",
+    longTicketThreePhotos: "3 foto",
+    longTicketHint: count => count === 3
+      ? "Foto 1 — Lao tiké-la · Foto 2 — Milié tiké-la · Foto 3 — Anba tiké-la"
+      : "Foto 1 — Lao tiké-la · Foto 2 — Anba tiké-la",
+    longTicketOverlapHint: "Fé sak foto chevauche in pé ek foto avan pou pa perdi bann lartik.",
+    longTicketPart: (index, count) => count === 3
+      ? ["Foto 1 — Lao tiké-la", "Foto 2 — Milié tiké-la", "Foto 3 — Anba tiké-la"][index]
+      : ["Foto 1 — Lao tiké-la", "Foto 2 — Anba tiké-la"][index],
+    longTicketGallery: count => `Import ${count} zimaz`,
+    longTicketAnalyze: count => `Analiz ${count} foto-la`,
     longTicketReset: "Recommansé",
-    longTicketTopReady: "Foto 1 lé paré",
-    longTicketBottomReady: "Foto 2 lé paré",
-    longTicketMissing: "Azout 2 foto tiké-la.",
-    longTicketNeedTwo: "Swazi 2 zimaz : lao tiké-la, apre anba tiké-la.",
-    longTicketModeOpened: "Azout lao tiké-la, apre anba tiké-la.",
-    longTicketMerging: "Nou pe kol 2 foto tiké-la...",
+    longTicketPartReady: index => `Foto ${index + 1} lé paré`,
+    longTicketMissing: count => `Azout ${count} foto tiké-la.`,
+    longTicketNeedCount: count => `Swazi exactement ${count} zimaz depi lao ziska anba.`,
+    longTicketModeOpened: "Swazi 2 ou 3 foto.",
+    longTicketMerging: count => `Analiz ${count} parti tiké-la...`,
     quota: quota => quota.plan === "premium_plus"
       ? `Analiz IA san limit — ${quota.planLabel}`
       : `Analiz IA : ${quota.used} / ${quota.limit} — ${quota.planLabel}`,
@@ -1015,7 +1027,7 @@ async function mergeReceiptImagesVertically(files = []) {
     throw new Error("Fusion image impossible.")
   }
 
-  return new File([blob], `ticket-long-2-photos-${Date.now()}.jpg`, {
+  return new File([blob], `ticket-long-${validFiles.length}-photos-${Date.now()}.jpg`, {
     type: "image/jpeg",
     lastModified: Date.now(),
   })
@@ -1042,8 +1054,7 @@ export default function ReceiptsPage({
   })
   const cameraRef = useRef(null)
   const galleryRef = useRef(null)
-  const longTopCameraRef = useRef(null)
-  const longBottomCameraRef = useRef(null)
+  const longSegmentCameraRefs = useRef([])
   const longGalleryRef = useRef(null)
 
   const [mode, setMode] = useState("history")
@@ -1064,10 +1075,8 @@ export default function ReceiptsPage({
   const [pendingImagePath, setPendingImagePath] = useState(null)
   const [showBlockedDetectedLines, setShowBlockedDetectedLines] = useState(false)
   const [longTicketMode, setLongTicketMode] = useState(false)
-  const [longTicketFiles, setLongTicketFiles] = useState({
-    top: null,
-    bottom: null,
-  })
+  const [longTicketPhotoCount, setLongTicketPhotoCount] = useState(null)
+  const [longTicketFiles, setLongTicketFiles] = useState([null, null, null])
   const automatedScanDisabled = busy || quota.loading
 
   const globalCategory = draft?.items?.[0]?.category || "alimentaire"
@@ -1135,42 +1144,43 @@ export default function ReceiptsPage({
   }
 
   function resetLongTicketScan() {
-    setLongTicketFiles({
-      top: null,
-      bottom: null,
-    })
+    setLongTicketFiles([null, null, null])
+    setLongTicketPhotoCount(null)
     setLongTicketMode(false)
 
-    if (longTopCameraRef.current) longTopCameraRef.current.value = ""
-    if (longBottomCameraRef.current) longBottomCameraRef.current.value = ""
+    longSegmentCameraRefs.current.forEach(input => {
+      if (input) input.value = ""
+    })
     if (longGalleryRef.current) longGalleryRef.current.value = ""
   }
 
-  function handleLongTicketPart(part, file) {
+  function selectLongTicketPhotoCount(count) {
+    setLongTicketPhotoCount(count)
+    setLongTicketFiles([null, null, null])
+    setMessage(txt.longTicketOverlapHint)
+  }
+
+  function handleLongTicketPart(index, file) {
     if (!file) return
 
-    setLongTicketFiles(prev => ({
-      ...prev,
-      [part]: file,
-    }))
+    setLongTicketFiles(previous => previous.map((current, currentIndex) => (
+      currentIndex === index ? file : current
+    )))
 
-    setMessage(part === "top" ? txt.longTicketTopReady : txt.longTicketBottomReady)
+    setMessage(txt.longTicketPartReady(index))
   }
 
   function handleLongTicketGallery(files) {
     const images = Array.from(files || []).filter(file => file?.type?.startsWith("image/"))
 
-    if (images.length < 2) {
-      setMessage(txt.longTicketNeedTwo)
+    if (!longTicketPhotoCount || images.length !== longTicketPhotoCount) {
+      setMessage(txt.longTicketNeedCount(longTicketPhotoCount || 2))
       return
     }
 
-    setLongTicketFiles({
-      top: images[0],
-      bottom: images[1],
-    })
+    setLongTicketFiles(previous => previous.map((_, index) => images[index] || null))
 
-    setMessage(`${txt.longTicketTopReady}. ${txt.longTicketBottomReady}.`)
+    setMessage(images.map((_, index) => txt.longTicketPartReady(index)).join(". "))
   }
 
   async function processCompletedScan(scan, sourceFile) {
@@ -1294,8 +1304,9 @@ export default function ReceiptsPage({
   }
 
   async function handleLongTicketScan() {
-    if (!longTicketFiles.top || !longTicketFiles.bottom) {
-      setMessage(txt.longTicketMissing)
+    const segments = longTicketFiles.slice(0, longTicketPhotoCount || 0)
+    if (!longTicketPhotoCount || segments.length !== longTicketPhotoCount || segments.some(file => !file)) {
+      setMessage(txt.longTicketMissing(longTicketPhotoCount || 2))
       return
     }
 
@@ -1319,23 +1330,18 @@ export default function ReceiptsPage({
     setMessage("")
     setScanError(null)
 
-    const inputBytes =
-      Number(longTicketFiles.top?.size || 0)
-      + Number(longTicketFiles.bottom?.size || 0)
+    const inputBytes = segments.reduce((sum, file) => sum + Number(file?.size || 0), 0)
 
     try {
       setMode("analysis")
       setScanProgress({
         step: "optimizing",
-        label: "Préparation des deux photos...",
+        label: txt.longTicketMerging(longTicketPhotoCount),
         progress: 5,
       })
 
       const scan = await scanLongReceiptWithConfiguredEngine(
-        {
-          top: longTicketFiles.top,
-          bottom: longTicketFiles.bottom,
-        },
+        { segments },
         {
           onProgress: progress => setScanProgress(progress),
           plan: quota.plan,
@@ -1348,10 +1354,7 @@ export default function ReceiptsPage({
         progress: 95,
       })
 
-      const mergedFile = await mergeReceiptImagesVertically([
-        longTicketFiles.top,
-        longTicketFiles.bottom,
-      ])
+      const mergedFile = await mergeReceiptImagesVertically(segments)
 
       await processCompletedScan(scan, mergedFile)
       resetLongTicketScan()
@@ -1374,7 +1377,17 @@ export default function ReceiptsPage({
       } catch (metricError) {
         console.warn("Metrique scanner indisponible:", metricError)
       }
-      startManual({ keepError: true })
+      const canRetakeLongTicket = [
+        "long_receipt_overlap_unreliable",
+        "overlap_not_found",
+        "images_order_invalid",
+        "image_quality_failed",
+      ].includes(details.code)
+      if (canRetakeLongTicket) {
+        setMode("history")
+      } else {
+        startManual({ keepError: true })
+      }
     } finally {
       setBusy(false)
     }
@@ -2298,52 +2311,65 @@ export default function ReceiptsPage({
             <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 950 }}>
               {txt.longTicketTitle}
             </div>
-            <div style={{ color: COLORS.muted, fontSize: 13, lineHeight: 1.5, marginTop: 4 }}>
-              {txt.longTicketHint}
+            {!longTicketPhotoCount && (
+              <div style={{ color: COLORS.muted, fontSize: 14, lineHeight: 1.5, marginTop: 8, fontWeight: 850 }}>
+                {txt.longTicketCountQuestion}
+              </div>
+            )}
+          </div>
+
+          {!longTicketPhotoCount && (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+              {[2, 3].map(count => (
+                <button
+                  key={count}
+                  type="button"
+                  disabled={automatedScanDisabled}
+                  onClick={() => selectLongTicketPhotoCount(count)}
+                  style={{ minHeight: 48, borderRadius: 14, border: `1px solid ${COLORS.border}`, background: COLORS.cardLight, color: COLORS.text, fontWeight: 950, fontFamily: "inherit" }}
+                >
+                  {count === 2 ? txt.longTicketTwoPhotos : txt.longTicketThreePhotos}
+                </button>
+              ))}
             </div>
-          </div>
+          )}
 
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: 12 }}>
-            <button
-              type="button"
-              disabled={automatedScanDisabled}
-              onClick={() => longTopCameraRef.current?.click()}
-              style={{
-                minHeight: 54,
-                borderRadius: 16,
-                border: `1px solid ${longTicketFiles.top ? COLORS.green : COLORS.border}`,
-                background: COLORS.cardLight,
-                color: COLORS.text,
-                fontWeight: 950,
-                fontFamily: "inherit",
-                cursor: automatedScanDisabled ? "wait" : "pointer",
-              }}
-            >
-              {longTicketFiles.top ? txt.longTicketTopReady : txt.longTicketTop}
-            </button>
+          {longTicketPhotoCount && (
+            <>
+              <div style={{ color: COLORS.muted, fontSize: 13, lineHeight: 1.5 }}>
+                {txt.longTicketHint(longTicketPhotoCount)}
+                <div style={{ marginTop: 6, color: COLORS.text, fontWeight: 800 }}>
+                  {txt.longTicketOverlapHint}
+                </div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : `repeat(${longTicketPhotoCount}, 1fr)`, gap: 12 }}>
+                {Array.from({ length: longTicketPhotoCount }, (_, index) => (
+                  <button
+                    key={index}
+                    type="button"
+                    disabled={automatedScanDisabled}
+                    onClick={() => longSegmentCameraRefs.current[index]?.click()}
+                    style={{
+                      minHeight: 54,
+                      borderRadius: 16,
+                      border: `1px solid ${longTicketFiles[index] ? COLORS.green : COLORS.border}`,
+                      background: COLORS.cardLight,
+                      color: COLORS.text,
+                      fontWeight: 950,
+                      fontFamily: "inherit",
+                      cursor: automatedScanDisabled ? "wait" : "pointer",
+                    }}
+                  >
+                    {longTicketFiles[index] ? txt.longTicketPartReady(index) : txt.longTicketPart(index, longTicketPhotoCount)}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
 
-            <button
-              type="button"
-              disabled={automatedScanDisabled}
-              onClick={() => longBottomCameraRef.current?.click()}
-              style={{
-                minHeight: 54,
-                borderRadius: 16,
-                border: `1px solid ${longTicketFiles.bottom ? COLORS.green : COLORS.border}`,
-                background: COLORS.cardLight,
-                color: COLORS.text,
-                fontWeight: 950,
-                fontFamily: "inherit",
-                cursor: automatedScanDisabled ? "wait" : "pointer",
-              }}
-            >
-              {longTicketFiles.bottom ? txt.longTicketBottomReady : txt.longTicketBottom}
-            </button>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: 10 }}>
+          {longTicketPhotoCount && <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: 10 }}>
             <ActionButton
-              label={txt.longTicketGallery}
+              label={txt.longTicketGallery(longTicketPhotoCount)}
               Icon={BkIcons.receipts}
               disabled={automatedScanDisabled}
               onClick={() => longGalleryRef.current?.click()}
@@ -2351,9 +2377,9 @@ export default function ReceiptsPage({
             />
 
             <ActionButton
-              label={txt.longTicketAnalyze}
+              label={txt.longTicketAnalyze(longTicketPhotoCount)}
               Icon={BkIcons.scan}
-              disabled={automatedScanDisabled || !longTicketFiles.top || !longTicketFiles.bottom}
+              disabled={automatedScanDisabled || longTicketFiles.slice(0, longTicketPhotoCount).some(file => !file)}
               onClick={handleLongTicketScan}
             />
 
@@ -2364,34 +2390,26 @@ export default function ReceiptsPage({
               onClick={resetLongTicketScan}
               muted
             />
-          </div>
+          </div>}
         </div>
       )}
 
       <input ref={cameraRef} type="file" accept="image/*" capture="environment" hidden onChange={event => handleFile(event.target.files?.[0])} />
       <input ref={galleryRef} type="file" accept="image/*" hidden onChange={event => handleFile(event.target.files?.[0])} />
-      <input
-        ref={longTopCameraRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        hidden
-        onChange={event => {
-          handleLongTicketPart("top", event.target.files?.[0])
-          event.target.value = ""
-        }}
-      />
-      <input
-        ref={longBottomCameraRef}
-        type="file"
-        accept="image/*"
-        capture="environment"
-        hidden
-        onChange={event => {
-          handleLongTicketPart("bottom", event.target.files?.[0])
-          event.target.value = ""
-        }}
-      />
+      {[0, 1, 2].map(index => (
+        <input
+          key={index}
+          ref={input => { longSegmentCameraRefs.current[index] = input }}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          hidden
+          onChange={event => {
+            handleLongTicketPart(index, event.target.files?.[0])
+            event.target.value = ""
+          }}
+        />
+      ))}
       <input
         ref={longGalleryRef}
         type="file"

@@ -1,10 +1,14 @@
+import tempfile
 import unittest
+from pathlib import Path
+from unittest.mock import patch
 
 from helpers import make_line
 from receipt_scanner.long_receipt_pipeline import (
     _repair_multibuy_detail_rows,
     _repair_staggered_financial_rows,
     find_overlap,
+    run_long_receipt_pipeline,
     run_two_photo_pipeline,
 )
 
@@ -103,6 +107,111 @@ class LongReceiptPipelineTest(unittest.TestCase):
         ]
         _repaired, report = _repair_multibuy_detail_rows(lines)
         self.assertEqual(report, [])
+
+    def test_three_segments_are_joined_sequentially_with_two_local_seams(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            sources = [root / f"segment-{index}.jpg" for index in range(3)]
+            for source in sources:
+                source.write_bytes(b"image")
+
+            def summary(name, anchors, similarity):
+                merged = root / f"{name}-merged.jpg"
+                merged.write_bytes(b"merged")
+                summary_path = root / f"{name}-summary.json"
+                return {
+                    "run_id": name,
+                    "overlap": {
+                        "matched_anchor_count": anchors,
+                        "average_similarity": similarity,
+                        "bottom_cut_line": 3,
+                    },
+                    "preprocessing": {
+                        "top": {"rotation_degrees": 0},
+                        "bottom": {"rotation_degrees": 0},
+                    },
+                    "ocr": {
+                        "elapsed_seconds_total": 0.2,
+                        "merged_token_count": 30,
+                    },
+                    "files": {
+                        "merged_preprocessed": str(merged),
+                        "overlap_report": str(root / f"{name}-overlap.json"),
+                        "summary": str(summary_path),
+                    },
+                }
+
+            with patch(
+                "receipt_scanner.long_receipt_pipeline.run_two_photo_pipeline",
+                side_effect=[summary("pair-12", 3, 0.96), summary("pair-23", 4, 0.94)],
+            ) as pair_pipeline:
+                result = run_long_receipt_pipeline(
+                    sources,
+                    output_root=root,
+                    run_id="three-segments",
+                    ocr_engine=object(),
+                )
+
+            self.assertEqual(pair_pipeline.call_count, 2)
+            second_call_paths = pair_pipeline.call_args_list[1].args
+            self.assertTrue(str(second_call_paths[0]).endswith("pair-12-merged.jpg"))
+            self.assertEqual(second_call_paths[1], sources[2])
+            self.assertEqual(result["segment_count"], 3)
+            self.assertEqual(
+                [(pair["first_segment"], pair["second_segment"]) for pair in result["overlap"]["pairs"]],
+                [(1, 2), (2, 3)],
+            )
+            self.assertEqual(result["overlap"]["matched_anchor_count"], 3)
+            self.assertAlmostEqual(result["overlap"]["average_similarity"], 0.95)
+
+    def test_three_segment_middle_without_overlap_is_never_silently_merged(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            sources = [root / f"segment-{index}.jpg" for index in range(3)]
+            for source in sources:
+                source.write_bytes(b"image")
+            with patch(
+                "receipt_scanner.long_receipt_pipeline.run_two_photo_pipeline",
+                side_effect=RuntimeError("Chevauchement insuffisant entre les photos"),
+            ):
+                with self.assertRaisesRegex(
+                    RuntimeError,
+                    "long_receipt_overlap_unreliable",
+                ):
+                    run_long_receipt_pipeline(sources, output_root=root)
+
+    def test_identical_product_away_from_the_seam_is_preserved(self) -> None:
+        top = overlap_top_lines() + [
+            make_line(5, [("BOUTEILLE IDENTIQUE", "description", 70), ("2.50", "price", 620)], y=240, segment="top"),
+        ]
+        bottom = overlap_bottom_lines()
+        bottom.append(
+            make_line(10, [("BOUTEILLE IDENTIQUE", "description", 70), ("2.50", "price", 620)], y=480, segment="bottom")
+        )
+        overlap = find_overlap(top, bottom)
+        retained_text = [line.text for line in top + bottom[overlap.bottom_cut_line:]]
+        self.assertEqual(
+            sum("BOUTEILLE IDENTIQUE" in text for text in retained_text),
+            2,
+        )
+
+    def test_promotion_inside_confirmed_seam_is_removed_once(self) -> None:
+        top = overlap_top_lines()
+        top.insert(
+            4,
+            make_line(4, [("PRIX PROMOTION -0.50", "description", 70)], y=180, segment="top"),
+        )
+        bottom = overlap_bottom_lines()
+        bottom.insert(
+            2,
+            make_line(2, [("PRIX PROMOTION -0.50", "description", 70)], y=100, segment="bottom"),
+        )
+        overlap = find_overlap(top, bottom)
+        retained_text = [line.text for line in top + bottom[overlap.bottom_cut_line:]]
+        self.assertEqual(
+            sum("PRIX PROMOTION" in text for text in retained_text),
+            1,
+        )
 
 
 if __name__ == "__main__":

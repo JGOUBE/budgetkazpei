@@ -145,33 +145,52 @@ def create_app(
             500: {"model": ErrorResponse},
         },
         tags=["scan"],
-        summary="Scan a long receipt from two photos",
+        summary="Scan a long receipt from two or three photos",
         description=(
-            "Scans a long receipt split into top and bottom images with a "
-            "visible textual overlap."
+            "Accepts the legacy top_image + bottom_image contract or two/three "
+            "ordered segments fields with visible textual overlaps."
         ),
     )
     async def scan_long_receipt(
-        top_image: UploadFile = File(..., description="Top receipt image"),
-        bottom_image: UploadFile = File(..., description="Bottom receipt image"),
+        segments: list[UploadFile] | None = File(
+            default=None,
+            description="Two or three ordered receipt segments",
+        ),
+        top_image: UploadFile | None = File(
+            default=None,
+            description="Legacy top receipt image",
+        ),
+        bottom_image: UploadFile | None = File(
+            default=None,
+            description="Legacy bottom receipt image",
+        ),
         scan_id: str | None = Form(default=None),
         locale: str | None = Form(default=None),
         client_version: str | None = Form(default=None),
         user: AuthenticatedUser = Depends(require_user),
         service: ReceiptScanService = Depends(get_scan_service),
     ) -> dict[str, object]:
+        if segments:
+            if top_image is not None or bottom_image is not None:
+                raise ScannerApiError(code="invalid_file", retryable=False)
+            if len(segments) not in {2, 3}:
+                raise ScannerApiError(code="invalid_file", retryable=False)
+            ordered_uploads = segments
+        else:
+            if top_image is None or bottom_image is None:
+                raise ScannerApiError(code="invalid_file", retryable=False)
+            ordered_uploads = [top_image, bottom_image]
+
         return await run_in_threadpool(
             service.scan_long_receipt,
-            top_upload=ScanUpload(
-                filename=top_image.filename,
-                content_type=top_image.content_type,
-                stream=top_image.file,
-            ),
-            bottom_upload=ScanUpload(
-                filename=bottom_image.filename,
-                content_type=bottom_image.content_type,
-                stream=bottom_image.file,
-            ),
+            segment_uploads=[
+                ScanUpload(
+                    filename=image.filename,
+                    content_type=image.content_type,
+                    stream=image.file,
+                )
+                for image in ordered_uploads
+            ],
             user_id=user.user_id,
             access_token=user.access_token,
             scan_id=scan_id,

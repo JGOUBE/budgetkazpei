@@ -388,6 +388,25 @@ def leader_price_weight_lines():
 
 
 class ReceiptParserFRTest(unittest.TestCase):
+    def test_three_segment_source_truth_uses_header_and_final_footer(self) -> None:
+        lines = [
+            make_line(0, [("E.LECLERC", "description", 70)], y=40, segment="top"),
+            make_line(1, [("LE PORTAIL", "description", 70)], y=80, segment="top"),
+            make_line(2, [("17/07/2026", "description", 70)], y=120, segment="top"),
+            make_line(3, [(">> EPICERIE", "description", 70)], y=180, segment="top"),
+            make_line(4, [("RIZ LOCAL", "description", 70), ("2.00", "price", 620)], y=230, segment="top"),
+            make_line(5, [("HUILE LOCAL", "description", 70), ("2.00", "price", 620)], y=280, segment="middle"),
+            make_line(6, [("LAIT LOCAL", "description", 70), ("2.00", "price", 620)], y=330, segment="bottom"),
+            make_line(7, [("Total 3 articles", "description", 70), ("6.00", "price", 620)], y=390, segment="bottom"),
+        ]
+        parsed = ReceiptParserFR().parse(make_document([]), lines)
+        self.assertEqual(parsed.store_name, "E.Leclerc")
+        self.assertEqual(parsed.store_location, "LE PORTAIL")
+        self.assertEqual(parsed.receipt_date, "2026-07-17")
+        self.assertEqual(parsed.declared_item_count, 3)
+        self.assertEqual(parsed.total, 6.00)
+        self.assertEqual(len(parsed.items), 3)
+
     def test_short_receipt_case_a_is_parsed_without_private_photo(
         self,
     ) -> None:
@@ -781,5 +800,3 @@ class ReceiptParserFRPhase13IdentityTest(unittest.TestCase):
         ]
         parsed = self.parse(lines)
         self.assertEqual(parsed.receipt_date, "2026-07-24")
-
-

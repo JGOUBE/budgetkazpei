@@ -315,6 +315,19 @@ export async function runReceiptScannerFrontRegressionFixtures(): Promise<Regres
   results.push(assertTrue("long-form-top-bottom", longForm instanceof FormData && longForm.has("top_image") && longForm.has("bottom_image")))
   results.push(assertEqual("long-form-scan-id", longForm?.get("scan_id"), "22222222-2222-4222-8222-222222222222"))
 
+  const threeSegmentCalls: any[] = []
+  await scanLongReceiptWithApi({
+    segments: [fakeFile("top.jpg"), fakeFile("middle.jpg"), fakeFile("bottom.jpg")],
+  }, {
+    apiUrl: "https://scanner.local",
+    getSession: fakeSession("three-token"),
+    fetchImpl: okFetch({ ...responseFor("trusted"), mode: "long_receipt" }, threeSegmentCalls) as typeof fetch,
+  })
+  const threeSegmentForm = threeSegmentCalls[0]?.init?.body
+  results.push(assertEqual("long-three-segment-count", threeSegmentForm?.getAll("segments")?.length, 3))
+  results.push(assertFalse("long-three-does-not-send-legacy-top", threeSegmentForm?.has("top_image")))
+  results.push(assertFalse("long-three-does-not-send-legacy-bottom", threeSegmentForm?.has("bottom_image")))
+
   try {
     await scanSingleReceiptWithApi(fakeFile("no-session.jpg"), {
       apiUrl: "https://scanner.local",
@@ -423,6 +436,31 @@ export async function runReceiptScannerFrontRegressionFixtures(): Promise<Regres
   }
 
   try {
+    await scanLongReceiptWithApi({ segments: [fakeFile("one.jpg")] } as any, {
+      apiUrl: "https://scanner.local",
+      getSession: fakeSession(),
+      fetchImpl: okFetch(responseFor("trusted")) as typeof fetch,
+    })
+    results.push(fail("long-one-segment-blocked", "invalid_file", "no error"))
+  } catch (error) {
+    results.push(assertEqual("long-one-segment-blocked", (error as ReceiptScannerApiError).scanError?.code, "invalid_file"))
+  }
+
+  try {
+    const repeated = fakeFile("repeated.jpg")
+    await scanLongReceiptWithApi({
+      segments: [repeated, fakeFile("middle-unique.jpg"), repeated],
+    }, {
+      apiUrl: "https://scanner.local",
+      getSession: fakeSession(),
+      fetchImpl: okFetch(responseFor("trusted")) as typeof fetch,
+    })
+    results.push(fail("long-three-any-identical-pair-blocked", "images_identical", "no error"))
+  } catch (error) {
+    results.push(assertEqual("long-three-any-identical-pair-blocked", (error as ReceiptScannerApiError).scanError?.code, "images_identical"))
+  }
+
+  try {
     await scanLongReceiptWithApi({
       top: fakeFile("bottom.jpg", { lastModified: 2000 }),
       bottom: fakeFile("top.jpg", { lastModified: 3000 }),
@@ -450,6 +488,20 @@ export async function runReceiptScannerFrontRegressionFixtures(): Promise<Regres
   } catch (error) {
     results.push(assertEqual("long-overlap-missing-business-error", (error as ReceiptScannerApiError).scanError?.code, "overlap_not_found"))
     results.push(assertFalse("long-overlap-no-legacy", canOfferLegacyFallback(error)))
+  }
+
+  try {
+    await scanLongReceiptWithApi({
+      segments: [fakeFile("top-gap.jpg"), fakeFile("middle-gap.jpg"), fakeFile("bottom-gap.jpg")],
+    }, {
+      apiUrl: "https://scanner.local",
+      getSession: fakeSession(),
+      fetchImpl: errorFetch("long_receipt_overlap_unreliable", false) as typeof fetch,
+    })
+    results.push(fail("long-three-overlap-unreliable", "long_receipt_overlap_unreliable", "no error"))
+  } catch (error) {
+    results.push(assertEqual("long-three-overlap-unreliable", (error as ReceiptScannerApiError).scanError?.code, "long_receipt_overlap_unreliable"))
+    results.push(assertFalse("long-three-overlap-no-legacy", canOfferLegacyFallback(error)))
   }
 
   try {
@@ -540,6 +592,14 @@ export async function runReceiptScannerFrontRegressionFixtures(): Promise<Regres
   results.push(assertEqual("trusted-status-map", trusted.scan_status, "budget_ok_articles_ok"))
   results.push(assertEqual("trusted-local-pending", trusted.python_scan_pending_save, true))
   results.push(assertEqual("trusted-courses-feed", trusted.smart_shopping_safe, true))
+  const noDeclaredCountResponse = responseFor("trusted")
+  noDeclaredCountResponse.receipt.declared_item_count = null
+  noDeclaredCountResponse.receipt.product_line_count = 9
+  results.push(assertEqual(
+    "expected-items-count-not-inferred-from-lines",
+    mapPythonScanToDraft(noDeclaredCountResponse).expected_items_count,
+    null,
+  ))
   results.push(assertEqual("trusted-preview-view", getReceiptScanValidationView({
     isPendingSave: Boolean(trusted.python_scan_pending_save),
     reviewItemsCount: countItemsNeedingReview(trusted.items),

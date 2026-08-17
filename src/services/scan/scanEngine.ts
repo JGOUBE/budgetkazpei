@@ -5,6 +5,7 @@ import { resolveMarketProducts } from "./marketProductResolver"
 import { extractReceiptDueTotal, extractReceiptTotal, mergeReceiptItems, normalizeReceiptDate, parseReceipt } from "./receiptParser"
 import { validateParsedReceipt } from "./receiptValidator"
 import { ScanError } from "./scanErrors"
+import type { LongReceiptFiles } from "./receiptScannerTypes"
 
 export type ScanStep =
   | "optimizing"
@@ -1454,10 +1455,7 @@ export async function runSmartScan(file: File, options: ScanEngineOptions = {}) 
 }
 
 
-export type LongTicketScanFiles = {
-  top: File
-  bottom: File
-}
+export type LongTicketScanFiles = LongReceiptFiles
 
 function longTicketItemKey(item: any = {}) {
   const name = normalizeFinalItemText(
@@ -1595,12 +1593,29 @@ export async function runSmartScanLongTicket(
   files: LongTicketScanFiles,
   options: ScanEngineOptions = {},
 ) {
-  if (!files?.top || !files?.bottom) {
+  const segments = Array.isArray(files?.segments)
+    ? files.segments
+    : [files?.top, files?.bottom]
+  if ((segments.length !== 2 && segments.length !== 3) || segments.some(file => !file)) {
     throw new ScanError(
       "SCAN_IMAGE_UNREADABLE",
-      "Deux photos sont nécessaires pour analyser un ticket long.",
+      "Deux ou trois photos sont nécessaires pour analyser un ticket long.",
     )
   }
+
+  if (segments.length === 3) {
+    const firstJoin = await runSmartScanLongTicket(
+      { top: segments[0] as File, bottom: segments[1] as File },
+      options,
+    )
+    return runSmartScanLongTicket(
+      { top: firstJoin.optimizedFile, bottom: segments[2] as File },
+      options,
+    )
+  }
+
+  const topFile = segments[0] as File
+  const bottomFile = segments[1] as File
 
   const scanStartedAt = performance.now()
   const progressByPart = { top: 0, bottom: 0 }
@@ -1617,14 +1632,14 @@ export async function runSmartScanLongTicket(
   emit(options.onProgress, "optimizing", "Préparation séparée des deux photos...", 5)
 
   const settled = await Promise.allSettled([
-    runSmartScan(files.top, {
+    runSmartScan(topFile, {
       ...options,
       scanMode: "long_ticket_top",
       skipLocalOcr: true,
       disableSplitRetry: true,
       onProgress: partProgress("top"),
     }),
-    runSmartScan(files.bottom, {
+    runSmartScan(bottomFile, {
       ...options,
       scanMode: "long_ticket_bottom",
       skipLocalOcr: true,
@@ -1825,8 +1840,8 @@ export async function runSmartScanLongTicket(
 
   const validation = validateParsedReceipt(receipt)
   const archiveFile = await createLongTicketArchiveFile(
-    topScan?.optimizedFile || files.top,
-    bottomScan?.optimizedFile || files.bottom,
+    topScan?.optimizedFile || topFile,
+    bottomScan?.optimizedFile || bottomFile,
   )
 
   const topMetrics: any = topScan?.metrics || {}
@@ -1858,7 +1873,7 @@ export async function runSmartScanLongTicket(
       numericLongTicketMetric(topMetrics, "estimatedCostEur")
       + numericLongTicketMetric(bottomMetrics, "estimatedCostEur")
       || null,
-    imageInitialBytes: Number(files.top.size || 0) + Number(files.bottom.size || 0),
+    imageInitialBytes: Number(topFile.size || 0) + Number(bottomFile.size || 0),
     imageCompressedBytes:
       Number(topScan?.optimizedFile?.size || 0)
       + Number(bottomScan?.optimizedFile?.size || 0),

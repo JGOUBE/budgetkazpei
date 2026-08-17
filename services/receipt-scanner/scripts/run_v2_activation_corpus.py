@@ -110,7 +110,7 @@ def _run_case(
             if case.mode == "long":
                 if image_2 is None:
                     raise FileNotFoundError("Seconde image absente du manifeste")
-                result = runner.run_long_receipt(image_1, image_2, work_dir)
+                result = runner.run_long_receipt([image_1, image_2], work_dir)
             else:
                 result = runner.run_single(image_1, work_dir)
     except Exception as exc:

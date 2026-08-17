@@ -71,10 +71,19 @@ class ItemSummary(BaseModel):
     eligible_for_market_database: bool
 
 
+class OverlapPairDiagnostics(BaseModel):
+    first_segment: int
+    second_segment: int
+    matched_anchor_count: int | None = None
+    average_similarity: float | None = None
+
+
 class OverlapDiagnostics(BaseModel):
     used: bool
     matched_anchor_count: int | None = None
     average_similarity: float | None = None
+    segment_count: int | None = None
+    pairs: list[OverlapPairDiagnostics] = Field(default_factory=list)
 
 
 class ParserDiagnostics(BaseModel):

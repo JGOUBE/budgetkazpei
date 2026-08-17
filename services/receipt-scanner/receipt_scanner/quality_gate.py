@@ -430,10 +430,6 @@ class ReceiptQualityGate:
             )
 
         if article_partial_reasons:
-            has_unattributed_difference = (
-                parsed.total_delta is not None and parsed.total_delta > 0.02
-            )
-
             # A global accounting difference must not invalidate every
             # individually reliable article. The downstream layer remains
             # responsible for keeping only line-level trusted items and
@@ -456,7 +452,9 @@ class ReceiptQualityGate:
                 requires_user_validation=True,
                 reasons=article_partial_reasons,
                 unattributed_amount=(
-                    parsed.total_delta if has_unattributed_difference else None
+                    parsed.total_delta
+                    if parsed.total_delta is not None and parsed.total_delta > 0
+                    else None
                 ),
                 image=image,
                 ocr=ocr,
@@ -474,7 +472,11 @@ class ReceiptQualityGate:
             should_feed_verified_articles=True,
             requires_user_validation=False,
             reasons=[],
-            unattributed_amount=None,
+            unattributed_amount=(
+                parsed.total_delta
+                if parsed.total_delta is not None and parsed.total_delta > 0
+                else None
+            ),
             image=image,
             ocr=ocr,
             receipt=parsed,

@@ -98,6 +98,19 @@ class QualityGateTest(TempImageTestCase):
         self.assertEqual(decision.receipt.items_total, 89.81)
         self.assertEqual(decision.receipt.total, 89.81)
 
+    def test_printed_total_is_kept_with_one_cent_diagnostic(self) -> None:
+        receipt = parsed_receipt(
+            total=111.77,
+            items=[standard_item("TOTAL LIGNES", 111.78)],
+            declared_item_count=1,
+            article_total=111.77,
+        )
+        decision = self.evaluate(receipt)
+        self.assertEqual(decision.status, "trusted")
+        self.assertEqual(decision.budget_amount, 111.77)
+        self.assertEqual(decision.receipt.items_total, 111.78)
+        self.assertEqual(decision.unattributed_amount, 0.01)
+
     def test_case_c_unusable_image_with_no_ocr_tokens_is_rejected_without_crash(self) -> None:
         image_path = self.temp_path / "bad.jpg"
         make_bad_image(image_path)

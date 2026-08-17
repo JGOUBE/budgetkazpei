@@ -8,10 +8,12 @@ from fastapi.responses import JSONResponse
 
 
 ERROR_HTTP_STATUS = {
+    "invalid_file": 400,
     "invalid_file_type": 400,
     "invalid_image": 400,
     "image_dimensions_invalid": 400,
     "overlap_not_found": 400,
+    "long_receipt_overlap_unreliable": 400,
     "images_order_invalid": 400,
     "authentication_required": 401,
     "authentication_invalid": 401,
@@ -28,6 +30,7 @@ ERROR_HTTP_STATUS = {
 }
 
 ERROR_MESSAGES = {
+    "invalid_file": "Ajoutez deux ou trois images ordonnees du ticket.",
     "invalid_file_type": "Le fichier envoye n'est pas une image prise en charge.",
     "file_too_large": "Le fichier envoye depasse la taille maximale autorisee.",
     "invalid_image": "L'image envoyee ne peut pas etre decodee.",
@@ -35,6 +38,10 @@ ERROR_MESSAGES = {
     "image_quality_failed": "La qualite de l'image ne permet pas une analyse fiable.",
     "scan_not_exploitable": "Le ticket n'est pas exploitable automatiquement.",
     "overlap_not_found": "Le chevauchement entre les deux photos est insuffisant.",
+    "long_receipt_overlap_unreliable": (
+        "Les photos du ticket ne se chevauchent pas assez. Reprenez-les en "
+        "gardant quelques lignes communes entre chaque image."
+    ),
     "images_order_invalid": "Les deux photos semblent inversees ou incoherentes.",
     "scanner_busy": "Le scanner est temporairement occupe.",
     "quota_exceeded": "Votre quota de scans est atteint.",

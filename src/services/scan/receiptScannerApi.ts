@@ -1,6 +1,6 @@
 import { supabase } from "../supabase"
 import { PREMIUM_PLUS_SAFETY_MESSAGE } from "../../config/plans"
-import type { ReceiptScanError, ReceiptScanResponse } from "./receiptScannerTypes"
+import type { LongReceiptFiles, LongReceiptSegments, ReceiptScanError, ReceiptScanResponse } from "./receiptScannerTypes"
 
 export type ReceiptScannerApiOptions = {
   apiUrl?: string
@@ -11,7 +11,7 @@ export type ReceiptScannerApiOptions = {
   requestId?: string
 }
 
-const DEFAULT_TIMEOUT_MS = 100000
+const DEFAULT_TIMEOUT_MS = 190000
 const MAX_CLIENT_UPLOAD_BYTES = 12 * 1024 * 1024
 const SUPPORTED_CLIENT_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"])
 export const MONTHLY_SCAN_QUOTA_MESSAGE =
@@ -25,6 +25,7 @@ const SAFE_ERROR_MESSAGES: Record<string, string> = {
   image_quality_failed: "La photo n'est pas assez lisible. Reprenez le ticket bien à plat, avec plus de lumière.",
   scan_not_exploitable: "Le ticket n'est pas assez exploitable. Reprenez la photo ou saisissez le ticket manuellement.",
   overlap_not_found: "Les deux photos du ticket ne se recoupent pas assez. Gardez une zone commune visible.",
+  long_receipt_overlap_unreliable: "Les photos du ticket ne se chevauchent pas assez. Reprenez-les en gardant quelques lignes communes entre chaque image.",
   images_order_invalid: "Les deux photos semblent dans le mauvais ordre. Inversez haut et bas puis réessayez.",
   images_identical: "Ajoutez deux photos différentes du ticket long.",
   scanner_busy: "Le service de scan est occupé. Réessayez dans quelques instants.",
@@ -156,6 +157,25 @@ function sameImageFile(first: File, second: File) {
     )
 }
 
+export function normalizeLongReceiptFiles(files: LongReceiptFiles): {
+  segments: LongReceiptSegments
+  legacyContract: boolean
+} {
+  if (Array.isArray(files?.segments)) {
+    if (files.segments.length !== 2 && files.segments.length !== 3) {
+      throw localError("invalid_file", false)
+    }
+    return {
+      segments: files.segments as LongReceiptSegments,
+      legacyContract: false,
+    }
+  }
+  return {
+    segments: [files?.top as File, files?.bottom as File],
+    legacyContract: true,
+  }
+}
+
 function isValidScanResponse(payload: any): payload is ReceiptScanResponse {
   return Boolean(
     payload
@@ -222,14 +242,22 @@ export async function scanSingleReceiptWithApi(file: File, options: ReceiptScann
   return postScan("/scan/single", form, options)
 }
 
-export async function scanLongReceiptWithApi(files: { top: File; bottom: File }, options: ReceiptScannerApiOptions = {}) {
-  validateImageFile(files?.top)
-  validateImageFile(files?.bottom)
-  if (sameImageFile(files.top, files.bottom)) {
-    throw localError("images_identical")
+export async function scanLongReceiptWithApi(files: LongReceiptFiles, options: ReceiptScannerApiOptions = {}) {
+  const { segments, legacyContract } = normalizeLongReceiptFiles(files)
+  segments.forEach(validateImageFile)
+  for (let index = 0; index < segments.length; index += 1) {
+    for (let otherIndex = index + 1; otherIndex < segments.length; otherIndex += 1) {
+      if (sameImageFile(segments[index], segments[otherIndex])) {
+        throw localError("images_identical")
+      }
+    }
   }
   const form = new FormData()
-  form.append("top_image", files.top)
-  form.append("bottom_image", files.bottom)
+  if (legacyContract) {
+    form.append("top_image", segments[0])
+    form.append("bottom_image", segments[1])
+  } else {
+    segments.forEach(segment => form.append("segments", segment))
+  }
   return postScan("/scan/long-receipt", form, options)
 }

@@ -127,12 +127,13 @@ class FakeRunner:
 
     def run_long_receipt(
         self,
-        top_image_path: Path,
-        bottom_image_path: Path,
+        image_paths: list[Path],
         work_dir: Path,
     ) -> PipelineResult:
-        del top_image_path, bottom_image_path
+        self.long_segment_count = len(image_paths)
         self.work_dirs.append(work_dir)
+        if self.error:
+            raise self.error
         return self.result
 
 
@@ -489,6 +490,49 @@ class ReceiptScanServiceTest(unittest.TestCase):
             svc.scan_long_receipt(
                 top_upload=upload(data=padded_image),
                 bottom_upload=upload(data=padded_image),
+                user_id="u1",
+            )
+
+    def test_three_segment_long_receipt_reaches_generic_runner(self) -> None:
+        runner = FakeRunner()
+        response = self.service(runner).scan_long_receipt(
+            segment_uploads=[upload(), upload(), upload()],
+            user_id="u1",
+        )
+        self.assertEqual(response["mode"], "long_receipt")
+        self.assertEqual(runner.long_segment_count, 3)
+
+    def test_long_receipt_rejects_more_than_three_segments(self) -> None:
+        with self.assertRaisesRegex(ScannerApiError, "invalid_file"):
+            self.service().scan_long_receipt(
+                segment_uploads=[upload(), upload(), upload(), upload()],
+                user_id="u1",
+            )
+
+    def test_three_segment_unreliable_overlap_has_specific_error(self) -> None:
+        runner = FakeRunner(
+            error=RuntimeError(
+                "long_receipt_overlap_unreliable: chevauchement adjacent insuffisant"
+            )
+        )
+        with self.assertRaisesRegex(
+            ScannerApiError,
+            "long_receipt_overlap_unreliable",
+        ):
+            self.service(runner).scan_long_receipt(
+                segment_uploads=[upload(), upload(), upload()],
+                user_id="u1",
+            )
+
+    def test_unreadable_middle_segment_is_image_quality_error(self) -> None:
+        runner = FakeRunner(
+            error=RuntimeError(
+                "Une des deux photos ne contient aucun texte lisible."
+            )
+        )
+        with self.assertRaisesRegex(ScannerApiError, "image_quality_failed"):
+            self.service(runner).scan_long_receipt(
+                segment_uploads=[upload(), upload(), upload()],
                 user_id="u1",
             )
 

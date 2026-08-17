@@ -14,7 +14,7 @@ Included:
 - column detection;
 - French receipt parsing;
 - quality decision gate;
-- two-photo long receipt merge pipeline.
+- ordered two-or-three-photo long receipt merge pipeline.
 - FastAPI wrapper with `/health`, `/ready`, `/scan/single` and
   `/scan/long-receipt`.
 - Supabase JWT authentication and server-side scan quota reservation via RPC.
@@ -81,10 +81,10 @@ JWKS to validate `HS256`.
 Runtime guardrails:
 
 - `RECEIPT_SCANNER_MAX_FILE_SIZE_MB=12`
-- `RECEIPT_SCANNER_MAX_TOTAL_FILE_SIZE_MB=24`
+- `RECEIPT_SCANNER_MAX_TOTAL_FILE_SIZE_MB=36`
 - `RECEIPT_SCANNER_MAX_CONCURRENT_SCANS=1`
 - `RECEIPT_SCANNER_BUSY_TIMEOUT_SECONDS=2`
-- `RECEIPT_SCANNER_PROCESSING_TIMEOUT_SECONDS=90`
+- `RECEIPT_SCANNER_PROCESSING_TIMEOUT_SECONDS=180`
 - `RECEIPT_SCANNER_DIAGNOSTICS_ENABLED=true`
 - `RECEIPT_SCANNER_QUOTA_MODE=supabase`
 - `RECEIPT_SCANNER_QUOTA_TIMEOUT_SECONDS=5`
@@ -123,8 +123,9 @@ and the Supabase reservation remains idempotent.
 - `GET /health`
 - `GET /ready`
 - `POST /scan/single` with multipart field `image`
-- `POST /scan/long-receipt` with multipart fields `top_image` and
-  `bottom_image`
+- `POST /scan/long-receipt` with either the legacy multipart fields
+  `top_image` + `bottom_image`, or two/three repeated `segments` fields in
+  top-to-bottom order
 
 Optional multipart text fields are `scan_id`, `locale` and `client_version`.
 Responses use one canonical JSON shape for both scan modes and never include

@@ -1,6 +1,11 @@
 export type ReceiptScannerEngineMode = "legacy" | "python" | "auto"
 export type ReceiptScannerEngineUsed = "legacy" | "python"
 
+export type LongReceiptSegments = [File, File] | [File, File, File]
+export type LongReceiptFiles =
+  | { segments: LongReceiptSegments; top?: never; bottom?: never }
+  | { segments?: never; top: File; bottom: File }
+
 export type ReceiptScanStatus =
   | "trusted"
   | "budget_ok_articles_partial"
@@ -47,6 +52,13 @@ export type ReceiptScanDiagnostics = {
     used: boolean
     matched_anchor_count?: number | null
     average_similarity?: number | null
+    segment_count?: number | null
+    pairs?: Array<{
+      first_segment: number
+      second_segment: number
+      matched_anchor_count?: number | null
+      average_similarity?: number | null
+    }>
   }
 }
 
@@ -79,6 +91,7 @@ export type ReceiptScanErrorCode =
   | "image_quality_failed"
   | "scan_not_exploitable"
   | "overlap_not_found"
+  | "long_receipt_overlap_unreliable"
   | "images_order_invalid"
   | "scanner_busy"
   | "processing_timeout"

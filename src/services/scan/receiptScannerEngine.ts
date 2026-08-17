@@ -1,6 +1,6 @@
 import { runSmartScan, runSmartScanLongTicket, type ScanEngineOptions } from "./scanEngine"
-import { ReceiptScannerApiError, scanLongReceiptWithApi, scanSingleReceiptWithApi, type ReceiptScannerApiOptions } from "./receiptScannerApi"
-import type { ReceiptScannerEngineMode, ReceiptScannerResult, ReceiptScanItem, ReceiptScanResponse } from "./receiptScannerTypes"
+import { ReceiptScannerApiError, normalizeLongReceiptFiles, scanLongReceiptWithApi, scanSingleReceiptWithApi, type ReceiptScannerApiOptions } from "./receiptScannerApi"
+import type { LongReceiptFiles, ReceiptScannerEngineMode, ReceiptScannerResult, ReceiptScanItem, ReceiptScanResponse } from "./receiptScannerTypes"
 
 export function getReceiptScannerEngineMode(): ReceiptScannerEngineMode {
   return "python"
@@ -119,7 +119,7 @@ export function mapPythonScanToDraft(response: ReceiptScanResponse) {
     ai_used: false,
     validation_status: "draft",
     items,
-    expected_items_count: receipt.declared_item_count || receipt.product_line_count || items.length,
+    expected_items_count: receipt.declared_item_count || null,
     declared_items_count: receipt.declared_item_count || null,
     counted_quantity: receipt.counted_quantity || items.length,
     estimated_items_sum: itemsTotal || null,
@@ -194,12 +194,13 @@ export async function scanWithPythonEngine(
 }
 
 export async function scanLongWithPythonEngine(
-  files: { top: File; bottom: File },
+  files: LongReceiptFiles,
   options: ScanEngineOptions & ReceiptScannerApiOptions = {},
 ): Promise<ReceiptScannerResult & { validation: { issues: string[] } }> {
+  const segmentCount = normalizeLongReceiptFiles(files).segments.length
   options.onProgress?.({
     step: "reading",
-    label: "Lecture et raccord des deux photos...",
+    label: `Analyse des ${segmentCount} parties du ticket...`,
     progress: 20,
   })
   const response = await scanLongReceiptWithApi(files, options)
@@ -228,7 +229,7 @@ export async function scanWithLegacyEngine(file: File, options: ScanEngineOption
   }
 }
 
-export async function scanLongWithLegacyEngine(files: { top: File; bottom: File }, options: ScanEngineOptions = {}): Promise<ReceiptScannerResult> {
+export async function scanLongWithLegacyEngine(files: LongReceiptFiles, options: ScanEngineOptions = {}): Promise<ReceiptScannerResult> {
   const scan = await runSmartScanLongTicket(files, options)
   return {
     ...scan,
@@ -240,6 +241,6 @@ export async function scanLongWithLegacyEngine(files: { top: File; bottom: File 
 export async function scanReceiptWithConfiguredEngine(file: File, options: ScanEngineOptions & ReceiptScannerApiOptions = {}) {
   return scanWithPythonEngine(file, options)
 }
-export async function scanLongReceiptWithConfiguredEngine(files: { top: File; bottom: File }, options: ScanEngineOptions & ReceiptScannerApiOptions = {}) {
+export async function scanLongReceiptWithConfiguredEngine(files: LongReceiptFiles, options: ScanEngineOptions & ReceiptScannerApiOptions = {}) {
   return scanLongWithPythonEngine(files, options)
 }
