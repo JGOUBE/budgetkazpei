@@ -22,15 +22,14 @@ function isMissingColumnError(error: any) {
   return error?.code === "PGRST204" || message.includes("Could not find") || message.includes("column")
 }
 
-function isReviewItem(item: Record<string, any> = {}, receipt: Record<string, any> = {}) {
+function isReviewItem(item: Record<string, any> = {}) {
   if (!isItemEligibleForSmartShopping(item)) return true
 
   const status = normalizeForGuard(
     [item.item_status, item.status, item.review_status].filter(Boolean).join(" "),
   )
 
-  return String(receipt?.scan_status || "").includes("partial_low_items")
-    || item.needs_review === true
+  return item.needs_review === true
     || status.includes("needs review")
     || status.includes("needs_review")
     || status.includes("a verifier")
@@ -83,7 +82,7 @@ async function safeDeleteShoppingItems({ userId, receiptId, transactionId }: { u
 function buildShoppingRows({ userId, transactionId, receipt, items }: { userId: string, transactionId: string, receipt: Record<string, any>, items?: Record<string, any>[] }) {
   return (items || [])
     .filter(item => String(item.name || item.corrected_name || item.ocr_name || "").trim())
-    .filter(item => !isReviewItem(item, receipt))
+    .filter(item => !isReviewItem(item))
     .map(item => {
       const originalName = String(item.ocr_name || item.name || "").trim()
       const correctedName = String(item.corrected_name || item.name || originalName).trim()

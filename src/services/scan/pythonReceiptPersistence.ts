@@ -333,9 +333,13 @@ function buildDraftToPersist({
 }) {
   const full = decision.kind === "full"
   const partial = decision.kind === "budget_only_with_review_items"
-  const shouldFeedVerifiedArticles = decision.flags.should_feed_verified_articles === true
+  const hasVerifiedCourseItems = items.some(item =>
+    item.needs_review !== true
+    && item.eligible_for_courses !== false
+    && isItemEligibleForSmartShopping(item)
+  )
   const smartShoppingSafe = (full && decision.flags.should_feed_courses === true)
-    || (partial && shouldFeedVerifiedArticles)
+    || (partial && hasVerifiedCourseItems)
   return {
     ...draft,
     python_scan_pending_save: false,
@@ -356,9 +360,9 @@ function buildDraftToPersist({
       unattributed_amount: decision.flags.unattributed_amount ?? null,
       items_quality_status: full ? "trusted" : partial ? "partial" : draft.parser_debug?.items_quality_status,
       smart_shopping_safe: smartShoppingSafe,
-      should_feed_courses: full && decision.flags.should_feed_courses === true,
+      should_feed_courses: smartShoppingSafe,
       should_feed_market_database: full && decision.flags.should_feed_market_database === true,
-      should_feed_verified_articles: shouldFeedVerifiedArticles,
+      should_feed_verified_articles: hasVerifiedCourseItems,
     },
   }
 }
@@ -410,10 +414,7 @@ export async function persistPythonScanResult({
 
     const allowAutomaticUse = decision.kind === "full"
     const allowVerifiedArticles = allowAutomaticUse
-      || (
-        decision.kind === "budget_only_with_review_items"
-        && decision.flags.should_feed_verified_articles === true
-      )
+      || decision.kind === "budget_only_with_review_items"
     const persistableItems = normalizeItemsForPersistence({
       items,
       allowArticles: true,

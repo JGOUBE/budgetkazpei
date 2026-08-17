@@ -631,8 +631,44 @@ export async function runReceiptScannerFrontRegressionFixtures(): Promise<Regres
     requiresQuickReview: true,
   }), "editor"))
 
-  const discountedLongResponse: ReceiptScanResponse = {
+  const partialResponse = {
     ...responseFor("budget_ok_articles_partial"),
+    budget_amount: 10.5,
+    unattributed_amount: 1.84,
+  }
+  const mixedPartialResponse: ReceiptScanResponse = {
+    ...partialResponse,
+    should_feed_verified_articles: false,
+    items: [
+      {
+        raw_name: "RIZ FIABLE 1KG",
+        canonical_name: "RIZ FIABLE 1KG",
+        quantity: 1,
+        unit_price: 4.2,
+        total_price: 4.2,
+        item_type: "standard",
+        ocr_confidence: 0.96,
+        needs_review: false,
+        eligible_for_courses: true,
+        eligible_for_market_database: true,
+      },
+      {
+        raw_name: "ARTICLE A VERIFIER",
+        canonical_name: "ARTICLE A VERIFIER",
+        quantity: 1,
+        unit_price: 6.3,
+        total_price: 6.3,
+        item_type: "standard",
+        ocr_confidence: 0.52,
+        needs_review: true,
+        eligible_for_courses: false,
+        eligible_for_market_database: false,
+      },
+    ],
+  }
+
+  const discountedLongResponse: ReceiptScanResponse = {
+    ...mixedPartialResponse,
     mode: "long_receipt",
     budget_amount: 73.99,
     unattributed_amount: 0.2,
@@ -680,11 +716,6 @@ export async function runReceiptScannerFrontRegressionFixtures(): Promise<Regres
   results.push(assertEqual("persist-trusted-market-service-only", trustedPersistenceMocks.calls.syncAnonymizedMarketReceipt.length, 1))
   results.push(assertEqual("persist-trusted-not-user-validated", trustedPersistenceMocks.calls.validateReceipt[0]?.items?.[0]?.item_status, "trusted"))
 
-  const partialResponse = {
-    ...responseFor("budget_ok_articles_partial"),
-    budget_amount: 10.5,
-    unattributed_amount: 1.84,
-  }
   const partialPersistenceMocks = createPersistenceMocks()
   const partialDraft = mapPythonScanToDraft(partialResponse)
   const partialPersisted = await persistPythonScanResult({
@@ -703,6 +734,24 @@ export async function runReceiptScannerFrontRegressionFixtures(): Promise<Regres
   results.push(assertEqual("persist-partial-no-market", partialPersistenceMocks.calls.syncAnonymizedMarketReceipt.length, 0))
   results.push(assertTrue("persist-partial-unattributed-warning", partialPersisted.warnings.includes("unattributed_amount_not_persisted_schema_unknown")))
 
+  const mixedPartialPersistenceMocks = createPersistenceMocks()
+  const mixedPartialDraft = mapPythonScanToDraft(mixedPartialResponse)
+  const mixedPartialPersisted = await persistPythonScanResult({
+    userId: "user-1",
+    draft: mixedPartialDraft,
+    items: mixedPartialDraft.items,
+    action: "total_only",
+    state: createPythonScanPersistenceState(),
+    services: mixedPartialPersistenceMocks.services,
+  })
+  results.push(assertEqual("persist-partial-mixed-status", mixedPartialPersisted.status, "saved"))
+  results.push(assertEqual("persist-partial-mixed-items-kept", mixedPartialPersistenceMocks.calls.validateReceipt[0]?.items?.length, 2))
+  results.push(assertEqual("persist-partial-mixed-one-trusted", mixedPartialPersistenceMocks.calls.validateReceipt[0]?.items?.filter((item: any) => item.needs_review === false)?.length, 1))
+  results.push(assertEqual("persist-partial-mixed-one-review", mixedPartialPersistenceMocks.calls.validateReceipt[0]?.items?.filter((item: any) => item.needs_review === true)?.length, 1))
+  results.push(assertEqual("persist-partial-mixed-shopping-fed", mixedPartialPersistenceMocks.calls.syncShoppingItemsFromReceipt.length, 1))
+  results.push(assertEqual("persist-partial-mixed-shopping-count", mixedPartialPersistenceMocks.calls.syncShoppingItemsFromReceipt[0]?.items?.length, 1))
+  results.push(assertEqual("persist-partial-mixed-no-market", mixedPartialPersistenceMocks.calls.syncAnonymizedMarketReceipt.length, 0))
+
   const discountedPersistenceMocks = createPersistenceMocks()
   const discountedPersisted = await persistPythonScanResult({
     userId: "user-1",
@@ -714,7 +763,8 @@ export async function runReceiptScannerFrontRegressionFixtures(): Promise<Regres
   })
   results.push(assertEqual("persist-discounted-long-status", discountedPersisted.status, "saved"))
   results.push(assertEqual("persist-discounted-long-budget-amount", discountedPersistenceMocks.calls.upsertReceiptTransaction[0]?.draft?.total_amount, 73.99))
-  results.push(assertEqual("persist-discounted-long-no-shopping", discountedPersistenceMocks.calls.syncShoppingItemsFromReceipt.length, 0))
+  results.push(assertEqual("persist-discounted-long-shopping-fed", discountedPersistenceMocks.calls.syncShoppingItemsFromReceipt.length, 1))
+  results.push(assertEqual("persist-discounted-long-shopping-count", discountedPersistenceMocks.calls.syncShoppingItemsFromReceipt[0]?.items?.length, 1))
   results.push(assertEqual("persist-discounted-long-no-market", discountedPersistenceMocks.calls.syncAnonymizedMarketReceipt.length, 0))
 
   const needsReviewPersistenceMocks = createPersistenceMocks()
