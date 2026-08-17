@@ -41,10 +41,13 @@ export function useStatisticsInsights({
           listShoppingItems({ userId }),
           supabase
             .from("receipts")
-            .select("id, store_name, purchase_date, total_amount, created_at")
+            .select("id, store_name, purchase_date, total_amount, created_at, duplicate_of_receipt_id")
             .eq("user_id", userId)
+            .is("duplicate_of_receipt_id", null)
             .order("created_at", { ascending: false }),
         ])
+
+        if (receiptsResult.error) throw receiptsResult.error
 
         if (ignore) return
         setShoppingItems(shoppingRows || [])
