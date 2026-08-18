@@ -262,6 +262,72 @@ class GenericParserV2FoundationTest(unittest.TestCase):
         self.assertIn("exact_declared_count_match", selected["reasons"])
 
 
+    def test_discount_can_cross_long_receipt_stitch_boundary(self):
+        lines = [
+            make_line(
+                0,
+                [("OPERATION VENTE", "description", 60)],
+                y=20,
+                segment="top",
+            ),
+            make_line(
+                1,
+                [
+                    ("GALETTE BRETONNE 125G LP", "description", 140),
+                    ("1.45", "price", 650),
+                ],
+                y=80,
+                segment="top",
+            ),
+            # The label is retained from the lower photo after stitching.
+            make_line(
+                2,
+                [("JEUDI 10% MDD", "description", 140)],
+                y=125,
+                segment="bottom",
+            ),
+            # OCR may put the discount amount on its own line.
+            make_line(
+                3,
+                [("0.15", "price", 650)],
+                y=160,
+                segment="bottom",
+            ),
+            make_line(
+                4,
+                [
+                    ("TAB MILKA LAIT NOISETTES", "description", 140),
+                    ("1.69", "price", 650),
+                ],
+                y=200,
+                segment="bottom",
+            ),
+            make_line(
+                5,
+                [
+                    ("TOTAL 2 ARTICLES", "description", 60),
+                    ("2.99", "price", 650),
+                ],
+                y=255,
+                segment="bottom",
+            ),
+        ]
+
+        result = self.analyze(lines)
+        selected = result["selected_hypothesis"]
+        names = {item["raw_name"]: item for item in selected["items"]}
+
+        self.assertEqual(selected["items_total"], 2.99)
+        self.assertEqual(selected["counted_quantity"], 2)
+        self.assertEqual(len(selected["items"]), 2)
+        self.assertEqual(
+            names["GALETTE BRETONNE 125G LP"]["total_price"],
+            1.30,
+        )
+        self.assertIn("exact_total_match", selected["reasons"])
+        self.assertIn("exact_declared_count_match", selected["reasons"])
+
+
     def test_leader_price_real_42_89_full_regression(self):
         lines = []
         y = 30

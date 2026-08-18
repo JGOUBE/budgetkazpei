@@ -93,12 +93,26 @@ def _discount_close(first: LineEvidence, second: LineEvidence) -> bool:
         first.y_max - first.y_min,
         second.y_max - second.y_min,
     )
+    close_enough = 0 <= gap <= max(96.0, height * 3.6)
+    if not close_enough:
+        return False
+
     same_segment = (
         first.source_segment is None
         or second.source_segment is None
         or first.source_segment == second.source_segment
     )
-    return same_segment and 0 <= gap <= max(96.0, height * 3.6)
+    if same_segment:
+        return True
+
+    # A long receipt is stitched top -> bottom. The last product from the
+    # retained top part and its discount can therefore legitimately live
+    # on opposite source segments. Permit only that forward stitch crossing;
+    # all other cross-segment associations remain rejected.
+    return (
+        first.source_segment == "top"
+        and second.source_segment == "bottom"
+    )
 
 
 def _looks_like_item_code_bridge(line: LineEvidence) -> bool:
