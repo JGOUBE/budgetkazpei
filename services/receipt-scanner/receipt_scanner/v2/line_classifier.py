@@ -300,12 +300,14 @@ class GenericLineClassifier:
 
             # A short percentage row without an item code is generic discount
             # context, even when OCR loses the minus sign on the next amount.
+            weekday_percentage_discount = any(
+                day in normalized for day in WEEKDAY_LABELS
+            )
             if (
                 percentage_discount
-                and not money
                 and (
-                    percentage_at_start
-                    or any(day in normalized for day in WEEKDAY_LABELS)
+                    weekday_percentage_discount
+                    or (percentage_at_start and not money)
                 )
                 and not BARCODE_RE.search(text)
                 and not PRODUCT_UNIT_HINT_RE.search(semantic_text)
@@ -444,6 +446,7 @@ class GenericLineClassifier:
         }
         recent_product_amounts: list[Decimal] = []
         recent_description_x: list[float] = []
+        recent_product_price_x: list[float] = []
 
         def description_x(line: LineEvidence) -> float | None:
             physical = physical_by_id.get(line.line_id)
@@ -526,6 +529,7 @@ class GenericLineClassifier:
             ):
                 recent_product_amounts.clear()
                 recent_description_x.clear()
+                recent_product_price_x.clear()
                 continue
 
             if (
@@ -587,11 +591,24 @@ class GenericLineClassifier:
 
                 # The threshold is relative to the image, so it works on
                 # resized photos and does not encode a specific receipt.
-                layout_boundary_match = (
+                label_column_shift = (
                     label_x is not None
-                    and label_x + image_width * 0.075
-                    < median_product_x
+                    and label_x + image_width * 0.075 < median_product_x
                     and label_x <= image_width * 0.42
+                )
+
+                amount_column_shift = False
+                if recent_product_price_x and line.rightmost_money is not None:
+                    sorted_price_x = sorted(recent_product_price_x)
+                    median_price_x = sorted_price_x[len(sorted_price_x) // 2]
+                    amount_column_shift = (
+                        line.rightmost_money.x_center + image_width * 0.07
+                        < median_price_x
+                        and line.rightmost_money.x_center <= image_width * 0.62
+                    )
+
+                layout_boundary_match = (
+                    label_column_shift or amount_column_shift
                 )
 
             discount_boundary_match = False
@@ -616,6 +633,7 @@ class GenericLineClassifier:
                 mark_subtotal(line)
                 recent_product_amounts.clear()
                 recent_description_x.clear()
+                recent_product_price_x.clear()
                 continue
 
             if (
@@ -627,11 +645,16 @@ class GenericLineClassifier:
                 x = description_x(line)
                 if x is not None:
                     recent_description_x.append(x)
+                if line.rightmost_money is not None:
+                    recent_product_price_x.append(
+                        line.rightmost_money.x_center
+                    )
 
                 # A group can be long. Keep enough history while bounding
                 # memory and avoiding unrelated receipt sections.
                 recent_product_amounts = recent_product_amounts[-40:]
                 recent_description_x = recent_description_x[-40:]
+                recent_product_price_x = recent_product_price_x[-40:]
 
     @staticmethod
     def _add_context_scores(lines: list[LineEvidence]) -> None:

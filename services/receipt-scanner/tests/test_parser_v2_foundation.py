@@ -262,6 +262,79 @@ class GenericParserV2FoundationTest(unittest.TestCase):
         self.assertIn("exact_declared_count_match", selected["reasons"])
 
 
+    def test_leader_price_real_42_89_full_regression(self):
+        lines = []
+        y = 30
+        line_id = 0
+
+        def add(name, price=None, *, x=140, price_x=650):
+            nonlocal y, line_id
+            tokens = [(name, "description", x)]
+            if price is not None:
+                tokens.append((f"{price:.2f}", "price", price_x))
+            lines.append(make_line(line_id, tokens, y=y))
+            line_id += 1
+            y += 35
+
+        add("OPERATION VENTE")
+        add("BOUCHERIE COUPE", 6.56)
+        add("SOUS TRAITANCE", 6.56, x=70, price_x=360)
+        add("KALAO THE PECHE 2L", 2.45)
+        add("JUS DE RAISIN 6X20 CL LP", 3.70)
+        add("JEUDI 10% MDD", 0.37)
+        add("BOISSONS SANS ALCOOL", 5.78, x=70, price_x=360)
+        add("MOUCHOIR ETUI STD 15X9 CO", 2.04)
+        add("JEUDI 10% MDD", 0.20)
+        add("HYGIENE", 1.84, x=70, price_x=360)
+        add("LACTEL LAIT CHEVRE 1.5% M", 3.18)
+        add("EMMENTAL RAP 45MG 200G", 2.45)
+        add("LAIT 1/2 ECREME UHT 1L", 1.00)
+        add("CREMERIE", 6.63, x=70, price_x=360)
+        add("SAUCISSON SEC CABY 200G", 2.59)
+        add("GALANTINE VOLAIL COMBAVA", 3.64)
+        add("CHARCUTERIE LS", 6.23, x=70, price_x=360)
+        add("PAIN DE MIE COMPLET 350G", 2.10)
+        add("PAINS AU LAIT X10 460G", 2.99)
+        add("PPI", 5.09, x=70, price_x=360)
+        add("225G GOUTER FOURRES CHOCO", 2.25)
+        add("JEUDI 10% MDD", 0.23)
+        add("GALETTE BRETONNE 125G LP", 1.45)
+        add("JEUDI 10% MDD", 0.15)
+        add("TAB MILKA LAIT NOISETTES", 1.69)
+        add("PRIX PROMOTION")
+        add("BRI VALEUR QTE", -0.04)
+        add("IVORIA PATE A TARTINER 20", 2.50)
+        add("JEUDI 10% MDD", 0.25)
+        add("SEE POP CORN CARAM 90G", 2.10)
+        add("EPICERIE SUCREE", 9.32, x=70, price_x=360)
+        add("20 SACS POUBELLE 20 L EK", 1.44)
+        add("DROGUERIE", 1.44, x=70, price_x=360)
+        add("TOTAL 17 ARTICLES", 42.89, x=60, price_x=650)
+
+        result = self.analyze(lines)
+        selected = result["selected_hypothesis"]
+        names = {item["raw_name"]: item for item in selected["items"]}
+
+        self.assertEqual(selected["items_total"], 42.89)
+        self.assertEqual(selected["counted_quantity"], 17)
+        self.assertEqual(len(selected["items"]), 17)
+        self.assertIn("EMMENTAL RAP 45MG 200G", names)
+        for subtotal in (
+            "SOUS TRAITANCE", "BOISSONS SANS ALCOOL", "HYGIENE",
+            "CREMERIE", "CHARCUTERIE LS", "PPI",
+            "EPICERIE SUCREE", "DROGUERIE",
+        ):
+            self.assertNotIn(subtotal, names)
+        self.assertEqual(names["JUS DE RAISIN 6X20 CL LP"]["total_price"], 3.33)
+        self.assertEqual(names["MOUCHOIR ETUI STD 15X9 CO"]["total_price"], 1.84)
+        self.assertEqual(names["225G GOUTER FOURRES CHOCO"]["total_price"], 2.02)
+        self.assertEqual(names["GALETTE BRETONNE 125G LP"]["total_price"], 1.30)
+        self.assertEqual(names["TAB MILKA LAIT NOISETTES"]["total_price"], 1.65)
+        self.assertEqual(names["IVORIA PATE A TARTINER 20"]["total_price"], 2.25)
+        self.assertIn("exact_total_match", selected["reasons"])
+        self.assertIn("exact_declared_count_match", selected["reasons"])
+
+
     def test_classifier_is_not_store_specific(self):
         lines = simple_generic_receipt()
         lines[0] = make_line(

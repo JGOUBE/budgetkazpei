@@ -174,7 +174,7 @@ def _find_following_discount(
     evidence: list[LineEvidence],
     *,
     end_line_id: int,
-    max_bridge_lines: int = 1,
+    max_bridge_lines: int = 2,
 ) -> tuple[LineEvidence, tuple[int, ...], Decimal] | None:
     """Attach an explicit negative adjustment to the preceding item.
 
