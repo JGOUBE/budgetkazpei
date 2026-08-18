@@ -2990,6 +2990,8 @@ function ValidationForm({
         <ActionButton label={txt.cancel} icon="" onClick={onCancel} disabled={busy} muted />
         <ActionButton label={busy ? txt.savingTicketShort : (partialLowItems ? txt.saveAnyway : txt.save)} icon="" onClick={onSave} disabled={busy || Boolean(validationError)} />
       </div>
+
+      {busy && <SavingReceiptNotice txt={txt} />}
     </div>
   )
 }
@@ -3005,7 +3007,8 @@ function SavingReceiptNotice({ txt }) {
         borderRadius: 14,
         color: COLORS.text,
         padding: "12px 14px",
-        marginBottom: 14,
+        marginTop: 10,
+        marginBottom: 0,
         lineHeight: 1.45,
       }}
     >
