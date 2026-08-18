@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import sys
+import traceback
 
 from .settings import ScannerSettings
 
@@ -42,6 +43,19 @@ class _CloudRunJsonFormatter(logging.Formatter):
         for field in _SAFE_EXTRA_FIELDS:
             if hasattr(record, field):
                 payload[field] = getattr(record, field)
+
+        if record.exc_info:
+            exc_type, exc_value, exc_tb = record.exc_info
+            payload["exception_type"] = getattr(exc_type, "__name__", str(exc_type))
+            payload["exception_message"] = str(exc_value)[:500]
+            payload["exception_frames"] = [
+                {
+                    "file": frame.filename.replace("\\", "/").rsplit("/", 1)[-1],
+                    "line": frame.lineno,
+                    "function": frame.name,
+                }
+                for frame in traceback.extract_tb(exc_tb)[-12:]
+            ]
 
         return json.dumps(
             payload,
