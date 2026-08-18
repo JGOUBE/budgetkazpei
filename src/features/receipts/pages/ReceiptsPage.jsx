@@ -101,6 +101,9 @@ const TEXT = {
     foodHint: "Ajoutez vos courses automatiquement ou manuellement. L'analyse automatique sert surtout aux tickets alimentaires, pour comprendre vos habitudes et recevoir des conseils utiles.",
     loaded: "Image chargée. Vérifiez les informations détectées.",
     saveTicket: "Enregistrer le ticket",
+    savingTicket: "Enregistrement du ticket en cours...",
+    savingTicketShort: "Enregistrement...",
+    savingTicketHint: "Merci de patienter, cela peut prendre quelques secondes.",
     reviewOrImproveArticles: "Vérifier ou améliorer les articles",
     finalizingTicket: "Finalisation du ticket en cours...",
     analysisPreparing: "Analyse terminée. Encore un instant, nous préparons votre ticket...",
@@ -200,6 +203,9 @@ const TEXT = {
     foodHint: "Azout out courses otomatikman ou amain. Analiz otomatik-la lé surtout pou bann tiké manzé, pou konprann out labitid ek gagn bann konsey itil.",
     loaded: "Zimaz-la la chargé. Vérifié bann zinformasyon.",
     saveTicket: "Anrezistre lo tiké",
+    savingTicket: "Anrezistreman tike-la an kour...",
+    savingTicketShort: "Anrezistreman...",
+    savingTicketHint: "Mersi atann, sa pe pran in pe segonn.",
     reviewOrImproveArticles: "Vérifie ousa amelyor bann lartik",
     finalizingTicket: "Finalizasyon tiké-la an kour...",
     analysisPreparing: "Analiz fini. Ankor in ti moman, nou pe prepar out tiké...",
@@ -2686,6 +2692,7 @@ function ValidationForm({
   if (validationView === "preview") {
     return (
       <div style={cardStyle()}>
+        {busy && <SavingReceiptNotice txt={txt} />}
         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", gap: 10, alignItems: "center", marginBottom: 14 }}>
           <div>
             <div style={{ color: COLORS.cyan, fontSize: 13, fontWeight: 950 }}>
@@ -2749,7 +2756,7 @@ function ValidationForm({
         </div>
 
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10, marginTop: 18 }}>
-          <ActionButton label={txt.saveTicket} onClick={onSave} disabled={busy || Boolean(validationError)} />
+          <ActionButton label={busy ? txt.savingTicketShort : txt.saveTicket} onClick={onSave} disabled={busy || Boolean(validationError)} />
           <ActionButton label={txt.reviewOrImproveArticles} onClick={onOpenEditor} disabled={busy} variant="secondary" />
           <ActionButton label={txt.cancel} onClick={onCancel} disabled={busy} variant="neutral" />
         </div>
@@ -2759,6 +2766,7 @@ function ValidationForm({
 
   return (
     <div style={cardStyle()}>
+      {busy && <SavingReceiptNotice txt={txt} />}
       <div style={{ color: COLORS.text, fontSize: 20, fontWeight: 950, marginBottom: 14 }}>
         {txt.scanTitle}
       </div>
@@ -2887,13 +2895,20 @@ function ValidationForm({
 
       <div style={{ display: displayDetectedLines ? "grid" : "none", gap: 12 }}>
         {editableDraftItems.map(({ item, index }) => {
-          const itemAllowed = isItemEligibleForSmartShopping(item)
-          const itemNeedsReview = normalizeItemQualityStatus(item) !== "trusted" || articlesBlocked || item.needs_review === true
+          const normalizedItemStatus = normalizeItemQualityStatus(item)
+          const itemUserValidated = item._pre_save_validated === true || normalizedItemStatus === "user_validated"
+          const itemAllowed = itemUserValidated || isItemEligibleForSmartShopping(item)
+          const itemNeedsReview = !itemUserValidated && (
+            normalizedItemStatus !== "trusted"
+            || articlesBlocked
+            || item.needs_review === true
+          )
           return (
           <div key={index} style={{ background: COLORS.cardLight, border: `1px solid ${COLORS.border}`, borderRadius: 16, padding: 12 }}>
             <div style={{ display: "grid", gap: 10 }}>
-              {(itemNeedsReview || !itemAllowed) && (
+              {(itemUserValidated || itemNeedsReview || !itemAllowed) && (
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                  {itemUserValidated && <MetaChip label={`✓ ${txt.itemValidated}`} />}
                   {itemNeedsReview && <MetaChip label={txt.itemNeedsReview} strong />}
                   {!itemAllowed && <MetaChip label={txt.itemNotUsedForSmartShopping} />}
                 </div>
@@ -2909,7 +2924,7 @@ function ValidationForm({
                   Texte OCR : {item.ocr_name}
                 </div>
               )}
-              {(item.name === "Produit à vérifier" || Number(item.confidence_score || 0) < 70) && (
+              {!itemUserValidated && (item.name === "Produit à vérifier" || Number(item.confidence_score || 0) < 70) && (
                 <div style={{ color: COLORS.yellow, fontSize: 12, fontWeight: 900 }}>
                   Produit à vérifier avant enregistrement.
                 </div>
@@ -2969,7 +2984,30 @@ function ValidationForm({
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1.4fr", gap: 10, marginTop: 18 }}>
         <ActionButton label={txt.cancel} icon="" onClick={onCancel} disabled={busy} muted />
-        <ActionButton label={partialLowItems ? txt.saveAnyway : txt.save} icon="" onClick={onSave} disabled={busy || Boolean(validationError)} />
+        <ActionButton label={busy ? txt.savingTicketShort : (partialLowItems ? txt.saveAnyway : txt.save)} icon="" onClick={onSave} disabled={busy || Boolean(validationError)} />
+      </div>
+    </div>
+  )
+}
+
+function SavingReceiptNotice({ txt }) {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      style={{
+        background: "rgba(35,211,214,.10)",
+        border: "1px solid rgba(35,211,214,.32)",
+        borderRadius: 14,
+        color: COLORS.text,
+        padding: "12px 14px",
+        marginBottom: 14,
+        lineHeight: 1.45,
+      }}
+    >
+      <strong>{txt.savingTicket}</strong>
+      <div style={{ color: COLORS.muted, fontSize: 13, marginTop: 4 }}>
+        {txt.savingTicketHint}
       </div>
     </div>
   )

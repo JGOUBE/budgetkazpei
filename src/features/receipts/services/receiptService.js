@@ -1,4 +1,5 @@
 import { learnManualMarketAliasFromReceiptItem } from "../../../services/scan/marketManualAliasService"
+import { classifyReceipt } from "../../../services/scan/receiptClassifier"
 import { supabase } from "../../../services/supabase"
 import { createCompatibleReceiptImageUrl } from "./receiptImageAvailability"
 
@@ -292,6 +293,19 @@ export async function getReceiptImageUrl(receipt) {
 
 export async function createReceipt({ userId, draft, imagePath }) {
   const dateGuard = resolveReceiptDateForDb(draft.purchase_date)
+  const inferredClassification = classifyReceipt({
+    ...draft,
+    items: Array.isArray(draft?.items) ? draft.items : [],
+  })
+  const draftTicketType = String(draft?.ticket_type || "").trim()
+  const draftBudgetCategory = String(draft?.budget_category || "").trim()
+  const persistedTicketType = draftTicketType && draftTicketType !== "other"
+    ? draftTicketType
+    : inferredClassification.ticket_type
+  const persistedBudgetCategory = draftBudgetCategory && draftBudgetCategory !== "divers"
+    ? draftBudgetCategory
+    : inferredClassification.budget_category
+  const persistedIsFoodTicket = draft?.is_food_ticket === true || inferredClassification.is_food_ticket === true
   console.info("[scanner] Creation receipt: START", {
     store: draft.store_name,
     date: dateGuard.purchaseDate,
@@ -312,16 +326,15 @@ export async function createReceipt({ userId, draft, imagePath }) {
     ocr_status: draft.ocr_status || "manual",
     ai_used: Boolean(draft.ai_used),
     validation_status: "draft",
-    ticket_type: draft.ticket_type || "other",
-    budget_category: draft.budget_category || "divers",
+    ticket_type: persistedTicketType,
+    budget_category: persistedBudgetCategory,
     normalized_store_name: draft.normalized_store_name || draft.merchant_normalized_name || null,
     store_location: draft.store_location || draft.location || null,
-    is_food_ticket: Boolean(draft.is_food_ticket),
+    is_food_ticket: persistedIsFoodTicket,
     scan_level_used: Number(draft.scan_level_used || 1),
     scan_duration_ms: Number(draft.scan_duration_ms || 0),
     confidence_score: Number(draft.confidence_score || 0),
     escalation_reason: draft.escalation_reason || null,
-    scan_status: draft.scan_status || "success",
     duplicate_confirmed: Boolean(draft.duplicate_confirmed),
     duplicate_of_receipt_id: draft.duplicate_of_receipt_id || null,
   }
@@ -400,9 +413,7 @@ export async function saveReceiptItems({ receiptId, userId, items }) {
       ticket_section: item.ticket_section || null,
       promotion: Boolean(item.promotion),
       item_status: item.item_status || item.status || (normalizeProductLabel(item.name).includes("produit verifier") ? "a_verifier" : "detected"),
-      review_status: item.review_status || (item.needs_review || item.item_status === "a_verifier" || item.status === "a_verifier" ? "needs_review" : "trusted"),
       line_type: item.line_type || "product",
-      item_source: item.item_source || item.source || "parser",
       confidence_score: item.confidence_score == null ? null : Number(item.confidence_score),
       market_product_id: item.market_product_id || null,
       market_matched: item.market_matched === true,
@@ -986,6 +997,19 @@ export async function upsertReceiptTransaction({ userId, receipt, draft, transac
 export async function validateReceipt({ receiptId, userId, draft, items, transactionId }) {
   console.info("[scanner] Validation receipt: START", { receiptId, transactionId })
   const dateGuard = resolveReceiptDateForDb(draft.purchase_date)
+  const inferredClassification = classifyReceipt({
+    ...draft,
+    items: Array.isArray(draft?.items) && draft.items.length > 0 ? draft.items : items,
+  })
+  const draftTicketType = String(draft?.ticket_type || "").trim()
+  const draftBudgetCategory = String(draft?.budget_category || "").trim()
+  const persistedTicketType = draftTicketType && draftTicketType !== "other"
+    ? draftTicketType
+    : inferredClassification.ticket_type
+  const persistedBudgetCategory = draftBudgetCategory && draftBudgetCategory !== "divers"
+    ? draftBudgetCategory
+    : inferredClassification.budget_category
+  const persistedIsFoodTicket = draft?.is_food_ticket === true || inferredClassification.is_food_ticket === true
   const payload = {
     store_name: draft.store_name || "Enseigne non reconnue",
     merchant_name: draft.merchant_name || draft.store_name || "Enseigne non reconnue",
@@ -995,16 +1019,15 @@ export async function validateReceipt({ receiptId, userId, draft, items, transac
     total_amount: Number(draft.total_amount || 0),
     validation_status: "validated",
     ocr_status: draft.ocr_status || "manual",
-    ticket_type: draft.ticket_type || "other",
-    budget_category: draft.budget_category || "divers",
+    ticket_type: persistedTicketType,
+    budget_category: persistedBudgetCategory,
     normalized_store_name: draft.normalized_store_name || draft.merchant_normalized_name || null,
     store_location: draft.store_location || draft.location || null,
-    is_food_ticket: Boolean(draft.is_food_ticket),
+    is_food_ticket: persistedIsFoodTicket,
     scan_level_used: Number(draft.scan_level_used || 1),
     scan_duration_ms: Number(draft.scan_duration_ms || 0),
     confidence_score: Number(draft.confidence_score || 0),
     escalation_reason: draft.escalation_reason || null,
-    scan_status: draft.scan_status || "success",
     duplicate_confirmed: Boolean(draft.duplicate_confirmed),
     duplicate_of_receipt_id: draft.duplicate_of_receipt_id || null,
     transaction_id: transactionId || null,

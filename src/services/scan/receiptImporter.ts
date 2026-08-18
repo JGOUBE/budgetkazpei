@@ -1,6 +1,7 @@
 import { upsertReceiptTransaction, validateReceipt } from "../../features/receipts/services/receiptService"
 import { syncShoppingItemsFromReceipt } from "../../features/shopping/services/shoppingEngine"
 import { learnManualMarketAliasFromReceiptItem } from "./marketManualAliasService"
+import { classifyReceipt } from "./receiptClassifier"
 import { syncAnonymizedMarketReceipt } from "./marketObservationService"
 import { enrichProductDictionary } from "./productKnowledgeService"
 import { isItemEligibleForSmartShopping } from "./receiptRules"
@@ -76,6 +77,23 @@ export async function importValidatedReceipt({
   draft: any
   items: any[]
 }) {
+  const inferredClassification = classifyReceipt({
+    ...draft,
+    items: Array.isArray(draft?.items) && draft.items.length > 0 ? draft.items : items,
+  })
+  const draftTicketType = String(draft?.ticket_type || "").trim()
+  const draftBudgetCategory = String(draft?.budget_category || "").trim()
+  draft = {
+    ...draft,
+    ticket_type: draftTicketType && draftTicketType !== "other"
+      ? draftTicketType
+      : inferredClassification.ticket_type,
+    budget_category: draftBudgetCategory && draftBudgetCategory !== "divers"
+      ? draftBudgetCategory
+      : inferredClassification.budget_category,
+    is_food_ticket: draft?.is_food_ticket === true || inferredClassification.is_food_ticket === true,
+  }
+
   const mainCategory = "alimentaire"
   const cleanItems = (items || [])
     .filter(item => String(item.name || "").trim())
