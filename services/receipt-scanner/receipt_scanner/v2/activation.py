@@ -154,6 +154,7 @@ def build_v2_safe_candidate(
             reasons.append("v2_counted_quantity_recomputation_mismatch")
 
     target_gap: Decimal | None = None
+    reviewable_article_gap = False
     if target_amount is not None and items_total is not None:
         target_amount = target_amount.quantize(_MONEY_SCALE, rounding=ROUND_HALF_UP)
         target_gap = (items_total - target_amount).quantize(
@@ -161,7 +162,25 @@ def build_v2_safe_candidate(
             rounding=ROUND_HALF_UP,
         )
         if target_kind == "article_total" and abs(target_gap) > Decimal("0.02"):
-            reasons.append("v2_article_total_not_reconciled")
+            exact_declared_count = (
+                declared_count is not None
+                and counted_quantity is not None
+                and declared_count == counted_quantity
+            )
+            permitted_review_gap = min(
+                Decimal("0.50"),
+                (target_amount * Decimal("0.02")).quantize(
+                    _MONEY_SCALE,
+                    rounding=ROUND_HALF_UP,
+                ),
+            )
+            if (
+                exact_declared_count
+                and abs(target_gap) <= permitted_review_gap
+            ):
+                reviewable_article_gap = True
+            else:
+                reasons.append("v2_article_total_not_reconciled")
         if target_kind == "payable":
             if target_gap < Decimal("-0.02"):
                 reasons.append("v2_payable_exceeds_items_total")
@@ -176,6 +195,10 @@ def build_v2_safe_candidate(
                 reasons.append("v2_discount_gap_too_large")
             if target_gap > Decimal("0.02") and declared_count is None:
                 reasons.append("v2_discount_without_declared_count")
+
+    if reviewable_article_gap:
+        for converted_item in converted_items:
+            converted_item.needs_review = True
 
     legacy_payable = _decimal(legacy_receipt.payable_total)
     if (
@@ -195,6 +218,10 @@ def build_v2_safe_candidate(
         "v2_declared_count": declared_count,
         "v2_score": _float(selected.get("score"), default=0.0),
         "v2_reasons": list(selected.get("reasons") or []),
+        "v2_article_total_gap": (
+            float(target_gap) if target_gap is not None else None
+        ),
+        "v2_reviewable_article_gap": reviewable_article_gap,
     }
 
     if reasons:

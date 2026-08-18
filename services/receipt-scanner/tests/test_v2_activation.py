@@ -111,6 +111,43 @@ class V2ActivationTest(unittest.TestCase):
         self.assertEqual(candidate.receipt.payable_total, 9.0)
         self.assertEqual(candidate.receipt.immediate_discount_total, 1.0)
 
+    def test_accepts_small_article_gap_for_user_review_when_count_is_exact(self) -> None:
+        candidate = build_v2_safe_candidate(
+            legacy_receipt=legacy_receipt(total=None),
+            v2_result=v2_result(
+                target=42.89,
+                kind="article_total",
+                items_total=43.04,
+                declared_count=2,
+                counted_quantity=2,
+            ),
+        )
+        self.assertTrue(candidate.accepted)
+        assert candidate.receipt is not None
+        self.assertEqual(candidate.receipt.total, 42.89)
+        self.assertEqual(candidate.receipt.article_total, 42.89)
+        self.assertEqual(candidate.receipt.items_total, 43.04)
+        self.assertTrue(all(item.needs_review for item in candidate.receipt.items))
+        self.assertTrue(candidate.diagnostics["v2_reviewable_article_gap"])
+        self.assertEqual(candidate.diagnostics["v2_article_total_gap"], 0.15)
+
+    def test_rejects_large_article_gap_even_when_count_is_exact(self) -> None:
+        candidate = build_v2_safe_candidate(
+            legacy_receipt=legacy_receipt(total=None),
+            v2_result=v2_result(
+                target=42.89,
+                kind="article_total",
+                items_total=44.00,
+                declared_count=2,
+                counted_quantity=2,
+            ),
+        )
+        self.assertFalse(candidate.accepted)
+        self.assertIn(
+            "v2_article_total_not_reconciled",
+            candidate.fallback_reasons,
+        )
+
     def test_rejects_missing_target(self) -> None:
         candidate = build_v2_safe_candidate(
             legacy_receipt=legacy_receipt(),
