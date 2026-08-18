@@ -62,7 +62,7 @@ def quality(
         "article_data_mode": "partial" if status == "budget_ok_articles_partial" else "full",
         "should_feed_courses": status == "trusted",
         "should_feed_market_database": False,
-        "should_feed_verified_articles": status == "trusted",
+        "should_feed_verified_articles": status in {"trusted", "budget_ok_articles_partial"},
         "requires_user_validation": status != "trusted",
         "reasons": ["items_sum_differs_from_total"] if status == "budget_ok_articles_partial" else [],
         "unattributed_amount": unattributed_amount,
@@ -250,6 +250,30 @@ class ReceiptScanServiceTest(unittest.TestCase):
             quota_provider=quota_provider,
             market_resolver=market_resolver,
         )
+
+    def test_partial_scan_exposes_reliable_item_for_courses(self) -> None:
+        partial_quality = quality("budget_ok_articles_partial")
+        partial_quality["should_feed_verified_articles"] = True
+        runner = FakeRunner(
+            result=PipelineResult(
+                receipt=receipt(total=48.58, item_total=48.73, article_total=48.58),
+                quality=partial_quality,
+                engine="synthetic",
+                elapsed_seconds=0.125,
+                token_count=14,
+                rotation_degrees=0,
+                overlap=None,
+            )
+        )
+
+        response = self.service(runner).scan_single(
+            upload=upload(),
+            user_id="u1",
+        )
+
+        self.assertEqual(response["status"], "budget_ok_articles_partial")
+        self.assertTrue(response["items"][0]["eligible_for_courses"])
+        self.assertFalse(response["items"][0]["needs_review"])
 
     def test_rejects_invalid_mime(self) -> None:
         with self.assertRaisesRegex(ScannerApiError, "invalid_file_type"):
@@ -442,7 +466,7 @@ class ReceiptScanServiceTest(unittest.TestCase):
         self.assertEqual(response["receipt"]["immediate_discount_total"], 0.25)
         self.assertEqual(response["receipt"]["payable_total"], 73.99)
         self.assertEqual(response["unattributed_amount"], 0.2)
-        self.assertFalse(response["items"][0]["eligible_for_courses"])
+        self.assertTrue(response["items"][0]["eligible_for_courses"])
 
     def test_maps_needs_review_and_scan_not_exploitable(self) -> None:
         for status in ["needs_review", "scan_not_exploitable"]:

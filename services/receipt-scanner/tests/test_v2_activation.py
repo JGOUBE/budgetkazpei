@@ -127,9 +127,45 @@ class V2ActivationTest(unittest.TestCase):
         self.assertEqual(candidate.receipt.total, 42.89)
         self.assertEqual(candidate.receipt.article_total, 42.89)
         self.assertEqual(candidate.receipt.items_total, 43.04)
-        self.assertTrue(all(item.needs_review for item in candidate.receipt.items))
+        self.assertFalse(any(item.needs_review for item in candidate.receipt.items))
+        self.assertEqual(candidate.diagnostics["v2_review_item_indexes"], [])
         self.assertTrue(candidate.diagnostics["v2_reviewable_article_gap"])
         self.assertEqual(candidate.diagnostics["v2_article_total_gap"], 0.15)
+
+    def test_marks_only_product_preceding_unique_orphan_discount(self) -> None:
+        payload = v2_result(
+            target=9.85,
+            kind="article_total",
+            items_total=10.00,
+            declared_count=2,
+            counted_quantity=2,
+        )
+        selected = payload["selected_hypothesis"]
+        selected["items"][0]["raw_name"] = "GALETTE BRETONNE 125G LP"
+        selected["items"][0]["source_line_ids"] = [10]
+        selected["items"][1]["raw_name"] = "TAB MILKA LAIT NOISETTES"
+        selected["items"][1]["source_line_ids"] = [13]
+        payload["lines"] = [
+            {"line_id": 10, "money": [{"amount": 4.0}], "role_scores": {"product": 1.0}},
+            {"line_id": 11, "money": [], "role_scores": {"discount": 0.95}},
+            {"line_id": 12, "money": [{"amount": 0.15}], "role_scores": {"unknown": 1.0}},
+            {"line_id": 13, "money": [{"amount": 6.0}], "role_scores": {"product": 1.0}},
+        ]
+
+        candidate = build_v2_safe_candidate(
+            legacy_receipt=legacy_receipt(total=None),
+            v2_result=payload,
+        )
+
+        self.assertTrue(candidate.accepted)
+        assert candidate.receipt is not None
+        self.assertTrue(candidate.receipt.items[0].needs_review)
+        self.assertFalse(candidate.receipt.items[1].needs_review)
+        self.assertEqual(candidate.diagnostics["v2_review_item_indexes"], [0])
+        self.assertEqual(
+            candidate.diagnostics["v2_review_item_names"],
+            ["GALETTE BRETONNE 125G LP"],
+        )
 
     def test_rejects_large_article_gap_even_when_count_is_exact(self) -> None:
         candidate = build_v2_safe_candidate(

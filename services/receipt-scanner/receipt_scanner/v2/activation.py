@@ -26,6 +26,108 @@ class V2ActivationCandidate:
         return self.receipt is not None and not self.fallback_reasons
 
 
+
+def _find_review_item_indexes_for_unattached_discount(
+    *,
+    v2_result: dict[str, Any],
+    items_payload: list[dict[str, Any]],
+    target_gap: Decimal | None,
+) -> list[int]:
+    if target_gap is None or target_gap <= Decimal("0.02"):
+        return []
+
+    expected = target_gap.quantize(_MONEY_SCALE, rounding=ROUND_HALF_UP)
+    lines = v2_result.get("lines") or []
+    if not isinstance(lines, list):
+        return []
+
+    used_line_ids: set[int] = set()
+    item_last_lines: list[tuple[int, int]] = []
+    for item_index, payload in enumerate(items_payload):
+        ids = []
+        for value in payload.get("source_line_ids", []) or []:
+            try:
+                ids.append(int(value))
+            except (TypeError, ValueError):
+                continue
+        used_line_ids.update(ids)
+        if ids:
+            item_last_lines.append((item_index, max(ids)))
+
+    if not item_last_lines:
+        return []
+
+    ordered_lines = sorted(
+        (line for line in lines if isinstance(line, dict)),
+        key=lambda line: int(line.get("line_id", 0)),
+    )
+    matches: list[int] = []
+
+    def matching_amount(line: dict[str, Any]) -> bool:
+        for money in line.get("money", []) or []:
+            if not isinstance(money, dict):
+                continue
+            amount = _decimal(money.get("amount"))
+            if amount is not None and abs(amount - expected) <= Decimal("0.001"):
+                return True
+        return False
+
+    for position, line in enumerate(ordered_lines):
+        try:
+            line_id = int(line.get("line_id"))
+        except (TypeError, ValueError):
+            continue
+        if line_id in used_line_ids:
+            continue
+
+        role_scores = line.get("role_scores") or {}
+        discount_score = _float(
+            role_scores.get("discount") if isinstance(role_scores, dict) else None,
+            default=0.0,
+        )
+        if discount_score < 0.72:
+            continue
+
+        amount_line_id = line_id if matching_amount(line) else None
+        if amount_line_id is None:
+            for following in ordered_lines[position + 1:position + 3]:
+                try:
+                    following_id = int(following.get("line_id"))
+                except (TypeError, ValueError):
+                    continue
+                if following_id in used_line_ids:
+                    break
+                if matching_amount(following):
+                    amount_line_id = following_id
+                    break
+                following_roles = following.get("role_scores") or {}
+                if _float(
+                    following_roles.get("product") if isinstance(following_roles, dict) else None,
+                    default=0.0,
+                ) >= 0.70:
+                    break
+
+        if amount_line_id is None:
+            continue
+
+        preceding = [
+            (item_index, last_line)
+            for item_index, last_line in item_last_lines
+            if last_line < line_id
+        ]
+        if not preceding:
+            continue
+
+        item_index, last_line = max(preceding, key=lambda pair: pair[1])
+        if line_id - last_line > 4:
+            continue
+        matches.append(item_index)
+
+    unique = sorted(set(matches))
+    return unique if len(unique) == 1 else []
+
+
+
 def build_v2_safe_candidate(
     *,
     legacy_receipt: ParsedReceipt,
@@ -196,9 +298,16 @@ def build_v2_safe_candidate(
             if target_gap > Decimal("0.02") and declared_count is None:
                 reasons.append("v2_discount_without_declared_count")
 
+    review_item_indexes: list[int] = []
     if reviewable_article_gap:
-        for converted_item in converted_items:
-            converted_item.needs_review = True
+        review_item_indexes = _find_review_item_indexes_for_unattached_discount(
+            v2_result=v2_result,
+            items_payload=items_payload,
+            target_gap=target_gap,
+        )
+        for item_index in review_item_indexes:
+            if 0 <= item_index < len(converted_items):
+                converted_items[item_index].needs_review = True
 
     legacy_payable = _decimal(legacy_receipt.payable_total)
     if (
@@ -222,6 +331,12 @@ def build_v2_safe_candidate(
             float(target_gap) if target_gap is not None else None
         ),
         "v2_reviewable_article_gap": reviewable_article_gap,
+        "v2_review_item_indexes": list(review_item_indexes),
+        "v2_review_item_names": [
+            converted_items[index].raw_name
+            for index in review_item_indexes
+            if 0 <= index < len(converted_items)
+        ],
     }
 
     if reasons:

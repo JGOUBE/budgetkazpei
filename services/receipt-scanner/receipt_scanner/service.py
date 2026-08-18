@@ -829,6 +829,9 @@ class ReceiptScanService:
 
         status = str(quality["status"])
         should_feed_courses = bool(quality["should_feed_courses"])
+        should_feed_verified_articles = bool(
+            quality["should_feed_verified_articles"]
+        )
         should_feed_market = bool(quality["should_feed_market_database"])
 
         return {
@@ -865,7 +868,10 @@ class ReceiptScanService:
             "items": [
                 _item_to_api(
                     item,
-                    eligible_courses=should_feed_courses and not item.needs_review,
+                    eligible_courses=(
+                        (should_feed_courses or should_feed_verified_articles)
+                        and not item.needs_review
+                    ),
                     eligible_market=should_feed_market and not item.needs_review,
                 )
                 for item in receipt.items
