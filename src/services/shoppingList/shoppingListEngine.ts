@@ -45,7 +45,7 @@ export function getAutocompleteSuggestions(query = "", shoppingItems: any[] = []
   const clean = normalizeProductName(query)
   if (!clean) return []
 
-  return buildTopProducts(shoppingItems, 80)
+  return buildTopProducts(shoppingItems, Number.MAX_SAFE_INTEGER)
     .map(product => ({
       ...product,
       suggestionScore: getProductSuggestionScore(product.label, clean),
