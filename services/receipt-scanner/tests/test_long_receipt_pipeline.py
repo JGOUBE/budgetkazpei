@@ -49,6 +49,42 @@ class LongReceiptPipelineTest(unittest.TestCase):
         self.assertEqual(overlap.bottom_cut_line, 3)
         self.assertGreater(overlap.average_similarity, 0.9)
 
+    def test_large_valid_overlap_can_search_beyond_first_18_bottom_lines(self) -> None:
+        top = [
+            make_line(
+                index,
+                [(f"PRODUIT COMMUN UNIQUE {index:02d}", "description", 70), (f"{index + 1}.00", "price", 620)],
+                y=40 + index * 40,
+                segment="top",
+            )
+            for index in range(25)
+        ]
+        bottom = [
+            make_line(
+                index,
+                [(f"PRODUIT COMMUN UNIQUE {index:02d}", "description", 70), (f"{index + 1}.00", "price", 620)],
+                y=40 + index * 40,
+                segment="bottom",
+            )
+            for index in range(25)
+        ]
+        bottom.extend(
+            make_line(
+                25 + offset,
+                [(f"NOUVEAU PRODUIT BAS {offset}", "description", 70), (f"{30 + offset}.00", "price", 620)],
+                y=1040 + offset * 40,
+                segment="bottom",
+            )
+            for offset in range(3)
+        )
+
+        with self.assertRaisesRegex(RuntimeError, "fin de la première photo"):
+            find_overlap(top, bottom)
+
+        overlap = find_overlap(top, bottom, bottom_head_limit=36)
+        self.assertGreaterEqual(overlap.matched_anchor_count, 20)
+        self.assertLessEqual(overlap.top_trailing_line_count, 5)
+
     def test_price_only_lines_are_not_valid_overlap_anchors(self) -> None:
         top = [make_line(index, [(f"{index + 1}.00", "price", 620)], y=40 + index * 40, segment="top") for index in range(5)]
         bottom = [make_line(index, [(f"{index + 1}.00", "price", 620)], y=40 + index * 40, segment="bottom") for index in range(5)]
@@ -154,8 +190,10 @@ class LongReceiptPipelineTest(unittest.TestCase):
 
             self.assertEqual(pair_pipeline.call_count, 2)
             second_call_paths = pair_pipeline.call_args_list[1].args
+            second_call_kwargs = pair_pipeline.call_args_list[1].kwargs
             self.assertTrue(str(second_call_paths[0]).endswith("pair-12-merged.jpg"))
             self.assertEqual(second_call_paths[1], sources[2])
+            self.assertEqual(second_call_kwargs["overlap_bottom_head_limit"], 36)
             self.assertEqual(result["segment_count"], 3)
             self.assertEqual(
                 [(pair["first_segment"], pair["second_segment"]) for pair in result["overlap"]["pairs"]],

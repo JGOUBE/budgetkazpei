@@ -852,10 +852,18 @@ def run_long_receipt_pipeline(
             max_side=max_side * 2,
             use_cls=use_cls,
             ocr_engine=ocr_engine,
+            # On a three-photo receipt, the middle/bottom overlap can span
+            # more than 18 reconstructed lines. Search farther into the
+            # bottom photo without relaxing any overlap quality threshold.
+            overlap_bottom_head_limit=36,
         )
     except RuntimeError as exc:
         lowered = str(exc).lower()
-        if "chevauchement" in lowered or "raccord" in lowered:
+        if (
+            "chevauchement" in lowered
+            or "raccord" in lowered
+            or "partie commune" in lowered
+        ):
             raise RuntimeError(
                 "long_receipt_overlap_unreliable: chevauchement adjacent "
                 "insuffisant"
@@ -917,6 +925,7 @@ def run_two_photo_pipeline(
     max_side: int = 1600,
     use_cls: bool = False,
     ocr_engine: Any | None = None,
+    overlap_bottom_head_limit: int = 18,
 ) -> dict[str, Any]:
     top_source = Path(top_image_path)
     bottom_source = Path(bottom_image_path)
@@ -979,7 +988,11 @@ def run_two_photo_pipeline(
     reconstructor = LineReconstructor()
     top_lines = reconstructor.reconstruct(top_document)
     bottom_lines = reconstructor.reconstruct(bottom_document)
-    overlap = find_overlap(top_lines, bottom_lines)
+    overlap = find_overlap(
+        top_lines,
+        bottom_lines,
+        bottom_head_limit=overlap_bottom_head_limit,
+    )
     overlap.bottom_cut_line = _extend_bottom_cut_over_numeric_overlap(
         top_lines,
         bottom_lines,
