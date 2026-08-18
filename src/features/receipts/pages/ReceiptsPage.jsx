@@ -138,7 +138,7 @@ const TEXT = {
     status: "Statut",
     open: "Ouvrir",
     deleteTicket: "Retirer le ticket",
-    confirmDelete: "Le ticket sera retiré de votre historique et la dépense liée sera retirée du budget. Les suppressions automatiques après 7 jours conservent les transactions et les statistiques.",
+    confirmDelete: "Le ticket sera retiré de Mes tickets. La dépense, les statistiques, Mes courses et les données utiles à votre liste de courses seront conservées.",
     duplicateTitle: "Ticket déjà enregistré ?",
     duplicateMessage: "Ce ticket semble déjà enregistré. Voulez-vous quand même l'ajouter ?",
     duplicateAddAnyway: "Ajouter quand même",
@@ -240,7 +240,7 @@ const TEXT = {
     status: "Leta",
     open: "Ouvrir",
     deleteTicket: "Tir tike-la",
-    confirmDelete: "Tike-la va sorti dann listwar ou ek depans-la va sorti dann bidze. Bann suppression otomatik apre 7 zour, zot i gard tranzaksyon ek statistik.",
+    confirmDelete: "Tike-la va sorti dann Mon bann tike. Depans, statistik, Mes courses ek bann done itil pou out liste courses va reste conserve.",
     duplicateTitle: "Tiké-la déjà anrezistré ?",
     duplicateMessage: "Sa tiké-la i semble déjà anrezistré. Ou veu azout ali kan même ?",
     duplicateAddAnyway: "Azout kan même",
@@ -1865,7 +1865,7 @@ export default function ReceiptsPage({
     setBusy(true)
 
     try {
-      await deleteReceipt({ receipt: detail, userId: user?.id, removeBudget: true, removeLearning: true, reason: "user_removed_receipt" })
+      await deleteReceipt({ receipt: detail, userId: user?.id, removeBudget: false, removeLearning: false, reason: "user_removed_receipt" })
       setDetail(null)
       setDetailImageUrl("")
       setMode("history")
@@ -1884,7 +1884,7 @@ export default function ReceiptsPage({
 
     setBusy(true)
     try {
-      await deleteReceipt({ receipt: row, userId: user?.id, removeBudget: true, removeLearning: true, reason: "user_removed_receipt" })
+      await deleteReceipt({ receipt: row, userId: user?.id, removeBudget: false, removeLearning: false, reason: "user_removed_receipt" })
       setReceipts(prev => prev.filter(receiptRow => receiptRow.id !== row.id))
       setMessage(txt.deleted)
       await refreshReceipts()
