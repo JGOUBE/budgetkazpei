@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import logging
 from typing import Any
 
 from fastapi import Request
 from fastapi.responses import JSONResponse
+
+
+LOGGER = logging.getLogger("receipt_scanner.api.errors")
 
 
 ERROR_HTTP_STATUS = {
@@ -99,8 +103,17 @@ async def scanner_error_handler(
 
 
 async def unhandled_error_handler(
-    _request: Request,
-    _exc: Exception,
+    request: Request,
+    exc: Exception,
 ) -> JSONResponse:
+    # Ne journalise ni corps de requete, ni JWT, ni images.
+    # Le traceback est indispensable pour diagnostiquer un HTTP 500 Cloud Run.
+    LOGGER.error(
+        "Unhandled scanner exception method=%s path=%s error_type=%s",
+        request.method,
+        request.url.path,
+        type(exc).__name__,
+        exc_info=(type(exc), exc, exc.__traceback__),
+    )
     error = ScannerApiError(code="internal_scan_error", retryable=True)
     return JSONResponse(status_code=500, content=error.public_payload())
