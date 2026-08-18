@@ -454,8 +454,22 @@ class ReceiptScanService:
         except ScannerApiError:
             raise
         except RuntimeError as exc:
-            raise self._map_runtime_error(exc, scan_id) from exc
+            mapped = self._map_runtime_error(exc, scan_id)
+            if mapped.code == "internal_scan_error":
+                logger.exception(
+                    "scan_runtime_error scan_id=%s mode=%s error_type=%s",
+                    scan_id,
+                    mode,
+                    type(exc).__name__,
+                )
+            raise mapped from exc
         except Exception as exc:
+            logger.exception(
+                "scan_unhandled_error scan_id=%s mode=%s error_type=%s",
+                scan_id,
+                mode,
+                type(exc).__name__,
+            )
             raise ScannerApiError(
                 code="internal_scan_error",
                 retryable=True,
