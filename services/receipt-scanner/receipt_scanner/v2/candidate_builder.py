@@ -86,6 +86,21 @@ def _close(first: LineEvidence, second: LineEvidence) -> bool:
     return same_segment and 0 <= gap <= max(58.0, height * 2.35)
 
 
+def _discount_close(first: LineEvidence, second: LineEvidence) -> bool:
+    gap = second.center_y - first.center_y
+    height = max(
+        1.0,
+        first.y_max - first.y_min,
+        second.y_max - second.y_min,
+    )
+    same_segment = (
+        first.source_segment is None
+        or second.source_segment is None
+        or first.source_segment == second.source_segment
+    )
+    return same_segment and 0 <= gap <= max(96.0, height * 3.6)
+
+
 def _looks_like_item_code_bridge(line: LineEvidence) -> bool:
     """Detect an isolated item reference between its name and detail row.
 
@@ -185,7 +200,7 @@ def _find_following_discount(
             break
 
         target = evidence[target_index]
-        if not _close(proximity_reference, target):
+        if not _discount_close(proximity_reference, target):
             break
 
         amount = negative_money_value(target.text)

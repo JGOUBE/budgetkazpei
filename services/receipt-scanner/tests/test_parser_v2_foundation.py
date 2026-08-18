@@ -220,6 +220,48 @@ class GenericParserV2FoundationTest(unittest.TestCase):
             selected["reasons"],
         )
 
+    def test_weekday_discounts_misread_subtotal_and_missing_product_regression(self):
+        lines = [
+            make_line(0, [("OPERATION VENTE", "description", 60)], y=30),
+            make_line(1, [("JUS DE RAISIN 6X20 CL LP", "description", 140), ("3.70", "price", 650)], y=80),
+            make_line(2, [("JEUDI 10% MDD", "description", 140)], y=115),
+            make_line(3, [("-0.37", "price", 650)], y=150),
+            make_line(4, [("MOUCHOIR ETUI STD 15X9 CO", "description", 140), ("2.04", "price", 650)], y=185),
+            make_line(5, [("JEUDI 10% MDD", "description", 140)], y=220),
+            make_line(6, [("-0.20", "price", 650)], y=255),
+            make_line(7, [("HYGIENE", "description", 100), ("1.64", "price", 360)], y=290),
+            make_line(8, [("LACTEL LAIT CHEVRE 1.5% M", "description", 140), ("3.18", "price", 650)], y=325),
+            make_line(9, [("EMMENTAL RAP 45MG 200G", "description", 140), ("2.45", "price", 650)], y=360),
+            make_line(10, [("LAIT 1/2 ECREME UHT 1L", "description", 140), ("1.00", "price", 650)], y=395),
+            make_line(11, [("GALETTE BRETONNE 125G LP", "description", 140), ("1.45", "price", 650)], y=430),
+            make_line(12, [("JEUDI 10% MDD", "description", 140)], y=465),
+            make_line(13, [("-0.15", "price", 650)], y=500),
+            make_line(14, [("TAB MILKA LAIT NOISETTES", "description", 140), ("1.69", "price", 650)], y=535),
+            make_line(15, [("PRIX PROMOTION", "description", 140)], y=570),
+            make_line(16, [("BRI VALEUR QTE", "description", 140), ("-0.04", "price", 650)], y=650),
+            make_line(17, [("IVORIA PATE A TARTINER 20", "description", 140), ("2.50", "price", 650)], y=685),
+            make_line(18, [("JEUDI 10% MDD", "description", 140)], y=720),
+            make_line(19, [("-0.25", "price", 650)], y=755),
+            make_line(20, [("TOTAL 8 ARTICLES", "description", 60), ("17.00", "price", 650)], y=810),
+        ]
+
+        result = self.analyze(lines)
+        selected = result["selected_hypothesis"]
+        names = {item["raw_name"]: item for item in selected["items"]}
+
+        self.assertEqual(selected["items_total"], 17.0)
+        self.assertEqual(selected["counted_quantity"], 8)
+        self.assertEqual(len(selected["items"]), 8)
+        self.assertIn("EMMENTAL RAP 45MG 200G", names)
+        self.assertNotIn("HYGIENE", names)
+        self.assertEqual(names["JUS DE RAISIN 6X20 CL LP"]["total_price"], 3.33)
+        self.assertEqual(names["GALETTE BRETONNE 125G LP"]["total_price"], 1.30)
+        self.assertEqual(names["TAB MILKA LAIT NOISETTES"]["total_price"], 1.65)
+        self.assertEqual(names["IVORIA PATE A TARTINER 20"]["total_price"], 2.25)
+        self.assertIn("exact_total_match", selected["reasons"])
+        self.assertIn("exact_declared_count_match", selected["reasons"])
+
+
     def test_classifier_is_not_store_specific(self):
         lines = simple_generic_receipt()
         lines[0] = make_line(

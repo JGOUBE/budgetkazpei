@@ -85,6 +85,16 @@ DISCOUNT_LABELS = (
     "VOS REDUCTIONS IMMEDIATES",
     "TOTAL REDUCTIONS IMMEDIATES",
 )
+WEEKDAY_LABELS = (
+    "LUNDI",
+    "MARDI",
+    "MERCREDI",
+    "JEUDI",
+    "VENDREDI",
+    "SAMEDI",
+    "DIMANCHE",
+)
+
 HEADER_LABELS = (
     "BIENVENUE",
     "MERCI",
@@ -292,7 +302,11 @@ class GenericLineClassifier:
             # context, even when OCR loses the minus sign on the next amount.
             if (
                 percentage_discount
-                and percentage_at_start
+                and not money
+                and (
+                    percentage_at_start
+                    or any(day in normalized for day in WEEKDAY_LABELS)
+                )
                 and not BARCODE_RE.search(text)
                 and not PRODUCT_UNIT_HINT_RE.search(semantic_text)
                 and word_count(semantic_text) <= 8
@@ -580,7 +594,25 @@ class GenericLineClassifier:
                     and label_x <= image_width * 0.42
                 )
 
-            if arithmetic_match or layout_boundary_match:
+            discount_boundary_match = False
+            if (
+                short_label
+                and recent_product_amounts
+                and recent_description_x
+                and next_starts_new_group(index)
+                and index > 0
+                and lines[index - 1].score_for(LineRole.DISCOUNT) >= 0.7
+            ):
+                label_x = description_x(line)
+                sorted_x = sorted(recent_description_x)
+                median_product_x = sorted_x[len(sorted_x) // 2]
+                discount_boundary_match = (
+                    label_x is not None
+                    and label_x + image_width * 0.025 < median_product_x
+                    and label_x <= image_width * 0.46
+                )
+
+            if arithmetic_match or layout_boundary_match or discount_boundary_match:
                 mark_subtotal(line)
                 recent_product_amounts.clear()
                 recent_description_x.clear()

@@ -1113,6 +1113,8 @@ export default function ReceiptsPage({
       isPendingSave: Boolean(resumeDraft.python_scan_pending_save),
       reviewItemsCount: countItemsNeedingReview(items),
       totalNeedsReview: Boolean(resumeDraft.total_needs_review),
+      requiresQuickReview: Boolean(resumeDraft.python_scan_decision?.requires_user_validation)
+        || String(resumeDraft.items_quality_status || "").toLowerCase() === "partial",
     })
     setValidationView(nextValidationView)
     if (nextValidationView === "preview") {
@@ -1297,6 +1299,8 @@ export default function ReceiptsPage({
       isPendingSave: Boolean(parsed.python_scan_pending_save),
       reviewItemsCount,
       totalNeedsReview: Boolean(parsed.total_needs_review),
+      requiresQuickReview: Boolean(parsed.python_scan_decision?.requires_user_validation)
+        || String(parsed.items_quality_status || "").toLowerCase() === "partial",
       hasValidationError: Boolean(validationError),
     }))
     setDuplicateReceipt(null)
