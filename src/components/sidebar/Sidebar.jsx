@@ -5,6 +5,7 @@ import AppLogo from "../AppLogo"
 
 const NAV_ITEMS = [
   { id: "shopping", icon: BkIcons.shopping, section: "nav", key: "shopping" },
+  { id: "depenses", icon: BkIcons.depenses, section: "nav", key: "depenses" },
   { id: "goodDeals", icon: BkIcons.deals, section: "nav", key: "goodDeals" },
   { id: "statistics", icon: BkIcons.stats, section: "nav", key: "statistics" },
   { id: "aides", icon: BkIcons.aides, section: "nav", key: "aides" },
