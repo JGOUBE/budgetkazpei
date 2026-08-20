@@ -817,6 +817,112 @@ html[data-theme="dark"] .hero-demo__receipt {
   color: var(--landing-green);
 }
 
+.landing-advisor {
+  border-block: 1px solid var(--landing-border);
+  background:
+    radial-gradient(circle at 12% 18%, var(--landing-blue-soft), transparent 34%),
+    color-mix(in srgb, var(--landing-card) 78%, var(--landing-bg));
+}
+
+.advisor-showcase {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(310px, .85fr);
+  gap: clamp(22px, 5vw, 54px);
+  align-items: center;
+}
+
+.advisor-showcase__main {
+  min-width: 0;
+}
+
+.advisor-showcase__icon {
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 18px;
+  border: 1px solid color-mix(in srgb, var(--landing-blue) 30%, var(--landing-border));
+  border-radius: 16px;
+  background: var(--landing-blue-soft);
+  color: var(--landing-blue);
+}
+
+.advisor-showcase h2 {
+  max-width: 720px;
+  margin: 0;
+}
+
+.advisor-showcase__intro {
+  max-width: 760px;
+  margin: 16px 0 0;
+  color: var(--landing-muted);
+  font-size: 1.03rem;
+  font-weight: 750;
+  line-height: 1.65;
+}
+
+.advisor-showcase__capabilities {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.advisor-showcase__capabilities li {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  min-width: 0;
+  border: 1px solid var(--landing-border);
+  border-radius: 12px;
+  padding: 12px;
+  background: color-mix(in srgb, var(--landing-card) 88%, transparent);
+  color: var(--landing-text);
+  font-size: .92rem;
+  font-weight: 820;
+  line-height: 1.45;
+}
+
+.advisor-showcase__capabilities svg {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: var(--landing-green);
+}
+
+.advisor-showcase__plus {
+  border: 1px solid color-mix(in srgb, var(--landing-blue) 32%, var(--landing-border));
+  border-radius: 20px;
+  padding: clamp(20px, 4vw, 30px);
+  background: linear-gradient(145deg, color-mix(in srgb, var(--landing-lavender) 68%, var(--landing-card)), var(--landing-card));
+  box-shadow: 0 16px 40px rgba(20, 32, 51, .08);
+}
+
+.advisor-showcase__plus > span {
+  color: var(--landing-blue);
+  font-size: .78rem;
+  font-weight: 950;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.advisor-showcase__plus h3 {
+  margin: 10px 0;
+  color: var(--landing-text);
+  font-family: "DM Serif Display", Georgia, serif;
+  font-size: clamp(1.7rem, 3vw, 2.25rem);
+  font-weight: 400;
+  line-height: 1.12;
+}
+
+.advisor-showcase__plus p {
+  margin: 0 0 20px;
+  color: var(--landing-muted);
+  font-weight: 740;
+  line-height: 1.62;
+}
+
 .privacy-band {
   background: var(--landing-card);
 }
@@ -842,11 +948,37 @@ html[data-theme="dark"] .hero-demo__receipt {
 }
 
 .pricing-card {
+  --plan-accent: var(--landing-blue);
+  position: relative;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   gap: 18px;
-  padding: 22px;
+  border-radius: 18px;
+  padding: 24px;
+  background: var(--landing-card);
+  box-shadow: 0 12px 32px rgba(20, 32, 51, .07);
+}
+
+.pricing-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: var(--plan-accent);
+}
+
+.pricing-card--neutral {
+  --plan-accent: var(--landing-green);
+}
+
+.pricing-card--premium {
+  --plan-accent: var(--landing-primary);
+}
+
+.pricing-card--plus {
+  --plan-accent: var(--landing-blue);
 }
 
 .pricing-card--cream {
@@ -862,20 +994,22 @@ html[data-theme="dark"] .hero-demo__receipt {
 }
 
 .pricing-card--featured {
-  border-color: color-mix(in srgb, var(--landing-primary) 64%, var(--landing-border));
-  box-shadow: var(--landing-shadow);
+  border-color: color-mix(in srgb, var(--plan-accent) 48%, var(--landing-border));
+  box-shadow: 0 18px 42px rgba(20, 32, 51, .11);
 }
 
 .pricing-card__label {
   margin: 0;
-  color: var(--landing-blue);
+  color: var(--plan-accent);
   font-size: .85rem;
   font-weight: 950;
   text-transform: uppercase;
 }
 
 .pricing-card h3 {
+  font-family: "DM Sans", "Helvetica Neue", Arial, sans-serif;
   font-size: 2rem;
+  font-weight: 950;
 }
 
 .pricing-card li {
@@ -1232,6 +1366,7 @@ html[data-theme="dark"] .hero-demo__receipt {
 }
 
 .pricing-card__check,
+.pricing-card__lock,
 .pricing-card__dash,
 .pricing-card__soon {
   width: fit-content;
@@ -1249,6 +1384,15 @@ html[data-theme="dark"] .hero-demo__receipt {
 
 .pricing-card__soon {
   color: var(--landing-blue) !important;
+}
+
+.pricing-card__lock {
+  color: var(--landing-primary) !important;
+}
+
+.pricing-card li:has(.pricing-card__lock) span:last-child {
+  color: var(--landing-text);
+  font-weight: 850;
 }
 
 .pricing-card__dash {
@@ -1294,6 +1438,7 @@ html[data-theme="dark"] .hero-demo__receipt {
 
   .landing-hero__grid,
   .local-deals,
+  .advisor-showcase,
   .product-demo__panel,
   .split-grid,
   .advisor-grid,
@@ -1369,6 +1514,10 @@ html[data-theme="dark"] .hero-demo__receipt {
 
   .hero-demo__cards,
   .local-deals__cards {
+    grid-template-columns: 1fr;
+  }
+
+  .advisor-showcase__capabilities {
     grid-template-columns: 1fr;
   }
 
@@ -1561,9 +1710,10 @@ html[data-theme="dark"] .premium-public-page {
 
 .premium-plan__price {
   color: var(--landing-text);
-  font-family: "DM Serif Display", Georgia, serif;
+  font-family: "DM Sans", "Helvetica Neue", Arial, sans-serif;
   font-size: clamp(2.25rem, 4vw, 3.1rem);
-  font-weight: 400;
+  font-weight: 950;
+  letter-spacing: -.04em;
   line-height: 1;
 }
 
@@ -1582,6 +1732,14 @@ html[data-theme="dark"] .premium-public-page {
 
 .premium-plan__intro {
   margin: 12px 0 0;
+}
+
+.premium-plan__usage-note {
+  margin: 10px 0 0 !important;
+  color: var(--landing-subtle) !important;
+  font-size: .78rem;
+  font-weight: 780 !important;
+  line-height: 1.45 !important;
 }
 
 .premium-plan__features {
@@ -1616,6 +1774,21 @@ html[data-theme="dark"] .premium-public-page {
   color: var(--landing-green) !important;
   font-size: .82rem !important;
   font-weight: 950 !important;
+}
+
+.premium-plan__lock {
+  width: 26px;
+  height: 26px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--landing-primary) 10%, var(--landing-card));
+  font-size: .78rem;
+}
+
+.premium-plan__features li.is-locked > span:last-child {
+  color: var(--landing-text);
+  font-weight: 850;
 }
 
 .premium-plan__action {

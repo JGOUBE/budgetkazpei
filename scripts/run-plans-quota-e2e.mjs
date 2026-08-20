@@ -211,7 +211,7 @@ assert.doesNotMatch(targetedPublicTexts, /Gratuit[\s\S]{0,160}\b1\s+scan/i, "fre
 assert.ok(PUBLIC_PLAN_CARDS.find(plan => plan.id === PLAN_IDS.premium)?.items.some(item => item.text === "10 scans par mois"), "Premium public quota must be visible")
 assert.ok(PUBLIC_PLAN_CARDS.find(plan => plan.id === PLAN_IDS.premiumPlus)?.items.some(item => /Scans illimit/i.test(item.text)), "Premium+ public quota must stay commercially unlimited")
 assert.ok(PUBLIC_PLAN_CARDS.every(plan => plan.items.every(item => Object.values(PLAN_FEATURE_STATUS).includes(item.status))), "all public plan features must have a status")
-assert.ok(PUBLIC_PLAN_CARDS.some(plan => plan.items.some(item => item.status === PLAN_FEATURE_STATUS.soon)), "future features must use a dedicated soon status")
+assert.ok(PUBLIC_PLAN_CARDS.find(plan => plan.id === PLAN_IDS.free)?.items.some(item => item.status === PLAN_FEATURE_STATUS.locked), "free advisor teaser must use a dedicated locked status")
 
 assert.match(receiptQuota, /subscription_loading/, "receipt quota hook must keep a dedicated subscription loading state")
 assert.match(receiptQuota, /getReceiptQuotaBlockingMessage/, "receipt quota hook must expose a shared quota blocking helper")
@@ -340,8 +340,8 @@ assert.match(publicHome, /href=\{`mailto:\$\{CONTACT_EMAIL\}`\}/, "professional 
 assert.match(read("src/pages/PrivacyPage.jsx") + read("src/pages/TermsPage.jsx"), /contact\.budgetkazpei@gmail\.com/, "professional CTA email must already exist in official public pages")
 assert.doesNotMatch(publicHome + landingContent, /Chez\s+[A-Z]|SARL\s+[A-Z]|prix publicitaire|partenaire officiel/, "public marketing copy must not invent partners or ad pricing")
 
-assert.match(premiumLanding + pricing, /10 scans par mois|PLAN_PUBLIC_SCAN_LABELS\[PLAN_IDS\.premium\]/, "public plan pages must keep the Premium scan quota")
-assert.match(premiumLanding + premiumPage + pricing, /Conseiller renforc\u00e9|Conseiller renforce/, "Premium+ advisor wording must stay present across the offer surfaces")
+assert.match(premiumLanding + pricing + landingContent, /10 scans par mois|PLAN_PUBLIC_SCAN_LABELS\[PLAN_IDS\.premium\]/, "public plan pages must keep the Premium scan quota")
+assert.match(premiumLanding + premiumPage + pricing, /Conseiller BudgetKazP\u00e9i\+|Konsey\u00e9 BudgetKazP\u00e9i\+/, "Premium+ advisor wording must stay present across the offer surfaces")
 assert.match(premiumLanding + premiumPage + pricing, /Bient\u00f4t|An pr\u00e9parasyon|Byento|bient\u00f4t disponible|Bientot/i, "future Premium+ functions must stay separated as soon features")
 assert.match(premiumPage, /from "lucide-react"/, "Premium page must use Lucide icons instead of emojis")
 assert.doesNotMatch(premiumPage, /\uD83C\uDF34|\u2B50|\uD83D\uDC51|FREE|\u2728/u, "Premium page must not use emojis or low-quality free badges")
@@ -363,7 +363,7 @@ assert.match(premiumPageKrCopy, /Konpar bann offres/, "Premium page KR copy must
 assert.match(premiumPageKrCopy, /Tout sak l[ée] dann Gratuit/, "Premium page KR copy must reuse the validated Gratuit bundle wording")
 assert.match(premiumPageKrCopy, /Tout sak l[ée] dann Premium/, "Premium page KR copy must reuse the validated Premium bundle wording")
 assert.match(premiumPageKrCopy, /Scans san limit/, "Premium page KR copy must translate the Premium+ scan promise")
-assert.match(premiumPageKrCopy, /Konsey[ée] ranfors[ée]/, "Premium page KR copy must reuse the validated reinforced advisor wording")
+assert.match(premiumPageKrCopy, /Konsey[ée] BudgetKazP[ée]i\+.*itilizasion san limit/, "Premium page KR copy must expose the final Premium+ advisor wording")
 assert.match(premiumPageKrCopy, /An pr[ée]parasyon/, "Premium page KR copy must use the validated coming-soon section title")
 
 console.log("Plans quota e2e checks passed.")

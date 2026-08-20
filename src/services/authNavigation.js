@@ -117,7 +117,7 @@ export function resolveAuthRoute({
     return { type: "auth-callback" }
   }
 
-  if (isAuthenticated && (path === "/" || path === DISCOVER_ROUTE || isPublicOnlyPath(path))) {
+  if (isAuthenticated && (path === "/" || isPublicOnlyPath(path))) {
     return { type: "redirect", to: APP_ROUTE, replace: true }
   }
 
@@ -169,12 +169,12 @@ export function resolveAuthRoute({
     return { type: "render", page: "admin-retail-price-review" }
   }
 
-  if (isPremiumPath(path)) {
+  if (path === DISCOVER_ROUTE || isPremiumPath(path)) {
     return { type: "render", page: "premium" }
   }
 
   if (PUBLIC_PAGES.has(path)) {
-    return { type: "render", page: path === "/" || path === DISCOVER_ROUTE ? "home" : path.slice(1) }
+    return { type: "render", page: path === "/" ? "home" : path.slice(1) }
   }
 
   return { type: "render", page: "home" }

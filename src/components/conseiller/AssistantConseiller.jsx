@@ -19,6 +19,7 @@ import {
 } from "../../services/advisorHandoff"
 import { useAssistantInsights } from "../../hooks/useAssistantInsights"
 import { buildAssistantAiSummary } from "../../services/ai/assistantInsightsService"
+import { resolveAdvisorLanguage } from "../../services/advisorLanguage"
 
 const COLORS = createColorAliases({ red: () => "#FB7185" })
 
@@ -87,40 +88,6 @@ function isKreolLanguage(t) {
   const lang = String(t.lang || "").toLowerCase()
   if (lang === "cr" || lang === "kreol") return true
   return normalizeText(t("nav", "dashboard")) === "tablo debor"
-}
-
-function looksLikeKreolText(value = "") {
-  const text = ` ${normalizeText(value)} `
-  const markers = [
-    " mi ",
-    " moin",
-    " marmay",
-    " larzan",
-    " zed",
-    " zede",
-    " zot",
-    " aou",
-    " out ",
-    " ou la ",
-    " na ",
-    " gagn",
-    " kosa",
-    " pou ",
-    " ek ",
-    " dann",
-    " kaz",
-    " renyon",
-    " pei",
-    " domann",
-    " marmailles",
-    " marmaille",
-    " koz",
-    " koze",
-    " aide",
-    " led",
-  ]
-
-  return markers.some(marker => text.includes(marker))
 }
 
 function formatValue(value, fallback = "Non renseigne") {
@@ -404,6 +371,7 @@ export default function AssistantConseiller({
   const [errorMessage, setErrorMessage] = useState("")
   const [pendingMessage, setPendingMessage] = useState(null)
   const [failedMessage, setFailedMessage] = useState(null)
+  const [advisorHandoffContext, setAdvisorHandoffContext] = useState(null)
   const messagesEndRef = useRef(null)
   const textareaRef = useRef(null)
   const {
@@ -457,6 +425,7 @@ export default function AssistantConseiller({
 
       setAssistantMode(mode)
       setQuestion(prompt)
+      setAdvisorHandoffContext(event?.detail?.context || null)
       setQuickQuestionSelected(true)
       setErrorMessage("")
       setFailedMessage(null)
@@ -526,8 +495,14 @@ export default function AssistantConseiller({
     mode,
     recentHistory,
     isQuickPreset,
+    handoffContext,
   }) {
-    const assistantIsKreol = isKreol || looksLikeKreolText(sentQuestion)
+    const interfaceLanguage = isKreol ? "kreol" : "fr"
+    const assistantLanguage = resolveAdvisorLanguage({
+      message: sentQuestion,
+      interfaceLanguage,
+    })
+    const assistantIsKreol = assistantLanguage === "kreol"
     const preparedAides = prepareAideContext(
       sortAidesForContext(aides, currentProfile),
       assistantIsKreol
@@ -567,7 +542,8 @@ export default function AssistantConseiller({
         assistantMode: mode,
         assistantModeLabel: getModeLabel(mode, assistantIsKreol),
         modeInstruction: buildModeInstruction(mode, assistantIsKreol),
-        language: assistantIsKreol ? "kreol" : "fr",
+        language: assistantLanguage,
+        interfaceLanguage,
         isKreol: assistantIsKreol,
         isQuickPreset: isQuickPreset || mode === "scan_profil",
         profile: currentProfile,
@@ -577,6 +553,7 @@ export default function AssistantConseiller({
         recommended_aides: preparedAides,
         reunionOrientation: REUNION_ORIENTATION,
         reunion_orientation: REUNION_ORIENTATION,
+        advisorHandoffContext: handoffContext || null,
         recentHistory: (recentHistory || []).map(item => ({
           question: item.question,
           answer: item.answer,
@@ -646,6 +623,7 @@ export default function AssistantConseiller({
         mode: currentMode,
         recentHistory: history,
         isQuickPreset: requestedQuickPreset,
+        handoffContext: advisorHandoffContext,
       })
     } catch (error) {
       console.error("Erreur analyse conseiller:", error)
@@ -682,9 +660,10 @@ export default function AssistantConseiller({
       return
     }
 
+    const responseIsKreol = result.language === "kreol"
     const answer =
       result.answer ||
-      (isKreol
+      (responseIsKreol
         ? "Mi na pas reussi generer in repons pou linstan."
         : "Je n'ai pas réussi à générer une réponse pour le moment.")
 
@@ -694,6 +673,7 @@ export default function AssistantConseiller({
           id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
           question: sentQuestion,
           answer,
+          language: result.language || (responseIsKreol ? "kreol" : "fr"),
           mode: currentMode,
           createdAt: new Date().toISOString(),
         },
@@ -705,6 +685,7 @@ export default function AssistantConseiller({
     setQuestion("")
     setAssistantMode("general")
     setQuickQuestionSelected(false)
+    setAdvisorHandoffContext(null)
   }
 
   function resetConversation() {
@@ -715,6 +696,7 @@ export default function AssistantConseiller({
     setErrorMessage("")
     setPendingMessage(null)
     setFailedMessage(null)
+    setAdvisorHandoffContext(null)
   }
 
   function resizeComposer() {
@@ -727,6 +709,7 @@ export default function AssistantConseiller({
   function selectSuggestion(mode) {
     setAssistantMode(mode.mode)
     setQuestion(mode.prompt)
+    setAdvisorHandoffContext(null)
     setQuickQuestionSelected(true)
     setErrorMessage("")
     setFailedMessage(null)

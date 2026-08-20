@@ -1,4 +1,4 @@
-import { ADVISOR_MODES } from "../config/advisorAccess"
+import { ADVISOR_MODES } from "../config/advisorAccess.js"
 
 export const ADVISOR_PROMPT_EVENT = "budgetkazpei:assistant-prompt"
 export const ADVISOR_HANDOFF_STORAGE_KEY = "budgetkazpei:advisor-handoff"
@@ -15,8 +15,10 @@ function sanitizeContext(context = {}) {
     aideNameKreol: cleanText(context.aideNameKreol, 180),
     category: cleanText(context.category, 100),
     status: cleanText(context.status, 60),
-    description: cleanText(context.description, 900),
-    steps: cleanText(context.steps, 1200),
+    descriptionFr: cleanText(context.descriptionFr || context.description, 900),
+    descriptionKreol: cleanText(context.descriptionKreol, 900),
+    stepsFr: cleanText(context.stepsFr || context.steps, 1200),
+    stepsKreol: cleanText(context.stepsKreol, 1200),
     addedAt: cleanText(context.addedAt, 60),
   }
 }
@@ -25,7 +27,7 @@ export function createAdvisorHandoff({ mode = "general", prompt, context = {} } 
   const safeMode = ADVISOR_MODES.includes(mode) ? mode : "general"
 
   return {
-    version: 1,
+    version: 2,
     createdAt: Date.now(),
     mode: safeMode,
     prompt: cleanText(prompt, 5000),

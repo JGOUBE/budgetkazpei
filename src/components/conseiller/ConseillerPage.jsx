@@ -150,7 +150,7 @@ function LockedAdvisor({ isKreol, onDiscover }) {
       </div>
       <button type="button" className="bkp-advisor-discover" onClick={onDiscover}>
         <Sparkles size={18} />
-        {isKreol ? "Dékouv Konseye" : "Découvrir le Conseiller"}
+        {isKreol ? "Dékouv Premium" : "Découvrir Premium"}
       </button>
       <p className="bkp-advisor-locked-note">
         {isKreol

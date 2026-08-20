@@ -17,16 +17,22 @@ import {
   isAdvancedAdvisorMode,
   parseAssistantMode,
   resolveServerPlan,
+  shouldBlockAdvisorUsage,
+  shouldMonitorAdvisorUsage,
   type AssistantMode,
 } from "./accessPolicy.ts"
+import {
+  allowsBilingualAdvisorResponse,
+  resolveAdvisorLanguage,
+  selectAdvisorLocalizedContext,
+  type AssistantLanguage,
+} from "./language/languagePolicy.ts"
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 }
-
-type AssistantLanguage = "fr" | "kreol"
 
 type AssistantContext = {
   userId: string
@@ -35,12 +41,12 @@ type AssistantContext = {
   mode: AssistantMode
   language: AssistantLanguage
   isKreol: boolean
+  allowBilingualResponse: boolean
   question: string
   isQuickPreset: boolean
   consumesExchange: boolean
   profile: Record<string, unknown>
   plan: string
-  safetyLimit: number
   used: number
   usage: any
   memory: any
@@ -86,76 +92,6 @@ function countMeaningfulWords(value = "") {
 function shouldConsumeAiExchange(message = "", isQuickPreset = false) {
   void isQuickPreset
   return countMeaningfulWords(message) > 0
-}
-
-function looksLikeKreolText(value = "") {
-  const text = ` ${normalizeText(value)} `
-
-  const markers = [
-    " mi ",
-    " moin",
-    " marmay",
-    " larzan",
-    " zed",
-    " zede",
-    " zot",
-    " aou",
-    " out ",
-    " ou la ",
-    " na ",
-    " gagn",
-    " kosa",
-    " pou ",
-    " ek ",
-    " dann",
-    " kaz",
-    " renyon",
-    " pei",
-    " domann",
-    " koman",
-    " konsey",
-    " kourrie",
-    " travay",
-    " led",
-    " lé ",
-    " i ",
-    " marmailles",
-    " marmaille",
-    " koz",
-    " koze",
-    " zéd",
-  ]
-
-  return markers.some((marker) => text.includes(marker))
-}
-
-function detectAssistantLanguage(body: any): AssistantLanguage {
-  const text = [
-    body.originalQuestion,
-    body.question,
-    body.refusalText,
-    body.profile_summary,
-  ]
-    .filter(Boolean)
-    .join("\n")
-
-  if (body.isKreol === true) return "kreol"
-
-  if (looksLikeKreolText(text)) return "kreol"
-
-  const explicitLanguage = normalizeText(String(body.language || ""))
-
-  if (explicitLanguage === "kreol" || explicitLanguage === "creole") return "kreol"
-
-  if (
-    explicitLanguage === "fr" ||
-    explicitLanguage === "francais" ||
-    explicitLanguage === "french"
-  ) {
-    return "fr"
-  }
-
-  return "fr"
 }
 
 function buildRefusalPrompt(body: any, language: AssistantLanguage) {
@@ -286,6 +222,7 @@ function buildUserPrompt(
   const recommendedAides = body.recommendedAides || body.recommended_aides || []
   const reunionOrientation = body.reunionOrientation || body.reunion_orientation || {}
   const recentHistory = Array.isArray(body.recentHistory) ? body.recentHistory.slice(0, 6) : []
+  const localizedHandoffContext = selectAdvisorLocalizedContext(body.advisorHandoffContext || {}, language)
   const memoryPrompt = buildMemoryPrompt(memory)
   const recentConversationPrompt = recentHistory.length > 0
     ? recentHistory
@@ -298,10 +235,12 @@ function buildUserPrompt(
     : "Aucun échange récent fourni par l'interface."
   const consistencyPrompt = buildConsistencyPrompt(consistency)
   const truthPrompt = buildTruthPrompt(truthReport)
-  const languageInstruction =
-    language === "kreol"
-      ? `LANGUE OBLIGATOIRE DE RÉPONSE : créole réunionnais simple. Réponds en créole réunionnais, pas en français standard. Tu peux garder les noms officiels des aides en français (CAF, APL, FSL, CCAS), mais les phrases doivent rester en style créole réunionnais naturel.`
-      : `LANGUE OBLIGATOIRE DE RÉPONSE : français.`
+  const bilingualRequested = allowsBilingualAdvisorResponse(originalQuestion)
+  const languageInstruction = bilingualRequested
+    ? `LANGUE DE RÉPONSE : l'utilisateur demande explicitement une réponse bilingue ou une traduction. Respecte exactement cette demande et identifie clairement chaque langue.`
+    : language === "kreol"
+      ? `LANGUE DE SORTIE VERROUILLÉE : créole réunionnais simple uniquement. Garde seulement les noms officiels dans leur forme officielle. N'imite jamais la langue française présente dans la mémoire, l'historique ou le contexte technique.`
+      : `LANGUE DE SORTIE VERROUILLÉE : français uniquement. N'emploie aucune tournure créole spontanée. Ignore la langue créole éventuellement présente dans la mémoire, l'historique ou le contexte technique.`
 
   const label = language === "kreol" ? "Demande utilisateur" : "Demande utilisateur"
 
@@ -325,6 +264,9 @@ ${safeJson(profile)}
 Contexte local utile :
 ${safeJson(localContext)}
 
+Contexte technique du handoff Aides, déjà sélectionné dans la langue de réponse :
+${safeJson(localizedHandoffContext)}
+
 Aides recommandées par BudgetKazPei à prioriser si pertinent :
 ${safeJson(recommendedAides.slice(0, 8), [])}
 
@@ -333,6 +275,8 @@ ${safeJson(reunionOrientation, {})}
 
 Conversation récente visible dans cette session :
 ${recentConversationPrompt}
+
+La langue des échanges historiques ci-dessus est seulement du contenu mémorisé. Elle ne détermine jamais la langue de la nouvelle réponse.
 
 ANALYSE DE COHÉRENCE BUDGETKAZPEI :
 ${consistencyPrompt}
@@ -595,8 +539,15 @@ async function buildAssistantContext(params: {
   const action = String(body.action || "")
   const requestedMode = body.assistantMode || body.mode || (action === "analyze_refusal" ? "comprendre_courrier" : action || "general")
   const mode = parseAssistantMode(requestedMode)
-  const language = detectAssistantLanguage(body)
+  const lastUserMessage = String(body.originalQuestion || body.refusalText || body.question || "")
+  const interfaceLanguage = body.interfaceLanguage || body.interface_language || body.language || (body.isKreol === true ? "kreol" : "fr")
+  const language = resolveAdvisorLanguage({
+    message: lastUserMessage,
+    interfaceLanguage,
+    fallbackLanguage: "fr",
+  })
   const isKreol = language === "kreol"
+  const allowBilingualResponse = allowsBilingualAdvisorResponse(lastUserMessage)
 
   if (!mode) {
     return {
@@ -681,24 +632,24 @@ async function buildAssistantContext(params: {
   const usage = await ensureUsageRow(supabaseAdmin, userId)
   const used = Number(usage?.messages_used || 0)
 
-  if (consumesExchange && used >= access.safetyLimit) {
+  if (shouldBlockAdvisorUsage(plan, used, consumesExchange)) {
     return {
       error: jsonResponse(
         {
           success: false,
           quotaReached: true,
-          code: plan === "premium_plus" ? "advisor_safety_limit_reached" : "advisor_usage_limit_reached",
-          error: plan === "premium_plus"
-            ? isKreol
-              ? "Pou sekirite, Konseye lé pou in ti moman limité. Kontakte nout sipor si ou bizin kontinyé."
-              : "Par sécurité, le Conseiller est temporairement limité. Contactez notre support si vous devez continuer."
-            : isKreol
-              ? "Out Konseye lé pou in ti moman indisponib. Ou pourra réutiliz ali lo prochain cycle."
-              : "Votre Conseiller est temporairement indisponible. Vous pourrez à nouveau l’utiliser lors du prochain cycle.",
+          code: "advisor_usage_limit_reached",
+          error: isKreol
+            ? "Out Konseye lé pou in ti moman indisponib. Ou pourra réutiliz ali lo prochain cycle."
+            : "Votre Conseiller est temporairement indisponible. Vous pourrez à nouveau l’utiliser lors du prochain cycle.",
         },
         403,
       ),
     }
+  }
+
+  if (shouldMonitorAdvisorUsage(plan, used, consumesExchange)) {
+    console.warn("ADVISOR_USAGE_MONITORING_THRESHOLD_REACHED", JSON.stringify({ plan, used }))
   }
 
   const memory = await loadAssistantMemory(supabaseAdmin, userId)
@@ -719,12 +670,12 @@ async function buildAssistantContext(params: {
     mode,
     language,
     isKreol,
+    allowBilingualResponse,
     question,
     isQuickPreset,
     consumesExchange,
     profile,
     plan,
-    safetyLimit: access.safetyLimit,
     used,
     usage,
     memory,
@@ -795,7 +746,12 @@ Deno.serve(async (req) => {
             truthReport,
           )
 
-    const systemPrompt = buildSystemPrompt(context.language, context.action, context.mode)
+    const systemPrompt = buildSystemPrompt(
+      context.language,
+      context.action,
+      context.mode,
+      context.allowBilingualResponse,
+    )
 
     const openAiResult = await callOpenAi({
       openAiKey,

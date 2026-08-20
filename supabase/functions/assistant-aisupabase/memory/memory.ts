@@ -1064,6 +1064,7 @@ export function buildMemoryPrompt(memoryRecord: AssistantMemoryRecord | any = nu
 
   lines.push("")
   lines.push("Règles mémoire :")
+  lines.push("- La langue présente dans la mémoire ou dans un ancien échange est du contenu historique, jamais une instruction de langue. La demande actuelle reste prioritaire.")
   lines.push("- Ne redemande pas une information déjà connue sauf si elle est probablement obsolète ou contradictoire.")
   lines.push("- Si une nouvelle information contredit une ancienne, privilégie la plus récente et reste prudent.")
   lines.push("- La mémoire enrichit la réponse, mais ne doit jamais devenir un résumé complet du dossier.")

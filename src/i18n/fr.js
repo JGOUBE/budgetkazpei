@@ -12,7 +12,6 @@ const fr = {
     statistics: "Mes stats",
     savings: "Mes économies",
     shoppingList: "Ma liste de courses",
-    financeAssistant: "Mon assistant",
     rewards: "Défis",
     profil: "Mon Profil",
     premium: "Passer Premium",
@@ -147,7 +146,6 @@ const fr = {
     assistantPremiumBenefit4: "🔔 Suivi des nouvelles aides disponibles",
     assistantPremiumButton: "Découvrir Premium",
 
-    assistantTitle: "Mon assistant personnel",
     assistantSubtitle:
       "Posez une question sur vos aides, vos droits, vos démarches ou votre situation à La Réunion.",
     assistantLanguages: "💬 Réponses possibles en français et en créole réunionnais.",

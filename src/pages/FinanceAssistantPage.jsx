@@ -93,9 +93,11 @@ export default function FinanceAssistantPage({
   })
 
   const provider = useMemo(() => getFinanceAssistantProvider(), [])
-  const answerText = answer ? selectAssistantAnswerText(answer, language) : ""
+  const answerLanguage = answer?.responseLanguage || language
+  const answerIsKreol = isAssistantKreol(answerLanguage)
+  const answerText = answer ? selectAssistantAnswerText(answer, answerLanguage) : ""
   const transparency = answer
-    ? isKreol
+    ? answerIsKreol
       ? answer.transparency?.kr
       : answer.transparency?.fr
     : ""
@@ -276,7 +278,7 @@ export default function FinanceAssistantPage({
           {Array.isArray(answer.actions) && answer.actions.length > 0 && (
             <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
               {answer.actions.slice(0, 2).map(action => {
-                const label = selectAssistantActionLabel(action, language)
+                const label = selectAssistantActionLabel(action, answerLanguage)
 
                 if (!label || action.type !== "open_page") return null
 

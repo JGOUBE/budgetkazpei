@@ -128,6 +128,48 @@ function LocalDealsSection({ content }) {
   )
 }
 
+function AdvisorSection({ content }) {
+  return (
+    <section
+      className="landing-section landing-advisor"
+      id="conseiller"
+      aria-labelledby="advisor-title"
+    >
+      <div className="landing-shell advisor-showcase">
+        <div className="advisor-showcase__main">
+          <span className="advisor-showcase__icon" aria-hidden="true">
+            <BkIcons.assistant size={28} />
+          </span>
+          <p className="landing-eyebrow">{content.eyebrow}</p>
+          <h2 id="advisor-title">{content.title}</h2>
+          <p className="advisor-showcase__intro">{content.intro}</p>
+
+          <ul className="advisor-showcase__capabilities">
+            {content.capabilities.map(capability => (
+              <li key={capability}>
+                <BkIcons.check size={18} aria-hidden="true" />
+                <span>{capability}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <aside className="advisor-showcase__plus">
+          <span>{content.plusLabel}</span>
+          <h3>{content.plusTitle}</h3>
+          <p>{content.plusText}</p>
+          <LandingLink
+            href="/decouvrir"
+            className="landing-link-button landing-link-button--primary"
+          >
+            {content.cta}
+          </LandingLink>
+        </aside>
+      </div>
+    </section>
+  )
+}
+
 export default function PublicHomePage({ isAuthenticated = false }) {
   const [language, setLanguage] = useState(getInitialLanguage)
   const content = getLandingContent(language)
@@ -220,6 +262,7 @@ export default function PublicHomePage({ isAuthenticated = false }) {
       </section>
 
       <ScanJourney content={content.productDemo} />
+      <AdvisorSection content={content.advisor} />
       <LocalDealsSection content={content.localDeals} />
       <PricingSection
         isAuthenticated={isAuthenticated}

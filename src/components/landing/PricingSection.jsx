@@ -3,6 +3,18 @@ import { getLandingContent } from "./landingContent"
 import LandingLink from "./LandingLink"
 
 function FeatureMarker({ status, copy }) {
+  if (status === PLAN_FEATURE_STATUS.locked) {
+    return (
+      <span
+        className="pricing-card__lock"
+        role="img"
+        aria-label={copy.lockedAriaLabel}
+      >
+        🔒
+      </span>
+    )
+  }
+
   if (status === PLAN_FEATURE_STATUS.soon) {
     return <span className="pricing-card__soon">{copy.soonLabel}</span>
   }
@@ -58,6 +70,7 @@ export default function PricingSection({ isAuthenticated = false, content }) {
                 className={`pricing-card pricing-card--${plan.tone} ${
                   plan.featured ? "pricing-card--featured" : ""
                 }`}
+                aria-label={`${plan.name} — ${plan.price}`}
                 key={plan.id}
               >
                 <div>

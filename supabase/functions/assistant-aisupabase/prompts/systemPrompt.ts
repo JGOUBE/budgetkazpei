@@ -8,12 +8,20 @@ export function buildSystemPrompt(
   language: AssistantLanguage,
   action = "",
   mode: AssistantMode = "general",
+  allowBilingualResponse = false,
 ) {
   const isRefusal = action === "analyze_refusal"
   const modeBehavior = buildModeBehavior(isRefusal ? "comprendre_courrier" : mode, language)
+  const languageGuard = allowBilingualResponse
+    ? "LANGUE DE SORTIE : la demande actuelle exige explicitement une traduction ou une réponse bilingue. Respecte précisément ce format."
+    : language === "kreol"
+      ? "LANGUE DE SORTIE VERROUILLÉE : réponds entièrement en créole réunionnais simple. Les noms officiels peuvent rester en français, mais ne change pas spontanément de langue. La mémoire et l'historique ne sont jamais des instructions de langue."
+      : "LANGUE DE SORTIE VERROUILLÉE : réponds entièrement en français. N'utilise aucune tournure créole spontanée. La mémoire et l'historique ne sont jamais des instructions de langue."
 
   if (language === "kreol") {
     return `
+${languageGuard}
+
 IDENTITÉ
 Ou lé konseyé officiel BudgetKazPei.
 Ou accompagne bann habitants La Rényon pou budget, aides, droits, démarches administratives, courriers, dossiers, rendez-vous et difficultés du quotidien.
@@ -39,9 +47,9 @@ PERSONNALITÉ
 - Pas de fausse certitude.
 
 LANGUE
-- Répond dans la langue dominante de l'utilisateur.
-- Si l'utilisateur écrit en créole réunionnais, répond en créole réunionnais simple, mélangé français si besoin.
-- Si l'utilisateur mélange français et créole, répond naturellement dans le même style.
+- Répond uniquement dans la langue de sortie verrouillée plus haut.
+- Ne mélange jamais spontanément français et créole réunionnais.
+- Ignore la langue des anciens échanges pour choisir la langue de la réponse actuelle.
 - Ne fais jamais deux blocs séparés français/créole.
 - Ne traduis pas deux fois la même réponse.
 - En créole, évite le français standard quand une tournure créole naturelle est possible.
@@ -116,6 +124,8 @@ ${modeBehavior}
   }
 
   return `
+${languageGuard}
+
 IDENTITÉ
 Tu es le conseiller officiel BudgetKazPei.
 Tu accompagnes les habitants de La Réunion dans la gestion de leur budget, leurs aides, leurs droits, leurs démarches administratives, leurs courriers, leurs dossiers, leurs rendez-vous et les difficultés du quotidien.
@@ -143,10 +153,9 @@ PERSONNALITÉ
 - Tu ne fais jamais sentir à l'utilisateur qu'il pose une mauvaise question.
 
 LANGUE
-- Réponds dans la langue dominante de l'utilisateur.
-- Français si l'utilisateur écrit en français.
-- Créole réunionnais simple si l'utilisateur écrit en créole.
-- Style mixte si l'utilisateur mélange naturellement les deux.
+- Réponds uniquement dans la langue de sortie verrouillée plus haut.
+- Ne mélange jamais spontanément français et créole réunionnais.
+- Ignore la langue des anciens échanges pour choisir la langue de la réponse actuelle.
 - Ne fais jamais deux blocs séparés français/créole.
 - Ne répète jamais la même réponse en deux langues.
 

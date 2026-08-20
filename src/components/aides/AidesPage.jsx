@@ -314,7 +314,7 @@ function PremiumPlusPromotion({ isKreol, onDiscover }) {
       <span aria-hidden="true"><Crown size={21} /></span>
       <div>
         <strong>{isKreol ? "Akonpagnman avansé bann demars — Premium+" : "Accompagnement avancé des démarches — Premium+"}</strong>
-        <p>{isKreol ? "Prépar dosyé, kourrié, email, refi, rekour ek randévou dann Konseye." : "Préparez dossiers, courriers, emails, refus, recours et rendez-vous dans le Conseiller."}</p>
+        <p>{isKreol ? "Prépar dosyé, kourrié, email, relans, randévou, refi ek rekour dann Konseyé-la." : "Préparez dossiers, courriers, emails, relances et rendez-vous, puis comprenez les refus et préparez les recours dans le Conseiller."}</p>
       </div>
       <button type="button" onClick={onDiscover}>{isKreol ? "Dékouv Premium+" : "Découvrir Premium+"}</button>
     </aside>
@@ -336,8 +336,10 @@ function DemarcheCard({ demarche, isKreol, isPremiumPlus, saving, onStatusChange
         aideNameKreol: aide.nameKr,
         category: aide.category,
         status: demarche.status,
-        description: isKreol ? aide.descriptionKr : aide.descriptionFr,
-        steps: nextActionFor(demarche, isKreol),
+        descriptionFr: aide.descriptionFr,
+        descriptionKreol: aide.descriptionKr,
+        stepsFr: nextActionFor(demarche, false),
+        stepsKreol: nextActionFor(demarche, true),
         addedAt: demarche.created_at,
       },
     })

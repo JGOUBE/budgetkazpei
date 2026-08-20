@@ -11,7 +11,7 @@ import { createColorAliases } from "../../styles/designSystem"
 import { PLAN_IDS, PLAN_NAMES, PLAN_PRICES, PLAN_PUBLIC_SCAN_LABELS } from "../../config/plans"
 
 const COLORS = createColorAliases()
-const PREMIUM_URL = "/premium"
+const PREMIUM_URL = "/decouvrir"
 
 const PLAN_META = {
   [PLAN_IDS.free]: {
@@ -34,12 +34,14 @@ const PLAN_META = {
   },
 }
 
+// Exported for the plan regression suite as well as the component below.
+// eslint-disable-next-line react-refresh/only-export-components
 export const PREMIUM_PAGE_COPY = {
   fr: {
     pageEyebrow: "Offres BudgetKazPéi",
     pageTitle: "Choisissez la formule adaptée à votre rythme.",
     pageText:
-      "Le serveur garde toujours l'autorité sur les quotas. L'application vous montre une lecture claire de votre formule, de vos scans inclus et des fonctions déjà disponibles.",
+      "Comparez ce qui est disponible avec Gratuit, le conseil au quotidien de Premium et l'accompagnement avancé de Premium+.",
     currentTitle: "Votre formule actuelle",
     currentLoading: "Chargement de votre formule...",
     currentFree: "Mode découverte actif",
@@ -54,25 +56,27 @@ export const PREMIUM_PAGE_COPY = {
     premiumPlusBadge: "Accompagnement complet",
     currentBadge: "Actuel",
     freeIntro: "Pour suivre l'essentiel de votre budget sans friction.",
-    premiumIntro: "Pour analyser plus de courses et garder un historique solide.",
-    premiumPlusIntro: "Pour un accompagnement plus complet, avec scans inclus et conseils renforcés.",
+    premiumIntro: "BudgetKazPéi vous conseille dans votre gestion quotidienne.",
+    premiumPlusIntro: "BudgetKazPéi vous accompagne dans des démarches concrètes.",
     freeFeatures: [
       "Budget mensuel et catégories",
       "Revenus, dépenses et historique simple",
       PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.free],
       "Bons plans locaux",
+      "🔒 Conseiller BudgetKazPéi à découvrir avec Premium",
     ],
     premiumFeatures: [
       "Tout le Gratuit",
       PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premium],
       "Historique et statistiques avancées",
       "Export PDF et alertes budget",
+      "Conseiller BudgetKazPéi — utilisation limitée",
     ],
     premiumPlusFeatures: [
       "Tout le Premium",
       PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premiumPlus],
-      "Conseiller renforcé",
-      "Suivi des démarches et conseils personnalisés",
+      "Conseiller BudgetKazPéi+ — utilisation illimitée",
+      "Dossiers, courriers, emails, relances, rendez-vous et recours",
     ],
     soonFeatures: [
       "Comparaisons intelligentes de promotions",
@@ -82,7 +86,7 @@ export const PREMIUM_PAGE_COPY = {
     scanCardTitles: {
       [PLAN_IDS.free]: PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.free],
       [PLAN_IDS.premium]: PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premium],
-      [PLAN_IDS.premiumPlus]: "Scans inclus",
+      [PLAN_IDS.premiumPlus]: PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premiumPlus],
     },
     statusCardTitles: {
       [PLAN_IDS.free]: "BudgetKazPéi",
@@ -92,7 +96,7 @@ export const PREMIUM_PAGE_COPY = {
     statusCardTexts: {
       [PLAN_IDS.free]: "Découverte simple, sans engagement.",
       [PLAN_IDS.premium]: "Plus d'analyses, plus d'historique.",
-      [PLAN_IDS.premiumPlus]: "Scans, conseils et suivi renforcés.",
+      [PLAN_IDS.premiumPlus]: "Accompagnement avancé des démarches.",
     },
     scanInfoTitle: "Contrat scanner",
     scanInfoFree: "Gratuit affiche la vraie allocation gratuite.",
@@ -118,25 +122,27 @@ export const PREMIUM_PAGE_COPY = {
     premiumPlusBadge: "Lakonpagnman complet",
     currentBadge: "Aktiel",
     freeIntro: "Pou dékouv BudgetKazPéi ek koumans swiv sak lé esansyèl.",
-    premiumIntro: "Pou swiv out bidjé ek out bann labitid pli présizéman.",
-    premiumPlusIntro: "Pou gagn in lakonpagnman pli konplé.",
+    premiumIntro: "BudgetKazPéi i konsey aou dann out gestion kotidien.",
+    premiumPlusIntro: "BudgetKazPéi i akonpagn aou dann bann demars konkrè.",
     freeFeatures: [
       "Bidjé esansyèl",
       "Larzan i rantre, dépans ek istorik senp",
       "Aksé pou dékouv scanner-la",
       "Bann Bon Plan lokal",
+      "🔒 Konseyé BudgetKazPéi pou dékouv dann Premium",
     ],
     premiumFeatures: [
       "Tout sak lé dann Gratuit",
       "10 scans par mwa",
       "Istorik ek statistik avansé",
       "Èksport PDF ek alèrt bidjé",
+      "Konseyé BudgetKazPéi — itilizasion limité",
     ],
     premiumPlusFeatures: [
       "Tout sak lé dann Premium",
       "Scans san limit",
-      "Konseyé ranforsé",
-      "Swivi bann demars ek konsey pèsonalizé",
+      "Konseyé BudgetKazPéi+ — itilizasion san limit",
+      "Dosyé, kourrié, email, relans, randévou ek rekour",
     ],
     soonFeatures: [
       "Konparézon entélizan pou bann promos",
@@ -156,7 +162,7 @@ export const PREMIUM_PAGE_COPY = {
     statusCardTexts: {
       [PLAN_IDS.free]: "Pou dékouv sinp, san langazman.",
       [PLAN_IDS.premium]: "Plis analiz, plis istorik.",
-      [PLAN_IDS.premiumPlus]: "Scans san limit, konsey ek swivi ranforsé.",
+      [PLAN_IDS.premiumPlus]: "Lakonpagnman avansé pou bann demars.",
     },
     scanInfoTitle: "Kontra scanner",
     scanInfoFree: "Gratuit i afis vré kantite gratuit an kler.",

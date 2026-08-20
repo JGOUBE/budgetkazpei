@@ -32,8 +32,11 @@ function unique(values: string[]) {
   return Array.from(new Set(values.filter(Boolean)))
 }
 
-function removeMoneyClaims(answer: string) {
+function removeMoneyClaims(answer: string, language: "fr" | "kreol") {
   let revised = answer
+  const amountReplacement = language === "kreol"
+    ? "in montant pou vérifié avèk in simulation officielle"
+    : "un montant à vérifier par simulation officielle"
 
   const moneyRanges = unique(revised.match(MONEY_RANGE_PATTERN) || [])
   const moneyAmounts = unique(revised.match(MONEY_PATTERN) || [])
@@ -41,24 +44,41 @@ function removeMoneyClaims(answer: string) {
   for (const value of [...moneyRanges, ...moneyAmounts]) {
     revised = revised.replace(
       value,
-      "un montant à vérifier par simulation officielle"
+      amountReplacement
     )
   }
 
   revised = revised.replace(
     /l['’]apl\s+i\s+p[eé]\s+varier\s+[^.!\n]+[.!\n]?/gi,
-    "Le montant de l'APL dépend de plusieurs critères et doit être vérifié avec une simulation officielle. "
+    language === "kreol"
+      ? "Montant l'APL i dépend plusieurs critères et i fo vérifie ali avèk in simulation officielle. "
+      : "Le montant de l'APL dépend de plusieurs critères et doit être vérifié avec une simulation officielle. "
   )
 
   revised = revised.replace(
     /l['’]apl\s+peut\s+varier\s+[^.!\n]+[.!\n]?/gi,
-    "Le montant de l'APL dépend de plusieurs critères et doit être vérifié avec une simulation officielle. "
+    language === "kreol"
+      ? "Montant l'APL i dépend plusieurs critères et i fo vérifie ali avèk in simulation officielle. "
+      : "Le montant de l'APL dépend de plusieurs critères et doit être vérifié avec une simulation officielle. "
   )
 
   return revised
 }
 
-function softenCertainty(answer: string) {
+function softenCertainty(answer: string, language: "fr" | "kreol") {
+  if (language === "kreol") {
+    return answer
+      .replace(/vous avez droit à/gi, "ou lé peut-être éligible à")
+      .replace(/vous avez droit au/gi, "ou lé peut-être éligible au")
+      .replace(/vous êtes éligible à/gi, "ou lé peut-être éligible à")
+      .replace(/vous etes eligible a/gi, "ou lé peut-être éligible à")
+      .replace(/vous recevrez/gi, "ou pourra peut-être recevoir, après validation officielle,")
+      .replace(/vous toucherez/gi, "ou pourra peut-être gagne, après simulation officielle,")
+      .replace(/votre dossier sera accepté/gi, "seul l'organisme i peut confirme si dossier-la lé accepté")
+      .replace(/votre dossier est accepté/gi, "seul l'organisme i peut confirme si dossier-la lé accepté")
+      .replace(/automatiquement/gi, "selon out situation et après vérification")
+  }
+
   return answer
     .replace(/vous avez droit à/gi, "vous pourriez être éligible à")
     .replace(/vous avez droit au/gi, "vous pourriez être éligible au")
@@ -71,14 +91,16 @@ function softenCertainty(answer: string) {
     .replace(/automatiquement/gi, "selon la situation et après vérification")
 }
 
-function removeDeadlineClaims(answer: string) {
+function removeDeadlineClaims(answer: string, language: "fr" | "kreol") {
   const deadlines = unique(answer.match(DEADLINE_PATTERN) || [])
   let revised = answer
 
   for (const value of deadlines) {
     revised = revised.replace(
       value,
-      "selon les délais de traitement de l'organisme"
+      language === "kreol"
+        ? "selon délai traitement l'organisme"
+        : "selon les délais de traitement de l'organisme"
     )
   }
 
@@ -182,9 +204,9 @@ export function reviewAssistantAnswer(
   const issues = detectIssues(answer)
 
   let revisedAnswer = answer
-  revisedAnswer = removeMoneyClaims(revisedAnswer)
-  revisedAnswer = removeDeadlineClaims(revisedAnswer)
-  revisedAnswer = softenCertainty(revisedAnswer)
+  revisedAnswer = removeMoneyClaims(revisedAnswer, language)
+  revisedAnswer = removeDeadlineClaims(revisedAnswer, language)
+  revisedAnswer = softenCertainty(revisedAnswer, language)
   revisedAnswer = addSafetySentenceIfNeeded(revisedAnswer, issues, language)
 
   return {

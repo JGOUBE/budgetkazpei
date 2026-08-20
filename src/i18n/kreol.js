@@ -12,7 +12,6 @@ const kreol = {
     statistics: "Mes stats",
     savings: "Mes ekonomi",
     shoppingList: "Ma liste courses",
-    financeAssistant: "Mon assistant",
     rewards: "Défis",
     profil: "Mon Profil",
     premium: "Pas an Premium",
@@ -224,7 +223,6 @@ const kreol = {
     assistantPremiumBenefit4: "🔔 Suivi bann nouvo èd disponib",
     assistantPremiumButton: "Découv Premium",
 
-    assistantTitle: "Mon asistan pèsonèl",
     assistantSubtitle:
       "Poz out kestion su bann èd, drwa, démarches ou out sitiasyon La Rényon.",
     assistantLanguages: "💬 Répons an fransé ek kréol rényoné.",

@@ -34,10 +34,10 @@ function route(pathname, options = {}) {
 assert.deepEqual(route("/", { isAuthenticated: true }), { type: "redirect", to: APP_ROUTE, replace: true })
 assert.deepEqual(route(LOGIN_ROUTE, { isAuthenticated: true }), { type: "redirect", to: APP_ROUTE, replace: true })
 assert.deepEqual(route(REGISTER_ROUTE, { isAuthenticated: true }), { type: "redirect", to: APP_ROUTE, replace: true })
-assert.deepEqual(route(DISCOVER_ROUTE, { isAuthenticated: true }), { type: "redirect", to: APP_ROUTE, replace: true })
+assert.deepEqual(route(DISCOVER_ROUTE, { isAuthenticated: true }), { type: "render", page: "premium" })
 assert.deepEqual(route("/"), { type: "render", page: "home" })
 assert.deepEqual(route("/", { hasAuthenticatedBefore: true }), { type: "redirect", to: LOGIN_ROUTE, replace: true })
-assert.deepEqual(route(DISCOVER_ROUTE, { hasAuthenticatedBefore: true }), { type: "render", page: "home" })
+assert.deepEqual(route(DISCOVER_ROUTE, { hasAuthenticatedBefore: true }), { type: "render", page: "premium" })
 assert.deepEqual(route(APP_ROUTE, { hasAuthenticatedBefore: true }), {
   type: "redirect",
   to: `${LOGIN_ROUTE}?next=%2Fapp`,

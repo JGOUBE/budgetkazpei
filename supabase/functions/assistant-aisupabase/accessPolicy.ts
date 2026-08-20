@@ -38,6 +38,28 @@ export const ADVISOR_SAFETY_LIMITS: Readonly<Record<AdvisorPlan, number>> = {
   premium_plus: 250,
 }
 
+export function shouldBlockAdvisorUsage(
+  planInput: unknown,
+  usedInput: unknown,
+  consumesExchange = true,
+) {
+  const plan = normalizeAdvisorPlan(planInput)
+  const used = Math.max(0, Number(usedInput) || 0)
+
+  return consumesExchange && plan === "premium" && used >= ADVISOR_SAFETY_LIMITS.premium
+}
+
+export function shouldMonitorAdvisorUsage(
+  planInput: unknown,
+  usedInput: unknown,
+  consumesExchange = true,
+) {
+  const plan = normalizeAdvisorPlan(planInput)
+  const used = Math.max(0, Number(usedInput) || 0)
+
+  return consumesExchange && plan === "premium_plus" && used >= ADVISOR_SAFETY_LIMITS.premium_plus
+}
+
 function isTrue(value: unknown) {
   return value === true || value === "true" || value === 1 || value === "1"
 }

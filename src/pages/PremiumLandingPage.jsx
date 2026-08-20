@@ -6,9 +6,8 @@ import {
   getLandingContent,
 } from "../components/landing/landingContent"
 import {
+  PLAN_FEATURE_STATUS,
   PLAN_IDS,
-  PLAN_PRICES,
-  PLAN_PUBLIC_SCAN_LABELS,
 } from "../config/plans"
 import "../styles/landing.css"
 
@@ -19,9 +18,6 @@ const STRIPE_LINKS = {
   premiumMonthly: "https://buy.stripe.com/7sYbJ0fIR2JU4yua1ggMw00",
   premiumPlusMonthly: "https://buy.stripe.com/7sY28qdAJ1FQ6GCddsgMw03",
 }
-
-const PREMIUM_PRICE = PLAN_PRICES[PLAN_IDS.premium].replace("/mois", "")
-const PREMIUM_PLUS_PRICE = PLAN_PRICES[PLAN_IDS.premiumPlus].replace("/mois", "")
 
 const PREMIUM_CONTENT = {
   fr: {
@@ -36,10 +32,10 @@ const PREMIUM_CONTENT = {
       { label: "FAQ", href: "#faq" },
     ],
     hero: {
-      eyebrow: "BudgetKazPéi Premium",
-      title: "Choisissez la formule adaptée à votre quotidien.",
+      eyebrow: "Découvrir BudgetKazPéi",
+      title: "Découvrez, soyez conseillé, puis accompagné.",
       text:
-        "Commencez gratuitement, puis passez à Premium lorsque vous avez besoin de plus de scans, d'analyses et d'accompagnement.",
+        "Gratuit pose les bases. Premium ajoute le Conseiller pour la gestion quotidienne. Premium+ vous accompagne dans des démarches concrètes.",
       trust: [
         "Sans engagement",
         "Paiement sécurisé par Stripe",
@@ -59,56 +55,9 @@ const PREMIUM_CONTENT = {
       dashboardCta: "Accéder à mon tableau de bord",
       premiumCta: "Choisir Premium",
       premiumPlusCta: "Choisir Premium+",
-      plans: [
-        {
-          id: PLAN_IDS.free,
-          name: "Gratuit",
-          tone: "cream",
-          price: "0 €",
-          intro: "Pour découvrir BudgetKazPéi et suivre l'essentiel.",
-          features: [
-            "Budget mensuel",
-            "Revenus et dépenses",
-            "Statistiques simples",
-            "Aides essentielles",
-            "Accès aux Bons plans locaux",
-            PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.free],
-          ],
-        },
-        {
-          id: PLAN_IDS.premium,
-          name: "Premium",
-          tone: "peach",
-          price: PREMIUM_PRICE,
-          intro: "Pour suivre précisément votre budget et vos habitudes.",
-          badge: "recommended",
-          featured: true,
-          features: [
-            "Tout le Gratuit",
-            PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premium],
-            "Historique et statistiques avancées",
-            "Alertes budget",
-            "Export PDF",
-            "Assistant standard",
-          ],
-        },
-        {
-          id: PLAN_IDS.premiumPlus,
-          name: "Premium+",
-          tone: "lavender",
-          price: PREMIUM_PLUS_PRICE,
-          intro: "Pour bénéficier d'un accompagnement plus complet.",
-          badge: "complete",
-          features: [
-            "Tout le Premium",
-            PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premiumPlus],
-            "Conseiller renforcé",
-            "Suivi des démarches et accompagnement avancé",
-            "Conseils personnalisés",
-            "Analyses plus approfondies",
-          ],
-        },
-      ],
+      premiumGuestCta: "Créer mon compte pour Premium",
+      premiumPlusGuestCta: "Créer mon compte pour Premium+",
+      normalUse: "Utilisation illimitée dans le cadre d'un usage normal du service.",
       comingSoonTitle: "En préparation",
       comingSoonText:
         "Les comparaisons intelligentes et les Bons plans personnalisés seront ajoutés progressivement, à mesure que la base locale s'enrichit.",
@@ -125,14 +74,14 @@ const PREMIUM_CONTENT = {
           text: "Pour gérer un budget simple et tester le scanner.",
         },
         {
-          label: "Je scanne régulièrement mes tickets",
+          label: "Je veux être conseillé au quotidien",
           plan: "Premium",
-          text: "Pour analyser davantage vos dépenses et retrouver un historique complet.",
+          text: "Le Conseiller analyse budget, dépenses, habitudes, courses et aides, avec une utilisation limitée.",
         },
         {
-          label: "Je veux être davantage accompagné",
+          label: "Je veux agir avec un accompagnement avancé",
           plan: "Premium+",
-          text: "Pour profiter des scans illimités, du Conseiller renforcé et de conseils personnalisés.",
+          text: "Pour préparer dossiers, courriers, emails, relances, rendez-vous et recours.",
         },
       ],
     },
@@ -142,7 +91,7 @@ const PREMIUM_CONTENT = {
       items: [
         [
           "Quelle est la différence entre Premium et Premium+ ?",
-          "Premium améliore le suivi du budget, l'historique et les analyses. Premium+ ajoute les scans illimités et un accompagnement renforcé avec des conseils plus personnalisés.",
+          "Premium donne accès au Conseiller BudgetKazPéi en utilisation limitée pour la gestion quotidienne. Premium+ ajoute une utilisation illimitée dans le cadre d'un usage normal et l'accompagnement avancé des démarches.",
         ],
         [
           "Que se passe-t-il lorsque j'atteins ma limite de scans ?",
@@ -181,10 +130,10 @@ const PREMIUM_CONTENT = {
       { label: "FAQ", href: "#faq" },
     ],
     hero: {
-      eyebrow: "BudgetKazPéi Premium",
-      title: "Swazi lof ki korespond ek out kotidien.",
+      eyebrow: "Dékouv BudgetKazPéi",
+      title: "Dékouv, gagn konsey, épi gagn lakonpagnman.",
       text:
-        "Koumans gratis, épi pas Premium kan ou néna bezoin plis scans, plis analiz ek plis lakonpagnman.",
+        "Gratis i poz bann baz. Premium i azout Konseyé-la pou lo kotidien. Premium+ i akonpagn aou dann bann demars konkrè.",
       trust: [
         "San langazman",
         "Payman sekirizé par Stripe",
@@ -204,56 +153,9 @@ const PREMIUM_CONTENT = {
       dashboardCta: "Alé su mon tablo débor",
       premiumCta: "Swazi Premium",
       premiumPlusCta: "Swazi Premium+",
-      plans: [
-        {
-          id: PLAN_IDS.free,
-          name: "Gratis",
-          tone: "cream",
-          price: "0 €",
-          intro: "Pou dékouv BudgetKazPéi ek swiv sak lé esansyèl.",
-          features: [
-            "Bidjé chak mwa",
-            "Larzan i rantre ek dépans",
-            "Statistik senp",
-            "Bann èd esansyèl",
-            "Aksé bann Bon Plan lokal",
-            "Aksé pou dékouv scanner-la",
-          ],
-        },
-        {
-          id: PLAN_IDS.premium,
-          name: "Premium",
-          tone: "peach",
-          price: PREMIUM_PRICE,
-          intro: "Pou swiv out bidjé ek out bann labitid pli présizéman.",
-          badge: "recommended",
-          featured: true,
-          features: [
-            "Tout sak lé dann Gratis",
-            "10 scans par mwa",
-            "Istorik ek statistik avansé",
-            "Alèrt bidjé",
-            "Èksport PDF",
-            "Asistan standar",
-          ],
-        },
-        {
-          id: PLAN_IDS.premiumPlus,
-          name: "Premium+",
-          tone: "lavender",
-          price: PREMIUM_PLUS_PRICE,
-          intro: "Pou gagn in lakonpagnman pli konplé.",
-          badge: "complete",
-          features: [
-            "Tout sak lé dann Premium",
-            "Scans san limit",
-            "Konseyé ranforsé",
-            "Swivi bann demars ek lakonpagnman avansé",
-            "Konsey pèsonalizé",
-            "Analiz pli pousé",
-          ],
-        },
-      ],
+      premiumGuestCta: "Kré mon kont pou Premium",
+      premiumPlusGuestCta: "Kré mon kont pou Premium+",
+      normalUse: "Itilizasion san limit dann kad in lizaz normal servis-la.",
       comingSoonTitle: "An préparasyon",
       comingSoonText:
         "Konparézon entélizan ek Bon Plan pèsonalizé va ariv progressivement, amezir baz lokal-la i grandi.",
@@ -270,14 +172,14 @@ const PREMIUM_CONTENT = {
           text: "Pou gèr in bidjé senp ek teste scanner-la.",
         },
         {
-          label: "Mi scan mon bann tiké souvan",
+          label: "Mi vé gagn konsey dann mon kotidien",
           plan: "Premium",
-          text: "Pou analiz plis dépans ek retrouv in istorik konplé.",
+          text: "Konseyé-la i analiz bidjé, dépans, labitid, courses ek èd, avèk in itilizasion limité.",
         },
         {
-          label: "Mi vé plis lakonpagnman",
+          label: "Mi vé azir avèk in lakonpagnman avansé",
           plan: "Premium+",
-          text: "Pou gagn scans san limit, Konseyé ranforsé ek konsey pèsonalizé.",
+          text: "Pou prépar dosyé, kourrié, email, relans, randévou ek rekour.",
         },
       ],
     },
@@ -287,7 +189,7 @@ const PREMIUM_CONTENT = {
       items: [
         [
           "Kosa lé diferans ant Premium ek Premium+ ?",
-          "Premium i amélior swivi bidjé, istorik ek bann analiz. Premium+ i azout scans san limit ek in lakonpagnman ranforsé avèk bann konsey pli pèsonalizé.",
+          "Premium i donn aksé Konseyé BudgetKazPéi an itilizasion limité pou lo kotidien. Premium+ i azout in itilizasion san limit dann kad in lizaz normal ek lakonpagnman avansé pou bann demars.",
         ],
         [
           "Kosa i ariv kan mi ariv mon limit scans ?",
@@ -349,48 +251,59 @@ function usePremiumSeo(content, language) {
 function PlanCard({ plan, content, isAuthenticated }) {
   const isFree = plan.id === PLAN_IDS.free
   const isPremium = plan.id === PLAN_IDS.premium
-  const badge = plan.badge ? content[plan.badge] : null
+  const isPremiumPlus = plan.id === PLAN_IDS.premiumPlus
+  const badge = isPremium ? content.recommended : isPremiumPlus ? content.complete : null
   const ctaLabel = isFree
     ? isAuthenticated
       ? content.dashboardCta
       : content.freeCta
     : isPremium
-      ? content.premiumCta
-      : content.premiumPlusCta
+      ? (isAuthenticated ? content.premiumCta : content.premiumGuestCta)
+      : (isAuthenticated ? content.premiumPlusCta : content.premiumPlusGuestCta)
   const href = isFree
     ? isAuthenticated
       ? "/app"
       : "/register"
-    : isPremium
-      ? STRIPE_LINKS.premiumMonthly
-      : STRIPE_LINKS.premiumPlusMonthly
+    : !isAuthenticated
+      ? "/register"
+      : isPremium
+        ? STRIPE_LINKS.premiumMonthly
+        : STRIPE_LINKS.premiumPlusMonthly
+  const displayPrice = plan.price.replace(/\/mois$/, "")
 
   return (
     <article
       className={`pricing-card pricing-card--${plan.tone} premium-pricing-card ${plan.featured ? "pricing-card--featured premium-pricing-card--featured" : ""}`}
+      aria-label={`${plan.name} — ${plan.price}`}
     >
       {badge && <span className="premium-pricing-card__badge">{badge}</span>}
 
       <div className="premium-plan__heading">
         <p className="pricing-card__label">{plan.name}</p>
         <div className="premium-plan__price-row">
-          <strong className="premium-plan__price">{plan.price}</strong>
+          <strong className="premium-plan__price">{displayPrice}</strong>
           {!isFree && <span>{content.perMonth}</span>}
         </div>
         {!isFree && <p className="premium-plan__billing">{content.monthly}</p>}
         <p className="premium-plan__intro">{plan.intro}</p>
+        {isPremiumPlus && <p className="premium-plan__usage-note">{content.normalUse}</p>}
       </div>
 
       <ul className="premium-plan__features">
-        {plan.features.map(feature => (
-          <li key={feature}>
-            <span className="premium-plan__check" aria-hidden="true">✓</span>
-            <span>{feature}</span>
+        {plan.items.map(item => (
+          <li key={item.text} className={item.status === PLAN_FEATURE_STATUS.locked ? "is-locked" : ""}>
+            <span
+              className={item.status === PLAN_FEATURE_STATUS.locked ? "premium-plan__lock" : "premium-plan__check"}
+              aria-hidden="true"
+            >
+              {item.status === PLAN_FEATURE_STATUS.locked ? "🔒" : "✓"}
+            </span>
+            <span>{item.text}</span>
           </li>
         ))}
       </ul>
 
-      {isFree ? (
+      {isFree || !isAuthenticated ? (
         <LandingLink
           href={href}
           className={`landing-link-button ${plan.featured ? "landing-link-button--primary" : "landing-link-button--ghost"} premium-plan__action`}
@@ -478,7 +391,7 @@ export default function PremiumLandingPage({ isAuthenticated = false }) {
           </div>
 
           <div className="pricing-grid premium-pricing-grid">
-            {content.offers.plans.map(plan => (
+            {sharedContent.pricing.plans.map(plan => (
               <PlanCard
                 key={plan.id}
                 plan={plan}

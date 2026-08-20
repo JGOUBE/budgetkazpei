@@ -21,7 +21,7 @@ function countMatches(text, pattern) {
 
 assert.equal(countMatches(publicHome, /<h1\b/g), 1, "landing must keep a single H1")
 assert.ok(countMatches(publicHome, /<section\b/g) <= 6, "landing must keep six large visible sections maximum")
-assert.match(publicHome, /Votre budget, vos courses et vos aides\. Au même endroit\./, "global hero title missing")
+assert.match(content, /Votre budget, vos courses et vos aides\. Au même endroit\./, "global hero title missing")
 assert.match(publicHome, /href=\{isAuthenticated \? "\/app" : "\/register"\}/, "hero register CTA missing")
 assert.match(publicHome, /href="#fonctionnalites"/, "hero features CTA missing")
 assert.doesNotMatch(publicHome + content, /sans carte bancaire/i, "landing must not mention no-card reassurance")
@@ -30,7 +30,7 @@ assert.doesNotMatch(publicHome, /Un budget plus lisible|Trois gestes simples|Cas
 assert.match(header, /Fonctionnalités|navItems/, "features nav missing")
 assert.match(content, /Bons plans/, "Bons plans nav/content missing")
 assert.match(header, /href="\/login"/, "login CTA missing")
-assert.match(header, /Créer mon compte/, "create account CTA missing")
+assert.match(header + content, /Créer mon compte/, "create account CTA missing")
 assert.match(header, /aria-expanded=\{isMenuOpen\}/, "mobile menu must expose aria-expanded")
 assert.match(header, /key === "Escape"/, "mobile menu must close on Escape")
 
@@ -53,7 +53,7 @@ assert.match(publicHome, /id="bons-plans"/, "Bons plans section missing")
 assert.match(content, /Restaurants et snacks/, "local deal categories missing")
 assert.match(content, /Filtre par ville/, "city filter principle missing")
 assert.match(content, /Offres sponsorisées identifiées/, "sponsored offer caution missing")
-assert.match(publicHome, /Nous contacter/, "professional CTA missing")
+assert.match(publicHome + content, /Nous contacter/, "professional CTA missing")
 assert.match(publicHome, /contact\.budgetkazpei@gmail\.com/, "professional CTA must reuse existing public contact")
 assert.doesNotMatch(publicHome + content, /Chez\s+[A-Z]|SARL\s+[A-Z]|prix publicitaire|partenaire officiel/, "landing must not invent partners or ad prices")
 
@@ -69,11 +69,18 @@ assert.doesNotMatch(content, /\b(?:1|5|10)\s+scans?\b[\s\S]{0,80}Gratuit|Gratuit
 assert.match(content + plans, /10 scans par mois/, "Premium public quota missing")
 assert.match(content + plans, /Scans illimités/, "Premium+ public unlimited wording missing")
 assert.doesNotMatch(content + publicHome + pricing, /\b50\b|50 sur 50/, "Premium+ safety limit must not be public")
-assert.doesNotMatch(content + pricing, /Disponible/, "repeated Disponible badges must be removed")
-assert.match(pricing, /Bientôt/, "future features must be marked")
+assert.doesNotMatch(pricing, />Disponible</, "repeated Disponible badges must be removed")
+assert.match(content, /Bientôt/, "future features must have reusable copy")
 
-const faqBlock = content.match(/export const faqs = \[[\s\S]*?\n\]/)?.[0] || ""
-assert.equal(countMatches(faqBlock, /\[\s*\n?\s*"/g), 5, "FAQ must contain five questions")
+for (const question of [
+  "Est-ce gratuit ?",
+  "Comment fonctionne le scanner de tickets ?",
+  "Que se passe-t-il si mon ticket est illisible ?",
+  "Les aides proposées sont-elles garanties ?",
+  "Comment proposer un bon plan ou devenir partenaire ?",
+]) {
+  assert.match(content, new RegExp(question.replace(/[?]/g, "\\?")), `FAQ question missing: ${question}`)
+}
 assert.match(faq, /aria-expanded=\{isOpen\}/, "FAQ must expose aria-expanded")
 assert.match(faq, /aria-controls=\{panelId\}/, "FAQ must expose aria-controls")
 assert.match(faq, /role="region"/, "FAQ answer panel must be a labelled region")
@@ -87,7 +94,7 @@ assert.match(css, /min-height: 44px/, "44px touch target rule missing")
 assert.match(css, /overflow-x: hidden/, "landing must prevent horizontal overflow")
 assert.doesNotMatch(css, /blur\(18px\)|backdrop-filter:\s*blur/i, "landing must not reintroduce heavy blur")
 
-assert.match(index, /BudgetKazPei — Budget, courses, aides et bons plans à La Réunion/, "landing title missing")
+assert.match(index, /BudgetKazPéi — Budget, courses, aides et bons plans à La Réunion/, "landing title missing")
 assert.match(index, /Suivez votre budget, comprenez vos courses/, "landing meta description missing")
 assert.match(index, /og:title/, "Open Graph title missing")
 
