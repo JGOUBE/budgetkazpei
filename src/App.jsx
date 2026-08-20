@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useCallback, useState, useEffect } from "react"
 import { useAuth } from "./hooks/useAuth"
 import { useLanguage } from "./hooks/useLanguage"
 import { useTransactions } from "./hooks/useTransactions"
@@ -30,15 +30,11 @@ import AbonnementsPage from "./components/abonnements/AbonnementsPage"
 import AidesPage from "./components/aides/AidesPage"
 import HistoriquePage from "./components/historique/HistoriquePage"
 import OpportunitesPage from "./components/opportunites/OpportunitesPage"
-import DemarchesPage from "./components/demarches/DemarchesPage"
 import ContactPage from "./components/contact/ContactPage"
 import ConseillerPage from "./components/conseiller/ConseillerPage"
 import ReceiptsPage from "./features/receipts/pages/ReceiptsPage"
-import ShoppingInsightsPage from "./features/shopping/pages/ShoppingInsightsPage"
+import ShoppingHubPage from "./features/shopping/pages/ShoppingHubPage"
 import StatisticsPage from "./pages/StatisticsPage"
-import SavingsPage from "./pages/SavingsPage"
-import ShoppingListPage from "./pages/ShoppingListPage"
-import FinanceAssistantPage from "./pages/FinanceAssistantPage"
 import RewardsPage from "./pages/RewardsPage"
 import GoodDealsPage from "./pages/GoodDealsPage"
 import GoodDealsReviewPage from "./pages/admin/GoodDealsReviewPage"
@@ -55,8 +51,11 @@ import { useTheme } from "./styles/ThemeProvider"
 import AppLogo from "./components/AppLogo"
 import ThemeToggle from "./components/ThemeToggle"
 import { getPlanFlags, normalizePlan } from "./config/plans"
+import { createAdvisorHandoff, storeAdvisorHandoff } from "./services/advisorHandoff"
+import { resolveAppSectionTarget } from "./services/appSectionNavigation"
 import {
   APP_ROUTE,
+  DISCOVER_ROUTE,
   GOOD_DEALS_REVIEW_ADMIN_ROUTE,
   LOGIN_ROUTE,
   RETAIL_PRICE_VALIDATION_ADMIN_ROUTE,
@@ -190,10 +189,11 @@ function BudgetKazPeiApp({
   } = auth || contextAuth
 
   const authPage = initialAuthPage
-  const [activeNav, setActiveNav] = useState(initialAppSection)
+  const initialSectionTarget = resolveAppSectionTarget(initialAppSection)
+  const [activeNav, setActiveNav] = useState(initialSectionTarget.section)
+  const [shoppingTab, setShoppingTab] = useState(initialSectionTarget.shoppingTab || "overview")
   const [showModal, setShowModal] = useState(false)
   const [showSidebar, setShowSidebar] = useState(false)
-  const [mounted, setMounted] = useState(false)
   const [editingTransaction, setEditingTransaction] = useState(null)
   const [subscriptionPlan, setSubscriptionPlan] = useState("free")
   const [subscriptionLoading, setSubscriptionLoading] = useState(true)
@@ -203,21 +203,22 @@ function BudgetKazPeiApp({
   const isMobile = useIsMobile()
   const { lang, toggleLang, t } = useLanguage()
 
-  const appT = (section, key) => {
-    if (section === "nav" && key === "goodDeals") {
-      return lang === "fr" ? "Mes bons plans" : "Mon bann bon plan"
-    }
+  const appT = Object.assign(
+    (section, key) => {
+      if (section === "nav" && key === "goodDeals") {
+        return lang === "fr" ? "Mes bons plans" : "Mon bann bon plan"
+      }
 
-    return t(section, key)
-  }
-  appT.lang = lang
+      return t(section, key)
+    },
+    { lang },
+  )
 
   const {
     transactions,
     fetchTransactions,
     addTransaction,
     updateTransaction,
-    deleteTransaction,
   } = useTransactions(user?.id)
 
   const { profile, loading: profileLoading } = useProfile(user?.id)
@@ -310,11 +311,10 @@ function BudgetKazPeiApp({
   } = useBudgets(transactions, abonnements, customBudgets)
 
   useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  useEffect(() => {
     if (!user) {
+      // This effect synchronizes transient authenticated UI state with an
+      // external authentication change.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowSidebar(false)
       setShowModal(false)
       setEditingTransaction(null)
@@ -324,6 +324,9 @@ function BudgetKazPeiApp({
 
   useEffect(() => {
     if (!isMobile) {
+      // The viewport subscription lives in useIsMobile; close its transient
+      // drawer when that external viewport state switches to desktop.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowSidebar(false)
     }
   }, [isMobile])
@@ -338,7 +341,7 @@ function BudgetKazPeiApp({
   }, [user?.id, hasPremiumAccess, savePreviousMonthHistory])
 
   useEffect(() => {
-    if (!user?.id || !profile) return
+    if (!user?.id || !profile?.id) return
 
     syncProfileIncomeForCurrentMonth({
       userId: user?.id,
@@ -390,15 +393,22 @@ function BudgetKazPeiApp({
     }
   }, [user?.id, profile?.commune])
 
-  function handleNavChange(nav) {
-    const normalizedNav =
-      nav === "revenusDetails" || nav === "revenus-detail" || nav === "revenus-details"
-        ? "revenus"
-        : nav === "depensesDetails" || nav === "depenses-detail" || nav === "depenses-details"
-          ? "depenses"
-          : nav === "soldeDetails" || nav === "solde-detail" || nav === "solde-details"
-            ? "solde"
-            : nav
+  const handleNavChange = useCallback((nav) => {
+    const target = resolveAppSectionTarget(nav)
+    const normalizedNav = target.section
+
+    if (target.shoppingTab) setShoppingTab(target.shoppingTab)
+    if (normalizedNav === "shopping" && !target.shoppingTab && activeNav !== "shopping") {
+      setShoppingTab("overview")
+    }
+    if (target.advisorMode) {
+      storeAdvisorHandoff(createAdvisorHandoff({
+        mode: target.advisorMode,
+        prompt: lang === "fr"
+          ? "Analyse mon budget et mes dépenses à partir de mes données BudgetKazPéi."
+          : "Analiz mon bidzé ek mon bann dépans ek done BudgetKazPéi.",
+      }))
+    }
 
     setActiveNav(normalizedNav)
     if (
@@ -408,7 +418,7 @@ function BudgetKazPeiApp({
       navigate(APP_ROUTE, { replace: true })
     }
     setShowSidebar(false)
-  }
+  }, [activeNav, initialPathname, lang])
 
   useEffect(() => {
     function handleExternalNavigate(event) {
@@ -428,7 +438,7 @@ function BudgetKazPeiApp({
     return () => {
       window.removeEventListener("budgetkazpei:navigate", handleExternalNavigate)
     }
-  }, [])
+  }, [handleNavChange])
 
   if (loading) return <AuthLoadingScreen />
 
@@ -464,8 +474,7 @@ function BudgetKazPeiApp({
         background: ds.appBackground,
         color: COLORS.text,
         fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif",
-        opacity: mounted ? 1 : 0,
-        transition: "opacity 0.5s ease",
+        opacity: 1,
         display: isMobile ? "block" : "flex",
       }}
       data-theme={themeName}
@@ -501,7 +510,10 @@ function BudgetKazPeiApp({
             <BkIcons.menu size={22} />
           </button>
 
-          <div
+          <button
+            type="button"
+            onClick={() => handleNavChange("dashboard")}
+            aria-label={lang === "fr" ? "Retour au tableau de bord" : "Retour tablo débor"}
             style={{
               position: "absolute",
               left: "50%",
@@ -511,12 +523,16 @@ function BudgetKazPeiApp({
               justifyContent: "center",
               gap: 8,
               minWidth: 0,
-              pointerEvents: "none",
+              minHeight: 44,
+              padding: "0 8px",
+              color: "inherit",
+              background: "transparent",
+              border: 0,
             }}
           >
             <AppLogo size={36} />
             <span style={{ fontSize: 17, fontWeight: 950, color: COLORS.text, lineHeight: 1, whiteSpace: "nowrap" }}>BudgetKazPéi</span>
-          </div>
+          </button>
 
           <button
             type="button"
@@ -640,6 +656,8 @@ function BudgetKazPeiApp({
               {activeNav === "revenus" && (lang === "fr" ? "Revenus du mois" : "Larzan i rantre")}
               {activeNav === "depenses" && t("nav", "depenses")}
               {activeNav === "solde" && (lang === "fr" ? "Solde disponible" : "Larzan disponible")}
+              {activeNav === "shopping" && (lang === "fr" ? "Mes courses" : "Mon bann courses")}
+              {activeNav === "statistics" && (lang === "fr" ? "Mes stats" : "Mon bann stats")}
               {activeNav === "aides" && t("nav", "aides")}
               {activeNav === "demarches" && (lang === "fr" ? "Mes demarches" : "Mon demars")}
               {activeNav === "conseiller" && (lang === "fr" ? "Conseiller" : "Konseye")}
@@ -776,25 +794,16 @@ function BudgetKazPeiApp({
           />
         )}
 
-        {activeNav === "aides" && (
+        {(activeNav === "aides" || activeNav === "demarches") && (
           <AidesPage
+            key={activeNav}
             isMobile={isMobile}
             t={t}
             isPremium={isPremium}
             isPremiumPlus={isPremiumPlus}
             user={user}
-          />
-        )}
-
-        {activeNav === "demarches" && (
-          <DemarchesPage
-            user={user}
-            language={lang}
-            isMobile={isMobile}
-            isPremium={isPremium}
-            isPremiumPlus={isPremiumPlus}
-            onGoAides={() => setActiveNav("aides")}
-            onGoPremium={() => setActiveNav("premium")}
+            initialTab={activeNav === "demarches" ? "demarches" : "pour_moi"}
+            onDiscover={() => navigate(DISCOVER_ROUTE)}
           />
         )}
 
@@ -805,6 +814,18 @@ function BudgetKazPeiApp({
             user={user}
             isPremium={isPremium}
             isPremiumPlus={isPremiumPlus}
+            transactions={transactions}
+            stats={{
+              revenus,
+              depenses,
+              solde,
+              chargesFixes,
+              depensesVariables,
+              resteAVivre,
+              tauxChargesFixes,
+            }}
+            byCategory={byCategory}
+            onDiscover={() => navigate(DISCOVER_ROUTE)}
           />
         )}
 
@@ -835,15 +856,20 @@ function BudgetKazPeiApp({
             subscriptionLoading={profileLoading || subscriptionLoading}
             onAddTransaction={addTransaction}
             onOpenReceipts={() => setActiveNav("receipts")}
-            onOpenShoppingList={() => setActiveNav("shoppingList")}
+            onOpenShoppingList={() => handleNavChange("shoppingList")}
           />
         )}
 
         {activeNav === "shopping" && (
-          <ShoppingInsightsPage
+          <ShoppingHubPage
             user={user}
             t={t}
             isMobile={isMobile}
+            language={lang}
+            transactions={transactions}
+            activeTab={shoppingTab}
+            onTabChange={setShoppingTab}
+            onOpenReceipts={() => setActiveNav("receipts")}
           />
         )}
 
@@ -902,42 +928,6 @@ function BudgetKazPeiApp({
               tauxChargesFixes,
             }}
             byCategory={byCategory}
-            isMobile={isMobile}
-            language={lang}
-          />
-        )}
-
-        {activeNav === "savings" && (
-          <SavingsPage
-            user={user}
-            transactions={transactions}
-            isMobile={isMobile}
-            language={lang}
-          />
-        )}
-
-        {activeNav === "shoppingList" && (
-          <ShoppingListPage
-            user={user}
-            isMobile={isMobile}
-            language={lang}
-            onOpenReceipts={() => setActiveNav("receipts")}
-          />
-        )}
-
-        {activeNav === "financeAssistant" && (
-          <FinanceAssistantPage
-            user={user}
-            transactions={transactions}
-            stats={{
-              revenus,
-              depenses,
-              solde,
-              chargesFixes,
-              depensesVariables,
-              resteAVivre,
-              tauxChargesFixes,
-            }}
             isMobile={isMobile}
             language={lang}
           />
@@ -1020,10 +1010,10 @@ function BudgetKazPeiApp({
           }}
         >
           {[
-            { id: "dashboard", icon: BkIcons.dashboard, label: "Budget" },
-            { id: "depenses", icon: BkIcons.depenses, label: t("nav", "depenses") },
+            { id: "shopping", icon: BkIcons.shopping, label: lang === "fr" ? "Courses" : "Courses" },
+            { id: "statistics", icon: BkIcons.stats, label: lang === "fr" ? "Stats" : "Stats" },
             { id: "aides", icon: BkIcons.aides, label: "Aides" },
-            { id: "demarches", icon: BkIcons.demarches, label: lang === "fr" ? "Demarches" : "Demars" },
+            { id: "conseiller", icon: BkIcons.assistant, label: lang === "fr" ? "Conseiller" : "Konseye" },
             { id: "profil", icon: BkIcons.user, label: t("nav", "profil") },
           ].map(item => {
             const Icon = item.icon
@@ -1080,8 +1070,6 @@ function BudgetKazPeiApp({
       )}
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2family=Baloo+2:wght@600;700;800&family=DM+Serif+Display&family=DM+Sans:wght@400;500;600;700&display=swap');
-
         * { box-sizing: border-box; }
         body { margin: 0; padding: 0; }
         button, input, select, textarea { -webkit-tap-highlight-color: transparent; }

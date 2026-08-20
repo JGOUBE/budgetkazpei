@@ -132,17 +132,13 @@ export default function ShoppingInsightsPage({ user, t, isMobile = false }) {
   const storeHabits = useMemo(() => buildStoreHabits(items).slice(0, 6), [items])
   const topProducts = useMemo(() => buildTopProducts(items, 30), [items])
   const productRows = useMemo(() => splitProductRows(topProducts), [topProducts])
+  const currentSelectedProduct = selectedProduct
+    || productRows.products[0]?.normalizedName
+    || productRows.departments[0]?.normalizedName
+    || ""
   const selectedStats = useMemo(() => {
-    const firstProduct = productRows.products[0]?.normalizedName || productRows.departments[0]?.normalizedName || ""
-    const name = selectedProduct || firstProduct
-    return name ? buildProductStats(items, name) : null
-  }, [items, selectedProduct, productRows])
-
-  useEffect(() => {
-    if (!selectedProduct && productRows.products[0]?.normalizedName) {
-      setSelectedProduct(productRows.products[0]?.normalizedName)
-    }
-  }, [selectedProduct, productRows])
+    return currentSelectedProduct ? buildProductStats(items, currentSelectedProduct) : null
+  }, [items, currentSelectedProduct])
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
@@ -150,9 +146,9 @@ export default function ShoppingInsightsPage({ user, t, isMobile = false }) {
         <div style={{ color: COLORS.cyan, fontSize: 13, fontWeight: 950, marginBottom: 8 }}>
           {isKreol ? "Mes labitid courses" : "Mes habitudes"}
         </div>
-        <h1 style={{ margin: 0, color: COLORS.text, fontFamily: "'DM Serif Display', serif", fontSize: isMobile ? 30 : 38 }}>
+        <h2 style={{ margin: 0, color: COLORS.text, fontFamily: "'DM Serif Display', serif", fontSize: isMobile ? 30 : 38, fontWeight: 400 }}>
           {isKreol ? "Courses intelligentes" : "Courses intelligentes"}
-        </h1>
+        </h2>
         <p style={{ color: COLORS.muted, margin: "10px 0 0", lineHeight: 1.55 }}>
           {isKreol ? "BudgetKazPéi i analiz bann tiké validé pou montre out magazin ek bann produits ou achète souvent."
             : "BudgetKazPéi analyse les tickets validés pour suivre vos magasins et produits récurrents."}
@@ -181,7 +177,7 @@ export default function ShoppingInsightsPage({ user, t, isMobile = false }) {
           <TopProductsCard
             products={productRows.products}
             departments={productRows.departments}
-            selectedProduct={selectedProduct}
+            selectedProduct={currentSelectedProduct}
             setSelectedProduct={setSelectedProduct}
             isKreol={isKreol}
           />
@@ -334,36 +330,6 @@ function TopProductsCard({ products, departments = [], selectedProduct, setSelec
           </div>
         </div>
       )}
-    </div>
-  )
-}
-
-function ProductHistoryCard({ stats, isKreol }) {
-  return (
-    <div style={cardStyle()}>
-      <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 950, marginBottom: 12 }}>
-        {isKreol ? "Istorik prix" : "Historique"}
-      </div>
-      <div style={{ display: "grid", gap: 9 }}>
-        {stats.history.map(item => (
-          <div key={item.id || `${item.store}-${item.created_at}`} style={{
-            display: "grid",
-            gridTemplateColumns: "1fr auto",
-            gap: 12,
-            color: COLORS.text,
-            borderBottom: `1px solid ${COLORS.borderSubtle}`,
-            paddingBottom: 9,
-          }}>
-            <span>
-              <strong>{item.store || "Magasin"}</strong>
-              <span style={{ display: "block", color: COLORS.muted, fontSize: 12, marginTop: 3 }}>
-                {item.created_at ? new Date(item.created_at).toLocaleDateString("fr-FR", { day: "numeric", month: "short" }) : ""}
-              </span>
-            </span>
-            <strong style={{ color: COLORS.green }}>{formatMontant(item.priceValue)}</strong>
-          </div>
-        ))}
-      </div>
     </div>
   )
 }

@@ -1,47 +1,22 @@
 import {
   Bot,
   CalendarDays,
+  FilePenLine,
   FolderCheck,
   HelpCircle,
+  LockKeyhole,
   Mail,
   SearchCheck,
   Scale,
+  Sparkles,
+  WalletCards,
+  RefreshCw,
+  ShieldQuestion,
 } from "lucide-react"
 
 import AssistantConseiller from "./AssistantConseiller"
 import "./conseillerChat.css"
-import { createColorAliases } from "../../styles/designSystem"
-import { useTheme } from "../../styles/ThemeProvider"
-
-const COLORS = createColorAliases({ red: () => "#FB7185" })
-
-const LIGHT_ACTION_COLORS = {
-  scan_profil: { bg: "#E2F1E7", hover: "#D4EBDD", border: "#B9DDC6", accent: "#15803D" },
-  trouver_aide: { bg: "#DCEEFE", hover: "#C8E4FA", border: "#B7DDF7", accent: "#0284C7" },
-  comprendre_courrier: { bg: "#FCE7DA", hover: "#F8D6C4", border: "#F6C7AD", accent: "#EA580C" },
-  preparer_dossier: { bg: "#E2F1E7", hover: "#D4EBDD", border: "#B9DDC6", accent: "#15803D" },
-  generer_email: { bg: "#EEE7FB", hover: "#E2D7F8", border: "#D8CBF6", accent: "#7C3AED" },
-  preparer_recours: { bg: "#FBE4EA", hover: "#F7D3DD", border: "#F0BBCB", accent: "#BE123C" },
-  preparer_rdv: { bg: "#FCE7DA", hover: "#F8D6C4", border: "#F6C7AD", accent: "#EA580C" },
-}
-
-function getActionPalette(mode, fallbackColor, isLightTheme) {
-  if (!isLightTheme) {
-    return {
-      bg: `linear-gradient(135deg, ${fallbackColor}22, ${COLORS.card})`,
-      hover: COLORS.hover,
-      border: `${fallbackColor}44`,
-      accent: fallbackColor,
-      iconBg: `${fallbackColor}22`,
-    }
-  }
-
-  const light = LIGHT_ACTION_COLORS[mode] || LIGHT_ACTION_COLORS.trouver_aide
-  return {
-    ...light,
-    iconBg: "rgba(255,255,255,.52)",
-  }
-}
+import { getAdvisorAccess } from "../../config/advisorAccess"
 
 function isKreolLang(t) {
   const lang = String(t?.lang || "").toLowerCase()
@@ -49,13 +24,140 @@ function isKreolLang(t) {
   return t?.("nav", "dashboard") === "Tablo debor"
 }
 
-function sendAssistantPrompt(prompt, mode = "general") {
-  if (typeof window === "undefined") return
+function buildModes(isKreol, canUseAdvancedAdvisorTools) {
+  const primary = [
+    {
+      mode: "budget_depenses",
+      icon: WalletCards,
+      title: isKreol ? "Mon bidzé ek mon bann dépans" : "Mon budget & mes dépenses",
+      prompt: isKreol
+        ? "Pou kosa mi dépans plis sa mwa-la ? Explique avec mon bann données BudgetKazPéi."
+        : "Pourquoi ai-je dépensé plus ce mois-ci ? Explique-le à partir de mes données BudgetKazPéi.",
+    },
+    {
+      mode: "trouver_aide",
+      icon: SearchCheck,
+      title: isKreol ? "Trouve in aide" : "Trouver une aide",
+      prompt: isKreol
+        ? "Mi vé trouve bann aides possibles pou ma situation. Guide a moin simplement."
+        : "Je veux trouver les aides possibles pour ma situation. Guide-moi simplement.",
+    },
+    {
+      mode: "comprendre_courrier",
+      icon: HelpCircle,
+      title: isKreol ? "Comprann in kourrié" : "Comprendre un courrier",
+      prompt: isKreol
+        ? "Mi sava kole in kourrié administratif. Aide a moin konprann sak lé ékri ek kosa fé apré."
+        : "Je vais coller un courrier administratif. Aide-moi à comprendre ce qui est écrit et la prochaine action.",
+    },
+  ]
 
-  window.dispatchEvent(
-    new CustomEvent("budgetkazpei:assistant-prompt", {
-      detail: { prompt, mode },
-    }),
+  if (!canUseAdvancedAdvisorTools) return { primary, advanced: [] }
+
+  return {
+    primary,
+    advanced: [
+    {
+      mode: "preparer_dossier",
+      icon: FolderCheck,
+      title: isKreol ? "Prépar in dosyé" : "Préparer un dossier",
+      prompt: isKreol
+        ? "Aide a moin prépar in dosyé administratif ek bann dokiman utiles."
+        : "Aide-moi à préparer un dossier administratif et les documents utiles.",
+    },
+    {
+      mode: "generer_courrier",
+      icon: FilePenLine,
+      title: isKreol ? "Prépar in kourrié" : "Générer un courrier",
+      prompt: isKreol
+        ? "Aide a moin rédiz in kourrié administratif poli, prêt pou kopié."
+        : "Aide-moi à rédiger un courrier administratif poli et prêt à copier.",
+    },
+    {
+      mode: "generer_email",
+      icon: Mail,
+      title: isKreol ? "Prépar in email" : "Générer un email",
+      prompt: isKreol
+        ? "Aide a moin rédiz in email administratif simple ek poli."
+        : "Aide-moi à rédiger un email administratif simple et poli.",
+    },
+    {
+      mode: "preparer_relance",
+      icon: RefreshCw,
+      title: isKreol ? "Prépar in relance" : "Préparer une relance",
+      prompt: isKreol
+        ? "Aide a moin prépar in relance administrative courte, polie ek factuelle."
+        : "Aide-moi à préparer une relance administrative courte, polie et factuelle.",
+    },
+    {
+      mode: "comprendre_refus",
+      icon: ShieldQuestion,
+      title: isKreol ? "Comprann in refus" : "Comprendre un refus",
+      prompt: isKreol
+        ? "Mi sava colle in refus. Explique seulement sak lé écrit ek sak mi doi vérifiye."
+        : "Je vais coller un refus. Explique uniquement ce qui est écrit et ce que je dois vérifier.",
+    },
+    {
+      mode: "preparer_recours",
+      icon: Scale,
+      title: isKreol ? "Prépar in rekour" : "Préparer un recours",
+      prompt: isKreol
+        ? "Aide a moin prépar in rekour administratif avèk prudans, san invente naryin."
+        : "Aide-moi à préparer un recours administratif avec prudence, sans rien inventer.",
+    },
+    {
+      mode: "preparer_rdv",
+      icon: CalendarDays,
+      title: isKreol ? "Prépar in randévou" : "Préparer un rendez-vous",
+      prompt: isKreol
+        ? "Aide a moin prépar mon randévou administratif, bann kestyon ek dokiman pou amenné."
+        : "Aide-moi à préparer mon rendez-vous administratif, les questions et documents à apporter.",
+    },
+    ],
+  }
+}
+
+function LockedAdvisor({ isKreol, onDiscover }) {
+  const examples = isKreol
+    ? [
+        "Kèl aides i correspond ek ma situation ?",
+        "Pou kosa mon bann dépans la ogmanté ?",
+        "Mi konpran pa sa kourrié CAF-la.",
+      ]
+    : [
+        "Quelles aides correspondent à ma situation ?",
+        "Pourquoi mes dépenses ont-elles augmenté ?",
+        "Je ne comprends pas ce courrier CAF.",
+      ]
+
+  return (
+    <section className="bkp-advisor-locked" aria-labelledby="advisor-locked-title">
+      <div className="bkp-advisor-locked-icon" aria-hidden="true">
+        <Bot size={30} />
+        <span><LockKeyhole size={14} /></span>
+      </div>
+      <p className="bkp-advisor-eyebrow">{isKreol ? "In service Premium" : "Un service Premium"}</p>
+      <h1 id="advisor-locked-title">
+        {isKreol ? "Out Konseye BudgetKazPéi" : "Votre Conseiller BudgetKazPéi"}
+      </h1>
+      <p className="bkp-advisor-locked-lead">
+        {isKreol
+          ? "In konseye ki koné out situation pou aide aou konprann out bidzé, out droits, out aides ek out démarches."
+          : "Un conseiller qui connaît votre situation pour vous aider à comprendre votre budget, vos droits, vos aides et vos démarches."}
+      </p>
+      <div className="bkp-advisor-locked-examples" aria-label={isKreol ? "Bann lexanp kestyon" : "Exemples de questions"}>
+        {examples.map(example => <div key={example}>“{example}”</div>)}
+      </div>
+      <button type="button" className="bkp-advisor-discover" onClick={onDiscover}>
+        <Sparkles size={18} />
+        {isKreol ? "Dékouv Konseye" : "Découvrir le Conseiller"}
+      </button>
+      <p className="bkp-advisor-locked-note">
+        {isKreol
+          ? "Bann aides, recherche ek suivi manuel out démarches i reste disponib gratis."
+          : "Le catalogue des aides, la recherche et le suivi manuel de vos démarches restent disponibles gratuitement."}
+      </p>
+    </section>
   )
 }
 
@@ -65,265 +167,47 @@ export default function ConseillerPage({
   user,
   isPremium,
   isPremiumPlus,
+  transactions = [],
+  stats = {},
+  byCategory = [],
+  onDiscover,
 }) {
-  const { themeName } = useTheme()
   const isKreol = isKreolLang(t)
+  const access = getAdvisorAccess(undefined, { isPremium, isPremiumPlus })
 
-  const modes = [
-    {
-      mode: "scan_profil",
-      icon: Bot,
-      color: COLORS.green,
-      title: isKreol ? "Scan mon profil" : "Scanner mon profil",
-      text: isKreol
-        ? "Analyse out profil gratuitement pou trouv bann aides ek démarches les plus utiles."
-        : "Analyse gratuitement votre profil pour identifier les aides et démarches les plus pertinentes.",
-      prompt: isKreol
-        ? "Analyse mon profil BudgetKazPéi. Donne a moin bann aides, droits ek demarches les plus utiles selon ma situation. Repond en creole reunionnais simple. Pose une seule question seulement si in information essentielle i manque."
-        : "Analyse mon profil BudgetKazPéi. Indique les aides, droits et demarches les plus pertinents selon ma situation. Pose une seule question uniquement si une information essentielle manque.",
-    },
-    {
-      mode: "trouver_aide",
-      icon: SearchCheck,
-      color: COLORS.cyan,
-      title: isKreol ? "Trouve in aide" : "Trouver une aide",
-      text: isKreol
-        ? "Le konseye i analyse out profil ek i priorise bann aides les plus utiles."
-        : "Le conseiller analyse votre profil et priorise les aides les plus utiles.",
-      prompt: isKreol
-        ? "Mi veux trouver bann aides possibles selon mon profil. Guide a moin naturellement et pose seulement une question si une info importante i manque."
-        : "Je veux trouver les aides possibles selon mon profil. Guide-moi naturellement et pose seulement une question si une information importante manque.",
-    },
-    {
-      mode: "comprendre_courrier",
-      icon: HelpCircle,
-      color: COLORS.yellow,
-      title: isKreol ? "Comprann in courrier" : "Comprendre un courrier",
-      text: isKreol
-        ? "Colle in courrier CAF, CCAS, France Travail ou autre. Le konseye n'invente rien."
-        : "Collez un courrier CAF, CCAS, France Travail ou autre. Le conseiller n'invente rien.",
-      prompt: isKreol
-        ? "Mi sava colle in courrier administratif. Aide à moin comprendre seulement sak lé écrit, sak i manque, sak faut vérifier, ek prochaine action."
-        : "Je vais coller un courrier administratif. Aide-moi à comprendre uniquement ce qui est écrit, ce qui manque, ce qu'il faut vérifier, et la prochaine action.",
-    },
-    {
-      mode: "preparer_dossier",
-      icon: FolderCheck,
-      color: COLORS.green,
-      title: isKreol ? "Prepar in dossier" : "Preparer un dossier",
-      text: isKreol
-        ? "Dokiman, etapes, organisme, ek prochaine action sans noyer aou."
-        : "Documents, etapes, organisme et prochaine action sans vous noyer.",
-      prompt: isKreol
-        ? "Aide a moin prepar in dossier administratif selon ma situation. Donne seulement les infos utiles, les dokiman probables, et la prochaine action."
-        : "Aide-moi a preparer un dossier administratif selon ma situation. Donne seulement les informations utiles, les documents probables, et la prochaine action.",
-    },
-    {
-      mode: "generer_email",
-      icon: Mail,
-      color: COLORS.purple,
-      title: isKreol ? "Prépar in email" : "Générer un email",
-      text: isKreol
-        ? "Email simple, poli, prêt pou copier, sans donnée inventée."
-        : "Email simple, poli, prêt à copier, sans donnée inventée.",
-      prompt: isKreol
-        ? "Aide à moin rediz in email administratif simple ek poli. Pa mette aucun nom ni prénom automatiquement. Utilise [À compléter] si in info i manque."
-        : "Aide-moi à rédiger un email administratif simple et poli. Ne mets aucun nom ni prénom automatiquement. Utilise [À compléter] si une information manque.",
-    },
-    {
-      mode: "preparer_recours",
-      icon: Scale,
-      color: COLORS.red,
-      title: isKreol ? "Prepar in recours" : "Preparer un recours",
-      text: isKreol
-        ? "Structurer in reponse a in refus, avec prudence, sans promesse."
-        : "Structurer une reponse a un refus, avec prudence, sans promesse.",
-      prompt: isKreol
-        ? "Aide a moin prepar in recours administratif. Reste prudent, n'invente rien, demande les motifs exacts si besoin, ek aide a moin structurer."
-        : "Aide-moi a preparer un recours administratif. Reste prudent, n'invente rien, demande les motifs exacts si besoin, et aide-moi a structurer.",
-    },
-    {
-      mode: "preparer_rdv",
-      icon: CalendarDays,
-      color: COLORS.accent,
-      title: isKreol ? "Prepar in rendez-vous" : "Preparer un rendez-vous",
-      text: isKreol
-        ? "Questions, dokiman, points importants pou CAF, CCAS, mairie..."
-        : "Questions, documents, points importants pour CAF, CCAS, mairie...",
-      prompt: isKreol
-        ? "Aide a moin prepar in rendez-vous administratif. Donne les questions importantes, les dokiman a amene, et une phrase simple pou expliquer ma situation."
-        : "Aide-moi a preparer un rendez-vous administratif. Donne les questions importantes, les documents a apporter, et une phrase simple pour expliquer ma situation.",
-    },
-  ]
-
-  const isLightTheme = themeName === "light"
-
-  if (modes.length > 0) {
-    return (
-      <div className="bkp-advisor-page">
-        <AssistantConseiller
-          isPremium={isPremium}
-          isPremiumPlus={isPremiumPlus}
-          isMobile={isMobile}
-          t={t}
-          user={user}
-          modes={modes}
-        />
-      </div>
-    )
+  if (!access.canUseAdvisor) {
+    return <div className="bkp-advisor-page"><LockedAdvisor isKreol={isKreol} onDiscover={onDiscover} /></div>
   }
 
+  const modes = buildModes(isKreol, access.canUseAdvancedAdvisorTools)
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-      <section
-        style={{
-          position: "relative",
-          overflow: "hidden",
-          background: isLightTheme
-            ? "linear-gradient(135deg, #FFFDF8 0%, #DCEEFE 48%, #EEE7FB 100%)"
-            : "linear-gradient(135deg, rgba(167,139,250,.24), rgba(35,211,214,.16), rgba(15,30,56,.96))",
-          border: isLightTheme ? "1px solid #E6EAF0" : "1px solid rgba(167,139,250,.32)",
-          borderRadius: 24,
-          padding: isMobile ? 20 : 30,
-          boxShadow: isLightTheme ? "0 16px 36px rgba(20,32,51,.08)" : "0 18px 40px rgba(0,0,0,.22)",
-        }}
-      >
-        <div style={{ position: "relative", zIndex: 1 }}>
-          <div
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: 8,
-              background: isLightTheme ? "#EEE7FB" : "rgba(167,139,250,.16)",
-              border: isLightTheme ? "1px solid #D8CBF6" : "1px solid rgba(167,139,250,.34)",
-              borderRadius: 999,
-              padding: "7px 13px",
-              color: isLightTheme ? "#142033" : "#DDD6FE",
-              fontSize: 12,
-              fontWeight: 900,
-              marginBottom: 14,
-            }}
-          >
-            <Bot size={15} />
-            {isPremiumPlus ? "Premium+" : isPremium ? "Premium" : "Gratuit"}
+    <div className="bkp-advisor-page">
+      <div className="bkp-advisor-planbar">
+        <div>
+          <span className="bkp-advisor-planbar-icon" aria-hidden="true"><Bot size={18} /></span>
+          <div>
+            <strong>{access.canUseAdvancedAdvisorTools ? "Conseiller BudgetKazPéi+" : "Conseiller BudgetKazPéi"}</strong>
+            <span>{isKreol ? "Konseye pèrsone pou out situation" : "Un conseiller personnalisé pour votre situation"}</span>
           </div>
-
-          <h2
-            style={{
-              margin: "0 0 8px",
-              fontSize: isMobile ? 26 : 34,
-              color: isLightTheme ? "#142033" : COLORS.text,
-              fontFamily: "'DM Serif Display', Georgia, serif",
-              fontWeight: 900,
-            }}
-          >
-            {isKreol ? "Konseye BudgetKazPéi" : "Conseiller BudgetKazPéi"}
-          </h2>
-
-          <p
-            style={{
-              margin: 0,
-              color: isLightTheme ? "#526074" : COLORS.muted,
-              fontSize: 14,
-              lineHeight: 1.7,
-              maxWidth: 820,
-            }}
-          >
-            {isKreol
-              ? "In konseye numérique réunionnais pou aide aou comprendre, préparer, décider ek avancer sans répétition inutile."
-              : "Un conseiller numérique réunionnais pour vous aider à comprendre, préparer, décider et avancer sans répétition inutile."}
-          </p>
         </div>
-      </section>
-
-      <section
-        style={{
-          background: isLightTheme ? "#FFFFFF" : "rgba(255,255,255,.04)",
-          border: isLightTheme ? "1px solid #E6EAF0" : "1px solid rgba(255,255,255,.08)",
-          borderRadius: 22,
-          padding: isMobile ? 16 : 20,
-          boxShadow: isLightTheme ? "0 12px 28px rgba(20,32,51,.06)" : "none",
-        }}
-      >
-        <div style={{ color: isLightTheme ? "#142033" : COLORS.text, fontSize: 17, fontWeight: 900, marginBottom: 12 }}>
-          {isKreol ? "Kosa ou veux fe ?" : "Que souhaitez-vous faire ?"}
-        </div>
-
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)",
-            gap: 12,
-          }}
-        >
-          {modes.map(mode => {
-            const Icon = mode.icon
-            const palette = getActionPalette(mode.mode, mode.color, isLightTheme)
-
-            return (
-              <button
-                key={mode.mode}
-                type="button"
-                onClick={() => sendAssistantPrompt(mode.prompt, mode.mode)}
-                onMouseEnter={event => {
-                  event.currentTarget.style.background = palette.hover
-                  event.currentTarget.style.transform = "translateY(-2px)"
-                  event.currentTarget.style.borderColor = palette.accent
-                }}
-                onMouseLeave={event => {
-                  event.currentTarget.style.background = palette.bg
-                  event.currentTarget.style.transform = "translateY(0)"
-                  event.currentTarget.style.borderColor = palette.border
-                }}
-                style={{
-                  textAlign: "left",
-                  background: palette.bg,
-                  border: `1px solid ${palette.border}`,
-                  borderRadius: 18,
-                  padding: 15,
-                  cursor: "pointer",
-                  color: isLightTheme ? "#142033" : COLORS.text,
-                  fontFamily: "inherit",
-                  minHeight: 120,
-                  boxShadow: isLightTheme ? "0 10px 22px rgba(20,32,51,.05)" : "none",
-                  transition: "background .18s ease, border-color .18s ease, transform .18s ease, box-shadow .18s ease",
-                }}
-              >
-                <div
-                  style={{
-                    width: 38,
-                    height: 38,
-                    borderRadius: 14,
-                    display: "grid",
-                    placeItems: "center",
-                    background: palette.iconBg,
-                    border: `1px solid ${palette.border}`,
-                    color: palette.accent,
-                    marginBottom: 10,
-                  }}
-                >
-                  <Icon size={19} />
-                </div>
-
-                <div style={{ fontWeight: 900, fontSize: 14, marginBottom: 6 }}>
-                  {mode.title}
-                </div>
-
-                <div style={{ color: isLightTheme ? "#526074" : COLORS.muted, fontSize: 12.5, lineHeight: 1.5, fontWeight: 760 }}>
-                  {mode.text}
-                </div>
-              </button>
-            )
-          })}
-        </div>
-      </section>
+        <span className="bkp-advisor-usage-label">
+          {access.publicUsageLabel === "unlimited"
+            ? (isKreol ? "Itilizasion san limit" : "Utilisation illimitée")
+            : (isKreol ? "Itilizasion limité" : "Utilisation limitée")}
+        </span>
+      </div>
 
       <AssistantConseiller
-        isPremium={isPremium}
-        isPremiumPlus={isPremiumPlus}
         isMobile={isMobile}
         t={t}
         user={user}
+        modes={modes.primary}
+        advancedModes={modes.advanced}
+        access={access}
+        transactions={transactions}
+        stats={stats}
+        byCategory={byCategory}
       />
     </div>
   )

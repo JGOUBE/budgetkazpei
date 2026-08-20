@@ -1,6 +1,184 @@
 .bkp-advisor-page {
   width: min(100%, 980px);
   margin: 0 auto;
+  display: grid;
+  gap: 12px;
+  font-family: var(--bkp-font-body, "DM Sans", sans-serif);
+}
+
+.bkp-advisor-planbar {
+  min-height: 66px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px;
+  color: var(--bkp-text);
+  background: var(--bkp-card);
+  border: 1px solid var(--bkp-border);
+  border-radius: 18px;
+  box-shadow: var(--bkp-shadow);
+}
+
+.bkp-advisor-planbar > div {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.bkp-advisor-planbar-icon {
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  color: var(--bkp-cyan);
+  background: color-mix(in srgb, var(--bkp-cyan) 12%, var(--bkp-card));
+  border: 1px solid color-mix(in srgb, var(--bkp-cyan) 35%, var(--bkp-border));
+  border-radius: 13px;
+}
+
+.bkp-advisor-planbar strong,
+.bkp-advisor-planbar span {
+  display: block;
+}
+
+.bkp-advisor-planbar strong {
+  font-size: 15px;
+  line-height: 1.25;
+}
+
+.bkp-advisor-planbar > div span {
+  margin-top: 2px;
+  color: var(--bkp-muted);
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.bkp-advisor-usage-label {
+  flex: 0 0 auto;
+  padding: 7px 10px;
+  color: var(--bkp-purple);
+  background: color-mix(in srgb, var(--bkp-purple) 11%, var(--bkp-card));
+  border: 1px solid color-mix(in srgb, var(--bkp-purple) 30%, var(--bkp-border));
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.bkp-advisor-locked {
+  min-height: min(680px, calc(100dvh - 170px));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(28px, 7vw, 72px) clamp(18px, 7vw, 80px);
+  text-align: center;
+  color: var(--bkp-text);
+  background:
+    radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--bkp-cyan) 13%, transparent), transparent 42%),
+    var(--bkp-card);
+  border: 1px solid var(--bkp-border);
+  border-radius: 24px;
+  box-shadow: var(--bkp-shadow);
+}
+
+.bkp-advisor-locked-icon {
+  position: relative;
+  width: 66px;
+  height: 66px;
+  display: grid;
+  place-items: center;
+  color: var(--bkp-cyan);
+  background: color-mix(in srgb, var(--bkp-cyan) 12%, var(--bkp-card));
+  border: 1px solid color-mix(in srgb, var(--bkp-cyan) 40%, var(--bkp-border));
+  border-radius: 21px;
+}
+
+.bkp-advisor-locked-icon span {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  width: 29px;
+  height: 29px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: var(--bkp-primary);
+  border: 3px solid var(--bkp-card);
+  border-radius: 50%;
+}
+
+.bkp-advisor-eyebrow {
+  margin: 18px 0 8px;
+  color: var(--bkp-primary);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.bkp-advisor-locked h1 {
+  max-width: 680px;
+  margin: 0;
+  font-family: var(--bkp-font-display, "DM Serif Display", serif);
+  font-size: clamp(30px, 5vw, 48px);
+  font-weight: 400;
+  line-height: 1.08;
+}
+
+.bkp-advisor-locked-lead {
+  max-width: 680px;
+  margin: 14px 0 0;
+  color: var(--bkp-muted);
+  font-size: clamp(15px, 2vw, 18px);
+  line-height: 1.65;
+}
+
+.bkp-advisor-locked-examples {
+  width: min(100%, 680px);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin: 28px 0 22px;
+}
+
+.bkp-advisor-locked-examples div {
+  display: flex;
+  align-items: center;
+  min-height: 84px;
+  padding: 13px;
+  text-align: left;
+  color: var(--bkp-text);
+  background: var(--bkp-surface-secondary);
+  border: 1px solid var(--bkp-border);
+  border-radius: 15px;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+.bkp-advisor-discover {
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 20px;
+  color: #fff;
+  background: var(--bkp-primary);
+  border: 1px solid var(--bkp-primary);
+  border-radius: 14px;
+  font-weight: 800;
+}
+
+.bkp-advisor-locked-note {
+  max-width: 610px;
+  margin: 15px 0 0;
+  color: var(--bkp-muted);
+  font-size: 11px;
+  line-height: 1.5;
 }
 
 .bkp-advisor-chat {
@@ -34,6 +212,46 @@
 .bkp-advisor-suggestions button {
   display: flex;
   align-items: center;
+}
+
+.bkp-advisor-advanced {
+  margin-top: 9px;
+  border: 1px solid var(--bkp-border);
+  border-radius: 13px;
+  background: var(--bkp-bg-soft);
+}
+
+.bkp-advisor-advanced summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  padding: 9px 12px;
+  color: var(--bkp-purple);
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  list-style-position: inside;
+}
+
+.bkp-advisor-advanced > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding: 0 9px 9px;
+}
+
+.bkp-advisor-advanced button {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  color: var(--bkp-text);
+  background: var(--bkp-card);
+  border: 1px solid color-mix(in srgb, var(--bkp-purple) 28%, var(--bkp-border));
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 750;
 }
 
 .bkp-advisor-identity {
@@ -287,26 +505,17 @@
 }
 
 .bkp-advisor-suggestions {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 7px;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  -webkit-overflow-scrolling: touch;
   padding: 1px 1px 4px;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.bkp-advisor-suggestions::-webkit-scrollbar {
-  width: 0;
-  height: 0;
-  display: none;
 }
 
 .bkp-advisor-suggestions button {
-  flex: 0 0 auto;
+  min-width: 0;
   min-height: 36px;
   gap: 6px;
+  justify-content: flex-start;
   padding: 7px 10px;
   color: var(--bkp-text);
   background: var(--bkp-surface-secondary);
@@ -448,6 +657,27 @@
     margin-left: -2px;
   }
 
+  .bkp-advisor-planbar {
+    align-items: flex-start;
+    padding: 10px 11px;
+  }
+
+  .bkp-advisor-planbar > div span { display: none; }
+  .bkp-advisor-usage-label { font-size: 10px; }
+
+  .bkp-advisor-locked {
+    min-height: calc(100dvh - 220px);
+    padding: 30px 15px;
+    border-radius: 19px;
+  }
+
+  .bkp-advisor-locked-examples {
+    grid-template-columns: 1fr;
+    margin-block: 22px 18px;
+  }
+
+  .bkp-advisor-locked-examples div { min-height: 56px; }
+
   .bkp-advisor-chat {
     height: calc(100dvh - 218px);
     min-height: 360px;
@@ -498,22 +728,30 @@
   }
 
   .bkp-advisor-suggestions button {
-    min-height: 34px;
+    min-height: 40px;
     padding: 6px 9px;
     font-size: 10px;
+    white-space: normal;
+    text-align: left;
   }
+
+  .bkp-advisor-suggestions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
   .bkp-advisor-composer { padding-left: 11px; }
   .bkp-advisor-send { width: 40px; height: 40px; }
 }
 
 @media (max-width: 350px) {
+  .bkp-advisor-planbar { gap: 8px; }
+  .bkp-advisor-planbar strong { font-size: 13px; }
+  .bkp-advisor-usage-label { padding-inline: 8px; }
   .bkp-advisor-header { padding-inline: 10px; }
   .bkp-advisor-identity { gap: 7px; }
   .bkp-advisor-avatar { width: 34px; height: 34px; }
   .bkp-advisor-identity h2 { font-size: 14px; }
   .bkp-advisor-thread { padding-inline: 8px; }
   .bkp-advisor-bubble { max-width: 90%; }
+  .bkp-advisor-suggestions { grid-template-columns: 1fr; }
 }
 
 @media (prefers-reduced-motion: reduce) {

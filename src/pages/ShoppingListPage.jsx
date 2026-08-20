@@ -268,7 +268,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
       <div style={card({ padding: isMobile ? 18 : 24 })}>
         <div style={{ color: COLORS.cyan, fontSize: 13, fontWeight: 950 }}>{txt.smartLabel}</div>
-        <h1 style={{ color: COLORS.text, margin: "8px 0", fontFamily: "'DM Serif Display', serif", fontSize: isMobile ? 34 : 42 }}>{txt.title}</h1>
+        <h2 style={{ color: COLORS.text, margin: "8px 0", fontFamily: "'DM Serif Display', serif", fontSize: isMobile ? 34 : 42, fontWeight: 400 }}>{txt.title}</h2>
         {foodReceiptCount === 0 ? (
           <>
             <div style={{ color: COLORS.yellow, fontSize: 22, fontWeight: 950 }}>{txt.learningTitle}</div>

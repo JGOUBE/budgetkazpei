@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react"
 import {
   Bot,
   Send,
-  SearchCheck,
   Trash2,
   Sparkles,
   MessageCircle,
@@ -14,16 +13,20 @@ import { supabase } from "../../services/supabase"
 import { REUNION_ORIENTATION } from "../../data/reunionOrientation"
 import { createColorAliases } from "../../styles/designSystem"
 import { useTheme } from "../../styles/ThemeProvider"
+import {
+  ADVISOR_PROMPT_EVENT,
+  consumeAdvisorHandoff,
+} from "../../services/advisorHandoff"
+import { useAssistantInsights } from "../../hooks/useAssistantInsights"
+import { buildAssistantAiSummary } from "../../services/ai/assistantInsightsService"
 
 const COLORS = createColorAliases({ red: () => "#FB7185" })
 
-const AI_USAGE_LIMITS = {
-  free: 5,
-  premium: 50,
-  premium_plus: 250,
-}
-
 const MODE_LABELS = {
+  budget_depenses: {
+    fr: "Budget et dépenses",
+    kreol: "Bidzé ek dépans",
+  },
   scan_profil: {
     fr: "Scanner mon profil",
     kreol: "Scan mon profil",
@@ -40,9 +43,21 @@ const MODE_LABELS = {
     fr: "Preparer un dossier",
     kreol: "Prepar in dossier",
   },
+  generer_courrier: {
+    fr: "Générer un courrier",
+    kreol: "Prépar in kourrié",
+  },
   generer_email: {
     fr: "Generer un email",
     kreol: "Prepar in email",
+  },
+  preparer_relance: {
+    fr: "Préparer une relance",
+    kreol: "Prépar in relance",
+  },
+  comprendre_refus: {
+    fr: "Comprendre un refus",
+    kreol: "Comprann in refus",
   },
   preparer_recours: {
     fr: "Preparer un recours",
@@ -65,10 +80,6 @@ function normalizeText(value = "") {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-}
-
-function isTrue(value) {
-  return value === true || value === "true" || value === 1 || value === "1"
 }
 
 function isKreolLanguage(t) {
@@ -110,51 +121,6 @@ function looksLikeKreolText(value = "") {
   ]
 
   return markers.some(marker => text.includes(marker))
-}
-
-function getCurrentMonthNumber() {
-  return new Date().getMonth() + 1
-}
-
-function getCurrentYearNumber() {
-  return new Date().getFullYear()
-}
-
-function getAiPlan(profile = {}, isPremium = false, isPremiumPlus = false) {
-  const rawPlan = normalizeText(profile?.subscription_plan || profile?.plan || "")
-
-  if (
-    isPremiumPlus ||
-    isTrue(profile?.premium_plus) ||
-    rawPlan.includes("premium_plus") ||
-    rawPlan.includes("premium plus")
-  ) {
-    return "premium_plus"
-  }
-
-  if (
-    isPremium ||
-    isTrue(profile?.premium) ||
-    isTrue(profile?.is_premium) ||
-    rawPlan.includes("premium")
-  ) {
-    return "premium"
-  }
-
-  return "free"
-}
-
-function countMeaningfulWords(value = "") {
-  return normalizeText(value)
-    .replace(/[^a-z0-9\s]/g, " ")
-    .split(/\s+/)
-    .filter(Boolean).length
-}
-
-function shouldConsumeAiExchange(message = "", isQuickPreset = false) {
-  if (!String(message || "").trim()) return false
-  if (isQuickPreset) return false
-  return countMeaningfulWords(message) > 2
 }
 
 function formatValue(value, fallback = "Non renseigne") {
@@ -284,14 +250,22 @@ function getModeLabel(mode = "general", isKreol = false) {
 
 function buildModeInstruction(mode = "general", isKreol = false) {
   const fr = {
+    budget_depenses:
+      "Comportement : analyser le budget et les dépenses uniquement à partir du contexte financier agrégé. Ne pas inventer de cause. Présenter les prix comme des observations historiques et utiliser seulement les économies marquées fiables.",
     trouver_aide:
       "Comportement : chercher les aides les plus pertinentes, expliquer pourquoi elles peuvent correspondre, rester prudent, et proposer une seule prochaine action.",
     comprendre_courrier:
       "Comportement : aider a comprendre un courrier administratif uniquement a partir des elements fournis, sans inventer, en distinguant ce qui est ecrit et ce qui reste a verifier.",
     preparer_dossier:
       "Comportement : aider a preparer un dossier concret avec les documents probables, les etapes simples, les informations manquantes et une prochaine action.",
+    generer_courrier:
+      "Comportement : rediger un courrier administratif structure, poli et pret a copier, sans identite ni information inventee, avec [A completer] si besoin.",
     generer_email:
       "Comportement : rediger un email administratif pret a copier, poli, simple, sans nom/prenom ni situation inventee, avec [A completer] si besoin.",
+    preparer_relance:
+      "Comportement : rediger une relance courte, polie et factuelle, sans date, reference ou engagement invente, avec [A completer] si besoin.",
+    comprendre_refus:
+      "Comportement : expliquer uniquement le refus fourni, distinguer ce qui est ecrit de ce qui manque, sans inventer motif, delai ou recours.",
     preparer_recours:
       "Comportement : aider a structurer un recours avec prudence, sans avis juridique, sans garantir l'acceptation, et uniquement selon les faits donnes.",
     preparer_rdv:
@@ -301,14 +275,22 @@ function buildModeInstruction(mode = "general", isKreol = false) {
   }
 
   const kreol = {
+    budget_depenses:
+      "Komportman : analiz bidzé ek dépans seulement avec contexte financier agrégé. Invente pa cause. Présente prix comme observation ancienne ek utilise seulement lékonomi marqué fiable.",
     trouver_aide:
       "Komportman : rode bann aides les plus pertinentes, explique poukosa zot i pe correspond, reste prudent, ek propose une seule prochaine action.",
     comprendre_courrier:
       "Komportman : aide comprend in courrier administratif seulement avec sak le fourni, sans inventer, en separant sak le ecrit ek sak faut verifiye.",
     preparer_dossier:
       "Komportman : aide prepar in dossier concret avec dokiman probables, etapes simples, infos manquantes ek prochaine action.",
+    generer_courrier:
+      "Komportman : redige in kourrie administratif kler, poli ek pret pou kopie, san invente okenn info, avek [A completer] si bizin.",
     generer_email:
       "Komportman : redige in email administratif pret pou copier, poli, simple, sans nom/prenom ni situation inventee, avec [A completer] si besoin.",
+    preparer_relance:
+      "Komportman : redige in relance courte, polie ek factuelle, sans invente date, reference ou engagement, avec [A completer] si besoin.",
+    comprendre_refus:
+      "Komportman : explique seulement refus fourni, sépare sak lé écrit ek sak i manque, sans invente motif, delai ou recours.",
     preparer_recours:
       "Komportman : aide structurer in recours avec prudence, sans avis juridique, sans garantir acceptation, seulement selon faits donnes.",
     preparer_rdv:
@@ -396,12 +378,15 @@ function sortAidesForContext(aides = [], profile = {}) {
 }
 
 export default function AssistantConseiller({
-  isPremium,
-  isPremiumPlus,
   isMobile,
   t,
   user,
   modes = [],
+  advancedModes = [],
+  access,
+  transactions = [],
+  stats = {},
+  byCategory = [],
 }) {
   const { themeName } = useTheme()
   const isKreol = isKreolLanguage(t)
@@ -411,7 +396,6 @@ export default function AssistantConseiller({
   const [assistantMode, setAssistantMode] = useState("general")
   const [quickQuestionSelected, setQuickQuestionSelected] = useState(false)
   const [profile, setProfile] = useState(null)
-  const [aiUsage, setAiUsage] = useState(null)
   const [loadingProfile, setLoadingProfile] = useState(false)
   const [loadingAssistant, setLoadingAssistant] = useState(false)
   const [history, setHistory] = useState(() =>
@@ -422,13 +406,19 @@ export default function AssistantConseiller({
   const [failedMessage, setFailedMessage] = useState(null)
   const messagesEndRef = useRef(null)
   const textareaRef = useRef(null)
-
-  const aiPlan = getAiPlan(profile, isPremium, isPremiumPlus)
-  const aiLimit = AI_USAGE_LIMITS[aiPlan] || AI_USAGE_LIMITS.free
-  const aiUsed = Number(aiUsage?.messages_used || 0)
-  const aiRemaining = Math.max(0, aiLimit - aiUsed)
-  const aiQuotaReached = aiRemaining <= 0
-  const currentQuestionConsumesExchange = shouldConsumeAiExchange(question, quickQuestionSelected)
+  const {
+    insights: financialInsights,
+    error: financialContextError,
+  } = useAssistantInsights({
+    userId: user?.id,
+    transactions,
+    stats,
+    byCategory,
+  })
+  const financialContext = useMemo(
+    () => buildAssistantAiSummary(financialInsights),
+    [financialInsights],
+  )
 
   const activeModeLabel = useMemo(() => {
     return getModeLabel(assistantMode, isKreol)
@@ -438,10 +428,12 @@ export default function AssistantConseiller({
     loadingProfile ||
     loadingAssistant ||
     !question.trim() ||
-    (currentQuestionConsumesExchange && aiQuotaReached)
+    !access?.canUseAdvisor
 
   useEffect(() => {
     fetchProfile()
+    // The profile request is intentionally refreshed only when the authenticated user changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id])
 
   useEffect(() => {
@@ -455,12 +447,6 @@ export default function AssistantConseiller({
       block: "end",
     })
   }, [history.length, pendingMessage, loadingAssistant, errorMessage])
-
-  useEffect(() => {
-    if (profile) {
-      fetchAiUsage()
-    }
-  }, [profile?.id, aiPlan])
 
   useEffect(() => {
     function handleExternalAssistantPrompt(event) {
@@ -483,10 +469,13 @@ export default function AssistantConseiller({
       }, 80)
     }
 
-    window.addEventListener("budgetkazpei:assistant-prompt", handleExternalAssistantPrompt)
+    const pendingHandoff = consumeAdvisorHandoff()
+    if (pendingHandoff) handleExternalAssistantPrompt({ detail: pendingHandoff })
+
+    window.addEventListener(ADVISOR_PROMPT_EVENT, handleExternalAssistantPrompt)
 
     return () => {
-      window.removeEventListener("budgetkazpei:assistant-prompt", handleExternalAssistantPrompt)
+      window.removeEventListener(ADVISOR_PROMPT_EVENT, handleExternalAssistantPrompt)
     }
   }, [])
 
@@ -514,49 +503,6 @@ export default function AssistantConseiller({
 
     setProfile(data || null)
     return data || null
-  }
-
-  async function fetchAiUsage() {
-    if (!user?.id) return
-
-    const currentMonth = getCurrentMonthNumber()
-    const currentYear = getCurrentYearNumber()
-
-    const { data, error } = await supabase
-      .from("ai_usage")
-      .select("*")
-      .eq("user_id", user.id)
-      .maybeSingle()
-
-    if (error) {
-      console.error("Erreur chargement quota IA:", error)
-      setAiUsage(null)
-      return
-    }
-
-    if (!data) {
-      setAiUsage({
-        messages_used: 0,
-        reset_month: currentMonth,
-        reset_year: currentYear,
-      })
-      return
-    }
-
-    const savedMonth = Number(data.reset_month || 0)
-    const savedYear = Number(data.reset_year || 0)
-
-    if (savedMonth !== currentMonth || savedYear !== currentYear) {
-      setAiUsage({
-        ...data,
-        messages_used: 0,
-        reset_month: currentMonth,
-        reset_year: currentYear,
-      })
-      return
-    }
-
-    setAiUsage(data)
   }
 
   async function fetchAides() {
@@ -596,6 +542,13 @@ export default function AssistantConseiller({
       revenus_foyer: currentProfile?.revenus_foyer ?? null,
       revenus_details: currentProfile?.revenus_details ?? null,
       allocataire_caf: currentProfile?.allocataire_caf ?? null,
+      financial: financialContext,
+      financial_context_status: financialContextError ? "partially_unavailable" : "available",
+      financial_reliability_rules: {
+        aggregated_only: true,
+        historical_prices_may_have_changed: true,
+        product_savings_are_reliable_only: true,
+      },
       organismes_locaux_a_verifier: [
         currentProfile?.commune
           ? `CCAS / Mairie de ${currentProfile.commune}`
@@ -617,9 +570,6 @@ export default function AssistantConseiller({
         language: assistantIsKreol ? "kreol" : "fr",
         isKreol: assistantIsKreol,
         isQuickPreset: isQuickPreset || mode === "scan_profil",
-        isPremium,
-        isPremiumPlus,
-        subscription_plan: isPremiumPlus ? "premium_plus" : isPremium ? "premium" : "free",
         profile: currentProfile,
         profile_summary: buildProfileSummary(currentProfile, assistantIsKreol),
         localContext,
@@ -655,11 +605,6 @@ export default function AssistantConseiller({
     const requestedQuickPreset = Boolean(
       messageOverride?.quickQuestionSelected ?? quickQuestionSelected
     )
-    const requestedConsumesExchange = shouldConsumeAiExchange(
-      sentQuestion,
-      requestedQuickPreset
-    )
-
     let currentProfile
 
     try {
@@ -679,15 +624,6 @@ export default function AssistantConseiller({
         isKreol
           ? "Inposib sharj out profil pou linstan."
           : "Impossible de charger votre profil pour le moment."
-      )
-      return
-    }
-
-    if (requestedConsumesExchange && aiQuotaReached) {
-      setErrorMessage(
-        isKreol
-          ? "Out konseye lé temporairement indisponib. Ou pourra réutiliz ali lo prochain cycle."
-          : "Votre conseiller est temporairement indisponible. Vous pourrez à nouveau l’utiliser lors de votre prochain cycle."
       )
       return
     }
@@ -744,12 +680,6 @@ export default function AssistantConseiller({
             : "Le conseiller est indisponible pour le moment.")
       )
       return
-    }
-
-    if (result.usage) {
-      setAiUsage(result.usage)
-    } else {
-      await fetchAiUsage()
     }
 
     const answer =
@@ -907,17 +837,35 @@ export default function AssistantConseiller({
 
         <footer className="bkp-advisor-composer-zone">
           {chronologicalHistory.length === 0 && !pendingMessage && (
-            <div className="bkp-advisor-suggestions" aria-label={isKreol ? "Suggestions" : "Suggestions rapides"}>
-              {modes.map(mode => {
-                const Icon = mode.icon
-                return (
-                  <button type="button" key={mode.mode} onClick={() => selectSuggestion(mode)}>
-                    <Icon size={16} style={{ color: mode.color }} />
-                    <span>{mode.title}</span>
-                  </button>
-                )
-              })}
-            </div>
+            <>
+              <div className="bkp-advisor-suggestions" aria-label={isKreol ? "Suggestions" : "Suggestions rapides"}>
+                {modes.map(mode => {
+                  const Icon = mode.icon
+                  return (
+                    <button type="button" key={mode.mode} onClick={() => selectSuggestion(mode)}>
+                      <Icon size={16} style={{ color: mode.color }} />
+                      <span>{mode.title}</span>
+                    </button>
+                  )
+                })}
+              </div>
+              {advancedModes.length > 0 && (
+                <details className="bkp-advisor-advanced">
+                  <summary>{isKreol ? "Bann zouti démarches Premium+" : "Outils démarches Premium+"}</summary>
+                  <div>
+                    {advancedModes.map(mode => {
+                      const Icon = mode.icon
+                      return (
+                        <button type="button" key={mode.mode} onClick={() => selectSuggestion(mode)}>
+                          <Icon size={15} aria-hidden="true" />
+                          <span>{mode.title}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </details>
+              )}
+            </>
           )}
 
           <div className="bkp-advisor-composer">
@@ -938,9 +886,9 @@ export default function AssistantConseiller({
             </button>
           </div>
           <p className="bkp-advisor-composer-hint">
-            {aiQuotaReached
-              ? (isKreol ? "Out konseye lé temporairement indisponib. Bann suggestions rapides i reste disponibles." : "Votre conseiller est temporairement indisponible. Les suggestions rapides restent disponibles.")
-              : (isKreol ? "Entrée pou anvoy • Maj + Entrée pou alé à la ligne" : "Entrée pour envoyer • Maj + Entrée pour aller à la ligne")}
+            {isKreol
+              ? "Entrée pou anvoy • Maj + Entrée pou alé à la ligne"
+              : "Entrée pour envoyer • Maj + Entrée pour aller à la ligne"}
           </p>
         </footer>
       </section>

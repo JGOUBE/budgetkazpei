@@ -52,6 +52,8 @@ export const themeDark = {
   radius: 16,
   radiusLg: 22,
   spacing: 16,
+  fontBody: '"DM Sans", "Helvetica Neue", Arial, sans-serif',
+  fontDisplay: '"DM Serif Display", Georgia, serif',
 }
 
 export const themeLight = {
@@ -111,6 +113,8 @@ export const themeLight = {
   radius: 16,
   radiusLg: 22,
   spacing: 16,
+  fontBody: '"DM Sans", "Helvetica Neue", Arial, sans-serif',
+  fontDisplay: '"DM Serif Display", Georgia, serif',
 }
 
 export const ds = {}
@@ -200,6 +204,8 @@ export function applyTheme(themeName = getInitialThemeName(), { persist = false 
     root.style.setProperty("--bkp-list-row", tokens.listRow)
     root.style.setProperty("--bkp-list-row-hover", tokens.listRowHover)
     root.style.setProperty("--bkp-progress-track", tokens.progressTrack)
+    root.style.setProperty("--bkp-font-body", tokens.fontBody)
+    root.style.setProperty("--bkp-font-display", tokens.fontDisplay)
   }
 
   if (persist && typeof window !== "undefined") {

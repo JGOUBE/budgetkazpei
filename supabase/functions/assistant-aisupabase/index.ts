@@ -12,6 +12,13 @@ import { checkProfileConsistency } from "./engine/profile/profileConsistency.ts"
 import { evaluateTruth } from "./engine/truth/truthAnalyzer.ts"
 import { buildTruthPrompt } from "./engine/truth/truthPrompt.ts"
 import { reviewAssistantAnswer } from "./engine/review/reviewerEngine.ts"
+import {
+  getAdvisorAccess,
+  isAdvancedAdvisorMode,
+  parseAssistantMode,
+  resolveServerPlan,
+  type AssistantMode,
+} from "./accessPolicy.ts"
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,23 +26,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 }
 
-const AI_USAGE_LIMITS: Record<string, number> = {
-  free: 5,
-  premium: 50,
-  premium_plus: 250,
-}
-
 type AssistantLanguage = "fr" | "kreol"
-
-type AssistantMode =
-  | "general"
-  | "trouver_aide"
-  | "comprendre_courrier"
-  | "preparer_dossier"
-  | "generer_email"
-  | "preparer_recours"
-  | "preparer_rdv"
-  | "scan_profil"
 
 type AssistantContext = {
   userId: string
@@ -49,7 +40,7 @@ type AssistantContext = {
   consumesExchange: boolean
   profile: Record<string, unknown>
   plan: string
-  limit: number
+  safetyLimit: number
   used: number
   usage: any
   memory: any
@@ -60,10 +51,6 @@ function normalizeText(value = "") {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-}
-
-function isTrue(value: unknown) {
-  return value === true || value === "true" || value === 1 || value === "1"
 }
 
 function safeJson(value: unknown, fallback: unknown = {}) {
@@ -97,43 +84,10 @@ function countMeaningfulWords(value = "") {
 }
 
 function shouldConsumeAiExchange(message = "", isQuickPreset = false) {
-  if (isQuickPreset) return false
-  if (!message.trim()) return false
-  return countMeaningfulWords(message) > 2
+  void isQuickPreset
+  return countMeaningfulWords(message) > 0
 }
 
-function getAiPlan(profile: Record<string, unknown> = {}, body: any = {}) {
-  const rawPlan = normalizeText(
-    String(
-      body.subscription_plan ||
-        body.plan ||
-        profile.subscription_plan ||
-        profile.plan ||
-        "",
-    ),
-  )
-
-  if (
-    body.isPremiumPlus === true ||
-    isTrue(body.isPremiumPlus) ||
-    isTrue(profile.premium_plus) ||
-    rawPlan.includes("premium_plus") ||
-    rawPlan.includes("premium plus")
-  ) {
-    return "premium_plus"
-  }
-
-  if (
-    body.isPremium === true ||
-    isTrue(body.isPremium) ||
-    isTrue(profile.premium) ||
-    rawPlan.includes("premium")
-  ) {
-    return "premium"
-  }
-
-  return "free"
-}
 function looksLikeKreolText(value = "") {
   const text = ` ${normalizeText(value)} `
 
@@ -202,24 +156,6 @@ function detectAssistantLanguage(body: any): AssistantLanguage {
   }
 
   return "fr"
-}
-
-function getAssistantMode(rawMode = ""): AssistantMode {
-  const mode = normalizeText(String(rawMode || "general")).replace(/\s+/g, "_")
-
-  if (
-    mode === "trouver_aide" ||
-    mode === "comprendre_courrier" ||
-    mode === "preparer_dossier" ||
-    mode === "generer_email" ||
-    mode === "preparer_recours" ||
-    mode === "preparer_rdv" ||
-    mode === "scan_profil"
-  ) {
-    return mode
-  }
-
-  return "general"
 }
 
 function buildRefusalPrompt(body: any, language: AssistantLanguage) {
@@ -657,13 +593,76 @@ async function buildAssistantContext(params: {
   const body = await req.json()
 
   const action = String(body.action || "")
-  const mode = getAssistantMode(body.assistantMode || body.mode || action || "general")
+  const requestedMode = body.assistantMode || body.mode || (action === "analyze_refusal" ? "comprendre_courrier" : action || "general")
+  const mode = parseAssistantMode(requestedMode)
   const language = detectAssistantLanguage(body)
   const isKreol = language === "kreol"
+
+  if (!mode) {
+    return {
+      error: jsonResponse(
+        {
+          success: false,
+          code: "invalid_advisor_mode",
+          error: isKreol ? "Mode konseye pa rekonèt." : "Mode du conseiller non reconnu.",
+        },
+        400,
+      ),
+    }
+  }
 
   const question = String(body.originalQuestion || body.question || body.refusalText || "")
   const isQuickPreset = body.isQuickPreset === true || mode === "scan_profil"
   const consumesExchange = shouldConsumeAiExchange(question, isQuickPreset)
+
+  const [profileResult, subscriptionResult] = await Promise.all([
+    supabaseAdmin.from("profiles").select("*").eq("id", userId).maybeSingle(),
+    supabaseAdmin
+      .from("user_subscriptions")
+      .select("plan, status, updated_at")
+      .eq("user_id", userId)
+      .eq("status", "active")
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+  ])
+
+  if (profileResult.error) console.log("ADVISOR PROFILE LOAD ERROR", profileResult.error.message)
+  if (subscriptionResult.error) console.log("ADVISOR SUBSCRIPTION LOAD ERROR", subscriptionResult.error.message)
+
+  const profile = profileResult.data || {}
+  const plan = resolveServerPlan({ profile, subscription: subscriptionResult.data })
+  const access = getAdvisorAccess(plan)
+
+  if (!access.canUseAdvisor) {
+    return {
+      error: jsonResponse(
+        {
+          success: false,
+          code: "advisor_subscription_required",
+          error: isKreol
+            ? "Konseye BudgetKazPéi lé disponib avèk Premium."
+            : "Le Conseiller BudgetKazPéi est disponible avec Premium.",
+        },
+        403,
+      ),
+    }
+  }
+
+  if ((isAdvancedAdvisorMode(mode) || action === "analyze_refusal") && !access.canUseAdvancedAdvisorTools) {
+    return {
+      error: jsonResponse(
+        {
+          success: false,
+          code: "advanced_advisor_subscription_required",
+          error: isKreol
+            ? "Fonksion-la lé réservée pou Premium+."
+            : "Cette fonctionnalité est réservée à Premium+.",
+        },
+        403,
+      ),
+    }
+  }
 
   if (action === "analyze_refusal" && question.trim().length < 40) {
     return {
@@ -679,26 +678,23 @@ async function buildAssistantContext(params: {
     }
   }
 
-  const profile = body.profile || {}
-  const plan = getAiPlan(profile, body)
-  const limit = AI_USAGE_LIMITS[plan] || AI_USAGE_LIMITS.free
-
   const usage = await ensureUsageRow(supabaseAdmin, userId)
   const used = Number(usage?.messages_used || 0)
 
-  if (consumesExchange && used >= limit) {
+  if (consumesExchange && used >= access.safetyLimit) {
     return {
       error: jsonResponse(
         {
           success: false,
           quotaReached: true,
-          plan,
-          limit,
-          used,
-          remaining: 0,
-          error: isKreol
-            ? "Ou la itilize tout out échanges pou sa mwa-la."
-            : "Vous avez utilisé tous vos échanges du mois.",
+          code: plan === "premium_plus" ? "advisor_safety_limit_reached" : "advisor_usage_limit_reached",
+          error: plan === "premium_plus"
+            ? isKreol
+              ? "Pou sekirite, Konseye lé pou in ti moman limité. Kontakte nout sipor si ou bizin kontinyé."
+              : "Par sécurité, le Conseiller est temporairement limité. Contactez notre support si vous devez continuer."
+            : isKreol
+              ? "Out Konseye lé pou in ti moman indisponib. Ou pourra réutiliz ali lo prochain cycle."
+              : "Votre Conseiller est temporairement indisponible. Vous pourrez à nouveau l’utiliser lors du prochain cycle.",
         },
         403,
       ),
@@ -706,10 +702,19 @@ async function buildAssistantContext(params: {
   }
 
   const memory = await loadAssistantMemory(supabaseAdmin, userId)
+  const trustedBody = {
+    ...body,
+    profile,
+    profile_summary: "",
+  }
+  delete trustedBody.isPremium
+  delete trustedBody.isPremiumPlus
+  delete trustedBody.subscription_plan
+  delete trustedBody.plan
 
   const context: AssistantContext = {
     userId,
-    body,
+    body: trustedBody,
     action,
     mode,
     language,
@@ -719,7 +724,7 @@ async function buildAssistantContext(params: {
     consumesExchange,
     profile,
     plan,
-    limit,
+    safetyLimit: access.safetyLimit,
     used,
     usage,
     memory,
@@ -807,10 +812,6 @@ Deno.serve(async (req) => {
         {
           success: false,
           providerError: true,
-          plan: context.plan,
-          limit: context.limit,
-          used: context.used,
-          remaining: Math.max(0, context.limit - context.used),
           consumed: false,
           error: context.isKreol
             ? "L'assistant IA lé indisponib pou linstan."
@@ -839,13 +840,8 @@ Deno.serve(async (req) => {
 
     const answer = reviewResult.revisedAnswer
 
-    let finalUsage = context.usage
-    let nextUsed = context.used
-
     if (context.consumesExchange && answer) {
-      const usageUpdate = await incrementUsage(supabaseAdmin, context.userId, context.used)
-      finalUsage = usageUpdate.usage
-      nextUsed = usageUpdate.used
+      await incrementUsage(supabaseAdmin, context.userId, context.used)
     }
 
     const savedMemory = await saveAssistantMemory(
@@ -893,11 +889,6 @@ Deno.serve(async (req) => {
       {
         success: true,
         answer,
-        usage: finalUsage,
-        plan: context.plan,
-        limit: context.limit,
-        used: nextUsed,
-        remaining: Math.max(0, context.limit - nextUsed),
         consumed: context.consumesExchange,
         language: context.language,
         mode: context.mode,

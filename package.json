@@ -13,6 +13,8 @@
     "test:good-deals-admin": "node scripts/run-good-deals-admin-tests.mjs",
     "test:plans-routing": "node scripts/run-plans-routing-tests.mjs",
     "test:plans-quota-e2e": "node scripts/run-plans-quota-e2e.mjs",
+    "test:advisor-aides": "node scripts/run-advisor-aides-tests.mjs",
+    "test:shopping-consolidation": "node scripts/run-shopping-consolidation-tests.mjs",
     "test:receipt-scanner-front": "node scripts/run-receipt-scanner-front-regression.mjs",
     "test:receipt-image-retention": "node scripts/run-receipt-image-retention-tests.mjs",
     "test:market": "node scripts/run-market-regression.mjs",

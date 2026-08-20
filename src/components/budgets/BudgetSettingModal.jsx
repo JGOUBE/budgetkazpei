@@ -114,7 +114,7 @@ export default function BudgetSettingsModal({
                 margin: 0,
                 color: COLORS.text,
                 fontSize: 22,
-                fontFamily: "'Baloo 2', 'DM Serif Display', sans-serif",
+                fontFamily: "var(--bkp-font-display, 'DM Serif Display', serif)",
                 fontWeight: 800,
               }}
             >

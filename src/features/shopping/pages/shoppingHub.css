@@ -1,0 +1,147 @@
+.bkp-shopping-hub {
+  width: min(100%, 1180px);
+  margin: 0 auto;
+  display: grid;
+  gap: 16px;
+  color: var(--bkp-text);
+  font-family: var(--bkp-font-body, "DM Sans", sans-serif);
+}
+
+.bkp-shopping-hero {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: clamp(16px, 3vw, 24px);
+  background: var(--bkp-card);
+  border: 1px solid var(--bkp-border);
+  border-radius: 22px;
+  box-shadow: var(--bkp-shadow);
+}
+
+.bkp-shopping-hero-icon {
+  flex: 0 0 48px;
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  color: var(--bkp-primary);
+  background: var(--bkp-peach-soft);
+  border: 1px solid color-mix(in srgb, var(--bkp-primary) 28%, var(--bkp-border));
+  border-radius: 16px;
+}
+
+.bkp-shopping-hero p,
+.bkp-shopping-hero h1,
+.bkp-shopping-hero span { margin: 0; }
+.bkp-shopping-hero p { color: var(--bkp-primary); font-size: 11px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+.bkp-shopping-hero h1 { margin-top: 3px; font-family: var(--bkp-font-display, "DM Serif Display", serif); font-size: clamp(24px, 4vw, 36px); font-weight: 400; line-height: 1.15; }
+.bkp-shopping-hero div > span { display: block; max-width: 760px; margin-top: 5px; color: var(--bkp-muted); font-size: 13px; line-height: 1.5; }
+
+.bkp-shopping-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 5px;
+  background: var(--bkp-bg-soft);
+  border: 1px solid var(--bkp-border);
+  border-radius: 17px;
+}
+
+.bkp-shopping-tabs button {
+  min-width: 0;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 10px;
+  color: var(--bkp-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  font-weight: 750;
+  line-height: 1.25;
+}
+
+.bkp-shopping-tabs button.is-active {
+  color: var(--bkp-text);
+  background: var(--bkp-card);
+  border-color: var(--bkp-border);
+  box-shadow: 0 5px 16px rgb(15 23 42 / 7%);
+}
+
+.bkp-shopping-tabs button svg { flex: 0 0 auto; color: var(--bkp-primary); }
+.bkp-shopping-panel { min-width: 0; outline: none; }
+
+.bkp-savings-panel { display: grid; gap: 16px; }
+.bkp-shopping-section-heading { padding: 4px 2px; }
+.bkp-shopping-section-heading > span { display: inline-flex; align-items: center; gap: 6px; color: var(--bkp-primary); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .045em; }
+.bkp-shopping-section-heading h2 { margin: 4px 0 3px; font-family: var(--bkp-font-display, "DM Serif Display", serif); font-size: clamp(24px, 3vw, 31px); font-weight: 400; }
+.bkp-shopping-section-heading p { max-width: 760px; margin: 0; color: var(--bkp-muted); font-size: 13px; line-height: 1.55; }
+
+.bkp-shopping-empty {
+  min-height: 230px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 26px;
+  color: var(--bkp-muted);
+  text-align: center;
+  background: var(--bkp-card);
+  border: 1px dashed var(--bkp-border-strong);
+  border-radius: 19px;
+}
+.bkp-shopping-empty svg { color: var(--bkp-primary); }
+.bkp-shopping-empty h3 { margin: 4px 0 0; color: var(--bkp-text); font-size: 18px; }
+.bkp-shopping-empty p { max-width: 580px; margin: 0; font-size: 13px; line-height: 1.55; }
+
+.bkp-savings-total {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, 420px);
+  align-items: center;
+  gap: 18px;
+  padding: 18px;
+  background: var(--bkp-card);
+  border: 1px solid var(--bkp-border);
+  border-radius: 19px;
+  box-shadow: 0 8px 24px rgb(15 23 42 / 5%);
+}
+.bkp-savings-total span { display: block; color: var(--bkp-muted); font-size: 12px; font-weight: 750; }
+.bkp-savings-total strong { display: block; margin-top: 3px; color: var(--bkp-success); font-size: clamp(28px, 5vw, 40px); line-height: 1.1; }
+.bkp-savings-total p { margin: 0; color: var(--bkp-muted); font-size: 12px; line-height: 1.5; }
+
+.bkp-savings-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.bkp-savings-card { min-width: 0; padding: 17px; background: var(--bkp-card); border: 1px solid var(--bkp-border); border-radius: 19px; box-shadow: 0 8px 24px rgb(15 23 42 / 5%); }
+.bkp-savings-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.bkp-savings-card-head span { color: var(--bkp-muted); font-size: 10px; font-weight: 800; letter-spacing: .045em; text-transform: uppercase; }
+.bkp-savings-card h3 { margin: 5px 0 0; font-size: 17px; line-height: 1.3; overflow-wrap: anywhere; }
+.bkp-savings-amount { flex: 0 0 auto; padding: 7px 10px; color: var(--bkp-success); background: var(--bkp-success-soft); border: 1px solid color-mix(in srgb, var(--bkp-success) 25%, var(--bkp-border)); border-radius: 999px; font-size: 13px; }
+.bkp-savings-prices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin-top: 15px; }
+.bkp-savings-prices > div { min-width: 0; padding: 11px; background: var(--bkp-bg-soft); border: 1px solid var(--bkp-border); border-radius: 13px; }
+.bkp-savings-prices span { display: block; min-height: 31px; color: var(--bkp-muted); font-size: 10px; font-weight: 750; line-height: 1.35; }
+.bkp-savings-prices strong { display: block; margin-top: 4px; color: var(--bkp-text); font-size: 18px; overflow-wrap: anywhere; }
+.bkp-savings-prices small { min-width: 0; display: flex; align-items: center; gap: 5px; margin-top: 4px; color: var(--bkp-muted); font-size: 10px; overflow-wrap: anywhere; }
+.bkp-savings-prices > div:last-child strong { color: var(--bkp-success); }
+.bkp-savings-meta { display: flex; flex-wrap: wrap; gap: 7px 13px; margin-top: 13px; color: var(--bkp-muted); font-size: 10px; font-weight: 700; line-height: 1.4; }
+.bkp-savings-meta span { display: inline-flex; align-items: center; gap: 5px; }
+
+@media (max-width: 760px) {
+  .bkp-shopping-hero { align-items: flex-start; padding: 15px; }
+  .bkp-shopping-tabs button { padding-inline: 6px; font-size: 12px; }
+  .bkp-savings-list { grid-template-columns: 1fr; }
+  .bkp-savings-total { grid-template-columns: 1fr; gap: 8px; }
+}
+
+@media (max-width: 390px) {
+  .bkp-shopping-hub { gap: 12px; }
+  .bkp-shopping-hero-icon { display: none; }
+  .bkp-shopping-tabs { padding: 4px; }
+  .bkp-shopping-tabs button { gap: 4px; padding: 7px 4px; font-size: 11px; }
+  .bkp-shopping-tabs button svg { width: 15px; }
+  .bkp-shopping-tabs button span { overflow-wrap: anywhere; }
+  .bkp-savings-card-head { flex-direction: column; }
+  .bkp-savings-amount { align-self: flex-start; }
+  .bkp-savings-prices { grid-template-columns: 1fr; }
+  .bkp-savings-prices span { min-height: 0; }
+}

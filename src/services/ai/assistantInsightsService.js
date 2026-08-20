@@ -1,4 +1,5 @@
 import { normalizeForAssistantMatch } from "./assistantLanguage.js"
+import { buildSavingsInsights } from "../savings/savingsEngine.ts"
 
 const CATEGORY_LABELS = {
   alimentaire: { fr: "l'alimentation", kr: "manzé" },
@@ -219,84 +220,6 @@ function buildFrequentProducts(items = [], limit = 6) {
     .slice(0, limit)
 }
 
-function buildStoreComparisons(items = []) {
-  const products = new Map()
-
-  items.forEach(item => {
-    const productKey = normalizeForAssistantMatch(item.normalized_name || item.product_name || "")
-    const store = storeFromItem(item)
-    const amount = money(item.price_per_unit) || money(item.price)
-
-    if (!productKey || !store || amount <= 0) return
-
-    const product = products.get(productKey) || {
-      productKey,
-      label: item.product_name || productKey,
-      stores: new Map(),
-    }
-
-    const storeRows = product.stores.get(store) || []
-    storeRows.push(amount)
-    product.stores.set(store, storeRows)
-    products.set(productKey, product)
-  })
-
-  const storeScores = new Map()
-  const comparableProducts = []
-
-  products.forEach(product => {
-    if (product.stores.size < 2) return
-
-    const storeAverages = Array.from(product.stores.entries())
-      .map(([store, prices]) => ({
-        store,
-        averagePrice: prices.reduce((sum, price) => sum + price, 0) / prices.length,
-        observations: prices.length,
-      }))
-      .filter(row => row.averagePrice > 0)
-      .sort((a, b) => a.averagePrice - b.averagePrice)
-
-    if (storeAverages.length < 2) return
-
-    const best = storeAverages[0]
-    const second = storeAverages[1]
-    const difference = second.averagePrice - best.averagePrice
-
-    if (difference <= 0.01) return
-
-    comparableProducts.push({
-      product: product.label,
-      bestStore: best.store,
-      bestPrice: best.averagePrice,
-      nextPrice: second.averagePrice,
-      difference,
-      comparedStores: storeAverages.length,
-    })
-
-    const current = storeScores.get(best.store) || {
-      store: best.store,
-      wins: 0,
-      savings: 0,
-      products: [],
-    }
-
-    current.wins += 1
-    current.savings += difference
-    current.products.push(product.label)
-    storeScores.set(best.store, current)
-  })
-
-  const ranking = Array.from(storeScores.values())
-    .sort((a, b) => b.wins - a.wins || b.savings - a.savings)
-
-  return {
-    comparableProductsCount: comparableProducts.length,
-    hasReliableComparison: comparableProducts.length >= 2 && ranking.length > 0,
-    ranking,
-    examples: comparableProducts.slice(0, 4),
-  }
-}
-
 function monthSummary({ transactions = [], receipts = [], shoppingItems = [], byCategory = [] }) {
   const expenses = transactions
     .filter(transaction => money(transaction.amount) < 0)
@@ -422,7 +345,33 @@ export function buildAssistantInsights({
   const budgetUse = revenusFoyer > 0 ? Math.round((currentMonth.expenses / revenusFoyer) * 100) : 0
   const stores = groupStoreSpending({ receipts: currentReceipts, shoppingItems: currentShoppingItems })
   const frequentProducts = buildFrequentProducts(currentShoppingItems)
-  const storeComparisons = buildStoreComparisons(currentShoppingItems)
+  const savings = buildSavingsInsights({ shoppingItems })
+  const reliableStoreRanking = Array.from(
+    savings.suggestions.reduce((ranking, item) => {
+      const current = ranking.get(item.bestStore) || { store: item.bestStore, wins: 0, savings: 0, products: [] }
+      current.wins += 1
+      current.savings += money(item.potentialSaving)
+      current.products.push(item.product)
+      ranking.set(item.bestStore, current)
+      return ranking
+    }, new Map()).values(),
+  ).sort((a, b) => b.wins - a.wins || b.savings - a.savings)
+  const storeComparisons = {
+    comparableProductsCount: savings.comparableProductsCount,
+    hasReliableComparison: savings.hasReliableComparison,
+    ranking: reliableStoreRanking,
+    examples: savings.suggestions.slice(0, 4).map(item => ({
+      product: item.product,
+      bestStore: item.bestStore,
+      referenceStore: item.referenceStore,
+      referencePrice: item.referencePrice,
+      bestPrice: item.alternativePrice,
+      potentialSaving: item.potentialSaving,
+      normalizedComparison: item.normalizedComparison,
+      unitLabel: item.unitLabel,
+      lastObservedAt: item.lastObservedAt,
+    })),
+  }
   const smallRepeatedPurchases = buildSmallRepeatedPurchases(currentShoppingItems)
   const categoryIncreases = buildCategoryIncreases(currentMonth.categories, previousMonth.categories)
 
@@ -439,6 +388,7 @@ export function buildAssistantInsights({
     categoryIncreases,
     stores,
     storeComparisons,
+    savings,
     frequentProducts,
     smallRepeatedPurchases,
     dataUsed: {
@@ -481,6 +431,19 @@ export function buildAssistantAiSummary(insights = {}) {
       count: money(product.count),
       totalSpend: money(product.totalSpend),
     })),
+    reliableSavings: (insights.savings?.suggestions || []).slice(0, 5).map(item => ({
+      product: item.product,
+      referenceStore: item.referenceStore,
+      bestStore: item.bestStore,
+      referencePrice: money(item.referencePrice),
+      lowerObservedPrice: money(item.alternativePrice),
+      potentialSaving: money(item.potentialSaving),
+      normalizedComparison: Boolean(item.normalizedComparison),
+      unitLabel: item.unitLabel || "",
+      lastObservedAt: item.lastObservedAt || "",
+      observationsCount: money(item.observationsCount),
+    })),
+    totalReliablePotentialSaving: money(insights.savings?.totalPotential),
     dataUsed: insights.dataUsed || {},
   }
 }

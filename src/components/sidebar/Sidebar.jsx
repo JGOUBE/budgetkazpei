@@ -4,17 +4,10 @@ import { useTheme } from "../../styles/ThemeProvider"
 import AppLogo from "../AppLogo"
 
 const NAV_ITEMS = [
-  { id: "dashboard", icon: BkIcons.dashboard, section: "nav", key: "dashboard" },
-  { id: "depenses", icon: BkIcons.depenses, section: "nav", key: "depenses" },
-  { id: "receipts", icon: BkIcons.receipts, section: "nav", key: "receipts" },
   { id: "shopping", icon: BkIcons.shopping, section: "nav", key: "shopping" },
   { id: "goodDeals", icon: BkIcons.deals, section: "nav", key: "goodDeals" },
   { id: "statistics", icon: BkIcons.stats, section: "nav", key: "statistics" },
-  { id: "savings", icon: BkIcons.savings, section: "nav", key: "savings" },
-  { id: "shoppingList", icon: BkIcons.list, section: "nav", key: "shoppingList" },
-  { id: "financeAssistant", icon: BkIcons.assistant, section: "nav", key: "financeAssistant" },
   { id: "aides", icon: BkIcons.aides, section: "nav", key: "aides" },
-  { id: "demarches", icon: BkIcons.demarches, section: "nav", key: "demarches" },
   { id: "conseiller", icon: BkIcons.assistant, section: "nav", key: "conseiller" },
   { id: "abonnements", icon: BkIcons.abonnements, section: "nav", key: "abonnements" },
   { id: "historique", icon: BkIcons.calendar, section: "nav", key: "monthlyHistory", premiumOnly: true },
@@ -104,14 +97,22 @@ export default function Sidebar({
           paddingBottom: 10,
         }}
       >
-        <div
+        <button
+          type="button"
+          onClick={() => onNavChange("dashboard")}
+          aria-label={isKreol ? "Retour tablo débor" : "Retour au tableau de bord"}
           style={{
+            width: "100%",
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
             gap: 8,
             margin: "12px 0 18px",
+            padding: 0,
+            color: "inherit",
+            background: "transparent",
+            border: 0,
           }}
         >
           <AppLogo size={68} />
@@ -127,7 +128,7 @@ export default function Sidebar({
           >
             BudgetKazPéi
           </div>
-        </div>
+        </button>
 
         <div
           style={{

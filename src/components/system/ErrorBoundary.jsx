@@ -81,7 +81,7 @@ export default class ErrorBoundary extends React.Component {
             style={{
               margin: "0 0 8px",
               fontSize: 24,
-              fontFamily: "'Baloo 2', 'DM Serif Display', sans-serif",
+              fontFamily: "var(--bkp-font-display, 'DM Serif Display', serif)",
             }}
           >
             Oups, l'app a rencontré un souci
