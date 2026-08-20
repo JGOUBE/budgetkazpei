@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { CATEGORIES } from "../../data/categories";
 import { createColorAliases } from "../../styles/designSystem";
+import { useTheme } from "../../styles/ThemeProvider";
 
-const COLORS = createColorAliases();
 
 export default function AddTransactionModal({ onAdd, onClose, onOpenReceipts, t }) {
+  useTheme();
+  const COLORS = createColorAliases();
   const [form, setForm] = useState({
     label: "",
     category: "alimentaire",
@@ -58,7 +60,7 @@ export default function AddTransactionModal({ onAdd, onClose, onOpenReceipts, t 
       style={{
         position: "fixed",
         inset: 0,
-        background: "rgba(0,0,0,0.7)",
+        background: "rgba(15,23,42,.52)",
         zIndex: 100,
         display: "flex",
         alignItems: "center",
@@ -74,6 +76,7 @@ export default function AddTransactionModal({ onAdd, onClose, onOpenReceipts, t 
           padding: 28,
           width: 360,
           maxWidth: "90vw",
+        boxShadow: "0 24px 70px rgba(15,23,42,.22)",
         }}
       >
         <h3
@@ -97,7 +100,7 @@ export default function AddTransactionModal({ onAdd, onClose, onOpenReceipts, t 
               marginBottom: 14,
               border: "none",
               borderRadius: 14,
-              background: "linear-gradient(135deg, #F97316, #FB923C)",
+              background: "linear-gradient(135deg, rgba(249,115,22,.90), rgba(251,146,60,.82))",
               color: "#fff",
               cursor: "pointer",
               fontFamily: "inherit",
@@ -117,8 +120,8 @@ export default function AddTransactionModal({ onAdd, onClose, onOpenReceipts, t 
               flex: 1,
               padding: "9px 0",
               borderRadius: 10,
-              border: `1px solid ${form.type === "depense" ? COLORS.accent : COLORS.border}`,
-              background: form.type === "depense" ? COLORS.accent : "transparent",
+              border: `1px solid ${form.type === "depense" ? "rgba(249,115,22,.38)" : COLORS.border}`,
+              background: form.type === "depense" ? "rgba(249,115,22,.12)" : "transparent",
               color: COLORS.text,
               cursor: "pointer",
               fontSize: 13,
@@ -136,9 +139,9 @@ export default function AddTransactionModal({ onAdd, onClose, onOpenReceipts, t 
               flex: 1,
               padding: "9px 0",
               borderRadius: 10,
-              border: `1px solid ${isIncome ? COLORS.green : COLORS.border}`,
-              background: isIncome ? "rgba(34,197,94,.18)" : "transparent",
-              color: isIncome ? "#86EFAC" : COLORS.text,
+              border: `1px solid ${isIncome ? "rgba(34,197,94,.38)" : COLORS.border}`,
+              background: isIncome ? "rgba(34,197,94,.12)" : "transparent",
+              color: COLORS.text,
               cursor: "pointer",
               fontSize: 13,
               fontFamily: "inherit",
@@ -152,8 +155,8 @@ export default function AddTransactionModal({ onAdd, onClose, onOpenReceipts, t 
         {isIncome && (
           <div
             style={{
-              background: "rgba(35,211,214,.08)",
-              border: "1px solid rgba(35,211,214,.25)",
+              background: "rgba(35,211,214,.06)",
+              border: "1px solid rgba(35,211,214,.18)",
               borderRadius: 12,
               padding: "10px 12px",
               color: COLORS.muted,
@@ -250,8 +253,10 @@ export default function AddTransactionModal({ onAdd, onClose, onOpenReceipts, t 
               padding: "10px 0",
               borderRadius: 10,
               border: "none",
-              background: isIncome ? COLORS.green : COLORS.accent,
-              color: isIncome ? "#0A1628" : "#fff",
+              background: isIncome
+                ? "rgba(34,197,94,.88)"
+                : "linear-gradient(135deg, rgba(249,115,22,.94), rgba(251,146,60,.88))",
+              color: "#fff",
               cursor: "pointer",
               fontWeight: 800,
               fontFamily: "inherit",
