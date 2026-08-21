@@ -83,18 +83,26 @@ export async function importValidatedReceipt({
   })
   const draftTicketType = String(draft?.ticket_type || "").trim()
   const draftBudgetCategory = String(draft?.budget_category || "").trim()
+  const useInferredClassification = inferredClassification.should_override_existing === true
+
   draft = {
     ...draft,
-    ticket_type: draftTicketType && draftTicketType !== "other"
-      ? draftTicketType
-      : inferredClassification.ticket_type,
-    budget_category: draftBudgetCategory && draftBudgetCategory !== "divers"
-      ? draftBudgetCategory
-      : inferredClassification.budget_category,
-    is_food_ticket: draft?.is_food_ticket === true || inferredClassification.is_food_ticket === true,
+    ticket_type: useInferredClassification
+      ? inferredClassification.ticket_type
+      : draftTicketType && draftTicketType !== "other"
+        ? draftTicketType
+        : inferredClassification.ticket_type,
+    budget_category: useInferredClassification
+      ? inferredClassification.budget_category
+      : draftBudgetCategory && draftBudgetCategory !== "divers"
+        ? draftBudgetCategory
+        : inferredClassification.budget_category,
+    is_food_ticket: useInferredClassification
+      ? inferredClassification.is_food_ticket === true
+      : draft?.is_food_ticket === true || inferredClassification.is_food_ticket === true,
   }
 
-  const mainCategory = "alimentaire"
+  const mainCategory = draft.is_food_ticket ? "alimentaire" : "divers"
   const cleanItems = (items || [])
     .filter(item => String(item.name || "").trim())
     .map(item => ({ ...item, category: item.category || mainCategory }))

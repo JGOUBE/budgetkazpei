@@ -3,6 +3,7 @@ import {
   upsertReceiptTransaction,
   validateReceipt,
 } from "../../features/receipts/services/receiptService"
+import { classifyReceipt } from "./receiptClassifier"
 import { syncShoppingItemsFromReceipt } from "../../features/shopping/services/shoppingEngine"
 import { createScanMetric } from "./scanUsageService"
 import { syncAnonymizedMarketReceipt } from "./marketObservationService"
@@ -331,6 +332,27 @@ function buildDraftToPersist({
   decision: ReturnType<typeof resolveDecision>
   items: Record<string, any>[]
 }) {
+  const inferredClassification = classifyReceipt({ ...draft, items })
+  const draftTicketType = String(draft?.ticket_type || "").trim()
+  const draftBudgetCategory = String(draft?.budget_category || "").trim()
+  const useInferredClassification = inferredClassification.should_override_existing === true
+
+  const resolvedTicketType = useInferredClassification
+    ? inferredClassification.ticket_type
+    : draftTicketType && draftTicketType !== "other"
+      ? draftTicketType
+      : inferredClassification.ticket_type
+
+  const resolvedBudgetCategory = useInferredClassification
+    ? inferredClassification.budget_category
+    : draftBudgetCategory && draftBudgetCategory !== "divers"
+      ? draftBudgetCategory
+      : inferredClassification.budget_category
+
+  const resolvedIsFoodTicket = useInferredClassification
+    ? inferredClassification.is_food_ticket === true
+    : draft?.is_food_ticket === true || inferredClassification.is_food_ticket === true
+
   const full = decision.kind === "full"
   const partial = decision.kind === "budget_only_with_review_items"
   const hasVerifiedCourseItems = items.some(item =>
@@ -338,15 +360,18 @@ function buildDraftToPersist({
     && item.eligible_for_courses !== false
     && isItemEligibleForSmartShopping(item)
   )
-  const smartShoppingSafe = (full && decision.flags.should_feed_courses === true)
+  const smartShoppingSafe = resolvedIsFoodTicket && (
+    (full && decision.flags.should_feed_courses === true)
     || (partial && hasVerifiedCourseItems)
+  )
   return {
     ...draft,
     python_scan_pending_save: false,
     total_amount: decision.budgetAmount,
     total_needs_review: false,
-    is_food_ticket: true,
-    budget_category: "alimentaire",
+    ticket_type: resolvedTicketType,
+    is_food_ticket: resolvedIsFoodTicket,
+    budget_category: resolvedBudgetCategory,
     items,
     scan_status: full ? "budget_ok_articles_ok" : partial ? "budget_ok_articles_partial" : draft.scan_status,
     final_scan_status: full ? "budget_ok_articles_ok" : partial ? "budget_ok_articles_partial" : draft.final_scan_status,
