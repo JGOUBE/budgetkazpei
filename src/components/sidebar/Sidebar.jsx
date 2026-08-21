@@ -4,7 +4,9 @@ import { useTheme } from "../../styles/ThemeProvider"
 import AppLogo from "../AppLogo"
 
 const NAV_ITEMS = [
+  { id: "dashboard", icon: BkIcons.dashboard, section: "nav", key: "dashboard" },
   { id: "shopping", icon: BkIcons.shopping, section: "nav", key: "shopping" },
+  { id: "receipts", icon: BkIcons.receipts, section: "nav", key: "receipts" },
   { id: "depenses", icon: BkIcons.depenses, section: "nav", key: "depenses" },
   { id: "goodDeals", icon: BkIcons.deals, section: "nav", key: "goodDeals" },
   { id: "statistics", icon: BkIcons.stats, section: "nav", key: "statistics" },
@@ -52,6 +54,8 @@ export default function Sidebar({
   const premiumColor = isPremiumPlus || isPremium ? ds.purple : ds.warning
 
   function getNavLabel(item) {
+    if (item.id === "dashboard") return isKreol ? "Tablo de bor" : "Tableau de bord"
+    if (item.id === "receipts") return isKreol ? "Mon bann tiket" : "Mes tickets"
     if (item.id === "goodDeals") {
       return isKreol ? "Mon bann bon plan" : "Mes bons plans"
     }
