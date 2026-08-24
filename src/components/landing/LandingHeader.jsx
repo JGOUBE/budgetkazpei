@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react"
 import AppLogo from "../AppLogo"
-import ThemeToggle from "../ThemeToggle"
 import { getLandingContent } from "./landingContent"
 import LandingLink from "./LandingLink"
 
@@ -72,8 +71,6 @@ export default function LandingHeader({
         </nav>
 
         <div className="landing-header__actions">
-          <ThemeToggle compact />
-
           <button
             type="button"
             className="landing-language-button"
@@ -132,7 +129,6 @@ export default function LandingHeader({
             </div>
 
             <div className="landing-mobile-menu__settings">
-              <ThemeToggle compact />
               <button
                 type="button"
                 className="landing-language-button"

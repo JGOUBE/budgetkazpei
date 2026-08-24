@@ -12,85 +12,42 @@ export const LANDING_LANGUAGES = {
   kr: "kr",
 }
 
+// Les plans restent disponibles pour la page dédiée aux offres. La home ne les
+// affiche volontairement pas : elle renvoie vers cette page avec un message
+// simple, « Gratuit pour commencer ».
 const PLAN_COPY = {
   fr: {
     [PLAN_IDS.free]: {
-      name: PLAN_NAMES[PLAN_IDS.free],
-      cta: "Créer mon compte",
+      name: PLAN_NAMES[PLAN_IDS.free], cta: "Créer mon compte",
       intro: "Pour découvrir BudgetKazPéi et commencer à suivre l'essentiel.",
-      items: [
-        "Budget essentiel",
-        "Revenus et dépenses",
-        "Statistiques simples",
-        "Aides essentielles et Bons plans locaux",
-        PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.free],
-        "Conseiller BudgetKazPéi à découvrir avec Premium",
-      ],
+      items: ["Budget essentiel", "Revenus et dépenses", "Statistiques simples", "Aides essentielles et Bons plans locaux", PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.free], "Conseiller BudgetKazPéi à découvrir avec Premium"],
     },
     [PLAN_IDS.premium]: {
-      name: PLAN_NAMES[PLAN_IDS.premium],
-      cta: "Découvrir Premium",
+      name: PLAN_NAMES[PLAN_IDS.premium], cta: "Découvrir Premium",
       intro: "BudgetKazPéi me conseille au quotidien.",
-      items: [
-        "Tout le Gratuit",
-        PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premium],
-        "Historique et statistiques avancées",
-        "Alertes budget et export PDF",
-        "Conseiller BudgetKazPéi — utilisation limitée",
-      ],
+      items: ["Tout le Gratuit", PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premium], "Historique et statistiques avancées", "Alertes budget et export PDF", "Conseiller BudgetKazPéi — utilisation limitée"],
     },
     [PLAN_IDS.premiumPlus]: {
-      name: PLAN_NAMES[PLAN_IDS.premiumPlus],
-      cta: "Découvrir Premium+",
+      name: PLAN_NAMES[PLAN_IDS.premiumPlus], cta: "Découvrir Premium+",
       intro: "BudgetKazPéi m'accompagne dans mes actions concrètes.",
-      items: [
-        "Tout le Premium",
-        PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premiumPlus],
-        "Conseiller BudgetKazPéi+ — utilisation illimitée",
-        "Accompagnement avancé des démarches",
-        "Dossiers, courriers, emails, relances et rendez-vous",
-        "Compréhension des refus et préparation des recours",
-      ],
+      items: ["Tout le Premium", PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premiumPlus], "Conseiller BudgetKazPéi+ — utilisation illimitée", "Accompagnement avancé des démarches", "Dossiers, courriers, emails, relances et rendez-vous", "Compréhension des refus et préparation des recours"],
     },
   },
   kr: {
     [PLAN_IDS.free]: {
-      name: "Gratis",
-      cta: "Kré mon kont",
+      name: "Gratis", cta: "Kré mon kont",
       intro: "Pou dékouv BudgetKazPéi ek koumans swiv sak lé esansyèl.",
-      items: [
-        "Bidjé esansyèl",
-        "Larzan i rantre ek dépans",
-        "Statistik senp",
-        "Èd esansyèl ek bann Bon Plan lokal",
-        "Aksé pou dékouv scanner-la",
-        "Konseyé BudgetKazPéi pou dékouv dann Premium",
-      ],
+      items: ["Bidjé esansyèl", "Larzan i rantre ek dépans", "Statistik senp", "Èd esansyèl ek bann Bon Plan lokal", "Aksé pou dékouv scanner-la", "Konseyé BudgetKazPéi pou dékouv dann Premium"],
     },
     [PLAN_IDS.premium]: {
-      name: "Premium",
-      cta: "Dékouv Premium",
+      name: "Premium", cta: "Dékouv Premium",
       intro: "BudgetKazPéi i konsey amwin dann mon kotidien.",
-      items: [
-        "Tout sak lé dann Gratis",
-        "10 scans par mwa",
-        "Istorik ek statistik avansé",
-        "Alèrt bidjé ek èksport PDF",
-        "Konseyé BudgetKazPéi — itilizasion limité",
-      ],
+      items: ["Tout sak lé dann Gratis", "10 scans par mwa", "Istorik ek statistik avansé", "Alèrt bidjé ek èksport PDF", "Konseyé BudgetKazPéi — itilizasion limité"],
     },
     [PLAN_IDS.premiumPlus]: {
-      name: "Premium+",
-      cta: "Dékouv Premium+",
+      name: "Premium+", cta: "Dékouv Premium+",
       intro: "BudgetKazPéi i akonpagn amwin dann mon bann aksion konkrè.",
-      items: [
-        "Tout sak lé dann Premium",
-        "Scans san limit",
-        "Konseyé BudgetKazPéi+ — itilizasion san limit",
-        "Lakonpagnman avansé pou bann demars",
-        "Dosyé, kourrié, email, relans ek randévou",
-        "Konprann bann refi ek prépar bann rekour",
-      ],
+      items: ["Tout sak lé dann Premium", "Scans san limit", "Konseyé BudgetKazPéi+ — itilizasion san limit", "Lakonpagnman avansé pou bann demars", "Dosyé, kourrié, email, relans ek randévou", "Konprann bann refi ek prépar bann rekour"],
     },
   },
 }
@@ -99,523 +56,174 @@ const CONTENT = {
   fr: {
     seo: {
       title: "BudgetKazPéi — Budget, courses, aides et bons plans à La Réunion",
-      description:
-        "Suivez votre budget, comprenez vos courses, préparez vos démarches et découvrez progressivement les bons plans locaux avec BudgetKazPéi.",
+      description: "Suivez votre budget, vos courses, vos aides et vos démarches avec une application pensée pour le quotidien à La Réunion.",
       ogTitle: "BudgetKazPéi — Budget, courses, aides et bons plans à La Réunion",
-      ogDescription:
-        "Une application locale pour réunir budget, courses, aides, démarches et solutions utiles autour de vous.",
+      ogDescription: "Une application locale pour mieux gérer son pouvoir d'achat et son quotidien.",
     },
     header: {
-      skipLink: "Aller au contenu",
-      homeAriaLabel: "Accueil BudgetKazPéi",
-      logoAlt: "Logo BudgetKazPéi",
-      mainNavigationAriaLabel: "Navigation principale",
-      mobileNavigationAriaLabel: "Navigation mobile",
-      menuDialogAriaLabel: "Menu BudgetKazPéi",
-      menu: "Menu",
-      close: "Fermer",
-      closeMenuAriaLabel: "Fermer le menu",
-      login: "Connexion",
-      register: "Créer mon compte",
-      dashboard: "Accéder à mon tableau de bord",
-      languageButton: "Kréol",
-      languageAriaLabel: "Afficher la landing page en créole réunionnais",
+      skipLink: "Aller au contenu", homeAriaLabel: "Accueil BudgetKazPéi", logoAlt: "Logo BudgetKazPéi",
+      mainNavigationAriaLabel: "Navigation principale", mobileNavigationAriaLabel: "Navigation mobile",
+      menuDialogAriaLabel: "Menu BudgetKazPéi", menu: "Menu", close: "Fermer", closeMenuAriaLabel: "Fermer le menu",
+      login: "Connexion", register: "Créer mon compte", dashboard: "Accéder à BudgetKazPéi",
+      languageButton: "Kréol", languageAriaLabel: "Afficher la landing page en créole réunionnais",
     },
     navItems: [
       { label: "Fonctionnalités", href: "#fonctionnalites" },
       { label: "Conseiller", href: "#conseiller" },
-      { label: "Tarifs", href: "#offres" },
+      { label: "Bons plans", href: "#bons-plans" },
     ],
     hero: {
-      eyebrow: "BudgetKazPéi à La Réunion",
+      eyebrow: "BudgetKazPéi · La Réunion",
       title: "Votre budget, vos courses et vos aides. Au même endroit.",
-      lead:
-        "Suivez vos dépenses, comprenez mieux vos achats, préparez vos démarches et découvrez progressivement les solutions utiles autour de vous, avec une application pensée pour La Réunion.",
-      primaryGuest: "Créer mon compte",
-      primaryAuthenticated: "Accéder à mon tableau de bord",
-      secondary: "Découvrir les fonctionnalités",
+      lead: "Suivez vos dépenses, scannez vos tickets, trouvez des aides et profitez des bons plans utiles à La Réunion.",
+      localLine: "Pensé pour La Réunion · Français & kréol réunionnais",
+      primaryGuest: "Créer mon compte gratuitement", primaryAuthenticated: "Accéder à BudgetKazPéi",
+      secondary: "Découvrir l'application",
     },
     heroDemo: {
-      ariaLabel: "Démonstration fictive des parcours BudgetKazPéi",
-      topbarTitle: "Vue quotidienne",
-      exampleLabel: "Exemple",
-      cards: [
-        {
-          tone: "budget",
-          label: "Budget",
-          title: "Solde du mois",
-          text: "Dépenses classées, catégorie visible et alerte avant dépassement.",
-        },
-        {
-          tone: "courses",
-          label: "Courses",
-          title: "Ticket reconnu",
-          text: "Produits fréquents, habitudes d'achat et comparaison en cours d'enrichissement.",
-        },
-        {
-          tone: "aides",
-          label: "Aides",
-          title: "Prochaine action",
-          text: "Aide possible, document à préparer et statut de démarche.",
-        },
-        {
-          tone: "local",
-          label: "Bons plans",
-          title: "Près de chez vous",
-          text: "Ville, catégorie et service local clairement identifiés.",
-        },
-      ],
+      ariaLabel: "Aperçu éditorial du tableau de bord BudgetKazPéi", appLabel: "Tableau de bord", monthLabel: "Août 2026",
+      greeting: "Bonjour", scoreLabel: "Score BudgetKazPéi", score: "82", scoreStatus: "Correct",
+      balanceLabel: "Solde du mois", balance: "1 240 €", balanceMeta: "Solde disponible",
+      stats: [["Revenus", "+ 1 850 €"], ["Dépenses", "620 €"], ["Reste", "1 240 €"]],
+      categoryTitle: "Dépenses par catégorie", categoryLabel: "Alimentaire", categoryValue: "280 €",
+      recentTitle: "Derniers mouvements", transactions: [["Courses", "− 84,20 €", "Aujourd'hui"], ["Revenu", "+ 1 850 €", "Ce mois"]], viewAll: "Voir tout",
       signals: [
-        { label: "Budget", value: "Solde du mois suivi" },
-        { label: "Courses", value: "Ticket reconnu" },
-        { label: "Aides", value: "Prochaine action" },
-        { label: "Local", value: "Bon plan près de vous" },
+        { type: "budget", label: "Budget du mois", value: "1 240 € disponibles" },
+        { type: "scan", label: "Ticket analysé", value: "8 articles reconnus" },
+        { type: "advisor", label: "Conseiller", value: "Une action utile identifiée" },
       ],
+      caption: "Produit BudgetKazPéi · aperçu du tableau de bord",
     },
     features: {
-      eyebrow: "Fonctionnalités",
-      title: "Tout votre quotidien dans une seule application.",
-      intro:
-        "Budget, courses, aides et bons plans avancent ensemble, sans présenter le scanner comme l'ensemble du produit.",
+      eyebrow: "Les quatre piliers", title: "Tout votre quotidien dans une seule application.",
+      intro: "Un même endroit pour comprendre, agir et avancer.",
       pillars: [
-        {
-          title: "Mon budget en clair",
-          answer:
-            "Visualisez ce qui entre, ce qui sort et ce qu'il vous reste, sans devoir tout suivre dans un tableau.",
-          points: ["Revenus et dépenses", "Solde et alertes", "Statistiques"],
-          tone: "cream",
-          icon: "budget",
-        },
-        {
-          title: "Mes courses mieux comprises",
-          answer:
-            "Ajoutez vos tickets, retrouvez vos habitudes et préparez progressivement des achats plus adaptés.",
-          points: ["Tickets", "Produits fréquents", "Courses intelligentes"],
-          tone: "blue",
-          icon: "shopping",
-        },
-        {
-          title: "Mes aides et mes démarches",
-          answer:
-            "Repérez des aides possibles, préparez vos pièces et sachez plus facilement quelle étape effectuer ensuite.",
-          points: ["Aides possibles", "Documents", "Prochaine action"],
-          tone: "lavender",
-          icon: "aides",
-        },
-        {
-          title: "Mes bons plans locaux",
-          answer:
-            "Découvrez progressivement des professionnels, promotions et services utiles près de chez vous.",
-          points: ["Commerces", "Artisans", "Ville et catégorie"],
-          tone: "sage",
-          icon: "location",
-        },
-      ],
-    },
-    productDemo: {
-      eyebrow: "Démonstration compacte",
-      title: "Trois parcours, une même application.",
-      intro:
-        "BudgetKazPéi relie le budget, les courses et les démarches dans une lecture simple du quotidien.",
-      tabsAriaLabel: "Parcours BudgetKazPéi",
-      tabs: [
-        {
-          id: "budget",
-          label: "Budget",
-          title: "Un mois plus lisible",
-          intro:
-            "BudgetKazPéi rapproche vos revenus, dépenses et alertes pour comprendre rapidement où vous en êtes.",
-          metrics: [
-            ["Solde du mois", "À jour"],
-            ["Dépenses", "Classées"],
-            ["Répartition", "Visible"],
-            ["Alerte", "Avant dépassement"],
-          ],
-        },
-        {
-          id: "courses",
-          label: "Courses intelligentes",
-          title: "Des tickets qui enrichissent vos habitudes",
-          intro:
-            "Un ticket analysé peut alimenter progressivement vos produits fréquents, vos listes et vos conseils de courses.",
-          metrics: [
-            ["Ticket analysé", "Total contrôlé"],
-            ["Produits", "Regroupés"],
-            ["Habitudes", "Enrichies"],
-            ["Comparaison", "En cours"],
-          ],
-          note: "Un ticket difficile peut demander une nouvelle photo ou une correction.",
-        },
-        {
-          id: "aides",
-          label: "Aides et démarches",
-          title: "Du profil à la prochaine action",
-          intro:
-            "Le Conseiller aide à préparer une démarche, sans remplacer les organismes officiels.",
-          flow: ["Profil", "Aide possible", "Documents", "Prochaine action"],
-          note: "La décision finale appartient toujours à l'organisme officiel.",
-        },
+        { title: "Mon budget", answer: "Revenus, dépenses, solde, alertes et statistiques.", points: ["Solde du mois", "Dépenses classées"], tone: "cream", icon: "budget", visual: "budget" },
+        { title: "Mes courses", answer: "Tickets de caisse, achats, habitudes de consommation et courses intelligentes.", points: ["Tickets vérifiables", "Historique utile"], tone: "blue", icon: "shopping", visual: "courses" },
+        { title: "Mes aides & démarches", answer: "Aides possibles, informations utiles et suivi des démarches.", points: ["Documents", "Prochaine action"], tone: "lavender", icon: "aides", visual: "aides" },
+        { title: "Mon Conseiller BudgetKazPéi", answer: "Un Conseiller qui s'appuie sur les informations disponibles dans l'application.", points: ["Comprendre", "Avancer"], tone: "sage", icon: "assistant", visual: "advisor" },
       ],
     },
     advisor: {
-      eyebrow: "Conseiller BudgetKazPéi",
-      title: "Un Conseiller qui connaît votre situation.",
-      intro:
-        "Avec Premium, le Conseiller s'appuie sur les informations connues dans BudgetKazPéi pour vous aider à comprendre votre quotidien et choisir une prochaine action utile.",
-      capabilities: [
-        "Analyser le budget et les habitudes de dépenses",
-        "Orienter vers des aides et comprendre une démarche",
-        "Expliquer un courrier sans promettre le résultat",
-        "Proposer une prochaine action adaptée aux informations disponibles",
-      ],
-      plusLabel: "Avec Premium+",
-      plusTitle: "Passez du conseil à l'accompagnement concret.",
-      plusText:
-        "Préparez dossiers, courriers, emails, relances et rendez-vous. Le Conseiller peut aussi vous aider à comprendre un refus et à préparer un recours, sans remplacer l'organisme officiel.",
+      eyebrow: "Conseiller BudgetKazPéi", title: "Un Conseiller qui connaît votre BudgetKazPéi.",
+      intro: "Il s'appuie sur les informations disponibles dans l'application pour vous aider à comprendre votre situation et avancer dans votre quotidien.",
+      conversation: {
+        user: "Où part mon argent ce mois-ci ?",
+        assistant: "Vos courses représentent votre plus forte hausse ce mois-ci. Je peux vous montrer les catégories concernées.",
+        followup: "Voir les catégories concernées",
+      },
+      chatTitle: "Conseiller BudgetKazPéi", chatMeta: "À partir de vos informations disponibles",
+      questions: ["Quelles aides existent pour le sport de mes enfants ?", "Peux-tu m'aider à préparer cette démarche ?"],
+      contextLabels: ["Budget", "Courses", "Aides", "Démarches"],
       cta: "Découvrir les offres",
     },
     localDeals: {
-      eyebrow: "Bons plans locaux",
-      title: "Les bons plans autour de chez vous.",
-      intro:
-        "Retrouvez progressivement des promotions, commerces, artisans et services locaux classés par ville et catégorie.",
-      categoriesAriaLabel: "Catégories de bons plans",
-      principlesAriaLabel: "Fonctionnement progressif des bons plans",
-      categories: [
-        "Restaurants et snacks",
-        "Boulangeries",
-        "Commerces",
-        "Artisans",
-        "Services",
-        "Promotions locales",
+      eyebrow: "Bons plans locaux", title: "Les bons plans près de chez vous",
+      intro: "Des informations utiles pour le budget du quotidien, sans fausse carte ni promesse de prix garanti.",
+      promoTitle: "Les promos du moment", promoText: "Retrouvez les promotions en cours et les catalogues des enseignes près de chez vous.",
+      promoCards: [
+        { badge: "PROMO DU MOMENT", title: "Produits du quotidien", text: "Disponible dans votre secteur", meta: "Prix · période · enseigne dans l'application", tone: "peach" },
+        { badge: "CATALOGUE", title: "Catalogue de la semaine", text: "Enseignes proches de chez vous", meta: "À consulter dans BudgetKazPéi", tone: "blue" },
       ],
-      principles: [
-        "Filtre par ville",
-        "Filtre par catégorie",
-        "Partenaires locaux",
-        "Mises en avant limitées",
-        "Offres sponsorisées identifiées",
-      ],
-      professionalTitle: "Vous êtes commerçant, artisan ou professionnel à La Réunion ?",
-      professionalText:
-        "Proposez votre établissement, une promotion ou un service local pour apparaître dans les Bons plans BudgetKazPéi.",
-      contact: "Nous contacter",
-    },
-    pricing: {
-      eyebrow: "Offres",
-      title: "Trois niveaux, lisibles en quelques secondes.",
-      intro:
-        "Commencez simplement, puis choisissez davantage d'accompagnement lorsque cela devient utile.",
-      soonLabel: "Bientôt",
-      includedAriaLabel: "Inclus",
-      lockedAriaLabel: "Disponible avec Premium",
-      unavailableAriaLabel: "Non inclus",
-      dashboard: "Accéder à mon tableau de bord",
-    },
-    faq: {
-      eyebrow: "FAQ",
-      title: "Questions fréquentes",
-      items: [
-        [
-          "Est-ce gratuit ?",
-          "Oui. L'offre gratuite permet de découvrir BudgetKazPéi et de suivre l'essentiel. Les offres Premium ajoutent davantage de suivi et d'accompagnement.",
-        ],
-        [
-          "Comment fonctionne le scanner de tickets ?",
-          "Vous ajoutez une photo lisible, BudgetKazPéi prépare les informations, puis vous gardez la main pour vérifier ou corriger.",
-        ],
-        [
-          "Que se passe-t-il si mon ticket est illisible ?",
-          "Vous pouvez reprendre la photo, corriger les informations ou ajouter la dépense manuellement.",
-        ],
-        [
-          "Les aides proposées sont-elles garanties ?",
-          "Non. BudgetKazPéi aide à préparer vos démarches, mais la décision finale appartient toujours à l'organisme officiel.",
-        ],
-        [
-          "Comment proposer un bon plan ou devenir partenaire ?",
-          "Les professionnels peuvent prendre contact avec BudgetKazPéi. Les offres sponsorisées devront toujours être clairement identifiées.",
-        ],
-      ],
+      familyTitle: "Sorties et bons plans famille", familyText: "Des idées de sorties et activités à repérer pour profiter de La Réunion en famille sans faire exploser son budget.",
+      familyTags: ["Sortie à petit budget", "Activité à repérer", "Gratuit ou accessible"], localLabel: "Aussi dans l'univers local",
+      localTags: ["Commerces", "Artisans", "Restaurants & snacks", "Services"],
     },
     finalCta: {
-      eyebrow: "Premier pas",
-      title: "Prenez en main votre budget et votre quotidien.",
-      text:
-        "Commencez avec les outils essentiels, puis choisissez davantage d'accompagnement seulement lorsque vous en avez besoin.",
-      primaryGuest: "Créer mon compte",
-      primaryAuthenticated: "Accéder à mon tableau de bord",
-      secondary: "Découvrir les offres",
+      eyebrow: "Le quotidien péi, au même endroit", title: "Pensé ici, pour le quotidien péi.",
+      text: "Budget, courses, aides, démarches et bons plans réunis dans une application conçue pour le quotidien à La Réunion.",
+      languageLine: "Français · Kréol réunionnais", freeLabel: "Gratuit pour commencer",
+      primaryGuest: "Créer mon compte gratuitement", primaryAuthenticated: "Accéder à BudgetKazPéi", secondary: "Découvrir les offres",
     },
-    footer: {
-      privacy: "Confidentialité",
-      terms: "Conditions",
-      deleteAccount: "Suppression du compte",
-      navigationAriaLabel: "Liens de pied de page",
+    pricing: {
+      eyebrow: "Offres", title: "Des offres pour aller plus loin.", intro: "Commencez avec l'essentiel, puis découvrez les offres dédiées.",
+      soonLabel: "Bientôt", includedAriaLabel: "Inclus", lockedAriaLabel: "Disponible avec Premium", unavailableAriaLabel: "Non inclus", dashboard: "Accéder à BudgetKazPéi",
     },
+    faq: {
+      eyebrow: "FAQ", title: "Questions fréquentes",
+      items: [["Est-ce gratuit ?", "Oui. L'offre gratuite permet de découvrir BudgetKazPéi et de suivre l'essentiel."], ["Les aides sont-elles garanties ?", "Non. La décision finale appartient toujours à l'organisme officiel."], ["Que faire si un ticket est mal lu ?", "Vous pouvez reprendre la photo, corriger les informations ou ajouter la dépense manuellement."]],
+    },
+    footer: { privacy: "Confidentialité", terms: "Conditions", deleteAccount: "Suppression du compte", navigationAriaLabel: "Liens de pied de page" },
   },
   kr: {
     seo: {
       title: "BudgetKazPéi — Bidjé, courses, èd ek Bon Plan La Rényon",
-      description:
-        "Swiv out bidjé, konpran out courses, prépar out bann demars ek dékouv ti-a-ti bann Bon Plan lokal avèk BudgetKazPéi.",
-      ogTitle: "BudgetKazPéi — Bidjé, courses, èd ek Bon Plan La Rényon",
-      ogDescription:
-        "In aplikasyon lokal pou rasanm bidjé, courses, èd, demars ek bann solisyon itil otour de ou.",
+      description: "Swiv out bidjé, out courses, bann èd ek bann demars avek in aplikasyon pansé pou la vi La Rényon.",
+      ogTitle: "BudgetKazPéi — Bidjé, courses, èd ek Bon Plan La Rényon", ogDescription: "In aplikasyon lokal pou aide aou gère out larzan ek out kotidien.",
     },
     header: {
-      skipLink: "Alé dann konteni",
-      homeAriaLabel: "Lakèy BudgetKazPéi",
-      logoAlt: "Logo BudgetKazPéi",
-      mainNavigationAriaLabel: "Navigasyon prinsipal",
-      mobileNavigationAriaLabel: "Navigasyon mobil",
-      menuDialogAriaLabel: "Menu BudgetKazPéi",
-      menu: "Menu",
-      close: "Fèrmé",
-      closeMenuAriaLabel: "Fèrm menu-la",
-      login: "Koneksyon",
-      register: "Kré mon kont",
-      dashboard: "Alé su mon tablo débor",
-      languageButton: "Français",
-      languageAriaLabel: "Afficher la landing page en français",
+      skipLink: "Alé dann konteni", homeAriaLabel: "Lakèy BudgetKazPéi", logoAlt: "Logo BudgetKazPéi",
+      mainNavigationAriaLabel: "Navigasyon prinsipal", mobileNavigationAriaLabel: "Navigasyon mobil", menuDialogAriaLabel: "Menu BudgetKazPéi",
+      menu: "Menu", close: "Fèrmé", closeMenuAriaLabel: "Fèrm menu-la", login: "Koneksyon", register: "Kré mon kont", dashboard: "Alé dann BudgetKazPéi",
+      languageButton: "Français", languageAriaLabel: "Afficher la landing page en français",
     },
-    navItems: [
-      { label: "Fonksionalité", href: "#fonctionnalites" },
-      { label: "Konseyé", href: "#conseiller" },
-      { label: "Tarif", href: "#offres" },
-    ],
+    navItems: [{ label: "Fonksionalité", href: "#fonctionnalites" }, { label: "Konseyé", href: "#conseiller" }, { label: "Bon Plan", href: "#bons-plans" }],
     hero: {
-      eyebrow: "BudgetKazPéi La Rényon",
-      title: "Out bidjé, out courses ek out bann èd. Tout dann in sèl landrwa.",
-      lead:
-        "Swiv out dépans, konpran mieu sak ou asté, prépar out bann demars ek dékouv ti-a-ti bann solisyon itil otour de ou, avèk in aplikasyon pansé pou La Rényon.",
-      primaryGuest: "Kré mon kont",
-      primaryAuthenticated: "Alé su mon tablo débor",
-      secondary: "Dékouv bann fonksionalité",
+      eyebrow: "BudgetKazPéi · La Rényon", title: "Out bidjé, out courses ek out bann èd. Tout dann in sèl landrwa.",
+      lead: "Swiv out dépans, scan out bann tiké, trouv bann èd ek profite bann Bon Plan itil La Rényon.", localLine: "Fait pou La Rényon · Français ek kréol rényoné",
+      primaryGuest: "Kré mon kont gratis", primaryAuthenticated: "Alé dann BudgetKazPéi", secondary: "Dékouv l'application",
     },
     heroDemo: {
-      ariaLabel: "Egzanp bann parcours BudgetKazPéi",
-      topbarTitle: "Gad kotidien",
-      exampleLabel: "Egzanp",
-      cards: [
-        {
-          tone: "budget",
-          label: "Bidjé",
-          title: "Larzan i reste pou mwa-la",
-          text: "Dépans lé klasé, katégori lé vizib ek alèrt i ariv avan ou dépassé.",
-        },
-        {
-          tone: "courses",
-          label: "Courses",
-          title: "Tiké rekonèt",
-          text: "Produi souvan asté, labitid d'achat ek konparézon an kour dann ranforsman.",
-        },
-        {
-          tone: "aides",
-          label: "Èd",
-          title: "Proshin aksyon",
-          text: "Èd posib, dokiman pou préparé ek stati out demars.",
-        },
-        {
-          tone: "local",
-          label: "Bon Plan",
-          title: "Otour de ou",
-          text: "Komin, katégori ek servis lokal lé bien idantifyé.",
-        },
-      ],
+      ariaLabel: "Egzanp éditorial tablo débor BudgetKazPéi", appLabel: "Tablo débor", monthLabel: "Out 2026", greeting: "Bonzour",
+      scoreLabel: "Score BudgetKazPéi", score: "82", scoreStatus: "Korek", balanceLabel: "Larzan i reste", balance: "1 240 €", balanceMeta: "Larzan disponib",
+      stats: [["Larzan rantre", "+ 1 850 €"], ["Dépans", "620 €"], ["Reste", "1 240 €"]], categoryTitle: "Dépans par kategori", categoryLabel: "Manzé", categoryValue: "280 €",
+      recentTitle: "Dernyé mouvman", transactions: [["Courses", "− 84,20 €", "Zordi"], ["Larzan rantre", "+ 1 850 €", "Lo mwa-la"]], viewAll: "Gad tout",
       signals: [
-        { label: "Bidjé", value: "Larzan i reste lé swivi" },
-        { label: "Courses", value: "Tiké rekonèt" },
-        { label: "Èd", value: "Proshin aksyon" },
-        { label: "Lokal", value: "Bon Plan otour de ou" },
+        { type: "budget", label: "Bidjé pou lo mwa", value: "1 240 € disponib" },
+        { type: "scan", label: "Tiké analizé", value: "8 produi rekonèt" },
+        { type: "advisor", label: "Konseyé", value: "In aksyon itil trouvé" },
       ],
+      caption: "Produit BudgetKazPéi · egzanp tablo débor",
     },
     features: {
-      eyebrow: "Fonksionalité",
-      title: "Tout out kotidien dann in sèl aplikasyon.",
-      intro:
-        "Bidjé, courses, èd ek Bon Plan i avans ansanm, san fé krwar scanner-la sé tout aplikasyon-la.",
+      eyebrow: "Katri pilier", title: "Tout out kotidien dann in sèl aplikasyon.", intro: "In sèl landrwa pou konpran, agir ek avansé.",
       pillars: [
-        {
-          title: "Mon bidjé lé kler",
-          answer:
-            "Gad sak i rantre, sak i sort ek sak i reste, san bizin swiv tout dann in tablo.",
-          points: ["Larzan i rantre ek dépans", "Larzan i reste ek alèrt", "Statistik"],
-          tone: "cream",
-          icon: "budget",
-        },
-        {
-          title: "Mi konpran mieu mon courses",
-          answer:
-            "Azout out bann tiké, retrouv out labitid ek prépar ti-a-ti bann achat pli adapté.",
-          points: ["Tiké", "Produi souvan asté", "Courses entélizan"],
-          tone: "blue",
-          icon: "shopping",
-        },
-        {
-          title: "Mon bann èd ek mon bann demars",
-          answer:
-            "Trouv bann èd posib, prépar out bann dokiman ek koné pli fasilman kèl etap fé apré.",
-          points: ["Èd posib", "Dokiman", "Proshin aksyon"],
-          tone: "lavender",
-          icon: "aides",
-        },
-        {
-          title: "Mon bann Bon Plan lokal",
-          answer:
-            "Dékouv ti-a-ti bann professionnel, promosyon ek servis itil otour de ou.",
-          points: ["Komers", "Artizan", "Komin ek katégori"],
-          tone: "sage",
-          icon: "location",
-        },
-      ],
-    },
-    productDemo: {
-      eyebrow: "Ti démonstrasyon",
-      title: "Trois parcours, in sèl aplikasyon.",
-      intro:
-        "BudgetKazPéi i relie bidjé, courses ek bann demars pou donn aou in vue simple su out kotidien.",
-      tabsAriaLabel: "Parcours BudgetKazPéi",
-      tabs: [
-        {
-          id: "budget",
-          label: "Bidjé",
-          title: "In mwa pli fasil pou konpran",
-          intro:
-            "BudgetKazPéi i rasanm out larzan i rantre, out dépans ek out bann alèrt pou ou koné vit koté ou lé.",
-          metrics: [
-            ["Larzan i reste pou mwa-la", "Mizazour"],
-            ["Dépans", "Klasé"],
-            ["Répartisyon", "Vizib"],
-            ["Alèrt", "Avan dépassman"],
-          ],
-        },
-        {
-          id: "courses",
-          label: "Courses entélizan",
-          title: "Bann tiké i ranfors out labitid",
-          intro:
-            "In tiké analizé i pé alimant ti-a-ti out produi souvan asté, out bann lis ek out konsey courses.",
-          metrics: [
-            ["Tiké analizé", "Total kontrolé"],
-            ["Produi", "Rasanblé"],
-            ["Labitid", "Ranforsé"],
-            ["Konparézon", "An kour"],
-          ],
-          note: "Pou in tiké difisil, l'aplikasyon i pé domann in nouvo foto ou in koreksyon.",
-        },
-        {
-          id: "aides",
-          label: "Èd ek demars",
-          title: "Depi out profil ziska proshin aksyon",
-          intro:
-            "Konseyé-la i aide aou prépar in demars, san pran plas bann lorganism ofisyèl.",
-          flow: ["Profil", "Èd posib", "Dokiman", "Proshin aksyon"],
-          note: "Désizyon final i apartien touzour lorganism ofisyèl.",
-        },
+        { title: "Mon bidjé", answer: "Larzan i rantre, dépans, larzan i reste, alèrt ek statistik.", points: ["Larzan i reste", "Dépans klasé"], tone: "cream", icon: "budget", visual: "budget" },
+        { title: "Mon bann courses", answer: "Bann tiké, bann achat, labitid d'achat ek courses entélizan.", points: ["Tiké vérifiab", "Istorik itil"], tone: "blue", icon: "shopping", visual: "courses" },
+        { title: "Mon bann èd ek demars", answer: "Bann èd posib, ransèyman itil ek swiv out bann demars.", points: ["Dokiman", "Proshin aksyon"], tone: "lavender", icon: "aides", visual: "aides" },
+        { title: "Mon Konseyé BudgetKazPéi", answer: "In Konseyé i servi bann ransèyman disponib dann aplikasyon-la.", points: ["Konpran", "Avansé"], tone: "sage", icon: "assistant", visual: "advisor" },
       ],
     },
     advisor: {
-      eyebrow: "Konseyé BudgetKazPéi",
-      title: "In Konseyé ki koné out situation.",
-      intro:
-        "Dann Premium, Konseyé-la i servi bann linformasion BudgetKazPéi i koné déza pou aide aou konprann out kotidien ek swazi in proshin aksion itil.",
-      capabilities: [
-        "Analiz out bidjé ek out bann labitid dépans",
-        "Oriente aou vèr bann èd ek konprann in demars",
-        "Èksplik in kourrié san promèt lo rézilta",
-        "Propoz in proshin aksion selon bann linformasion disponib",
-      ],
-      plusLabel: "Avèk Premium+",
-      plusTitle: "Depas lo konsey pou gagn in lakonpagnman konkrè.",
-      plusText:
-        "Prépar dosyé, kourrié, email, relans ek randévou. Konseyé-la i pé osi aide aou konprann in refi ek prépar in rekour, san pran plas lorganism ofisyèl.",
-      cta: "Dékouv bann offres",
+      eyebrow: "Konseyé BudgetKazPéi", title: "In Konseyé i koné out BudgetKazPéi.", intro: "Li servi bann ransèyman disponib dann aplikasyon-la pou aide aou konpran out sitiasyon ek avans dann out kotidien.",
+      conversation: { user: "Kot mon larzan i sava sa mwa-la ?", assistant: "Out courses i représente out pli for ogmantasyon sa mwa-la. Mi pé montre aou bann kategori concerné.", followup: "Gad bann kategori concerné" },
+      chatTitle: "Konseyé BudgetKazPéi", chatMeta: "A partir bann ransèyman disponib",
+      questions: ["Kèl èd i existe pou lo sport mon bann marmay ?", "Ou pé aide amwin prépar sa demars-la ?"], contextLabels: ["Bidjé", "Courses", "Èd", "Demars"], cta: "Dékouv bann lof",
     },
     localDeals: {
-      eyebrow: "Bon Plan lokal",
-      title: "Bann Bon Plan otour de ou.",
-      intro:
-        "Retrouv ti-a-ti promosyon, komers, artizan ek servis lokal, klasé par komin ek katégori.",
-      categoriesAriaLabel: "Katégori bann Bon Plan",
-      principlesAriaLabel: "Koman bann Bon Plan va ranpli ti-a-ti",
-      categories: [
-        "Restoran ek snak",
-        "Boulanzri",
-        "Komers",
-        "Artizan",
-        "Servis",
-        "Promosyon lokal",
+      eyebrow: "Bon Plan lokal", title: "Bann Bon Plan près koté ou", intro: "Bann ransèyman itil pou lo bidjé kotidien, san fausse kart ni promès pri garanti.",
+      promoTitle: "Bann promosyon dann moman", promoText: "Retrouv bann promosyon an kour ek bann katalog bann ensegn près koté ou.",
+      promoCards: [
+        { badge: "PROMO DANN MOMAN", title: "Egzanp ensegn", text: "Produi kotidien", meta: "Donnée démonstrasyon · La Rényon", tone: "peach" },
+        { badge: "KATALOG DISPONIB", title: "Egzanp katalog", text: "Périod ek landrwa pou vérifié", meta: "Gad lo katalog dann aplikasyon-la", tone: "blue" },
       ],
-      principles: [
-        "Filtre par komin",
-        "Filtre par katégori",
-        "Partenèr lokal",
-        "Miz an avan limité",
-        "Bann offres sponsorisées lé idantifyé",
-      ],
-      professionalTitle: "Ou lé komersan, artizan ou professionnel La Rényon ?",
-      professionalText:
-        "Propoz out etablisman, in promosyon ou in servis lokal pou aparèt dann bann Bon Plan BudgetKazPéi.",
-      contact: "Kontakt a nou",
-    },
-    pricing: {
-      eyebrow: "Bann offres",
-      title: "Trois nivo, fasil pou konpran vitman.",
-      intro:
-        "Koumans simplement, épi swazi plis lakonpagnman kan ou néna bezoin.",
-      soonLabel: "Biento",
-      includedAriaLabel: "Lé dann lof",
-      lockedAriaLabel: "Disponib dann Premium",
-      unavailableAriaLabel: "Lé pa dann lof",
-      dashboard: "Alé su mon tablo débor",
-    },
-    faq: {
-      eyebrow: "FAQ",
-      title: "Kestion souvan pozé",
-      items: [
-        [
-          "Lé gratis ?",
-          "Wi. Loffre Gratis i permet dékouv BudgetKazPéi ek swiv sak lé esansyèl. Bann offres Premium i azout plis swivi ek lakonpagnman.",
-        ],
-        [
-          "Koman scanner tiké-la i fonksyone ?",
-          "Ou azout in foto lizib, BudgetKazPéi i prépar bann linformasyon, épi ou i gard la min pou vérifié ou korijé.",
-        ],
-        [
-          "Kosa i ariv si mon tiké lé pa lizib ?",
-          "Ou pé repran foto-la, korij bann linformasyon ou azout dépans-la amain.",
-        ],
-        [
-          "Bann èd propozé lé garanti ?",
-          "Non. BudgetKazPéi i aide aou prépar out bann demars, mé désizyon final i apartien touzour lorganism ofisyèl.",
-        ],
-        [
-          "Koman propoz in Bon Plan ou devenir partenèr ?",
-          "Bann professionnel i pé pran kontakt avèk BudgetKazPéi. Bann offres sponsorisé va touzour bien idantifyé.",
-        ],
-      ],
+      familyTitle: "👨‍👩‍👧‍👦 Sorti ek Bon Plan famiy", familyText: "Bann lidé sorti, aktivité ek Bon Plan pou profite La Rényon an famiy san fé out bidjé eksplozé.", familyTags: ["Sorti famiy", "Aktivité marmay", "Evennman gratis"], localLabel: "Ossi dann l'univers lokal", localTags: ["Komers", "Artizan", "Restoran ek snack", "Servis"],
     },
     finalCta: {
-      eyebrow: "Premié pa",
-      title: "Pran out bidjé ek out kotidien an min.",
-      text:
-        "Koumans avèk bann zouti esansyèl, épi swazi plis lakonpagnman sèlman kan ou néna bezoin.",
-      primaryGuest: "Kré mon kont",
-      primaryAuthenticated: "Alé su mon tablo débor",
-      secondary: "Dékouv bann lof",
+      eyebrow: "La vi péi, dann in sèl landrwa", title: "Fait isi, pou la vi péi.", text: "Bidjé, courses, èd, demars ek Bon Plan rasanblé dann in aplikasyon pansé pou La Rényon.", languageLine: "Français · Kréol rényoné", freeLabel: "Gratis pou koumansé", primaryGuest: "Kré mon kont gratis", primaryAuthenticated: "Alé dann BudgetKazPéi", secondary: "Dékouv bann lof",
     },
-    footer: {
-      privacy: "Konfidansyalité",
-      terms: "Kondisyon",
-      deleteAccount: "Suprim mon kont",
-      navigationAriaLabel: "Lien anba paz",
+    pricing: {
+      eyebrow: "Bann lof", title: "Bann lof pou al pli loin.", intro: "Koumans avek l'esansyèl, apré dékouv bann lof dédié.", soonLabel: "Biento", includedAriaLabel: "Inclus", lockedAriaLabel: "Disponib avek Premium", unavailableAriaLabel: "Pa inclus", dashboard: "Alé dann BudgetKazPéi",
     },
+    faq: {
+      eyebrow: "FAQ", title: "Kestion souvan", items: [["Eske lé gratis ?", "Wi. Lof gratis i permet dékouv BudgetKazPéi ek suiv sak lé esansyèl."], ["Bann èd lé garanti ?", "Non. Lo organisme officiel i pran désizion final."], ["Kosa fé si in tiké lé mal lu ?", "Ou pé repran foto-la, korij bann ransèyman ou azout dépans-la a la min."]],
+    },
+    footer: { privacy: "Konfidansyalité", terms: "Kondisyon", deleteAccount: "Suprim mon kont", navigationAriaLabel: "Bann lien pié paz" },
   },
 }
 
 function normalizeLandingLanguage(language) {
   return language === LANDING_LANGUAGES.kr ? LANDING_LANGUAGES.kr : LANDING_LANGUAGES.fr
+}
+
+const NEUTRAL_KR_DEALS = {
+  promoCards: [
+    { badge: "PROMO DANN MOMAN", title: "Produi kotidien", text: "Disponib dann out landrwa", meta: "Pri · périod · ensegn dann aplikasyon-la", tone: "peach" },
+    { badge: "KATALOG", title: "Katalog la semenn", text: "Ensegn pros koté ou", meta: "Pou gad dann BudgetKazPéi", tone: "blue" },
+  ],
+  familyTitle: "Sorti ek Bon Plan famiy",
+  familyText: "Bann lidé sorti ek aktivité pou profite La Rényon an famiy san fé out bidjé eksplozé.",
+  familyTags: ["Sorti famiy", "Aktivité marmay", "Gratis ou aksesib"],
 }
 
 function buildPricingPlans(language) {
@@ -624,17 +232,10 @@ function buildPricingPlans(language) {
 
   return PUBLIC_PLAN_CARDS.map(plan => {
     const copy = copyByPlan[plan.id]
-
     return {
       ...plan,
-      name: copy?.name || PLAN_NAMES[plan.id],
-      price: PLAN_PRICES[plan.id],
-      cta: copy?.cta || plan.cta,
-      intro: copy?.intro || plan.intro,
-      items: plan.items.map((item, index) => ({
-        ...item,
-        text: copy?.items?.[index] || item.text,
-      })),
+      name: copy?.name || PLAN_NAMES[plan.id], price: PLAN_PRICES[plan.id], cta: copy?.cta || plan.cta, intro: copy?.intro || plan.intro,
+      items: plan.items.map((item, index) => ({ ...item, text: copy?.items?.[index] || item.text })),
     }
   })
 }
@@ -642,26 +243,21 @@ function buildPricingPlans(language) {
 export function getLandingContent(language = LANDING_LANGUAGES.fr) {
   const normalizedLanguage = normalizeLandingLanguage(language)
   const content = CONTENT[normalizedLanguage]
-
-  return {
-    ...content,
-    language: normalizedLanguage,
-    pricing: {
-      ...content.pricing,
-      plans: buildPricingPlans(normalizedLanguage),
-    },
-  }
+  const localDeals = normalizedLanguage === LANDING_LANGUAGES.kr
+    ? { ...content.localDeals, ...NEUTRAL_KR_DEALS }
+    : content.localDeals
+  return { ...content, language: normalizedLanguage, localDeals, pricing: { ...content.pricing, plans: buildPricingPlans(normalizedLanguage) } }
 }
 
 const frenchContent = getLandingContent(LANDING_LANGUAGES.fr)
 
-// Exports conservés pour éviter de casser d'anciens imports pendant la transition.
+// Exports historiques conservés pour la page offres et les éventuels imports.
 export const navItems = frenchContent.navItems
-export const heroSignals = frenchContent.heroDemo.signals
+export const heroSignals = frenchContent.heroDemo.transactions
 export const pillars = frenchContent.features.pillars
-export const productTabs = frenchContent.productDemo.tabs
-export const localDealCategories = frenchContent.localDeals.categories
-export const localDealPrinciples = frenchContent.localDeals.principles
+export const productTabs = []
+export const localDealCategories = frenchContent.localDeals.localTags
+export const localDealPrinciples = frenchContent.localDeals.familyTags
 export const pricingPlans = frenchContent.pricing.plans
 export const faqs = frenchContent.faq.items
 
