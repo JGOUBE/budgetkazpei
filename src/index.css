@@ -12,12 +12,12 @@ body,
   min-height: 100%;
   margin: 0;
   padding: 0;
-  background: var(--bkp-page-bg, #0A1628) !important;
+  background: var(--bkp-page-bg, #fffdf9) !important;
 }
 
 body {
   min-height: 100vh;
-  color: var(--bkp-text, #F1F5F9);
+  color: var(--bkp-text, #142033);
   font-family: var(--bkp-font-body, 'DM Sans', 'Helvetica Neue', Arial, sans-serif);
   text-align: left !important;
   overflow-x: hidden;
@@ -44,9 +44,9 @@ textarea {
 input,
 select,
 textarea {
-  background-color: var(--bkp-input, #152A4D);
-  color: var(--bkp-input-text, #F8FAFC);
-  border-color: var(--bkp-input-border, var(--bkp-border, #26466F));
+  background-color: var(--bkp-input, #ffffff);
+  color: var(--bkp-input-text, #142033);
+  border-color: var(--bkp-input-border, var(--bkp-border, #d8e0e8));
 }
 
 select {

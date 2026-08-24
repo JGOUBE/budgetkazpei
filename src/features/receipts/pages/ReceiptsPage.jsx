@@ -74,10 +74,11 @@ const TEXT = {
     gallery: "Importer une image",
     manual: "Remplir manuellement",
     longTicket: "Ticket long",
-    longTicketTitle: "Scanner un ticket long",
-    longTicketCountQuestion: "Combien de photos ?",
     longTicketTwoPhotos: "2 photos",
     longTicketThreePhotos: "3 photos",
+    longTicketCamera: "Prendre les photos",
+    longTicketSelected: count => `${count} photos sélectionnées`,
+    longTicketReady: (ready, count) => `${ready} / ${count} photos prêtes`,
     longTicketHint: count => count === 3
       ? "Photo 1 — Haut du ticket · Photo 2 — Milieu du ticket · Photo 3 — Bas du ticket"
       : "Photo 1 — Haut du ticket · Photo 2 — Bas du ticket",
@@ -85,13 +86,12 @@ const TEXT = {
     longTicketPart: (index, count) => count === 3
       ? ["Photo 1 — Haut du ticket", "Photo 2 — Milieu du ticket", "Photo 3 — Bas du ticket"][index]
       : ["Photo 1 — Haut du ticket", "Photo 2 — Bas du ticket"][index],
-    longTicketGallery: count => `Importer ${count} images`,
+    longTicketGallery: "Importer les images",
     longTicketAnalyze: count => `Analyser les ${count} photos`,
     longTicketReset: "Recommencer",
     longTicketPartReady: index => `Photo ${index + 1} prête`,
     longTicketMissing: count => `Ajoutez les ${count} photos du ticket.`,
     longTicketNeedCount: count => `Sélectionnez exactement ${count} images dans l’ordre du haut vers le bas.`,
-    longTicketModeOpened: "Choisissez 2 ou 3 photos.",
     longTicketMerging: count => `Analyse des ${count} parties du ticket...`,
     quota: quota => quota.plan === "premium_plus"
       ? `Analyses IA illimitées — ${quota.planLabel}`
@@ -176,10 +176,11 @@ const TEXT = {
     gallery: "Import in zimaz",
     manual: "Ranpli amain",
     longTicket: "Tiké long",
-    longTicketTitle: "Scanner in tiké long",
-    longTicketCountQuestion: "Konbien foto ?",
     longTicketTwoPhotos: "2 foto",
     longTicketThreePhotos: "3 foto",
+    longTicketCamera: "Pran bann foto",
+    longTicketSelected: count => `${count} foto sélectionnées`,
+    longTicketReady: (ready, count) => `${ready} / ${count} foto lé paré`,
     longTicketHint: count => count === 3
       ? "Foto 1 — Lao tiké-la · Foto 2 — Milié tiké-la · Foto 3 — Anba tiké-la"
       : "Foto 1 — Lao tiké-la · Foto 2 — Anba tiké-la",
@@ -187,13 +188,12 @@ const TEXT = {
     longTicketPart: (index, count) => count === 3
       ? ["Foto 1 — Lao tiké-la", "Foto 2 — Milié tiké-la", "Foto 3 — Anba tiké-la"][index]
       : ["Foto 1 — Lao tiké-la", "Foto 2 — Anba tiké-la"][index],
-    longTicketGallery: count => `Import ${count} zimaz`,
+    longTicketGallery: "Import bann zimaz",
     longTicketAnalyze: count => `Analiz ${count} foto-la`,
     longTicketReset: "Recommansé",
     longTicketPartReady: index => `Foto ${index + 1} lé paré`,
     longTicketMissing: count => `Azout ${count} foto tiké-la.`,
     longTicketNeedCount: count => `Swazi exactement ${count} zimaz depi lao ziska anba.`,
-    longTicketModeOpened: "Swazi 2 ou 3 foto.",
     longTicketMerging: count => `Analiz ${count} parti tiké-la...`,
     quota: quota => quota.plan === "premium_plus"
       ? `Analiz IA san limit — ${quota.planLabel}`
@@ -1146,9 +1146,14 @@ export default function ReceiptsPage({
   }
 
   function openLongTicketMode() {
-    const nextMode = !longTicketMode
-    setLongTicketMode(nextMode)
-    setMessage(nextMode ? txt.longTicketModeOpened : "")
+    if (longTicketMode) {
+      resetLongTicketScan()
+      setMessage("")
+      return
+    }
+
+    setLongTicketMode(true)
+    setMessage("")
   }
 
   function resetLongTicketScan() {
@@ -1165,7 +1170,20 @@ export default function ReceiptsPage({
   function selectLongTicketPhotoCount(count) {
     setLongTicketPhotoCount(count)
     setLongTicketFiles([null, null, null])
-    setMessage(txt.longTicketOverlapHint)
+    setMessage("")
+  }
+
+  function startLongTicketCamera() {
+    if (!longTicketPhotoCount || automatedScanDisabled) return
+
+    const nextIndex = longTicketFiles
+      .slice(0, longTicketPhotoCount)
+      .findIndex(file => !file)
+
+    if (nextIndex < 0) return
+
+    setMessage("")
+    longSegmentCameraRefs.current[nextIndex]?.click()
   }
 
   function handleLongTicketPart(index, file) {
@@ -1175,7 +1193,12 @@ export default function ReceiptsPage({
       currentIndex === index ? file : current
     )))
 
-    setMessage(txt.longTicketPartReady(index))
+    setMessage("")
+
+    const nextIndex = index + 1
+    if (longTicketPhotoCount && nextIndex < longTicketPhotoCount) {
+      setTimeout(() => longSegmentCameraRefs.current[nextIndex]?.click(), 0)
+    }
   }
 
   function handleLongTicketGallery(files) {
@@ -1187,8 +1210,7 @@ export default function ReceiptsPage({
     }
 
     setLongTicketFiles(previous => previous.map((_, index) => images[index] || null))
-
-    setMessage(images.map((_, index) => txt.longTicketPartReady(index)).join(". "))
+    setMessage("")
   }
 
   async function processCompletedScan(scan, sourceFile) {
@@ -2316,27 +2338,16 @@ export default function ReceiptsPage({
       </div>
 
       {showMethodActions && longTicketMode && (
-        <div style={cardStyle({ display: "grid", gap: 14 })}>
-          <div>
-            <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 950 }}>
-              {txt.longTicketTitle}
-            </div>
-            {!longTicketPhotoCount && (
-              <div style={{ color: COLORS.muted, fontSize: 14, lineHeight: 1.5, marginTop: 8, fontWeight: 850 }}>
-                {txt.longTicketCountQuestion}
-              </div>
-            )}
-          </div>
-
+        <div style={{ display: "grid", gap: 10, marginTop: -3, padding: "0 2px 2px" }}>
           {!longTicketPhotoCount && (
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8, maxWidth: isMobile ? 300 : 360 }}>
               {[2, 3].map(count => (
                 <button
                   key={count}
                   type="button"
                   disabled={automatedScanDisabled}
                   onClick={() => selectLongTicketPhotoCount(count)}
-                  style={{ minHeight: 48, borderRadius: 14, border: `1px solid ${COLORS.border}`, background: COLORS.cardLight, color: COLORS.text, fontWeight: 950, fontFamily: "inherit" }}
+                  style={{ minHeight: 42, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: COLORS.cardLight, color: COLORS.text, fontWeight: 950, fontFamily: "inherit", fontSize: 14 }}
                 >
                   {count === 2 ? txt.longTicketTwoPhotos : txt.longTicketThreePhotos}
                 </button>
@@ -2346,61 +2357,43 @@ export default function ReceiptsPage({
 
           {longTicketPhotoCount && (
             <>
-              <div style={{ color: COLORS.muted, fontSize: 13, lineHeight: 1.5 }}>
-                {txt.longTicketHint(longTicketPhotoCount)}
-                <div style={{ marginTop: 6, color: COLORS.text, fontWeight: 800 }}>
-                  {txt.longTicketOverlapHint}
+              <div style={{ color: COLORS.text, fontSize: 14, fontWeight: 950 }}>
+                {txt.longTicketSelected(longTicketPhotoCount)}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 8, maxWidth: isMobile ? 420 : 560 }}>
+                <ActionButton
+                  label={txt.longTicketCamera}
+                  Icon={BkIcons.scan}
+                  disabled={automatedScanDisabled || longTicketFiles.slice(0, longTicketPhotoCount).every(Boolean)}
+                  onClick={startLongTicketCamera}
+                  variant="primary"
+                  compact
+                />
+                <ActionButton
+                  label={txt.longTicketGallery}
+                  Icon={BkIcons.receipts}
+                  disabled={automatedScanDisabled}
+                  onClick={() => longGalleryRef.current?.click()}
+                  variant="secondary"
+                  compact
+                />
+              </div>
+              {longTicketFiles.slice(0, longTicketPhotoCount).some(Boolean) && (
+                <div style={{ color: COLORS.muted, fontSize: 12, fontWeight: 800 }}>
+                  {txt.longTicketReady(longTicketFiles.slice(0, longTicketPhotoCount).filter(Boolean).length, longTicketPhotoCount)}
                 </div>
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : `repeat(${longTicketPhotoCount}, 1fr)`, gap: 12 }}>
-                {Array.from({ length: longTicketPhotoCount }, (_, index) => (
-                  <button
-                    key={index}
-                    type="button"
-                    disabled={automatedScanDisabled}
-                    onClick={() => longSegmentCameraRefs.current[index]?.click()}
-                    style={{
-                      minHeight: 54,
-                      borderRadius: 16,
-                      border: `1px solid ${longTicketFiles[index] ? COLORS.green : COLORS.border}`,
-                      background: COLORS.cardLight,
-                      color: COLORS.text,
-                      fontWeight: 950,
-                      fontFamily: "inherit",
-                      cursor: automatedScanDisabled ? "wait" : "pointer",
-                    }}
-                  >
-                    {longTicketFiles[index] ? txt.longTicketPartReady(index) : txt.longTicketPart(index, longTicketPhotoCount)}
-                  </button>
-                ))}
-              </div>
+              )}
+              {longTicketFiles.slice(0, longTicketPhotoCount).every(Boolean) && (
+                <ActionButton
+                  label={txt.longTicketAnalyze(longTicketPhotoCount)}
+                  Icon={BkIcons.scan}
+                  disabled={automatedScanDisabled}
+                  onClick={handleLongTicketScan}
+                  compact
+                />
+              )}
             </>
           )}
-
-          {longTicketPhotoCount && <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr 1fr", gap: 10 }}>
-            <ActionButton
-              label={txt.longTicketGallery(longTicketPhotoCount)}
-              Icon={BkIcons.receipts}
-              disabled={automatedScanDisabled}
-              onClick={() => longGalleryRef.current?.click()}
-              muted
-            />
-
-            <ActionButton
-              label={txt.longTicketAnalyze(longTicketPhotoCount)}
-              Icon={BkIcons.scan}
-              disabled={automatedScanDisabled || longTicketFiles.slice(0, longTicketPhotoCount).some(file => !file)}
-              onClick={handleLongTicketScan}
-            />
-
-            <ActionButton
-              label={txt.longTicketReset}
-              Icon={null}
-              disabled={busy}
-              onClick={resetLongTicketScan}
-              muted
-            />
-          </div>}
         </div>
       )}
 
@@ -2532,6 +2525,7 @@ function ActionButton({
   muted = false,
   variant = "primary",
   active = false,
+  compact = false,
 }) {
   const resolvedVariant = muted && variant === "primary" ? "neutral" : variant
 
@@ -2573,7 +2567,7 @@ function ActionButton({
       disabled={disabled}
       aria-pressed={resolvedVariant === "special" ? active : undefined}
       style={{
-        minHeight: 58,
+        minHeight: compact ? 46 : 58,
         border: `1px solid ${palette.border}`,
         borderRadius: 16,
         background: palette.background,
@@ -2582,7 +2576,7 @@ function ActionButton({
         fontWeight: 950,
         cursor: disabled ? "wait" : "pointer",
         fontFamily: "inherit",
-        fontSize: 15,
+        fontSize: compact ? 14 : 15,
         opacity: disabled ? 0.58 : 1,
         transition: "transform .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease",
       }}

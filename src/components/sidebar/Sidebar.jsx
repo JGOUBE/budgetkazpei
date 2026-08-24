@@ -17,6 +17,24 @@ const NAV_ITEMS = [
   { id: "profil", icon: BkIcons.user, section: "nav", key: "profil" },
 ]
 
+const ADMIN_ITEMS = [
+  {
+    id: "goodDealsAdminReview",
+    icon: BkIcons.deals,
+    label: "Bons plans à valider",
+  },
+  {
+    id: "retailPriceAdminReview",
+    icon: BkIcons.shopping,
+    label: "Prix & promotions",
+  },
+  {
+    id: "goodDealsEventsAdminReview",
+    icon: BkIcons.calendar,
+    label: "Événements à venir",
+  },
+]
+
 export default function Sidebar({
   activeNav,
   onNavChange,
@@ -24,6 +42,7 @@ export default function Sidebar({
   user,
   isPremium,
   isPremiumPlus = false,
+  isAdmin = false,
   lang = "fr",
   t,
 }) {
@@ -235,6 +254,74 @@ export default function Sidebar({
             )
           })}
         </nav>
+
+        {isAdmin && (
+          <div
+            style={{
+              marginTop: 16,
+              paddingTop: 14,
+              borderTop: `1px solid ${ds.border}`,
+            }}
+          >
+            <div
+              style={{
+                padding: "0 13px 8px",
+                fontSize: 11,
+                fontWeight: 950,
+                letterSpacing: ".08em",
+                textTransform: "uppercase",
+                color: ds.primary,
+              }}
+            >
+              Administration
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                gap: 5,
+              }}
+            >
+              {ADMIN_ITEMS.map(item => {
+                const Icon = item.icon
+                const active = activeNav === item.id
+
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => onNavChange(item.id)}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 11,
+                      width: "100%",
+                      padding: "10px 13px",
+                      borderRadius: 12,
+                      border: active
+                        ? `1px solid ${ds.primary}66`
+                        : "1px solid transparent",
+                      background: active
+                        ? "rgba(249,115,22,.15)"
+                        : "transparent",
+                      color: active ? ds.primary : ds.textSecondary,
+                      cursor: "pointer",
+                      fontSize: 14,
+                      fontWeight: active ? 900 : 700,
+                      fontFamily: "inherit",
+                      textAlign: "left",
+                    }}
+                  >
+                    <Icon size={17} />
+                    <span>{item.label}</span>
+                  </button>
+                )
+              })}
+
+            </div>
+          </div>
+        )}
 
         <button
           type="button"

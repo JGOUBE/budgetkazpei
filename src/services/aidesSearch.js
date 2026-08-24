@@ -6,6 +6,11 @@ const SEARCH_EQUIVALENTS = [
   ["mobilite", "deplasman", "transport", "bus", "voiture"],
   ["scolarite", "ecole", "lekol", "cantine", "bourse"],
   ["sante", "soin", "mutuelle", "cgss"],
+  [
+    "sport", "sports", "sportif", "sportive", "club", "clubs", "licence", "licences",
+    "cotisation", "loisir", "loisirs", "judo", "tennis", "surf", "football", "foot",
+    "athletisme", "natation", "rugby", "basket", "handball", "karate", "taekwondo", "capoeira",
+  ],
   ["aide", "aides", "ed", "zed"],
 ]
 

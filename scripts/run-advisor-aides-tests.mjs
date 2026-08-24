@@ -9,6 +9,7 @@ import {
   getAdvisorAccess,
 } from "../src/config/advisorAccess.js"
 import { matchesAidSearch, normalizeAidSearchText } from "../src/services/aidesSearch.js"
+import { rankAidesForAdvisor } from "../src/services/aidesRanking.js"
 import {
   resolveAdvisorLanguage as resolveClientAdvisorLanguage,
 } from "../src/services/advisorLanguage.js"
@@ -176,6 +177,68 @@ for (const query of ["logement", "kaz", "énergie", "kouran", "enfant", "marmay"
 }
 assert.equal(normalizeAidSearchText("  L’ÉNERGIE  "), "l energie")
 
+const sportSearchAide = {
+  nameFr: "Pass'Sport",
+  nameKr: "Pass'Sport",
+  descriptionFr: "Aide pour rÃ©duire le coÃ»t d'une licence ou cotisation dans un club sportif.",
+  descriptionKr: "Aide pou rÃ©duit pri licence ou cotisation dann in club sportif.",
+  stepsFr: "VÃ©rifier l'Ã©ligibilitÃ© sur le site officiel.",
+  stepsKr: "VÃ©rifie Ã©ligibilitÃ© su site officiel.",
+  category: "sport",
+}
+
+for (const query of ["sport", "club", "licence", "judo", "tennis", "surf"]) {
+  assert.equal(
+    matchesAidSearch(sportSearchAide, query),
+    true,
+    `La recherche sport doit trouver une aide sportive avec : ${query}`,
+  )
+}
+
+const rankingAides = [
+  {
+    id: "apl",
+    nom: "Aide personnalisÃ©e au logement",
+    categorie: "logement",
+    description_fr: "Aide au paiement du logement.",
+    score_priorite: 260,
+  },
+  {
+    id: "pass_sport",
+    nom: "Pass'Sport",
+    categorie: "sport",
+    description_fr: "Aide Ã  l'inscription, Ã  la licence ou Ã  la cotisation dans un club sportif.",
+    besoin_enfant: true,
+    score_priorite: 80,
+  },
+  {
+    id: "plan_5000_licences",
+    nom: "Plan 5000 licences",
+    categorie: "sport",
+    organisme: "DÃ©partement de La RÃ©union",
+    description_fr: "Aide pour financer une licence et une cotisation dans un club sportif.",
+    besoin_enfant: true,
+    score_priorite: 75,
+  },
+]
+
+const genericSportRanking = rankAidesForAdvisor(
+  rankingAides,
+  { nombre_enfants: 2, logement: "locataire" },
+  "Je cherche une aide financiÃ¨re pour le sport de mes enfants",
+)
+assert.deepEqual(
+  genericSportRanking.slice(0, 2).map(aide => aide.id).sort(),
+  ["pass_sport", "plan_5000_licences"],
+  "Une demande sport enfants doit faire passer les aides sport avant une aide gÃ©nÃ©rale mieux scorÃ©e",
+)
+
+const namedSportRanking = rankAidesForAdvisor(
+  rankingAides,
+  { nombre_enfants: 2 },
+  "Est-ce que le plan 5000 licences peut m'aider ?",
+)
+assert.equal(namedSportRanking[0].id, "plan_5000_licences")
 const backend = await read("supabase/functions/assistant-aisupabase/index.ts")
 const policy = await read("supabase/functions/assistant-aisupabase/accessPolicy.ts")
 const advisorPage = await read("src/components/conseiller/ConseillerPage.jsx")

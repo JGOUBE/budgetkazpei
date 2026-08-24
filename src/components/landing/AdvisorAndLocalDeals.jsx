@@ -1,109 +1,38 @@
-import { BkIcons } from "../icons-budgetkazpei"
 import LandingLink from "./LandingLink"
+import ProductPhoneMockup from "./ProductPhoneMockup"
+import { LANDING_REFERENCE_IMAGES } from "./landingReferenceImages"
 
-function AdvisorScene({ advisor }) {
-  const chat = advisor.conversation
-
+function DealEvidence() {
   return (
-    <div className="advisor-scene">
-      <div className="advisor-scene__context" aria-label={advisor.title}>
-        {advisor.contextLabels.map((label, index) => (
-          <span key={label} className={index === 0 ? "is-active" : ""}>{label}</span>
-        ))}
-      </div>
-      <div className="advisor-scene__context-used"><small>{advisor.contextUsedLabel || "Contexte utilisé"}</small>{(advisor.contextUsed || advisor.contextLabels.slice(0, 2)).map(label => <span key={label}>{label}</span>)}</div>
-      <div className="advisor-scene__connector" aria-hidden="true"><span /></div>
-      <div className="advisor-reference-frame" aria-hidden="true"><img src={advisor.referenceImage || "/landing-reference/conseiller-mobile.png"} alt="" /></div>
-      <div className="advisor-chat">
-        <div className="advisor-chat__topbar">
-          <span className="advisor-chat__avatar" aria-hidden="true"><BkIcons.assistant size={17} /></span>
-          <span><strong>{advisor.chatTitle}</strong><small>{advisor.chatMeta}</small></span>
-          <i aria-hidden="true" />
-        </div>
-        <div className="advisor-chat__messages">
-          <div className="advisor-chat__message advisor-chat__message--user">{chat.user}</div>
-          <div className="advisor-chat__message advisor-chat__message--assistant">
-            <span>{chat.assistant}</span>
-            {chat.detail && <p>{chat.detail}</p>}
-            <button type="button">{chat.followup}<span aria-hidden="true">↗</span></button>
-          </div>
-        </div>
-        <div className="advisor-chat__suggestions">
-          {advisor.questions.map(question => <span key={question}>{question}</span>)}
-        </div>
-      </div>
+    <div className="deal-evidence" aria-label="Contenu réel visible dans Bons plans">
+      <div className="deal-evidence__line"><span>BudgetKazPéi Local</span><b>Saint-Leu</b></div>
+      <div className="deal-evidence__filters"><span>Promos & bons prix</span><span>Restaurants</span><span>Loisirs & famille</span></div>
+      <div className="deal-evidence__event"><span>ÉVÉNEMENT</span><strong>Exposition Les Engagés du sucre</strong><small>Musée Stella Matutina · 15 novembre 2025 → 4 avril 2027</small></div>
+      <div className="deal-evidence__counts"><span><b>24</b> événements à venir</span><span><b>80</b> à faire toute l'année</span></div>
     </div>
-  )
-}
-
-function PromoCard({ card, index }) {
-  const isPrimary = index === 0
-  const referenceImage = card.referenceImage || (isPrimary ? "/landing-reference/bons-plans-mobile.png" : "/landing-reference/bons-plans-loisirs-mobile.png")
-  return (
-    <article className={`deal-preview deal-preview--${card.tone} ${isPrimary ? "deal-preview--primary" : ""}`}>
-      <div className="deal-preview__art" aria-hidden="true">
-        <img src={referenceImage} alt="" />
-      </div>
-      <div className="deal-preview__body">
-        <span className="deal-preview__badge">{card.badge}</span>
-        <h3>{card.title}</h3>
-        <p>{card.text}</p>
-        <small>{card.meta}</small>
-        {card.detail && <b className="deal-preview__detail">{card.detail}</b>}
-      </div>
-    </article>
   )
 }
 
 function DealsScene({ localDeals }) {
   return (
-    <div className="deals-scene" id="bons-plans" aria-labelledby="deals-title">
-      <div className="deals-scene__heading">
-        <div>
-          <p className="landing-eyebrow">{localDeals.eyebrow}</p>
-          <h2 id="deals-title">{localDeals.title}</h2>
+    <section className="landing-section landing-deals-section" id="bons-plans" aria-labelledby="deals-title">
+      <div className="landing-shell landing-deals-showcase">
+        <div className="landing-deals-showcase__phone">
+          <ProductPhoneMockup referenceImage={LANDING_REFERENCE_IMAGES.deals} imageAlt="Écran réel BudgetKazPéi Local — Saint-Leu" variant="left" />
+          <div className="landing-deals-showcase__detail" aria-hidden="true"><img src={LANDING_REFERENCE_IMAGES.leisure} alt="" /></div>
         </div>
-        <p>{localDeals.intro}</p>
-      </div>
-
-      <div className="deals-scene__promo-heading">
-        <div><span className="deals-scene__number">02</span><h3>{localDeals.promoTitle}</h3></div>
-        <p>{localDeals.promoText}</p>
-      </div>
-
-      <div className="deal-preview-grid">
-        {localDeals.promoCards.map((card, index) => <PromoCard card={card} index={index} key={card.badge} />)}
-      </div>
-
-      <div className="family-preview">
-        <div className="family-preview__intro"><div className="family-preview__art" aria-hidden="true"><img src={localDeals.familyReferenceImage || "/landing-reference/bons-plans-loisirs-mobile.png"} alt="" /></div><div><span className="deals-scene__eyebrow">{localDeals.familyTitle}</span><p>{localDeals.familyText}</p></div></div>
-        <div className="family-preview__cards">{(localDeals.familyCards || []).map((card, index) => <article key={card.label} className={`family-preview__card family-preview__card--${index}`}><span>{card.label}</span><strong>{card.title}</strong><p>{card.text}</p><small>{card.meta}</small></article>)}</div>
-        <div className="family-preview__tags">{localDeals.familyTags.map(tag => <span key={tag}>{tag}</span>)}</div>
-      </div>
-
-      <div className="deals-scene__local-line">
-        <span>{localDeals.localLabel}</span>
-        <div>{localDeals.localTags.map(tag => <span key={tag}>{tag}</span>)}</div>
-      </div>
-    </div>
-  )
-}
-
-export default function AdvisorAndLocalDeals({ advisor, localDeals }) {
-  return (
-    <section className="landing-section landing-value-section" aria-labelledby="advisor-title">
-      <div className="landing-shell">
-        <div className="advisor-showcase">
-          <div className="advisor-showcase__copy">
-            <p className="landing-eyebrow">{advisor.eyebrow}</p>
-            <h2 id="advisor-title">{advisor.title}</h2>
-            <p>{advisor.intro}</p>
-            <LandingLink href="/decouvrir" className="landing-link-button landing-link-button--ghost">{advisor.cta}</LandingLink>
-          </div>
-          <AdvisorScene advisor={advisor} />
+        <div className="landing-deals-showcase__copy">
+          <p className="landing-eyebrow">05 · {localDeals.eyebrow}</p>
+          <h2 id="deals-title">Les bons plans autour de vous.</h2>
+          <p className="landing-deals-showcase__phrase">Retrouvez les offres, événements et loisirs utiles près de votre commune, sans inventer de prix ni de partenariat.</p>
+          <DealEvidence />
+          <LandingLink href="/decouvrir" className="landing-link-button landing-link-button--ghost">Explorer les promos</LandingLink>
         </div>
-        <DealsScene localDeals={localDeals} />
       </div>
     </section>
   )
+}
+
+export default function AdvisorAndLocalDeals({ localDeals }) {
+  return <DealsScene localDeals={localDeals} />
 }

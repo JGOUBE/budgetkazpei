@@ -20,6 +20,7 @@ import {
 import { useAssistantInsights } from "../../hooks/useAssistantInsights"
 import { buildAssistantAiSummary } from "../../services/ai/assistantInsightsService"
 import { resolveAdvisorLanguage } from "../../services/advisorLanguage"
+import { rankAidesForAdvisor } from "../../services/aidesRanking"
 
 const COLORS = createColorAliases({ red: () => "#FB7185" })
 
@@ -318,30 +319,8 @@ function prepareAideContext(aides = [], isKreol = false) {
   }))
 }
 
-function sortAidesForContext(aides = [], profile = {}) {
-  const commune = normalizeText(profile?.commune || "")
-  const enfants = Number(profile?.nombre_enfants || 0)
-  const logement = normalizeText(profile?.logement || "")
-  const situationPro = normalizeText(profile?.situation_professionnelle || "")
-
-  return [...aides].sort((a, b) => {
-    const score = aide => {
-      let value = Number(aide.score_priorite || 0)
-      const text = normalizeText(
-        `${aide.nom || ""} ${aide.categorie || ""} ${aide.description || ""} ${aide.description_fr || ""} ${aide.organisme || ""}`
-      )
-
-      if (commune && text.includes(commune)) value += 40
-      if (enfants > 0 && (aide.besoin_enfant || text.includes("famille") || text.includes("scolaire"))) value += 35
-      if (logement === "locataire" && (aide.besoin_locataire || text.includes("logement") || text.includes("apl"))) value += 30
-      if (situationPro.includes("demandeur") && (aide.besoin_demandeur_emploi || text.includes("emploi"))) value += 30
-      if (aide.besoin_allocataire_caf && profile?.allocataire_caf) value += 20
-
-      return value
-    }
-
-    return score(b) - score(a)
-  })
+function sortAidesForContext(aides = [], profile = {}, question = "") {
+  return rankAidesForAdvisor(aides, profile, question)
 }
 
 export default function AssistantConseiller({
@@ -504,7 +483,7 @@ export default function AssistantConseiller({
     })
     const assistantIsKreol = assistantLanguage === "kreol"
     const preparedAides = prepareAideContext(
-      sortAidesForContext(aides, currentProfile),
+      sortAidesForContext(aides, currentProfile, sentQuestion),
       assistantIsKreol
     )
 

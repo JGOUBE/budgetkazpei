@@ -17,11 +17,11 @@
       (function () {
         try {
           var stored = localStorage.getItem("budgetkazpei:theme");
-          var light = stored ? stored === "light" : window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches;
+          var light = stored ? stored === "light" : true;
           var vars = light
             ? {
-                "--bkp-bg": "#F9FAF7",
-                "--bkp-page-bg": "#F9FAF7",
+                "--bkp-bg": "#FFFFFF",
+                "--bkp-page-bg": "#FFFFFF",
                 "--bkp-card": "#FFFFFF",
                 "--bkp-card-hover": "#FFF7ED",
                 "--bkp-border": "#E8DED1",

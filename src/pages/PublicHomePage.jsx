@@ -129,8 +129,8 @@ export default function PublicHomePage({ isAuthenticated = false }) {
           <SectionHeading id="pillars-title" eyebrow={content.features.eyebrow} title={content.features.title}>
             {content.features.intro}
           </SectionHeading>
-          <div className="landing-bento-grid landing-pillars-carousel" aria-label="Les quatre piliers BudgetKazPéi" aria-roledescription="carousel">
-            {content.features.pillars.map((benefit, index) => <LandingPillar key={benefit.title} benefit={benefit} index={index} />)}
+          <div className="landing-showcase-track landing-pillars-carousel" aria-label="Les écrans BudgetKazPéi" aria-roledescription="carousel">
+            {content.features.pillars.slice(1).map((benefit, index) => <LandingPillar key={benefit.title} benefit={benefit} index={index + 1} />)}
           </div>
         </div>
       </section>

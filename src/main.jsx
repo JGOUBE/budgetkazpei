@@ -7,6 +7,17 @@ import { ThemeProvider } from "./styles/ThemeProvider.jsx"
 import { AuthProvider } from "./context/AuthContext.jsx"
 import packageInfo from "../package.json"
 
+const normalizedPath = window.location.pathname.replace(/\/$/, "") || "/"
+const isPublicLandingPath = normalizedPath === "/" || normalizedPath === "/decouvrir" || normalizedPath === "/premium"
+if (isPublicLandingPath) {
+  const root = document.documentElement
+  root.dataset.publicLanding = "light"
+  root.style.colorScheme = "light"
+  root.style.setProperty("--bkp-page-bg", "#fffdf9")
+  root.style.setProperty("--bkp-bg", "#fffdf9")
+  root.style.setProperty("--bkp-text", "#142033")
+}
+
 const rootElement = document.getElementById("root")
 rootElement?.setAttribute("data-app-version", packageInfo.version)
 

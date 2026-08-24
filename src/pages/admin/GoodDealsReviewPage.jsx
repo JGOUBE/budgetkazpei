@@ -85,6 +85,9 @@ export default function GoodDealsReviewPage({
   profileLoading = false,
   onGoBack,
   onAccessDenied,
+  initialContentKind = "all",
+  pageTitle = "Validation des bons plans",
+  pageDescription = "File privée réservée à Jacques. Les candidats incertains restent invisibles au public tant qu'ils ne sont pas corrigés puis validés.",
 }) {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
@@ -96,7 +99,7 @@ export default function GoodDealsReviewPage({
   const [draft, setDraft] = useState(null)
   const [filters, setFilters] = useState({
     status: "needs_review",
-    contentKind: "all",
+    contentKind: initialContentKind,
     sourceSlug: "all",
     commune: "all",
     scoreBand: "all",
@@ -303,10 +306,10 @@ export default function GoodDealsReviewPage({
               Administration privée
             </div>
             <h2 style={{ margin: "6px 0 4px", color: ds.textPrimary, fontSize: 28, lineHeight: 1.05 }}>
-              Validation des bons plans
+              {pageTitle}
             </h2>
             <p style={{ margin: 0, color: ds.textSecondary, maxWidth: 760 }}>
-              File privée réservée à Jacques. Les candidats incertains restent invisibles au public tant qu'ils ne sont pas corrigés puis validés.
+              {pageDescription}
             </p>
           </div>
 

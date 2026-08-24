@@ -222,6 +222,7 @@ function BudgetKazPeiApp({
   } = useTransactions(user?.id)
 
   const { profile, loading: profileLoading } = useProfile(user?.id)
+  const isAdmin = profile?.is_admin === true
 
   useEffect(() => {
     async function loadSubscriptionPlan() {
@@ -587,6 +588,7 @@ function BudgetKazPeiApp({
             user={user}
             isPremium={isPremium}
             isPremiumPlus={isPremiumPlus}
+            isAdmin={isAdmin}
             lang={lang}
             t={appT}
           />
@@ -607,6 +609,7 @@ function BudgetKazPeiApp({
             user={user}
             isPremium={isPremium}
             isPremiumPlus={isPremiumPlus}
+            isAdmin={isAdmin}
             lang={lang}
             t={appT}
           />
@@ -667,6 +670,7 @@ function BudgetKazPeiApp({
               {activeNav === "goodDeals" && (lang === "fr" ? "Mes bons plans" : "Mon bann bon plan")}
               {activeNav === "goodDealsAdminReview" && "Validation bons plans"}
               {activeNav === "retailPriceAdminReview" && "Validation prix et promotions"}
+              {activeNav === "goodDealsEventsAdminReview" && "Événements à venir"}
               {activeNav === "historique" && t("nav", "monthlyHistory")}
               {activeNav === "profil" && t("nav", "profil")}
               {activeNav === "premium" && t("nav", "premium")}
@@ -887,6 +891,26 @@ function BudgetKazPeiApp({
             user={user}
             profile={profile}
             profileLoading={profileLoading}
+            onGoBack={() => {
+              setActiveNav("dashboard")
+              navigate(APP_ROUTE, { replace: true })
+            }}
+            onAccessDenied={() => {
+              setActiveNav("dashboard")
+              navigate(APP_ROUTE, { replace: true })
+            }}
+          />
+        )}
+
+        {activeNav === "goodDealsEventsAdminReview" && (
+          <GoodDealsReviewPage
+            key="admin-events"
+            user={user}
+            profile={profile}
+            profileLoading={profileLoading}
+            initialContentKind="event"
+            pageTitle="Événements à venir"
+            pageDescription="Contrôlez, corrigez et publiez les événements locaux détectés avant leur affichage dans BudgetKazPéi. Le filtre Événements est appliqué automatiquement."
             onGoBack={() => {
               setActiveNav("dashboard")
               navigate(APP_ROUTE, { replace: true })

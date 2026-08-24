@@ -1,5 +1,5 @@
 import assert from "node:assert/strict"
-import { readFileSync } from "node:fs"
+import { existsSync, readFileSync } from "node:fs"
 import { join } from "node:path"
 
 const root = process.cwd()
@@ -10,11 +10,19 @@ const header = read("src/components/landing/LandingHeader.jsx")
 const content = read("src/components/landing/landingContent.js")
 const pillar = read("src/components/landing/LandingPillar.jsx")
 const productDemo = read("src/components/landing/HeroProductDemo.jsx")
+const productPhone = read("src/components/landing/ProductPhoneMockup.jsx")
+const referenceImages = read("src/components/landing/landingReferenceImages.js")
 const advisor = read("src/components/landing/AdvisorAndLocalDeals.jsx")
 const css = read("src/styles/landing-public.css")
 const plans = read("src/config/plans.js")
 const index = read("index.html")
 const androidReferenceViewports = [[360, 800], [360, 780], [393, 873], [412, 915], [430, 932], [320, 720]]
+const referenceAssets = [
+  "public/landing-reference/dashboard-mobile.png",
+  "public/landing-reference/conseiller-mobile.png",
+  "public/landing-reference/bons-plans-mobile.png",
+  "public/landing-reference/bons-plans-loisirs-mobile.png",
+]
 
 function countMatches(text, pattern) {
   return [...text.matchAll(pattern)].length
@@ -24,6 +32,7 @@ assert.equal(countMatches(publicHome, /<h1\b/g), 1, "landing must keep a single 
 assert.ok(countMatches(publicHome, /<section\b/g) <= 4, "landing must keep a short section structure")
 assert.match(publicHome, /landing-public\.css/, "public landing must use its dedicated visual layer")
 assert.match(content, /Votre budget, vos courses et vos aides\. Au même endroit\./, "global hero title missing")
+assert.match(content, /préparez vos courses/, "hero must mention course preparation")
 assert.match(publicHome, /href=\{isAuthenticated \? "\/app" : "\/register"\}/, "hero register CTA missing")
 assert.match(publicHome, /href="#fonctionnalites"/, "hero features CTA missing")
 assert.match(publicHome, /drapeau-reunionnais\.png/, "stable Reunion visual mark missing")
@@ -43,29 +52,40 @@ for (const pillarTitle of ["Mon budget", "Mes courses", "Mes aides & démarches"
 for (const visual of ["budget", "courses", "aides", "advisor"]) {
   assert.match(content, new RegExp(`visual: "${visual}"`), `pillar visual missing: ${visual}`)
 }
-assert.match(pillar, /pillar-visual/, "pillars must show product micro-visuals")
-assert.match(pillar, /BkIcons/, "pillars must reuse BudgetKazPéi icons")
+assert.match(pillar, /ProductPhoneMockup/, "features must show product smartphones")
+assert.match(pillar, /CoursesProductScreen|AidesProductScreen/, "features must show real product fragments")
+assert.match(pillar, /conseiller-mobile\.png|LANDING_REFERENCE_IMAGES\.advisor/, "advisor feature must use real reference")
 
 assert.match(productDemo, /ProductSignal/, "hero product signals missing")
 assert.match(productDemo, /ProductListCard/, "shareable shopping list scene missing")
-assert.match(productDemo, /AppLogo/, "hero must reuse the real app logo")
+assert.match(productDemo, /ProductPhoneMockup/, "hero must use the shared smartphone mockup")
+assert.match(productDemo, /dashboard-mobile\.png|LANDING_REFERENCE_IMAGES\.dashboard/, "real dashboard reference image missing")
 assert.match(productDemo, /aria-label=\{copy\.ariaLabel\}/, "hero product scene must be labelled")
-assert.match(css, /perspective:\s*1300px/, "phone scene perspective missing")
-assert.match(css, /rotateY\(-6deg\)/, "desktop phone perspective missing")
-assert.match(css, /rotateY\(-1deg\)/, "mobile phone perspective reduction missing")
+assert.match(productPhone, /product-phone__back|product-phone__edge|product-phone__front/, "phone must expose material layers")
+assert.match(css, /transform-style:\s*preserve-3d/, "phone must use preserve-3d layers")
+assert.match(css, /perspective:\s*1100px/, "phone scene perspective missing")
+assert.match(css, /rotateY\(-13deg\)/, "desktop phone perspective missing")
+assert.match(css, /rotateY\(-12deg\)/, "mobile phone perspective missing")
+assert.match(css, /translate3d\(/, "phone thickness depth missing")
+assert.match(css, /product-phone__back/, "phone back layer styling missing")
 assert.match(css, /hero-product-demo__contact-shadow/, "phone contact shadow missing")
 assert.match(css, /product-list-card/, "shopping list card styling missing")
 
-assert.match(advisor, /advisor-chat/, "advisor chat scene missing")
-assert.match(advisor, /contextLabels/, "advisor context links missing")
-assert.match(advisor, /chatTitle|chatMeta/, "advisor localized header copy missing")
-assert.match(advisor, /context-used/, "advisor data context indicator missing")
+assert.match(advisor, /ProductPhoneMockup/, "deals must use a product smartphone")
+assert.match(advisor, /bons-plans-mobile\.png|LANDING_REFERENCE_IMAGES\.deals/, "real deals reference image missing")
+assert.match(advisor, /bons-plans-loisirs-mobile\.png|LANDING_REFERENCE_IMAGES\.leisure/, "real leisure reference image missing")
 assert.match(content, /BudgetKazPéi./, "advisor product context missing")
-assert.match(content, /Produits du quotidien|Produi kotidien/, "neutral deal preview missing")
-assert.match(content, /Catalogue de la semaine|Katalog la semenn/, "catalogue preview missing")
-assert.match(content, /Prix · période · enseigne dans l'application|Pri · périod · ensegn dann aplikasyon-la/, "neutral deal disclosure missing")
+assert.match(content, /Offres autour de vous/, "neutral deal preview missing")
+assert.match(content, /Événements et loisirs/, "leisure preview missing")
+assert.match(content, /Retrouvez les offres disponibles autour de votre commune/, "deal disclosure missing")
+assert.match(content, /Exposition Les Engagés du sucre/, "real local event content missing")
+assert.match(content, /24 événements à venir/, "real local event count missing")
 assert.match(content, /Sorties et bons plans famille|Sorti ek Bon Plan famiy/, "family preview missing")
 assert.match(content, /LANDING_DEMO_DATA/, "landing demo data must be centralized")
+assert.match(content, /dashboard-mobile\.png/, "real dashboard asset must be configured")
+assert.match(content, /bons-plans-mobile\.png|bons-plans-loisirs-mobile\.png/, "real local-deals assets must be configured")
+assert.match(referenceImages, /dashboard-mobile\.png/)
+for (const asset of referenceAssets) assert.ok(existsSync(join(root, asset)), `reference asset missing: ${asset}`)
 for (const value of ["3 450 €", "2 180 €", "1 270 €", "742 €", "186,40 €", "+118 €", "Partager la liste", "WhatsApp"]) {
   assert.match(content + productDemo + pillar, new RegExp(value.replace(/[+€]/g, "\\$&")), `coherent demo value missing: ${value}`)
 }

@@ -86,7 +86,7 @@ const CONTENT = {
     hero: {
       eyebrow: "BudgetKazPéi · La Réunion",
       title: "Votre budget, vos courses et vos aides. Au même endroit.",
-      lead: "Suivez vos dépenses, scannez vos tickets, trouvez des aides et profitez des bons plans utiles à La Réunion.",
+      lead: "Suivez vos dépenses, scannez vos tickets, préparez vos courses, trouvez des aides et profitez des bons plans utiles à La Réunion.",
       localLine: "Pensé pour La Réunion · Français & kréol réunionnais",
       primaryGuest: "Créer mon compte gratuitement", primaryAuthenticated: "Accéder à BudgetKazPéi",
       secondary: "Découvrir l'application",
@@ -107,8 +107,8 @@ const CONTENT = {
       caption: "Produit BudgetKazPéi · aperçu du tableau de bord",
     },
     features: {
-      eyebrow: "Les quatre piliers", title: "Tout votre quotidien dans une seule application.",
-      intro: "Un même endroit pour comprendre, agir et avancer.",
+      eyebrow: "Les écrans BudgetKazPéi", title: "Vos fonctionnalités, en vrai.",
+      intro: "Découvrez l'application par ses écrans, avec le même soin que dans votre quotidien.",
       pillars: [
         { title: "Mon budget", answer: "Revenus, dépenses, solde, alertes et statistiques.", points: ["Solde du mois", "Dépenses classées"], tone: "cream", icon: "budget", visual: "budget" },
         { title: "Mes courses", answer: "Tickets, habitudes, listes de courses et partage facile avec la famille.", points: ["Liste intelligente", "Partage rapide"], tone: "blue", icon: "shopping", visual: "courses" },
@@ -117,7 +117,7 @@ const CONTENT = {
       ],
     },
     advisor: {
-      eyebrow: "Conseiller BudgetKazPéi", title: "Un Conseiller qui connaît votre BudgetKazPéi.",
+      eyebrow: "Conseiller BudgetKazPéi", title: "Des réponses basées sur votre quotidien.",
       intro: "Il s'appuie sur les informations disponibles dans l'application pour vous aider à comprendre votre situation et avancer dans votre quotidien.",
       conversation: {
         user: "Nos courses ont encore augmenté ce mois-ci. Où part l'argent ?",
@@ -128,21 +128,21 @@ const CONTENT = {
       referenceImage: "/landing-reference/conseiller-mobile.png", chatTitle: "Conseiller BudgetKazPéi", chatMeta: "À partir de vos informations disponibles",
       questions: ["Quelles aides existent pour le sport de mes enfants ?", "Peux-tu m'aider à préparer cette démarche ?"],
       contextLabels: ["Budget", "Courses", "Aides", "Démarches"], contextUsedLabel: "Contexte utilisé", contextUsed: ["Budget", "Courses"],
-      cta: "Découvrir les offres",
+      cta: "Voir les catégories concernées",
     },
     localDeals: {
-      eyebrow: "Bons plans locaux", title: "Les bons plans près de chez vous",
-      intro: "Des informations utiles pour le budget du quotidien, sans fausse carte ni promesse de prix garanti.",
-      promoTitle: "Les promos du moment", promoText: "Retrouvez les promotions en cours et les catalogues des enseignes près de chez vous.",
+      eyebrow: "Bons plans locaux", title: "Les bons plans autour de vous.",
+      intro: "Retrouvez les offres, événements et loisirs utiles près de votre commune.",
+      promoTitle: "Promos & bons prix", promoText: "Retrouvez les offres disponibles autour de votre commune.",
       promoCards: [
-        { badge: "PROMO DU MOMENT", title: "Produits du quotidien", text: "Prix et avantages à repérer selon les catalogues disponibles", meta: "Enseigne · période · secteur dans l'application", detail: "À consulter dans BudgetKazPéi", referenceImage: "/landing-reference/bons-plans-mobile.png", tone: "peach" },
-        { badge: "CATALOGUE", title: "Catalogue de la semaine", text: "Préparez vos courses à partir des contenus disponibles près de chez vous", meta: "Source et période affichées dans l'application", detail: "Aperçu local à vérifier", referenceImage: "/landing-reference/bons-plans-loisirs-mobile.png", tone: "blue" },
+        { badge: "PROMOS & BONS PRIX", title: "Offres autour de vous", text: "Les enseignes, périodes et secteurs sont affichés dans l'application.", meta: "Contenu local disponible selon votre commune", detail: "Explorer les promos", referenceImage: "/landing-reference/bons-plans-mobile.png", tone: "peach" },
+        { badge: "LOISIRS & FAMILLE", title: "Événements et loisirs", text: "24 événements à venir et 80 activités à faire toute l'année.", meta: "Saint-Leu · contenu visible dans l'application", detail: "Voir les loisirs", referenceImage: "/landing-reference/bons-plans-loisirs-mobile.png", tone: "blue" },
       ],
       familyTitle: "Sorties et bons plans famille", familyText: "Des contenus à repérer pour profiter de La Réunion en famille sans faire exploser son budget.",
       familyReferenceImage: "/landing-reference/bons-plans-loisirs-mobile.png",
       familyCards: [
-        { label: "SORTIE À PETIT BUDGET", title: "Activité famille", text: "Une idée accessible à consulter", meta: "Commune et date dans l'application" },
-        { label: "GRATUIT / ACCESSIBLE", title: "Bon plan local", text: "Un contenu à vérifier près de chez vous", meta: "Détails disponibles dans l'application" },
+        { label: "ÉVÉNEMENT", title: "Exposition Les Engagés du sucre", text: "Musée Stella Matutina · Saint-Leu", meta: "15 novembre 2025 → 4 avril 2027" },
+        { label: "LOISIRS", title: "24 événements à venir", text: "80 activités disponibles toute l'année", meta: "Filtres Loisirs & famille" },
       ],
       familyTags: ["Sortie à petit budget", "Activité à repérer", "Gratuit ou accessible"], localLabel: "Aussi dans l'univers local",
       localTags: ["Commerces", "Artisans", "Restaurants & snacks", "Services"],

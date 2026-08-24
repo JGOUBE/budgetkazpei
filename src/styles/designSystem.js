@@ -119,11 +119,6 @@ export const themeLight = {
 
 export const ds = {}
 
-export function getSystemThemeName() {
-  if (typeof window === "undefined") return "dark"
-  return window.matchMedia?.("(prefers-color-scheme: light)")?.matches ? "light" : "dark"
-}
-
 export function getStoredThemeName() {
   if (typeof window === "undefined") return null
   try {
@@ -135,7 +130,9 @@ export function getStoredThemeName() {
 }
 
 export function getInitialThemeName() {
-  return getStoredThemeName() || getSystemThemeName()
+  // A missing preference is intentionally light. The device/browser theme must
+  // never silently choose the app theme before the user has made a choice.
+  return getStoredThemeName() || "light"
 }
 
 export function getThemeTokens(themeName = getInitialThemeName()) {

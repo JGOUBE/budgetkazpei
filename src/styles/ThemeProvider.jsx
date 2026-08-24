@@ -11,25 +11,6 @@ export function ThemeProvider({ children }) {
     applyTheme(themeName)
   }, [themeName])
 
-  useEffect(() => {
-    if (typeof window === "undefined") return undefined
-
-    const media = window.matchMedia?.("(prefers-color-scheme: light)")
-    if (!media) return undefined
-
-    function handleSystemThemeChange(event) {
-      try {
-        if (window.localStorage.getItem("budgetkazpei:theme")) return
-      } catch {
-        // Ignore storage errors and keep following the system preference.
-      }
-      setThemeName(event.matches ? "light" : "dark")
-    }
-
-    media.addEventListener?.("change", handleSystemThemeChange)
-    return () => media.removeEventListener?.("change", handleSystemThemeChange)
-  }, [])
-
   const value = useMemo(() => {
     const tokens = getThemeTokens(themeName)
 
