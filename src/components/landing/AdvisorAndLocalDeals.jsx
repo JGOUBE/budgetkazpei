@@ -11,6 +11,7 @@ function AdvisorScene({ advisor }) {
           <span key={label} className={index === 0 ? "is-active" : ""}>{label}</span>
         ))}
       </div>
+      <div className="advisor-scene__context-used"><small>{advisor.contextUsedLabel || "Contexte utilisé"}</small>{(advisor.contextUsed || advisor.contextLabels.slice(0, 2)).map(label => <span key={label}>{label}</span>)}</div>
       <div className="advisor-scene__connector" aria-hidden="true"><span /></div>
       <div className="advisor-chat">
         <div className="advisor-chat__topbar">
@@ -22,6 +23,7 @@ function AdvisorScene({ advisor }) {
           <div className="advisor-chat__message advisor-chat__message--user">{chat.user}</div>
           <div className="advisor-chat__message advisor-chat__message--assistant">
             <span>{chat.assistant}</span>
+            {chat.detail && <p>{chat.detail}</p>}
             <button type="button">{chat.followup}<span aria-hidden="true">↗</span></button>
           </div>
         </div>
@@ -45,6 +47,7 @@ function PromoCard({ card, index }) {
         <h3>{card.title}</h3>
         <p>{card.text}</p>
         <small>{card.meta}</small>
+        {card.detail && <b className="deal-preview__detail">{card.detail}</b>}
       </div>
     </article>
   )
@@ -71,12 +74,9 @@ function DealsScene({ localDeals }) {
       </div>
 
       <div className="family-preview">
-        <div className="family-preview__art" aria-hidden="true"><span /><span /><span /><span /></div>
-        <div>
-          <span className="deals-scene__eyebrow">{localDeals.familyTitle}</span>
-          <p>{localDeals.familyText}</p>
-          <div className="family-preview__tags">{localDeals.familyTags.map(tag => <span key={tag}>{tag}</span>)}</div>
-        </div>
+        <div className="family-preview__intro"><div className="family-preview__art" aria-hidden="true"><span /><span /><span /><span /></div><div><span className="deals-scene__eyebrow">{localDeals.familyTitle}</span><p>{localDeals.familyText}</p></div></div>
+        <div className="family-preview__cards">{(localDeals.familyCards || []).map((card, index) => <article key={card.label} className={`family-preview__card family-preview__card--${index}`}><span>{card.label}</span><strong>{card.title}</strong><p>{card.text}</p><small>{card.meta}</small></article>)}</div>
+        <div className="family-preview__tags">{localDeals.familyTags.map(tag => <span key={tag}>{tag}</span>)}</div>
       </div>
 
       <div className="deals-scene__local-line">

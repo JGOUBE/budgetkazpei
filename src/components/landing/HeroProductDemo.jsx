@@ -3,13 +3,27 @@ import AppLogo from "../AppLogo"
 import { BkIcons } from "../icons-budgetkazpei"
 
 function ProductSignal({ signal }) {
-  const Icon = signal.type === "scan" ? BkIcons.scan : signal.type === "advisor" ? BkIcons.assistant : BkIcons.budget
+  const Icon = signal.type === "scan" ? BkIcons.scan : signal.type === "advisor" ? BkIcons.assistant : signal.type === "list" ? BkIcons.shopping : BkIcons.budget
 
   return (
     <div className={`product-signal product-signal--${signal.type}`}>
       <span className="product-signal__icon" aria-hidden="true"><Icon size={15} /></span>
       <span><small>{signal.label}</small><strong>{signal.value}</strong></span>
     </div>
+  )
+}
+
+function ProductListCard({ card }) {
+  if (!card) return null
+
+  return (
+    <article className="product-list-card" aria-label={card.title}>
+      <div className="product-list-card__head"><span className="product-list-card__icon" aria-hidden="true"><BkIcons.shopping size={14} /></span><strong>{card.title}</strong><span className="product-list-card__count">{card.items.length}</span></div>
+      <ul>
+        {card.items.map(item => <li key={item}><span aria-hidden="true" />{item}</li>)}
+      </ul>
+      <div className="product-list-card__footer"><span>{card.meta}</span><b>{card.action}<span aria-hidden="true">↗</span></b></div>
+    </article>
   )
 }
 
@@ -78,6 +92,7 @@ export default function HeroProductDemo({ content }) {
           <div className="hero-product-demo__speaker" aria-hidden="true" />
           <ProductPhoneScreen copy={copy} />
         </article>
+        <ProductListCard card={copy.listCard} />
       </div>
 
       <div className="hero-product-demo__signals">

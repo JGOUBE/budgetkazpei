@@ -12,6 +12,17 @@ export const LANDING_LANGUAGES = {
   kr: "kr",
 }
 
+export const LANDING_DEMO_DATA = {
+  revenues: "3 450 €",
+  expenses: "2 180 €",
+  remaining: "1 270 €",
+  score: "82",
+  groceries: "742 €",
+  latestTicket: "186,40 €",
+  increase: "+118 €",
+  listItems: ["Riz", "Lait", "Yaourts", "Poulet", "Lessive"],
+}
+
 // Les plans restent disponibles pour la page dédiée aux offres. La home ne les
 // affiche volontairement pas : elle renvoie vers cette page avec un message
 // simple, « Gratuit pour commencer ».
@@ -83,15 +94,16 @@ const CONTENT = {
     heroDemo: {
       ariaLabel: "Aperçu éditorial du tableau de bord BudgetKazPéi", appLabel: "Tableau de bord", monthLabel: "Août 2026",
       greeting: "Bonjour", scoreLabel: "Score BudgetKazPéi", score: "82", scoreStatus: "Correct",
-      balanceLabel: "Solde du mois", balance: "1 240 €", balanceMeta: "Solde disponible",
-      stats: [["Revenus", "+ 1 850 €"], ["Dépenses", "620 €"], ["Reste", "1 240 €"]],
-      categoryTitle: "Dépenses par catégorie", categoryLabel: "Alimentaire", categoryValue: "280 €",
-      recentTitle: "Derniers mouvements", transactions: [["Courses", "− 84,20 €", "Aujourd'hui"], ["Revenu", "+ 1 850 €", "Ce mois"]], viewAll: "Voir tout",
+      balanceLabel: "Solde du mois", balance: LANDING_DEMO_DATA.remaining, balanceMeta: "Solde disponible",
+      stats: [["Revenus", LANDING_DEMO_DATA.revenues], ["Dépenses", LANDING_DEMO_DATA.expenses], ["Reste", LANDING_DEMO_DATA.remaining]],
+      categoryTitle: "Courses du mois", categoryLabel: `Hausse vs mois précédent ${LANDING_DEMO_DATA.increase}`, categoryValue: LANDING_DEMO_DATA.groceries,
+      recentTitle: "Derniers mouvements", transactions: [["Dernier ticket", `− ${LANDING_DEMO_DATA.latestTicket}`, "Aujourd'hui"], ["Revenu", `+ ${LANDING_DEMO_DATA.revenues}`, "Ce mois"]], viewAll: "Voir tout",
       signals: [
-        { type: "budget", label: "Budget du mois", value: "1 240 € disponibles" },
-        { type: "scan", label: "Ticket analysé", value: "8 articles reconnus" },
-        { type: "advisor", label: "Conseiller", value: "Une action utile identifiée" },
+        { type: "scan", label: "Ticket analysé", value: LANDING_DEMO_DATA.latestTicket },
+        { type: "list", label: "Liste de courses", value: "Prête à partager" },
+        { type: "advisor", label: "Conseiller", value: "Hausse expliquée" },
       ],
+      listCard: { title: "Ma liste de courses", items: LANDING_DEMO_DATA.listItems, action: "Partager la liste", meta: "WhatsApp · Messages · autres applications" },
       caption: "Produit BudgetKazPéi · aperçu du tableau de bord",
     },
     features: {
@@ -99,7 +111,7 @@ const CONTENT = {
       intro: "Un même endroit pour comprendre, agir et avancer.",
       pillars: [
         { title: "Mon budget", answer: "Revenus, dépenses, solde, alertes et statistiques.", points: ["Solde du mois", "Dépenses classées"], tone: "cream", icon: "budget", visual: "budget" },
-        { title: "Mes courses", answer: "Tickets de caisse, achats, habitudes de consommation et courses intelligentes.", points: ["Tickets vérifiables", "Historique utile"], tone: "blue", icon: "shopping", visual: "courses" },
+        { title: "Mes courses", answer: "Tickets, habitudes, listes de courses et partage facile avec la famille.", points: ["Liste intelligente", "Partage rapide"], tone: "blue", icon: "shopping", visual: "courses" },
         { title: "Mes aides & démarches", answer: "Aides possibles, informations utiles et suivi des démarches.", points: ["Documents", "Prochaine action"], tone: "lavender", icon: "aides", visual: "aides" },
         { title: "Mon Conseiller BudgetKazPéi", answer: "Un Conseiller qui s'appuie sur les informations disponibles dans l'application.", points: ["Comprendre", "Avancer"], tone: "sage", icon: "assistant", visual: "advisor" },
       ],
@@ -108,13 +120,14 @@ const CONTENT = {
       eyebrow: "Conseiller BudgetKazPéi", title: "Un Conseiller qui connaît votre BudgetKazPéi.",
       intro: "Il s'appuie sur les informations disponibles dans l'application pour vous aider à comprendre votre situation et avancer dans votre quotidien.",
       conversation: {
-        user: "Où part mon argent ce mois-ci ?",
-        assistant: "Vos courses représentent votre plus forte hausse ce mois-ci. Je peux vous montrer les catégories concernées.",
+        user: "Nos courses ont encore augmenté ce mois-ci. Où part l'argent ?",
+        assistant: `Vous avez dépensé ${LANDING_DEMO_DATA.groceries} en courses ce mois-ci, soit 118 € de plus que le mois dernier. L'entretien de la maison et les achats hors liste expliquent une grande partie de la hausse.`,
+        detail: "Je peux vous montrer les 3 catégories qui ont le plus augmenté et vous aider à préparer votre prochaine liste de courses.",
         followup: "Voir les catégories concernées",
       },
       chatTitle: "Conseiller BudgetKazPéi", chatMeta: "À partir de vos informations disponibles",
       questions: ["Quelles aides existent pour le sport de mes enfants ?", "Peux-tu m'aider à préparer cette démarche ?"],
-      contextLabels: ["Budget", "Courses", "Aides", "Démarches"],
+      contextLabels: ["Budget", "Courses", "Aides", "Démarches"], contextUsedLabel: "Contexte utilisé", contextUsed: ["Budget", "Courses"],
       cta: "Découvrir les offres",
     },
     localDeals: {
@@ -122,10 +135,14 @@ const CONTENT = {
       intro: "Des informations utiles pour le budget du quotidien, sans fausse carte ni promesse de prix garanti.",
       promoTitle: "Les promos du moment", promoText: "Retrouvez les promotions en cours et les catalogues des enseignes près de chez vous.",
       promoCards: [
-        { badge: "PROMO DU MOMENT", title: "Produits du quotidien", text: "Disponible dans votre secteur", meta: "Prix · période · enseigne dans l'application", tone: "peach" },
-        { badge: "CATALOGUE", title: "Catalogue de la semaine", text: "Enseignes proches de chez vous", meta: "À consulter dans BudgetKazPéi", tone: "blue" },
+        { badge: "PROMO DU MOMENT", title: "Produits du quotidien", text: "Prix et avantages à repérer selon les catalogues disponibles", meta: "Enseigne · période · secteur dans l'application", detail: "À consulter dans BudgetKazPéi", tone: "peach" },
+        { badge: "CATALOGUE", title: "Catalogue de la semaine", text: "Préparez vos courses à partir des contenus disponibles près de chez vous", meta: "Source et période affichées dans l'application", detail: "Aperçu local à vérifier", tone: "blue" },
       ],
-      familyTitle: "Sorties et bons plans famille", familyText: "Des idées de sorties et activités à repérer pour profiter de La Réunion en famille sans faire exploser son budget.",
+      familyTitle: "Sorties et bons plans famille", familyText: "Des contenus à repérer pour profiter de La Réunion en famille sans faire exploser son budget.",
+      familyCards: [
+        { label: "SORTIE À PETIT BUDGET", title: "Activité famille", text: "Une idée accessible à consulter", meta: "Commune et date dans l'application" },
+        { label: "GRATUIT / ACCESSIBLE", title: "Bon plan local", text: "Un contenu à vérifier près de chez vous", meta: "Détails disponibles dans l'application" },
+      ],
       familyTags: ["Sortie à petit budget", "Activité à repérer", "Gratuit ou accessible"], localLabel: "Aussi dans l'univers local",
       localTags: ["Commerces", "Artisans", "Restaurants & snacks", "Services"],
     },
@@ -169,8 +186,7 @@ const CONTENT = {
       stats: [["Larzan rantre", "+ 1 850 €"], ["Dépans", "620 €"], ["Reste", "1 240 €"]], categoryTitle: "Dépans par kategori", categoryLabel: "Manzé", categoryValue: "280 €",
       recentTitle: "Dernyé mouvman", transactions: [["Courses", "− 84,20 €", "Zordi"], ["Larzan rantre", "+ 1 850 €", "Lo mwa-la"]], viewAll: "Gad tout",
       signals: [
-        { type: "budget", label: "Bidjé pou lo mwa", value: "1 240 € disponib" },
-        { type: "scan", label: "Tiké analizé", value: "8 produi rekonèt" },
+        { type: "scan", label: "Tiké analizé", value: LANDING_DEMO_DATA.latestTicket },
         { type: "advisor", label: "Konseyé", value: "In aksyon itil trouvé" },
       ],
       caption: "Produit BudgetKazPéi · egzanp tablo débor",
