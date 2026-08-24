@@ -29,7 +29,8 @@ function ProductListCard({ card }) {
 
 function ProductPhoneScreen({ copy }) {
   return (
-    <div className="product-phone__screen">
+    <div className={`product-phone__screen ${copy.referenceImage ? "has-reference" : ""}`}>
+      {copy.referenceImage && <img className="product-phone__reference-image" src={copy.referenceImage} alt="" aria-hidden="true" />}
       <div className="product-screen__topbar">
         <span className="product-screen__time">09:41</span>
         <span className="product-screen__notch" aria-hidden="true" />
@@ -77,7 +78,8 @@ function ProductPhoneScreen({ copy }) {
 }
 
 export default function HeroProductDemo({ content }) {
-  const copy = content || getLandingContent("fr").heroDemo
+  const sourceCopy = content || getLandingContent("fr").heroDemo
+  const copy = { ...sourceCopy, referenceImage: sourceCopy.referenceImage || "/landing-reference/dashboard-mobile.png" }
 
   return (
     <div className="hero-product-demo" aria-label={copy.ariaLabel}>

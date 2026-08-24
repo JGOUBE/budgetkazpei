@@ -92,7 +92,7 @@ const CONTENT = {
       secondary: "Découvrir l'application",
     },
     heroDemo: {
-      ariaLabel: "Aperçu éditorial du tableau de bord BudgetKazPéi", appLabel: "Tableau de bord", monthLabel: "Août 2026",
+      ariaLabel: "Aperçu du vrai tableau de bord BudgetKazPéi", referenceImage: "/landing-reference/dashboard-mobile.png", appLabel: "Tableau de bord", monthLabel: "Août 2026",
       greeting: "Bonjour", scoreLabel: "Score BudgetKazPéi", score: "82", scoreStatus: "Correct",
       balanceLabel: "Solde du mois", balance: LANDING_DEMO_DATA.remaining, balanceMeta: "Solde disponible",
       stats: [["Revenus", LANDING_DEMO_DATA.revenues], ["Dépenses", LANDING_DEMO_DATA.expenses], ["Reste", LANDING_DEMO_DATA.remaining]],
@@ -125,7 +125,7 @@ const CONTENT = {
         detail: "Je peux vous montrer les 3 catégories qui ont le plus augmenté et vous aider à préparer votre prochaine liste de courses.",
         followup: "Voir les catégories concernées",
       },
-      chatTitle: "Conseiller BudgetKazPéi", chatMeta: "À partir de vos informations disponibles",
+      referenceImage: "/landing-reference/conseiller-mobile.png", chatTitle: "Conseiller BudgetKazPéi", chatMeta: "À partir de vos informations disponibles",
       questions: ["Quelles aides existent pour le sport de mes enfants ?", "Peux-tu m'aider à préparer cette démarche ?"],
       contextLabels: ["Budget", "Courses", "Aides", "Démarches"], contextUsedLabel: "Contexte utilisé", contextUsed: ["Budget", "Courses"],
       cta: "Découvrir les offres",
@@ -135,10 +135,11 @@ const CONTENT = {
       intro: "Des informations utiles pour le budget du quotidien, sans fausse carte ni promesse de prix garanti.",
       promoTitle: "Les promos du moment", promoText: "Retrouvez les promotions en cours et les catalogues des enseignes près de chez vous.",
       promoCards: [
-        { badge: "PROMO DU MOMENT", title: "Produits du quotidien", text: "Prix et avantages à repérer selon les catalogues disponibles", meta: "Enseigne · période · secteur dans l'application", detail: "À consulter dans BudgetKazPéi", tone: "peach" },
-        { badge: "CATALOGUE", title: "Catalogue de la semaine", text: "Préparez vos courses à partir des contenus disponibles près de chez vous", meta: "Source et période affichées dans l'application", detail: "Aperçu local à vérifier", tone: "blue" },
+        { badge: "PROMO DU MOMENT", title: "Produits du quotidien", text: "Prix et avantages à repérer selon les catalogues disponibles", meta: "Enseigne · période · secteur dans l'application", detail: "À consulter dans BudgetKazPéi", referenceImage: "/landing-reference/bons-plans-mobile.png", tone: "peach" },
+        { badge: "CATALOGUE", title: "Catalogue de la semaine", text: "Préparez vos courses à partir des contenus disponibles près de chez vous", meta: "Source et période affichées dans l'application", detail: "Aperçu local à vérifier", referenceImage: "/landing-reference/bons-plans-loisirs-mobile.png", tone: "blue" },
       ],
       familyTitle: "Sorties et bons plans famille", familyText: "Des contenus à repérer pour profiter de La Réunion en famille sans faire exploser son budget.",
+      familyReferenceImage: "/landing-reference/bons-plans-loisirs-mobile.png",
       familyCards: [
         { label: "SORTIE À PETIT BUDGET", title: "Activité famille", text: "Une idée accessible à consulter", meta: "Commune et date dans l'application" },
         { label: "GRATUIT / ACCESSIBLE", title: "Bon plan local", text: "Un contenu à vérifier près de chez vous", meta: "Détails disponibles dans l'application" },
