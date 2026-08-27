@@ -1,15 +1,12 @@
 import { supabase } from "../supabase"
-
-const SNAPSHOT_DAYS = 7
+import {
+  cloneShoppingListSnapshotItems,
+  isShoppingListSnapshotVisible,
+  MANUAL_SAVE_METHOD,
+} from "./shoppingListSnapshotModel"
 
 function nowIso() {
   return new Date().toISOString()
-}
-
-function expiresAtIso() {
-  const date = new Date()
-  date.setDate(date.getDate() + SNAPSHOT_DAYS)
-  return date.toISOString()
 }
 
 function normalizeSnapshot(row = {}) {
@@ -31,16 +28,14 @@ function normalizeSnapshot(row = {}) {
 export async function expireShoppingListSnapshots({ userId }) {
   if (!userId) return []
 
-  const { data, error } = await supabase
+  const { error } = await supabase
     .from("shopping_list_snapshots")
-    .update({ status: "expired" })
+    .delete()
     .eq("user_id", userId)
-    .eq("status", "active")
-    .lt("expires_at", nowIso())
-    .select("*")
+    .lte("expires_at", nowIso())
 
   if (error) throw error
-  return (data || []).map(normalizeSnapshot)
+  return []
 }
 
 export async function listShoppingListSnapshots({ userId }) {
@@ -57,7 +52,7 @@ export async function listShoppingListSnapshots({ userId }) {
     .order("created_at", { ascending: false })
 
   if (error) throw error
-  return (data || []).map(normalizeSnapshot)
+  return (data || []).map(normalizeSnapshot).filter(row => isShoppingListSnapshotVisible(row))
 }
 
 export async function saveShoppingListSnapshot({
@@ -67,21 +62,22 @@ export async function saveShoppingListSnapshot({
   totalEstimated = 0,
   missingPriceCount = 0,
   totalItems = 0,
-  shareMethod = "copy",
+  shareMethod = MANUAL_SAVE_METHOD,
 }) {
   if (!userId) return null
+
+  const snapshotItems = cloneShoppingListSnapshotItems(items)
 
   const { data, error } = await supabase
     .from("shopping_list_snapshots")
     .insert({
       user_id: userId,
       title,
-      items,
+      items: snapshotItems,
       total_estimated: Number(totalEstimated || 0),
       missing_price_count: Number(missingPriceCount || 0),
-      total_items: Number(totalItems || items.length || 0),
-      expires_at: expiresAtIso(),
-      shared_at: nowIso(),
+      total_items: Number(totalItems || snapshotItems.length || 0),
+      shared_at: shareMethod === MANUAL_SAVE_METHOD ? null : nowIso(),
       share_method: shareMethod,
       status: "active",
     })

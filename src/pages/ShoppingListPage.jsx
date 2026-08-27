@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react"
-import { Copy, Eye, Mail, MessageCircle, ScanLine, Send, Share2, Trash2 } from "lucide-react"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { Copy, Eye, Mail, MessageCircle, Save, ScanLine, Send, Share2, Trash2 } from "lucide-react"
 import { listShoppingItems } from "../features/shopping/services/shoppingEngine"
 import {
   buildShoppingListShareText,
@@ -12,8 +12,10 @@ import {
   markShoppingListSnapshotDeleted,
   saveShoppingListSnapshot,
 } from "../services/shoppingList/shoppingListSnapshots"
+import { MANUAL_SAVE_METHOD } from "../services/shoppingList/shoppingListSnapshotModel"
 import { formatMontant } from "../utils/format"
 import { createColorAliases } from "../styles/designSystem"
+import { languages } from "../i18n"
 
 const COLORS = createColorAliases({ danger: () => COLORS.red })
 const card = extra => ({ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 22, padding: 18, boxShadow: COLORS.shadow, ...extra })
@@ -114,14 +116,20 @@ function snapshotTitle(txt) {
 }
 
 export default function ShoppingListPage({ user, isMobile = false, onOpenReceipts, language = "fr" }) {
-  const txt = isKreolLanguage(language) ? COPY.kreol : COPY.fr
+  const locale = isKreolLanguage(language) ? "cr" : "fr"
+  const txt = useMemo(
+    () => ({ ...(locale === "cr" ? COPY.kreol : COPY.fr), ...languages[locale].shoppingList }),
+    [locale],
+  )
   const [shoppingItems, setShoppingItems] = useState([])
   const [items, setItems] = useState([])
   const [query, setQuery] = useState("")
   const [snapshots, setSnapshots] = useState([])
   const [shareModal, setShareModal] = useState(null)
   const [previewSnapshot, setPreviewSnapshot] = useState(null)
-  const [notice, setNotice] = useState("")
+  const [notice, setNotice] = useState(null)
+  const [isSaving, setIsSaving] = useState(false)
+  const saveInFlightRef = useRef(false)
 
   useEffect(() => {
     let ignore = false
@@ -179,9 +187,32 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
     }
   }
 
+  async function saveCurrentSnapshot() {
+    if (saveInFlightRef.current) return
+    if (estimate.items.length === 0) {
+      setNotice({ message: txt.addBeforeSave, kind: "error" })
+      return
+    }
+
+    saveInFlightRef.current = true
+    setIsSaving(true)
+
+    try {
+      const saved = await saveSnapshot(MANUAL_SAVE_METHOD)
+      if (!saved) throw new Error("snapshot_not_saved")
+      await refreshSnapshots()
+      setNotice({ message: txt.saved, kind: "success" })
+    } catch {
+      setNotice({ message: txt.saveError, kind: "error" })
+    } finally {
+      saveInFlightRef.current = false
+      setIsSaving(false)
+    }
+  }
+
   async function startShare() {
     if (estimate.items.length === 0) {
-      setNotice(txt.addBeforeShare)
+      setNotice({ message: txt.addBeforeShare, kind: "error" })
       return
     }
 
@@ -195,7 +226,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
         await navigator.share({ title: snapshotTitle(txt), text: shareText })
         await saveSnapshot("native_share")
         await refreshSnapshots()
-        setNotice(txt.sharedNative)
+        setNotice({ message: txt.sharedNative, kind: "success" })
         return
       } catch (error) {
         if (error?.name === "AbortError") return
@@ -216,22 +247,22 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
 
     if (method === "copy") {
       await navigator.clipboard?.writeText(text)
-      setNotice(txt.copied)
+      setNotice({ message: txt.copied, kind: "success" })
     }
 
     if (method === "email") {
       window.location.href = `mailto:?subject=${encodeURIComponent(snapshotTitle(txt))}&body=${encoded}`
-      setNotice(txt.emailReady)
+      setNotice({ message: txt.emailReady, kind: "success" })
     }
 
     if (method === "sms") {
       window.location.href = `sms:?&body=${encoded}`
-      setNotice(txt.smsReady)
+      setNotice({ message: txt.smsReady, kind: "success" })
     }
 
     if (method === "whatsapp") {
       window.open(`https://wa.me/?text=${encoded}`, "_blank", "noopener,noreferrer")
-      setNotice(txt.whatsappReady)
+      setNotice({ message: txt.whatsappReady, kind: "success" })
     }
 
     await saveSnapshot(method, shareModal || {})
@@ -304,19 +335,24 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
         </div>
       </div>
 
-      {notice && (
-        <div style={{ background: "rgba(35,211,214,.12)", border: `1px solid ${COLORS.cyan}55`, color: COLORS.text, borderRadius: 14, padding: 12, fontWeight: 800 }}>
-          {notice}
+      {notice?.message && (
+        <div role={notice.kind === "error" ? "alert" : "status"} style={{ background: notice.kind === "error" ? COLORS.redSoft : "rgba(35,211,214,.12)", border: `1px solid ${notice.kind === "error" ? `${COLORS.danger}55` : `${COLORS.cyan}55`}`, color: notice.kind === "error" ? COLORS.danger : COLORS.text, borderRadius: 14, padding: 12, fontWeight: 800 }}>
+          {notice.message}
         </div>
       )}
 
       <div style={card()}>
-        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr auto auto", gap: 10 }}>
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "minmax(0, 1fr)" : "minmax(0, 1fr) auto auto", gap: 10 }}>
           <input data-shopping-add value={query} onChange={e => setQuery(e.target.value)} onKeyDown={e => e.key === "Enter" && addItem()} placeholder={txt.addPlaceholder} style={{ minHeight: 50, borderRadius: 14, border: `1px solid ${COLORS.inputBorder}`, background: COLORS.input, color: COLORS.text, padding: "0 14px" }} />
           <button type="button" onClick={() => addItem()} style={{ minHeight: 50, border: "none", borderRadius: 14, background: COLORS.accent, color: "#fff", fontWeight: 950, padding: "0 16px" }}>{txt.add}</button>
-          <button type="button" onClick={startShare} style={{ minHeight: 50, border: `1px solid ${COLORS.cyan}66`, borderRadius: 14, background: "rgba(35,211,214,.12)", color: COLORS.text, fontWeight: 950, padding: "0 16px", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-            <Share2 size={18} /> {txt.share}
-          </button>
+          <div data-shopping-list-actions style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8, minWidth: 0 }}>
+            <button type="button" onClick={saveCurrentSnapshot} disabled={isSaving} style={{ minWidth: 0, minHeight: 50, border: `1px solid ${COLORS.cyan}66`, borderRadius: 14, background: "rgba(35,211,214,.12)", color: COLORS.text, fontSize: isMobile ? 12 : 13, fontWeight: 950, padding: "0 4px", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5, whiteSpace: "nowrap", opacity: isSaving ? 0.7 : 1, cursor: isSaving ? "wait" : "pointer" }}>
+              <Save size={17} aria-hidden="true" /> <span>{isSaving ? txt.saving : txt.save}</span>
+            </button>
+            <button type="button" onClick={startShare} style={{ minWidth: 0, minHeight: 50, border: `1px solid ${COLORS.cyan}66`, borderRadius: 14, background: "rgba(35,211,214,.12)", color: COLORS.text, fontSize: isMobile ? 12 : 13, fontWeight: 950, padding: "0 4px", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5, whiteSpace: "nowrap" }}>
+              <Share2 size={17} aria-hidden="true" /> <span>{txt.share}</span>
+            </button>
+          </div>
         </div>
         {suggestions.length > 0 && <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>{suggestions.map(s => <button key={s.normalizedName} type="button" onClick={() => addItem(s.label)} style={{ minHeight: 38, borderRadius: 999, border: `1px solid ${COLORS.cyan}55`, background: "rgba(35,211,214,.12)", color: COLORS.text }}>{s.label}</button>)}</div>}
         {hasQueryWithoutResult && <div style={{ color: COLORS.muted, marginTop: 10 }}>{txt.noProduct}</div>}
@@ -355,8 +391,13 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
               <div>
                 <div style={{ color: COLORS.text, fontWeight: 950 }}>{snapshot.title}</div>
                 <div style={{ color: COLORS.muted, marginTop: 4, fontSize: 13 }}>
-                  {new Date(snapshot.createdAt).toLocaleDateString("fr-FR")} - {txt.expiresIn(daysUntil(snapshot.expiresAt))} - {txt.products(snapshot.totalItems)} - {formatMontant(snapshot.totalEstimated)}
-                  {snapshot.missingPriceCount > 0 ? ` - ${txt.missingPrices(snapshot.missingPriceCount)}` : ""}
+                  {[
+                    new Date(snapshot.createdAt).toLocaleDateString("fr-FR"),
+                    txt.expiresIn(daysUntil(snapshot.expiresAt)),
+                    txt.products(snapshot.totalItems),
+                    snapshot.totalEstimated > 0 ? txt.estimatedTotal(formatMontant(snapshot.totalEstimated)) : null,
+                    snapshot.missingPriceCount > 0 ? txt.missingPrices(snapshot.missingPriceCount) : null,
+                  ].filter(Boolean).join(" · ")}
                 </div>
               </div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -386,12 +427,20 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
           <div style={{ display: "grid", gap: 8 }}>
             {previewSnapshot.items.map((item, index) => (
               <div key={`${item.name}-${index}`} style={{ display: "flex", justifyContent: "space-between", gap: 12, color: COLORS.text }}>
-                <span>{item.name}</span>
+                <span style={{ textDecoration: item.checked ? "line-through" : "none" }}>
+                  {item.name}{item.quantity ? ` · ${item.quantity}${item.unit ? ` ${item.unit}` : ""}` : ""}
+                </span>
                 <strong style={{ color: item.estimatedPrice ? COLORS.green : COLORS.muted }}>
                   {item.estimatedPrice ? formatMontant(item.estimatedPrice) : txt.priceMissing}
                 </strong>
               </div>
             ))}
+            {previewSnapshot.totalEstimated > 0 && (
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 12, borderTop: `1px solid ${COLORS.border}`, color: COLORS.text, paddingTop: 10, marginTop: 4 }}>
+                <strong>{txt.estimate}</strong>
+                <strong style={{ color: COLORS.green }}>{formatMontant(previewSnapshot.totalEstimated)}</strong>
+              </div>
+            )}
           </div>
         </Modal>
       )}
