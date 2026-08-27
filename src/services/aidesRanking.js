@@ -115,6 +115,53 @@ function profileRelevanceScore(aide, profile = {}) {
   return score
 }
 
+const FOLLOW_UP_PATTERNS = [
+  /\brien d autre/,
+  /\brien d autres/,
+  /\bautre chose/,
+  /\bquelque chose d autre/,
+  /^et\b/,
+  /^mais\b/,
+  /^sinon\b/,
+  /^alors\b/,
+  /^aussi\b/,
+  /\bune autre aide\b/,
+  /\bautre aide\b/,
+  /\bd autres aides\b/,
+  /\bquoi d autre\b/,
+  /\bencore une\b/,
+  /\by en a d autres\b/,
+  /\bil y en a d autres\b/,
+  /\bil y a pas une autre\b/,
+  /\best ce qu il y en a une autre\b/,
+  /\bet pour ca\b/,
+  /\bet pour cela\b/,
+]
+
+function isAidFollowUpQuestion(question = "") {
+  const normalized = normalizeAidRankingText(question)
+  if (!normalized) return false
+  return FOLLOW_UP_PATTERNS.some(pattern => pattern.test(normalized))
+}
+
+export function buildAidRankingQuery(question = "", recentHistory = []) {
+  const currentQuestion = String(question || "").trim()
+  if (!currentQuestion) return ""
+
+  if (!isAidFollowUpQuestion(currentQuestion)) {
+    return currentQuestion
+  }
+
+  const previousQuestion = (Array.isArray(recentHistory) ? recentHistory : [])
+    .map(item => String(item?.question || "").trim())
+    .find(previous => previous && !isAidFollowUpQuestion(previous))
+
+  if (!previousQuestion) {
+    return currentQuestion
+  }
+
+  return `${previousQuestion} ${currentQuestion}`.trim()
+}
 export function scoreAidForAdvisor(aide, profile = {}, question = "") {
   return profileRelevanceScore(aide, profile) + questionRelevanceScore(aide, question)
 }

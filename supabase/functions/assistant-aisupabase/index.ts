@@ -74,6 +74,104 @@ function jsonResponse(payload: Record<string, unknown>, status = 200) {
   })
 }
 
+type TrustedAidAmountClaim = {
+  name: string
+  amounts: number[]
+}
+
+function getRecommendedAidIds(body: any) {
+  const recommendedAides = Array.isArray(body?.recommendedAides)
+    ? body.recommendedAides
+    : Array.isArray(body?.recommended_aides)
+      ? body.recommended_aides
+      : []
+
+  return Array.from(new Set(
+    recommendedAides
+      .map((aide: any) => aide?.id)
+      .filter((id: any) => id !== null && id !== undefined && String(id).trim() !== "")
+      .map((id: any) => String(id))
+  ))
+}
+
+function getRecommendedAidNames(body: any) {
+  const recommendedAides = Array.isArray(body?.recommendedAides)
+    ? body.recommendedAides
+    : Array.isArray(body?.recommended_aides)
+      ? body.recommended_aides
+      : []
+
+  return Array.from(new Set(
+    recommendedAides
+      .map((aide: any) => String(aide?.nom || aide?.name || "").trim())
+      .filter(Boolean)
+  ))
+}
+async function loadTrustedAidClaims(
+  supabaseAdmin: any,
+  body: any,
+): Promise<TrustedAidAmountClaim[]> {
+  const ids = getRecommendedAidIds(body)
+  const names = getRecommendedAidNames(body)
+  if (ids.length === 0 && names.length === 0) return []
+
+  try {
+    const rowsById: any[] = []
+    const rowsByName: any[] = []
+
+    if (ids.length > 0) {
+      const { data, error } = await supabaseAdmin
+        .from("aides_reunion")
+        .select("id, nom, montant_min, montant_max, lien, lien_officiel")
+        .in("id", ids)
+
+      if (error) {
+        console.log("Trusted aid claims by id unavailable:", error.message)
+      } else {
+        rowsById.push(...(data || []))
+      }
+    }
+
+    if (names.length > 0) {
+      const { data, error } = await supabaseAdmin
+        .from("aides_reunion")
+        .select("id, nom, montant_min, montant_max, lien, lien_officiel")
+        .in("nom", names)
+
+      if (error) {
+        console.log("Trusted aid claims by name unavailable:", error.message)
+      } else {
+        rowsByName.push(...(data || []))
+      }
+    }
+
+    const uniqueRows = Array.from(new Map(
+      [...rowsById, ...rowsByName]
+        .map((row: any) => [String(row?.id || row?.nom || ""), row])
+        .filter(([key]) => key)
+    ).values())
+
+    return uniqueRows
+      .map((aide: any) => {
+        const officialSource = String(aide?.lien_officiel || aide?.lien || "").trim()
+        const name = String(aide?.nom || "").trim()
+        if (!officialSource || !name) return null
+
+        const amounts = Array.from(new Set(
+          [aide?.montant_min, aide?.montant_max]
+            .map(value => Number(value))
+            .filter(value => Number.isFinite(value) && value > 0)
+        ))
+
+        if (amounts.length === 0) return null
+        return { name, amounts }
+      })
+      .filter(Boolean) as TrustedAidAmountClaim[]
+  } catch (error) {
+    console.log("Trusted aid claims check unavailable:", String(error))
+    return []
+  }
+}
 function getCurrentMonthNumber() {
   return new Date().getMonth() + 1
 }
@@ -783,6 +881,8 @@ Deno.serve(async (req) => {
       (context.isKreol
         ? "Mi na pas réussi générer une réponse pou le moment."
         : "Je n’ai pas réussi à générer une réponse pour le moment.")
+    const trustedAidClaims = await loadTrustedAidClaims(supabaseAdmin, context.body)
+
 
     const reviewResult =
       context.action === "analyze_refusal"
@@ -792,7 +892,7 @@ Deno.serve(async (req) => {
             issues: [],
             revisedAnswer: rawAnswer,
           }
-        : reviewAssistantAnswer(rawAnswer, context.language)
+        : reviewAssistantAnswer(rawAnswer, context.language, trustedAidClaims)
 
     const answer = reviewResult.revisedAnswer
 

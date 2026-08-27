@@ -32,7 +32,82 @@ function unique(values: string[]) {
   return Array.from(new Set(values.filter(Boolean)))
 }
 
-function removeMoneyClaims(answer: string, language: "fr" | "kreol") {
+export interface TrustedAmountClaim {
+  name: string
+  amounts: number[]
+}
+
+function normalizeTrustedClaims(claims: TrustedAmountClaim[] = []) {
+  return (Array.isArray(claims) ? claims : [])
+    .map(claim => ({
+      name: String(claim?.name || "").trim(),
+      amounts: Array.from(new Set(
+        (Array.isArray(claim?.amounts) ? claim.amounts : [])
+          .map(value => Number(value))
+          .filter(value => Number.isFinite(value) && value > 0)
+      )),
+    }))
+    .filter(claim => claim.name && claim.amounts.length > 0)
+}
+
+function extractMoneyNumbers(value = "") {
+  return (String(value || "")
+    .replace(/\s+/g, "")
+    .replace(/,/g, ".")
+    .match(/\d+(?:\.\d+)?/g) || [])
+    .map(item => Number(item))
+    .filter(item => Number.isFinite(item) && item > 0)
+}
+
+function sentenceAroundValue(answer = "", value = "") {
+  const index = answer.indexOf(value)
+  if (index < 0) return ""
+
+  const before = answer.slice(0, index)
+  const after = answer.slice(index + value.length)
+
+  const previousBoundary = Math.max(
+    before.lastIndexOf("."),
+    before.lastIndexOf("!"),
+    before.lastIndexOf("?"),
+    before.lastIndexOf("\n")
+  )
+
+  const boundaryCandidates = [
+    after.indexOf("."),
+    after.indexOf("!"),
+    after.indexOf("?"),
+    after.indexOf("\n"),
+  ].filter(position => position >= 0)
+
+  const nextBoundary = boundaryCandidates.length > 0
+    ? Math.min(...boundaryCandidates)
+    : after.length
+
+  return `${before.slice(previousBoundary + 1)}${value}${after.slice(0, nextBoundary + 1)}`
+}
+
+function isTrustedMoneyClaim(
+  answer: string,
+  value: string,
+  trustedAmountClaims: TrustedAmountClaim[] = [],
+) {
+  const numbers = extractMoneyNumbers(value)
+  if (numbers.length === 0) return false
+
+  const sentence = normalize(sentenceAroundValue(answer, value))
+  if (!sentence) return false
+
+  return normalizeTrustedClaims(trustedAmountClaims).some(claim => {
+    const normalizedName = normalize(claim.name)
+    if (!normalizedName || !sentence.includes(normalizedName)) return false
+
+    return numbers.every(number =>
+      claim.amounts.some(amount => Math.abs(amount - number) < 0.001)
+    )
+  })
+}
+function removeMoneyClaims(answer: string, language: "fr" | "kreol", trustedAmountClaims: TrustedAmountClaim[] = []) {
   let revised = answer
   const amountReplacement = language === "kreol"
     ? "in montant pou vérifié avèk in simulation officielle"
@@ -42,6 +117,8 @@ function removeMoneyClaims(answer: string, language: "fr" | "kreol") {
   const moneyAmounts = unique(revised.match(MONEY_PATTERN) || [])
 
   for (const value of [...moneyRanges, ...moneyAmounts]) {
+    if (isTrustedMoneyClaim(answer, value, trustedAmountClaims)) continue
+
     revised = revised.replace(
       value,
       amountReplacement
@@ -107,7 +184,7 @@ function removeDeadlineClaims(answer: string, language: "fr" | "kreol") {
   return revised
 }
 
-function detectIssues(answer: string): ReviewIssue[] {
+function detectIssues(answer: string, trustedAmountClaims: TrustedAmountClaim[] = []): ReviewIssue[] {
   const issues: ReviewIssue[] = []
   const normalized = normalize(answer)
 
@@ -116,6 +193,8 @@ function detectIssues(answer: string): ReviewIssue[] {
   const deadlines = unique(answer.match(DEADLINE_PATTERN) || [])
 
   for (const value of [...moneyRanges, ...moneyAmounts]) {
+    if (isTrustedMoneyClaim(answer, value, trustedAmountClaims)) continue
+
     issues.push({
       type: "amount",
       value,
@@ -200,11 +279,12 @@ function addSafetySentenceIfNeeded(answer: string, issues: ReviewIssue[], langua
 export function reviewAssistantAnswer(
   answer: string,
   language: "fr" | "kreol" = "fr",
+  trustedAmountClaims: TrustedAmountClaim[] = [],
 ): ReviewResult {
-  const issues = detectIssues(answer)
+  const issues = detectIssues(answer, trustedAmountClaims)
 
   let revisedAnswer = answer
-  revisedAnswer = removeMoneyClaims(revisedAnswer, language)
+  revisedAnswer = removeMoneyClaims(revisedAnswer, language, trustedAmountClaims)
   revisedAnswer = removeDeadlineClaims(revisedAnswer, language)
   revisedAnswer = softenCertainty(revisedAnswer, language)
   revisedAnswer = addSafetySentenceIfNeeded(revisedAnswer, issues, language)

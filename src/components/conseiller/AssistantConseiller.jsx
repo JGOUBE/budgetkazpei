@@ -20,7 +20,7 @@ import {
 import { useAssistantInsights } from "../../hooks/useAssistantInsights"
 import { buildAssistantAiSummary } from "../../services/ai/assistantInsightsService"
 import { resolveAdvisorLanguage } from "../../services/advisorLanguage"
-import { rankAidesForAdvisor } from "../../services/aidesRanking"
+import { buildAidRankingQuery, rankAidesForAdvisor } from "../../services/aidesRanking"
 
 const COLORS = createColorAliases({ red: () => "#FB7185" })
 
@@ -482,8 +482,9 @@ export default function AssistantConseiller({
       interfaceLanguage,
     })
     const assistantIsKreol = assistantLanguage === "kreol"
+    const rankingQuestion = buildAidRankingQuery(sentQuestion, recentHistory)
     const preparedAides = prepareAideContext(
-      sortAidesForContext(aides, currentProfile, sentQuestion),
+      sortAidesForContext(aides, currentProfile, rankingQuestion),
       assistantIsKreol
     )
 

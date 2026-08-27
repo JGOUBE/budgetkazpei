@@ -9,7 +9,7 @@ import {
   getAdvisorAccess,
 } from "../src/config/advisorAccess.js"
 import { matchesAidSearch, normalizeAidSearchText } from "../src/services/aidesSearch.js"
-import { rankAidesForAdvisor } from "../src/services/aidesRanking.js"
+import { buildAidRankingQuery, rankAidesForAdvisor } from "../src/services/aidesRanking.js"
 import {
   resolveAdvisorLanguage as resolveClientAdvisorLanguage,
 } from "../src/services/advisorLanguage.js"
@@ -239,6 +239,106 @@ const namedSportRanking = rankAidesForAdvisor(
   "Est-ce que le plan 5000 licences peut m'aider ?",
 )
 assert.equal(namedSportRanking[0].id, "plan_5000_licences")
+const followUpSportQuery = buildAidRankingQuery(
+  "et il y a pas une autre aide",
+  [
+    {
+      question: "Je cherche une aide pour inscrire mes enfants au sport",
+      answer: "Le Plan 5 000 licences mÃ©rite d'Ãªtre regardÃ©.",
+    },
+  ],
+)
+assert.match(followUpSportQuery, /sport/i)
+assert.match(followUpSportQuery, /autre aide/i)
+
+const followUpSportRanking = rankAidesForAdvisor(
+  rankingAides,
+  { nombre_enfants: 2, logement: "locataire" },
+  followUpSportQuery,
+)
+assert.deepEqual(
+  followUpSportRanking.slice(0, 2).map(aide => aide.id).sort(),
+  ["pass_sport", "plan_5000_licences"],
+  "La relance 'une autre aide' doit rester sur le theme sport",
+)
+
+const newTopicQuery = buildAidRankingQuery(
+  "Je cherche maintenant une aide pour mon loyer",
+  [{ question: "Je cherche une aide pour le sport de mes enfants" }],
+)
+assert.equal(
+  newTopicQuery,
+  "Je cherche maintenant une aide pour mon loyer",
+  "Une nouvelle demande explicite ne doit pas heriter du theme precedent",
+)
+const trustedOfficialAmount = reviewAssistantAnswer(
+  "Le Plan 5 000 licences peut financer jusqu'a 100 \u20ac pour l'inscription sportive.",
+  "fr",
+  [{ name: "Plan 5 000 licences", amounts: [100] }],
+)
+assert.match(trustedOfficialAmount.revisedAnswer, /100\s*\u20ac/)
+assert.doesNotMatch(
+  trustedOfficialAmount.revisedAnswer,
+  /montant . v.rifier par simulation officielle/,
+)
+assert.equal(
+  trustedOfficialAmount.issues.some(issue => issue.type === "amount"),
+  false,
+)
+
+const wrongAidForTrustedAmount = reviewAssistantAnswer(
+  "Le Pass'Sport peut financer jusqu'a 100 \u20ac.",
+  "fr",
+  [{ name: "Plan 5 000 licences", amounts: [100] }],
+)
+assert.doesNotMatch(wrongAidForTrustedAmount.revisedAnswer, /100\s*\u20ac/)
+assert.equal(
+  wrongAidForTrustedAmount.issues.some(issue => issue.type === "amount"),
+  true,
+)
+
+const inventedAmount = reviewAssistantAnswer(
+  "Le Plan 5 000 licences peut financer jusqu'a 137 \u20ac.",
+  "fr",
+  [{ name: "Plan 5 000 licences", amounts: [100] }],
+)
+assert.doesNotMatch(inventedAmount.revisedAnswer, /137\s*\u20ac/)
+assert.equal(
+  inventedAmount.issues.some(issue => issue.type === "amount"),
+  true,
+)
+const chainedFollowUpSportQuery = buildAidRankingQuery(
+  "il y a pas une autre aide ?",
+  [
+    { question: "rien d'autres ?", answer: "Je regarde d'autres pistes." },
+    { question: "je cherche une aide pour mes enfants pour les inscrire au sport", answer: "Plan 5 000 licences." },
+  ],
+)
+assert.match(chainedFollowUpSportQuery, /sport/i)
+
+const rienDautresQuery = buildAidRankingQuery(
+  "rien d'autres ?",
+  [
+    { question: "je cherche une aide pour mes enfants pour les inscrire au sport", answer: "Plan 5 000 licences." },
+  ],
+)
+assert.match(rienDautresQuery, /sport/i)
+
+const trustedEurAmount = reviewAssistantAnswer(
+  "Le Plan 5 000 licences peut financer jusqu'a 100 EUR.",
+  "fr",
+  [{ name: "Plan 5 000 licences", amounts: [100] }],
+)
+assert.match(trustedEurAmount.revisedAnswer, /100\s*EUR/i)
+assert.equal(trustedEurAmount.issues.some(issue => issue.type === "amount"), false)
+
+const unsafeEurAmount = reviewAssistantAnswer(
+  "Aide garde d'enfants reprise emploi : 1000 EUR.",
+  "fr",
+  [],
+)
+assert.doesNotMatch(unsafeEurAmount.revisedAnswer, /1000\s*EUR/i)
+assert.equal(unsafeEurAmount.issues.some(issue => issue.type === "amount"), true)
 const backend = await read("supabase/functions/assistant-aisupabase/index.ts")
 const policy = await read("supabase/functions/assistant-aisupabase/accessPolicy.ts")
 const advisorPage = await read("src/components/conseiller/ConseillerPage.jsx")
@@ -290,4 +390,5 @@ console.log("✓ Modes standard et avancés vérifiés")
 console.log("✓ Autorité serveur et absence de limites publiques vérifiées")
 console.log("✓ Recherche FR / kréol vérifiée")
 console.log("✓ Onglets Aides et handoff vers l’unique Conseiller vérifiés")
+console.log("OK trusted official aid amounts verified")
 console.log("✓ Sélection de langue FR / kréol par message et mémoire multilingue vérifiées")
