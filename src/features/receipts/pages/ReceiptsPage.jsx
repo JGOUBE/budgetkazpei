@@ -90,6 +90,8 @@ const TEXT = {
     longTicketAnalyze: count => `Analyser les ${count} photos`,
     longTicketReset: "Recommencer",
     longTicketPartReady: index => `Photo ${index + 1} prête`,
+    longTicketTakePart: "Prendre cette photo",
+    longTicketRetakePart: "Reprendre cette photo",
     longTicketMissing: count => `Ajoutez les ${count} photos du ticket.`,
     longTicketNeedCount: count => `Sélectionnez exactement ${count} images dans l’ordre du haut vers le bas.`,
     longTicketMerging: count => `Analyse des ${count} parties du ticket...`,
@@ -192,6 +194,8 @@ const TEXT = {
     longTicketAnalyze: count => `Analiz ${count} foto-la`,
     longTicketReset: "Recommansé",
     longTicketPartReady: index => `Foto ${index + 1} lé paré`,
+    longTicketTakePart: "Pran sa foto-la",
+    longTicketRetakePart: "Repran sa foto-la",
     longTicketMissing: count => `Azout ${count} foto tiké-la.`,
     longTicketNeedCount: count => `Swazi exactement ${count} zimaz depi lao ziska anba.`,
     longTicketMerging: count => `Analiz ${count} parti tiké-la...`,
@@ -1193,12 +1197,9 @@ export default function ReceiptsPage({
       currentIndex === index ? file : current
     )))
 
+    // Retourner sur la page après chaque prise permet de voir clairement
+    // Haut / Milieu / Bas et de choisir la photo suivante ou d'en reprendre une.
     setMessage("")
-
-    const nextIndex = index + 1
-    if (longTicketPhotoCount && nextIndex < longTicketPhotoCount) {
-      setTimeout(() => longSegmentCameraRefs.current[nextIndex]?.click(), 0)
-    }
   }
 
   function handleLongTicketGallery(files) {
@@ -2360,6 +2361,36 @@ export default function ReceiptsPage({
               <div style={{ color: COLORS.text, fontSize: 14, fontWeight: 950 }}>
                 {txt.longTicketSelected(longTicketPhotoCount)}
               </div>
+
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: isMobile
+                  ? "1fr"
+                  : `repeat(${longTicketPhotoCount}, minmax(0, 1fr))`,
+                gap: 10,
+                maxWidth: isMobile ? 440 : 760,
+              }}>
+                {Array.from({ length: longTicketPhotoCount }, (_, index) => (
+                  <LongTicketPhotoSlot
+                    key={index}
+                    label={txt.longTicketPart(index, longTicketPhotoCount)}
+                    file={longTicketFiles[index]}
+                    disabled={automatedScanDisabled}
+                    takeLabel={txt.longTicketTakePart}
+                    retakeLabel={txt.longTicketRetakePart}
+                    readyLabel={txt.longTicketPartReady(index)}
+                    onClick={() => longSegmentCameraRefs.current[index]?.click()}
+                  />
+                ))}
+              </div>
+
+              <div style={{ color: COLORS.muted, fontSize: 12, fontWeight: 800 }}>
+                {txt.longTicketReady(
+                  longTicketFiles.slice(0, longTicketPhotoCount).filter(Boolean).length,
+                  longTicketPhotoCount,
+                )}
+              </div>
+
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 8, maxWidth: isMobile ? 420 : 560 }}>
                 <ActionButton
                   label={txt.longTicketCamera}
@@ -2378,11 +2409,7 @@ export default function ReceiptsPage({
                   compact
                 />
               </div>
-              {longTicketFiles.slice(0, longTicketPhotoCount).some(Boolean) && (
-                <div style={{ color: COLORS.muted, fontSize: 12, fontWeight: 800 }}>
-                  {txt.longTicketReady(longTicketFiles.slice(0, longTicketPhotoCount).filter(Boolean).length, longTicketPhotoCount)}
-                </div>
-              )}
+
               {longTicketFiles.slice(0, longTicketPhotoCount).every(Boolean) && (
                 <ActionButton
                   label={txt.longTicketAnalyze(longTicketPhotoCount)}
@@ -2514,6 +2541,102 @@ function ScanErrorMessage({ details }) {
       <div>Cause probable : {details.userMessage}</div>
       <div>Action : {details.action}</div>
     </div>
+  )
+}
+
+function LongTicketPhotoSlot({
+  label,
+  file,
+  disabled,
+  takeLabel,
+  retakeLabel,
+  readyLabel,
+  onClick,
+}) {
+  const [previewUrl, setPreviewUrl] = useState("")
+
+  useEffect(() => {
+    if (!file) {
+      setPreviewUrl("")
+      return undefined
+    }
+
+    const objectUrl = URL.createObjectURL(file)
+    setPreviewUrl(objectUrl)
+
+    return () => URL.revokeObjectURL(objectUrl)
+  }, [file])
+
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      aria-label={`${label} — ${file ? retakeLabel : takeLabel}`}
+      style={{
+        minHeight: 132,
+        borderRadius: 16,
+        border: `1px solid ${file ? COLORS.cyan : COLORS.border}`,
+        background: file
+          ? `color-mix(in srgb, ${COLORS.cyan} 8%, ${COLORS.card})`
+          : COLORS.cardLight,
+        color: COLORS.text,
+        padding: 10,
+        display: "grid",
+        gridTemplateColumns: previewUrl ? "84px 1fr" : "1fr",
+        gap: 10,
+        alignItems: "center",
+        textAlign: "left",
+        fontFamily: "inherit",
+        cursor: disabled ? "wait" : "pointer",
+        opacity: disabled ? 0.58 : 1,
+      }}
+    >
+      {previewUrl ? (
+        <img
+          src={previewUrl}
+          alt=""
+          style={{
+            width: 84,
+            height: 104,
+            objectFit: "cover",
+            borderRadius: 11,
+            border: `1px solid ${COLORS.border}`,
+            background: COLORS.card,
+          }}
+        />
+      ) : null}
+
+      <span style={{ display: "grid", gap: 6, minWidth: 0 }}>
+        <span style={{ color: COLORS.text, fontSize: 13, fontWeight: 950, lineHeight: 1.35 }}>
+          {label}
+        </span>
+
+        <span style={{ color: file ? COLORS.cyan : COLORS.muted, fontSize: 12, fontWeight: 850 }}>
+          {file ? `✓ ${readyLabel}` : takeLabel}
+        </span>
+
+        {file && (
+          <span style={{ color: COLORS.muted, fontSize: 11, fontWeight: 800 }}>
+            {retakeLabel}
+          </span>
+        )}
+
+        {!file && (
+          <span style={{
+            minHeight: 54,
+            borderRadius: 11,
+            border: `1px dashed ${COLORS.border}`,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            color: COLORS.cyan,
+          }}>
+            <BkIcons.scan size={22} aria-hidden="true" />
+          </span>
+        )}
+      </span>
+    </button>
   )
 }
 
