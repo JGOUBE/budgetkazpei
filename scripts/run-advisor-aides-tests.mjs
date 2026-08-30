@@ -9,7 +9,16 @@ import {
   getAdvisorAccess,
 } from "../src/config/advisorAccess.js"
 import { matchesAidSearch, normalizeAidSearchText } from "../src/services/aidesSearch.js"
-import { buildAidRankingQuery, rankAidesForAdvisor } from "../src/services/aidesRanking.js"
+import {
+  buildAidRankingQuery,
+  rankAidesForAdvisor,
+  selectAidCandidatesForAdvisor,
+} from "../src/services/aidesRanking.js"
+import {
+  ADVISOR_TURN_TYPES,
+  buildAdvisorConversationContext,
+  getAdvisorRankingOptions,
+} from "../src/services/advisorConversation.js"
 import {
   resolveAdvisorLanguage as resolveClientAdvisorLanguage,
 } from "../src/services/advisorLanguage.js"
@@ -28,6 +37,14 @@ import {
 import { buildSystemPrompt } from "../supabase/functions/assistant-aisupabase/prompts/systemPrompt.ts"
 import { buildMemoryPrompt } from "../supabase/functions/assistant-aisupabase/memory/memory.ts"
 import { reviewAssistantAnswer } from "../supabase/functions/assistant-aisupabase/engine/review/reviewerEngine.ts"
+import { evaluateTruth } from "../supabase/functions/assistant-aisupabase/engine/truth/truthAnalyzer.ts"
+import { buildTruthPrompt } from "../supabase/functions/assistant-aisupabase/engine/truth/truthPrompt.ts"
+import {
+  buildTrustedAidFacts,
+  loadTrustedAidFacts,
+  toTrustedAmountClaims,
+} from "../supabase/functions/assistant-aisupabase/engine/truth/trustedAidFacts.ts"
+import { prepareAdvisorAideContext } from "../src/services/advisorAideContext.js"
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const read = relativePath => readFile(path.join(root, relativePath), "utf8")
@@ -339,7 +356,395 @@ const unsafeEurAmount = reviewAssistantAnswer(
 )
 assert.doesNotMatch(unsafeEurAmount.revisedAnswer, /1000\s*EUR/i)
 assert.equal(unsafeEurAmount.issues.some(issue => issue.type === "amount"), true)
+
+const conversationAides = [
+  {
+    id: 76,
+    nom: "Plan 5 000 licences",
+    categorie: "sport",
+    description_fr: "Aide pour financer une licence et une cotisation dans un club sportif pour un jeune.",
+    condition_famille: "Jeune de moins de 21 ans dont les parents bénéficient du RSA.",
+    besoin_enfant: true,
+    montant_max: 100,
+    lien_officiel: "https://www.departement974.fr/aide/aide-plan-5000-licences",
+    score_priorite: 85,
+  },
+  {
+    id: 41,
+    nom: "Pass'Sport",
+    categorie: "sport",
+    description_fr: "Aide nationale pour réduire les frais d'inscription dans une structure sportive partenaire.",
+    besoin_enfant: false,
+    montant_max: null,
+    lien_officiel: "https://www.pass.sports.gouv.fr/",
+    score_priorite: 90,
+  },
+  {
+    id: 29,
+    nom: "Pass'Sport",
+    categorie: "sport",
+    description_fr: "Doublon de référentiel à dédupliquer par nom.",
+    montant_max: null,
+    lien_officiel: "https://www.pass.sports.gouv.fr/",
+    score_priorite: 90,
+  },
+  {
+    id: "apl",
+    nom: "Aide personnalisée au logement",
+    categorie: "logement",
+    description_fr: "Aide pour payer une partie du loyer.",
+    besoin_locataire: true,
+    score_priorite: 260,
+  },
+  {
+    id: "fsl",
+    nom: "Fonds de solidarité logement",
+    categorie: "logement",
+    description_fr: "Aide liée au logement et aux impayés de loyer.",
+    besoin_locataire: true,
+    score_priorite: 150,
+  },
+  {
+    id: "garde_emploi",
+    nom: "Aide garde d'enfants reprise emploi",
+    categorie: "emploi",
+    description_fr: "Aide de garde lors d'une reprise d'emploi.",
+    besoin_demandeur_emploi: true,
+    score_priorite: 300,
+  },
+]
+const advisorProfile = {
+  nombre_enfants: 2,
+  logement: "locataire",
+  situation_professionnelle: "demandeur d'emploi",
+}
+
+function getConversationSelection(question, recentHistory = []) {
+  const conversationContext = buildAdvisorConversationContext({
+    question,
+    recentHistory,
+    aides: conversationAides,
+  })
+  const candidates = selectAidCandidatesForAdvisor(
+    conversationAides,
+    advisorProfile,
+    conversationContext.rankingQuery,
+    getAdvisorRankingOptions(conversationContext),
+  )
+  return { conversationContext, candidates }
+}
+
+// TEST A — le sujet demandé domine le profil et les doublons sont supprimés.
+const sportTurn1 = getConversationSelection("Je cherche une aide financière pour inscrire mes enfants au sport")
+assert.equal(sportTurn1.conversationContext.turnType, ADVISOR_TURN_TYPES.NEW_TOPIC)
+assert.deepEqual(
+  sportTurn1.candidates.slice(0, 2).map(aide => aide.nom),
+  ["Plan 5 000 licences", "Pass'Sport"],
+)
+assert.equal(sportTurn1.candidates.some(aide => aide.id === "apl"), false)
+assert.equal(sportTurn1.candidates.filter(aide => aide.nom === "Pass'Sport").length, 1)
+
+const planHistory = [{
+  question: "Je cherche une aide financière pour inscrire mes enfants au sport",
+  answer: "Le Plan 5 000 licences est une première piste pertinente.",
+  conversationContext: sportTurn1.conversationContext,
+  recommendedAidIds: [76],
+  recommendedAidNames: ["Plan 5 000 licences"],
+}]
+
+// TEST B + D — une alternative conserve le sport et exclut le Plan.
+const sportTurn2 = getConversationSelection("Il n'y a pas une autre aide ?", planHistory)
+assert.equal(sportTurn2.conversationContext.turnType, ADVISOR_TURN_TYPES.REQUEST_ALTERNATIVE)
+assert.deepEqual(sportTurn2.conversationContext.activeTopic.domains, ["sport"])
+assert.equal(sportTurn2.candidates[0].nom, "Pass'Sport")
+assert.equal(sportTurn2.candidates.some(aide => aide.nom === "Plan 5 000 licences"), false)
+const rienDautreTurn = getConversationSelection("Rien d'autres ?", planHistory)
+assert.deepEqual(rienDautreTurn.conversationContext.activeTopic.domains, ["sport"])
+
+// TEST C — une troisième relance n'invente pas une aide hors sujet.
+const passSportHistory = [{
+  question: "Il n'y a pas une autre aide ?",
+  answer: "Une autre piste est Pass'Sport.",
+  conversationContext: sportTurn2.conversationContext,
+  recommendedAidIds: [41],
+  recommendedAidNames: ["Pass'Sport"],
+}, ...planHistory]
+const sportTurn3 = getConversationSelection("Encore une autre ?", passSportHistory)
+assert.equal(sportTurn3.conversationContext.turnType, ADVISOR_TURN_TYPES.REQUEST_ALTERNATIVE)
+assert.equal(sportTurn3.candidates.length, 0)
+
+// TEST E — un nouveau domaine abandonne le contexte sport.
+const logementAfterSport = getConversationSelection(
+  "Je cherche maintenant une aide pour mon loyer",
+  passSportHistory,
+)
+assert.equal(logementAfterSport.conversationContext.turnType, ADVISOR_TURN_TYPES.NEW_TOPIC)
+assert.deepEqual(logementAfterSport.conversationContext.activeTopic.domains, ["logement"])
+assert.equal(logementAfterSport.candidates[0].id, "apl")
+assert.equal(logementAfterSport.conversationContext.previouslyRecommendedAidNames.length, 0)
+
+const trustedPlanFacts = buildTrustedAidFacts([conversationAides[0]])
+assert.equal(trustedPlanFacts[0].amountMax, 100)
+assert.deepEqual(trustedPlanFacts[0].amounts, [100])
+const amountTruthReport = evaluateTruth(
+  advisorProfile,
+  {},
+  null,
+  "Combien ?",
+  "",
+  trustedPlanFacts,
+)
+const amountTruthPrompt = buildTruthPrompt(amountTruthReport)
+assert.match(amountTruthPrompt, /Montant maximum officiel Plan 5 000 licences : 100 EUR/)
+assert.match(amountTruthPrompt, /Ne remplace jamais un montant officiel autorisé/)
+const trustedDraftReport = evaluateTruth(
+  advisorProfile,
+  {},
+  null,
+  "Combien ?",
+  "Le Plan 5 000 licences peut prendre en charge jusqu'à 100 €.",
+  trustedPlanFacts,
+)
+assert.equal(trustedDraftReport.inventedAmounts.length, 0)
+assert.equal(trustedDraftReport.trustedOfficialAmounts.some(value => /100/.test(value)), true)
+const unsupportedDraftReport = evaluateTruth(
+  advisorProfile,
+  {},
+  null,
+  "Combien ?",
+  "Le Plan 5 000 licences peut prendre en charge jusqu'à 137 €.",
+  trustedPlanFacts,
+)
+assert.equal(unsupportedDraftReport.inventedAmounts.some(value => /137/.test(value)), true)
+
+// TEST F, G et H — le même fait fiable alimente le Truth Engine et le reviewer.
+const officialAmountReviewed = reviewAssistantAnswer(
+  "Le Plan 5 000 licences peut prendre en charge jusqu'à 100 € de la licence.",
+  "fr",
+  toTrustedAmountClaims(trustedPlanFacts),
+)
+assert.match(officialAmountReviewed.revisedAnswer, /100\s*€/)
+assert.equal(officialAmountReviewed.issues.some(issue => issue.type === "amount"), false)
+const invented137Reviewed = reviewAssistantAnswer(
+  "Le Plan 5 000 licences peut prendre en charge jusqu'à 137 €.",
+  "fr",
+  toTrustedAmountClaims(trustedPlanFacts),
+)
+assert.doesNotMatch(invented137Reviewed.revisedAnswer, /137\s*€/)
+const invented1000Reviewed = reviewAssistantAnswer("Une autre aide verse 1000 EUR.", "fr", [])
+assert.doesNotMatch(invented1000Reviewed.revisedAnswer, /1000\s*EUR/i)
+
+// TEST I — « combien ? » cible la dernière aide réellement proposée.
+const amountTurn = getConversationSelection("Combien ?", planHistory)
+assert.equal(amountTurn.conversationContext.turnType, ADVISOR_TURN_TYPES.ASK_DETAILS)
+assert.deepEqual(amountTurn.conversationContext.targetAidNames, ["Plan 5 000 licences"])
+assert.equal(amountTurn.candidates[0].nom, "Plan 5 000 licences")
+const followUpTurn = getConversationSelection("Et pour une licence en club ?", planHistory)
+assert.equal(followUpTurn.conversationContext.turnType, ADVISOR_TURN_TYPES.FOLLOW_UP)
+const nextStepTurn = getConversationSelection("Et ensuite ?", planHistory)
+assert.equal(nextStepTurn.conversationContext.turnType, ADVISOR_TURN_TYPES.NEXT_STEP)
+assert.deepEqual(nextStepTurn.conversationContext.targetAidNames, ["Plan 5 000 licences"])
+const correctionTurn = getConversationSelection("En fait, je voulais dire une aide pour l'énergie", planHistory)
+assert.equal(correctionTurn.conversationContext.turnType, ADVISOR_TURN_TYPES.CORRECTION)
+assert.deepEqual(correctionTurn.conversationContext.activeTopic.domains, ["energie"])
+
+// TEST J — le même mécanisme fonctionne sur le logement.
+const logementTurn1 = getConversationSelection("Je cherche une aide pour payer mon loyer")
+const logementHistory = [{
+  question: "Je cherche une aide pour payer mon loyer",
+  answer: "L'Aide personnalisée au logement est la première piste.",
+  conversationContext: logementTurn1.conversationContext,
+  recommendedAidIds: ["apl"],
+  recommendedAidNames: ["Aide personnalisée au logement"],
+}]
+const logementTurn2 = getConversationSelection("Une autre aide ?", logementHistory)
+assert.equal(logementTurn2.candidates[0].id, "fsl")
+assert.equal(logementTurn2.candidates.some(aide => aide.id === "apl"), false)
+assert.equal(logementTurn2.candidates.some(aide => aide.id === "garde_emploi"), false)
+
+// TEST K — le bruit secondaire du référentiel ne vaut pas un thème principal.
+const noisySportAides = [
+  {
+    id: 62,
+    nom: "Aide vacances enfants",
+    categorie: "famille",
+    description_fr: "Aide pour les vacances et des activités sportives des enfants.",
+    demarches_fr: "Vérifier les dispositifs sport/culture.",
+    besoin_enfant: true,
+    besoin_allocataire_caf: true,
+    score_priorite: 88,
+  },
+  conversationAides[0],
+  conversationAides[1],
+]
+const noisySportRanking = rankAidesForAdvisor(
+  noisySportAides,
+  { nombre_enfants: 2, allocataire_caf: true },
+  "Je cherche une aide financière pour inscrire mes enfants au sport",
+)
+const noisyVacationIndex = noisySportRanking.findIndex(aide => aide.id === 62)
+assert.equal(noisyVacationIndex > noisySportRanking.findIndex(aide => aide.id === 76), true)
+assert.equal(noisyVacationIndex > noisySportRanking.findIndex(aide => aide.id === 41), true)
+
+const realPlan5000Row = {
+  id: 76,
+  nom: "Plan 5 000 licences",
+  nom_kreol: "Plan 5 000 licences",
+  categorie: "sport",
+  description: "Aide du Département de La Réunion pour les jeunes de moins de 21 ans dont les parents sont bénéficiaires du RSA. Elle peut financer jusqu'à 100 € du coût de l'inscription en club, licence et cotisation comprises.",
+  description_fr: "Aide du Département de La Réunion pour les jeunes de moins de 21 ans dont les parents sont bénéficiaires du RSA. Elle peut financer jusqu'à 100 € du coût de l'inscription en club, licence et cotisation comprises.",
+  description_kreol: "Aide Département La Rényon pou bann jeunes moins de 21 an.",
+  demarches_fr: "Déposer le formulaire et les pièces auprès du club.",
+  demarches_kreol: "Donne formulaire ek papye au club.",
+  condition_logement: null,
+  condition_profession: null,
+  condition_famille: "Jeune de moins de 21 ans dont les parents sont bénéficiaires du RSA.",
+  montant_min: null,
+  montant_max: 100,
+  lien: "https://www.departement974.fr/aide/aide-plan-5000-licences",
+  lien_officiel: "https://www.departement974.fr/aide/aide-plan-5000-licences",
+}
+
+function fakeAidRepository(rows = []) {
+  return {
+    from(table) {
+      assert.equal(table, "aides_reunion")
+      return {
+        select(columns) {
+          assert.match(columns, /montant_max/)
+          assert.match(columns, /lien_officiel/)
+          return {
+            async in(field, values) {
+              const requested = new Set(values.map(String))
+              return {
+                data: rows.filter(row => requested.has(String(row[field]))),
+                error: null,
+              }
+            },
+          }
+        },
+      }
+    },
+  }
+}
+
+// TEST L — ligne réelle -> contexte frontend -> faits Edge -> Truth -> reviewer.
+const preparedRealPlan = prepareAdvisorAideContext([realPlan5000Row], false)
+const trustedFactsEndToEnd = await loadTrustedAidFacts(
+  fakeAidRepository([realPlan5000Row]),
+  { recommendedAides: preparedRealPlan },
+)
+const trustedClaimsEndToEnd = toTrustedAmountClaims(trustedFactsEndToEnd)
+const truthBeforeDraft = evaluateTruth(
+  advisorProfile,
+  {},
+  null,
+  "Quel montant pour cette aide ?",
+  "",
+  trustedFactsEndToEnd,
+)
+const truthPromptEndToEnd = buildTruthPrompt(truthBeforeDraft)
+const realisticOpenAiDraft = [
+  "### Plan 5 000 licences",
+  "",
+  "Cette aide peut prendre en charge une partie de l'inscription.",
+  "",
+  "- Montant : jusqu'à 100 €",
+  "- Public : jeunes de moins de 21 ans dont les parents sont bénéficiaires du RSA.",
+].join("\n")
+const truthAfterDraft = evaluateTruth(
+  advisorProfile,
+  {},
+  null,
+  "Quel montant pour cette aide ?",
+  realisticOpenAiDraft,
+  trustedFactsEndToEnd,
+)
+const reviewedEndToEnd = reviewAssistantAnswer(
+  realisticOpenAiDraft,
+  "fr",
+  trustedClaimsEndToEnd,
+)
+assert.equal(preparedRealPlan[0].id, 76)
+assert.equal(preparedRealPlan[0].montant_min, null)
+assert.equal(preparedRealPlan[0].montant_max, 100)
+assert.equal(preparedRealPlan[0].lien, realPlan5000Row.lien)
+assert.equal(preparedRealPlan[0].lien_officiel, realPlan5000Row.lien_officiel)
+assert.equal(trustedFactsEndToEnd[0].amountMax, 100)
+assert.deepEqual(trustedClaimsEndToEnd, [{ name: "Plan 5 000 licences", amounts: [100] }])
+assert.match(truthPromptEndToEnd, /Montant maximum officiel Plan 5 000 licences : 100 EUR/)
+assert.equal(truthAfterDraft.inventedAmounts.length, 0)
+assert.equal(truthAfterDraft.trustedOfficialAmounts.some(value => /100/.test(value)), true)
+assert.match(reviewedEndToEnd.revisedAnswer, /100\s*€/)
+assert.doesNotMatch(reviewedEndToEnd.revisedAnswer, /montant à vérifier par simulation officielle/i)
+assert.doesNotMatch(reviewedEndToEnd.revisedAnswer, /Je ne peux pas donner un montant fiable/i)
+assert.equal(reviewedEndToEnd.issues.some(issue => issue.type === "amount"), false)
+
+for (const officialAmountLabel of ["100 €", "100 euros", "100 EUR"]) {
+  const formattedDraft = [
+    "### Plan 5 000 licences",
+    "",
+    "Cette aide peut prendre en charge une partie de l'inscription.",
+    "",
+    `- Montant : jusqu'à ${officialAmountLabel}`,
+    "- Public : jeunes de moins de 21 ans.",
+  ].join("\n")
+  const formattedTruth = evaluateTruth(
+    advisorProfile,
+    {},
+    null,
+    "Quel montant pour cette aide ?",
+    formattedDraft,
+    trustedFactsEndToEnd,
+  )
+  const formattedReview = reviewAssistantAnswer(formattedDraft, "fr", trustedClaimsEndToEnd)
+
+  assert.equal(formattedTruth.inventedAmounts.length, 0, `${officialAmountLabel} doit être officiel`)
+  assert.equal(formattedReview.issues.filter(issue => issue.type === "amount").length, 0)
+  assert.match(formattedReview.revisedAnswer, new RegExp(officialAmountLabel.replace("€", "\\s*€"), "i"))
+  assert.doesNotMatch(formattedReview.revisedAnswer, /Je ne peux pas donner un montant fiable/i)
+}
+
+// TEST M — un montant absent du référentiel reste bloqué de bout en bout.
+const unsupportedOpenAiDraft = "### Plan 5 000 licences\n\n- Jusqu'à 137 € peuvent couvrir la licence."
+const unsupportedTruthEndToEnd = evaluateTruth(
+  advisorProfile,
+  {},
+  null,
+  "Quel montant pour cette aide ?",
+  unsupportedOpenAiDraft,
+  trustedFactsEndToEnd,
+)
+const unsupportedReviewEndToEnd = reviewAssistantAnswer(
+  unsupportedOpenAiDraft,
+  "fr",
+  trustedClaimsEndToEnd,
+)
+assert.equal(unsupportedTruthEndToEnd.inventedAmounts.some(value => /137/.test(value)), true)
+assert.doesNotMatch(unsupportedReviewEndToEnd.revisedAnswer, /137\s*€/)
+assert.equal(unsupportedReviewEndToEnd.issues.some(issue => issue.type === "amount"), true)
+
+console.log("TRACE TEST L trusted amount pipeline", JSON.stringify({
+  databaseRow: {
+    id: realPlan5000Row.id,
+    nom: realPlan5000Row.nom,
+    montant_min: realPlan5000Row.montant_min,
+    montant_max: realPlan5000Row.montant_max,
+    lien: realPlan5000Row.lien,
+    lien_officiel: realPlan5000Row.lien_officiel,
+  },
+  preparedAide: preparedRealPlan[0],
+  trustedAidFacts: trustedFactsEndToEnd,
+  truthEngineAmounts: {
+    trusted: truthAfterDraft.trustedOfficialAmounts,
+    invented: truthAfterDraft.inventedAmounts,
+  },
+  reviewerTrustedAmounts: trustedClaimsEndToEnd,
+  reviewerIssues: reviewedEndToEnd.issues,
+  finalAnswer: reviewedEndToEnd.revisedAnswer,
+}, null, 2))
 const backend = await read("supabase/functions/assistant-aisupabase/index.ts")
+const rankingSource = await read("src/services/aidesRanking.js")
 const policy = await read("supabase/functions/assistant-aisupabase/accessPolicy.ts")
 const advisorPage = await read("src/components/conseiller/ConseillerPage.jsx")
 const aidesPage = await read("src/components/aides/AidesPage.jsx")
@@ -361,6 +766,13 @@ assert.doesNotMatch(backend, /advisor_safety_limit_reached/, "Premium+ ne doit p
 assert.doesNotMatch(backend, /\b(?:50|250)\b/, "Les seuils internes ne doivent pas apparaître dans les réponses de l'API")
 assert.doesNotMatch(backend, /function detectAssistantLanguage|function looksLikeKreolText/)
 assert.match(backend, /message:\s*lastUserMessage[\s\S]{0,120}interfaceLanguage/)
+assert.doesNotMatch(rankingSource, /SPORT_QUERY_TERMS|SPORT_AIDE_TERMS/)
+assert.match(backend, /conversationContext/)
+assert.equal(
+  backend.indexOf("await loadTrustedAidFacts") < backend.indexOf("const openAiResult = await callOpenAi"),
+  true,
+  "Les faits officiels doivent être chargés avant la génération OpenAI",
+)
 
 assert.match(advisorPage, /if \(!access\.canUseAdvisor\)/)
 assert.match(advisorPage, /LockedAdvisor/)
@@ -391,4 +803,7 @@ console.log("✓ Autorité serveur et absence de limites publiques vérifiées")
 console.log("✓ Recherche FR / kréol vérifiée")
 console.log("✓ Onglets Aides et handoff vers l’unique Conseiller vérifiés")
 console.log("OK trusted official aid amounts verified")
+console.log("✓ Conversations NEW_TOPIC / FOLLOW_UP / ALTERNATIVE / DETAILS / NEXT_STEP / CORRECTION vérifiées")
+console.log("✓ Alternatives sport et logement sans répétition ni hors-sujet vérifiées")
+console.log("✓ Tests K–M : bruit sémantique et montants fiables end-to-end vérifiés")
 console.log("✓ Sélection de langue FR / kréol par message et mémoire multilingue vérifiées")

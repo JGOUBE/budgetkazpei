@@ -20,7 +20,13 @@ import {
 import { useAssistantInsights } from "../../hooks/useAssistantInsights"
 import { buildAssistantAiSummary } from "../../services/ai/assistantInsightsService"
 import { resolveAdvisorLanguage } from "../../services/advisorLanguage"
-import { buildAidRankingQuery, rankAidesForAdvisor } from "../../services/aidesRanking"
+import { selectAidCandidatesForAdvisor } from "../../services/aidesRanking"
+import { prepareAdvisorAideContext } from "../../services/advisorAideContext"
+import {
+  ADVISOR_TURN_TYPES,
+  buildAdvisorConversationContext,
+  getAdvisorRankingOptions,
+} from "../../services/advisorConversation"
 
 const COLORS = createColorAliases({ red: () => "#FB7185" })
 
@@ -287,40 +293,13 @@ function buildQuestionForAi(question = "", mode = "general", isKreol = false, pr
   ].filter(Boolean).join("\n")
 }
 
-function formatAideAmount(aide = {}) {
-  const min = Number(aide.montant_min)
-  const max = Number(aide.montant_max)
-
-  if (Number.isFinite(min) && Number.isFinite(max) && min > 0 && max > 0) {
-    if (min === max) return `${min} EUR`
-    return `${min} a ${max} EUR`
-  }
-
-  if (Number.isFinite(max) && max > 0) return `Jusqu'a ${max} EUR`
-  if (Number.isFinite(min) && min > 0) return `A partir de ${min} EUR`
-  return "Montant variable"
-}
-
-function prepareAideContext(aides = [], isKreol = false) {
-  return aides.slice(0, 8).map(aide => ({
-    id: aide.id || null,
-    nom: aide.nom || aide.aide_nom || "Aide",
-    nom_kreol: aide.nom_kreol || aide.nom || "Aide",
-    organisme: aide.organisme || "",
-    categorie: aide.categorie || "",
-    montant: formatAideAmount(aide),
-    description: isKreol
-      ? aide.description_kreol || aide.description_fr || aide.description || ""
-      : aide.description_fr || aide.description || "",
-    demarches: isKreol
-      ? aide.demarches_kreol || aide.demarches_fr || ""
-      : aide.demarches_fr || "",
-    lien_officiel: aide.lien_officiel || aide.lien || "",
-  }))
-}
-
-function sortAidesForContext(aides = [], profile = {}, question = "") {
-  return rankAidesForAdvisor(aides, profile, question)
+function selectAidesForContext(aides = [], profile = {}, conversationContext = {}) {
+  return selectAidCandidatesForAdvisor(
+    aides,
+    profile,
+    conversationContext.rankingQuery,
+    getAdvisorRankingOptions(conversationContext),
+  )
 }
 
 export default function AssistantConseiller({
@@ -482,9 +461,17 @@ export default function AssistantConseiller({
       interfaceLanguage,
     })
     const assistantIsKreol = assistantLanguage === "kreol"
-    const rankingQuestion = buildAidRankingQuery(sentQuestion, recentHistory)
-    const preparedAides = prepareAideContext(
-      sortAidesForContext(aides, currentProfile, rankingQuestion),
+    const conversationContext = buildAdvisorConversationContext({
+      question: sentQuestion,
+      recentHistory,
+      aides,
+    })
+    const selectedAides = selectAidesForContext(aides, currentProfile, conversationContext)
+    const noRelevantAlternative =
+      conversationContext.turnType === ADVISOR_TURN_TYPES.REQUEST_ALTERNATIVE &&
+      selectedAides.length === 0
+    const preparedAides = prepareAdvisorAideContext(
+      selectedAides,
       assistantIsKreol
     )
 
@@ -534,11 +521,18 @@ export default function AssistantConseiller({
         reunionOrientation: REUNION_ORIENTATION,
         reunion_orientation: REUNION_ORIENTATION,
         advisorHandoffContext: handoffContext || null,
+        conversationContext: {
+          ...conversationContext,
+          noRelevantAlternative,
+        },
         recentHistory: (recentHistory || []).map(item => ({
           question: item.question,
           answer: item.answer,
           mode: item.mode,
           createdAt: item.createdAt,
+          conversationContext: item.conversationContext || null,
+          recommendedAidIds: item.recommendedAidIds || [],
+          recommendedAidNames: item.recommendedAidNames || [],
         })),
       },
     })
@@ -551,7 +545,9 @@ export default function AssistantConseiller({
       }
     }
 
-    return data || { success: false, error: "Reponse vide." }
+    return data
+      ? { ...data, conversationContext: { ...conversationContext, noRelevantAlternative } }
+      : { success: false, error: "Reponse vide." }
   }
 
   async function handleAnalyze(messageOverride = null) {
@@ -656,6 +652,9 @@ export default function AssistantConseiller({
           language: result.language || (responseIsKreol ? "kreol" : "fr"),
           mode: currentMode,
           createdAt: new Date().toISOString(),
+          conversationContext: result.conversationContext || null,
+          recommendedAidIds: result.recommendedAidIds || [],
+          recommendedAidNames: result.recommendedAidNames || [],
         },
         ...prev,
       ].slice(0, 6)

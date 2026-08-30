@@ -11,6 +11,12 @@ import { buildAiMemoryPatch } from "./memory/memoryReasoner.ts"
 import { checkProfileConsistency } from "./engine/profile/profileConsistency.ts"
 import { evaluateTruth } from "./engine/truth/truthAnalyzer.ts"
 import { buildTruthPrompt } from "./engine/truth/truthPrompt.ts"
+import {
+  findMentionedTrustedAids,
+  loadTrustedAidFacts,
+  toTrustedAmountClaims,
+  type TrustedAidFact,
+} from "./engine/truth/trustedAidFacts.ts"
 import { reviewAssistantAnswer } from "./engine/review/reviewerEngine.ts"
 import {
   getAdvisorAccess,
@@ -74,104 +80,6 @@ function jsonResponse(payload: Record<string, unknown>, status = 200) {
   })
 }
 
-type TrustedAidAmountClaim = {
-  name: string
-  amounts: number[]
-}
-
-function getRecommendedAidIds(body: any) {
-  const recommendedAides = Array.isArray(body?.recommendedAides)
-    ? body.recommendedAides
-    : Array.isArray(body?.recommended_aides)
-      ? body.recommended_aides
-      : []
-
-  return Array.from(new Set(
-    recommendedAides
-      .map((aide: any) => aide?.id)
-      .filter((id: any) => id !== null && id !== undefined && String(id).trim() !== "")
-      .map((id: any) => String(id))
-  ))
-}
-
-function getRecommendedAidNames(body: any) {
-  const recommendedAides = Array.isArray(body?.recommendedAides)
-    ? body.recommendedAides
-    : Array.isArray(body?.recommended_aides)
-      ? body.recommended_aides
-      : []
-
-  return Array.from(new Set(
-    recommendedAides
-      .map((aide: any) => String(aide?.nom || aide?.name || "").trim())
-      .filter(Boolean)
-  ))
-}
-async function loadTrustedAidClaims(
-  supabaseAdmin: any,
-  body: any,
-): Promise<TrustedAidAmountClaim[]> {
-  const ids = getRecommendedAidIds(body)
-  const names = getRecommendedAidNames(body)
-  if (ids.length === 0 && names.length === 0) return []
-
-  try {
-    const rowsById: any[] = []
-    const rowsByName: any[] = []
-
-    if (ids.length > 0) {
-      const { data, error } = await supabaseAdmin
-        .from("aides_reunion")
-        .select("id, nom, montant_min, montant_max, lien, lien_officiel")
-        .in("id", ids)
-
-      if (error) {
-        console.log("Trusted aid claims by id unavailable:", error.message)
-      } else {
-        rowsById.push(...(data || []))
-      }
-    }
-
-    if (names.length > 0) {
-      const { data, error } = await supabaseAdmin
-        .from("aides_reunion")
-        .select("id, nom, montant_min, montant_max, lien, lien_officiel")
-        .in("nom", names)
-
-      if (error) {
-        console.log("Trusted aid claims by name unavailable:", error.message)
-      } else {
-        rowsByName.push(...(data || []))
-      }
-    }
-
-    const uniqueRows = Array.from(new Map(
-      [...rowsById, ...rowsByName]
-        .map((row: any) => [String(row?.id || row?.nom || ""), row])
-        .filter(([key]) => key)
-    ).values())
-
-    return uniqueRows
-      .map((aide: any) => {
-        const officialSource = String(aide?.lien_officiel || aide?.lien || "").trim()
-        const name = String(aide?.nom || "").trim()
-        if (!officialSource || !name) return null
-
-        const amounts = Array.from(new Set(
-          [aide?.montant_min, aide?.montant_max]
-            .map(value => Number(value))
-            .filter(value => Number.isFinite(value) && value > 0)
-        ))
-
-        if (amounts.length === 0) return null
-        return { name, amounts }
-      })
-      .filter(Boolean) as TrustedAidAmountClaim[]
-  } catch (error) {
-    console.log("Trusted aid claims check unavailable:", String(error))
-    return []
-  }
-}
 function getCurrentMonthNumber() {
   return new Date().getMonth() + 1
 }
@@ -312,12 +220,14 @@ function buildUserPrompt(
   memory: any = null,
   consistency: any = null,
   truthReport: any = null,
+  trustedAidFacts: TrustedAidFact[] = [],
 ) {
   const originalQuestion = String(body.originalQuestion || body.question || "").trim()
   const profile = body.profile || {}
   const profileSummary = body.profile_summary || ""
   const localContext = body.localContext || body.local_context || {}
   const recommendedAides = body.recommendedAides || body.recommended_aides || []
+  const conversationContext = body.conversationContext || {}
   const reunionOrientation = body.reunionOrientation || body.reunion_orientation || {}
   const recentHistory = Array.isArray(body.recentHistory) ? body.recentHistory.slice(0, 6) : []
   const localizedHandoffContext = selectAdvisorLocalizedContext(body.advisorHandoffContext || {}, language)
@@ -368,6 +278,12 @@ ${safeJson(localizedHandoffContext)}
 Aides recommandées par BudgetKazPei à prioriser si pertinent :
 ${safeJson(recommendedAides.slice(0, 8), [])}
 
+Contexte conversationnel structuré calculé par BudgetKazPei :
+${safeJson(conversationContext, {})}
+
+Faits officiels vérifiés en base avant génération :
+${safeJson(trustedAidFacts, [])}
+
 Repères locaux BudgetKazPei :
 ${safeJson(reunionOrientation, {})}
 
@@ -388,11 +304,19 @@ Consignes liées à l'analyse de cohérence :
 - Ne modifie jamais le profil automatiquement.
 - Ne déduis jamais un salaire individuel à partir du revenu du foyer : le revenu du foyer peut inclure salaire, aides, RSA, chômage, pensions ou autres revenus.
 
-Règle de continuité : si la demande actuelle est courte, incomplète ou ressemble à une précision, rattache-la au dernier échange pertinent au lieu de recommencer une réponse générale.
+Règles de continuité conversationnelle :
+- Respecte le type de tour et le sujet actif du contexte structuré.
+- REQUEST_ALTERNATIVE : propose seulement la meilleure aide nouvelle parmi les aides recommandées de ce tour. Ne répète aucun nom de previouslyRecommendedAidNames.
+- REQUEST_ALTERNATIVE avec noRelevantAlternative=true : dis clairement qu'aucune autre aide suffisamment pertinente et vérifiée n'est disponible pour ce sujet. Ne complète jamais avec une aide hors sujet.
+- ASK_DETAILS : réponds seulement au détail demandé sur targetAidNames, sans refaire toute la recommandation.
+- NEXT_STEP : donne uniquement la prochaine action utile pour targetAidNames.
+- NEW_TOPIC : abandonne l'ancien sujet métier.
+- CORRECTION : tiens compte de la correction sans défendre la réponse précédente.
 
 PRIORITÉ DE RAISONNEMENT BUDGETKAZPEI :
-- Le profil transmis par BudgetKazPei est la source principale d'information utilisateur.
-- Avant de répondre, utilise d'abord le profil connu, puis la mémoire, puis les aides recommandées, puis la demande actuelle.
+- La demande actuelle et son sujet actif déterminent d'abord la pertinence métier.
+- Utilise ensuite les faits officiels et aides recommandées du même sujet, puis le profil pour départager ou personnaliser.
+- Une opportunité générique du profil ne doit jamais remplacer une réponse directe au sujet demandé.
 - Ne redemande jamais une information déjà présente dans le profil ou dans la mémoire.
 - Si tu t'appuies sur le profil, montre-le naturellement avec une phrase courte comme "D'après votre profil BudgetKazPei" ou "Compte tenu de votre situation", sans recopier tout le profil.
 - Pose une question uniquement si une information indispensable manque réellement pour donner une réponse utile et prudente.
@@ -827,10 +751,22 @@ Deno.serve(async (req) => {
         ? null
         : checkProfileConsistency(context.profile, context.question)
 
+    const trustedAidFacts =
+      context.action === "analyze_refusal"
+        ? []
+        : await loadTrustedAidFacts(supabaseAdmin, context.body)
+
     const truthReport =
       context.action === "analyze_refusal"
         ? null
-        : evaluateTruth(context.profile, context.memory, consistency, context.question)
+        : evaluateTruth(
+            context.profile,
+            context.memory,
+            consistency,
+            context.question,
+            "",
+            trustedAidFacts,
+          )
 
     const userPrompt =
       context.action === "analyze_refusal"
@@ -842,6 +778,7 @@ Deno.serve(async (req) => {
             context.memory,
             consistency,
             truthReport,
+            trustedAidFacts,
           )
 
     const systemPrompt = buildSystemPrompt(
@@ -881,9 +818,6 @@ Deno.serve(async (req) => {
       (context.isKreol
         ? "Mi na pas réussi générer une réponse pou le moment."
         : "Je n’ai pas réussi à générer une réponse pour le moment.")
-    const trustedAidClaims = await loadTrustedAidClaims(supabaseAdmin, context.body)
-
-
     const reviewResult =
       context.action === "analyze_refusal"
         ? {
@@ -892,9 +826,10 @@ Deno.serve(async (req) => {
             issues: [],
             revisedAnswer: rawAnswer,
           }
-        : reviewAssistantAnswer(rawAnswer, context.language, trustedAidClaims)
+        : reviewAssistantAnswer(rawAnswer, context.language, toTrustedAmountClaims(trustedAidFacts))
 
     const answer = reviewResult.revisedAnswer
+    const mentionedTrustedAids = findMentionedTrustedAids(answer, trustedAidFacts)
 
     if (context.consumesExchange && answer) {
       await incrementUsage(supabaseAdmin, context.userId, context.used)
@@ -948,6 +883,8 @@ Deno.serve(async (req) => {
         consumed: context.consumesExchange,
         language: context.language,
         mode: context.mode,
+        recommendedAidIds: mentionedTrustedAids.map(aide => aide.id),
+        recommendedAidNames: mentionedTrustedAids.map(aide => aide.name),
         review: {
           ok: reviewResult.ok,
           qualityScore: reviewResult.qualityScore,

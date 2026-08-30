@@ -1,18 +1,6 @@
-const SEARCH_EQUIVALENTS = [
-  ["logement", "kaz", "loyer", "location", "locataire"],
-  ["enfant", "enfants", "marmay", "marmailles", "famille", "fami"],
-  ["energie", "kouran", "electricite", "edf", "facture"],
-  ["emploi", "travail", "travay", "chomage", "france travail"],
-  ["mobilite", "deplasman", "transport", "bus", "voiture"],
-  ["scolarite", "ecole", "lekol", "cantine", "bourse"],
-  ["sante", "soin", "mutuelle", "cgss"],
-  [
-    "sport", "sports", "sportif", "sportive", "club", "clubs", "licence", "licences",
-    "cotisation", "loisir", "loisirs", "judo", "tennis", "surf", "football", "foot",
-    "athletisme", "natation", "rugby", "basket", "handball", "karate", "taekwondo", "capoeira",
-  ],
-  ["aide", "aides", "ed", "zed"],
-]
+import { getAidTopicTermsForToken } from "./aidTopics.js"
+
+const GENERIC_SEARCH_EQUIVALENTS = ["aide", "aides", "ed", "zed"]
 
 export function normalizeAidSearchText(value = "") {
   return String(value || "")
@@ -26,8 +14,10 @@ export function normalizeAidSearchText(value = "") {
 }
 
 function tokenMatchesHaystack(token, haystack) {
-  const group = SEARCH_EQUIVALENTS.find(words => words.includes(token))
-  return (group || [token]).some(candidate => haystack.includes(candidate))
+  const candidates = GENERIC_SEARCH_EQUIVALENTS.includes(token)
+    ? GENERIC_SEARCH_EQUIVALENTS
+    : getAidTopicTermsForToken(token)
+  return candidates.some(candidate => haystack.includes(normalizeAidSearchText(candidate)))
 }
 
 export function matchesAidSearch(aide, query) {

@@ -33,6 +33,12 @@ ${list(report.warnings)}
 Montants détectés à ne pas affirmer sans source :
 ${list(report.inventedAmounts)}
 
+Montants officiels autorisés dans leur contexte :
+${list(report.trustedOfficialAmounts)}
+
+Montants calculés à partir de données explicites :
+${list(report.calculatedAmounts)}
+
 Délais détectés à ne pas affirmer sans source :
 ${list(report.inventedDeadlines)}
 
@@ -55,7 +61,9 @@ RÈGLES OBLIGATOIRES :
 - Ne présente comme certain que ce qui figure dans les faits confirmés.
 - Pour toute aide, utilise des formulations prudentes : "vous pourriez", "à vérifier", "selon votre situation".
 - Ne dis jamais "vous avez droit à" sans preuve officielle.
-- Ne donne jamais de montant ou fourchette de montant sans calcul officiel ou source intégrée.
+- Un montant présent dans "Montants officiels autorisés" peut et doit être restitué pour l'aide nommée correspondante, avec prudence sur l'éligibilité.
+- Ne remplace jamais un montant officiel autorisé par une invitation générique à faire une simulation.
+- Ne donne jamais d'autre montant ou fourchette sans calcul explicite fiable ou source intégrée.
 - Ne confirme jamais qu'un dossier existe, est accepté, refusé ou en cours sans preuve.
 - Ne cite pas un organisme local non vérifié comme interlocuteur prioritaire.
 - Ne déduis jamais un salaire individuel à partir du revenu du foyer.

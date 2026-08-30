@@ -5,6 +5,11 @@ import {
   MONEY_RANGE_PATTERN,
   OFFICIAL_ORGANIZATIONS,
 } from "./truthRules.ts"
+import {
+  isTrustedAidAmountClaim,
+  toTrustedAmountClaims,
+  type TrustedAidFact,
+} from "./trustedAidFacts.ts"
 
 export type TruthLevel = "confirmed" | "likely" | "unknown" | "forbidden"
 
@@ -17,6 +22,8 @@ export interface TruthReport {
   recommendations: string[]
   warnings: string[]
   inventedAmounts: string[]
+  trustedOfficialAmounts: string[]
+  calculatedAmounts: string[]
   inventedDeadlines: string[]
   inventedOrganizations: string[]
   unsupportedClaims: string[]
@@ -53,6 +60,8 @@ function createEmptyReport(): TruthReport {
     recommendations: [],
     warnings: [],
     inventedAmounts: [],
+    trustedOfficialAmounts: [],
+    calculatedAmounts: [],
     inventedDeadlines: [],
     inventedOrganizations: [],
     unsupportedClaims: [],
@@ -124,13 +133,22 @@ function analyseCertainty(report: TruthReport, text: string) {
   }
 }
 
-function analyseAmounts(report: TruthReport, rawText: string) {
+function isTrustedOfficialAmount(rawText: string, value: string, facts: TrustedAidFact[]) {
+  return isTrustedAidAmountClaim(rawText, value, toTrustedAmountClaims(facts))
+}
+
+function analyseAmounts(report: TruthReport, rawText: string, trustedAidFacts: TrustedAidFact[] = []) {
   const amounts = rawText.match(MONEY_PATTERN) || []
   const ranges = rawText.match(MONEY_RANGE_PATTERN) || []
 
   const detected = [...amounts, ...ranges]
 
   for (const amount of detected) {
+    if (isTrustedOfficialAmount(rawText, amount, trustedAidFacts)) {
+      pushUnique(report.trustedOfficialAmounts, amount)
+      pushUnique(report.confirmed, `Montant officiel autorisé dans son contexte : ${amount}`)
+      continue
+    }
     pushUnique(report.inventedAmounts, amount)
     pushUnique(report.forbidden, "Ne jamais donner de montant ou fourchette de montant sans calcul officiel ou source intégrée.")
     pushUnique(report.recommendations, "Pour les montants CAF/APL/RSA, renvoyer vers une simulation officielle.")
@@ -166,12 +184,16 @@ function analyseOrganizations(report: TruthReport, rawText: string) {
   }
 }
 
-function analyseQuestionRisk(report: TruthReport, question = "") {
+function analyseQuestionRisk(report: TruthReport, question = "", trustedAidFacts: TrustedAidFact[] = []) {
   const text = normalize(question)
 
   if (text.includes("combien") || text.includes("gagn combien") || text.includes("montant")) {
     pushUnique(report.forbidden, "Ne pas inventer de montant en réponse à une question de montant.")
-    pushUnique(report.recommendations, "Expliquer les critères qui influencent le montant et proposer une simulation officielle.")
+    if (trustedAidFacts.some(fact => fact.amounts.length > 0)) {
+      pushUnique(report.recommendations, "Répondre avec le montant officiel du fait fiable concerné, sans le remplacer par une simulation.")
+    } else {
+      pushUnique(report.recommendations, "Expliquer les critères qui influencent le montant et proposer une simulation officielle.")
+    }
     report.confidence -= 8
   }
 
@@ -191,17 +213,30 @@ export function evaluateTruth(
   consistency: any = null,
   question = "",
   draftAnswer = "",
+  trustedAidFacts: TrustedAidFact[] = [],
 ): TruthReport {
   const report = createEmptyReport()
   const normalizedDraft = normalize(draftAnswer)
 
   analyseProfile(report, profile)
   analyseConsistency(report, consistency)
-  analyseQuestionRisk(report, question)
+  analyseQuestionRisk(report, question, trustedAidFacts)
+
+  trustedAidFacts.forEach(fact => {
+    pushUnique(report.confirmed, `Aide officielle intégrée : ${fact.name} — source ${fact.officialSource}`)
+    if (fact.amountMin !== null) {
+      pushUnique(report.confirmed, `Montant minimum officiel ${fact.name} : ${fact.amountMin} EUR`)
+      pushUnique(report.trustedOfficialAmounts, `${fact.amountMin} EUR (${fact.name})`)
+    }
+    if (fact.amountMax !== null) {
+      pushUnique(report.confirmed, `Montant maximum officiel ${fact.name} : ${fact.amountMax} EUR`)
+      pushUnique(report.trustedOfficialAmounts, `${fact.amountMax} EUR (${fact.name})`)
+    }
+  })
 
   if (draftAnswer) {
     analyseCertainty(report, normalizedDraft)
-    analyseAmounts(report, draftAnswer)
+    analyseAmounts(report, draftAnswer, trustedAidFacts)
     analyseDeadlines(report, draftAnswer)
     analyseOrganizations(report, draftAnswer)
   }

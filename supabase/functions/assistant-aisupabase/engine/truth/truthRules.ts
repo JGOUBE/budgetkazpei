@@ -31,8 +31,8 @@ export const SAFE_CERTAINTY_REPLACEMENTS = [
   "à vérifier auprès de l'organisme concerné",
 ]
 
-export const MONEY_PATTERN = /(?:\d{1,4}(?:[.,]\d{1,2})?\s?(?:\u20ac|euros?|EUR))/gi
-export const MONEY_RANGE_PATTERN = /(?:entre\s+\d{1,4}\s?(?:\u20ac|euros?|EUR)\s+et\s+\d{1,4}\s?(?:\u20ac|euros?|EUR))/gi
+export const MONEY_PATTERN = /(?:\d{1,9}(?:[.,]\d{1,2})?\s?(?:\u20ac|euros?|EUR))/gi
+export const MONEY_RANGE_PATTERN = /(?:(?:entre\s+)?\d{1,9}(?:[.,]\d{1,2})?\s*(?:(?:\u20ac|euros?|EUR)\s*)?(?:à|a|-|et)\s*\d{1,9}(?:[.,]\d{1,2})?\s*(?:\u20ac|euros?|EUR))/gi
 
 export const DEADLINE_PATTERN = /(?:sous|dans|en)\s+\d{1,3}\s+(?:jour|jours|semaine|semaines|mois|heures|heure)/gi
 
