@@ -11,6 +11,7 @@ import {
   getRetailProductStateLabel,
   getRetailPublishFunctionName,
   getRetailPublishMode,
+  getRetailPromotionPublicationState,
   hasReferenceProduct,
   RETAIL_UNIT_OPTIONS,
 } from "./retailPriceValidationState"
@@ -172,8 +173,9 @@ function createPublishFeedback({ mode, ids, result, itemsById }) {
   const created = Array.isArray(result?.created) ? result.created : []
   const updated = Array.isArray(result?.updated) ? result.updated : []
   const ignored = Array.isArray(result?.ignored) ? result.ignored : []
+  const observedOnly = Array.isArray(result?.observed_only) ? result.observed_only : []
   const rejected = Array.isArray(result?.rejected) ? result.rejected : []
-  const succeeded = [...created, ...updated, ...ignored]
+  const succeeded = [...created, ...updated, ...ignored, ...observedOnly]
 
   if (!succeeded.length) {
     const rejectedItem = ids.map(id => itemsById[id]).find(Boolean)
@@ -198,6 +200,18 @@ function createPublishFeedback({ mode, ids, result, itemsById }) {
     const productLabel = candidate.matched_market_product_name || candidate.product_name || "Produit associe"
 
     if (mode === "promotion") {
+      if (observedOnly.includes(ids[0])) {
+        return {
+          kind: "success",
+          text: [
+            "Promotion terminee ou non publiable.",
+            "- Aucun catalogue ou promotion active n'a ete cree.",
+            "- Le prix a ete conserve comme prix observe.",
+            `- Produit associe : ${productLabel}`,
+          ].join("\n"),
+        }
+      }
+
       return {
         kind: "success",
         text: [
@@ -221,12 +235,16 @@ function createPublishFeedback({ mode, ids, result, itemsById }) {
   }
 
   const label = mode === "promotion" ? "promotions" : "prix observes"
+  const promotionCount = created.length + updated.length
   return {
     kind: "success",
     text: [
-      `${succeeded.length} ${label} publies avec succes.`,
+      mode === "promotion"
+        ? `${promotionCount} promotion(s) publiee(s) et ${observedOnly.length} prix observe(s) conserve(s).`
+        : `${succeeded.length} ${label} publies avec succes.`,
       `- ${created.length} creation(s) et ${updated.length} mise(s) a jour`,
       `- ${ignored.length} deja publie(s)`,
+      ...(mode === "promotion" ? [`- ${observedOnly.length} promotion(s) terminee(s) ou non publiable(s), prix observe uniquement`] : []),
       `- ${rejected.length} rejet(s) sans ecriture publique`,
     ].join("\n"),
   }
@@ -433,6 +451,11 @@ export default function RetailPriceValidationPage({
   const quantityValidationErrors = useMemo(
     () => getRetailQuantityValidationErrors(stagedSelectedItem || {}),
     [stagedSelectedItem],
+  )
+
+  const promotionPublicationState = useMemo(
+    () => getRetailPromotionPublicationState(selectedItem || {}),
+    [selectedItem],
   )
 
   function toggleSelection(candidateId) {
@@ -899,6 +922,22 @@ export default function RetailPriceValidationPage({
                   </Badge>
                 </div>
               </div>
+
+              {selectedItem.price_type === "promotion" && promotionPublicationState.kind !== "active" && (
+                <div
+                  style={{
+                    padding: "12px 14px",
+                    borderRadius: 14,
+                    border: `1px solid ${ds.warning}55`,
+                    background: "rgba(245,158,11,.10)",
+                    color: ds.warning,
+                    fontWeight: 800,
+                    lineHeight: 1.45,
+                  }}
+                >
+                  {promotionPublicationState.message}
+                </div>
+              )}
 
               <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
                 <LabeledField label="Type">

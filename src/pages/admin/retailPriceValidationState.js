@@ -56,6 +56,39 @@ export function getRetailPublishMode(item = {}) {
   return item?.price_type === "promotion" ? "promotion" : "observed_price"
 }
 
+export function getRetailPromotionPublicationState(item = {}, referenceNow = new Date()) {
+  if (item?.price_type !== "promotion" || item?.promotion_proven !== true) {
+    return { kind: "not_promotion", message: "Prix observe." }
+  }
+
+  const now = referenceNow instanceof Date ? referenceNow.getTime() : Date.parse(referenceNow)
+  const startsAt = item?.starts_at ? Date.parse(item.starts_at) : Number.NaN
+  const endsAt = item?.ends_at ? Date.parse(item.ends_at) : Number.NaN
+
+  if (Number.isFinite(endsAt) && endsAt < now) {
+    return {
+      kind: "expired",
+      message: "Promotion terminee — le prix sera conserve comme prix observe.",
+    }
+  }
+
+  if (!Number.isFinite(startsAt) || !Number.isFinite(endsAt) || endsAt < startsAt) {
+    return {
+      kind: "incomplete",
+      message: "La periode de promotion est incomplete. Le prix sera enregistre comme prix observe.",
+    }
+  }
+
+  if (startsAt > now) {
+    return {
+      kind: "not_active_yet",
+      message: "La promotion n'est pas encore active. Le prix sera conserve comme prix observe.",
+    }
+  }
+
+  return { kind: "active", message: "Promotion active avec une periode commerciale exploitable." }
+}
+
 export function getRetailApprovalStatusForItem(item = {}) {
   return getRetailPublishMode(item) === "promotion" ? "approved_promotion" : "approved_price"
 }

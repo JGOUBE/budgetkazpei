@@ -20,6 +20,7 @@ import {
   getRetailQuantityValidationErrors,
   getRetailProductStateLabel,
   getRetailPublishFunctionName,
+  getRetailPromotionPublicationState,
   RETAIL_UNIT_OPTIONS,
 } from "../src/pages/admin/retailPriceValidationState.js"
 
@@ -196,6 +197,32 @@ assert.equal(getRetailAdminBucket({
 }), "published")
 assert.equal(getRetailPublishFunctionName({ price_type: "promotion" }), "retail_publish_promotion_candidates")
 assert.equal(getRetailPublishFunctionName({ price_type: "observed_price" }), "retail_publish_price_candidates")
+const testNow = new Date("2026-08-26T12:00:00Z")
+assert.equal(getRetailPromotionPublicationState({ price_type: "observed_price" }, testNow).kind, "not_promotion")
+assert.equal(getRetailPromotionPublicationState({
+  price_type: "promotion",
+  promotion_proven: true,
+  starts_at: "2026-08-01T00:00:00Z",
+  ends_at: "2026-09-01T00:00:00Z",
+}, testNow).kind, "active")
+assert.equal(getRetailPromotionPublicationState({
+  price_type: "promotion",
+  promotion_proven: true,
+  starts_at: "2026-08-01T00:00:00Z",
+  ends_at: "2026-08-25T23:59:59Z",
+}, testNow).kind, "expired")
+assert.equal(getRetailPromotionPublicationState({
+  price_type: "promotion",
+  promotion_proven: true,
+  starts_at: null,
+  ends_at: "2026-09-01T00:00:00Z",
+}, testNow).kind, "incomplete")
+assert.equal(getRetailPromotionPublicationState({
+  price_type: "promotion",
+  promotion_proven: true,
+  starts_at: "2026-09-01T00:00:00Z",
+  ends_at: "2026-09-15T00:00:00Z",
+}, testNow).kind, "not_active_yet")
 assert.deepEqual(RETAIL_UNIT_OPTIONS.map(option => option.value), ["", "unite", "bloc", "piece", "kg", "g", "l", "cl", "ml"])
 assert.deepEqual(getRetailQuantityValidationErrors({
   package_format: "2 blocs",
@@ -265,6 +292,7 @@ const retailMigration = read("supabase/migrations/202607290003_retail_publicatio
 const retailSourceConstraintMigration = read("supabase/migrations/202607290004_market_seed_batches_retail_source.sql")
 const retailBatchIdFixMigration = read("supabase/migrations/202607290005_retail_market_batch_id_ambiguity_fix.sql")
 const retailQuantityContractMigration = read("supabase/migrations/202607290006_retail_quantity_contract_and_harpic_fix.sql")
+const retailExpiredPromotionMigration = read("supabase/migrations/202608260001_retail_expired_promotions_as_observed_prices.sql")
 const normalizedRetailMigration = normalizeSql(retailMigration)
 const retailReviewViewContractMatch = retailMigration.match(/create or replace view public\.retail_price_candidates_review[\s\S]*?left join public\.shopping_products[\s\S]*?;/)
 assert.ok(retailReviewViewContractMatch, "Retail migration must still define the retail_price_candidates_review view contract")
@@ -374,6 +402,15 @@ assert.doesNotMatch(retailQuantityContractMigration, /where .*product_name/i, "R
 const harpicFixBlockMatch = retailQuantityContractMigration.match(/do \$\$[\s\S]*?end;\s*\$\$;/i)
 assert.ok(harpicFixBlockMatch, "Retail quantity contract migration must contain the targeted Harpic reconciliation block")
 assert.doesNotMatch(harpicFixBlockMatch[0], /insert into public\.retail_price_observations|insert into public\.market_price_observations/i, "Retail quantity contract migration must not duplicate published observations inside the Harpic reconciliation block")
+
+assert.match(retailExpiredPromotionMigration, /alter function public\.retail_publish_promotion_candidates\(uuid\[\]\)\s+rename to retail_publish_promotion_candidates_active/, "Expired-promotion migration must preserve the audited active-promotion implementation")
+assert.match(retailExpiredPromotionMigration, /v_candidate\.ends_at is not null and v_candidate\.ends_at < now\(\)/, "Expired promotions must be detected from ends_at against the real current time")
+assert.match(retailExpiredPromotionMigration, /v_candidate\.starts_at is null or v_candidate\.ends_at is null/, "Missing commercial dates must be classified as incomplete")
+assert.match(retailExpiredPromotionMigration, /status = 'approved_price',\s+price_type = 'observed_price',\s+promotion_proven = false,\s+promotion_evidence = null/s, "Non-publishable promotions must be converted to a coherent observed-price candidate")
+assert.match(retailExpiredPromotionMigration, /select public\.retail_publish_price_candidates\(array\[v_candidate\.id\]\)/, "Non-publishable promotions must reuse the observed-price publication pipeline")
+assert.match(retailExpiredPromotionMigration, /'observed_only', to_jsonb/, "Promotion publication must report observed-price fallbacks separately")
+assert.match(retailExpiredPromotionMigration, /foreach v_candidate_id in array p_candidate_ids loop[\s\S]*?exception\s+when others then[\s\S]*?end;\s+end loop;/, "Batch promotion publication must isolate candidate failures")
+assert.doesNotMatch(retailExpiredPromotionMigration, /starts_at\s*:=\s*now\(\)|starts_at\s*=\s*now\(\)/i, "Expired-promotion migration must never invent a commercial start date")
 
 const provenMarketStoreId = "29ae25ce-eb77-4d8e-9f88-0b4b5c5b4eb3"
 const mappingRows = [
