@@ -118,17 +118,11 @@ def choose_pilot_store(stores: list[LeaderDriveStore]) -> LeaderDriveStore:
     if not stores:
         raise ValueError("no_public_store_available")
 
-    preferred_slugs = [
-        "leaderprice-lp-saint-leu",
-        "leaderprice-lp-ermitage",
-        "leaderprice-lp-chaussee-royale",
-        "leaderprice-lp-possession",
-    ]
     by_slug = {store.slug: store for store in stores}
-    for slug in preferred_slugs:
-        if slug in by_slug:
-            return by_slug[slug]
-    return stores[0]
+    pilot = by_slug.get("leaderprice-lp-ermitage")
+    if pilot is None:
+        raise ValueError("leader_price_pilot_store_unavailable:leaderprice-lp-ermitage")
+    return pilot
 
 
 def parse_store_categories(html_text: str) -> list[LeaderDriveCategory]:
@@ -296,18 +290,21 @@ def parse_product_cards(html_text: str, *, page_url: str) -> list[LeaderDrivePro
 
 
 def parse_product_detail_page(html_text: str, *, product_url: str) -> LeaderDriveDetail:
-    title = _extract_first(html_text, r"<h1[^>]*>\s*(?P<value>.*?)\s*</h1>")
-    package_format = _extract_first(html_text, r"Contenu\s*:\s*(?P<value>[^<]+)")
-    brand = None
+    product_block = _extract_primary_product_block(html_text)
+    title = _extract_first(product_block, r'<span class="product-label">(?P<value>.*?)</span>')
+    if not title:
+        title = _extract_first(product_block, r"<h1[^>]*>\s*(?P<value>.*?)\s*</h1>")
+    product_content = _extract_first(product_block, r'<span class="product-content">(?P<value>.*?)</span>')
+    package_format = product_content or _extract_first(
+        product_block,
+        r"Contenu\s*:\s*(?P<value>[^<]+)",
+    )
+    brand = _extract_first(product_block, r'<span class="brand">(?P<value>.*?)</span>')
+    if not brand:
+        brand = _extract_first(product_block, r'<div class="brand-block">(?P<value>.*?)</div>')
     normalized_title = clean_text(_strip_tags(title))
-    title_index = html_text.find(title) if title else -1
-    if title_index > 0:
-        window = html_text[max(0, title_index - 600):title_index]
-        candidate = re.findall(r">([A-Z0-9 '\-]+)<", window)
-        if candidate:
-            brand = clean_text(candidate[-1])
 
-    price_block = PRICE_BLOCK_RE.search(html_text)
+    price_block = PRICE_BLOCK_RE.search(product_block)
     price_values = []
     if price_block:
         price_values = [
@@ -315,8 +312,16 @@ def parse_product_detail_page(html_text: str, *, product_url: str) -> LeaderDriv
             for match in PRICE_VALUE_RE.finditer(price_block.group("body"))
         ]
     current_price = price_values[-1] if price_values else None
-    unit_price, unit_price_unit = parse_unit_price(_strip_tags(html_text))
-    image_url = _extract_first(html_text, r'<img[^>]+class="product-image-main img-fluid"[^>]+src="(?P<value>https://[^"]+)"')
+    unit_price, unit_price_unit = parse_unit_price(_strip_tags(product_block))
+    image_url = _extract_first(
+        product_block,
+        r'<img[^>]+src="(?P<value>https://[^"]+)"[^>]+class="[^"]*product-image-main[^"]*"',
+    )
+    if not image_url:
+        image_url = _extract_first(
+            product_block,
+            r'<img[^>]+class="[^"]*product-image-main[^"]*"[^>]+src="(?P<value>https://[^"]+)"',
+        )
     return LeaderDriveDetail(
         product_url=product_url,
         brand=_strip_tags(brand) if brand else None,
@@ -327,6 +332,21 @@ def parse_product_detail_page(html_text: str, *, product_url: str) -> LeaderDriv
         current_price=current_price,
         image_url=clean_text(image_url) or None,
     )
+
+
+def _extract_primary_product_block(html_text: str) -> str:
+    primary_match = re.search(r'<div class="mb-4 product">', html_text, re.I)
+    if primary_match:
+        recommendation_match = PRODUCT_CARD_START_RE.search(html_text, primary_match.end())
+        block_end = recommendation_match.start() if recommendation_match else len(html_text)
+        return html_text[primary_match.start():block_end]
+
+    fixture_match = re.search(r'<div class="product-page">', html_text, re.I)
+    if fixture_match:
+        body_end = html_text.find("</body>", fixture_match.end())
+        block_end = body_end if body_end >= 0 else len(html_text)
+        return html_text[fixture_match.start():block_end]
+    return ""
 
 
 def _store_slug_from_name(name: str) -> str:

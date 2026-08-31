@@ -1,13 +1,17 @@
 from __future__ import annotations
 
 import json
+import hashlib
 from dataclasses import dataclass
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Protocol
-from uuid import NAMESPACE_URL, UUID, uuid5
+from urllib.parse import urlsplit, urlunsplit
+from uuid import NAMESPACE_URL, uuid5
 
 from app.db.supabase_client import SupabaseAdminClient
 from app.models.retail_price_observation import RetailPriceObservation
+from app.services.retail_product_normalization import normalize_lookup_key
 from app.settings import Settings
 
 
@@ -71,27 +75,42 @@ def import_leader_price_report(
         raise ValueError(f"unsupported_store_name:{store['name']}")
 
     observations = payload["observations"][:max_products]
-    source_run_id = build_source_run_id(observations)
-    rpc_items = [_to_rpc_item(item) for item in observations]
-
     supabase_client = client or _build_client(settings)
-    rpc_result = supabase_client.rpc(
+    return import_leader_price_observations(
+        observations,
+        client=supabase_client,
+        retailer_slug=retailer_slug,
+        store_slug=EXPECTED_STORE_SLUG,
+        report_path=str(report_path or settings.report_path.parent / DEFAULT_REPORT_NAME),
+    )
+
+
+def import_leader_price_observations(
+    observations: list[dict[str, object]],
+    *,
+    client: RetailImportClient,
+    source_run_id: str | None = None,
+    retailer_slug: str = EXPECTED_RETAILER_SLUG,
+    store_slug: str = EXPECTED_STORE_SLUG,
+    report_path: str = "incremental-collection",
+) -> LeaderPriceImportSummary:
+    resolved_source_run_id = source_run_id or build_source_run_id(observations)
+    rpc_items = [to_rpc_item(item) for item in observations]
+    rpc_result = client.rpc(
         "retail_import_price_candidates",
         {
-            "p_source_run_id": source_run_id,
+            "p_source_run_id": resolved_source_run_id,
             "p_items": rpc_items,
         },
     )
-
-    summary = _coerce_summary(
+    return _coerce_summary(
         rpc_result,
-        source_run_id=source_run_id,
+        source_run_id=resolved_source_run_id,
         retailer_slug=retailer_slug,
-        store_slug=EXPECTED_STORE_SLUG,
+        store_slug=store_slug,
         imported_items=len(rpc_items),
-        report_path=str(report_path or settings.report_path.parent / DEFAULT_REPORT_NAME),
+        report_path=report_path,
     )
-    return summary
 
 
 def build_source_run_id(observations: list[dict[str, object]]) -> str:
@@ -99,13 +118,37 @@ def build_source_run_id(observations: list[dict[str, object]]) -> str:
         raise ValueError("leader_price_report_has_no_observations")
 
     keys = sorted(
-        f"{item.get('source_product_id') or ''}|{item.get('duplicate_key') or ''}|{item.get('source_observed_at') or ''}"
+        f"{build_source_product_identity(item)}|{build_commercial_fingerprint(item)}"
         for item in observations
     )
-    retailer_slug = _expect_text(observations[0].get("retailer_slug"), "retailer_slug")
-    store_slug = _expect_text(observations[0].get("store_slug"), "store_slug")
-    seed = f"{retailer_slug}|{store_slug}|{len(observations)}|{'::'.join(keys)}"
+    seed = f"leader-price-commercial-run-v2|{len(observations)}|{'::'.join(keys)}"
     return str(uuid5(NAMESPACE_URL, seed))
+
+
+def build_source_product_identity(item: dict[str, object]) -> str:
+    retailer_slug = _expect_text(item.get("retailer_slug"), "retailer_slug").strip().lower()
+    store_slug = _expect_text(item.get("store_slug"), "store_slug").strip().lower()
+    source_product_id = _optional_text(item.get("source_product_id"))
+    if source_product_id:
+        source_key = f"source-id:{source_product_id.lower()}"
+    else:
+        product_url = _canonical_product_url(_optional_text(item.get("product_url")))
+        if not product_url:
+            raise ValueError("missing_stable_product_identity")
+        source_key = f"product-url:{product_url}"
+    return f"{retailer_slug}|{store_slug}|{source_key}"
+
+
+def build_commercial_fingerprint(item: dict[str, object]) -> str:
+    payload = {
+        "source_identity": build_source_product_identity(item),
+        "current_price": _canonical_price(item.get("current_price")),
+        "original_price": _canonical_price(item.get("original_price")),
+        "promotion_proven": item.get("promotion_proven") is True,
+        "offer_mechanism": normalize_lookup_key(_optional_text(item.get("offer_mechanism"))),
+    }
+    encoded = json.dumps(payload, ensure_ascii=True, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
 
 
 def _build_client(settings: Settings) -> SupabaseAdminClient:
@@ -128,7 +171,7 @@ def _load_report_payload(path: Path) -> dict[str, object]:
     return data
 
 
-def _to_rpc_item(raw_item: dict[str, object]) -> dict[str, object]:
+def to_rpc_item(raw_item: dict[str, object]) -> dict[str, object]:
     observation = RetailPriceObservation(
         source_type=str(raw_item["source_type"]),
         source_url=str(raw_item["source_url"]),
@@ -257,3 +300,29 @@ def _json_list(value: object) -> list[str]:
     if not isinstance(value, list):
         return []
     return [str(item) for item in value]
+
+
+def _canonical_product_url(value: str | None) -> str:
+    if not value:
+        return ""
+    parsed = urlsplit(value.strip())
+    if not parsed.scheme or not parsed.netloc:
+        return value.strip().lower().rstrip("/")
+    return urlunsplit(
+        (
+            parsed.scheme.lower(),
+            parsed.netloc.lower(),
+            parsed.path.rstrip("/"),
+            parsed.query,
+            "",
+        )
+    )
+
+
+def _canonical_price(value: object) -> str | None:
+    if value in (None, ""):
+        return None
+    try:
+        return format(Decimal(str(value)).quantize(Decimal("0.01")), "f")
+    except (InvalidOperation, ValueError):
+        return str(value).strip()

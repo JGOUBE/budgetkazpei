@@ -111,6 +111,52 @@ class LeaderDriveProductExtractionTests(unittest.TestCase):
         self.assertEqual(detail.unit_price, 34.67)
         self.assertEqual(detail.unit_price_unit, "kg")
 
+    def test_detail_parser_never_reads_recommended_product_metadata(self):
+        cases = [
+            ("Rasoirs jetables 3 lames - 4 rasoirs", "25 cl", "20 cl"),
+            ("Lingette nettoie sols agrumes - 15 lingettes", "50 cl", "65 cl"),
+            ("Bloc WC eau bleue pour chasse d eau - 2 blocs", "70 cl", "1 L"),
+        ]
+        for label, first_recommendation, second_recommendation in cases:
+            with self.subTest(label=label):
+                first = parse_product_detail_page(
+                    self._detail_html(label, first_recommendation, second_recommendation),
+                    product_url="https://leaderdrive.re/test",
+                )
+                second = parse_product_detail_page(
+                    self._detail_html(label, second_recommendation, first_recommendation),
+                    product_url="https://leaderdrive.re/test",
+                )
+                self.assertEqual(first.package_format, second.package_format)
+                self.assertIsNone(first.package_format)
+                self.assertIsNone(first.unit_price)
+                self.assertEqual(first.current_price, 3.62)
+
+    @staticmethod
+    def _detail_html(label: str, first_recommendation: str, second_recommendation: str) -> str:
+        return f"""
+        <div class="mb-4 product">
+          <p class="name">
+            <span class="brand">MARQUE TEST</span>
+            <span class="product-label">{label}</span>
+          </p>
+          <p class="product-unit-price">&nbsp;</p>
+          <p class="product-price">
+            <span class="price"><span class="int">3</span>
+              <span><span class="cents">62</span></span>
+            </span>
+          </p>
+        </div>
+        <span class="card product-card" id="product-card-9001">
+          <span class="product-content">Contenu : {first_recommendation}</span>
+          <p class="product-unit-price">Soit 38,75 € / L</p>
+        </span>
+        <span class="card product-card" id="product-card-9002">
+          <span class="product-content">Contenu : {second_recommendation}</span>
+          <p class="product-unit-price">Soit 66,60 € / L</p>
+        </span>
+        """
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -94,6 +94,29 @@ class LeaderPriceImporterTests(unittest.TestCase):
             build_source_run_id(reversed_observations),
         )
 
+    def test_build_source_run_id_ignores_observation_timestamp_but_tracks_price(self):
+        first = _observation("A1")
+        later = dict(first, source_observed_at="2026-07-30T09:00:00Z")
+        changed = dict(later, current_price=2.79)
+
+        self.assertEqual(build_source_run_id([first]), build_source_run_id([later]))
+        self.assertNotEqual(build_source_run_id([first]), build_source_run_id([changed]))
+
+    def test_build_source_run_id_ignores_package_metadata(self):
+        first = _observation("A1")
+        changed_package = dict(
+            first,
+            package_format="20 cl",
+            quantity_value=20,
+            quantity_unit="cl",
+            total_quantity_value=20,
+            total_quantity_unit="cl",
+        )
+        self.assertEqual(
+            build_source_run_id([first]),
+            build_source_run_id([changed_package]),
+        )
+
     def test_import_leader_price_report_calls_retail_rpc_with_limited_payload(self):
         temp_root = Path(tempfile.gettempdir()) / "budgetkazpei-leader-price-import-tests"
         temp_root.mkdir(parents=True, exist_ok=True)

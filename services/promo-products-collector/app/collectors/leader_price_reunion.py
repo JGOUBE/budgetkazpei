@@ -28,6 +28,7 @@ from app.services.retail_product_normalization import (
     normalize_lookup_key,
     normalize_product_name,
     parse_package_format,
+    select_package_format,
 )
 from app.settings import Settings
 
@@ -251,7 +252,11 @@ def _observation_from_card(
     card,
     detail: LeaderDriveDetail | None,
 ) -> RetailPriceObservation:
-    package_value = detail.package_format if detail and detail.package_format else card.product_content
+    package_value, package_source = select_package_format(
+        card_product_content=card.product_content,
+        detail_package_format=detail.package_format if detail else None,
+        product_label=card.product_label,
+    )
     package = parse_package_format(package_value)
     product_name = normalize_product_name(card.product_label)
     brand = card.brand or (detail.brand if detail else None)
@@ -317,12 +322,15 @@ def _observation_from_card(
             "store_url": store.url,
             "page_url": page_audit.url,
             "card_html": card.raw_block,
+            "card_product_content": card.product_content,
             "detail_brand": detail.brand if detail else None,
             "detail_package_format": detail.package_format if detail else None,
+            "package_format_source": package_source,
         },
     )
     observation.duplicate_key = build_duplicate_key(
         store_slug=store.slug,
+        source_product_id=observation.source_product_id,
         product_url=observation.product_url,
         normalized_product_name=observation.normalized_product_name,
         brand=observation.brand,

@@ -25,6 +25,10 @@ from app.services.page_layout_classifier import PageLayoutAnalysis, classify_pag
 from app.services.promotion_deduplication import DeduplicationSummary, annotate_duplicates
 from app.services.promotion_scoring import extract_promotion_candidates
 from app.services.leader_price_importer import LeaderPriceImportSummary, import_leader_price_report
+from app.services.leader_price_incremental import (
+    LeaderPriceIncrementalReport,
+    run_leader_price_incremental,
+)
 from app.services.leader_price_validation_job import (
     LeaderPriceValidationJobReport,
     build_validation_job_smoke_report,
@@ -235,6 +239,8 @@ def build_argument_parser() -> argparse.ArgumentParser:
     parser.add_argument("--extract-products", action="store_true", help="Run the local product extraction prototype.")
     parser.add_argument("--leader-price-readonly", action="store_true", help="Run the readonly Leader Price structured collector.")
     parser.add_argument("--leader-price-import", action="store_true", help="Import the local Leader Price readonly report into Supabase staging.")
+    parser.add_argument("--leader-price-incremental", action="store_true", help="Collect LP Ermitage, compare commercial state, and stage only changes.")
+    parser.add_argument("--dry-run", action="store_true", help="Disable Supabase writes for the incremental Leader Price mode.")
     parser.add_argument("--leader-price-validation-job", action="store_true", help="Run the one-shot Leader Price import validation job.")
     parser.add_argument("--leader-price-validation-job-smoke", action="store_true", help="Run the offline smoke for the Leader Price validation job.")
     parser.add_argument("--leader-max-products", type=int, default=100, help="Maximum Leader Price products to inspect.")
@@ -678,6 +684,17 @@ def main() -> int:
         print(json.dumps(_leader_price_import_to_json(report), ensure_ascii=False, indent=2))
         return 0
 
+    if args.leader_price_incremental:
+        report = run_leader_price_incremental(
+            settings,
+            fetcher=HttpFetcher(),
+            dry_run=args.dry_run,
+            max_products=args.leader_max_products,
+            report_path=Path(args.leader_report_path) if args.leader_report_path else None,
+        )
+        print(json.dumps(_leader_price_incremental_to_json(report), ensure_ascii=False, indent=2))
+        return 0
+
     if args.leader_price_validation_job:
         report = run_leader_price_validation_job(settings, fetcher=HttpFetcher())
         print(json.dumps(_leader_price_validation_job_to_json(report), ensure_ascii=False, indent=2))
@@ -774,6 +791,10 @@ def _leader_price_report_to_json(report: LeaderPriceReadonlyRunReport) -> dict[s
 
 
 def _leader_price_import_to_json(report: LeaderPriceImportSummary) -> dict[str, object]:
+    return report.to_dict()
+
+
+def _leader_price_incremental_to_json(report: LeaderPriceIncrementalReport) -> dict[str, object]:
     return report.to_dict()
 
 
