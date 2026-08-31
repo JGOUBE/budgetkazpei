@@ -1,0 +1,66 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-08T00:00:00.000Z",
+  "dry_run_only": true,
+  "source_report": "reports/phase2b-positive-report.json",
+  "batch_id": "phase2b-positive-fixture",
+  "summary": {
+    "report_item_count": 1,
+    "applicable_count": 1,
+    "excluded_count": 0,
+    "excluded_by_reason": {},
+    "creates_or_reuses_products": 1,
+    "creates_aliases": 1,
+    "writes_performed": 0
+  },
+  "rpc_preview": {
+    "function": "market_apply_scoped_alias_library",
+    "args": {
+      "p_items": [
+        {
+          "recommended_action": "library",
+          "classification": "active_library_ready",
+          "proposed_alias": {
+            "product_id": "f3061576-1e12-4ee2-8b8f-58919383c104",
+            "raw_label": "POULAIN SP",
+            "normalized_raw_label": "poulain sp",
+            "source": "open_prices",
+            "confidence": 1,
+            "scope": "chain",
+            "store_id": null,
+            "store_chain_key": "e leclerc",
+            "status": "active",
+            "evidence": {
+              "candidate_canonical_name": "Chocolat en poudre Poulain 450 g",
+              "classification": "active_library_ready",
+              "fixture_only": true
+            }
+          }
+        }
+      ]
+    }
+  },
+  "applicable_items": [
+    {
+      "recommended_action": "library",
+      "classification": "active_library_ready",
+      "proposed_alias": {
+        "product_id": "f3061576-1e12-4ee2-8b8f-58919383c104",
+        "raw_label": "POULAIN SP",
+        "normalized_raw_label": "poulain sp",
+        "source": "open_prices",
+        "confidence": 1,
+        "scope": "chain",
+        "store_id": null,
+        "store_chain_key": "e leclerc",
+        "status": "active",
+        "evidence": {
+          "candidate_canonical_name": "Chocolat en poudre Poulain 450 g",
+          "classification": "active_library_ready",
+          "fixture_only": true
+        }
+      }
+    }
+  ],
+  "excluded_items": []
+}

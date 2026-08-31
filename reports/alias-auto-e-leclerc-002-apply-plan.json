@@ -1,0 +1,125 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-08-06T19:01:27.872Z",
+  "dry_run_only": true,
+  "source_report": "reports/alias-auto-e-leclerc-002.json",
+  "batch_id": "alias-auto-e-leclerc-002",
+  "summary": {
+    "report_item_count": 20,
+    "applicable_count": 0,
+    "excluded_count": 20,
+    "excluded_by_reason": {
+      "classification_not_applicable": 20
+    },
+    "writes_performed": 0
+  },
+  "rpc_preview": {
+    "function": "market_apply_scoped_alias_library",
+    "args": {
+      "p_items": []
+    }
+  },
+  "applicable_items": [],
+  "excluded_items": [
+    {
+      "raw_label": "PAVE NATURE POLETTE",
+      "classification": "not_found",
+      "reason": "classification_not_applicable"
+    },
+    {
+      "raw_label": "POULET FRAIS ROTI TRADITION",
+      "classification": "not_found",
+      "reason": "classification_not_applicable"
+    },
+    {
+      "raw_label": "PAIN MIE SAND",
+      "classification": "not_found",
+      "reason": "classification_not_applicable"
+    },
+    {
+      "raw_label": "ARRANGE RDH ANANAS/ROTI TOCL",
+      "classification": "not_found",
+      "reason": "classification_not_applicable"
+    },
+    {
+      "raw_label": "PATE CAMPAGNE DEMOULE GENERIQU",
+      "classification": "not_found",
+      "reason": "classification_not_applicable"
+    },
+    {
+      "raw_label": "PETIT PAIN BLANC K10",
+      "classification": "not_found",
+      "reason": "classification_not_applicable"
+    },
+    {
+      "raw_label": "ROQUEFORT AOP L CR NRT,KG",
+      "classification": "not_found",
+      "reason": "classification_not_applicable"
+    },
+    {
+      "raw_label": "NATAUIE BISCUIT CHOCOLAT",
+      "classification": "not_found",
+      "reason": "classification_not_applicable"
+    },
+    {
+      "raw_label": "BURGER CURCUMA",
+      "classification": "ambiguous",
+      "reason": "classification_not_applicable"
+    },
+    {
+      "raw_label": "LENTILLES CUITES",
+      "classification": "not_found",
+      "reason": "classification_not_applicable"
+    },
+    {
+      "raw_label": "Compote Pomme",
+      "classification": "ambiguous",
+      "reason": "classification_not_applicable"
+    },
+    {
+      "raw_label": "OLIVE VRT DEN",
+      "classification": "not_found",
+      "reason": "classification_not_applicable"
+    },
+    {
+      "raw_label": "LENTILLE GRA",
+      "classification": "not_found",
+      "reason": "classification_not_applicable"
+    },
+    {
+      "raw_label": "PART PIZZA REBLOCH",
+      "classification": "not_found",
+      "reason": "classification_not_applicable"
+    },
+    {
+      "raw_label": "BURGER CURCUMA H1'KIF X4 2706",
+      "classification": "not_found",
+      "reason": "classification_not_applicable"
+    },
+    {
+      "raw_label": "Compote de pomme 4 x 100 g",
+      "classification": "ambiguous",
+      "reason": "classification_not_applicable"
+    },
+    {
+      "raw_label": "MACED LEGUMES",
+      "classification": "ambiguous",
+      "reason": "classification_not_applicable"
+    },
+    {
+      "raw_label": "MIMOLETTE UTEOL FORT,200G",
+      "classification": "not_found",
+      "reason": "classification_not_applicable"
+    },
+    {
+      "raw_label": "PAIN MIE SANDU CFLET YAMI 42OE",
+      "classification": "not_found",
+      "reason": "classification_not_applicable"
+    },
+    {
+      "raw_label": "PARNIG.REGGIANO EOH",
+      "classification": "not_found",
+      "reason": "classification_not_applicable"
+    }
+  ]
+}

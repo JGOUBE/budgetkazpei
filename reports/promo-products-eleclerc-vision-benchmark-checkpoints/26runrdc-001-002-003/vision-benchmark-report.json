@@ -1,0 +1,371 @@
+{
+  "catalogue": {
+    "source_url": "https://www.e-leclerc.re/index.php/page/catalogues-reunion",
+    "catalog_slug": "26runRDC",
+    "catalog_title": "Rentrée des classes: mention très bien pour votre budget (RDC)",
+    "viewer_url": "https://www.e-leclerc.re/public/catalogues/26runRDC",
+    "config_url": "https://www.e-leclerc.re/public/catalogues/26runRDC/javascript/config.js?v=1783601891210",
+    "total_detected_pages": 3,
+    "pages_processed": [
+      1,
+      2,
+      3
+    ]
+  },
+  "provider": "fake",
+  "model": "fake-model",
+  "duration_seconds": 0.079,
+  "total_calls": 12,
+  "total_estimated_cost_eur": 0.024,
+  "temporary_files_remaining": 0,
+  "errors": [],
+  "detected_catalogs": [
+    {
+      "catalog_slug": "26runRDC",
+      "title": "Rentrée des classes: mention très bien pour votre budget (RDC)",
+      "viewer_url": "https://www.e-leclerc.re/public/catalogues/26runRDC",
+      "selected": true,
+      "ignored_reason": null
+    },
+    {
+      "catalog_slug": "26run16-HYPER",
+      "title": "C'est la rentrée des petits prix ! (HYPER)",
+      "viewer_url": "https://www.e-leclerc.re/public/catalogues/26run16-HYPER",
+      "selected": false,
+      "ignored_reason": "outside_mvp_target"
+    },
+    {
+      "catalog_slug": "26run16-EXPRESS",
+      "title": "C'est la rentrée des petits prix ! (EXPRESS)",
+      "viewer_url": "https://www.e-leclerc.re/public/catalogues/26run16-EXPRESS",
+      "selected": false,
+      "ignored_reason": "outside_mvp_target"
+    },
+    {
+      "catalog_slug": "26run16-MAISON",
+      "title": "Spécial Espace Maison Éléctroménager Technologie (MAISON)",
+      "viewer_url": "https://www.e-leclerc.re/public/catalogues/26run16-MAISON",
+      "selected": false,
+      "ignored_reason": "outside_mvp_target"
+    },
+    {
+      "catalog_slug": "26run16-EC",
+      "title": "Rentrée des classes: bonne note pour le pouvoir d'achat (ESPACE CULTUREL)",
+      "viewer_url": "https://www.e-leclerc.re/public/catalogues/26run16-EC",
+      "selected": false,
+      "ignored_reason": "outside_mvp_target"
+    }
+  ],
+  "strategies": [
+    {
+      "strategy": "A",
+      "calls": 3,
+      "duration_seconds": 0.36,
+      "estimated_cost_eur": 0.006,
+      "offers_detected": 1,
+      "offers_complete": 1,
+      "offers_incomplete": 0,
+      "duplicates": 0,
+      "errors": 2,
+      "page_results": [
+        {
+          "page_number": 1,
+          "strategy": "A",
+          "calls": 1,
+          "duration_seconds": 0.12,
+          "estimated_cost_eur": 0.002,
+          "offers_detected": 1,
+          "offers_complete": 1,
+          "offers_incomplete": 0,
+          "duplicates": 0,
+          "errors": [],
+          "correct_product_price_associations": null,
+          "false_product_price_associations": null,
+          "input_tokens": 100,
+          "output_tokens": 40,
+          "offers": [
+            {
+              "page_number": 1,
+              "bounding_box": {
+                "left": 10.0,
+                "top": 20.0,
+                "width": 100.0,
+                "height": 140.0
+              },
+              "product_name": "Stylo bleu",
+              "brand": "Bic",
+              "package_format": "lot de 4",
+              "quantity_value": 4.0,
+              "quantity_unit": "unit",
+              "promo_price": 1.99,
+              "original_price": null,
+              "unit_price": null,
+              "unit_price_unit": null,
+              "loyalty_amount": null,
+              "loyalty_type": null,
+              "discount_percent": null,
+              "offer_mechanism": "simple_price",
+              "conditions": null,
+              "confidence": 88.0,
+              "visual_evidence_notes": "price near product"
+            }
+          ]
+        },
+        {
+          "page_number": 2,
+          "strategy": "A",
+          "calls": 1,
+          "duration_seconds": 0.12,
+          "estimated_cost_eur": 0.002,
+          "offers_detected": 0,
+          "offers_complete": 0,
+          "offers_incomplete": 0,
+          "duplicates": 0,
+          "errors": [
+            "page-002-full:vision_offer_unexpected_page_number"
+          ],
+          "correct_product_price_associations": null,
+          "false_product_price_associations": null,
+          "input_tokens": 100,
+          "output_tokens": 40,
+          "offers": []
+        },
+        {
+          "page_number": 3,
+          "strategy": "A",
+          "calls": 1,
+          "duration_seconds": 0.12,
+          "estimated_cost_eur": 0.002,
+          "offers_detected": 0,
+          "offers_complete": 0,
+          "offers_incomplete": 0,
+          "duplicates": 0,
+          "errors": [
+            "page-003-full:vision_offer_unexpected_page_number"
+          ],
+          "correct_product_price_associations": null,
+          "false_product_price_associations": null,
+          "input_tokens": 100,
+          "output_tokens": 40,
+          "offers": []
+        }
+      ]
+    },
+    {
+      "strategy": "B",
+      "calls": 6,
+      "duration_seconds": 0.72,
+      "estimated_cost_eur": 0.012,
+      "offers_detected": 2,
+      "offers_complete": 2,
+      "offers_incomplete": 0,
+      "duplicates": 0,
+      "errors": 4,
+      "page_results": [
+        {
+          "page_number": 1,
+          "strategy": "B",
+          "calls": 2,
+          "duration_seconds": 0.24,
+          "estimated_cost_eur": 0.004,
+          "offers_detected": 2,
+          "offers_complete": 2,
+          "offers_incomplete": 0,
+          "duplicates": 0,
+          "errors": [],
+          "correct_product_price_associations": null,
+          "false_product_price_associations": null,
+          "input_tokens": 200,
+          "output_tokens": 80,
+          "offers": [
+            {
+              "page_number": 1,
+              "bounding_box": {
+                "left": 10.0,
+                "top": 20.0,
+                "width": 100.0,
+                "height": 140.0
+              },
+              "product_name": "Stylo bleu",
+              "brand": "Bic",
+              "package_format": "lot de 4",
+              "quantity_value": 4.0,
+              "quantity_unit": "unit",
+              "promo_price": 1.99,
+              "original_price": null,
+              "unit_price": null,
+              "unit_price_unit": null,
+              "loyalty_amount": null,
+              "loyalty_type": null,
+              "discount_percent": null,
+              "offer_mechanism": "simple_price",
+              "conditions": null,
+              "confidence": 88.0,
+              "visual_evidence_notes": "price near product"
+            },
+            {
+              "page_number": 1,
+              "bounding_box": {
+                "left": 110.0,
+                "top": 20.0,
+                "width": 100.0,
+                "height": 140.0
+              },
+              "product_name": "Stylo bleu",
+              "brand": "Bic",
+              "package_format": "lot de 4",
+              "quantity_value": 4.0,
+              "quantity_unit": "unit",
+              "promo_price": 1.99,
+              "original_price": null,
+              "unit_price": null,
+              "unit_price_unit": null,
+              "loyalty_amount": null,
+              "loyalty_type": null,
+              "discount_percent": null,
+              "offer_mechanism": "simple_price",
+              "conditions": null,
+              "confidence": 88.0,
+              "visual_evidence_notes": "price near product"
+            }
+          ]
+        },
+        {
+          "page_number": 2,
+          "strategy": "B",
+          "calls": 2,
+          "duration_seconds": 0.24,
+          "estimated_cost_eur": 0.004,
+          "offers_detected": 0,
+          "offers_complete": 0,
+          "offers_incomplete": 0,
+          "duplicates": 0,
+          "errors": [
+            "tile-2-1:vision_offer_unexpected_page_number",
+            "tile-2-2:vision_offer_unexpected_page_number"
+          ],
+          "correct_product_price_associations": null,
+          "false_product_price_associations": null,
+          "input_tokens": 200,
+          "output_tokens": 80,
+          "offers": []
+        },
+        {
+          "page_number": 3,
+          "strategy": "B",
+          "calls": 2,
+          "duration_seconds": 0.24,
+          "estimated_cost_eur": 0.004,
+          "offers_detected": 0,
+          "offers_complete": 0,
+          "offers_incomplete": 0,
+          "duplicates": 0,
+          "errors": [
+            "tile-3-1:vision_offer_unexpected_page_number",
+            "tile-3-2:vision_offer_unexpected_page_number"
+          ],
+          "correct_product_price_associations": null,
+          "false_product_price_associations": null,
+          "input_tokens": 200,
+          "output_tokens": 80,
+          "offers": []
+        }
+      ]
+    },
+    {
+      "strategy": "C",
+      "calls": 3,
+      "duration_seconds": 0.36,
+      "estimated_cost_eur": 0.006,
+      "offers_detected": 1,
+      "offers_complete": 1,
+      "offers_incomplete": 0,
+      "duplicates": 0,
+      "errors": 2,
+      "page_results": [
+        {
+          "page_number": 1,
+          "strategy": "C",
+          "calls": 1,
+          "duration_seconds": 0.12,
+          "estimated_cost_eur": 0.002,
+          "offers_detected": 1,
+          "offers_complete": 1,
+          "offers_incomplete": 0,
+          "duplicates": 0,
+          "errors": [],
+          "correct_product_price_associations": null,
+          "false_product_price_associations": null,
+          "input_tokens": 100,
+          "output_tokens": 40,
+          "offers": [
+            {
+              "page_number": 1,
+              "bounding_box": {
+                "left": 30.0,
+                "top": 50.0,
+                "width": 100.0,
+                "height": 140.0
+              },
+              "product_name": "Stylo bleu",
+              "brand": "Bic",
+              "package_format": "lot de 4",
+              "quantity_value": 4.0,
+              "quantity_unit": "unit",
+              "promo_price": 1.99,
+              "original_price": null,
+              "unit_price": null,
+              "unit_price_unit": null,
+              "loyalty_amount": null,
+              "loyalty_type": null,
+              "discount_percent": null,
+              "offer_mechanism": "simple_price",
+              "conditions": null,
+              "confidence": 88.0,
+              "visual_evidence_notes": "price near product"
+            }
+          ]
+        },
+        {
+          "page_number": 2,
+          "strategy": "C",
+          "calls": 1,
+          "duration_seconds": 0.12,
+          "estimated_cost_eur": 0.002,
+          "offers_detected": 0,
+          "offers_complete": 0,
+          "offers_incomplete": 0,
+          "duplicates": 0,
+          "errors": [
+            "crop-2-1:vision_offer_unexpected_page_number"
+          ],
+          "correct_product_price_associations": null,
+          "false_product_price_associations": null,
+          "input_tokens": 100,
+          "output_tokens": 40,
+          "offers": []
+        },
+        {
+          "page_number": 3,
+          "strategy": "C",
+          "calls": 1,
+          "duration_seconds": 0.12,
+          "estimated_cost_eur": 0.002,
+          "offers_detected": 0,
+          "offers_complete": 0,
+          "offers_incomplete": 0,
+          "duplicates": 0,
+          "errors": [
+            "crop-3-1:vision_offer_unexpected_page_number"
+          ],
+          "correct_product_price_associations": null,
+          "false_product_price_associations": null,
+          "input_tokens": 100,
+          "output_tokens": 40,
+          "offers": []
+        }
+      ]
+    }
+  ],
+  "report_path": "C:\\Users\\Jack.LAPTOP-2USDKF0K\\budgetkazpei\\reports\\promo-products-eleclerc-vision-benchmark-checkpoints\\26runrdc-001-002-003\\vision-benchmark-report.json"
+}

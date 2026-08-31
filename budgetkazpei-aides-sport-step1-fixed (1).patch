@@ -1,0 +1,236 @@
+diff --git a/src/services/aidesSearch.js b/src/services/aidesSearch.js
+--- a/src/services/aidesSearch.js
++++ b/src/services/aidesSearch.js
+@@ -5,5 +5,10 @@ const SEARCH_EQUIVALENTS = [
+   ["mobilite", "deplasman", "transport", "bus", "voiture"],
+   ["scolarite", "ecole", "lekol", "cantine", "bourse"],
+   ["sante", "soin", "mutuelle", "cgss"],
++  [
++    "sport", "sports", "sportif", "sportive", "club", "clubs", "licence", "licences",
++    "cotisation", "loisir", "loisirs", "judo", "tennis", "surf", "football", "foot",
++    "athletisme", "natation", "rugby", "basket", "handball", "karate", "taekwondo", "capoeira",
++  ],
+   ["aide", "aides", "ed", "zed"],
+ ]
+diff --git a/src/services/aidesRanking.js b/src/services/aidesRanking.js
+new file mode 100644
+--- /dev/null
++++ b/src/services/aidesRanking.js
+@@ -0,0 +1,93 @@
++const SPORT_QUERY_TERMS = [
++  "sport", "sports", "sportif", "sportive", "club", "clubs", "licence", "licences",
++  "cotisation", "loisir", "loisirs", "judo", "tennis", "surf", "football", "foot",
++  "athletisme", "natation", "rugby", "basket", "handball", "karate", "taekwondo", "capoeira",
++]
++
++const SPORT_AIDE_TERMS = [
++  "sport", "sportif", "club", "licence", "pass sport", "5000 licences", "cros", "loisir",
++]
++
++const QUERY_STOP_WORDS = new Set([
++  "aide", "aides", "financier", "financiere", "pour", "avec", "dans", "mes", "mon",
++  "ma", "de", "des", "du", "le", "la", "les", "un", "une", "aux", "au", "enfant",
++  "enfants", "marmay", "famille", "possible", "possibles", "cherche", "trouver",
++])
++
++export function normalizeAidRankingText(value = "") {
++  return String(value || "")
++    .toLowerCase()
++    .normalize("NFD")
++    .replace(/[\u0300-\u036f]/g, "")
++    .replace(/[’'`´]/g, " ")
++    .replace(/[^a-z0-9]+/g, " ")
++    .trim()
++    .replace(/\s+/g, " ")
++}
++
++function aidText(aide = {}) {
++  return normalizeAidRankingText([
++    aide.nom,
++    aide.nom_kreol,
++    aide.aide_nom,
++    aide.categorie,
++    aide.description,
++    aide.description_fr,
++    aide.description_kreol,
++    aide.demarches_fr,
++    aide.demarches_kreol,
++    aide.organisme,
++  ].join(" "))
++}
++
++function containsAny(text, terms) {
++  return terms.some(term => text.includes(normalizeAidRankingText(term)))
++}
++
++function questionRelevanceScore(aide, question = "") {
++  const query = normalizeAidRankingText(question)
++  if (!query) return 0
++
++  const text = aidText(aide)
++  let score = 0
++  const isSportQuestion = containsAny(query, SPORT_QUERY_TERMS)
++
++  if (isSportQuestion && containsAny(text, SPORT_AIDE_TERMS)) score += 220
++  if (isSportQuestion && text.includes("pass sport")) score += 35
++  if (isSportQuestion && text.includes("5000 licences")) score += 35
++
++  const queryTokens = [...new Set(
++    query.split(" ").filter(token => token.length >= 3 && !QUERY_STOP_WORDS.has(token))
++  )]
++  const overlap = queryTokens.filter(token => text.includes(token)).length
++  score += Math.min(overlap * 25, 100)
++
++  return score
++}
++
++function profileRelevanceScore(aide, profile = {}) {
++  let score = Number(aide.score_priorite || 0)
++  const commune = normalizeAidRankingText(profile?.commune || "")
++  const enfants = Number(profile?.nombre_enfants || 0)
++  const logement = normalizeAidRankingText(profile?.logement || "")
++  const situationPro = normalizeAidRankingText(profile?.situation_professionnelle || "")
++  const text = aidText(aide)
++
++  if (commune && text.includes(commune)) score += 40
++  if (enfants > 0 && (aide.besoin_enfant || text.includes("famille") || text.includes("scolaire"))) score += 35
++  if (logement === "locataire" && (aide.besoin_locataire || text.includes("logement") || text.includes("apl"))) score += 30
++  if (situationPro.includes("demandeur") && (aide.besoin_demandeur_emploi || text.includes("emploi"))) score += 30
++  if (aide.besoin_allocataire_caf && profile?.allocataire_caf) score += 20
++
++  return score
++}
++
++export function scoreAidForAdvisor(aide, profile = {}, question = "") {
++  return profileRelevanceScore(aide, profile) + questionRelevanceScore(aide, question)
++}
++
++export function rankAidesForAdvisor(aides = [], profile = {}, question = "") {
++  return [...aides].sort(
++    (a, b) => scoreAidForAdvisor(b, profile, question) - scoreAidForAdvisor(a, profile, question)
++  )
++}
+diff --git a/src/components/conseiller/AssistantConseiller.jsx b/src/components/conseiller/AssistantConseiller.jsx
+--- a/src/components/conseiller/AssistantConseiller.jsx
++++ b/src/components/conseiller/AssistantConseiller.jsx
+@@ -20,2 +20,3 @@ import { useAssistantInsights } from "../../hooks/useAssistantInsights"
+ import { buildAssistantAiSummary } from "../../services/ai/assistantInsightsService"
+ import { resolveAdvisorLanguage } from "../../services/advisorLanguage"
++import { rankAidesForAdvisor } from "../../services/aidesRanking"
+@@ -317,25 +318,3 @@ function prepareAideContext(aides = [], isKreol = false) {
+-function sortAidesForContext(aides = [], profile = {}) {
+-  const commune = normalizeText(profile?.commune || "")
+-  const enfants = Number(profile?.nombre_enfants || 0)
+-  const logement = normalizeText(profile?.logement || "")
+-  const situationPro = normalizeText(profile?.situation_professionnelle || "")
+-
+-  return [...aides].sort((a, b) => {
+-    const score = aide => {
+-      let value = Number(aide.score_priorite || 0)
+-      const text = normalizeText(
+-        `${aide.nom || ""} ${aide.categorie || ""} ${aide.description || ""} ${aide.description_fr || ""} ${aide.organisme || ""}`
+-      )
+-
+-      if (commune && text.includes(commune)) value += 40
+-      if (enfants > 0 && (aide.besoin_enfant || text.includes("famille") || text.includes("scolaire"))) value += 35
+-      if (logement === "locataire" && (aide.besoin_locataire || text.includes("logement") || text.includes("apl"))) value += 30
+-      if (situationPro.includes("demandeur") && (aide.besoin_demandeur_emploi || text.includes("emploi"))) value += 30
+-      if (aide.besoin_allocataire_caf && profile?.allocataire_caf) value += 20
+-
+-      return value
+-    }
+-
+-    return score(b) - score(a)
+-  })
+-}
++function sortAidesForContext(aides = [], profile = {}, question = "") {
++  return rankAidesForAdvisor(aides, profile, question)
++}
+@@ -493,4 +472,4 @@ export default function AssistantConseiller({
+     })
+     const assistantIsKreol = assistantLanguage === "kreol"
+     const preparedAides = prepareAideContext(
+-      sortAidesForContext(aides, currentProfile),
++      sortAidesForContext(aides, currentProfile, sentQuestion),
+diff --git a/scripts/run-aides-sport-ranking-tests.mjs b/scripts/run-aides-sport-ranking-tests.mjs
+new file mode 100644
+--- /dev/null
++++ b/scripts/run-aides-sport-ranking-tests.mjs
+@@ -0,0 +1,71 @@
++import assert from "node:assert/strict"
++
++import { matchesAidSearch } from "../src/services/aidesSearch.js"
++import { rankAidesForAdvisor } from "../src/services/aidesRanking.js"
++
++const sportSearchAide = {
++  nameFr: "Pass'Sport",
++  nameKr: "Pass'Sport",
++  descriptionFr: "Aide pour réduire le coût d'une licence ou cotisation dans un club sportif.",
++  descriptionKr: "Aide pou réduit pri licence ou cotisation dann in club sportif.",
++  stepsFr: "Vérifier l'éligibilité sur le site officiel.",
++  stepsKr: "Vérifie éligibilité su site officiel.",
++  category: "sport",
++}
++
++for (const query of ["sport", "club", "licence", "judo", "tennis", "surf"]) {
++  assert.equal(
++    matchesAidSearch(sportSearchAide, query),
++    true,
++    `La recherche sport doit trouver une aide sportive avec : ${query}`,
++  )
++}
++
++const aides = [
++  {
++    id: "apl",
++    nom: "Aide personnalisée au logement",
++    categorie: "logement",
++    description_fr: "Aide au paiement du logement.",
++    score_priorite: 260,
++  },
++  {
++    id: "pass_sport",
++    nom: "Pass'Sport",
++    categorie: "sport",
++    description_fr: "Aide à l'inscription, à la licence ou à la cotisation dans un club sportif.",
++    besoin_enfant: true,
++    score_priorite: 80,
++  },
++  {
++    id: "plan_5000_licences",
++    nom: "Plan 5000 licences",
++    categorie: "sport",
++    organisme: "Département de La Réunion",
++    description_fr: "Aide pour financer une licence et une cotisation dans un club sportif.",
++    besoin_enfant: true,
++    score_priorite: 75,
++  },
++]
++
++const genericRanking = rankAidesForAdvisor(
++  aides,
++  { nombre_enfants: 2, logement: "locataire" },
++  "Je cherche une aide financière pour le sport de mes enfants",
++)
++
++assert.deepEqual(
++  genericRanking.slice(0, 2).map(aide => aide.id).sort(),
++  ["pass_sport", "plan_5000_licences"],
++  "Une demande sport enfants doit faire passer les aides sport avant une aide générale mieux scorée",
++)
++
++const namedRanking = rankAidesForAdvisor(
++  aides,
++  { nombre_enfants: 2 },
++  "Est-ce que le plan 5000 licences peut m'aider ?",
++)
++
++assert.equal(namedRanking[0].id, "plan_5000_licences")
++
++console.log("✓ Recherche et ranking sport / licences vérifiés")
+diff --git a/package.json b/package.json
+--- a/package.json
++++ b/package.json
+@@ -12,1 +12,1 @@
+-    "test:advisor-aides": "node scripts/run-advisor-aides-tests.mjs",
++    "test:advisor-aides": "node scripts/run-advisor-aides-tests.mjs && node scripts/run-aides-sport-ranking-tests.mjs",

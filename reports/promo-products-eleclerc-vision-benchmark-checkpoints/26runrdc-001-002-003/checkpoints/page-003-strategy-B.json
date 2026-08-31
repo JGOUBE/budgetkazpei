@@ -1,0 +1,40 @@
+{
+  "page_number": 3,
+  "strategy": "B",
+  "status": "completed",
+  "calls": 2,
+  "estimated_cost_eur": 0.004,
+  "duration_seconds": 0.24,
+  "offers_detected": 0,
+  "offers_complete": 0,
+  "offers_incomplete": 0,
+  "duplicates": 0,
+  "input_tokens": 200,
+  "output_tokens": 80,
+  "errors": [
+    "tile-3-1:vision_offer_unexpected_page_number",
+    "tile-3-2:vision_offer_unexpected_page_number"
+  ],
+  "result": {
+    "page_number": 3,
+    "strategy": "B",
+    "calls": 2,
+    "duration_seconds": 0.24,
+    "estimated_cost_eur": 0.004,
+    "offers_detected": 0,
+    "offers_complete": 0,
+    "offers_incomplete": 0,
+    "duplicates": 0,
+    "errors": [
+      "tile-3-1:vision_offer_unexpected_page_number",
+      "tile-3-2:vision_offer_unexpected_page_number"
+    ],
+    "correct_product_price_associations": null,
+    "false_product_price_associations": null,
+    "input_tokens": 200,
+    "output_tokens": 80,
+    "offers": []
+  },
+  "error": null,
+  "updated_at": "2026-07-29T10:10:26Z"
+}

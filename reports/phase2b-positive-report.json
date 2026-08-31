@@ -1,0 +1,15 @@
+{
+  "batch_id": "phase2b-positive-fixture",
+  "items": [
+    {
+      "raw_label": "POULAIN SP",
+      "normalized_raw_label": "poulain sp",
+      "frequency": 8,
+      "distinct_receipts": 8,
+      "store_chain_key": "e leclerc",
+      "store_name": "E.Leclerc",
+      "classification": "active_library_ready",
+      "recommended_action": "library"
+    }
+  ]
+}

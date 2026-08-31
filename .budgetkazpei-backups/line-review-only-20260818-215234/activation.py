@@ -1,0 +1,425 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+from typing import Any
+
+from ..receipt_parser_fr import ParsedReceipt, ParsedReceiptItem
+
+
+_VALID_TARGET_KINDS = {"article_total", "payable"}
+_MONEY_SCALE = Decimal("0.01")
+_QUANTITY_SCALE = Decimal("0.001")
+_MIN_TARGET_CONFIDENCE = 0.75
+_MIN_ITEM_CONFIDENCE = 0.70
+_ITEM_REVIEW_CONFIDENCE = 0.88
+
+
+@dataclass(slots=True)
+class V2ActivationCandidate:
+    receipt: ParsedReceipt | None
+    fallback_reasons: list[str]
+    diagnostics: dict[str, object]
+
+    @property
+    def accepted(self) -> bool:
+        return self.receipt is not None and not self.fallback_reasons
+
+
+
+def _find_review_item_indexes_for_unattached_discount(
+    *,
+    v2_result: dict[str, Any],
+    items_payload: list[dict[str, Any]],
+    target_gap: Decimal | None,
+) -> list[int]:
+    if target_gap is None or target_gap <= Decimal("0.02"):
+        return []
+
+    expected = target_gap.quantize(_MONEY_SCALE, rounding=ROUND_HALF_UP)
+    lines = v2_result.get("lines") or []
+    if not isinstance(lines, list):
+        return []
+
+    used_line_ids: set[int] = set()
+    item_last_lines: list[tuple[int, int]] = []
+    for item_index, payload in enumerate(items_payload):
+        ids = []
+        for value in payload.get("source_line_ids", []) or []:
+            try:
+                ids.append(int(value))
+            except (TypeError, ValueError):
+                continue
+        used_line_ids.update(ids)
+        if ids:
+            item_last_lines.append((item_index, max(ids)))
+
+    if not item_last_lines:
+        return []
+
+    ordered_lines = sorted(
+        (line for line in lines if isinstance(line, dict)),
+        key=lambda line: int(line.get("line_id", 0)),
+    )
+    matches: list[int] = []
+
+    def matching_amount(line: dict[str, Any]) -> bool:
+        for money in line.get("money", []) or []:
+            if not isinstance(money, dict):
+                continue
+            amount = _decimal(money.get("amount"))
+            if amount is not None and abs(amount - expected) <= Decimal("0.001"):
+                return True
+        return False
+
+    for position, line in enumerate(ordered_lines):
+        try:
+            line_id = int(line.get("line_id"))
+        except (TypeError, ValueError):
+            continue
+        if line_id in used_line_ids:
+            continue
+
+        role_scores = line.get("role_scores") or {}
+        discount_score = _float(
+            role_scores.get("discount") if isinstance(role_scores, dict) else None,
+            default=0.0,
+        )
+        if discount_score < 0.72:
+            continue
+
+        amount_line_id = line_id if matching_amount(line) else None
+        if amount_line_id is None:
+            for following in ordered_lines[position + 1:position + 3]:
+                try:
+                    following_id = int(following.get("line_id"))
+                except (TypeError, ValueError):
+                    continue
+                if following_id in used_line_ids:
+                    break
+                if matching_amount(following):
+                    amount_line_id = following_id
+                    break
+                following_roles = following.get("role_scores") or {}
+                if _float(
+                    following_roles.get("product") if isinstance(following_roles, dict) else None,
+                    default=0.0,
+                ) >= 0.70:
+                    break
+
+        if amount_line_id is None:
+            continue
+
+        preceding = [
+            (item_index, last_line)
+            for item_index, last_line in item_last_lines
+            if last_line < line_id
+        ]
+        if not preceding:
+            continue
+
+        item_index, last_line = max(preceding, key=lambda pair: pair[1])
+        if line_id - last_line > 4:
+            continue
+        matches.append(item_index)
+
+    unique = sorted(set(matches))
+    return unique if len(unique) == 1 else []
+
+
+
+def build_v2_safe_candidate(
+    *,
+    legacy_receipt: ParsedReceipt,
+    v2_result: dict[str, Any],
+) -> V2ActivationCandidate:
+    """Convert a V2 hypothesis into a production receipt when it is self-consistent.
+
+    The V2 parser currently focuses on product structure and totals. Store and date
+    identity remain inherited from the proven legacy parser. The function is
+    deliberately conservative: any missing target, arithmetic inconsistency or
+    ambiguous discount causes an automatic fallback to the legacy receipt.
+    """
+
+    selected = v2_result.get("selected_hypothesis") or {}
+    items_payload = selected.get("items") or []
+    target = selected.get("target_total") or {}
+    reasons: list[str] = []
+
+    target_amount = _decimal(target.get("amount"))
+    target_kind = str(target.get("kind") or "").strip().lower()
+    target_confidence = _float(target.get("confidence"), default=0.0)
+    items_total = _decimal(selected.get("items_total"))
+    declared_count = _optional_int(selected.get("declared_count"))
+    counted_quantity = _optional_int(selected.get("counted_quantity"))
+
+    if not items_payload:
+        reasons.append("v2_no_items")
+    if target_amount is None or target_amount <= 0:
+        reasons.append("v2_missing_positive_total")
+    if target_kind not in _VALID_TARGET_KINDS:
+        reasons.append("v2_unknown_total_kind")
+    if target_confidence < _MIN_TARGET_CONFIDENCE:
+        reasons.append("v2_total_confidence_too_low")
+    if items_total is None or items_total < 0:
+        reasons.append("v2_invalid_items_total")
+    if (
+        declared_count is not None
+        and counted_quantity is not None
+        and declared_count != counted_quantity
+    ):
+        reasons.append("v2_declared_count_mismatch")
+
+    converted_items: list[ParsedReceiptItem] = []
+    recomputed_total = Decimal("0")
+    recomputed_quantity = Decimal("0")
+
+    for index, payload in enumerate(items_payload):
+        raw_name = str(payload.get("raw_name") or "").strip()
+        quantity = _decimal(payload.get("quantity"))
+        unit_price = _decimal(payload.get("unit_price"))
+        total_price = _decimal(payload.get("total_price"))
+        confidence = _float(payload.get("confidence"), default=0.0)
+        arithmetic_ok = payload.get("arithmetic_ok")
+
+        if not raw_name:
+            reasons.append(f"v2_item_{index + 1}_missing_name")
+            continue
+        if quantity is None or quantity <= 0:
+            reasons.append(f"v2_item_{index + 1}_invalid_quantity")
+            continue
+        if total_price is None or total_price < 0:
+            reasons.append(f"v2_item_{index + 1}_invalid_total")
+            continue
+        if confidence < _MIN_ITEM_CONFIDENCE:
+            reasons.append(f"v2_item_{index + 1}_confidence_too_low")
+            continue
+        if arithmetic_ok is False:
+            reasons.append(f"v2_item_{index + 1}_arithmetic_mismatch")
+            continue
+
+        item_type = str(payload.get("item_type") or "standard")
+        weight_kg: Decimal | None = None
+        price_per_kg: Decimal | None = None
+        if item_type.startswith("weight") and unit_price is not None and unit_price > 0:
+            price_per_kg = unit_price
+            weight_kg = (total_price / unit_price).quantize(
+                _QUANTITY_SCALE,
+                rounding=ROUND_HALF_UP,
+            )
+
+        converted_items.append(
+            ParsedReceiptItem(
+                raw_name=raw_name,
+                quantity=float(quantity),
+                unit_price=float(unit_price) if unit_price is not None else None,
+                total_price=float(total_price),
+                vat_code=None,
+                item_type=item_type,
+                raw_detail=None,
+                weight_kg=float(weight_kg) if weight_kg is not None else None,
+                price_per_kg=(
+                    float(price_per_kg) if price_per_kg is not None else None
+                ),
+                ocr_confidence=confidence,
+                source_line_ids=[
+                    int(value) for value in payload.get("source_line_ids", [])
+                ],
+                needs_review=confidence < _ITEM_REVIEW_CONFIDENCE,
+                canonical_name=None,
+                match_type=None,
+                match_confidence=None,
+            )
+        )
+        recomputed_total += total_price
+        recomputed_quantity += quantity
+
+    recomputed_total = recomputed_total.quantize(
+        _MONEY_SCALE,
+        rounding=ROUND_HALF_UP,
+    )
+    recomputed_quantity = recomputed_quantity.quantize(
+        _QUANTITY_SCALE,
+        rounding=ROUND_HALF_UP,
+    )
+
+    if items_total is not None:
+        items_total = items_total.quantize(_MONEY_SCALE, rounding=ROUND_HALF_UP)
+        if recomputed_total != items_total:
+            reasons.append("v2_items_total_recomputation_mismatch")
+
+    if counted_quantity is not None:
+        rounded_quantity = int(
+            recomputed_quantity.to_integral_value(rounding=ROUND_HALF_UP)
+        )
+        if rounded_quantity != counted_quantity:
+            reasons.append("v2_counted_quantity_recomputation_mismatch")
+
+    target_gap: Decimal | None = None
+    reviewable_article_gap = False
+    if target_amount is not None and items_total is not None:
+        target_amount = target_amount.quantize(_MONEY_SCALE, rounding=ROUND_HALF_UP)
+        target_gap = (items_total - target_amount).quantize(
+            _MONEY_SCALE,
+            rounding=ROUND_HALF_UP,
+        )
+        if target_kind == "article_total" and abs(target_gap) > Decimal("0.02"):
+            exact_declared_count = (
+                declared_count is not None
+                and counted_quantity is not None
+                and declared_count == counted_quantity
+            )
+            permitted_review_gap = min(
+                Decimal("0.50"),
+                (target_amount * Decimal("0.02")).quantize(
+                    _MONEY_SCALE,
+                    rounding=ROUND_HALF_UP,
+                ),
+            )
+            if (
+                exact_declared_count
+                and abs(target_gap) <= permitted_review_gap
+            ):
+                reviewable_article_gap = True
+            else:
+                reasons.append("v2_article_total_not_reconciled")
+        if target_kind == "payable":
+            if target_gap < Decimal("-0.02"):
+                reasons.append("v2_payable_exceeds_items_total")
+            permitted_discount = max(
+                Decimal("2.00"),
+                (target_amount * Decimal("0.20")).quantize(
+                    _MONEY_SCALE,
+                    rounding=ROUND_HALF_UP,
+                ),
+            )
+            if target_gap > permitted_discount:
+                reasons.append("v2_discount_gap_too_large")
+            if target_gap > Decimal("0.02") and declared_count is None:
+                reasons.append("v2_discount_without_declared_count")
+
+    review_item_indexes: list[int] = []
+    if reviewable_article_gap:
+        review_item_indexes = _find_review_item_indexes_for_unattached_discount(
+            v2_result=v2_result,
+            items_payload=items_payload,
+            target_gap=target_gap,
+        )
+        for item_index in review_item_indexes:
+            if 0 <= item_index < len(converted_items):
+                converted_items[item_index].needs_review = True
+
+    legacy_payable = _decimal(legacy_receipt.payable_total)
+    if (
+        target_kind == "article_total"
+        and target_amount is not None
+        and legacy_payable is not None
+        and abs(legacy_payable - target_amount) > Decimal("0.02")
+    ):
+        reasons.append("legacy_has_different_payable_total")
+
+    diagnostics = {
+        "v2_total": float(target_amount) if target_amount is not None else None,
+        "v2_total_kind": target_kind or None,
+        "v2_items_total": float(items_total) if items_total is not None else None,
+        "v2_product_line_count": len(items_payload),
+        "v2_counted_quantity": counted_quantity,
+        "v2_declared_count": declared_count,
+        "v2_score": _float(selected.get("score"), default=0.0),
+        "v2_reasons": list(selected.get("reasons") or []),
+        "v2_article_total_gap": (
+            float(target_gap) if target_gap is not None else None
+        ),
+        "v2_reviewable_article_gap": reviewable_article_gap,
+        "v2_review_item_indexes": list(review_item_indexes),
+        "v2_review_item_names": [
+            converted_items[index].raw_name
+            for index in review_item_indexes
+            if 0 <= index < len(converted_items)
+        ],
+    }
+
+    if reasons:
+        return V2ActivationCandidate(
+            receipt=None,
+            fallback_reasons=_deduplicate(reasons),
+            diagnostics=diagnostics,
+        )
+
+    assert target_amount is not None
+    assert items_total is not None
+
+    if target_kind == "payable":
+        article_total = items_total
+        payable_total = target_amount
+        immediate_discount_total = max(Decimal("0"), items_total - target_amount)
+    else:
+        article_total = target_amount
+        payable_total = None
+        immediate_discount_total = None
+
+    receipt = ParsedReceipt(
+        store_name=legacy_receipt.store_name,
+        store_location=legacy_receipt.store_location,
+        receipt_date=legacy_receipt.receipt_date,
+        receipt_time=legacy_receipt.receipt_time,
+        declared_item_count=(
+            declared_count
+            if declared_count is not None
+            else legacy_receipt.declared_item_count
+        ),
+        total=float(target_amount),
+        items=converted_items,
+        excluded_sections=list(legacy_receipt.excluded_sections),
+        warnings=list(legacy_receipt.warnings),
+        article_total=float(article_total),
+        immediate_discount_total=(
+            float(immediate_discount_total)
+            if immediate_discount_total is not None
+            else None
+        ),
+        payable_total=(
+            float(payable_total) if payable_total is not None else None
+        ),
+    )
+    return V2ActivationCandidate(
+        receipt=receipt,
+        fallback_reasons=[],
+        diagnostics=diagnostics,
+    )
+
+
+def _decimal(value: object) -> Decimal | None:
+    if value is None or value == "":
+        return None
+    try:
+        return Decimal(str(value))
+    except (InvalidOperation, ValueError, TypeError):
+        return None
+
+
+def _float(value: object, *, default: float) -> float:
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def _optional_int(value: object) -> int | None:
+    if value is None or value == "":
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _deduplicate(values: list[str]) -> list[str]:
+    seen: set[str] = set()
+    result: list[str] = []
+    for value in values:
+        if value in seen:
+            continue
+        seen.add(value)
+        result.append(value)
+    return result

@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="fr" translate="no">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="google" content="notranslate" />
+
+    <meta
+      name="google-site-verification"
+      content="2rquq_dK38xOcNOy5QccJ_HCHGzMOPoVj0yWlJZ1qZ4"
+    />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      (function () {
+        try {
+          var stored = localStorage.getItem("budgetkazpei:theme");
+          var light = stored ? stored === "light" : window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches;
+          var vars = light
+            ? {
+                "--bkp-bg": "#F9FAF7",
+                "--bkp-page-bg": "#F9FAF7",
+                "--bkp-card": "#FFFFFF",
+                "--bkp-card-hover": "#FFF7ED",
+                "--bkp-border": "#E8DED1",
+                "--bkp-text": "#142033",
+                "--bkp-muted": "#526074",
+                "--bkp-input": "#FFFFFF",
+                "--bkp-input-text": "#142033",
+                "--bkp-cyan": "#0284C7",
+              }
+            : {
+                "--bkp-bg": "#081526",
+                "--bkp-page-bg": "#081526",
+                "--bkp-card": "#10213D",
+                "--bkp-card-hover": "#152A4D",
+                "--bkp-border": "#26466F",
+                "--bkp-text": "#F8FAFC",
+                "--bkp-muted": "#A9BAD3",
+                "--bkp-input": "#152A4D",
+                "--bkp-input-text": "#F8FAFC",
+                "--bkp-cyan": "#23D3D6",
+              };
+          document.documentElement.dataset.theme = light ? "light" : "dark";
+          document.documentElement.style.colorScheme = light ? "light" : "dark";
+          Object.keys(vars).forEach(function (key) {
+            document.documentElement.style.setProperty(key, vars[key]);
+          });
+        } catch (error) {}
+      })();
+    </script>
+
+    <meta
+      name="description"
+      content="Suivez votre budget, comprenez vos courses, préparez vos démarches et découvrez progressivement les bons plans locaux avec BudgetKazPei."
+    />
+    <meta property="og:title" content="BudgetKazPei - Budget, courses, aides et bons plans à La Réunion" />
+    <meta
+      property="og:description"
+      content="Une application locale pour réunir budget, courses, aides, démarches et solutions utiles autour de vous."
+    />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="/icons-creole/logo-budgetkazpei.png" />
+    <title>BudgetKazPei — Budget, courses, aides et bons plans à La Réunion</title>
+  </head>
+
+  <body translate="no">
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

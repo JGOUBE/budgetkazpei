@@ -172,6 +172,18 @@ const kreol = {
     title: "Mon bann tiké",
     scanCta: "Scanner tiké",
   },
+  shoppingList: {
+    save: "Sovgard",
+    saving: "Sovgard…",
+    saved: "Lis-la lé sovgardée pou 7 jours.",
+    saveError: "Nou la pa réussi sovgard la lis. Réésaye.",
+    addBeforeSave: "Azout au moins in produit avan sovgard la lis.",
+    savedLists: "Mon bann lis sovgardées",
+    savedListsText: "Out bann lis sovgardées i reste disponib pandan 7 jours, apré zot lé supprimées otomatikman.",
+    noSavedLists: "Nana poin lis sovgardée pou linstan.",
+    view: "Gad",
+    estimatedTotal: amount => `estimasyon ${amount}`,
+  },
 
   transactions: {
     labelPlaceholder: "Nom (ex: Super U)",

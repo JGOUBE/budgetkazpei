@@ -55,28 +55,51 @@ export default function ProductPhoneMockup({
   imageAlt = "",
   variant = "left",
   className = "",
+  premiumAsset = "",
   children,
 }) {
   const hasReference = Boolean(referenceImage)
+  const hasPremiumAsset = Boolean(premiumAsset)
 
   return (
-    <div className={`product-phone product-phone--${variant} ${hasReference ? "product-phone--reference" : "product-phone--custom"} ${className}`.trim()}>
-      <div className="product-phone__ambient-shadow" aria-hidden="true" />
+    <div className={`product-phone product-phone--${variant} ${hasReference ? "product-phone--reference" : "product-phone--custom"} ${hasPremiumAsset ? "product-phone--asset" : ""} ${className}`.trim()}>
+      {hasPremiumAsset ? (
+        <>
+          <img className="product-phone__asset" src={premiumAsset} alt="" aria-hidden="true" />
+          <div className="product-phone__asset-screen">
+            {hasReference ? <img src={referenceImage} alt={imageAlt} className="product-phone__asset-reference" /> : children}
+            <span className="product-phone__asset-glass" aria-hidden="true" />
+          </div>
+        </>
+      ) : (
+        <>
+      <div className="product-phone__floor-shadow" aria-hidden="true" />
       <div className="product-phone__body">
-        <div className="product-phone__back" aria-hidden="true" />
-        <div className="product-phone__edge" aria-hidden="true" />
-        <div className="product-phone__button product-phone__button--top" aria-hidden="true" />
-        <div className="product-phone__button product-phone__button--bottom" aria-hidden="true" />
+        <div className="product-phone__back" aria-hidden="true">
+          <span className="product-phone__back-glow" />
+        </div>
+
+        <div className="product-phone__side product-phone__side--left" aria-hidden="true" />
+        <div className="product-phone__side product-phone__side--right" aria-hidden="true" />
+        <div className="product-phone__side product-phone__side--top" aria-hidden="true" />
+        <div className="product-phone__side product-phone__side--bottom" aria-hidden="true" />
+
+        <span className="product-phone__button product-phone__button--volume" aria-hidden="true" />
+        <span className="product-phone__button product-phone__button--power" aria-hidden="true" />
+
         <div className="product-phone__front">
+          <div className="product-phone__bezel">
+            <div className="product-phone__screen">
+              {hasReference ? <img src={referenceImage} alt={imageAlt} className="product-phone__reference" /> : children}
+              <span className="product-phone__glass" aria-hidden="true" />
+            </div>
+          </div>
           <span className="product-phone__speaker" aria-hidden="true" />
           <span className="product-phone__camera" aria-hidden="true" />
-          <div className="product-phone__screen">
-            {hasReference ? <img src={referenceImage} alt={imageAlt} className="product-phone__reference" /> : children}
-            <span className="product-phone__glass" aria-hidden="true" />
-          </div>
-          <span className="product-phone__home-indicator" aria-hidden="true" />
         </div>
       </div>
+        </>
+      )}
     </div>
   )
 }

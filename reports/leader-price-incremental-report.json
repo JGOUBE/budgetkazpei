@@ -1,0 +1,889 @@
+{
+  "dry_run": false,
+  "mode": "real",
+  "retailer_slug": "leader-price-reunion",
+  "store_slug": "leaderprice-lp-ermitage",
+  "collection_report_path": "C:\\Users\\Jack.LAPTOP-2USDKF0K\\budgetkazpei\\reports\\leader-price-reunion-readonly.json",
+  "report_path": "C:\\Users\\Jack.LAPTOP-2USDKF0K\\budgetkazpei\\reports\\leader-price-incremental-report.json",
+  "metrics": {
+    "products_inspected": 100,
+    "unique_products": 95,
+    "new_products": 0,
+    "price_changes": 0,
+    "new_promotions": 0,
+    "returns_to_normal": 0,
+    "other_commercial_changes": 0,
+    "unchanged": 95,
+    "unusable_without_price": 0,
+    "candidates_to_create": 0,
+    "candidates_created": 0,
+    "candidates_refreshed": 95,
+    "errors": 0
+  },
+  "actions": [
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:35016",
+      "source_product_id": "35016",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/jus-multifruits-multivitamines/boisson-aux-fruits-a-base-de-concentre-saveur-tropical-3",
+      "product_name": "Boisson aux fruits à base de concentré saveur tropical",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "acf54a75b30a447e9f8bffa2bbc84811f785035145fc81686d428495145dccf8",
+      "previous_commercial_fingerprint": "acf54a75b30a447e9f8bffa2bbc84811f785035145fc81686d428495145dccf8"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:35018",
+      "source_product_id": "35018",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/jus-de-pommes-et-fruits-du-verger/boisson-aux-fruits-a-base-de-concentre-saveur-pomme-poire",
+      "product_name": "Boisson aux fruits à base de concentré saveur pomme poire",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "3861af6a5b6da5e7bef946e8a912b00dd2ad4022e1dbf21f426d79bb4abd4d8e",
+      "previous_commercial_fingerprint": "3861af6a5b6da5e7bef946e8a912b00dd2ad4022e1dbf21f426d79bb4abd4d8e"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:34997",
+      "source_product_id": "34997",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/thes-et-infusions-glaces/boisson-a-base-de-the-saveur-melon-3",
+      "product_name": "Boisson à base de thé saveur melon",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "283d6ccb4a30dcec9b53264f686aeaf93bd9d592239cec401c625c72e3202a34",
+      "previous_commercial_fingerprint": "283d6ccb4a30dcec9b53264f686aeaf93bd9d592239cec401c625c72e3202a34"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:34993",
+      "source_product_id": "34993",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/thes-et-infusions-glaces/boisson-a-base-de-the-saveur-peche-7",
+      "product_name": "Boisson à base de thé saveur pêche",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "ae55caad17dd15f51258266470c271d470d98b8f22896656e8138e19964bc206",
+      "previous_commercial_fingerprint": "ae55caad17dd15f51258266470c271d470d98b8f22896656e8138e19964bc206"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:302019",
+      "source_product_id": "302019",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/epices-herbes-aromates/curcuma-4",
+      "product_name": "Curcuma",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "4e6aab6150a40f5fa238d3b0c1ab879e0c90ef5cc95bbb333d86411c37f91606",
+      "previous_commercial_fingerprint": "4e6aab6150a40f5fa238d3b0c1ab879e0c90ef5cc95bbb333d86411c37f91606"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:35170",
+      "source_product_id": "35170",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/jus-formats-nomades/boisson-aux-fruits-a-base-de-concentre-saveur-tropical-6",
+      "product_name": "Boisson aux fruits à base de concentré saveur tropical",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "bb6b4a9c9684ec3695695bf15381f23e5278e8dbf816fc6f70aba684f6b87cb4",
+      "previous_commercial_fingerprint": "bb6b4a9c9684ec3695695bf15381f23e5278e8dbf816fc6f70aba684f6b87cb4"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:34728",
+      "source_product_id": "34728",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/thes-et-infusions-glaces/boisson-a-base-de-the-saveur-peche-3",
+      "product_name": "Boisson à base de thé saveur pêche",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "b7e1eb8ccfecdad69d5a025a9c961eaa8cd1ad5b894904fde5062628809fdefc",
+      "previous_commercial_fingerprint": "b7e1eb8ccfecdad69d5a025a9c961eaa8cd1ad5b894904fde5062628809fdefc"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:620531",
+      "source_product_id": "620531",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/laits/lait-demi-ecreme-uht-3",
+      "product_name": "Lait demi-écrémé UHT",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "61b33a0434012e423cbfd32687879e121e751a28ae92c298fbb4f70dc45ea7eb",
+      "previous_commercial_fingerprint": "61b33a0434012e423cbfd32687879e121e751a28ae92c298fbb4f70dc45ea7eb"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:49084",
+      "source_product_id": "49084",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/boissons-energisantes-et-sport/boisson-energisante-a-la-taurine-8",
+      "product_name": "Boisson energisante a la taurine",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "f2dd94a862f90063007e68f1ff1931271ee2fa0ed9820a34466ffb0239067459",
+      "previous_commercial_fingerprint": "f2dd94a862f90063007e68f1ff1931271ee2fa0ed9820a34466ffb0239067459"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:142728",
+      "source_product_id": "142728",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/epices-herbes-aromates/massale-avec-piment",
+      "product_name": "Massalé avec piment",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "15426dc93564b44fb85dfa6b117db464a963c6cf0b4d1e11ef7e9a46c18e22b4",
+      "previous_commercial_fingerprint": "15426dc93564b44fb85dfa6b117db464a963c6cf0b4d1e11ef7e9a46c18e22b4"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:163957",
+      "source_product_id": "163957",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/jus-formats-nomades/boisson-aux-jus-de-fruits-saveur-multivitamine",
+      "product_name": "Boisson aux jus de fruits saveur multivitaminé",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "8863b9f6c38a75b034ee6d41a990b945a7d92698b9e35f05f1245359aa60b0d8",
+      "previous_commercial_fingerprint": "8863b9f6c38a75b034ee6d41a990b945a7d92698b9e35f05f1245359aa60b0d8"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:163959",
+      "source_product_id": "163959",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/jus-formats-nomades/boisson-aux-jus-de-fruits-saveur-orange-peche",
+      "product_name": "Boisson aux jus de fruits saveur orange pêche",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "9eeca3c13c6f8174f01815d6f5c38ed6d16525e31f2c091cdbc2a673cdfe001f",
+      "previous_commercial_fingerprint": "9eeca3c13c6f8174f01815d6f5c38ed6d16525e31f2c091cdbc2a673cdfe001f"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:997861",
+      "source_product_id": "997861",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/jus-formats-nomades/boisson-aux-jus-de-fruits-saveur-cerise-grenade",
+      "product_name": "Boisson aux jus de fruits saveur cerise grenade",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "9c99b9766674f647bc38c1293c119c17af2b8cdb7a2f7dd1c44d03be57e8f36b",
+      "previous_commercial_fingerprint": "9c99b9766674f647bc38c1293c119c17af2b8cdb7a2f7dd1c44d03be57e8f36b"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:997860",
+      "source_product_id": "997860",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/jus-formats-nomades/boisson-aux-jus-de-fruits-saveur-mangue-passion",
+      "product_name": "Boisson aux jus de fruits saveur mangue passion",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "adf0306e471f08b46af155e8f89f3cb7b27a7c28278f1a5bf6032e0e9cfc3fd7",
+      "previous_commercial_fingerprint": "adf0306e471f08b46af155e8f89f3cb7b27a7c28278f1a5bf6032e0e9cfc3fd7"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:451588",
+      "source_product_id": "451588",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/volailles/saucisse-de-poulet-10-saucisses",
+      "product_name": "Saucisse de poulet - 10 saucisses",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "c20aea684b26602fc3970357e2acbc29945380630331fb5337812b64431a3fb5",
+      "previous_commercial_fingerprint": "c20aea684b26602fc3970357e2acbc29945380630331fb5337812b64431a3fb5"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:142729",
+      "source_product_id": "142729",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/epices-herbes-aromates/massale-sans-piment-1",
+      "product_name": "Massalé sans piment",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "b108f6bb1c9b3c284c0ef0a9f05e1a553c66c9b69812aee6bbd1f74b6618917e",
+      "previous_commercial_fingerprint": "b108f6bb1c9b3c284c0ef0a9f05e1a553c66c9b69812aee6bbd1f74b6618917e"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:20186",
+      "source_product_id": "20186",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/epicerie-salee/tofu-nature-bio-2-sachets",
+      "product_name": "Tofu nature bio - 2 sachets",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "1dfe3a4adaa01dd65e9b62eb5ef818469ba3513aaee28ffb1a1c7a23fd2244af",
+      "previous_commercial_fingerprint": "1dfe3a4adaa01dd65e9b62eb5ef818469ba3513aaee28ffb1a1c7a23fd2244af"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:301328",
+      "source_product_id": "301328",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/epicerie-salee/mais-sans-sucres-ajoutes-bio",
+      "product_name": "Maïs sans sucres ajoutés Bio",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "24671b5f0f76e15c77ccc3112422d8d907e324e3f472899d7244238fb016f825",
+      "previous_commercial_fingerprint": "24671b5f0f76e15c77ccc3112422d8d907e324e3f472899d7244238fb016f825"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:45768",
+      "source_product_id": "45768",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/epicerie-salee/haricots-verts-extra-fins-bio",
+      "product_name": "Haricots verts extra-fins bio",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "776a8bd1f1d329297a2237e729aa76bb94c1c816ba0ab3d46a1ed1e5a4ec4cb0",
+      "previous_commercial_fingerprint": "776a8bd1f1d329297a2237e729aa76bb94c1c816ba0ab3d46a1ed1e5a4ec4cb0"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:45771",
+      "source_product_id": "45771",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/epicerie-salee/petits-pois-extra-fins-bio",
+      "product_name": "Petits-pois extra-fins bio",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "52557ac5c5fdf1ebc1ffdd1ef00e7ae5685cb87b2e18e5fdcc528e9edbbd3d62",
+      "previous_commercial_fingerprint": "52557ac5c5fdf1ebc1ffdd1ef00e7ae5685cb87b2e18e5fdcc528e9edbbd3d62"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:45773",
+      "source_product_id": "45773",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/epicerie-salee/pois-chiches-bio",
+      "product_name": "Pois chiches bio",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "74235687dd4b6ecd0d26787dac53e0c8ac4e7f29def6fb2aa2625df314ed54e8",
+      "previous_commercial_fingerprint": "74235687dd4b6ecd0d26787dac53e0c8ac4e7f29def6fb2aa2625df314ed54e8"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:45745",
+      "source_product_id": "45745",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/epicerie-salee/riz-long-grain-bio",
+      "product_name": "Riz long grain bio",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "3ecbb611435b1a5add0ff7825071607131830fa4b8af60314a25b186a97972e4",
+      "previous_commercial_fingerprint": "3ecbb611435b1a5add0ff7825071607131830fa4b8af60314a25b186a97972e4"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:301615",
+      "source_product_id": "301615",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/epicerie-salee/terrine-de-campagne-bio",
+      "product_name": "Terrine de Campagne bio",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "48a4c2e817c3e3fb01db774485facea2d4683b5772da3ebc99347f8e1d847e85",
+      "previous_commercial_fingerprint": "48a4c2e817c3e3fb01db774485facea2d4683b5772da3ebc99347f8e1d847e85"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:301616",
+      "source_product_id": "301616",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/epicerie-salee/terrine-de-foie-de-volaille-bio",
+      "product_name": "Terrine de Foie de Volaille bio",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "11435e6844b516daafb08d2d2b5b757af4b1b84f68e8898b912b68527524fd44",
+      "previous_commercial_fingerprint": "11435e6844b516daafb08d2d2b5b757af4b1b84f68e8898b912b68527524fd44"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:67553",
+      "source_product_id": "67553",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/epicerie-salee/pates-spaghetti-bio-1",
+      "product_name": "Pâtes Spaghetti Bio",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "22a009e8697dcc6757470ecea7cfb93de546ad3c70fc40cc36a1d6ab50571289",
+      "previous_commercial_fingerprint": "22a009e8697dcc6757470ecea7cfb93de546ad3c70fc40cc36a1d6ab50571289"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:45790",
+      "source_product_id": "45790",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/epicerie-salee/sauce-pesto-au-basilic",
+      "product_name": "Sauce pesto au basilic",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "450e8aa259b357d8dce7b3afcecba672f411389b572c1a4a5d66346ab7d64048",
+      "previous_commercial_fingerprint": "450e8aa259b357d8dce7b3afcecba672f411389b572c1a4a5d66346ab7d64048"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:992044",
+      "source_product_id": "992044",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/epicerie-salee/ketchup-en-flacon-bio",
+      "product_name": "Ketchup en flacon bio",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "d9cd238381d701bfad03606d4bf21bfcd80586acb2104a40a52ac54dfabc6e56",
+      "previous_commercial_fingerprint": "d9cd238381d701bfad03606d4bf21bfcd80586acb2104a40a52ac54dfabc6e56"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:22165",
+      "source_product_id": "22165",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/epicerie-salee/double-concentre-de-tomate-bio",
+      "product_name": "Double concentré de tomate bio",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "347f51c7ed1db45e3c3aaf3d54cd6889bb5602a36a80a007baeb3b2ea72e803a",
+      "previous_commercial_fingerprint": "347f51c7ed1db45e3c3aaf3d54cd6889bb5602a36a80a007baeb3b2ea72e803a"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:25902",
+      "source_product_id": "25902",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/epicerie-salee/pur-jus-de-citron-origine-sicile-bio",
+      "product_name": "Pur jus de citron origine Sicile bio",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "78a829f152642a54907f4d33b49a70e03c3a675c255719a8810e410c4cb011f0",
+      "previous_commercial_fingerprint": "78a829f152642a54907f4d33b49a70e03c3a675c255719a8810e410c4cb011f0"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:98206",
+      "source_product_id": "98206",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/epicerie-salee/sauce-tomate-provencale-bio",
+      "product_name": "Sauce tomate provençale Bio",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "57493d318496530aeb489869b21297a49df7f017f7e157b2d7ca348152b8295f",
+      "previous_commercial_fingerprint": "57493d318496530aeb489869b21297a49df7f017f7e157b2d7ca348152b8295f"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:45769",
+      "source_product_id": "45769",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/epicerie-salee/coeurs-de-palmier-bio",
+      "product_name": "Coeurs de palmier bio",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "0932e5ab5f7bf1b4504a008a9d49970c5a96190fbd98056b1b1eb2e707b0aa77",
+      "previous_commercial_fingerprint": "0932e5ab5f7bf1b4504a008a9d49970c5a96190fbd98056b1b1eb2e707b0aa77"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:45822",
+      "source_product_id": "45822",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/epicerie-salee/pistaches-grillees-et-salees-bio",
+      "product_name": "Pistaches grillées et salées bio",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "15987c1bae28edef629f8289aed8c6b77c658b4781609b1b56fb24009a66c9e4",
+      "previous_commercial_fingerprint": "15987c1bae28edef629f8289aed8c6b77c658b4781609b1b56fb24009a66c9e4"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:34902",
+      "source_product_id": "34902",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/jus-de-fruits-et-sirops/pur-jus-de-fruits-saveur-ananas-victoria",
+      "product_name": "Pur jus de fruits saveur ananas victoria",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "57c5a7f3fd3b56451342ef4df5fa7ec961cd44f85d6d8dff3fbf4326da51fb75",
+      "previous_commercial_fingerprint": "57c5a7f3fd3b56451342ef4df5fa7ec961cd44f85d6d8dff3fbf4326da51fb75"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:68296",
+      "source_product_id": "68296",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/jus-de-fruits-et-sirops/jus-de-fruits-a-base-de-concentre-saveur-multifruits-2",
+      "product_name": "Jus de fruits à base de concentre saveur multifruits",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "696a383ecfb97200e2f33b71f4561ac2155136b798cc7225a81f743b53449229",
+      "previous_commercial_fingerprint": "696a383ecfb97200e2f33b71f4561ac2155136b798cc7225a81f743b53449229"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:47381",
+      "source_product_id": "47381",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/jus-de-fruits-et-sirops/boisson-aux-jus-de-fruits-saveur-mangue-passion-le-pack-de-8-poches-20cl",
+      "product_name": "Boisson aux jus de fruits saveur mangue passion - le pack de 8 p...",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "a0796a865846a3985d5b0e81cc6fa2b1b302f1311c6f6865f40f1e1bf9a3802c",
+      "previous_commercial_fingerprint": "a0796a865846a3985d5b0e81cc6fa2b1b302f1311c6f6865f40f1e1bf9a3802c"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:89265",
+      "source_product_id": "89265",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/jus-de-fruits-et-sirops/boisson-aux-jus-de-fruits-saveur-multivitamine-le-pack-de-8-poches-20cl",
+      "product_name": "Boisson aux jus de fruits saveur multivitaminé - le pack de 8 p...",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "d4aedbcd5f2ffda83312c77a94a492f239e20c17c407a4aaf70a3164ce372141",
+      "previous_commercial_fingerprint": "d4aedbcd5f2ffda83312c77a94a492f239e20c17c407a4aaf70a3164ce372141"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:89270",
+      "source_product_id": "89270",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/jus-de-fruits-et-sirops/boisson-aux-jus-de-fruits-saveur-multifruits-le-pack-de-8-poches-20cl-1",
+      "product_name": "Boisson aux jus de fruits saveur multifruits - le pack de 8 poch...",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "8a76c9f15c0c137edb3203a3e3b6e44620f0429930abf2cf061002cbeab294c9",
+      "previous_commercial_fingerprint": "8a76c9f15c0c137edb3203a3e3b6e44620f0429930abf2cf061002cbeab294c9"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:89266",
+      "source_product_id": "89266",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/jus-de-fruits-et-sirops/boisson-aux-jus-de-fruits-saveur-multifruits-le-pack-de-8-poches-20cl",
+      "product_name": "Boisson aux jus de fruits saveur multifruits - le pack de 8 poch...",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "c430faef186802d4dbb8e09da16cba3b42ec6a8195c5cf6aa3fb451cf066b2dc",
+      "previous_commercial_fingerprint": "c430faef186802d4dbb8e09da16cba3b42ec6a8195c5cf6aa3fb451cf066b2dc"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:69381",
+      "source_product_id": "69381",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/jus-de-fruits-et-sirops/jus-de-fruit-a-base-de-concentre-saveur-ananas",
+      "product_name": "Jus de fruit à base de concentré saveur ananas",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "cb387132c356decfa64b1150259304accdfae37462f29a90daf402bfec135d0c",
+      "previous_commercial_fingerprint": "cb387132c356decfa64b1150259304accdfae37462f29a90daf402bfec135d0c"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:840425",
+      "source_product_id": "840425",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/jus-de-fruits-et-sirops/jus-de-fruits-a-base-de-concentre-saveur-orange-3",
+      "product_name": "Jus de fruits à base de concentré saveur orange",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "dfe410809632f1effa9820193dc3d38968c5c142a2ebaaa815c826cfa74a19cf",
+      "previous_commercial_fingerprint": "dfe410809632f1effa9820193dc3d38968c5c142a2ebaaa815c826cfa74a19cf"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:69374",
+      "source_product_id": "69374",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/jus-de-fruits-et-sirops/jus-de-fruits-a-base-de-concentre-saveur-orange-le-pack-de-6-briques-20cl-1",
+      "product_name": "Jus de fruits à base de concentré saveur orange - le pack de 6...",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "6cd4823ec00a8ef14b1d2096b1c70a804c8943931421e34443791d1daa52d933",
+      "previous_commercial_fingerprint": "6cd4823ec00a8ef14b1d2096b1c70a804c8943931421e34443791d1daa52d933"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:840434",
+      "source_product_id": "840434",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/jus-de-fruits-et-sirops/jus-de-pamplemousse-rose-a-base-de-concentre",
+      "product_name": "Jus de pamplemousse rose à base de concentré",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "92c67f1a99f27b7985dfe21bec685894450abfcbb2f632af25d37f30ad186280",
+      "previous_commercial_fingerprint": "92c67f1a99f27b7985dfe21bec685894450abfcbb2f632af25d37f30ad186280"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:840415",
+      "source_product_id": "840415",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/jus-de-fruits-et-sirops/jus-de-pomme-a-base-de-concentre",
+      "product_name": "Jus de pomme à base de concentré",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "1c554b3fc20a163aedffd40cbb215514a1cba98bdba4e303c62090d153b00a48",
+      "previous_commercial_fingerprint": "1c554b3fc20a163aedffd40cbb215514a1cba98bdba4e303c62090d153b00a48"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:840411",
+      "source_product_id": "840411",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/jus-de-fruits-et-sirops/nectar-multifruits-a-base-de-jus-et-de-purees-de-fruits-concentres",
+      "product_name": "Nectar Multifruits À Base De Jus Et De Purées De Fruits Concen...",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "1b468deb59e0e40ecf2b9d5522ef53daf6e04b5cb7c96b2a2c0337a51f0f316e",
+      "previous_commercial_fingerprint": "1b468deb59e0e40ecf2b9d5522ef53daf6e04b5cb7c96b2a2c0337a51f0f316e"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:64939",
+      "source_product_id": "64939",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/jus-de-fruits-et-sirops/nectar-a-base-de-concentre-saveur-multifruits-le-pack-de-6-briques-20cl",
+      "product_name": "Nectar à base de concentré saveur Multifruits - le pack de 6 b...",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "72ba6b8d541f235d9fe363fd6796b88de9ce92ba54a7579b521852562191b3d6",
+      "previous_commercial_fingerprint": "72ba6b8d541f235d9fe363fd6796b88de9ce92ba54a7579b521852562191b3d6"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:124669",
+      "source_product_id": "124669",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/cremerie/chevre-cremeux",
+      "product_name": "Chèvre crémeux",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "333e65e36ad84576d4aba666958881e4a9733150d3f877f287b8249cbca2101c",
+      "previous_commercial_fingerprint": "333e65e36ad84576d4aba666958881e4a9733150d3f877f287b8249cbca2101c"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:124668",
+      "source_product_id": "124668",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/cremerie/fromage-frais-fouette-echalotte-et-ciboulette",
+      "product_name": "Fromage frais fouetté échalotte et ciboulette",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "ecd19a82cb84e38172b9846094742c98d7a144b4b9ade572a2288b306dfe5703",
+      "previous_commercial_fingerprint": "ecd19a82cb84e38172b9846094742c98d7a144b4b9ade572a2288b306dfe5703"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:119233",
+      "source_product_id": "119233",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/cremerie/guacamole-extra",
+      "product_name": "Guacamole extra",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "309d5ae68457d209872efde07c64e7525b25923a886f78bc7acd75969c3e7663",
+      "previous_commercial_fingerprint": "309d5ae68457d209872efde07c64e7525b25923a886f78bc7acd75969c3e7663"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:124667",
+      "source_product_id": "124667",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/cremerie/houmous-a-la-libanaise",
+      "product_name": "Houmous à la libanaise",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "e62b272c535c919d1dfde4b431154bd43a71ab38e9b0d3ff1e9dee23f308bec9",
+      "previous_commercial_fingerprint": "e62b272c535c919d1dfde4b431154bd43a71ab38e9b0d3ff1e9dee23f308bec9"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:119229",
+      "source_product_id": "119229",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/cremerie/tarama-extra",
+      "product_name": "Tarama extra",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "10653c06362f369f072ef853f3cb710cdd29606e9267f0e25757110451292745",
+      "previous_commercial_fingerprint": "10653c06362f369f072ef853f3cb710cdd29606e9267f0e25757110451292745"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:460826",
+      "source_product_id": "460826",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/cremerie/creme-fouettee-legere-20-mg",
+      "product_name": "Crème fouettée légère 20% MG",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "fef251acf7b345daad43700dfe16098f4bff3eebca327f5bd310330c3e224ab3",
+      "previous_commercial_fingerprint": "fef251acf7b345daad43700dfe16098f4bff3eebca327f5bd310330c3e224ab3"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:460831",
+      "source_product_id": "460831",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/cremerie/creme-legere-semi-epaisse-4-mg-3-briques",
+      "product_name": "Crème légère semi-épaisse 4% MG - 3 briques",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "ca729c03b4bbaa2d03f58802b35f893502b01706fec81b7898c7cda3ef24cfb3",
+      "previous_commercial_fingerprint": "ca729c03b4bbaa2d03f58802b35f893502b01706fec81b7898c7cda3ef24cfb3"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:42624",
+      "source_product_id": "42624",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/cremerie/boisson-lactee-au-cacao",
+      "product_name": "Boisson lactée au cacao",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "7cb3cab4d2353dbbbaafddb5ec8169029e0373e388d876bd5dbb33c36be3398e",
+      "previous_commercial_fingerprint": "7cb3cab4d2353dbbbaafddb5ec8169029e0373e388d876bd5dbb33c36be3398e"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:620336",
+      "source_product_id": "620336",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/cremerie/lait-demi-ecreme-uht-2",
+      "product_name": "Lait demi-écrémé UHT",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "8c08560efa0096e12ff4744a8b21fe6de55adc4baee2a432ea4b8d46edf16278",
+      "previous_commercial_fingerprint": "8c08560efa0096e12ff4744a8b21fe6de55adc4baee2a432ea4b8d46edf16278"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:460288",
+      "source_product_id": "460288",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/cremerie/lait-entier-sterilise-uht-2",
+      "product_name": "Lait entier stérilisé UHT",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "28165aa7627268b1611bd961cb5b3bcc600dd436748f2c2a7393441e2b391ee2",
+      "previous_commercial_fingerprint": "28165aa7627268b1611bd961cb5b3bcc600dd436748f2c2a7393441e2b391ee2"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:109376",
+      "source_product_id": "109376",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/cremerie/lait-demi-ecreme-sans-lactose-uht-1",
+      "product_name": "Lait demi-écrémé sans lactose UHT",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "9975ca94248b625fb01321e85df689f2260bd83d0e923827e5f74487e5dbcdd4",
+      "previous_commercial_fingerprint": "9975ca94248b625fb01321e85df689f2260bd83d0e923827e5f74487e5dbcdd4"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:105069",
+      "source_product_id": "105069",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/cremerie/lait-demi-ecreme-sans-lactose-uht",
+      "product_name": "Lait demi-écrémé sans lactose UHT",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "f485b5ecb487b44995d0ae68939a72957ed9718684cfe7d419cd863a44b58f71",
+      "previous_commercial_fingerprint": "f485b5ecb487b44995d0ae68939a72957ed9718684cfe7d419cd863a44b58f71"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:460287",
+      "source_product_id": "460287",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/cremerie/lait-ecreme-uht-riche-en-calcium-et-vitamine-d",
+      "product_name": "Lait écrémé UHT riche en calcium et vitamine D",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "88c4bf6202f8fd8d453f2a00e774b9252ab10f41b768ce05446a7516e8cb4533",
+      "previous_commercial_fingerprint": "88c4bf6202f8fd8d453f2a00e774b9252ab10f41b768ce05446a7516e8cb4533"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:460289",
+      "source_product_id": "460289",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/cremerie/lait-demi-ecreme-uht-10-vitamines",
+      "product_name": "Lait demi-écrémé UHT 10 vitamines",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "49e871a16ade3111f83eaa2ab78934e3af01033036984103635b8bc46bda6db7",
+      "previous_commercial_fingerprint": "49e871a16ade3111f83eaa2ab78934e3af01033036984103635b8bc46bda6db7"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:620760",
+      "source_product_id": "620760",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/cremerie/beurre-doux-82-mg-plaquette-2",
+      "product_name": "Beurre doux 82% MG - plaquette",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "bf6d6e7d4379c3e6b5b9c990737039a325307a8ad520b14e340ef76e9f0fc0aa",
+      "previous_commercial_fingerprint": "bf6d6e7d4379c3e6b5b9c990737039a325307a8ad520b14e340ef76e9f0fc0aa"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:114655",
+      "source_product_id": "114655",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/cremerie/beurre-doux-gastronomique-82-mg-plaquette",
+      "product_name": "Beurre doux gastronomique 82% MG - plaquette",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "6e6e6848a2ebcea7f693e85861aa59ab95f39cc98c177bb6de1f9d134ac7042d",
+      "previous_commercial_fingerprint": "6e6e6848a2ebcea7f693e85861aa59ab95f39cc98c177bb6de1f9d134ac7042d"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:122855",
+      "source_product_id": "122855",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/hygiene-soins-du-corps/rasoirs-jetables-3-lames-4-rasoirs",
+      "product_name": "Rasoirs jetables 3 lames - 4 rasoirs",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "931f68b102d3d55a21c9bbea44f109968e818ed9152d9159c9a0ee4b97446995",
+      "previous_commercial_fingerprint": "931f68b102d3d55a21c9bbea44f109968e818ed9152d9159c9a0ee4b97446995"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:350410",
+      "source_product_id": "350410",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/hygiene-soins-du-corps/rasoirs-jetables-2-lames-5-rasoirs",
+      "product_name": "Rasoirs jetables 2 lames - 5 rasoirs",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "127b0c54aa336c39eaa5a55f4aadecbb3d422840511464f6cc1e342f03e1d121",
+      "previous_commercial_fingerprint": "127b0c54aa336c39eaa5a55f4aadecbb3d422840511464f6cc1e342f03e1d121"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:301243",
+      "source_product_id": "301243",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/hygiene-soins-du-corps/eau-de-cologne-fraiche",
+      "product_name": "Eau de cologne fraîche",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "b40c22402b9bd616f4e7bbec8735e1d2b7c56a583944f98a17c68a18770c1b29",
+      "previous_commercial_fingerprint": "b40c22402b9bd616f4e7bbec8735e1d2b7c56a583944f98a17c68a18770c1b29"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:30304",
+      "source_product_id": "30304",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/hygiene-soins-du-corps/eau-de-cologne-lavande",
+      "product_name": "Eau de cologne lavande",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "fa5e7e272ae5193bd3d7a8d84aeace9cef962927a0d7c819757125e0a5a93ae4",
+      "previous_commercial_fingerprint": "fa5e7e272ae5193bd3d7a8d84aeace9cef962927a0d7c819757125e0a5a93ae4"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:30302",
+      "source_product_id": "30302",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/hygiene-soins-du-corps/eau-de-cologne-naturelle",
+      "product_name": "Eau de cologne naturelle",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "536aabda37e6e985886ccc3892be5f31386a5766081b95b009ac0055ab9354c6",
+      "previous_commercial_fingerprint": "536aabda37e6e985886ccc3892be5f31386a5766081b95b009ac0055ab9354c6"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:71421",
+      "source_product_id": "71421",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/hygiene-soins-du-corps/deodorant-bille-0-alcool-parfum-classique",
+      "product_name": "Déodorant bille 0% alcool parfum classique",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "87f7e19d64ffef4fbe1773698e46f77d2f615f35bcd21526ab3b0c2b1fdf9df9",
+      "previous_commercial_fingerprint": "87f7e19d64ffef4fbe1773698e46f77d2f615f35bcd21526ab3b0c2b1fdf9df9"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:71426",
+      "source_product_id": "71426",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/hygiene-soins-du-corps/deodorant-bille-anti-traces-1",
+      "product_name": "Déodorant bille anti-traces",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "5a32bc0281b5bf02cf416a09eaf3da3efbde3673bdcceda6255f7c915de1a98c",
+      "previous_commercial_fingerprint": "5a32bc0281b5bf02cf416a09eaf3da3efbde3673bdcceda6255f7c915de1a98c"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:71420",
+      "source_product_id": "71420",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/hygiene-soins-du-corps/deodorant-spray-anti-transpirant-original-invisible-dry-advanced-care",
+      "product_name": "Déodorant spray anti-transpirant original invisible dry advance...",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "89b49fc274027065ebe69eb277ad8d158613c7fbcfde74963936b6e549f250e4",
+      "previous_commercial_fingerprint": "89b49fc274027065ebe69eb277ad8d158613c7fbcfde74963936b6e549f250e4"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:71419",
+      "source_product_id": "71419",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/hygiene-soins-du-corps/deodorant-spray-anti-transpirant-parfum-poudre-powder-soft-0-alcool",
+      "product_name": "Déodorant spray anti-transpirant parfum poudré powder soft 0% ...",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "681b413624c5c0940d884bbe3a231e3c190ca594fdbdebc31e4d2cfc0d300d27",
+      "previous_commercial_fingerprint": "681b413624c5c0940d884bbe3a231e3c190ca594fdbdebc31e4d2cfc0d300d27"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:71418",
+      "source_product_id": "71418",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/hygiene-soins-du-corps/deodorant-spray-anti-transpirant-parfum-poudre-powder-soft-0-alcool-1",
+      "product_name": "Déodorant spray anti-transpirant parfum poudré powder soft 0% ...",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "7a49ab06693dd89a2e4e061017ab7e5c7d17332540eb2949fb3dfec40c08ac1d",
+      "previous_commercial_fingerprint": "7a49ab06693dd89a2e4e061017ab7e5c7d17332540eb2949fb3dfec40c08ac1d"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:12199",
+      "source_product_id": "12199",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/hygiene-soins-du-corps/rasoirs-jetables-2-lames-10-rasoirs",
+      "product_name": "Rasoirs jetables 2 lames - 10 rasoirs",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "089cc7aadb75b367bbf686d73785ab9ca8fda32d7292223b3a2a8892931390a8",
+      "previous_commercial_fingerprint": "089cc7aadb75b367bbf686d73785ab9ca8fda32d7292223b3a2a8892931390a8"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:997886",
+      "source_product_id": "997886",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/hygiene-soins-du-corps/gel-douche-parfum-grenade",
+      "product_name": "Gel douche parfum grenade",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "c933e9bda946e073d86a13ae75deacd9924d2c1c09a9c66d6c01013978a62cc5",
+      "previous_commercial_fingerprint": "c933e9bda946e073d86a13ae75deacd9924d2c1c09a9c66d6c01013978a62cc5"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:301410",
+      "source_product_id": "301410",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/hygiene-soins-du-corps/savon-solide-au-savon-de-marseille-et-amande-douce-4-savons",
+      "product_name": "Savon solide au savon de Marseille et amande douce - 4 savons",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "823eb802f4df72d09da770afdea8ff44e7091652263e784b725f82c00e0f8500",
+      "previous_commercial_fingerprint": "823eb802f4df72d09da770afdea8ff44e7091652263e784b725f82c00e0f8500"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:123087",
+      "source_product_id": "123087",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/hygiene-soins-du-corps/creme-de-douche-au-lait-d-amande-douce",
+      "product_name": "Crème de douche au lait d amande douce",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "277fdf65fe9ed614e402257dd131d9aa0e3f77e15eaff53b3cc00380dd180781",
+      "previous_commercial_fingerprint": "277fdf65fe9ed614e402257dd131d9aa0e3f77e15eaff53b3cc00380dd180781"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:997996",
+      "source_product_id": "997996",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/hygiene-soins-du-corps/savon-liquide-recharge-au-lait-hydrate-et-nourrit-doux",
+      "product_name": "Savon liquide recharge au lait hydrate et nourrit doux.",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "d4240139a6f1d1e3659fd199de92dca63161fc6182cb22c6961c744f983f0a06",
+      "previous_commercial_fingerprint": "d4240139a6f1d1e3659fd199de92dca63161fc6182cb22c6961c744f983f0a06"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:380129",
+      "source_product_id": "380129",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/hygiene-soins-du-corps/savon-de-marseille-pour-prelavage-et-lavage-du-linge-en-douceur-2-savons",
+      "product_name": "Savon de marseille pour prelavage et lavage du linge en douceur ...",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "ce3f8251c821e197b601573acef23f89e46af84cd6ee2ec08c068e3b67411472",
+      "previous_commercial_fingerprint": "ce3f8251c821e197b601573acef23f89e46af84cd6ee2ec08c068e3b67411472"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:122513",
+      "source_product_id": "122513",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/hygiene-soins-du-corps/lait-corps-nourissant-au-karite-pour-peaux-mates",
+      "product_name": "Lait corps nourissant au karité pour peaux mates",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "8c64e2bb50b738d2976a524da2d8dc7deb13ee0251aea032af0bf9ff6e958b88",
+      "previous_commercial_fingerprint": "8c64e2bb50b738d2976a524da2d8dc7deb13ee0251aea032af0bf9ff6e958b88"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:65652",
+      "source_product_id": "65652",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/produits-nettoyant/nettoyant-menager-multi-surfaces-parfum-eucalyptus-1",
+      "product_name": "Nettoyant ménager multi-surfaces parfum eucalyptus",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "be521d91952bfba78b37f1f7a31c9dc22e123cad7fb34989832afdbc646d79c3",
+      "previous_commercial_fingerprint": "be521d91952bfba78b37f1f7a31c9dc22e123cad7fb34989832afdbc646d79c3"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:65650",
+      "source_product_id": "65650",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/produits-nettoyant/nettoyant-menager-multi-surfaces-parfum-frais-1",
+      "product_name": "Nettoyant ménager multi-surfaces parfum frais",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "c889055b5b57f1d15bf7d05c1ad98afe9e222c1890fdaaa33088d29036316e70",
+      "previous_commercial_fingerprint": "c889055b5b57f1d15bf7d05c1ad98afe9e222c1890fdaaa33088d29036316e70"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:100861",
+      "source_product_id": "100861",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/produits-nettoyant/recharge-spray-nettoyant-vitres-triple-action",
+      "product_name": "Recharge spray nettoyant vitres triple action",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "dc965cdf3b8ab1a7ba222992120cbf52899ae2d7384f89cf25e247780badc433",
+      "previous_commercial_fingerprint": "dc965cdf3b8ab1a7ba222992120cbf52899ae2d7384f89cf25e247780badc433"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:100860",
+      "source_product_id": "100860",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/produits-nettoyant/spray-nettoyant-vitres-triple-action",
+      "product_name": "Spray nettoyant vitres triple action",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "b515c714c94f2ebebe383892611afdb6a91cc4cd412ac7f8a30c66306bdfc95c",
+      "previous_commercial_fingerprint": "b515c714c94f2ebebe383892611afdb6a91cc4cd412ac7f8a30c66306bdfc95c"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:12762",
+      "source_product_id": "12762",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/produits-nettoyant/spray-nettoyant-ultra-degraissant-au-savon-de-marseille",
+      "product_name": "Spray nettoyant ultra dégraissant au savon de Marseille",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "0a24fe73a5648ee95e383a5049509367dac737704732b3c426abf7c7659a2e08",
+      "previous_commercial_fingerprint": "0a24fe73a5648ee95e383a5049509367dac737704732b3c426abf7c7659a2e08"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:65794",
+      "source_product_id": "65794",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/produits-nettoyant/lingette-nettoie-sols-agrumes-15-lingettes",
+      "product_name": "Lingette nettoie sols agrumes - 15 lingettes",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "b3e7cbf6b95b69f8e7cac707204fb8474252cebd9d380cebff8b343593c059a7",
+      "previous_commercial_fingerprint": "b3e7cbf6b95b69f8e7cac707204fb8474252cebd9d380cebff8b343593c059a7"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:380411",
+      "source_product_id": "380411",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/produits-nettoyant/mousse-nettoyante-fours-1",
+      "product_name": "Mousse nettoyante fours",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "62ee8d9b35c55a2649b37cb4f6160cc6897213ae00908d84b62fbca9adec0992",
+      "previous_commercial_fingerprint": "62ee8d9b35c55a2649b37cb4f6160cc6897213ae00908d84b62fbca9adec0992"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:65796",
+      "source_product_id": "65796",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/produits-nettoyant/spray-degraissant-au-savon-de-marseille",
+      "product_name": "Spray dégraissant au savon de Marseille",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "3d94a21ab939ea8ae67f959bb61ac4c03c3d10be46a977cbf604895dffecd29f",
+      "previous_commercial_fingerprint": "3d94a21ab939ea8ae67f959bb61ac4c03c3d10be46a977cbf604895dffecd29f"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:45885",
+      "source_product_id": "45885",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/produits-nettoyant/spray-nettoyant-vitres-1",
+      "product_name": "Spray nettoyant vitres",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "d825bf22e698dac05091776d0aae9e2c0cd18e5176e571e24de07e7e3db778c8",
+      "previous_commercial_fingerprint": "d825bf22e698dac05091776d0aae9e2c0cd18e5176e571e24de07e7e3db778c8"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:180883",
+      "source_product_id": "180883",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/produits-nettoyant/creme-a-recurer-avec-javel-1",
+      "product_name": "Crème à récurer avec javel",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "2640cac8024d79794dedf8e7db8f8db9a8bc469ffbf85695fd30a2a4c0ee0a5a",
+      "previous_commercial_fingerprint": "2640cac8024d79794dedf8e7db8f8db9a8bc469ffbf85695fd30a2a4c0ee0a5a"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:180893",
+      "source_product_id": "180893",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/produits-nettoyant/creme-a-recurer-parfum-citron",
+      "product_name": "Crème à récurer parfum citron",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "0e325576f26d69a802bcce65dcf6d719773a8888fb04901629f992f51a339d5f",
+      "previous_commercial_fingerprint": "0e325576f26d69a802bcce65dcf6d719773a8888fb04901629f992f51a339d5f"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:68614",
+      "source_product_id": "68614",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/produits-nettoyant/mousse-nettoyante-fours-ultra-degraissant",
+      "product_name": "Mousse nettoyante fours ultra dégraissant",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "38c436662168e50f7d5c4b212c57eb1450586483e8b92e2f2d53a4e247fafd1d",
+      "previous_commercial_fingerprint": "38c436662168e50f7d5c4b212c57eb1450586483e8b92e2f2d53a4e247fafd1d"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:301401",
+      "source_product_id": "301401",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/produits-nettoyant/gel-deboucheur-5-minutes",
+      "product_name": "Gel déboucheur 5 minutes",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "62e8d290c5cc03f0bcbe5e3a9423f8d03ce8a8295ff3ef74d72910e0670024b2",
+      "previous_commercial_fingerprint": "62e8d290c5cc03f0bcbe5e3a9423f8d03ce8a8295ff3ef74d72910e0670024b2"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:100751",
+      "source_product_id": "100751",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/produits-nettoyant/bloc-wc-eau-bleue-pour-chasse-d-eau-2-blocs-3",
+      "product_name": "Bloc WC eau bleue pour chasse d eau - 2 blocs",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "325bf27c1a38d55311f15196494336241b33bb5b97e290bba965ea4d2e23f36c",
+      "previous_commercial_fingerprint": "325bf27c1a38d55311f15196494336241b33bb5b97e290bba965ea4d2e23f36c"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:71796",
+      "source_product_id": "71796",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/produits-nettoyant/gel-wc-100-detartrant-en-5-minutes",
+      "product_name": "Gel WC 100% détartrant en 5 minutes",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "4baf8d4fba0462a28871857480e546e62184d5607691ddb5b01d6e45892bac7c",
+      "previous_commercial_fingerprint": "4baf8d4fba0462a28871857480e546e62184d5607691ddb5b01d6e45892bac7c"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:71233",
+      "source_product_id": "71233",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/produits-nettoyant/gel-wc-odeur-ocean-pacifique-aux-huiles-essentielles",
+      "product_name": "Gel WC odeur océan pacifique aux huiles essentielles",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "58fb200634e7f95b766eb98894b7207fb09b90793deaf92277f4813f1246ec8a",
+      "previous_commercial_fingerprint": "58fb200634e7f95b766eb98894b7207fb09b90793deaf92277f4813f1246ec8a"
+    },
+    {
+      "source_identity": "leader-price-reunion|leaderprice-lp-ermitage|source-id:12679",
+      "source_product_id": "12679",
+      "product_url": "https://leaderdrive.re/leaderprice-lp-ermitage/articles/produits-nettoyant/eau-de-javel-1",
+      "product_name": "Eau de javel",
+      "change_type": "unchanged",
+      "commercial_fingerprint": "6d90af90900de4033d6e9994ddab7b82446c531461817e4372a270ed0705bf9d",
+      "previous_commercial_fingerprint": "6d90af90900de4033d6e9994ddab7b82446c531461817e4372a270ed0705bf9d"
+    }
+  ],
+  "import_summary": null,
+  "errors": [],
+  "writes": {
+    "retail_price_candidates": true,
+    "shopping_promotions": false,
+    "good_deals": false,
+    "retail_price_observations": false,
+    "market_price_observations": false
+  }
+}

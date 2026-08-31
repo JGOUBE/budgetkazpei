@@ -1,0 +1,60 @@
+{
+  "page_number": 1,
+  "strategy": "C",
+  "status": "completed",
+  "calls": 1,
+  "estimated_cost_eur": 0.002,
+  "duration_seconds": 0.12,
+  "offers_detected": 1,
+  "offers_complete": 1,
+  "offers_incomplete": 0,
+  "duplicates": 0,
+  "input_tokens": 100,
+  "output_tokens": 40,
+  "errors": [],
+  "result": {
+    "page_number": 1,
+    "strategy": "C",
+    "calls": 1,
+    "duration_seconds": 0.12,
+    "estimated_cost_eur": 0.002,
+    "offers_detected": 1,
+    "offers_complete": 1,
+    "offers_incomplete": 0,
+    "duplicates": 0,
+    "errors": [],
+    "correct_product_price_associations": null,
+    "false_product_price_associations": null,
+    "input_tokens": 100,
+    "output_tokens": 40,
+    "offers": [
+      {
+        "page_number": 1,
+        "bounding_box": {
+          "left": 30.0,
+          "top": 50.0,
+          "width": 100.0,
+          "height": 140.0
+        },
+        "product_name": "Stylo bleu",
+        "brand": "Bic",
+        "package_format": "lot de 4",
+        "quantity_value": 4.0,
+        "quantity_unit": "unit",
+        "promo_price": 1.99,
+        "original_price": null,
+        "unit_price": null,
+        "unit_price_unit": null,
+        "loyalty_amount": null,
+        "loyalty_type": null,
+        "discount_percent": null,
+        "offer_mechanism": "simple_price",
+        "conditions": null,
+        "confidence": 88.0,
+        "visual_evidence_notes": "price near product"
+      }
+    ]
+  },
+  "error": null,
+  "updated_at": "2026-07-29T10:10:26Z"
+}

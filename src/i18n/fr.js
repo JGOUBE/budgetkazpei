@@ -97,6 +97,18 @@ const fr = {
     title: "Mes tickets",
     scanCta: "Scanner un ticket",
   },
+  shoppingList: {
+    save: "Sauvegarder",
+    saving: "Sauvegarde…",
+    saved: "Liste sauvegardée pendant 7 jours.",
+    saveError: "Impossible de sauvegarder la liste. Réessayez.",
+    addBeforeSave: "Ajoutez au moins un produit avant de sauvegarder la liste.",
+    savedLists: "Mes listes sauvegardées",
+    savedListsText: "Vos listes sauvegardées restent disponibles pendant 7 jours, puis sont supprimées automatiquement.",
+    noSavedLists: "Aucune liste sauvegardée pour le moment.",
+    view: "Voir",
+    estimatedTotal: amount => `estimation ${amount}`,
+  },
   transactions: {
     labelPlaceholder: "Libellé (ex: Super U)",
     amountPlaceholder: "Montant (ex: 45,50)",

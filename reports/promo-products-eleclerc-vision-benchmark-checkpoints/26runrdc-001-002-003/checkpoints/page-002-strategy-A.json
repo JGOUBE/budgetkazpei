@@ -1,0 +1,38 @@
+{
+  "page_number": 2,
+  "strategy": "A",
+  "status": "completed",
+  "calls": 1,
+  "estimated_cost_eur": 0.002,
+  "duration_seconds": 0.12,
+  "offers_detected": 0,
+  "offers_complete": 0,
+  "offers_incomplete": 0,
+  "duplicates": 0,
+  "input_tokens": 100,
+  "output_tokens": 40,
+  "errors": [
+    "page-002-full:vision_offer_unexpected_page_number"
+  ],
+  "result": {
+    "page_number": 2,
+    "strategy": "A",
+    "calls": 1,
+    "duration_seconds": 0.12,
+    "estimated_cost_eur": 0.002,
+    "offers_detected": 0,
+    "offers_complete": 0,
+    "offers_incomplete": 0,
+    "duplicates": 0,
+    "errors": [
+      "page-002-full:vision_offer_unexpected_page_number"
+    ],
+    "correct_product_price_associations": null,
+    "false_product_price_associations": null,
+    "input_tokens": 100,
+    "output_tokens": 40,
+    "offers": []
+  },
+  "error": null,
+  "updated_at": "2026-07-29T10:10:26Z"
+}

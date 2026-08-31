@@ -101,10 +101,12 @@ export default function PublicHomePage({ isAuthenticated = false }) {
           <div className="landing-hero__copy">
             <p className="landing-eyebrow">{content.hero.eyebrow}</p>
             <h1 id="landing-title">{content.hero.title}</h1>
-            <p className="landing-hero__lead">{content.hero.lead}</p>
+            <p className="landing-hero__lead landing-hero__lead--full">{content.hero.lead}</p>
+            <p className="landing-hero__lead landing-hero__lead--mobile">{content.hero.mobileLead || content.hero.lead}</p>
             <p className="landing-hero__local">
               <span className="landing-local-mark" aria-hidden="true"><img src="/icons-creole/drapeau-reunionnais.png" alt="" /></span>
-              {content.hero.localLine}
+              <span className="landing-hero__local--full">{content.hero.localLine}</span>
+              <span className="landing-hero__local--mobile">{content.hero.mobileLocalLine || content.hero.localLine}</span>
             </p>
 
             <div className="landing-hero__actions">
@@ -124,13 +126,24 @@ export default function PublicHomePage({ isAuthenticated = false }) {
         </div>
       </section>
 
+      <section className="landing-compact-summary" aria-label={content.summaryAriaLabel}>
+        <div className="landing-shell landing-compact-summary__inner">
+          {content.summaryItems.map(([number, label]) => (
+            <span className="landing-compact-summary__item" key={number}>
+              <small>{number}</small>
+              <strong>{label}</strong>
+            </span>
+          ))}
+        </div>
+      </section>
+
       <section className="landing-section landing-pillars-section" id="fonctionnalites" aria-labelledby="pillars-title">
         <div className="landing-shell">
           <SectionHeading id="pillars-title" eyebrow={content.features.eyebrow} title={content.features.title}>
             {content.features.intro}
           </SectionHeading>
-          <div className="landing-showcase-track landing-pillars-carousel" aria-label="Les écrans BudgetKazPéi" aria-roledescription="carousel">
-            {content.features.pillars.slice(1).map((benefit, index) => <LandingPillar key={benefit.title} benefit={benefit} index={index + 1} />)}
+          <div className="landing-showcase-track landing-pillars-carousel" aria-label={content.features.ariaLabel} aria-roledescription="carousel">
+            {content.features.pillars.slice(0, 3).map((benefit, index) => <LandingPillar key={benefit.title} benefit={benefit} index={index} />)}
           </div>
         </div>
       </section>
