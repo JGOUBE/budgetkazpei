@@ -35,7 +35,10 @@ const resolveRetailMarketStore = ({ candidate, mappings, stores }) => {
   if (mappedStoreId) return mappedStoreId
 
   const normalizedStoreName = candidate.store_name.trim().toLowerCase()
-  const normalizedStoreCity = candidate.store_city.trim().toLowerCase()
+  const normalizedStoreCity = String(candidate.store_city ?? "").trim().toLowerCase()
+  if (normalizedStoreCity === "") {
+    throw new Error(`market store unresolved for retail candidate ${candidate.id} (store_name=${candidate.store_name}, store_city=${candidate.store_city})`)
+  }
   const exactNameCityMatches = stores.filter(store =>
     store.normalized_store_name === normalizedStoreName
     && (normalizedStoreCity === "" || store.normalized_city === normalizedStoreCity),
@@ -293,7 +296,10 @@ const retailSourceConstraintMigration = read("supabase/migrations/202607290004_m
 const retailBatchIdFixMigration = read("supabase/migrations/202607290005_retail_market_batch_id_ambiguity_fix.sql")
 const retailQuantityContractMigration = read("supabase/migrations/202607290006_retail_quantity_contract_and_harpic_fix.sql")
 const retailExpiredPromotionMigration = read("supabase/migrations/202608260001_retail_expired_promotions_as_observed_prices.sql")
+const retailChainScopesMigration = read("supabase/migrations/20260901143040_retail_chain_scopes.sql")
+const retailScopeResolutionGuardMigration = read("supabase/migrations/20260901144726_retail_scope_resolution_guard.sql")
 const normalizedRetailMigration = normalizeSql(retailMigration)
+const normalizedRetailChainScopesMigration = normalizeSql(retailChainScopesMigration)
 const retailReviewViewContractMatch = retailMigration.match(/create or replace view public\.retail_price_candidates_review[\s\S]*?left join public\.shopping_products[\s\S]*?;/)
 assert.ok(retailReviewViewContractMatch, "Retail migration must still define the retail_price_candidates_review view contract")
 const normalizedRetailReviewViewContract = normalizeSql(retailReviewViewContractMatch[0])
@@ -412,12 +418,48 @@ assert.match(retailExpiredPromotionMigration, /'observed_only', to_jsonb/, "Prom
 assert.match(retailExpiredPromotionMigration, /foreach v_candidate_id in array p_candidate_ids loop[\s\S]*?exception\s+when others then[\s\S]*?end;\s+end loop;/, "Batch promotion publication must isolate candidate failures")
 assert.doesNotMatch(retailExpiredPromotionMigration, /starts_at\s*:=\s*now\(\)|starts_at\s*=\s*now\(\)/i, "Expired-promotion migration must never invent a commercial start date")
 
+assert.match(retailChainScopesMigration, /market_stores_retailer_scope_has_no_city/, "Retailer scopes must enforce the absence of a physical city")
+assert.match(retailChainScopesMigration, /store_type is distinct from 'retailer_scope'/, "Retailer scopes must be explicitly distinguishable from physical stores")
+assert.match(retailChainScopesMigration, /'carrefour reunion\|\|la reunion'/, "Carrefour Réunion must have the stable native market store key with an empty city segment")
+assert.match(retailChainScopesMigration, /'carrefour market reunion\|\|la reunion'/, "Carrefour Market Réunion must have the stable native market store key with an empty city segment")
+assert.match(retailChainScopesMigration, /'carrefour city reunion\|\|la reunion'/, "Carrefour City Réunion must have the stable native market store key with an empty city segment")
+assert.match(normalizedRetailChainScopesMigration, /'carrefour-reunion'::text, 'carrefour-reunion'::text/, "Carrefour Réunion must resolve only through its explicit retailer/store slug mapping")
+assert.match(normalizedRetailChainScopesMigration, /'carrefour-market-reunion'::text, 'carrefour-market-reunion'::text/, "Carrefour Market Réunion must resolve only through its explicit retailer/store slug mapping")
+assert.match(normalizedRetailChainScopesMigration, /'carrefour-city-reunion'::text, 'carrefour-city-reunion'::text/, "Carrefour City Réunion must resolve only through its explicit retailer/store slug mapping")
+assert.match(retailChainScopesMigration, /create or replace function public\.retail_publish_promotion_candidates_active\(p_candidate_ids uuid\[\]\)/, "Active retail promotions must use the scope-aware publication implementation")
+assert.match(normalizedRetailChainScopesMigration, /when nullif\(trim\(coalesce\(v_candidate\.store_city, ''\)\), ''\) is null then 'island'/, "A promotion without a known city must use island scope")
+assert.match(normalizedRetailChainScopesMigration, /if v_catalog_scope_type = 'store' then select id into v_store_location_id from public\.shopping_store_locations/, "Only a candidate with a known physical city may resolve or create a shopping store location")
+assert.doesNotMatch(retailChainScopesMigration, /coalesce\(v_candidate\.store_city, v_candidate\.store_name\)/, "Retail promotion publication must never turn a store name into a commune")
+assert.match(normalizedRetailChainScopesMigration, /retail_candidates\.store_city as commune/, "Retail promotions must expose the real candidate city only")
+assert.match(normalizedRetailChainScopesMigration, /coalesce\(observations\.store_city, retail_candidates\.store_city\) as commune/, "Observed prices must not fall back from a missing city to a store name")
+assert.match(normalizedRetailChainScopesMigration, /retail_candidates\.store_name as locality/, "Retail promotions must expose the retailer-scope name as locality")
+assert.match(normalizedRetailChainScopesMigration, /observations\.store_name as locality/, "Observed prices must expose the retailer-scope name as locality")
+assert.doesNotMatch(retailChainScopesMigration, /starts_at\s*:=\s*now\(\)|starts_at\s*=\s*now\(\)/i, "Retailer scopes must not invent a promotion start date")
+assert.match(retailScopeResolutionGuardMigration, /v_store_id is null and v_normalized_store_city = ''/, "A candidate without a city must require an explicit retailer/store scope mapping")
+assert.match(retailScopeResolutionGuardMigration, /no explicit retailer\/store scope mapping exists/, "An unknown retailer scope must fail with an explicit error")
+assert.match(retailScopeResolutionGuardMigration, /select mappings\.market_store_id[\s\S]*?where mappings\.retailer_slug = v_candidate\.retailer_slug[\s\S]*?and mappings\.store_slug = v_candidate\.store_slug;/, "The scope guard must preserve exact mapping resolution before rejecting a missing city")
+
 const provenMarketStoreId = "29ae25ce-eb77-4d8e-9f88-0b4b5c5b4eb3"
 const mappingRows = [
   {
     retailer_slug: "leader-price-reunion",
     store_slug: "leaderprice-lp-ermitage",
     market_store_id: provenMarketStoreId,
+  },
+  {
+    retailer_slug: "carrefour-reunion",
+    store_slug: "carrefour-reunion",
+    market_store_id: "scope-carrefour-reunion",
+  },
+  {
+    retailer_slug: "carrefour-market-reunion",
+    store_slug: "carrefour-market-reunion",
+    market_store_id: "scope-carrefour-market-reunion",
+  },
+  {
+    retailer_slug: "carrefour-city-reunion",
+    store_slug: "carrefour-city-reunion",
+    market_store_id: "scope-carrefour-city-reunion",
   },
 ]
 const availableStores = [
@@ -432,6 +474,12 @@ const availableStores = [
     normalized_store_name: "leader price ermitage",
     normalized_city: "saint gilles les bains",
     store_chain_key: "leader price ermitage",
+  },
+  {
+    id: "physical-carrefour-saint-denis",
+    normalized_store_name: "carrefour saint denis",
+    normalized_city: "saint denis",
+    store_chain_key: "carrefour saint denis",
   },
 ]
 assert.equal(resolveRetailMarketStore({
@@ -467,6 +515,72 @@ assert.equal(resolveRetailMarketStore({
   mappings: mappingRows,
   stores: availableStores,
 }), provenMarketStoreId, "A second resolution must return the same proven market_store_id")
+assert.equal(resolveRetailMarketStore({
+  candidate: {
+    id: "candidate-carrefour-reunion",
+    retailer_slug: "carrefour-reunion",
+    store_slug: "carrefour-reunion",
+    store_name: "Carrefour Réunion",
+    store_city: null,
+  },
+  mappings: mappingRows,
+  stores: availableStores,
+}), "scope-carrefour-reunion", "Carrefour Réunion must resolve to its declared retailer scope without a city")
+assert.equal(resolveRetailMarketStore({
+  candidate: {
+    id: "candidate-carrefour-market-reunion",
+    retailer_slug: "carrefour-market-reunion",
+    store_slug: "carrefour-market-reunion",
+    store_name: "Carrefour Market Réunion",
+    store_city: null,
+  },
+  mappings: mappingRows,
+  stores: availableStores,
+}), "scope-carrefour-market-reunion", "Carrefour Market Réunion must resolve to its declared retailer scope without a city")
+assert.equal(resolveRetailMarketStore({
+  candidate: {
+    id: "candidate-carrefour-city-reunion",
+    retailer_slug: "carrefour-city-reunion",
+    store_slug: "carrefour-city-reunion",
+    store_name: "Carrefour City Réunion",
+    store_city: null,
+  },
+  mappings: mappingRows,
+  stores: availableStores,
+}), "scope-carrefour-city-reunion", "Carrefour City Réunion must resolve to its declared retailer scope without a city")
+assert.equal(resolveRetailMarketStore({
+  candidate: {
+    id: "candidate-physical-store",
+    retailer_slug: "carrefour-physical",
+    store_slug: "carrefour-saint-denis",
+    store_name: "Carrefour Saint Denis",
+    store_city: "Saint Denis",
+  },
+  mappings: mappingRows,
+  stores: availableStores,
+}), "physical-carrefour-saint-denis", "A known physical store must keep the existing exact name/city fallback")
+assert.throws(() => resolveRetailMarketStore({
+  candidate: {
+    id: "candidate-unknown-retailer-scope",
+    retailer_slug: "unknown-reunion",
+    store_slug: "unknown-reunion",
+    store_name: "Unknown Réunion",
+    store_city: null,
+  },
+  mappings: mappingRows,
+  stores: availableStores,
+}), /market store unresolved for retail candidate candidate-unknown-retailer-scope/, "An undeclared retailer scope must fail explicitly instead of being created")
+assert.throws(() => resolveRetailMarketStore({
+  candidate: {
+    id: "candidate-unmapped-physical-name-without-city",
+    retailer_slug: "carrefour-physical",
+    store_slug: "unmapped-carrefour-saint-denis",
+    store_name: "Carrefour Saint Denis",
+    store_city: null,
+  },
+  mappings: mappingRows,
+  stores: availableStores,
+}), /market store unresolved for retail candidate candidate-unmapped-physical-name-without-city/, "A missing city must never fall back to a uniquely named physical store")
 assert.throws(() => resolveRetailMarketStore({
   candidate: {
     id: "candidate-4",
