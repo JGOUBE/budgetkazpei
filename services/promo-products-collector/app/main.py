@@ -13,6 +13,7 @@ from typing import Protocol
 from urllib.parse import urlsplit
 
 from app.collectors.eleclerc_reunion import CatalogReference, discover_catalogs
+from app.collectors.carrefour_reunion import run_carrefour_reunion_readonly
 from app.collectors.leader_price_reunion import LeaderPriceReadonlyRunReport, run_leader_price_readonly
 from app.db.repositories import InMemoryPageSnapshotRepository, PageSnapshotRepository, build_repository
 from app.extractors.catalog_page_regions import PageRegion, detect_regions
@@ -34,6 +35,7 @@ from app.services.leader_price_validation_job import (
     build_validation_job_smoke_report,
     run_leader_price_validation_job,
 )
+from app.services.carrefour_reunion_incremental import run_carrefour_reunion_incremental
 from app.services.vision_benchmark import VisionBenchmarkRunReport, run_vision_benchmark
 from app.settings import Settings
 
@@ -240,9 +242,13 @@ def build_argument_parser() -> argparse.ArgumentParser:
     parser.add_argument("--leader-price-readonly", action="store_true", help="Run the readonly Leader Price structured collector.")
     parser.add_argument("--leader-price-import", action="store_true", help="Import the local Leader Price readonly report into Supabase staging.")
     parser.add_argument("--leader-price-incremental", action="store_true", help="Collect LP Ermitage, compare commercial state, and stage only changes.")
-    parser.add_argument("--dry-run", action="store_true", help="Disable Supabase writes for the incremental Leader Price mode.")
+    parser.add_argument("--dry-run", action="store_true", help="Disable Supabase writes for incremental retail modes.")
     parser.add_argument("--leader-price-validation-job", action="store_true", help="Run the one-shot Leader Price import validation job.")
     parser.add_argument("--leader-price-validation-job-smoke", action="store_true", help="Run the offline smoke for the Leader Price validation job.")
+    parser.add_argument("--carrefour-reunion-readonly", action="store_true", help="Run the readonly Carrefour Réunion SSR HTML collector.")
+    parser.add_argument("--carrefour-reunion-incremental", action="store_true", help="Collect Carrefour Réunion and stage only commercial changes.")
+    parser.add_argument("--carrefour-baseline-report", default=None, help="Optional local Carrefour readonly report used as incremental baseline.")
+    parser.add_argument("--carrefour-report-path", default=None, help="Override the local Carrefour readonly or incremental report path.")
     parser.add_argument("--leader-max-products", type=int, default=100, help="Maximum Leader Price products to inspect.")
     parser.add_argument("--leader-report-path", default=None, help="Override the local Leader Price readonly report path.")
     parser.add_argument("--benchmark-vision", action="store_true", help="Run the three-page vision benchmark.")
@@ -704,6 +710,30 @@ def main() -> int:
         report = build_validation_job_smoke_report(settings)
         print(json.dumps(_leader_price_validation_job_to_json(report), ensure_ascii=False, indent=2))
         print("VALIDATION_JOB_SMOKE_OK")
+        return 0
+
+    if args.carrefour_reunion_readonly:
+        report = run_carrefour_reunion_readonly(
+            settings,
+            fetcher=HttpFetcher(),
+            report_path=Path(args.carrefour_report_path) if args.carrefour_report_path else None,
+        )
+        print(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
+        return 0
+
+    if args.carrefour_reunion_incremental:
+        report = run_carrefour_reunion_incremental(
+            settings,
+            fetcher=HttpFetcher(),
+            dry_run=args.dry_run,
+            baseline_report_path=(
+                Path(args.carrefour_baseline_report)
+                if args.carrefour_baseline_report
+                else None
+            ),
+            report_path=Path(args.carrefour_report_path) if args.carrefour_report_path else None,
+        )
+        print(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
         return 0
 
     if args.benchmark_vision:

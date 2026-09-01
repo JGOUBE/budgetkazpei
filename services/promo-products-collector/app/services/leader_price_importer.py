@@ -171,7 +171,11 @@ def _load_report_payload(path: Path) -> dict[str, object]:
     return data
 
 
-def to_rpc_item(raw_item: dict[str, object]) -> dict[str, object]:
+def to_rpc_item(
+    raw_item: dict[str, object],
+    *,
+    default_store_city: str | None = "Saint-Gilles Les Bains",
+) -> dict[str, object]:
     observation = RetailPriceObservation(
         source_type=str(raw_item["source_type"]),
         source_url=str(raw_item["source_url"]),
@@ -230,7 +234,7 @@ def to_rpc_item(raw_item: dict[str, object]) -> dict[str, object]:
 
     return {
         **observation.to_dict(),
-        "store_city": _optional_text(raw_item.get("store_city")) or "Saint-Gilles Les Bains",
+        "store_city": _optional_text(raw_item.get("store_city")) or default_store_city,
         "promotion_evidence": (
             {"kind": observation.promotion_evidence}
             if observation.promotion_evidence
