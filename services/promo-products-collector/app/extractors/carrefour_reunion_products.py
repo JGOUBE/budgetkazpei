@@ -3,8 +3,9 @@ from __future__ import annotations
 import json
 import re
 from dataclasses import dataclass, field
+from datetime import date
 from html.parser import HTMLParser
-from urllib.parse import urlsplit, urlunsplit
+from urllib.parse import urljoin, urlsplit, urlunsplit
 
 from app.services.retail_product_normalization import clean_text
 
@@ -39,6 +40,28 @@ UNIT_PRICE_RE = re.compile(
     r"\b(?:la|le)\s+(?P<unit>dose|kg|kilogramme|litre|l)\s*:\s*(?P<value>\d+(?:[.,]\d+)?)\s*€",
     re.IGNORECASE,
 )
+CATALOG_PERIOD_RE = re.compile(
+    r"(?:du\s+)?(?:lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)?\s*"
+    r"(?P<start_day>\d{1,2})\s+(?P<start_month>[a-zA-ZÀ-ÿ]+)\s+"
+    r"(?:au|à)\s+(?:lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)?\s*"
+    r"(?P<end_day>\d{1,2})\s+(?P<end_month>[a-zA-ZÀ-ÿ]+)"
+    r"(?:\s+(?P<year>20\d{2}))?",
+    re.IGNORECASE,
+)
+MONTHS = {
+    "janvier": 1,
+    "fevrier": 2,
+    "mars": 3,
+    "avril": 4,
+    "mai": 5,
+    "juin": 6,
+    "juillet": 7,
+    "aout": 8,
+    "septembre": 9,
+    "octobre": 10,
+    "novembre": 11,
+    "decembre": 12,
+}
 
 
 @dataclass
@@ -122,6 +145,26 @@ class _TreeParser(HTMLParser):
 
 
 @dataclass(frozen=True)
+class CarrefourCatalog:
+    catalog_title: str
+    catalog_source_url: str
+    catalog_period_text: str
+    catalog_start_date: str | None
+    catalog_end_date: str | None
+    catalog_identity: str
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "catalog_title": self.catalog_title,
+            "catalog_source_url": self.catalog_source_url,
+            "catalog_period_text": self.catalog_period_text,
+            "catalog_start_date": self.catalog_start_date,
+            "catalog_end_date": self.catalog_end_date,
+            "catalog_identity": self.catalog_identity,
+        }
+
+
+@dataclass(frozen=True)
 class CarrefourIdentityAudit:
     native_source_id: str | None
     native_source_kind: str | None
@@ -168,6 +211,8 @@ class CarrefourProductCard:
     discount_percent: float | None
     conditions: str | None
     image_url: str | None
+    catalog: CarrefourCatalog | None
+    catalog_membership_basis: str | None
     identity_audit: CarrefourIdentityAudit
     ambiguity_reasons: tuple[str, ...]
 
@@ -175,6 +220,7 @@ class CarrefourProductCard:
 @dataclass(frozen=True)
 class CarrefourPageAudit:
     source_url: str
+    catalogs: list[CarrefourCatalog]
     cards: list[CarrefourProductCard]
     json_ld_blocks: int
     hidden_json_blocks: int
@@ -183,7 +229,11 @@ class CarrefourPageAudit:
     def to_dict(self) -> dict[str, object]:
         return {
             "source_url": self.source_url,
+            "catalogs": [item.to_dict() for item in self.catalogs],
             "cards_detected": len(self.cards),
+            "cards_with_reliable_catalog_period": len(
+                [item for item in self.cards if item.catalog is not None]
+            ),
             "json_ld_blocks": self.json_ld_blocks,
             "hidden_json_blocks": self.hidden_json_blocks,
             "errors": list(self.errors),
@@ -195,18 +245,41 @@ def parse_carrefour_page(
     *,
     source_url: str,
     expected_retailer_slug: str | None = None,
+    reference_date: date | None = None,
 ) -> CarrefourPageAudit:
     parser = _TreeParser()
     parser.feed(html_text)
     parser.close()
     errors: list[str] = []
     cards: list[CarrefourProductCard] = []
+    catalog_nodes = parser.root.find_all(class_name="catalog")
+    catalogs = [
+        catalog
+        for node in catalog_nodes
+        if (catalog := _parse_catalog(node, source_url=source_url, reference_date=reference_date))
+        is not None
+    ]
+    discounts_container = parser.root.find_first(class_name="discounts")
+    catalogs_container = parser.root.find_first(class_name="catalogs")
+    assigned_catalog = _single_structurally_related_catalog(
+        catalogs,
+        catalogs_container=catalogs_container,
+        discounts_container=discounts_container,
+    )
     for node in parser.root.find_all(class_name="discount"):
         designation = node.find_first(class_name="designation")
         if designation is None or not designation.text():
             continue
         try:
-            card = _parse_card(node, source_url=source_url)
+            card = _parse_card(
+                node,
+                source_url=source_url,
+                catalog=(
+                    assigned_catalog
+                    if discounts_container is not None and _is_descendant(node, discounts_container)
+                    else None
+                ),
+            )
             if expected_retailer_slug and card.retailer_slug != expected_retailer_slug:
                 errors.append(
                     f"unexpected_retailer_scope:{card.retailer_slug}:{card.raw_product_name}"
@@ -232,6 +305,7 @@ def parse_carrefour_page(
     )
     return CarrefourPageAudit(
         source_url=source_url,
+        catalogs=catalogs,
         cards=cards,
         json_ld_blocks=json_ld_blocks,
         hidden_json_blocks=hidden_json_blocks,
@@ -295,7 +369,12 @@ def parse_carrefour_unit_price(value: str | None) -> tuple[float | None, str | N
     return round(float(match.group("value").replace(",", ".")), 2), unit
 
 
-def _parse_card(node: HtmlNode, *, source_url: str) -> CarrefourProductCard:
+def _parse_card(
+    node: HtmlNode,
+    *,
+    source_url: str,
+    catalog: CarrefourCatalog | None,
+) -> CarrefourProductCard:
     retailer_slug, retailer_name = _retailer_from_classes(node.classes)
     designation = _node_text(node.find_first(class_name="designation"))
     brand = _node_text(node.find_first(class_name="marks")) or None
@@ -347,9 +426,105 @@ def _parse_card(node: HtmlNode, *, source_url: str) -> CarrefourProductCard:
         discount_percent=discount_percent,
         conditions=footer,
         image_url=image_url,
+        catalog=catalog,
+        catalog_membership_basis=(
+            "single_catalog_and_discounts_share_retailer_page_container"
+            if catalog is not None
+            else None
+        ),
         identity_audit=audit,
         ambiguity_reasons=tuple(ambiguity),
     )
+
+
+def _parse_catalog(
+    node: HtmlNode,
+    *,
+    source_url: str,
+    reference_date: date | None,
+) -> CarrefourCatalog | None:
+    title = _node_text(node.find_first(class_name="title"))
+    period_text = _node_text(node.find_first(class_name="subtitle"))
+    link = node.find_first(tag="a")
+    link_url = urljoin(source_url, link.attr("href") or source_url) if link else source_url
+    if not title or not period_text or link is None:
+        return None
+    start_date, end_date = parse_carrefour_catalog_period(
+        period_text,
+        reference_date=reference_date,
+    )
+    catalog_id = link.attr("data-flipping-book-id")
+    brand = link.attr("data-brand")
+    identity = (
+        f"{brand}:{catalog_id}"
+        if brand and catalog_id
+        else f"url:{urlsplit(link_url).path.rstrip('/').lower()}"
+    )
+    return CarrefourCatalog(
+        catalog_title=title,
+        catalog_source_url=link_url,
+        catalog_period_text=period_text,
+        catalog_start_date=start_date.isoformat() if start_date else None,
+        catalog_end_date=end_date.isoformat() if end_date else None,
+        catalog_identity=identity,
+    )
+
+
+def parse_carrefour_catalog_period(
+    value: str | None,
+    *,
+    reference_date: date | None,
+) -> tuple[date | None, date | None]:
+    match = CATALOG_PERIOD_RE.search(clean_text(value))
+    if not match:
+        return None, None
+    start_month = MONTHS.get(_fold_month(match.group("start_month")))
+    end_month = MONTHS.get(_fold_month(match.group("end_month")))
+    if start_month is None or end_month is None:
+        return None, None
+    explicit_year = int(match.group("year")) if match.group("year") else None
+    candidate_end_years = (
+        [explicit_year]
+        if explicit_year is not None
+        else ([reference_date.year - 1, reference_date.year, reference_date.year + 1] if reference_date else [])
+    )
+    candidates: list[tuple[date, date]] = []
+    for end_year in candidate_end_years:
+        start_year = end_year - 1 if start_month > end_month else end_year
+        try:
+            start = date(start_year, start_month, int(match.group("start_day")))
+            end = date(end_year, end_month, int(match.group("end_day")))
+        except ValueError:
+            continue
+        if explicit_year is not None or (reference_date is not None and start <= reference_date <= end):
+            candidates.append((start, end))
+    return candidates[0] if len(candidates) == 1 else (None, None)
+
+
+def _single_structurally_related_catalog(
+    catalogs: list[CarrefourCatalog],
+    *,
+    catalogs_container: HtmlNode | None,
+    discounts_container: HtmlNode | None,
+) -> CarrefourCatalog | None:
+    if len(catalogs) != 1 or catalogs_container is None or discounts_container is None:
+        return None
+    if catalogs[0].catalog_start_date is None or catalogs[0].catalog_end_date is None:
+        return None
+    return catalogs[0] if catalogs_container.parent is discounts_container.parent else None
+
+
+def _is_descendant(node: HtmlNode, ancestor: HtmlNode) -> bool:
+    current: HtmlNode | None = node
+    while current is not None:
+        if current is ancestor:
+            return True
+        current = current.parent
+    return False
+
+
+def _fold_month(value: str) -> str:
+    return value.lower().translate(str.maketrans("àâäçéèêëîïôöùûüÿ", "aaaceeee iioouuuy".replace(" ", "")))
 
 
 def _retailer_from_classes(classes: set[str]) -> tuple[str, str]:

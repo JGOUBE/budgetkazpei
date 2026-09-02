@@ -4,7 +4,7 @@ import hashlib
 import json
 import time
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Protocol
 
@@ -30,6 +30,7 @@ from app.settings import Settings
 
 CARREFOUR_ALLOWED_HOSTS = {"carrefour-reunion.com", "www.carrefour-reunion.com"}
 SOURCE_TYPE = "carrefour_reunion_ssr_html"
+REUNION_TIMEZONE = timezone(timedelta(hours=4), name="Indian/Reunion")
 REPORT_NAME = "carrefour-reunion-readonly.json"
 SOURCE_SCOPES = (
     (
@@ -63,6 +64,8 @@ class CarrefourReadonlyMetrics:
     brands_found: int
     formats_found: int
     promotions_proven: int
+    promotions_with_reliable_catalog_period: int
+    promotions_without_reliable_catalog_period: int
     observed_prices: int
     ambiguous_products: int
     errors: int
@@ -76,6 +79,8 @@ class CarrefourReadonlyMetrics:
             "brands_found": self.brands_found,
             "formats_found": self.formats_found,
             "promotions_proven": self.promotions_proven,
+            "promotions_with_reliable_catalog_period": self.promotions_with_reliable_catalog_period,
+            "promotions_without_reliable_catalog_period": self.promotions_without_reliable_catalog_period,
             "observed_prices": self.observed_prices,
             "ambiguous_products": self.ambiguous_products,
             "errors": self.errors,
@@ -171,7 +176,9 @@ def run_carrefour_reunion_readonly(
     source_scopes: tuple[tuple[str, str, str], ...] = SOURCE_SCOPES,
 ) -> CarrefourReadonlyRunReport:
     started = time.perf_counter()
-    observed_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+    observed_at_datetime = datetime.now(timezone.utc)
+    observed_at = observed_at_datetime.isoformat().replace("+00:00", "Z")
+    reunion_reference_date = observed_at_datetime.astimezone(REUNION_TIMEZONE).date()
     request_count = 0
     errors: list[str] = []
     page_audits: list[CarrefourPageAudit] = []
@@ -189,6 +196,7 @@ def run_carrefour_reunion_readonly(
                 document.text,
                 source_url=source_url,
                 expected_retailer_slug=retailer_slug,
+                reference_date=reunion_reference_date,
             )
             page_audits.append(audit)
             errors.extend(audit.errors)
@@ -212,6 +220,20 @@ def run_carrefour_reunion_readonly(
         brands_found=len([item for item in unique_observations if item.brand]),
         formats_found=len([item for item in unique_observations if item.package_format]),
         promotions_proven=len([item for item in unique_observations if item.promotion_proven]),
+        promotions_with_reliable_catalog_period=len(
+            [
+                item
+                for item in unique_observations
+                if item.promotion_proven and item.starts_at and item.ends_at
+            ]
+        ),
+        promotions_without_reliable_catalog_period=len(
+            [
+                item
+                for item in unique_observations
+                if item.promotion_proven and (not item.starts_at or not item.ends_at)
+            ]
+        ),
         observed_prices=len([item for item in unique_observations if not item.promotion_proven]),
         ambiguous_products=len(ambiguous),
         errors=len(errors),
@@ -305,8 +327,16 @@ def build_carrefour_observation(
         loyalty_type=None,
         offer_mechanism=card.offer_mechanism,
         conditions=card.conditions,
-        starts_at=None,
-        ends_at=None,
+        starts_at=(
+            card.catalog.catalog_start_date
+            if card.promotion_proven and card.catalog is not None
+            else None
+        ),
+        ends_at=(
+            card.catalog.catalog_end_date
+            if card.promotion_proven and card.catalog is not None
+            else None
+        ),
         match_warnings=review_reasons,
         extraction_confidence=max(0, extraction_confidence),
         validation_errors=validation_errors,
@@ -320,11 +350,16 @@ def build_carrefour_observation(
             "identity_components": identity_components,
             "identity_audit": card.identity_audit.to_dict(),
             "ambiguity_reasons": review_reasons,
+            "catalog": card.catalog.to_dict() if card.catalog is not None else None,
+            "catalog_membership_basis": card.catalog_membership_basis,
             "provenance": {
                 "source_url": card.source_url,
                 "source_type": SOURCE_TYPE,
                 "retailer_scope": card.retailer_name,
                 "individual_store_claimed": False,
+                "catalog_source_url": (
+                    card.catalog.catalog_source_url if card.catalog is not None else None
+                ),
             },
         },
         duplicate_key=duplicate_key,

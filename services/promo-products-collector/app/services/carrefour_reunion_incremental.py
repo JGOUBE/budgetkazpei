@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Protocol
 from uuid import NAMESPACE_URL, uuid5
@@ -23,7 +24,8 @@ from app.settings import Settings
 EXISTING_COLUMNS = (
     "id,source_run_id,source_product_id,product_url,retailer_slug,store_slug,"
     "duplicate_key,source_observed_at,created_at,updated_at,current_price,original_price,"
-    "promotion_proven,offer_mechanism,package_format,price_type"
+    "promotion_proven,promotion_evidence,offer_mechanism,package_format,price_type,starts_at,ends_at,status,"
+    "reviewed_at,published_price_observation_id,published_promotion_id"
 )
 INCREMENTAL_REPORT_NAME = "carrefour-reunion-incremental-report.json"
 
@@ -75,9 +77,13 @@ class CarrefourIncrementalMetrics:
     new_promotions: int
     returns_to_normal: int
     other_commercial_changes: int
+    catalog_period_updates: int
+    catalog_period_unchanged: int
+    published_states_preserved: int
     unchanged: int
     unusable_without_price: int
     candidates_to_create: int
+    candidates_to_refresh: int
     candidates_created: int
     candidates_refreshed: int
     errors: int
@@ -91,9 +97,13 @@ class CarrefourIncrementalMetrics:
             "new_promotions": self.new_promotions,
             "returns_to_normal": self.returns_to_normal,
             "other_commercial_changes": self.other_commercial_changes,
+            "catalog_period_updates": self.catalog_period_updates,
+            "catalog_period_unchanged": self.catalog_period_unchanged,
+            "published_states_preserved": self.published_states_preserved,
             "unchanged": self.unchanged,
             "unusable_without_price": self.unusable_without_price,
             "candidates_to_create": self.candidates_to_create,
+            "candidates_to_refresh": self.candidates_to_refresh,
             "candidates_created": self.candidates_created,
             "candidates_refreshed": self.candidates_refreshed,
             "errors": self.errors,
@@ -167,7 +177,7 @@ def run_carrefour_reunion_incremental(
         baseline_rows = _select_existing_rows(admin_client)
         baseline_source = "supabase"
 
-    candidates, unchanged, actions, planning_errors = plan_carrefour_incremental_observations(
+    candidates, refreshable, actions, planning_errors = plan_carrefour_incremental_observations(
         collection,
         baseline_rows,
     )
@@ -177,9 +187,9 @@ def run_carrefour_reunion_incremental(
     candidates_refreshed = 0
     if not dry_run:
         admin_client = admin_client or _build_client(settings)
-        candidates_refreshed, refresh_errors = _refresh_unchanged_candidates(
+        candidates_refreshed, refresh_errors = _refresh_existing_candidates(
             admin_client,
-            unchanged,
+            refreshable,
         )
         errors.extend(refresh_errors)
         if candidates:
@@ -207,9 +217,13 @@ def run_carrefour_reunion_incremental(
         new_promotions=counts.get("new_promotion", 0),
         returns_to_normal=counts.get("return_to_normal", 0),
         other_commercial_changes=counts.get("other_commercial_change", 0),
+        catalog_period_updates=counts.get("catalog_period_update", 0),
+        catalog_period_unchanged=counts.get("catalog_period_unchanged", 0),
+        published_states_preserved=counts.get("published_state_preserved", 0),
         unchanged=counts.get("unchanged", 0),
         unusable_without_price=counts.get("unusable_without_price", 0),
         candidates_to_create=len(candidates),
+        candidates_to_refresh=len(refreshable),
         candidates_created=candidates_created,
         candidates_refreshed=candidates_refreshed,
         errors=len(errors),
@@ -240,7 +254,7 @@ def plan_carrefour_incremental_observations(
 ]:
     latest = _latest_existing_by_identity(existing_rows)
     candidates: list[PlannedCarrefourObservation] = []
-    unchanged: list[PlannedCarrefourObservation] = []
+    refreshable: list[PlannedCarrefourObservation] = []
     actions: list[CarrefourIncrementalAction] = []
     errors: list[str] = []
 
@@ -266,8 +280,14 @@ def plan_carrefour_incremental_observations(
         previous_fingerprint = build_commercial_fingerprint(existing) if existing else None
         if existing is None:
             change_type = "new_product"
+        elif _is_published_candidate(existing):
+            change_type = "published_state_preserved"
+        elif _catalog_period_is_unchanged(existing, observation):
+            change_type = "catalog_period_unchanged"
         elif previous_fingerprint == current_fingerprint:
             change_type = "unchanged"
+        elif _non_temporal_commercial_fingerprint(existing) == _non_temporal_commercial_fingerprint(observation):
+            change_type = "catalog_period_update"
         elif existing.get("promotion_proven") is not True and observation.get("promotion_proven") is True:
             change_type = "new_promotion"
         elif existing.get("promotion_proven") is True and observation.get("promotion_proven") is not True:
@@ -292,11 +312,16 @@ def plan_carrefour_incremental_observations(
             action=action,
         )
         actions.append(action)
-        if change_type == "unchanged":
-            unchanged.append(planned)
+        if change_type in ("published_state_preserved", "catalog_period_unchanged"):
+            continue
+        if change_type == "unchanged" or (
+            change_type == "catalog_period_update"
+            and str(existing.get("status") or "").strip() == "needs_review"
+        ):
+            refreshable.append(planned)
         else:
             candidates.append(planned)
-    return candidates, unchanged, actions, errors
+    return candidates, refreshable, actions, errors
 
 
 def build_carrefour_incremental_source_run_id(
@@ -345,13 +370,13 @@ def _load_baseline_observations(path: Path) -> list[dict[str, object]]:
     return [item for item in observations if isinstance(item, dict) and not item.get("is_duplicate")]
 
 
-def _refresh_unchanged_candidates(
+def _refresh_existing_candidates(
     client: IncrementalClient,
-    unchanged: list[PlannedCarrefourObservation],
+    refreshable: list[PlannedCarrefourObservation],
 ) -> tuple[int, list[str]]:
     by_run: dict[str, list[dict[str, object]]] = {}
     errors: list[str] = []
-    for item in unchanged:
+    for item in refreshable:
         existing = item.existing or {}
         source_run_id = str(existing.get("source_run_id") or "").strip()
         duplicate_key = str(existing.get("duplicate_key") or "").strip()
@@ -370,6 +395,56 @@ def _refresh_unchanged_candidates(
         )
         refreshed += len(rpc_items)
     return refreshed, errors
+
+
+def _non_temporal_commercial_fingerprint(item: dict[str, object]) -> str:
+    without_period = {**item, "starts_at": None, "ends_at": None}
+    return build_commercial_fingerprint(without_period)
+
+
+def _catalog_period_is_unchanged(
+    existing: dict[str, object],
+    observation: dict[str, object],
+) -> bool:
+    proposed_starts_at = _period_token(observation.get("starts_at"))
+    proposed_ends_at = _period_token(observation.get("ends_at"))
+    if proposed_starts_at is None or proposed_ends_at is None:
+        return False
+    return (
+        _period_token(existing.get("starts_at")) == proposed_starts_at
+        and _period_token(existing.get("ends_at")) == proposed_ends_at
+        and _catalog_evidence(existing) == _catalog_evidence(observation)
+    )
+
+
+def _catalog_evidence(item: dict[str, object]) -> dict[str, object] | None:
+    evidence = item.get("promotion_evidence")
+    if isinstance(evidence, dict):
+        return evidence if isinstance(evidence.get("catalog"), dict) else None
+    try:
+        proposed = to_rpc_item(item, default_store_city=None).get("promotion_evidence")
+    except (KeyError, TypeError, ValueError):
+        return None
+    return proposed if isinstance(proposed, dict) and isinstance(proposed.get("catalog"), dict) else None
+
+
+def _period_token(value: object) -> str | None:
+    text = _text(value)
+    if text is None:
+        return None
+    try:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        return text
+    if parsed.tzinfo is not None:
+        parsed = parsed.astimezone(timezone.utc).replace(tzinfo=None)
+    if parsed.hour == parsed.minute == parsed.second == parsed.microsecond == 0:
+        return parsed.date().isoformat()
+    return parsed.isoformat(timespec="microseconds")
+
+
+def _is_published_candidate(existing: dict[str, object]) -> bool:
+    return str(existing.get("status") or "").strip() == "published"
 
 
 def _latest_existing_by_identity(

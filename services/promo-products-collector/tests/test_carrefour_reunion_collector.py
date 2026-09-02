@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from datetime import date
 from pathlib import Path
 import tempfile
 import unittest
@@ -10,7 +11,10 @@ from app.collectors.carrefour_reunion import (
     run_carrefour_reunion_readonly,
     stable_readonly_signature,
 )
-from app.extractors.carrefour_reunion_products import parse_carrefour_page
+from app.extractors.carrefour_reunion_products import (
+    parse_carrefour_catalog_period,
+    parse_carrefour_page,
+)
 from app.main import TextDocument
 from app.services.carrefour_reunion_incremental import (
     plan_carrefour_incremental_observations,
@@ -102,6 +106,35 @@ def _card_html(
 
 def _html(cards: list[str]) -> str:
     return "<html><body>" + "".join(cards) + "</body></html>"
+
+
+def _catalog_html(
+    catalog_id: int,
+    *,
+    title: str = "LES EXPLOITS",
+    period: str = "DU LUNDI 24 AOÛT AU DIMANCHE 6 SEPTEMBRE",
+    brand: str = "carrefour-city",
+) -> str:
+    return f"""
+    <div class="catalog">
+      <div class="title">{title}</div>
+      <div class="subtitle">{period}</div>
+      <div class="link"><a
+        href="/catalogues/{brand}/{catalog_id}-les-exploits"
+        data-flipping-book-id="{catalog_id}"
+        data-brand="{brand}">Consultez</a></div>
+    </div>
+    """
+
+
+def _catalog_page_html(catalogs: list[str], cards: list[str]) -> str:
+    return f"""
+    <html><body><div class="col-12 pt-2rem">
+      <div class="catalogs">{''.join(catalogs)}</div>
+      <h2>Profitez de nos promotions</h2>
+      <div class="discounts">{''.join(cards)}</div>
+    </div></body></html>
+    """
 
 
 def _settings(name: str) -> Settings:
@@ -331,6 +364,215 @@ class CarrefourReunionCollectorTests(unittest.TestCase):
         self.assertFalse(writes["market_price_observations"])
         self.assertFalse(writes["shopping_promotions"])
         self.assertFalse(writes["good_deals"])
+
+
+class CarrefourCatalogPeriodTests(unittest.TestCase):
+    def test_a_exact_reunion_period_parsing(self):
+        starts_at, ends_at = parse_carrefour_catalog_period(
+            "DU LUNDI 24 AOÛT AU DIMANCHE 6 SEPTEMBRE",
+            reference_date=date(2026, 9, 1),
+        )
+        self.assertEqual(starts_at, date(2026, 8, 24))
+        self.assertEqual(ends_at, date(2026, 9, 6))
+
+    def test_b_single_structurally_related_catalog_propagates_dates(self):
+        page = parse_carrefour_page(
+            _catalog_page_html(
+                [_catalog_html(660)],
+                [_card_html(20, name="Poisson rouge entier", retailer_class="carrefour-city")],
+            ),
+            source_url="https://www.carrefour-reunion.com/catalogues/carrefour-city",
+            expected_retailer_slug="carrefour-city-reunion",
+            reference_date=date(2026, 9, 1),
+        )
+        item = build_carrefour_observation(page.cards[0], observed_at="2026-09-01T08:00:00Z")
+        self.assertEqual((item.starts_at, item.ends_at), ("2026-08-24", "2026-09-06"))
+        self.assertEqual(page.cards[0].catalog.catalog_identity, "carrefour-city:660")
+        self.assertEqual(item.source_product_id.split(":", 1)[0], "synthetic-sha256")
+
+    def test_c_product_without_structural_relation_keeps_null_dates(self):
+        html = "<html><body><div class='catalogs'>" + _catalog_html(660) + "</div>" + _card_html(21, retailer_class="carrefour-city") + "</body></html>"
+        page = parse_carrefour_page(
+            html,
+            source_url="https://www.carrefour-reunion.com/catalogues/carrefour-city",
+            reference_date=date(2026, 9, 1),
+        )
+        item = build_carrefour_observation(page.cards[0], observed_at="2026-09-01T08:00:00Z")
+        self.assertIsNone(item.starts_at)
+        self.assertIsNone(item.ends_at)
+
+    def test_d_multiple_catalogs_never_cross_contaminate_products(self):
+        page = parse_carrefour_page(
+            _catalog_page_html(
+                [
+                    _catalog_html(662, brand="carrefour"),
+                    _catalog_html(
+                        664,
+                        title="ET BIM ! ON JARDINE !",
+                        period="DU LUNDI 31 AOÛT AU DIMANCHE 13 SEPTEMBRE 2026",
+                        brand="carrefour",
+                    ),
+                ],
+                [_card_html(22)],
+            ),
+            source_url=SOURCE_URL,
+            reference_date=date(2026, 9, 1),
+        )
+        item = build_carrefour_observation(page.cards[0], observed_at="2026-09-01T08:00:00Z")
+        self.assertEqual(len(page.catalogs), 2)
+        self.assertIsNone(item.starts_at)
+        self.assertIsNone(item.ends_at)
+
+    def test_e_active_period_is_complete_on_first_september(self):
+        starts_at, ends_at = parse_carrefour_catalog_period(
+            "Du lundi 24 août au dimanche 6 septembre 2026",
+            reference_date=date(2026, 9, 1),
+        )
+        self.assertTrue(starts_at <= date(2026, 9, 1) <= ends_at)
+
+    def test_f_expired_promotion_still_uses_return_to_normal_transition(self):
+        promo = _run(
+            _catalog_page_html(
+                [_catalog_html(650, period="DU LUNDI 10 AOÛT AU DIMANCHE 23 AOÛT 2026", brand="carrefour")],
+                [_card_html(23, current=2.19, original=2.49)],
+            ),
+            "expired-promo",
+        )
+        normal = _run(_html([_card_html(23, current=2.49, original=None)]), "expired-normal")
+        candidates, _refreshable, actions, _ = plan_carrefour_incremental_observations(
+            normal,
+            _unique_rows(promo),
+        )
+        self.assertEqual(len(candidates), 1)
+        self.assertEqual(actions[0].change_type, "return_to_normal")
+
+    def test_g_catalog_without_parseable_dates_preserves_observed_workflow(self):
+        page = parse_carrefour_page(
+            _catalog_page_html(
+                [_catalog_html(660, period="VALABLE CETTE SEMAINE")],
+                [_card_html(24, original=None, retailer_class="carrefour-city")],
+            ),
+            source_url="https://www.carrefour-reunion.com/catalogues/carrefour-city",
+            reference_date=date(2026, 9, 1),
+        )
+        item = build_carrefour_observation(page.cards[0], observed_at="2026-09-01T08:00:00Z")
+        self.assertEqual(item.price_type, "observed_price")
+        self.assertIsNone(item.starts_at)
+        self.assertIsNone(item.ends_at)
+
+    def test_h_date_only_backfill_refreshes_needs_review_without_new_candidate(self):
+        dated = _run(
+            _catalog_page_html(
+                [_catalog_html(660, brand="carrefour")],
+                [_card_html(25)],
+            ),
+            "date-backfill",
+        )
+        current = _unique_rows(dated)[0]
+        existing = {**current, "starts_at": None, "ends_at": None, "status": "needs_review"}
+        candidates, refreshable, actions, _ = plan_carrefour_incremental_observations(
+            dated,
+            [existing],
+        )
+        self.assertEqual(candidates, [])
+        self.assertEqual(len(refreshable), 1)
+        self.assertEqual(actions[0].change_type, "catalog_period_update")
+        self.assertEqual(refreshable[0].observation["source_product_id"], existing["source_product_id"])
+
+    def test_i_two_identical_dated_runs_create_no_artificial_candidate(self):
+        html = _catalog_page_html(
+            [_catalog_html(660, brand="carrefour")],
+            [_card_html(26)],
+        )
+        first = _run(html, "dated-first")
+        second = _run(html, "dated-second")
+        candidates, refreshable, actions, _ = plan_carrefour_incremental_observations(
+            second,
+            _unique_rows(first),
+        )
+        self.assertEqual(candidates, [])
+        self.assertEqual(refreshable, [])
+        self.assertEqual(actions[0].change_type, "catalog_period_unchanged")
+
+    def test_j_identical_catalog_period_skips_rpc_update(self):
+        html = _catalog_page_html(
+            [_catalog_html(660, brand="carrefour")],
+            [_card_html(28)],
+        )
+        existing = _unique_rows(_run(html, "period-no-sql-baseline"))[0]
+        existing.update({
+            "id": "candidate-28",
+            "source_run_id": "run-28",
+            "duplicate_key": "duplicate-28",
+            "status": "needs_review",
+            "starts_at": "2026-08-24T00:00:00+00:00",
+            "ends_at": "2026-09-06T00:00:00+00:00",
+            "promotion_evidence": to_rpc_item(existing, default_store_city=None)["promotion_evidence"],
+        })
+        client = _NoWriteClient()
+        settings = _settings("period-no-sql")
+        report = run_carrefour_reunion_incremental(
+            settings,
+            fetcher=_FakeFetcher(html),
+            dry_run=False,
+            client=client,
+            existing_rows=[existing],
+            report_path=settings.report_path.parent / "period-no-sql.json",
+        )
+        self.assertEqual(client.rpc_calls, [])
+        self.assertEqual(report.metrics.catalog_period_updates, 0)
+        self.assertEqual(report.metrics.catalog_period_unchanged, 1)
+        self.assertEqual(report.metrics.candidates_refreshed, 0)
+
+    def test_k_real_catalog_period_change_is_refreshed(self):
+        first_html = _catalog_page_html(
+            [_catalog_html(660, brand="carrefour")],
+            [_card_html(29)],
+        )
+        second_html = _catalog_page_html(
+            [
+                _catalog_html(
+                    665,
+                    period="DU LUNDI 31 AOÛT AU DIMANCHE 13 SEPTEMBRE 2026",
+                    brand="carrefour",
+                )
+            ],
+            [_card_html(29)],
+        )
+        existing = _unique_rows(_run(first_html, "period-change-first"))[0]
+        existing.update({"status": "needs_review"})
+        candidates, refreshable, actions, _ = plan_carrefour_incremental_observations(
+            _run(second_html, "period-change-second"),
+            [existing],
+        )
+        self.assertEqual(candidates, [])
+        self.assertEqual(len(refreshable), 1)
+        self.assertEqual(actions[0].change_type, "catalog_period_update")
+
+    def test_published_observed_fallback_is_not_recreated_by_date_backfill(self):
+        dated = _run(
+            _catalog_page_html(
+                [_catalog_html(660, brand="carrefour")],
+                [_card_html(27)],
+            ),
+            "published-fallback",
+        )
+        current = _unique_rows(dated)[0]
+        existing = {
+            **current,
+            "starts_at": None,
+            "ends_at": None,
+            "promotion_proven": False,
+            "price_type": "observed_price",
+            "status": "published",
+        }
+        candidates, refreshable, actions, _ = plan_carrefour_incremental_observations(
+            dated,
+            [existing],
+        )
+        self.assertEqual(candidates, [])
+        self.assertEqual(refreshable, [])
+        self.assertEqual(actions[0].change_type, "published_state_preserved")
 
 
 if __name__ == "__main__":

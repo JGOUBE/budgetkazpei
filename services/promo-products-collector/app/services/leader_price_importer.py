@@ -146,6 +146,8 @@ def build_commercial_fingerprint(item: dict[str, object]) -> str:
         "original_price": _canonical_price(item.get("original_price")),
         "promotion_proven": item.get("promotion_proven") is True,
         "offer_mechanism": normalize_lookup_key(_optional_text(item.get("offer_mechanism"))),
+        "starts_at": _optional_text(item.get("starts_at")),
+        "ends_at": _optional_text(item.get("ends_at")),
     }
     encoded = json.dumps(payload, ensure_ascii=True, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
@@ -235,12 +237,22 @@ def to_rpc_item(
     return {
         **observation.to_dict(),
         "store_city": _optional_text(raw_item.get("store_city")) or default_store_city,
-        "promotion_evidence": (
-            {"kind": observation.promotion_evidence}
-            if observation.promotion_evidence
-            else None
-        ),
+        "promotion_evidence": _promotion_evidence_payload(observation),
     }
+
+
+def _promotion_evidence_payload(observation: RetailPriceObservation) -> dict[str, object] | None:
+    if not observation.promotion_evidence:
+        return None
+    payload: dict[str, object] = {"kind": observation.promotion_evidence}
+    catalog = observation.raw_evidence.get("catalog")
+    membership_basis = observation.raw_evidence.get("catalog_membership_basis")
+    if isinstance(catalog, dict) and observation.starts_at and observation.ends_at:
+        payload["signals"] = [observation.promotion_evidence, "catalog_period"]
+        payload["catalog"] = dict(catalog)
+        if membership_basis:
+            payload["catalog_membership_basis"] = str(membership_basis)
+    return payload
 
 
 def _coerce_summary(
