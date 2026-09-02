@@ -4438,3 +4438,158 @@ html[data-theme="dark"]:has(.landing-page) #root {
     bottom: 38px !important;
   }
 }
+/* === BUDGETKAZPEI PREMIUM EDGE SPACING START === */
+/*
+   Correctif premium du CTA final.
+   Objectif : davantage d'air entre les textes/boutons et les bords,
+   sans modifier le Hero, le smartphone ni les autres sections.
+*/
+
+.landing-page .landing-closing .final-cta {
+  padding:
+    clamp(30px, 4vw, 48px)
+    clamp(26px, 4vw, 46px)
+    clamp(28px, 4vw, 44px) !important;
+}
+
+.landing-page .landing-closing .final-cta > div:first-child {
+  min-width: 0;
+  max-width: 680px;
+}
+
+.landing-page .landing-closing .final-cta .landing-eyebrow {
+  margin-bottom: 16px !important;
+  letter-spacing: .14em;
+}
+
+.landing-page .landing-closing .final-cta h2 {
+  max-width: 15ch !important;
+  margin-bottom: 18px !important;
+  text-wrap: balance;
+}
+
+.landing-page .landing-closing .final-cta > div:first-child > p:not(.landing-eyebrow) {
+  max-width: 48ch !important;
+  margin-bottom: 20px !important;
+  text-wrap: pretty;
+}
+
+.landing-page .landing-closing .final-cta__proof {
+  gap: 10px 16px !important;
+  margin-top: 2px;
+  line-height: 1.45;
+}
+
+.landing-page .landing-closing .final-cta__actions {
+  gap: 10px !important;
+}
+
+.landing-page .landing-closing .final-cta__actions .landing-link-button {
+  border-radius: 15px !important;
+}
+
+/* Footer : leger retrait supplementaire pour que le copyright
+   ne paraisse pas colle au bord sur les petits ecrans. */
+.landing-page .landing-footer .landing-shell {
+  width: min(1180px, calc(100% - 40px)) !important;
+}
+
+@media (max-width: 767px) {
+  .landing-page .landing-closing {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+
+  .landing-page .landing-closing .landing-shell {
+    width: min(100% - 24px, 540px) !important;
+  }
+
+  .landing-page .landing-closing .final-cta {
+    padding: 28px 22px 24px !important;
+    gap: 22px !important;
+  }
+
+  .landing-page .landing-closing .final-cta h2 {
+    max-width: 13ch !important;
+    margin-bottom: 16px !important;
+    line-height: .98 !important;
+  }
+
+  .landing-page .landing-closing .final-cta > div:first-child > p:not(.landing-eyebrow) {
+    margin-bottom: 18px !important;
+    line-height: 1.52 !important;
+  }
+
+  .landing-page .landing-closing .final-cta__proof {
+    gap: 9px !important;
+  }
+
+  .landing-page .landing-closing .final-cta__actions {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+    width: 100%;
+  }
+
+  .landing-page .landing-closing .final-cta__actions .landing-link-button {
+    width: 100% !important;
+    min-height: 50px !important;
+    padding-inline: 14px !important;
+    border-radius: 15px !important;
+  }
+}
+
+/* 303 px / 305 px / petits Android :
+   on garde de vraies marges, sans trop reduire la largeur utile. */
+@media (max-width: 350px) {
+  .landing-page .landing-closing .landing-shell {
+    width: calc(100% - 18px) !important;
+  }
+
+  .landing-page .landing-closing .final-cta {
+    padding: 25px 18px 22px !important;
+  }
+
+  .landing-page .landing-closing .final-cta .landing-eyebrow {
+    margin-bottom: 13px !important;
+  }
+
+  .landing-page .landing-closing .final-cta h2 {
+    margin-bottom: 15px !important;
+  }
+
+  .landing-page .landing-closing .final-cta__actions .landing-link-button {
+    min-height: 48px !important;
+    padding-inline: 12px !important;
+  }
+
+  .landing-page .landing-footer .landing-shell {
+    width: calc(100% - 36px) !important;
+  }
+}
+/* === BUDGETKAZPEI PREMIUM EDGE SPACING END === */
+/* === BUDGETKAZPEI FINAL CTA TITLE FIX V2 START === */
+/*
+   Ajustement plus fin du titre du bloc final :
+   - le titre occupe toute la largeur utile ;
+   - la taille descend legerement sur mobile ;
+   - la 2e ligne vise : "pÃ©i, au mÃªme endroit."
+*/
+@media (max-width: 767px) {
+  .landing-page .landing-closing .final-cta h2 {
+    width: 100% !important;
+    max-width: none !important;
+    font-size: clamp(1.72rem, 7.2vw, 2.12rem) !important;
+    line-height: 1.02 !important;
+    letter-spacing: -0.024em !important;
+    text-wrap: pretty !important;
+  }
+}
+
+@media (max-width: 340px) {
+  .landing-page .landing-closing .final-cta h2 {
+    font-size: 1.68rem !important;
+    line-height: 1.03 !important;
+  }
+}
+/* === BUDGETKAZPEI FINAL CTA TITLE FIX V2 END === */
