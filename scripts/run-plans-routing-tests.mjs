@@ -132,8 +132,11 @@ const publicTexts = [
   read("src/pages/PublicHomePage.jsx"),
   read("src/pages/PremiumLandingPage.jsx"),
 ].join("\n")
-assert.doesNotMatch(publicTexts, /\b50\b|50 sur 50/, "Public marketing must not expose Premium+ safety limit")
+assert.doesNotMatch(publicTexts, /\b50\s+scans?\b|50 sur 50/i, "Public marketing must not expose Premium+ safety limit")
 assert.doesNotMatch(publicTexts, /Gratuit[\s\S]{0,120}\b(?:1|5|10)\s+scans?\b/i, "Free plan must not expose a definitive numeric scanner quota")
+assert.match(publicTexts, /Sans publicité/, "Free plan must be explicitly ad-free in French")
+assert.match(publicTexts, /San piblisité/, "Free plan must be explicitly ad-free in Reunion Creole")
+assert.doesNotMatch(publicTexts, /(?:retirer|supprimer|enlever)\s+(?:les?\s+)?publicit/i, "Premium must not be presented as ad removal")
 assert.match(read("src/config/plans.js"), /10 scans par mois/, "Premium public quota must be defined centrally")
 assert.ok(PUBLIC_PLAN_CARDS.find(plan => plan.id === PLAN_IDS.premium)?.items.some(item => item.text === "10 scans par mois"), "Premium public quota must be visible")
 assert.ok(PUBLIC_PLAN_CARDS.find(plan => plan.id === PLAN_IDS.premiumPlus)?.items.some(item => item.text === "Scans illimités"), "Premium+ must be commercially unlimited in public wording")

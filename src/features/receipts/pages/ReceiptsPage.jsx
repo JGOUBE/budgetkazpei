@@ -99,7 +99,9 @@ const TEXT = {
       ? `Analyses IA illimitées — ${quota.planLabel}`
       : `Analyses IA : ${quota.used} / ${quota.limit} — ${quota.planLabel}`,
     methodTitle: "Choisissez une méthode",
-    privacy: "Vos tickets restent privés. Ils servent uniquement à mettre à jour votre budget.",
+    privacyTitle: "Confidentialité du scan",
+    privacy: "Votre ticket est transmis de façon sécurisée à notre service de reconnaissance afin d’en extraire les informations utiles.",
+    privacyLink: "En savoir plus",
     foodHint: "Ajoutez vos courses automatiquement ou manuellement. L'analyse automatique sert surtout aux tickets alimentaires, pour comprendre vos habitudes et recevoir des conseils utiles.",
     loaded: "Image chargée. Vérifiez les informations détectées.",
     saveTicket: "Enregistrer le ticket",
@@ -203,7 +205,9 @@ const TEXT = {
       ? `Analiz IA san limit — ${quota.planLabel}`
       : `Analiz IA : ${quota.used} / ${quota.limit} — ${quota.planLabel}`,
     methodTitle: "Swazi in fason",
-    privacy: "Bann tiké a ou i reste privé. Nou i servi azot zis pou met out bidzé à jour.",
+    privacyTitle: "Konfidansyalité scan-la",
+    privacy: "Out tiké lé anvoyé an tout sékirité dann nout servis pou tir bann zinformasion itil.",
+    privacyLink: "Konn plis",
     foodHint: "Azout out courses otomatikman ou amain. Analiz otomatik-la lé surtout pou bann tiké manzé, pou konprann out labitid ek gagn bann konsey itil.",
     loaded: "Zimaz-la la chargé. Vérifié bann zinformasyon.",
     saveTicket: "Anrezistre lo tiké",
@@ -2246,9 +2250,26 @@ export default function ReceiptsPage({
         <h1 style={{ margin: 0, color: COLORS.text, fontFamily: "'DM Serif Display', serif", fontSize: isMobile ? 30 : 38 }}>
           {txt.title}
         </h1>
-        <p style={{ color: COLORS.muted, lineHeight: 1.55, margin: "10px 0 14px", fontSize: 14 }}>
-          {txt.privacy}
-        </p>
+        <aside style={{
+          margin: "14px 0",
+          padding: "13px 14px",
+          border: `1px solid ${COLORS.cyan}35`,
+          borderRadius: 14,
+          background: `${COLORS.cyan}0D`,
+        }}>
+          <div style={{ color: COLORS.cyan, fontSize: 13, fontWeight: 900, marginBottom: 5 }}>
+            {txt.privacyTitle}
+          </div>
+          <p style={{ color: COLORS.muted, lineHeight: 1.55, margin: 0, fontSize: 13 }}>
+            {txt.privacy}{" "}
+            <a
+              href="/privacy#tickets-scanner"
+              style={{ color: COLORS.cyan, fontWeight: 900, textUnderlineOffset: 3 }}
+            >
+              {txt.privacyLink}
+            </a>
+          </p>
+        </aside>
         <p style={{ color: COLORS.cyan, lineHeight: 1.5, margin: "0 0 14px", fontSize: 13, fontWeight: 800 }}>
           {txt.foodHint}
         </p>

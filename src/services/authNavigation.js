@@ -17,6 +17,7 @@ const PUBLIC_PAGES = new Set([
   DISCOVER_ROUTE,
   "/premium",
   "/privacy",
+  "/mentions-legales",
   "/terms",
   "/suppression-compte",
   "/reset-password",

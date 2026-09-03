@@ -1,4 +1,11 @@
+import assert from "node:assert/strict"
+import { readFileSync } from "node:fs"
+import { join } from "node:path"
 import { createServer } from "vite"
+
+const receiptsPage = readFileSync(join(process.cwd(), "src/features/receipts/pages/ReceiptsPage.jsx"), "utf8")
+assert.match(receiptsPage, /Confidentialité du scan/, "Scanner privacy notice must be visible")
+assert.match(receiptsPage, /\/privacy#tickets-scanner/, "Scanner privacy notice must link to the relevant policy section")
 
 const server = await createServer({
   appType: "custom",

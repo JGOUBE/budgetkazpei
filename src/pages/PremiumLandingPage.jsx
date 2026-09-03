@@ -103,7 +103,7 @@ const PREMIUM_CONTENT = {
         ],
         [
           "Comment sont protégées les photos de mes tickets ?",
-          "Les photos servent temporairement au traitement du ticket. Elles sont ensuite supprimées automatiquement, tandis que les données utiles à votre budget restent conservées.",
+          "Les photos servent temporairement au traitement du ticket. Lorsqu'elles sont enregistrées, elles deviennent inaccessibles au plus tard après 7 jours puis sont supprimées automatiquement, tandis que les données structurées utiles à votre budget restent conservées.",
         ],
         [
           "Puis-je arrêter mon abonnement ?",
@@ -113,8 +113,10 @@ const PREMIUM_CONTENT = {
     },
     footer: {
       privacy: "Confidentialité",
+      legalNotices: "Mentions légales",
       terms: "Conditions",
       deleteAccount: "Suppression du compte",
+      contact: "Contact",
       navigationAriaLabel: "Liens de pied de page",
     },
   },
@@ -201,7 +203,7 @@ const PREMIUM_CONTENT = {
         ],
         [
           "Koman bann foto mon tiké lé protézé ?",
-          "Bann foto i servi tanporèrman pou traite tiké-la. Apré zot lé suprimé otomatikman, mé bann données itil pou out bidjé i reste sovgardé.",
+          "Bann foto i servi tanporèrman pou traite tiké-la. Kan zot lé anrezistré, ou pé pi war azot apré 7 zour o pli tar, épi zot lé suprimé otomatikman. Bann données itil pou out bidjé i reste sovgardé.",
         ],
         [
           "Mi pé arèt mon abonman ?",
@@ -211,8 +213,10 @@ const PREMIUM_CONTENT = {
     },
     footer: {
       privacy: "Konfidansyalité",
+      legalNotices: "Mansion légal",
       terms: "Kondisyon",
       deleteAccount: "Suprim mon kont",
+      contact: "Kontakt",
       navigationAriaLabel: "Lien anba paz",
     },
   },
@@ -461,11 +465,12 @@ export default function PremiumLandingPage({ isAuthenticated = false }) {
 
           <nav aria-label={content.footer.navigationAriaLabel}>
             <LandingLink href="/privacy">{content.footer.privacy}</LandingLink>
+            <LandingLink href="/mentions-legales">{content.footer.legalNotices}</LandingLink>
             <LandingLink href="/terms">{content.footer.terms}</LandingLink>
             <LandingLink href="/suppression-compte">
               {content.footer.deleteAccount}
             </LandingLink>
-            <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
+            <a href={`mailto:${CONTACT_EMAIL}`}>{content.footer.contact}</a>
           </nav>
         </div>
       </footer>

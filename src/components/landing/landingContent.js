@@ -31,7 +31,7 @@ const PLAN_COPY = {
     [PLAN_IDS.free]: {
       name: PLAN_NAMES[PLAN_IDS.free], cta: "Créer mon compte",
       intro: "Pour découvrir BudgetKazPéi et commencer à suivre l'essentiel.",
-      items: ["Budget essentiel", "Revenus et dépenses", "Statistiques simples", "Aides essentielles et Bons plans locaux", PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.free], "Conseiller BudgetKazPéi à découvrir avec Premium"],
+      items: ["Sans publicité", "Budget essentiel", "Revenus et dépenses", "Statistiques simples", "Aides essentielles et Bons plans locaux", PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.free], "Conseiller BudgetKazPéi à découvrir avec Premium"],
     },
     [PLAN_IDS.premium]: {
       name: PLAN_NAMES[PLAN_IDS.premium], cta: "Découvrir Premium",
@@ -48,7 +48,7 @@ const PLAN_COPY = {
     [PLAN_IDS.free]: {
       name: "Gratis", cta: "Kré mon kont",
       intro: "Pou dékouv BudgetKazPéi ek koumans swiv sak lé esansyèl.",
-      items: ["Bidjé esansyèl", "Larzan i rantre ek dépans", "Statistik senp", "Èd esansyèl ek bann Bon Plan lokal", "Aksé pou dékouv scanner-la", "Konseyé BudgetKazPéi pou dékouv dann Premium"],
+      items: ["San piblisité", "Bidjé esansyèl", "Larzan i rantre ek dépans", "Statistik senp", "Èd esansyèl ek bann Bon Plan lokal", "Aksé pou dékouv scanner-la", "Konseyé BudgetKazPéi pou dékouv dann Premium"],
     },
     [PLAN_IDS.premium]: {
       name: "Premium", cta: "Dékouv Premium",
@@ -164,7 +164,7 @@ const CONTENT = {
       eyebrow: "FAQ", title: "Questions fréquentes",
       items: [["Est-ce gratuit ?", "Oui. L'offre gratuite permet de découvrir BudgetKazPéi et de suivre l'essentiel."], ["Les aides sont-elles garanties ?", "Non. La décision finale appartient toujours à l'organisme officiel."], ["Que faire si un ticket est mal lu ?", "Vous pouvez reprendre la photo, corriger les informations ou ajouter la dépense manuellement."]],
     },
-    footer: { privacy: "Confidentialité", terms: "Conditions", deleteAccount: "Suppression du compte", navigationAriaLabel: "Liens de pied de page" },
+    footer: { privacy: "Confidentialité", legalNotices: "Mentions légales", terms: "Conditions", deleteAccount: "Suppression du compte", contact: "Contact", navigationAriaLabel: "Liens de pied de page" },
   },
   kr: {
     seo: {
@@ -240,7 +240,7 @@ const CONTENT = {
     faq: {
       eyebrow: "FAQ", title: "Kestion souvan", items: [["Eske lé gratis ?", "Wi. Lof gratis i permet dékouv BudgetKazPéi ek suiv sak lé esansyèl."], ["Bann èd lé garanti ?", "Non. Lo organisme officiel i pran désizion final."], ["Kosa fé si in tiké lé mal lu ?", "Ou pé repran foto-la, korij bann ransèyman ou azout dépans-la a la min."]],
     },
-    footer: { privacy: "Konfidansyalité", terms: "Kondisyon", deleteAccount: "Suprim mon kont", navigationAriaLabel: "Bann lien pié paz" },
+    footer: { privacy: "Konfidansyalité", legalNotices: "Mansion légal", terms: "Kondisyon", deleteAccount: "Suprim mon kont", contact: "Kontakt", navigationAriaLabel: "Bann lien pié paz" },
   },
 }
 

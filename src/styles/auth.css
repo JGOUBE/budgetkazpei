@@ -373,6 +373,30 @@ html[data-theme="dark"] .auth-side {
   min-height: 44px;
 }
 
+.auth-legal-links {
+  order: 4;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 14px;
+  color: var(--auth-muted);
+  font-size: .76rem;
+  font-weight: 800;
+}
+
+.auth-legal-links a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  color: var(--auth-muted);
+  text-decoration: none;
+}
+
+.auth-legal-links a:hover,
+.auth-legal-links a:focus-visible {
+  color: var(--auth-blue);
+}
+
 .auth-page a:focus-visible,
 .auth-page button:focus-visible,
 .auth-page input:focus-visible {

@@ -781,6 +781,84 @@ export default function ProfilePage({ user, t }) {
         </form>
       </div>
 
+      <section
+        aria-labelledby="profile-legal-title"
+        style={{
+          background: `linear-gradient(135deg, ${COLORS.cardLight}, ${COLORS.card})`,
+          border: `1px solid ${COLORS.border}`,
+          borderRadius: 20,
+          padding: 24,
+          display: "flex",
+          flexDirection: "column",
+          gap: 14,
+        }}
+      >
+        <div>
+          <div id="profile-legal-title" style={{ fontSize: 17, fontWeight: 800, color: COLORS.cyan, marginBottom: 6 }}>
+            {tr(isKreol, "Informations légales", "Zinformasion légal")}
+          </div>
+          <p style={{ margin: 0, color: COLORS.muted, fontSize: 13, lineHeight: 1.6 }}>
+            {tr(isKreol, "Retrouvez les règles d’utilisation, la confidentialité de vos données et la procédure actuelle de suppression du compte.", "Rod bann règ itilizasion, konfidansyalité out données ek fason pou demande suprim out kont.")}
+          </p>
+        </div>
+
+        <nav
+          aria-label={tr(isKreol, "Informations légales du compte", "Zinformasion légal kont-la")}
+          style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 10 }}
+        >
+          {[
+            ["/privacy", tr(isKreol, "Politique de confidentialité", "Politik konfidansyalité")],
+            ["/mentions-legales", tr(isKreol, "Mentions légales", "Mansion légal")],
+            ["/terms", tr(isKreol, "Conditions d’utilisation", "Kondisyon itilizasion")],
+            ["/suppression-compte", tr(isKreol, "Supprimer mon compte", "Suprim mon kont")],
+          ].map(([href, label]) => (
+            <a
+              key={href}
+              href={href}
+              style={{
+                minWidth: 0,
+                minHeight: 46,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 10,
+                padding: "11px 13px",
+                border: `1px solid ${COLORS.border}`,
+                borderRadius: 12,
+                background: "rgba(10,22,40,.35)",
+                color: COLORS.text,
+                fontSize: 12.5,
+                fontWeight: 800,
+                lineHeight: 1.35,
+                textDecoration: "none",
+                overflowWrap: "anywhere",
+              }}
+            >
+              <span>{label}</span>
+              <span aria-hidden="true" style={{ color: COLORS.cyan }}>→</span>
+            </a>
+          ))}
+          <a
+            href={`mailto:${CONTACT_EMAIL}`}
+            style={{
+              minHeight: 46,
+              display: "flex",
+              alignItems: "center",
+              padding: "11px 13px",
+              border: `1px solid ${COLORS.cyan}33`,
+              borderRadius: 12,
+              background: `${COLORS.cyan}10`,
+              color: COLORS.cyan,
+              fontSize: 12.5,
+              fontWeight: 900,
+              textDecoration: "none",
+            }}
+          >
+            {tr(isKreol, "Contacter BudgetKazPéi", "Kontakt BudgetKazPéi")}
+          </a>
+        </nav>
+      </section>
+
       {!hasPremiumAccess && (
         <div
           style={{
@@ -907,4 +985,3 @@ function Checkbox({ label, checked, onChange }) {
     </label>
   )
 }
-

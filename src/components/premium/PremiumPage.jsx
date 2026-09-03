@@ -59,6 +59,7 @@ export const PREMIUM_PAGE_COPY = {
     premiumIntro: "BudgetKazPéi vous conseille dans votre gestion quotidienne.",
     premiumPlusIntro: "BudgetKazPéi vous accompagne dans des démarches concrètes.",
     freeFeatures: [
+      "Sans publicité",
       "Budget mensuel et catégories",
       "Revenus, dépenses et historique simple",
       PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.free],
@@ -125,6 +126,7 @@ export const PREMIUM_PAGE_COPY = {
     premiumIntro: "BudgetKazPéi i konsey aou dann out gestion kotidien.",
     premiumPlusIntro: "BudgetKazPéi i akonpagn aou dann bann demars konkrè.",
     freeFeatures: [
+      "San piblisité",
       "Bidjé esansyèl",
       "Larzan i rantre, dépans ek istorik senp",
       "Aksé pou dékouv scanner-la",

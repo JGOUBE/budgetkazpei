@@ -47,6 +47,12 @@ export default function AuthLayout({
             {subtitle && <p>{subtitle}</p>}
           </header>
           {children}
+          <nav className="auth-legal-links" aria-label="Informations légales">
+            <a href="/privacy">Confidentialité</a>
+            <a href="/mentions-legales">Mentions légales</a>
+            <a href="/terms">Conditions</a>
+            <a href="mailto:contact.budgetkazpei@gmail.com">Contact</a>
+          </nav>
         </section>
       </div>
     </main>

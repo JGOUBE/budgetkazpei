@@ -218,14 +218,15 @@ export default function RegisterPage({
             <input
               ref={termsRef}
               type="checkbox"
+              required
               checked={acceptedTerms}
               onChange={event => setAcceptedTerms(event.target.checked)}
               aria-invalid={Boolean(errors.terms)}
               aria-describedby={errors.terms ? "register-terms-error" : undefined}
             />
             <span>
-              J'accepte les <a href="/terms">conditions d'utilisation</a> et la{" "}
-              <a href="/privacy">politique de confidentialité</a>.
+              J’accepte les <a href="/terms">Conditions générales d’utilisation</a> et reconnais avoir pris connaissance de la{" "}
+              <a href="/privacy">Politique de confidentialité</a>.
               {errors.terms && <em id="register-terms-error" role="alert">{errors.terms}</em>}
             </span>
           </label>

@@ -42,6 +42,7 @@ import RetailPriceValidationPage from "./pages/admin/RetailPriceValidationPage"
 import PremiumLandingPage from "./pages/PremiumLandingPage"
 import PublicHomePage from "./pages/PublicHomePage"
 import PrivacyPage from "./pages/PrivacyPage"
+import LegalNoticesPage from "./pages/LegalNoticesPage"
 import TermsPage from "./pages/TermsPage"
 import SuppressionComptePage from "./pages/SuppressionComptePage"
 import ResetPasswordPage from "./pages/ResetPasswordPage"
@@ -96,6 +97,7 @@ export default function App() {
   if (route.type === "auth-callback") return <AuthCallbackPage />
 
   if (route.page === "privacy") return <PrivacyPage />
+  if (route.page === "mentions-legales") return <LegalNoticesPage />
   if (route.page === "terms") return <TermsPage />
   if (route.page === "suppression-compte") return <SuppressionComptePage />
   if (route.page === "reset-password") return <ResetPasswordPage />

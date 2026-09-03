@@ -36,6 +36,7 @@ const cases = [
   ["guest premium stays public", route("/premium"), { type: "render", page: "premium" }],
   ["guest premium child stays public", route("/premium/offre"), { type: "render", page: "premium" }],
   ["guest privacy stays public", route("/privacy"), { type: "render", page: "privacy" }],
+  ["guest legal notices stay public", route("/mentions-legales"), { type: "render", page: "mentions-legales" }],
   ["guest terms stays public", route("/terms"), { type: "render", page: "terms" }],
   ["guest deletion page stays public", route("/suppression-compte"), { type: "render", page: "suppression-compte" }],
   ["guest reset page stays public", route("/reset-password"), { type: "render", page: "reset-password" }],

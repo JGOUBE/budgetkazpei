@@ -159,9 +159,10 @@ export default function PublicHomePage({ isAuthenticated = false }) {
           <span>© {new Date().getFullYear()} BudgetKazPéi</span>
           <nav aria-label={content.footer.navigationAriaLabel}>
             <LandingLink href="/privacy">{content.footer.privacy}</LandingLink>
+            <LandingLink href="/mentions-legales">{content.footer.legalNotices}</LandingLink>
             <LandingLink href="/terms">{content.footer.terms}</LandingLink>
             <LandingLink href="/suppression-compte">{content.footer.deleteAccount}</LandingLink>
-            <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
+            <a href={`mailto:${CONTACT_EMAIL}`}>{content.footer.contact}</a>
           </nav>
         </div>
       </footer>

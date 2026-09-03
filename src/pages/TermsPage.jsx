@@ -1,69 +1,63 @@
-import { createColorAliases } from "../styles/designSystem"
+import LegalPageLayout, { LegalCallout, LegalSection } from "../components/legal/LegalPageLayout"
 
-const COLORS = createColorAliases()
-
-function Section({ title, children }) {
-  return (
-    <section style={{ marginTop: 22 }}>
-      <h2 style={{ color: COLORS.cyan, margin: "0 0 8px", fontSize: 22 }}>{title}</h2>
-      <div style={{ color: COLORS.text, lineHeight: 1.7, fontSize: 15 }}>{children}</div>
-    </section>
-  )
-}
+const CONTACT_EMAIL = "contact.budgetkazpei@gmail.com"
 
 export default function TermsPage() {
   return (
-    <main style={{ minHeight: "100vh", background: COLORS.bg, color: COLORS.text, fontFamily: "'DM Sans', sans-serif", padding: "30px 18px 48px" }}>
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;900&display=swap');
-        * { box-sizing: border-box; }
-        body { margin: 0; background: ${COLORS.bg}; }
-      `}</style>
-      <div style={{ maxWidth: 920, margin: "0 auto", background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 24, padding: 26 }}>
-        <a href="/" style={{ color: COLORS.cyan, fontWeight: 900, textDecoration: "none" }}>← Retour à l'accueil</a>
-        <h1 style={{ margin: "18px 0 6px", fontSize: 34 }}>Conditions d'utilisation</h1>
-        <p style={{ margin: 0, color: COLORS.muted }}>Dernière mise à jour : 13 juin 2026</p>
+    <LegalPageLayout
+      currentPath="/terms"
+      title="Conditions générales d’utilisation"
+      updatedAt="3 septembre 2026"
+      intro="Ces conditions encadrent l’utilisation de BudgetKazPéi et complètent la Politique de confidentialité."
+    >
+      <LegalSection title="1. Objet du service">
+        <p>BudgetKazPéi aide à suivre un budget personnel ou familial, organiser ses courses, consulter des bons plans et informations de prix, repérer des aides potentielles et préparer des démarches.</p>
+        <LegalCallout>
+          <p><strong>L’offre Gratuit restera sans publicité.</strong> Premium et Premium+ financent des fonctionnalités, quotas et niveaux d’accompagnement supplémentaires ; ils ne servent pas à retirer des annonces.</p>
+        </LegalCallout>
+      </LegalSection>
 
-        <Section title="1. Objet">
-          <p>BudgetKazPéi est une application d'aide à la gestion du budget personnel et familial. Elle permet notamment de suivre ses dépenses, ses revenus, ses charges fixes, ses démarches et des pistes d'aides possibles.</p>
-        </Section>
+      <LegalSection title="2. Création et sécurité du compte">
+        <p>L’utilisateur fournit une adresse e-mail valide, choisit un mot de passe ou utilise la connexion Google, et maintient les informations de son compte à jour. Il doit préserver la confidentialité de ses accès et signaler rapidement toute utilisation non autorisée.</p>
+        <p>À l’inscription, l’utilisateur accepte les présentes conditions et reconnaît avoir pris connaissance de la <a href="/privacy">Politique de confidentialité</a>.</p>
+      </LegalSection>
 
-        <Section title="2. Création de compte">
-          <p>L'utilisateur doit fournir des informations exactes et conserver la confidentialité de son compte. Il est responsable de l'utilisation faite depuis son compte.</p>
-        </Section>
+      <LegalSection title="3. Données saisies et tickets">
+        <p>L’utilisateur reste responsable des informations, photos et documents qu’il importe. Il ne doit pas transmettre de contenu illicite ni de données appartenant à un tiers sans droit ou motif valable.</p>
+        <p>Le scanner automatise une lecture qui peut contenir des erreurs. Avant enregistrement, l’utilisateur est invité à vérifier l’enseigne, la date, le total, les produits, prix et quantités détectés. Les détails du traitement et de la conservation des photos figurent dans la <a href="/privacy#tickets-scanner">section Scanner de la Politique de confidentialité</a>.</p>
+      </LegalSection>
 
-        <Section title="3. Informations fournies par l'application">
-          <p>BudgetKazPéi fournit des informations indicatives. Les aides, droits, montants, conditions et démarches doivent toujours être vérifiés auprès des organismes officiels compétents : CAF, mairie, CCAS, Département, Région, France Travail, services publics ou tout autre organisme concerné.</p>
-        </Section>
+      <LegalSection title="4. Informations indicatives">
+        <p>Les soldes, statistiques, économies estimées, conseils, aides, droits, montants, critères et démarches présentés sont des outils d’information et d’organisation. Les décisions et informations des organismes officiels restent la référence.</p>
+        <p>Le Conseiller BudgetKazPéi ne remplace ni un organisme officiel ni un professionnel juridique, social, administratif, médical ou financier.</p>
+      </LegalSection>
 
-        <Section title="4. Assistant BudgetKazPéi">
-          <p>L'assistant peut aider à comprendre une situation, préparer une démarche ou repérer des pistes. Il ne remplace pas un professionnel du droit, du social, de la santé, de la finance ou un organisme officiel.</p>
-        </Section>
+      <LegalSection title="5. Prix, promotions et bons plans">
+        <p>Les prix observés, promotions, disponibilités et informations commerciales peuvent évoluer. BudgetKazPéi fait son possible pour proposer des informations utiles et à jour, mais l’affichage en magasin ou le prix effectivement pratiqué par l’enseigne au moment de l’achat reste la référence.</p>
+      </LegalSection>
 
-        <Section title="5. Offres Premium">
-          <p>Des offres Premium peuvent donner accès à des fonctionnalités supplémentaires, comme le conseiller BudgetKazPéi, les échanges mensuels, les exports, les alertes ou des outils avancés. Les conditions exactes de chaque offre sont indiquées sur la page des offres.</p>
-        </Section>
+      <LegalSection title="6. Offres Premium et Premium+">
+        <p>Les offres payantes donnent accès à des fonctionnalités et quotas supplémentaires décrits sur la page des offres. Les tarifs et caractéristiques applicables sont ceux affichés au moment de la souscription.</p>
+        <p>Les paiements sont traités par Stripe. La gestion ou la résiliation d’un abonnement suit les moyens proposés dans le parcours d’abonnement. Une résiliation empêche le renouvellement mais ne vaut pas, à elle seule, demande de suppression du compte.</p>
+      </LegalSection>
 
-        <Section title="6. Paiement et résiliation">
-          <p>Les paiements sont gérés via Stripe. L'utilisateur peut résilier son abonnement selon les modalités proposées par Stripe ou par l'espace prévu dans l'application. L'accès reste généralement actif jusqu'à la fin de la période déjà réglée.</p>
-        </Section>
+      <LegalSection title="7. Usage acceptable">
+        <p>Il est interdit de tenter d’accéder aux données d’un autre utilisateur, contourner l’authentification ou les quotas, perturber le service, automatiser un usage abusif, introduire du code malveillant ou utiliser BudgetKazPéi à des fins frauduleuses ou illégales.</p>
+      </LegalSection>
 
-        <Section title="7. Usage acceptable">
-          <p>L'utilisateur s'engage à ne pas utiliser BudgetKazPéi pour tenter d'accéder aux données d'autres utilisateurs, perturber le service, contourner les limitations techniques ou publier des contenus illégaux, abusifs ou frauduleux.</p>
-        </Section>
+      <LegalSection title="8. Disponibilité et responsabilité">
+        <p>BudgetKazPéi vise une continuité raisonnable du service, sans garantir une disponibilité permanente. Des interruptions peuvent résulter d’une maintenance, d’une correction, d’un incident ou de l’indisponibilité d’un service technique.</p>
+        <p>L’utilisateur conserve la maîtrise de ses décisions budgétaires, commerciales et administratives. Rien dans ces conditions ne limite les droits ou garanties qui ne peuvent pas être écartés par la loi applicable.</p>
+      </LegalSection>
 
-        <Section title="8. Disponibilité du service">
-          <p>BudgetKazPéi est fourni avec un objectif de continuité, mais des interruptions peuvent survenir pour maintenance, correction, évolution, incident technique ou indisponibilité de services tiers.</p>
-        </Section>
+      <LegalSection title="9. Propriété intellectuelle">
+        <p>La marque, l’identité graphique, les textes, interfaces, bases structurées et logiciels propres à BudgetKazPéi sont protégés selon les droits applicables. L’utilisateur conserve ses droits sur les contenus qu’il fournit et autorise leur traitement dans la mesure nécessaire au fonctionnement demandé.</p>
+      </LegalSection>
 
-        <Section title="9. Responsabilité">
-          <p>L'utilisateur reste responsable de ses décisions budgétaires, administratives et financières. BudgetKazPéi ne garantit pas l'obtention d'une aide, d'un droit, d'un financement ou d'une économie.</p>
-        </Section>
-
-        <Section title="10. Contact">
-          <p>Pour toute question, l'utilisateur peut écrire à : <strong>contact.budgetkazpei@gmail.com</strong>.</p>
-        </Section>
-      </div>
-    </main>
+      <LegalSection title="10. Suppression, modification et contact">
+        <p>La demande de suppression du compte est décrite sur la page <a href="/suppression-compte">Suppression du compte</a>. Les conditions peuvent évoluer avec le service ; la date de mise à jour identifie la version publiée.</p>
+        <p>Contact : <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.</p>
+      </LegalSection>
+    </LegalPageLayout>
   )
 }
