@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import json
 import hashlib
+import re
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Protocol
@@ -146,8 +148,8 @@ def build_commercial_fingerprint(item: dict[str, object]) -> str:
         "original_price": _canonical_price(item.get("original_price")),
         "promotion_proven": item.get("promotion_proven") is True,
         "offer_mechanism": normalize_lookup_key(_optional_text(item.get("offer_mechanism"))),
-        "starts_at": _optional_text(item.get("starts_at")),
-        "ends_at": _optional_text(item.get("ends_at")),
+        "starts_at": _canonical_datetime(item.get("starts_at")),
+        "ends_at": _canonical_datetime(item.get("ends_at")),
     }
     encoded = json.dumps(payload, ensure_ascii=True, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
@@ -342,3 +344,18 @@ def _canonical_price(value: object) -> str | None:
         return format(Decimal(str(value)).quantize(Decimal("0.01")), "f")
     except (InvalidOperation, ValueError):
         return str(value).strip()
+
+
+def _canonical_datetime(value: object) -> str | None:
+    text = _optional_text(value)
+    if not text:
+        return None
+    if re.fullmatch(r"\d{4}-\d{2}-\d{2}", text):
+        return text
+    try:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        return text
+    if parsed.tzinfo is None:
+        return parsed.isoformat(timespec="seconds")
+    return parsed.astimezone(timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")

@@ -14,6 +14,7 @@ from urllib.parse import urlsplit
 
 from app.collectors.eleclerc_reunion import CatalogReference, discover_catalogs
 from app.collectors.carrefour_reunion import run_carrefour_reunion_readonly
+from app.collectors.eleclerc_drive_reunion import run_eleclerc_reunion_readonly
 from app.collectors.leader_price_reunion import LeaderPriceReadonlyRunReport, run_leader_price_readonly
 from app.db.repositories import InMemoryPageSnapshotRepository, PageSnapshotRepository, build_repository
 from app.extractors.catalog_page_regions import PageRegion, detect_regions
@@ -36,6 +37,7 @@ from app.services.leader_price_validation_job import (
     run_leader_price_validation_job,
 )
 from app.services.carrefour_reunion_incremental import run_carrefour_reunion_incremental
+from app.services.eleclerc_reunion_incremental import run_eleclerc_reunion_incremental
 from app.services.vision_benchmark import VisionBenchmarkRunReport, run_vision_benchmark
 from app.settings import Settings
 
@@ -249,6 +251,12 @@ def build_argument_parser() -> argparse.ArgumentParser:
     parser.add_argument("--carrefour-reunion-incremental", action="store_true", help="Collect Carrefour Réunion and stage only commercial changes.")
     parser.add_argument("--carrefour-baseline-report", default=None, help="Optional local Carrefour readonly report used as incremental baseline.")
     parser.add_argument("--carrefour-report-path", default=None, help="Override the local Carrefour readonly or incremental report path.")
+    parser.add_argument("--leclerc-reunion-readonly", action="store_true", help="Run the readonly E.Leclerc Drive Réunion collector for the pilot store.")
+    parser.add_argument("--leclerc-reunion-incremental", action="store_true", help="Collect the E.Leclerc Drive pilot and stage only commercial changes.")
+    parser.add_argument("--leclerc-store", default="portail-st-leu", help="E.Leclerc Drive store slug; the pilot only allows portail-st-leu.")
+    parser.add_argument("--leclerc-max-products", type=int, default=100, help="Maximum E.Leclerc Drive products to inspect.")
+    parser.add_argument("--leclerc-baseline-report", default=None, help="Optional explicit local E.Leclerc readonly report used only as a simulation baseline.")
+    parser.add_argument("--leclerc-report-path", default=None, help="Override the local E.Leclerc readonly or incremental report path.")
     parser.add_argument("--leader-max-products", type=int, default=100, help="Maximum Leader Price products to inspect.")
     parser.add_argument("--leader-report-path", default=None, help="Override the local Leader Price readonly report path.")
     parser.add_argument("--benchmark-vision", action="store_true", help="Run the three-page vision benchmark.")
@@ -732,6 +740,34 @@ def main() -> int:
                 else None
             ),
             report_path=Path(args.carrefour_report_path) if args.carrefour_report_path else None,
+        )
+        print(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
+        return 0
+
+    if args.leclerc_reunion_readonly:
+        report = run_eleclerc_reunion_readonly(
+            settings,
+            fetcher=HttpFetcher(),
+            store_slug=args.leclerc_store,
+            max_products=args.leclerc_max_products,
+            report_path=Path(args.leclerc_report_path) if args.leclerc_report_path else None,
+        )
+        print(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
+        return 0
+
+    if args.leclerc_reunion_incremental:
+        report = run_eleclerc_reunion_incremental(
+            settings,
+            fetcher=HttpFetcher(),
+            dry_run=args.dry_run,
+            store_slug=args.leclerc_store,
+            max_products=args.leclerc_max_products,
+            baseline_report_path=(
+                Path(args.leclerc_baseline_report)
+                if args.leclerc_baseline_report
+                else None
+            ),
+            report_path=Path(args.leclerc_report_path) if args.leclerc_report_path else None,
         )
         print(json.dumps(report.to_dict(), ensure_ascii=False, indent=2))
         return 0
