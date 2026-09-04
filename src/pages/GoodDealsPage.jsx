@@ -564,6 +564,58 @@ function getDealPeriod(deal, isKreol) {
   return ""
 }
 
+function getPremiumDealDescription(deal) {
+  const value = String(deal.description || "").trim()
+  if (!value) return ""
+
+  const normalized = value
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+
+  const technicalLabels = new Set([
+    "promotion structuree",
+    "promotion retail structuree",
+    "prix promo",
+  ])
+
+  return technicalLabels.has(normalized) ? "" : value
+}
+
+function formatPremiumPriceNote(value) {
+  let text = String(value || "").trim()
+  if (!text) return ""
+
+  return text
+    .replace(/^prix promo\s+/i, "")
+    .replace(/\b(\d+)\.(\d{2})\b/g, "$1,$2")
+    .replace(/\s+EUR\//gi, " \u20ac/")
+    .replace(/\s+EUR\b/gi, " \u20ac")
+    .replace(/\s+-\s+/g, " \u00b7 ")
+}
+
+function isLeaderPriceFreshObservedPromotion(deal, period) {
+  if (period) return false
+
+  const tags = Array.isArray(deal.tags) ? deal.tags : []
+  if (!tags.includes("product_promo")) return false
+
+  const retailerText = [
+    deal.business_name,
+    deal.businessName,
+    deal.store_name,
+    deal.retailer_name,
+    deal.retailer_slug,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase()
+
+  return retailerText.includes("leader price") || retailerText.includes("leader-price")
+}
+
 function getLastVerificationText(deal, isKreol) {
   const value = deal.last_verified_at || deal.verified_at || deal.updated_at
   if (!value) return ""
@@ -971,6 +1023,9 @@ function DealCard({ deal, isKreol }) {
   const territoryName = String(deal.territory_name || "").trim()
   const dealUrl = getDealUrl(deal)
   const period = getDealPeriod(deal, isKreol)
+  const displayDescription = getPremiumDealDescription(deal)
+  const displayPriceNote = formatPremiumPriceNote(deal.price_note)
+  const freshObservedPromotion = isLeaderPriceFreshObservedPromotion(deal, period)
   const permanentLeisure = isPermanentLeisure(deal)
   const isSponsored = Boolean(deal.is_sponsored || deal.sponsored)
   const isPartner = Boolean(deal.business_is_partner || deal.is_partner || deal.partner)
@@ -1040,9 +1095,9 @@ function DealCard({ deal, isKreol }) {
           {deal.title}
         </h2>
 
-        {deal.description && (
+        {displayDescription && (
           <p style={{ margin: "9px 0 0", color: pageTheme.secondaryText, fontSize: 13, lineHeight: 1.55 }}>
-            {deal.description}
+            {displayDescription}
           </p>
         )}
       </div>
@@ -1052,6 +1107,27 @@ function DealCard({ deal, isKreol }) {
           <div style={{ display: "flex", alignItems: "center", gap: 7, color: COLORS.text, fontSize: 12, fontWeight: 900 }}>
             <BkIcons.calendar size={15} color={COLORS.purple} />
             {period}
+          </div>
+        )}
+
+        {!permanentLeisure && freshObservedPromotion && (
+          <div
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              alignSelf: "flex-start",
+              gap: 7,
+              color: COLORS.green,
+              background: pageTheme.greenSoft,
+              border: `1px solid ${COLORS.green}2e`,
+              borderRadius: 999,
+              padding: "5px 9px",
+              fontSize: 11.5,
+              fontWeight: 900,
+            }}
+          >
+            <BkIcons.check size={14} />
+            {isKreol ? "Promo nou la observ\u00e9 r\u00e9cemment" : "Promo observ\u00e9e r\u00e9cemment"}
           </div>
         )}
 
@@ -1098,9 +1174,9 @@ function DealCard({ deal, isKreol }) {
           />
         )}
 
-        {deal.price_note && (
-          <div style={{ color: COLORS.yellow, fontSize: 12, lineHeight: 1.45, fontWeight: 850 }}>
-            {deal.price_note}
+        {displayPriceNote && (
+          <div style={{ color: COLORS.accent, fontSize: 12.5, lineHeight: 1.45, fontWeight: 950 }}>
+            {displayPriceNote}
           </div>
         )}
 
