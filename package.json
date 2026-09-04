@@ -11,6 +11,7 @@
     "test:landing": "node scripts/run-landing-tests.mjs",
     "test:auth-ui": "node scripts/run-auth-ui-tests.mjs",
     "test:good-deals-admin": "node scripts/run-good-deals-admin-tests.mjs",
+    "test:retail-domain": "node scripts/run-retail-promotion-domain-tests.mjs",
     "test:plans-routing": "node scripts/run-plans-routing-tests.mjs",
     "test:plans-quota-e2e": "node scripts/run-plans-quota-e2e.mjs",
     "test:advisor-aides": "node scripts/run-advisor-aides-tests.mjs",

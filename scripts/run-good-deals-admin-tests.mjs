@@ -90,7 +90,9 @@ assert.match(app, /initialAppSection="retailPriceAdminReview"/, "Retail admin ro
 assert.match(app, /navigate\(APP_ROUTE, \{ replace: true \}\)/, "Admin page must redirect back to app when leaving the private route")
 
 const sidebar = read("src/components/sidebar/Sidebar.jsx")
-assert.doesNotMatch(sidebar, /goodDealsAdminReview|bons-plans-validation|validation bons plans|retailPriceAdminReview|prix-promotions-validation|validation prix et promotions/i, "Private admin pages must not appear in the normal navigation")
+const normalNavigation = sidebar.match(/const NAV_ITEMS = \[[\s\S]*?\n\]/)?.[0] || ""
+assert.doesNotMatch(normalNavigation, /goodDealsAdminReview|bons-plans-validation|validation bons plans|retailPriceAdminReview|prix-promotions-validation|validation prix et promotions/i, "Private admin pages must not appear in the normal navigation")
+assert.match(sidebar, /\{isAdmin && \(/, "Private admin navigation must remain guarded by the admin authority")
 
 const page = read("src/pages/admin/GoodDealsReviewPage.jsx")
 assert.match(page, /\.from\("good_deal_candidates_review"\)/, "Admin page must read from the private review view")

@@ -1,5 +1,6 @@
 import { normalizeForAssistantMatch } from "./assistantLanguage.js"
 import { buildSavingsInsights } from "../savings/savingsEngine.ts"
+import { buildBudgetAdvisorContext } from "./budgetAdvisorContext.js"
 
 const CATEGORY_LABELS = {
   alimentaire: { fr: "l'alimentation", kr: "manzé" },
@@ -16,6 +17,12 @@ const CATEGORY_LABELS = {
 function money(value) {
   const number = Number(String(value ?? 0).replace(",", "."))
   return Number.isFinite(number) ? number : 0
+}
+
+function optionalMoney(value) {
+  if (value === null || value === undefined || value === "") return null
+  const number = Number(String(value).replace(",", "."))
+  return Number.isFinite(number) ? number : null
 }
 
 function toIsoDate(date) {
@@ -391,6 +398,12 @@ export function buildAssistantInsights({
     savings,
     frequentProducts,
     smallRepeatedPurchases,
+    budgetInputs: {
+      income: optionalMoney(stats.revenus ?? profile?.revenus_foyer),
+      fixedExpenses: optionalMoney(stats.chargesFixes),
+      variableExpenses: optionalMoney(stats.depensesVariables),
+      availableBalance: optionalMoney(stats.resteAVivre ?? stats.solde),
+    },
     dataUsed: {
       transactionsCount: fallbackCurrentTransactions.length,
       previousTransactionsCount: previousTransactions.length,
@@ -444,6 +457,7 @@ export function buildAssistantAiSummary(insights = {}) {
       observationsCount: money(item.observationsCount),
     })),
     totalReliablePotentialSaving: money(insights.savings?.totalPotential),
+    budgetAdvisorContext: buildBudgetAdvisorContext(insights),
     dataUsed: insights.dataUsed || {},
   }
 }

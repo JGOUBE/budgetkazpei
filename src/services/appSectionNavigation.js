@@ -1,3 +1,5 @@
+export const APP_SECTION_NAVIGATION_EVENT = "budgetkazpei:navigate"
+
 const SECTION_ALIASES = Object.freeze({
   "liste-de-courses": { section: "shopping", shoppingTab: "list" },
   "mes-economies": { section: "shopping", shoppingTab: "savings" },
@@ -8,9 +10,24 @@ const SECTION_ALIASES = Object.freeze({
   savings: { section: "shopping", shoppingTab: "savings" },
   shoppingList: { section: "shopping", shoppingTab: "list" },
   shopping_list: { section: "shopping", shoppingTab: "list" },
+  promotions: { section: "goodDeals", goodDealsView: "product_promotion" },
+  "promotions-pertinentes": { section: "goodDeals", goodDealsView: "product_promotion" },
 })
 
 export function resolveAppSectionTarget(value) {
+  if (value && typeof value === "object") {
+    const section = String(value.section || "").trim()
+    return {
+      requested: section,
+      section: section || "dashboard",
+      ...(value.shoppingTab ? { shoppingTab: value.shoppingTab } : {}),
+      ...(value.advisorMode ? { advisorMode: value.advisorMode } : {}),
+      ...(value.goodDealsView ? { goodDealsView: value.goodDealsView } : {}),
+      ...(value.context ? { context: value.context } : {}),
+      legacy: false,
+    }
+  }
+
   const raw = String(value || "").trim()
   const decoded = raw.replace(/^#?\/?(?:app\/)?/, "").split(/[?#]/)[0]
   const direct = SECTION_ALIASES[raw] || SECTION_ALIASES[decoded]
@@ -27,4 +44,16 @@ export function resolveAppSectionTarget(value) {
   }
 
   return { requested: raw, section: raw || "dashboard", legacy: false }
+}
+
+export function createAppSectionTarget(section, options = {}) {
+  return resolveAppSectionTarget({ section, ...options })
+}
+
+export function requestAppSectionNavigation(target, eventTarget = globalThis?.window) {
+  if (!eventTarget?.dispatchEvent || typeof CustomEvent !== "function") return false
+  eventTarget.dispatchEvent(new CustomEvent(APP_SECTION_NAVIGATION_EVENT, {
+    detail: resolveAppSectionTarget(target),
+  }))
+  return true
 }

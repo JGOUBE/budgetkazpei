@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { BkIcons } from "../components/icons-budgetkazpei"
+import { loadPublishedGoodDeals } from "../services/retail/retailPromotionService"
 import { supabase } from "../services/supabase"
 import { createColorAliases } from "../styles/designSystem"
 import { useTheme } from "../styles/ThemeProvider"
@@ -564,58 +565,6 @@ function getDealPeriod(deal, isKreol) {
   return ""
 }
 
-function getPremiumDealDescription(deal) {
-  const value = String(deal.description || "").trim()
-  if (!value) return ""
-
-  const normalized = value
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/\s+/g, " ")
-    .trim()
-
-  const technicalLabels = new Set([
-    "promotion structuree",
-    "promotion retail structuree",
-    "prix promo",
-  ])
-
-  return technicalLabels.has(normalized) ? "" : value
-}
-
-function formatPremiumPriceNote(value) {
-  let text = String(value || "").trim()
-  if (!text) return ""
-
-  return text
-    .replace(/^prix promo\s+/i, "")
-    .replace(/\b(\d+)\.(\d{2})\b/g, "$1,$2")
-    .replace(/\s+EUR\//gi, " \u20ac/")
-    .replace(/\s+EUR\b/gi, " \u20ac")
-    .replace(/\s+-\s+/g, " \u00b7 ")
-}
-
-function isLeaderPriceFreshObservedPromotion(deal, period) {
-  if (period) return false
-
-  const tags = Array.isArray(deal.tags) ? deal.tags : []
-  if (!tags.includes("product_promo")) return false
-
-  const retailerText = [
-    deal.business_name,
-    deal.businessName,
-    deal.store_name,
-    deal.retailer_name,
-    deal.retailer_slug,
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase()
-
-  return retailerText.includes("leader price") || retailerText.includes("leader-price")
-}
-
 function getLastVerificationText(deal, isKreol) {
   const value = deal.last_verified_at || deal.verified_at || deal.updated_at
   if (!value) return ""
@@ -1023,9 +972,9 @@ function DealCard({ deal, isKreol }) {
   const territoryName = String(deal.territory_name || "").trim()
   const dealUrl = getDealUrl(deal)
   const period = getDealPeriod(deal, isKreol)
-  const displayDescription = getPremiumDealDescription(deal)
-  const displayPriceNote = formatPremiumPriceNote(deal.price_note)
-  const freshObservedPromotion = isLeaderPriceFreshObservedPromotion(deal, period)
+  const displayDescription = deal.display_description ?? String(deal.description || "").trim()
+  const displayPriceNote = deal.display_price_note ?? String(deal.price_note || "").trim()
+  const freshObservedPromotion = deal.show_fresh_observed_label === true
   const permanentLeisure = isPermanentLeisure(deal)
   const isSponsored = Boolean(deal.is_sponsored || deal.sponsored)
   const isPartner = Boolean(deal.business_is_partner || deal.is_partner || deal.partner)
@@ -1895,37 +1844,7 @@ export default function GoodDealsPage({
       setError("")
 
       try {
-        const { data: dealsData, error: dealsError } = await supabase
-          .from("published_good_deals")
-          .select("*")
-          .order("is_featured", { ascending: false })
-          .order("starts_at", { ascending: true, nullsFirst: false })
-
-        if (dealsError) throw dealsError
-
-        const dealIds = (dealsData || []).map(item => item.id).filter(Boolean)
-        let territoriesData = []
-
-        if (dealIds.length > 0) {
-          const { data, error: territoriesError } = await supabase
-            .from("good_deal_territories")
-            .select("good_deal_id, commune")
-            .in("good_deal_id", dealIds)
-
-          if (territoriesError) throw territoriesError
-          territoriesData = data || []
-        }
-
-        const territoriesByDeal = territoriesData.reduce((acc, item) => {
-          if (!acc[item.good_deal_id]) acc[item.good_deal_id] = []
-          acc[item.good_deal_id].push(item.commune)
-          return acc
-        }, {})
-
-        const prepared = (dealsData || []).map(item => ({
-          ...item,
-          targeted_communes: territoriesByDeal[item.id] || [],
-        }))
+        const prepared = await loadPublishedGoodDeals({ client: supabase })
 
         if (!ignore) setDeals(prepared)
       } catch (loadError) {
