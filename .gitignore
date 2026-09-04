@@ -37,3 +37,13 @@ reports/market-alias-*.md
 reports/promo-products-*.json
 .market-alias-cache/
 .market-alias-checkpoints/
+
+# Sauvegardes locales BudgetKazPei
+.budgetkazpei-backups/
+
+# Rapports temporaires des collecteurs retail
+reports/*-live*.json
+reports/*-dry-run*.json
+reports/*-run[0-9]*.json
+reports/*-readonly*.json
+reports/*-incremental-report.json
