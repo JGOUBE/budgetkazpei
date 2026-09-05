@@ -5,14 +5,17 @@ import { supabase } from "../services/supabase"
 import { createAppSectionTarget } from "../services/appSectionNavigation"
 import { loadActiveRetailPromotions } from "../services/retail/retailPromotionService"
 import {
+  buildShoppingListItemFromSuggestion,
   buildShoppingListShareText,
   estimateShoppingList,
   getAutocompleteSuggestions,
   getPairingSuggestion,
 } from "../services/shoppingList/shoppingListEngine"
 import {
+  buildShoppingPromotionDiagnostics,
   buildShoppingBasketSnapshotItems,
   enrichShoppingBasketWithPromotions,
+  resolveActiveRetailPromotionIdentity,
 } from "../services/shoppingList/shoppingPromotionEnrichment"
 import {
   listShoppingListSnapshots,
@@ -159,7 +162,12 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
 
   useEffect(() => {
     let ignore = false
-    listShoppingItems({ userId: user?.id, includeProductIdentity: true }).then(rows => !ignore && setShoppingItems(rows || [])).catch(() => !ignore && setShoppingItems([]))
+    listShoppingItems({ userId: user?.id, includeProductIdentity: true })
+      .then(rows => !ignore && setShoppingItems(rows || []))
+      .catch(error => {
+        if (import.meta.env.DEV) console.warn("[Shopping promotions] historical load failed", error?.code || "unknown")
+        if (!ignore) setShoppingItems([])
+      })
     return () => { ignore = true }
   }, [user?.id])
 
@@ -167,7 +175,10 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
     let ignore = false
     loadActiveRetailPromotions({ client: supabase })
       .then(rows => !ignore && setRetailPromotions(rows || []))
-      .catch(() => !ignore && setRetailPromotions([]))
+      .catch(error => {
+        if (import.meta.env.DEV) console.warn("[Shopping promotions] active promotions load failed", error?.code || "unknown")
+        if (!ignore) setRetailPromotions([])
+      })
     return () => { ignore = true }
   }, [])
 
@@ -189,6 +200,14 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
   const shareText = useMemo(() => buildShoppingListShareText({ title: snapshotTitle(txt), estimate }), [estimate, txt])
   const hasQueryWithoutResult = query.trim().length > 0 && suggestions.length === 0
 
+  useEffect(() => {
+    if (!import.meta.env.DEV) return
+    console.debug("[Shopping promotions]", buildShoppingPromotionDiagnostics({
+      items: estimate.items,
+      promotions: retailPromotions,
+    }))
+  }, [estimate, retailPromotions])
+
   function openPromotion(promotion) {
     if (!promotion || !onNavigate) return
     onNavigate(createAppSectionTarget("goodDeals", {
@@ -201,10 +220,17 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
     }))
   }
 
-  function addItem(name) {
-    const clean = String(name || query).trim()
-    if (!clean) return
-    setItems(prev => [...prev, { id: `${Date.now()}-${Math.random()}`, name: clean, checked: false }])
+  function addItem(value) {
+    const selectedItem = value && typeof value === "object"
+      ? buildShoppingListItemFromSuggestion(value)
+      : { name: String(value || query).trim() }
+    if (!selectedItem.name) return
+    const identifiedItem = resolveActiveRetailPromotionIdentity(selectedItem, retailPromotions)
+    setItems(prev => [...prev, {
+      ...identifiedItem,
+      id: `${Date.now()}-${Math.random()}`,
+      checked: false,
+    }])
     setQuery("")
   }
 
@@ -416,7 +442,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
             </button>
           </div>
         </div>
-        {suggestions.length > 0 && <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>{suggestions.map(s => <button key={s.normalizedName} type="button" onClick={() => addItem(s.label)} style={{ minHeight: 38, borderRadius: 999, border: `1px solid ${COLORS.cyan}55`, background: "rgba(35,211,214,.12)", color: COLORS.text }}>{s.label}</button>)}</div>}
+        {suggestions.length > 0 && <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>{suggestions.map(s => <button key={s.normalizedName} type="button" onClick={() => addItem(s)} style={{ minHeight: 38, borderRadius: 999, border: `1px solid ${COLORS.cyan}55`, background: "rgba(35,211,214,.12)", color: COLORS.text }}>{s.label}</button>)}</div>}
         {hasQueryWithoutResult && <div style={{ color: COLORS.muted, marginTop: 10 }}>{txt.noProduct}</div>}
         {pairing && <div style={{ color: COLORS.yellow, marginTop: 12, fontWeight: 900 }}>{pairing}</div>}
       </div>

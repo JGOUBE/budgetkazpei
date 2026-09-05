@@ -2,6 +2,8 @@ import {
   findActivePromotionsForShoppingItems,
   SHOPPING_PROMOTION_MATCH_STATUS,
 } from "../retail/shoppingPromotionMatching.js"
+import { normalizeProductName } from "../../features/shopping/services/normalizer.ts"
+import { extractComparablePackage } from "../savings/savingsEngine.ts"
 
 function moneyOrNull(value) {
   if (value === null || value === undefined || value === "") return null
@@ -32,6 +34,90 @@ function promotionSnapshot(promotion) {
     observedAt: promotion.observedAt || null,
     freshUntil: promotion.freshUntil || null,
     sourceUrl: promotion.sourceUrl || "",
+  }
+}
+
+function structuredIdentity(item = {}) {
+  return item.shopping_product_id || item.shoppingProductId || item.product_id ||
+    item.market_product_id || item.marketProductId || item.barcode
+}
+
+function promotionIdentityKey(promotion = {}) {
+  const productId = String(promotion.productId || "").trim()
+  const marketProductId = String(promotion.marketProductId || "").trim()
+  const barcode = String(promotion.barcode || "").trim()
+  return productId || marketProductId || barcode
+    ? `${productId}|${marketProductId}|${barcode}`
+    : ""
+}
+
+function hasKnownFormat(promotion = {}) {
+  return Boolean(
+    String(promotion.packageFormat || "").trim() ||
+    Number(promotion.quantityValue || 0) > 0 && String(promotion.quantityUnit || "").trim(),
+  )
+}
+
+function hasExplicitPackageConflict(item = {}, promotion = {}) {
+  const itemPackage = extractComparablePackage({
+    product_name: [item.name || item.product_name, item.package_format || item.packageFormat].filter(Boolean).join(" "),
+    quantity: item.quantity_value ?? item.quantityValue ?? item.quantity,
+    unit: item.quantity_unit ?? item.quantityUnit ?? item.unit,
+  })
+  if (itemPackage.family === "unknown") return false
+
+  const promotionPackage = extractComparablePackage({
+    product_name: [promotion.productName, promotion.packageFormat].filter(Boolean).join(" "),
+    quantity: promotion.quantityValue,
+    unit: promotion.quantityUnit,
+  })
+  return promotionPackage.family === "unknown" || itemPackage.signature !== promotionPackage.signature
+}
+
+export function resolveActiveRetailPromotionIdentity(item = {}, promotions = []) {
+  if (structuredIdentity(item)) return item
+
+  const itemName = normalizeProductName(item.name || item.product_name || "")
+  if (!itemName) return item
+
+  const exactPromotions = (Array.isArray(promotions) ? promotions : []).filter(promotion =>
+    promotion?.isActive === true &&
+    promotion?.promotionProven === true &&
+    hasKnownFormat(promotion) &&
+    !hasExplicitPackageConflict(item, promotion) &&
+    normalizeProductName(promotion.productName || "") === itemName,
+  )
+  const identities = new Set(exactPromotions.map(promotionIdentityKey).filter(Boolean))
+  if (identities.size !== 1) return item
+
+  const promotion = exactPromotions[0]
+  return {
+    ...item,
+    shopping_product_id: promotion.productId || null,
+    market_product_id: promotion.marketProductId || null,
+    barcode: promotion.barcode || null,
+    canonical_name: promotion.productName || item.name || "",
+    brand: promotion.brand || item.brand || null,
+    package_format: promotion.packageFormat || null,
+    quantity_value: promotion.quantityValue ?? null,
+    quantity_unit: promotion.quantityUnit || null,
+    pack_count: promotion.packCount ?? null,
+    normalized_product_name: itemName,
+    controlled_normalization: true,
+  }
+}
+
+export function buildShoppingPromotionDiagnostics({ items = [], promotions = [] } = {}) {
+  const rows = Array.isArray(items) ? items : []
+  const activePromotions = (Array.isArray(promotions) ? promotions : []).filter(promotion => promotion?.isActive)
+  return {
+    items: rows.length,
+    historicalIdentities: rows.filter(structuredIdentity).length,
+    activePromotions: activePromotions.length,
+    reliableMatches: rows.filter(item => item.promotionMatchStatus === SHOPPING_PROMOTION_MATCH_STATUS.RELIABLE).length,
+    suggestedMatches: rows.filter(item => item.promotionMatchStatus === SHOPPING_PROMOTION_MATCH_STATUS.SUGGESTED).length,
+    noMatches: rows.filter(item => item.promotionMatchStatus === SHOPPING_PROMOTION_MATCH_STATUS.NONE).length,
+    reliableSavings: roundedMoney(rows.reduce((sum, item) => sum + Math.max(0, moneyOrNull(item.reliableSaving) || 0), 0)),
   }
 }
 

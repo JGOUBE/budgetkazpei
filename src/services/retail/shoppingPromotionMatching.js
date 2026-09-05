@@ -72,9 +72,9 @@ function comparablePackageInput(item = {}) {
   return {
     ...item,
     product_name: label,
-    quantity: item.totalQuantityValue ?? item.quantityValue ?? item.quantity,
-    unit: item.totalQuantityUnit ?? item.quantityUnit ?? item.unit,
-    package_quantity: item.totalQuantityValue ?? item.quantityValue ?? item.package_quantity,
+    quantity: item.totalQuantityValue ?? item.total_quantity_value ?? item.quantityValue ?? item.quantity_value ?? item.quantity,
+    unit: item.totalQuantityUnit ?? item.total_quantity_unit ?? item.quantityUnit ?? item.quantity_unit ?? item.unit,
+    package_quantity: item.totalQuantityValue ?? item.total_quantity_value ?? item.quantityValue ?? item.quantity_value ?? item.package_quantity,
   }
 }
 

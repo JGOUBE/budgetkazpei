@@ -1,5 +1,5 @@
-import { buildTopProducts } from "../../features/shopping/services/priceHistory"
-import { normalizeProductName } from "../../features/shopping/services/normalizer"
+import { buildTopProducts } from "../../features/shopping/services/priceHistory.ts"
+import { normalizeProductName } from "../../features/shopping/services/normalizer.ts"
 
 const UNIT_WORDS = new Set(["g", "gr", "kg", "kgs", "ml", "cl", "l", "litre", "litres", "x", "xkg"])
 
@@ -74,8 +74,33 @@ export function getAutocompleteSuggestions(query = "", shoppingItems: any[] = []
     .slice(0, 6)
 }
 
+export function buildShoppingListItemFromSuggestion(suggestion: any = {}) {
+  const history = Array.isArray(suggestion.history) ? suggestion.history : []
+  const latest = history[0] || {}
+  const marketProductId = uniqueHistoryValue(history, ["market_product_id", "marketProductId"])
+  const shoppingProductId = uniqueHistoryValue(history, ["shopping_product_id", "shoppingProductId", "product_id"])
+  const barcode = uniqueHistoryValue(history, ["barcode"])
+
+  return {
+    name: String(suggestion.label || latest.product_name || "").trim(),
+    normalized_product_name: suggestion.normalizedName || latest.normalized_name || null,
+    shopping_product_id: shoppingProductId,
+    market_product_id: marketProductId,
+    barcode,
+    canonical_name: uniqueHistoryValue(history, ["market_canonical_name", "canonical_name"]),
+    brand: uniqueHistoryValue(history, ["market_brand", "brand"]),
+    package_format: uniqueHistoryValue(history, ["market_package_format", "package_format"]),
+    quantity: latest.quantity ?? null,
+    unit: latest.unit ?? null,
+    price_per_unit: latest.price_per_unit ?? null,
+    controlled_normalization: Boolean(shoppingProductId || marketProductId),
+  }
+}
+
 export function estimateShoppingList(items: any[] = [], shoppingItems: any[] = []) {
-  const products = buildTopProducts(shoppingItems, 80)
+  // Toute l'historique est déjà chargé en mémoire. Le limiter aux 80 produits
+  // les plus fréquents supprimait silencieusement les prix valides plus rares.
+  const products = buildTopProducts(shoppingItems, Number.MAX_SAFE_INTEGER)
 
   const rows = items.map(item => {
     const normalized = normalizeProductName(item.name)
