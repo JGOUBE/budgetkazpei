@@ -22,6 +22,7 @@ import {
   buildShoppingListItemFromSuggestion,
   estimateShoppingList,
   getAutocompleteSuggestions,
+  getShoppingAutocompleteSuggestions,
 } from "../src/services/shoppingList/shoppingListEngine.ts"
 
 const rootUrl = new URL("../", import.meta.url)
@@ -177,6 +178,74 @@ assert.equal(noodleBasket.items[0].promotionMatchStatus, SHOPPING_PROMOTION_MATC
 assert.equal(noodleBasket.items[0].historicalPrice, 0.74)
 assert.equal(noodleBasket.items[0].promotionPrice, 0.49)
 assert.equal(noodleBasket.items[0].reliableSaving, 0.25)
+
+// Autocomplétion multi-source A-H.
+const historicalOnlySuggestions = getShoppingAutocompleteSuggestions("Produit historique", knownHistory, [])
+assert.equal(historicalOnlySuggestions.historical.length, 1)
+assert.equal(historicalOnlySuggestions.historical[0].source, "history")
+assert.equal(historicalOnlySuggestions.historical[0].lastPrice, 2.4)
+assert.equal(historicalOnlySuggestions.retail.length, 0)
+
+const retailOnlySuggestions = getShoppingAutocompleteSuggestions(
+  "Nouilles instantanées saveur légumes",
+  [],
+  [noodlePromotion],
+)
+assert.equal(retailOnlySuggestions.historical.length, 0)
+assert.equal(retailOnlySuggestions.retail.length, 1)
+assert.equal(retailOnlySuggestions.retail[0].source, "retail")
+assert.equal(retailOnlySuggestions.retail[0].promoPrice, 0.49)
+const retailSelectedItem = buildShoppingListItemFromSuggestion(retailOnlySuggestions.retail[0])
+assert.equal(retailSelectedItem.shopping_product_id, "shopping-noodles-vegetables")
+assert.equal(retailSelectedItem.market_product_id, "market-noodles-vegetables")
+assert.equal(retailSelectedItem.package_format, "70 g")
+assert.equal(retailSelectedItem.quantity_value, 70)
+assert.equal(retailSelectedItem.quantity_unit, "g")
+assert.equal(retailSelectedItem.retailer_name, "Leader Price Réunion")
+const retailSelectedBasket = enrichShoppingBasketWithPromotions({
+  estimate: estimateShoppingList([retailSelectedItem], []),
+  promotions: [noodlePromotion],
+})
+assert.equal(retailSelectedBasket.items[0].promotionMatchStatus, SHOPPING_PROMOTION_MATCH_STATUS.RELIABLE)
+assert.equal(retailSelectedBasket.items[0].promotionPrice, 0.49)
+assert.equal(retailSelectedBasket.items[0].historicalPrice, null)
+assert.equal(retailSelectedBasket.items[0].reliableSaving, null)
+
+const mergedSuggestions = getShoppingAutocompleteSuggestions("Nouilles", noodleHistory, [noodlePromotion])
+assert.equal(mergedSuggestions.historical.length, 1)
+assert.deepEqual(mergedSuggestions.historical[0].sources, ["history", "retail"])
+assert.equal(mergedSuggestions.historical[0].activePromotion.id, "leader-noodles")
+assert.equal(mergedSuggestions.retail.length, 0)
+const mergedItem = buildShoppingListItemFromSuggestion(mergedSuggestions.historical[0])
+assert.equal(mergedItem.market_product_id, "market-noodles-vegetables")
+assert.equal(estimateShoppingList([mergedItem], noodleHistory).items[0].historicalPrice, 0.74)
+
+const unknownSuggestions = getShoppingAutocompleteSuggestions("Produit totalement inconnu XYZ", knownHistory, [noodlePromotion])
+assert.equal(unknownSuggestions.historical.length, 0)
+assert.equal(unknownSuggestions.retail.length, 0)
+
+const incompatibleFormatSuggestions = getShoppingAutocompleteSuggestions(
+  "Nouilles instantanées saveur légumes 80 g",
+  [],
+  [noodlePromotion],
+)
+assert.equal(incompatibleFormatSuggestions.retail.length, 0)
+
+const staleLeaderSuggestions = getShoppingAutocompleteSuggestions("Nouilles", [], [{ ...noodlePromotion, isActive: false }])
+assert.equal(staleLeaderSuggestions.retail.length, 0)
+const expiredCarrefourSuggestions = getShoppingAutocompleteSuggestions("Riz", [], [{
+  ...promotion(),
+  isActive: false,
+}])
+assert.equal(expiredCarrefourSuggestions.retail.length, 0)
+
+const bestRetailSuggestions = getShoppingAutocompleteSuggestions("Nouilles", [], [
+  { ...noodlePromotion, id: "leader-noodles-expensive", promoPrice: 0.59, storeName: "LP A" },
+  { ...noodlePromotion, id: "leader-noodles-cheapest", promoPrice: 0.39, storeName: "LP B" },
+])
+assert.equal(bestRetailSuggestions.retail.length, 1)
+assert.equal(bestRetailSuggestions.retail[0].promotion.id, "leader-noodles-cheapest")
+assert.equal(bestRetailSuggestions.retail[0].promoPrice, 0.39)
 
 // D. Même texte mais format explicitement différent : aucune économie fiable.
 const wrongNoodleIdentity = resolveActiveRetailPromotionIdentity(
@@ -448,8 +517,12 @@ const [page, hub, app, engine] = await Promise.all([
 ])
 assert.match(page, /loadActiveRetailPromotions\(\{ client: supabase \}\)/)
 assert.match(page, /includeProductIdentity: true/)
-assert.match(page, /onClick=\{\(\) => addItem\(s\)\}/)
+assert.match(page, /getShoppingAutocompleteSuggestions\(query, shoppingItems, retailPromotions\)/)
+assert.match(page, /onSelect=\{\(\) => addItem\(suggestion\)\}/)
 assert.doesNotMatch(page, /addItem\(s\.label\)/)
+assert.match(page, /data-shopping-suggestion-group="history"/)
+assert.match(page, /data-shopping-suggestion-group="retail"/)
+assert.match(page, /Promo actuelle/)
 assert.match(page, /console\.debug\("\[Shopping promotions\]"/)
 assert.match(page, /createAppSectionTarget\("goodDeals"/)
 assert.match(page, /Voir le bon plan/)

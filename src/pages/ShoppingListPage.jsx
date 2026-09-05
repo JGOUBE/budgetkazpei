@@ -8,7 +8,7 @@ import {
   buildShoppingListItemFromSuggestion,
   buildShoppingListShareText,
   estimateShoppingList,
-  getAutocompleteSuggestions,
+  getShoppingAutocompleteSuggestions,
   getPairingSuggestion,
 } from "../services/shoppingList/shoppingListEngine"
 import {
@@ -54,6 +54,10 @@ const COPY = {
     addPlaceholder: "Ajouter : pain, lait, beurre...",
     add: "Ajouter",
     share: "Partager",
+    habitualSuggestions: "Mes produits habituels",
+    currentPromotionSuggestions: "Promos actuelles",
+    lastKnownPrice: amount => `Dernier prix connu : ${amount}`,
+    promotionSuggestion: "Promo actuelle",
     noProduct: "Aucun produit trouvé. Appuyez sur Ajouter pour créer ce produit.",
     empty: "Ajoute un produit pour commencer.",
     priceMissing: "prix à estimer",
@@ -102,6 +106,10 @@ const COPY = {
     addPlaceholder: "Azout : pain, lait, beurre...",
     add: "Azouté",
     share: "Partaze",
+    habitualSuggestions: "Mes produits habituels",
+    currentPromotionSuggestions: "Bann promo actuelles",
+    lastKnownPrice: amount => `Dernier prix connu : ${amount}`,
+    promotionSuggestion: "Promo actuelle",
     noProduct: "Nana poin produit trouvé. Appuie su Azouté pou créer produit-la.",
     empty: "Azout in produit pou komansé.",
     priceMissing: "prix pou estimer",
@@ -141,6 +149,31 @@ function isKreolLanguage(language) {
 
 function snapshotTitle(txt) {
   return `${txt.snapshotTitle} - ${new Date().toLocaleDateString("fr-FR")}`
+}
+
+function AutocompleteSuggestion({ suggestion, txt, onSelect }) {
+  const promotion = suggestion.activePromotion || suggestion.promotion
+  const lastPrice = Number(suggestion.lastPrice || 0)
+  const promoPrice = Number(promotion?.promoPrice || suggestion.promoPrice || 0)
+  const retailer = String(promotion?.retailerName || suggestion.retailerName || "").trim()
+
+  return (
+    <button
+      data-shopping-suggestion-source={suggestion.source}
+      type="button"
+      onClick={onSelect}
+      style={{ minHeight: 54, borderRadius: 14, border: `1px solid ${COLORS.cyan}55`, background: "rgba(35,211,214,.12)", color: COLORS.text, padding: "8px 12px", textAlign: "left" }}
+    >
+      <span style={{ display: "block", fontWeight: 900 }}>{suggestion.label}</span>
+      {lastPrice > 0 && <span style={{ display: "block", color: COLORS.muted, fontSize: 12, marginTop: 2 }}>{txt.lastKnownPrice(formatMontant(lastPrice))}</span>}
+      {promotion && promoPrice > 0 && (
+        <>
+          <span style={{ display: "block", color: COLORS.green, fontSize: 12, fontWeight: 850, marginTop: 2 }}>{retailer ? `${retailer} · ` : ""}{formatMontant(promoPrice)}</span>
+          <span style={{ display: "block", color: COLORS.cyan, fontSize: 11, fontWeight: 900, marginTop: 2 }}>{txt.promotionSuggestion}</span>
+        </>
+      )}
+    </button>
+  )
 }
 
 export default function ShoppingListPage({ user, isMobile = false, onOpenReceipts, onNavigate, language = "fr" }) {
@@ -193,12 +226,15 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
     () => enrichShoppingBasketWithPromotions({ estimate: historicalEstimate, promotions: retailPromotions }),
     [historicalEstimate, retailPromotions],
   )
-  const suggestions = useMemo(() => getAutocompleteSuggestions(query, shoppingItems), [query, shoppingItems])
+  const suggestions = useMemo(
+    () => getShoppingAutocompleteSuggestions(query, shoppingItems, retailPromotions),
+    [query, shoppingItems, retailPromotions],
+  )
   const pairing = useMemo(() => getPairingSuggestion(items, shoppingItems), [items, shoppingItems])
   const foodReceiptCount = useMemo(() => new Set((shoppingItems || []).map(item => item.receipt_id).filter(Boolean)).size, [shoppingItems])
   const learningReady = foodReceiptCount >= 3
   const shareText = useMemo(() => buildShoppingListShareText({ title: snapshotTitle(txt), estimate }), [estimate, txt])
-  const hasQueryWithoutResult = query.trim().length > 0 && suggestions.length === 0
+  const hasQueryWithoutResult = query.trim().length > 0 && suggestions.historical.length === 0 && suggestions.retail.length === 0
 
   useEffect(() => {
     if (!import.meta.env.DEV) return
@@ -442,7 +478,22 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
             </button>
           </div>
         </div>
-        {suggestions.length > 0 && <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>{suggestions.map(s => <button key={s.normalizedName} type="button" onClick={() => addItem(s)} style={{ minHeight: 38, borderRadius: 999, border: `1px solid ${COLORS.cyan}55`, background: "rgba(35,211,214,.12)", color: COLORS.text }}>{s.label}</button>)}</div>}
+        {suggestions.historical.length > 0 && (
+          <div data-shopping-suggestion-group="history" style={{ marginTop: 12 }}>
+            <div style={{ color: COLORS.muted, fontSize: 11, fontWeight: 950, letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 6 }}>{txt.habitualSuggestions}</div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {suggestions.historical.map(suggestion => <AutocompleteSuggestion key={suggestion.key} suggestion={suggestion} txt={txt} onSelect={() => addItem(suggestion)} />)}
+            </div>
+          </div>
+        )}
+        {suggestions.retail.length > 0 && (
+          <div data-shopping-suggestion-group="retail" style={{ marginTop: 12 }}>
+            <div style={{ color: COLORS.muted, fontSize: 11, fontWeight: 950, letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 6 }}>{txt.currentPromotionSuggestions}</div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {suggestions.retail.map(suggestion => <AutocompleteSuggestion key={suggestion.key} suggestion={suggestion} txt={txt} onSelect={() => addItem(suggestion)} />)}
+            </div>
+          </div>
+        )}
         {hasQueryWithoutResult && <div style={{ color: COLORS.muted, marginTop: 10 }}>{txt.noProduct}</div>}
         {pairing && <div style={{ color: COLORS.yellow, marginTop: 12, fontWeight: 900 }}>{pairing}</div>}
       </div>

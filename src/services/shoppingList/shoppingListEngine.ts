@@ -1,5 +1,9 @@
 import { buildTopProducts } from "../../features/shopping/services/priceHistory.ts"
 import { normalizeProductName } from "../../features/shopping/services/normalizer.ts"
+import {
+  evaluatePromotionPackageCompatibility,
+  resolvePromotionIdentityMatch,
+} from "../retail/shoppingPromotionMatching.js"
 
 const UNIT_WORDS = new Set(["g", "gr", "kg", "kgs", "ml", "cl", "l", "litre", "litres", "x", "xkg"])
 
@@ -74,25 +78,173 @@ export function getAutocompleteSuggestions(query = "", shoppingItems: any[] = []
     .slice(0, 6)
 }
 
+function retailPromotionIdentityKey(promotion: any = {}) {
+  const productId = String(promotion.productId || "").trim()
+  const marketProductId = String(promotion.marketProductId || "").trim()
+  const barcode = String(promotion.barcode || "").trim()
+  if (productId) return `shopping:${productId}`
+  if (marketProductId) return `market:${marketProductId}`
+  if (/^\d{8,14}$/.test(barcode)) return `barcode:${barcode}`
+  return ""
+}
+
+function retailPromotionOrder(left: any = {}, right: any = {}) {
+  const leftPrice = money(left.promoPrice) || Number.POSITIVE_INFINITY
+  const rightPrice = money(right.promoPrice) || Number.POSITIVE_INFINITY
+  return leftPrice - rightPrice ||
+    (money(left.unitPrice) || Number.POSITIVE_INFINITY) - (money(right.unitPrice) || Number.POSITIVE_INFINITY) ||
+    Number(Boolean(right.isFeatured)) - Number(Boolean(left.isFeatured)) ||
+    String(right.observedAt || right.startsAt || "").localeCompare(String(left.observedAt || left.startsAt || ""))
+}
+
+function hasExplicitQueryPackageConflict(query = "", promotion: any = {}) {
+  const compatibility = evaluatePromotionPackageCompatibility(
+    { name: query },
+    promotion,
+  )
+  return compatibility.reason !== "package_identity_missing" && !compatibility.compatible
+}
+
+function historyPromotionCompatibility(suggestion: any = {}, promotion: any = {}) {
+  const item = buildShoppingListItemFromSuggestion(suggestion)
+  const identity = resolvePromotionIdentityMatch(item, promotion)
+  if (identity.conflict) return false
+
+  const itemBrand = normalizeProductName(item.brand || "")
+  const promotionBrand = normalizeProductName(promotion.brand || "")
+  if (itemBrand && promotionBrand && itemBrand !== promotionBrand) return false
+
+  const packages = evaluatePromotionPackageCompatibility(item, promotion)
+  if (!packages.compatible && packages.reason !== "package_identity_missing") return false
+  if (identity.matched) return true
+
+  return normalizeProductName(suggestion.label || "") === normalizeProductName(promotion.productName || "")
+}
+
+function retailSuggestion(promotion: any, suggestionScore: number) {
+  return {
+    key: `retail:${retailPromotionIdentityKey(promotion)}`,
+    source: "retail",
+    sources: ["retail"],
+    label: promotion.productName,
+    normalizedName: normalizeProductName(promotion.productName),
+    suggestionScore,
+    productId: promotion.productId || null,
+    shoppingProductId: promotion.productId || null,
+    marketProductId: promotion.marketProductId || null,
+    barcode: promotion.barcode || null,
+    brand: promotion.brand || null,
+    packageFormat: promotion.packageFormat || null,
+    quantityValue: promotion.quantityValue ?? null,
+    quantityUnit: promotion.quantityUnit || null,
+    packCount: promotion.packCount ?? null,
+    retailerSlug: promotion.retailerSlug || "",
+    retailerName: promotion.retailerName || "",
+    storeLocationId: promotion.storeLocationId || null,
+    storeName: promotion.storeName || "",
+    storeCity: promotion.storeCity || "",
+    promoPrice: money(promotion.promoPrice),
+    promotion,
+  }
+}
+
+export function getShoppingAutocompleteSuggestions(
+  query = "",
+  shoppingItems: any[] = [],
+  retailPromotions: any[] = [],
+) {
+  const historical = getAutocompleteSuggestions(query, shoppingItems)
+    .map(suggestion => ({ ...suggestion, key: `history:${suggestion.normalizedName}`, source: "history", sources: ["history"] }))
+  const bestPromotionByIdentity = new Map<string, any>()
+
+  for (const promotion of Array.isArray(retailPromotions) ? retailPromotions : []) {
+    if (promotion?.isActive !== true || promotion?.promotionProven !== true) continue
+    const identityKey = retailPromotionIdentityKey(promotion)
+    const score = getProductSuggestionScore(promotion.productName || "", query)
+    if (!identityKey || score < 0 || hasExplicitQueryPackageConflict(query, promotion)) continue
+    const current = bestPromotionByIdentity.get(identityKey)
+    if (!current || retailPromotionOrder(promotion, current.promotion) < 0) {
+      bestPromotionByIdentity.set(identityKey, { promotion, score })
+    }
+  }
+
+  const retail = [...bestPromotionByIdentity.values()]
+    .map(({ promotion, score }) => retailSuggestion(promotion, score))
+    .sort((left, right) =>
+      right.suggestionScore - left.suggestionScore ||
+      retailPromotionOrder(left.promotion, right.promotion) ||
+      String(left.label || "").localeCompare(String(right.label || ""), "fr"),
+    )
+
+  const mergedRetailKeys = new Set<string>()
+  const mergedHistorical = historical.map(suggestion => {
+    const compatible = retail.filter(candidate =>
+      historyPromotionCompatibility(suggestion, candidate.promotion),
+    )
+    const identityKeys = new Set(compatible.map(candidate => retailPromotionIdentityKey(candidate.promotion)))
+    if (identityKeys.size !== 1) return suggestion
+
+    const best = [...compatible].sort((left, right) => retailPromotionOrder(left.promotion, right.promotion))[0]
+    if (!best) return suggestion
+    mergedRetailKeys.add(retailPromotionIdentityKey(best.promotion))
+    return {
+      ...suggestion,
+      sources: ["history", "retail"],
+      activePromotion: best.promotion,
+      productId: best.productId,
+      shoppingProductId: best.shoppingProductId,
+      marketProductId: best.marketProductId,
+      barcode: suggestion.barcode || best.barcode,
+      brand: suggestion.brand || best.brand,
+      packageFormat: suggestion.packageFormat || best.packageFormat,
+      quantityValue: best.quantityValue,
+      quantityUnit: best.quantityUnit,
+      packCount: best.packCount,
+      retailerSlug: best.retailerSlug,
+      retailerName: best.retailerName,
+      storeLocationId: best.storeLocationId,
+      storeName: best.storeName,
+      storeCity: best.storeCity,
+      promoPrice: best.promoPrice,
+    }
+  })
+
+  return {
+    historical: mergedHistorical,
+    retail: retail.filter(suggestion => !mergedRetailKeys.has(retailPromotionIdentityKey(suggestion.promotion))).slice(0, 6),
+  }
+}
+
 export function buildShoppingListItemFromSuggestion(suggestion: any = {}) {
   const history = Array.isArray(suggestion.history) ? suggestion.history : []
   const latest = history[0] || {}
-  const marketProductId = uniqueHistoryValue(history, ["market_product_id", "marketProductId"])
-  const shoppingProductId = uniqueHistoryValue(history, ["shopping_product_id", "shoppingProductId", "product_id"])
-  const barcode = uniqueHistoryValue(history, ["barcode"])
+  const promotion = suggestion.activePromotion || suggestion.promotion || {}
+  const marketProductId = uniqueHistoryValue(history, ["market_product_id", "marketProductId"]) ||
+    suggestion.marketProductId || promotion.marketProductId || null
+  const shoppingProductId = uniqueHistoryValue(history, ["shopping_product_id", "shoppingProductId", "product_id"]) ||
+    suggestion.shoppingProductId || suggestion.productId || promotion.productId || null
+  const barcode = uniqueHistoryValue(history, ["barcode"]) || suggestion.barcode || promotion.barcode || null
 
   return {
-    name: String(suggestion.label || latest.product_name || "").trim(),
-    normalized_product_name: suggestion.normalizedName || latest.normalized_name || null,
+    name: String(suggestion.label || promotion.productName || latest.product_name || "").trim(),
+    normalized_product_name: suggestion.normalizedName || promotion.normalizedProductName || latest.normalized_name || null,
     shopping_product_id: shoppingProductId,
     market_product_id: marketProductId,
     barcode,
-    canonical_name: uniqueHistoryValue(history, ["market_canonical_name", "canonical_name"]),
-    brand: uniqueHistoryValue(history, ["market_brand", "brand"]),
-    package_format: uniqueHistoryValue(history, ["market_package_format", "package_format"]),
+    canonical_name: uniqueHistoryValue(history, ["market_canonical_name", "canonical_name"]) || promotion.productName || null,
+    brand: uniqueHistoryValue(history, ["market_brand", "brand"]) || suggestion.brand || promotion.brand || null,
+    package_format: uniqueHistoryValue(history, ["market_package_format", "package_format"]) || suggestion.packageFormat || promotion.packageFormat || null,
     quantity: latest.quantity ?? null,
     unit: latest.unit ?? null,
     price_per_unit: latest.price_per_unit ?? null,
+    quantity_value: suggestion.quantityValue ?? promotion.quantityValue ?? null,
+    quantity_unit: suggestion.quantityUnit || promotion.quantityUnit || null,
+    pack_count: suggestion.packCount ?? promotion.packCount ?? null,
+    retailer_slug: suggestion.retailerSlug || promotion.retailerSlug || "",
+    retailer_name: suggestion.retailerName || promotion.retailerName || "",
+    store_location_id: suggestion.storeLocationId || promotion.storeLocationId || null,
+    store_name: suggestion.storeName || promotion.storeName || "",
+    store_city: suggestion.storeCity || promotion.storeCity || "",
     controlled_normalization: Boolean(shoppingProductId || marketProductId),
   }
 }
