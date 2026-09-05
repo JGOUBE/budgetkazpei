@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { BkIcons } from "../components/icons-budgetkazpei"
 import { loadPublishedGoodDeals } from "../services/retail/retailPromotionService"
+import { resolveGoodDealsPromotionFocus } from "../services/appSectionNavigation"
 import { supabase } from "../services/supabase"
 import { createColorAliases } from "../styles/designSystem"
 import { useTheme } from "../styles/ThemeProvider"
@@ -965,7 +966,7 @@ function AreaExplorerDialog({
   )
 }
 
-function DealCard({ deal, isKreol }) {
+function DealCard({ deal, isKreol, highlighted = false }) {
   const pageTheme = getGoodDealsThemeStyles()
   const location = getDealLocation(deal)
   const locality = String(deal.locality || "").trim()
@@ -984,6 +985,8 @@ function DealCard({ deal, isKreol }) {
 
   return (
     <article
+      id={deal.id ? `good-deal-${deal.id}` : undefined}
+      data-good-deal-id={deal.id || undefined}
       className="good-deals-card"
       style={{
         ...pageTheme.cardHoverVars,
@@ -991,7 +994,7 @@ function DealCard({ deal, isKreol }) {
         border: `1px solid ${pageTheme.borderSubtle}`,
         borderRadius: 20,
         padding: 18,
-        boxShadow: pageTheme.cardShadow,
+        boxShadow: highlighted ? `0 0 0 3px ${COLORS.cyan}88, ${pageTheme.cardShadow}` : pageTheme.cardShadow,
         display: "flex",
         flexDirection: "column",
         gap: 13,
@@ -1787,6 +1790,7 @@ export default function GoodDealsPage({
   profile = {},
   isMobile,
   language = "fr",
+  navigationTarget = null,
 }) {
   useTheme()
   const pageTheme = getGoodDealsThemeStyles()
@@ -1803,6 +1807,12 @@ export default function GoodDealsPage({
   const [reloadKey, setReloadKey] = useState(0)
   const [selectedArea, setSelectedArea] = useState(null)
   const [showAreaExplorer, setShowAreaExplorer] = useState(false)
+  const [highlightedPromotionId, setHighlightedPromotionId] = useState("")
+
+  const promotionFocus = useMemo(
+    () => resolveGoodDealsPromotionFocus(deals, navigationTarget),
+    [deals, navigationTarget],
+  )
 
   const commune = String(profile?.commune || "").trim()
   const areaOptions = useMemo(() => buildAreaOptions(), [])
@@ -1862,21 +1872,49 @@ export default function GoodDealsPage({
     }
   }, [reloadKey])
 
+  useEffect(() => {
+    if (loading || error || promotionFocus.mode === "normal") return undefined
+
+    const focusTimer = window.setTimeout(() => {
+      if (promotionFocus.mode === "fallback") {
+        setActiveCategory("all")
+        setShoppingProductCategory("all")
+        setShoppingSearch("")
+        setHighlightedPromotionId("")
+        return
+      }
+
+      setActiveCategory("shopping")
+      setShoppingView("product_promotion")
+      setShoppingProductCategory("all")
+      setShoppingSearch("")
+      setHighlightedPromotionId(promotionFocus.promotionId)
+    }, 0)
+
+    return () => window.clearTimeout(focusTimer)
+  }, [error, loading, promotionFocus.mode, promotionFocus.promotionId])
+
   const geographicallyVisibleDeals = useMemo(() => {
     return (deals || [])
       .filter(deal => deal?.is_active !== false)
-      .map(deal => ({
-        ...deal,
-        normalized_category: normalizeCategory(deal.category),
-        content_kind_resolved: getDealContentKind(deal),
-        match: getDealMatch(deal, {
+      .map(deal => {
+        const match = getDealMatch(deal, {
           ...activeArea,
           commune: activeCommune,
           microRegion: activeMicroRegion,
-        }),
-      }))
+        })
+        const isFocusedPromotion = promotionFocus.mode === "promotion" && promotionFocus.promotionId === String(deal.id || "")
+        return {
+          ...deal,
+          normalized_category: normalizeCategory(deal.category),
+          content_kind_resolved: getDealContentKind(deal),
+          match: isFocusedPromotion && !match.visible
+            ? { ...match, visible: true, rank: -1, group: "other" }
+            : match,
+        }
+      })
       .filter(deal => deal.match.visible)
-  }, [activeArea, activeCommune, activeMicroRegion, deals])
+  }, [activeArea, activeCommune, activeMicroRegion, deals, promotionFocus.mode, promotionFocus.promotionId])
 
   const leisureCounts = useMemo(() => {
     return geographicallyVisibleDeals
@@ -1991,6 +2029,19 @@ export default function GoodDealsPage({
     shoppingSearch,
     shoppingView,
   ])
+
+  useEffect(() => {
+    if (!highlightedPromotionId || !visibleDeals.some(deal => String(deal.id || "") === highlightedPromotionId)) return
+
+    const scrollTimer = window.setTimeout(() => {
+      document.getElementById(`good-deal-${highlightedPromotionId}`)?.scrollIntoView({ behavior: "smooth", block: "center" })
+    }, 0)
+    const clearTimer = window.setTimeout(() => setHighlightedPromotionId(""), 2600)
+    return () => {
+      window.clearTimeout(scrollTimer)
+      window.clearTimeout(clearTimer)
+    }
+  }, [highlightedPromotionId, visibleDeals])
 
   const groupedDeals = useMemo(() => {
     const groups = []
@@ -2223,7 +2274,12 @@ export default function GoodDealsPage({
             </div>
             <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, minmax(0, 1fr))", gap: 14 }}>
               {items.map(deal => (
-                <DealCard key={deal.id || `${deal.title}-${getDealLocation(deal)}`} deal={deal} isKreol={isKreol} />
+                <DealCard
+                  key={deal.id || `${deal.title}-${getDealLocation(deal)}`}
+                  deal={deal}
+                  isKreol={isKreol}
+                  highlighted={String(deal.id || "") === highlightedPromotionId}
+                />
               ))}
             </div>
           </div>

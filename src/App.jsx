@@ -194,6 +194,9 @@ function BudgetKazPeiApp({
   const initialSectionTarget = resolveAppSectionTarget(initialAppSection)
   const [activeNav, setActiveNav] = useState(initialSectionTarget.section)
   const [shoppingTab, setShoppingTab] = useState(initialSectionTarget.shoppingTab || "overview")
+  const [goodDealsNavigationTarget, setGoodDealsNavigationTarget] = useState(
+    initialSectionTarget.context ? { ...initialSectionTarget.context, goodDealsView: initialSectionTarget.goodDealsView } : null,
+  )
   const [showModal, setShowModal] = useState(false)
   const [showSidebar, setShowSidebar] = useState(false)
   const [editingTransaction, setEditingTransaction] = useState(null)
@@ -411,6 +414,13 @@ function BudgetKazPeiApp({
           ? "Analyse mon budget et mes dépenses à partir de mes données BudgetKazPéi."
           : "Analiz mon bidzé ek mon bann dépans ek done BudgetKazPéi.",
       }))
+    }
+    if (normalizedNav === "goodDeals") {
+      setGoodDealsNavigationTarget(target.context
+        ? { ...target.context, goodDealsView: target.goodDealsView || "product_promotion" }
+        : null)
+    } else {
+      setGoodDealsNavigationTarget(null)
     }
 
     setActiveNav(normalizedNav)
@@ -886,6 +896,7 @@ function BudgetKazPeiApp({
             profile={profile}
             isMobile={isMobile}
             language={lang}
+            navigationTarget={goodDealsNavigationTarget}
           />
         )}
 

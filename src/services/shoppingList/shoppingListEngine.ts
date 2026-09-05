@@ -337,6 +337,9 @@ export function buildShoppingListShareText({ title = "Liste de courses BudgetKaz
   const missing = Number(estimate?.missingPriceCount || 0)
   const reliableSavings = money(estimate?.reliableSavingsTotal)
   const optimized = money(estimate?.optimizedBasketEstimate)
+  const usesReliablePromotionPrice = rows.some((item: any) =>
+    item.estimatedPriceSource === "promotion" && money(item.estimatedLineCost ?? item.estimatedPrice) > 0,
+  )
   const promotionSummary = reliableSavings > 0
     ? [
         `Promos fiables repérées : -${formatMoneyFr(reliableSavings)}`,
@@ -354,7 +357,9 @@ export function buildShoppingListShareText({ title = "Liste de courses BudgetKaz
     `Produits : ${rows.length}`,
     `Prix manquants : ${missing}`,
     "",
-    "Prix basés sur mes tickets BudgetKazPéi déjà scannés.",
+    usesReliablePromotionPrice
+      ? "Estimation basée sur mes tickets BudgetKazPéi et les promos fiables actuellement repérées."
+      : "Prix basés sur mes tickets BudgetKazPéi déjà scannés.",
   ].join("\n")
 }
 

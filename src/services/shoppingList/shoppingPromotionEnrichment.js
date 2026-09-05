@@ -34,6 +34,9 @@ function promotionSnapshot(promotion) {
     observedAt: promotion.observedAt || null,
     freshUntil: promotion.freshUntil || null,
     sourceUrl: promotion.sourceUrl || "",
+    catalogId: promotion.catalogId || null,
+    retailerSlug: promotion.retailerSlug || "",
+    sourceType: promotion.sourceType || "",
   }
 }
 
@@ -126,15 +129,36 @@ export function enrichShoppingBasketWithPromotions({ estimate = {}, promotions =
   const matches = findActivePromotionsForShoppingItems(estimateItems, promotions)
   const items = estimateItems.map((item, index) => {
     const match = matches[index]
+    const historicalPrice = moneyOrNull(item.historicalPrice)
+    const promotionPrice = moneyOrNull(match?.promotion?.promoPrice)
+    const reliablePromotion = match?.matchStatus === SHOPPING_PROMOTION_MATCH_STATUS.RELIABLE && promotionPrice !== null && promotionPrice > 0
+    const reliableSaving = match?.reliableSaving ?? null
+    const estimatedLineCost = reliablePromotion
+      ? historicalPrice !== null && historicalPrice > 0
+        ? Math.max(0, roundedMoney(historicalPrice - Math.max(0, moneyOrNull(reliableSaving) || 0)))
+        : promotionPrice
+      : historicalPrice !== null && historicalPrice > 0
+        ? historicalPrice
+        : null
+
     return {
       ...item,
+      historicalPrice,
       promotionMatchStatus: match?.matchStatus || SHOPPING_PROMOTION_MATCH_STATUS.NONE,
       promotion: match?.promotion || null,
-      promotionPrice: moneyOrNull(match?.promotion?.promoPrice),
+      promotionPrice,
       promotionAlternatives: match?.alternatives || [],
       promotionSuggestions: match?.suggestions || [],
       possibleSaving: match?.possibleSaving ?? null,
-      reliableSaving: match?.reliableSaving ?? null,
+      reliableSaving,
+      currentKnownPrice: estimatedLineCost,
+      estimatedLineCost,
+      estimatedPrice: estimatedLineCost,
+      estimatedPriceSource: reliablePromotion && (historicalPrice === null || Number(reliableSaving || 0) > 0)
+        ? "promotion"
+        : estimatedLineCost !== null
+          ? "historical"
+          : "missing",
     }
   })
 
@@ -146,18 +170,29 @@ export function enrichShoppingBasketWithPromotions({ estimate = {}, promotions =
       return total + (saving !== null && saving > 0 ? saving : 0)
     }, 0)),
   )
-  const optimizedBasketEstimate = Math.max(
+  const reliablePromotionOnlyTotal = roundedMoney(items.reduce((total, item) => {
+    if (item.historicalPrice !== null || item.promotionMatchStatus !== SHOPPING_PROMOTION_MATCH_STATUS.RELIABLE) return total
+    return total + Math.max(0, moneyOrNull(item.promotionPrice) || 0)
+  }, 0))
+  const currentBasketEstimate = Math.max(
     0,
-    roundedMoney(historicalBasketEstimate - reliableSavingsTotal),
+    roundedMoney(historicalBasketEstimate - reliableSavingsTotal + reliablePromotionOnlyTotal),
   )
+  const missingPriceCount = items.filter(item => item.estimatedLineCost === null).length
 
   return {
     ...estimate,
     items,
     enrichedItems: items,
+    total: currentBasketEstimate,
+    min: currentBasketEstimate * 0.92,
+    max: currentBasketEstimate * 1.08,
+    missingPriceCount,
+    historicalPriceMissingCount: items.filter(item => item.historicalPrice === null).length,
+    promotionPricedItemCount: items.filter(item => item.estimatedPriceSource === "promotion").length,
     historicalBasketEstimate,
     reliableSavingsTotal,
-    optimizedBasketEstimate,
+    optimizedBasketEstimate: currentBasketEstimate,
   }
 }
 

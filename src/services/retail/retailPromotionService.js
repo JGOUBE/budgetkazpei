@@ -79,6 +79,35 @@ function isMissingViewError(error) {
     (message.includes("published_retail_promotions") && message.includes("not"))
 }
 
+function safeHttpUrl(value) {
+  try {
+    const parsed = new URL(String(value || "").trim())
+    return ["http:", "https:"].includes(parsed.protocol) ? parsed.href : ""
+  } catch {
+    return ""
+  }
+}
+
+export function resolveRetailPromotionDestination(promotion = {}) {
+  const sourceUrl = safeHttpUrl(promotion.sourceUrl ?? promotion.source_url)
+  const catalogId = promotion.catalogId ?? promotion.catalog_id ?? null
+  const promotionId = promotion.id || null
+
+  if (sourceUrl) {
+    return {
+      kind: catalogId ? "external_catalog" : "external_offer",
+      url: sourceUrl,
+      promotionId,
+    }
+  }
+
+  if (promotionId) {
+    return { kind: "internal_promotion", url: "", promotionId }
+  }
+
+  return { kind: "generic_good_deals", url: "", promotionId: null }
+}
+
 export function sanitizeRetailMarketingText(value) {
   const text = String(value || "").trim()
   if (!text) return ""

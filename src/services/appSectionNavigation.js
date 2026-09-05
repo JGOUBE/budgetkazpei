@@ -50,6 +50,16 @@ export function createAppSectionTarget(section, options = {}) {
   return resolveAppSectionTarget({ section, ...options })
 }
 
+export function resolveGoodDealsPromotionFocus(deals = [], context = null) {
+  const promotionId = String(context?.promotionId || "").trim()
+  if (!promotionId) return { mode: "normal", promotionId: "", deal: null }
+
+  const deal = (Array.isArray(deals) ? deals : []).find(item => String(item?.id || "") === promotionId) || null
+  return deal
+    ? { mode: "promotion", promotionId, deal }
+    : { mode: "fallback", promotionId, deal: null }
+}
+
 export function requestAppSectionNavigation(target, eventTarget = globalThis?.window) {
   if (!eventTarget?.dispatchEvent || typeof CustomEvent !== "function") return false
   eventTarget.dispatchEvent(new CustomEvent(APP_SECTION_NAVIGATION_EVENT, {

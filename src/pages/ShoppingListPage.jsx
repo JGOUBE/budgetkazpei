@@ -3,7 +3,7 @@ import { Copy, ExternalLink, Eye, Mail, MessageCircle, Save, ScanLine, Send, Sha
 import { listShoppingItems } from "../features/shopping/services/shoppingEngine"
 import { supabase } from "../services/supabase"
 import { createAppSectionTarget } from "../services/appSectionNavigation"
-import { loadActiveRetailPromotions } from "../services/retail/retailPromotionService"
+import { loadActiveRetailPromotions, resolveRetailPromotionDestination } from "../services/retail/retailPromotionService"
 import {
   buildShoppingListItemFromSuggestion,
   buildShoppingListShareText,
@@ -48,6 +48,8 @@ const COPY = {
     estimate: "Estimation",
     basketRange: (min, max) => `Ce panier coûte généralement ${min} à ${max}.`,
     priceInfo: "Les prix affichés sont basés sur vos tickets déjà scannés. Ils deviendront plus précis au fur et à mesure de vos prochains achats.",
+    mixedBasketInfo: "Estimation basée sur vos derniers prix connus et les promos fiables actuellement repérées.",
+    mixedPriceInfo: "Les produits sans prix habituel ni promo fiable restent à estimer.",
     learningCardTitle: "Vos Courses intelligentes s'améliorent avec le temps",
     learningCardText: "Plus vous scannez de tickets alimentaires, plus BudgetKazPéi reconnaît vos produits, retrouve vos derniers prix et estime votre panier avec précision.",
     scan: "Scanner",
@@ -66,10 +68,13 @@ const COPY = {
     optimizedBudget: "Budget optimisé estimé",
     optimizedInfo: "Calculé uniquement avec les offres dont le produit et le format correspondent de façon fiable.",
     currentPromotion: "Promo actuelle repérée",
+    usualPriceLearning: "Prix habituel à apprendre",
     nearbyOffer: "Offre proche trouvée",
     verifyOffer: "Vérifiez le produit et le format avant d'en tenir compte.",
     potentialSaving: amount => `Économie potentielle : ${amount}`,
     seeDeal: "Voir le bon plan",
+    seeOffer: "Voir l’offre",
+    seeCatalog: "Voir le catalogue",
     savedLists: "Mes listes sauvegardées",
     savedListsText: "Les listes partagées ou copiées restent disponibles 7 jours.",
     noSavedLists: "Aucune liste sauvegardée pour le moment.",
@@ -100,6 +105,8 @@ const COPY = {
     estimate: "Estimasyon",
     basketRange: (min, max) => `Sa panié-la i kout généralement ${min} à ${max}.`,
     priceInfo: "Bann prix affiché i vien de out tiké déjà scanné. Zot va devnir pli précis au fil de out prochain achats.",
+    mixedBasketInfo: "Estimasyon i sèvi out derniers prix connus ek bann promo fiables nou la trouvé.",
+    mixedPriceInfo: "Bann produits san prix habituel ni promo fiable i reste pou estimer.",
     learningCardTitle: "Out Courses intelligentes i améliore ek le temps",
     learningCardText: "Plus ou scan bann tiké manzé, plus BudgetKazPéi i rekonèt out produits, retrouv out derniers prix ek estim out panié correctement.",
     scan: "Scanner",
@@ -118,10 +125,13 @@ const COPY = {
     optimizedBudget: "Bidjé courses optimisé estimé",
     optimizedInfo: "Kalkilé sèlman ek bann offres kot produit ek format lé reconnèt de fason fiable.",
     currentPromotion: "Promo actuelle trouvée",
+    usualPriceLearning: "Prix habituel pou aprann",
     nearbyOffer: "In offre proche lé trouvée",
     verifyOffer: "Vérifie produit-la ek son format avan pran li en compte.",
     potentialSaving: amount => `Lékonomi possible : ${amount}`,
     seeDeal: "Voir le bon plan",
+    seeOffer: "Voir l’offre",
+    seeCatalog: "Voir le catalogue",
     savedLists: "Mes lis sauvegardées",
     savedListsText: "Bann lis partagées ou copiées i reste disponible 7 jours.",
     noSavedLists: "Nana poin lis sauvegardée pou linstan.",
@@ -245,14 +255,20 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
   }, [estimate, retailPromotions])
 
   function openPromotion(promotion) {
-    if (!promotion || !onNavigate) return
+    if (!promotion) return
+    const destination = resolveRetailPromotionDestination(promotion)
+    if (destination.kind === "external_catalog" || destination.kind === "external_offer") {
+      window.open(destination.url, "_blank", "noopener,noreferrer")
+      return
+    }
+    if (!onNavigate) return
     onNavigate(createAppSectionTarget("goodDeals", {
       goodDealsView: "product_promotion",
-      context: {
+      context: destination.kind === "internal_promotion" ? {
         source: "shopping-list",
-        promotionId: promotion.id,
+        promotionId: destination.promotionId,
         productId: promotion.productId,
-      },
+      } : undefined,
     }))
   }
 
@@ -414,12 +430,12 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
       <div style={card({ padding: isMobile ? 18 : 24 })}>
         <div style={{ color: COLORS.cyan, fontSize: 13, fontWeight: 950 }}>{txt.smartLabel}</div>
         <h2 style={{ color: COLORS.text, margin: "8px 0", fontFamily: "'DM Serif Display', serif", fontSize: isMobile ? 34 : 42, fontWeight: 400 }}>{txt.title}</h2>
-        {foodReceiptCount === 0 ? (
+        {foodReceiptCount === 0 && estimate.total <= 0 ? (
           <>
             <div style={{ color: COLORS.yellow, fontSize: 22, fontWeight: 950 }}>{txt.learningTitle}</div>
             <div style={{ color: COLORS.muted, marginTop: 6 }}>{txt.learningText}</div>
           </>
-        ) : !learningReady ? (
+        ) : !learningReady && estimate.total <= 0 ? (
           <>
             <div style={{ color: COLORS.yellow, fontSize: 22, fontWeight: 950 }}>{txt.moreDataTitle}</div>
             <div style={{ color: COLORS.muted, marginTop: 6 }}>{txt.moreDataText}</div>
@@ -427,7 +443,11 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
         ) : (
           <>
             <div style={{ color: COLORS.green, fontSize: 28, fontWeight: 950 }}>{txt.estimate} : {formatMontant(estimate.total)}</div>
-            <div style={{ color: COLORS.muted, marginTop: 6 }}>{txt.basketRange(formatMontant(estimate.min), formatMontant(estimate.max))}</div>
+            <div style={{ color: COLORS.muted, marginTop: 6 }}>
+              {estimate.promotionPricedItemCount > 0
+                ? txt.mixedBasketInfo
+                : txt.basketRange(formatMontant(estimate.min), formatMontant(estimate.max))}
+            </div>
             {estimate.reliableSavingsTotal > 0 && (
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, minmax(0, 1fr))", gap: 8, marginTop: 16 }}>
                 <SummaryAmount label={txt.historicalBudget} value={estimate.historicalBasketEstimate} color={COLORS.text} />
@@ -438,7 +458,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
           </>
         )}
         <div style={{ color: COLORS.muted, marginTop: 10, lineHeight: 1.5 }}>
-          {txt.priceInfo}
+          {estimate.promotionPricedItemCount > 0 ? txt.mixedPriceInfo : txt.priceInfo}
         </div>
         {learningReady && estimate.reliableSavingsTotal > 0 && (
           <div style={{ color: COLORS.muted, marginTop: 6, fontSize: 12, lineHeight: 1.45 }}>{txt.optimizedInfo}</div>
@@ -499,14 +519,16 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
       </div>
 
       <div style={card()}>
-        {estimate.items.length === 0 ? <div style={{ color: COLORS.muted }}>{txt.empty}</div> : estimate.items.map(item => (
-          <div key={item.id} style={{ display: "grid", gridTemplateColumns: "auto minmax(0, 1fr) auto", gap: 10, alignItems: "start", color: COLORS.text, borderBottom: `1px solid ${COLORS.borderSubtle}`, padding: "12px 0" }}>
+        {estimate.items.length === 0 ? <div style={{ color: COLORS.muted }}>{txt.empty}</div> : estimate.items.map(item => {
+          const displayedPrice = Number(item.estimatedLineCost || 0)
+          const priceLearning = item.historicalPrice === null && item.estimatedPriceSource === "promotion"
+          return <div key={item.id} style={{ display: "grid", gridTemplateColumns: "auto minmax(0, 1fr) auto", gap: 10, alignItems: "start", color: COLORS.text, borderBottom: `1px solid ${COLORS.borderSubtle}`, padding: "12px 0" }}>
             <input aria-label={item.name} type="checkbox" checked={item.checked} onChange={e => setItems(prev => prev.map(row => row.id === item.id ? { ...row, checked: e.target.checked } : row))} style={{ marginTop: 4 }} />
             <div style={{ minWidth: 0 }}>
               <span style={{ textDecoration: item.checked ? "line-through" : "none" }}>
                 {item.name}
                 <span style={{ display: "block", color: COLORS.muted, fontSize: 12, marginTop: 2 }}>
-                  {item.priceSource === "known" ? item.priceLabel : txt.priceMissing}
+                  {priceLearning ? txt.usualPriceLearning : item.historicalPrice !== null ? item.priceLabel : txt.priceMissing}
                 </span>
               </span>
               {item.promotionMatchStatus === "reliable" && item.promotion && (
@@ -516,11 +538,11 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
                 <PromotionHint item={item} txt={txt} onOpen={() => openPromotion(item.promotion)} />
               )}
             </div>
-            <strong style={{ color: item.estimatedPrice ? COLORS.green : COLORS.muted, whiteSpace: "nowrap" }}>
-              {item.estimatedPrice ? formatMontant(item.estimatedPrice) : txt.priceMissing}
+            <strong style={{ color: displayedPrice ? COLORS.green : COLORS.muted, whiteSpace: "nowrap" }}>
+              {displayedPrice ? formatMontant(displayedPrice) : txt.priceMissing}
             </strong>
           </div>
-        ))}
+        })}
       </div>
 
       <div style={card()}>
@@ -614,6 +636,12 @@ function PromotionHint({ item, txt, onOpen, reliable = false }) {
   const promotion = item.promotion
   const saving = reliable ? item.reliableSaving : item.possibleSaving
   const store = [promotion.retailerName, promotion.storeName || promotion.storeCity].filter(Boolean).join(" · ")
+  const destination = resolveRetailPromotionDestination(promotion)
+  const actionLabel = destination.kind === "external_catalog"
+    ? txt.seeCatalog
+    : destination.kind === "external_offer"
+      ? txt.seeOffer
+      : txt.seeDeal
   return (
     <div style={{ marginTop: 8, borderRadius: 12, padding: 10, background: reliable ? "rgba(34,197,94,.10)" : "rgba(245,158,11,.10)", border: `1px solid ${reliable ? `${COLORS.green}55` : `${COLORS.yellow}55`}` }}>
       <div style={{ display: "flex", alignItems: "center", gap: 6, color: reliable ? COLORS.green : COLORS.yellow, fontSize: 13, fontWeight: 950 }}>
@@ -629,7 +657,7 @@ function PromotionHint({ item, txt, onOpen, reliable = false }) {
         </div>
       )}
       <button type="button" onClick={onOpen} style={{ minHeight: 38, marginTop: 8, borderRadius: 11, border: `1px solid ${COLORS.cyan}66`, background: COLORS.card, color: COLORS.text, fontWeight: 900, padding: "0 11px", display: "inline-flex", alignItems: "center", gap: 6 }}>
-        {txt.seeDeal} <ExternalLink size={14} aria-hidden="true" />
+        {actionLabel} <ExternalLink size={14} aria-hidden="true" />
       </button>
     </div>
   )

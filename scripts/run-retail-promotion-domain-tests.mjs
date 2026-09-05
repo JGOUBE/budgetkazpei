@@ -9,6 +9,7 @@ import {
   formatRetailPrice,
   isRetailPromotionEligible,
   loadPublishedGoodDeals,
+  resolveRetailPromotionDestination,
   sanitizeRetailMarketingText,
   toRetailPromotionViewModel,
 } from "../src/services/retail/retailPromotionService.js"
@@ -19,6 +20,7 @@ import {
 import { buildBudgetAdvisorContext } from "../src/services/ai/budgetAdvisorContext.js"
 import {
   createAppSectionTarget,
+  resolveGoodDealsPromotionFocus,
   resolveAppSectionTarget,
 } from "../src/services/appSectionNavigation.js"
 
@@ -100,6 +102,31 @@ const leader = toRetailPromotionViewModel(observedPromotion(), { now })
 assert.equal(leader.startsAt, null)
 assert.equal(leader.endsAt, null)
 assert.equal(leader.isFresh, true)
+
+// Navigation F-J : URL officielle d'abord, puis promotion interne exacte,
+// avec fallback générique si la cible n'existe plus.
+const carrefourDestination = resolveRetailPromotionDestination(toRetailPromotionViewModel(officialPromotion({
+  source_url: "https://www.carrefour-reunion.com/catalogues/carrefour-market",
+}), { now }))
+assert.deepEqual(carrefourDestination, {
+  kind: "external_catalog",
+  url: "https://www.carrefour-reunion.com/catalogues/carrefour-market",
+  promotionId: "official-1",
+})
+const leaderDestination = resolveRetailPromotionDestination(toRetailPromotionViewModel(observedPromotion({
+  source_url: "https://leaderdrive.re/leaderprice-lp-ermitage/promotions",
+}), { now }))
+assert.equal(leaderDestination.kind, "external_offer")
+assert.equal(leaderDestination.url, "https://leaderdrive.re/leaderprice-lp-ermitage/promotions")
+assert.deepEqual(resolveRetailPromotionDestination({ id: "promotion-internal", sourceUrl: "javascript:alert(1)" }), {
+  kind: "internal_promotion",
+  url: "",
+  promotionId: "promotion-internal",
+})
+assert.equal(resolveRetailPromotionDestination({}).kind, "generic_good_deals")
+assert.equal(resolveGoodDealsPromotionFocus([{ id: "promotion-internal" }], { promotionId: "promotion-internal" }).mode, "promotion")
+assert.equal(resolveGoodDealsPromotionFocus([], { promotionId: "missing" }).mode, "fallback")
+assert.equal(resolveGoodDealsPromotionFocus([], null).mode, "normal")
 
 // Formatage et étanchéité des libellés techniques.
 assert.equal(formatRetailPrice(0.49), "0,49 €")

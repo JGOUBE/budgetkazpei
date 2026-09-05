@@ -271,6 +271,55 @@ const noodleWithoutHistory = enrichShoppingBasketWithPromotions({
 assert.equal(noodleWithoutHistory.items[0].promotionMatchStatus, SHOPPING_PROMOTION_MATCH_STATUS.RELIABLE)
 assert.equal(noodleWithoutHistory.items[0].historicalPrice, null)
 assert.equal(noodleWithoutHistory.items[0].reliableSaving, null)
+assert.equal(noodleWithoutHistory.items[0].promotionPrice, 0.49)
+assert.equal(noodleWithoutHistory.items[0].estimatedLineCost, 0.49)
+assert.equal(noodleWithoutHistory.items[0].estimatedPrice, 0.49)
+assert.equal(noodleWithoutHistory.items[0].estimatedPriceSource, "promotion")
+assert.equal(noodleWithoutHistory.total, 0.49)
+assert.equal(noodleWithoutHistory.missingPriceCount, 0)
+
+// Prix A-E : historique et promotion restent distincts, seule une promotion
+// fiable peut alimenter le coût courant sans inventer d'économie personnelle.
+const historicalOnlyBasket = enrichShoppingBasketWithPromotions({
+  estimate: { items: [{ id: "history-only", name: "Produit A", historicalPrice: 1.5, estimatedPrice: 1.5 }], total: 1.5 },
+  promotions: [],
+})
+assert.equal(historicalOnlyBasket.items[0].estimatedLineCost, 1.5)
+assert.equal(historicalOnlyBasket.items[0].estimatedPriceSource, "historical")
+
+const discountedBasket = enrichShoppingBasketWithPromotions({
+  estimate: { items: [shoppingItem({ historicalPrice: 1.5, estimatedPrice: 1.5 })], total: 1.5 },
+  promotions: [promotion({ promoPrice: 1.2, originalPrice: 1.5 })],
+})
+assert.equal(discountedBasket.items[0].historicalPrice, 1.5)
+assert.equal(discountedBasket.items[0].promotionPrice, 1.2)
+assert.equal(discountedBasket.items[0].estimatedLineCost, 1.2)
+assert.equal(discountedBasket.items[0].reliableSaving, 0.3)
+assert.equal(discountedBasket.total, 1.2)
+
+const unknownPriceBasket = enrichShoppingBasketWithPromotions({
+  estimate: { items: [{ id: "unknown", name: "Produit inconnu", historicalPrice: null, estimatedPrice: null }], total: 0 },
+  promotions: [],
+})
+assert.equal(unknownPriceBasket.items[0].estimatedLineCost, null)
+assert.equal(unknownPriceBasket.missingPriceCount, 1)
+
+const suggestedOnlyBasket = enrichShoppingBasketWithPromotions({
+  estimate: {
+    items: [{
+      id: "suggested-only",
+      name: "Riz basmati bio 1 kg",
+      historicalPrice: null,
+      estimatedPrice: null,
+      controlled_normalization: false,
+    }],
+    total: 0,
+  },
+  promotions: [promotion({ productId: null, marketProductId: null, barcode: null, controlledNormalization: false })],
+})
+assert.equal(suggestedOnlyBasket.items[0].promotionMatchStatus, SHOPPING_PROMOTION_MATCH_STATUS.SUGGESTED)
+assert.equal(suggestedOnlyBasket.items[0].estimatedLineCost, null)
+assert.equal(suggestedOnlyBasket.total, 0)
 
 // Les cinq preuves autorisées peuvent produire un rapprochement fiable.
 assert.equal(onlyMatch().matchStatus, SHOPPING_PROMOTION_MATCH_STATUS.RELIABLE)
@@ -509,11 +558,12 @@ const expired = toRetailPromotionViewModel({
 assert.equal(expired.isActive, false)
 assert.equal(findActivePromotionsForShoppingItems([shoppingItem()], [expired])[0].matchStatus, SHOPPING_PROMOTION_MATCH_STATUS.NONE)
 
-const [page, hub, app, engine] = await Promise.all([
+const [page, hub, app, engine, goodDeals] = await Promise.all([
   read("src/pages/ShoppingListPage.jsx"),
   read("src/features/shopping/pages/ShoppingHubPage.jsx"),
   read("src/App.jsx"),
   read("src/features/shopping/services/shoppingEngine.ts"),
+  read("src/pages/GoodDealsPage.jsx"),
 ])
 assert.match(page, /loadActiveRetailPromotions\(\{ client: supabase \}\)/)
 assert.match(page, /includeProductIdentity: true/)
@@ -525,10 +575,15 @@ assert.match(page, /data-shopping-suggestion-group="retail"/)
 assert.match(page, /Promo actuelle/)
 assert.match(page, /console\.debug\("\[Shopping promotions\]"/)
 assert.match(page, /createAppSectionTarget\("goodDeals"/)
-assert.match(page, /Voir le bon plan/)
+assert.match(page, /resolveRetailPromotionDestination/)
+assert.match(page, /window\.open\(destination\.url, "_blank", "noopener,noreferrer"\)/)
 assert.doesNotMatch(page, />\s*(?:confidence|matchMethod|fuzzy_name|observed_freshness)\s*</i)
 assert.match(hub, /onNavigate=\{onNavigate\}/)
 assert.match(app, /<ShoppingHubPage[\s\S]*onNavigate=\{handleNavChange\}/)
+assert.match(app, /navigationTarget=\{goodDealsNavigationTarget\}/)
+assert.match(goodDeals, /resolveGoodDealsPromotionFocus/)
+assert.match(goodDeals, /data-good-deal-id=\{deal\.id \|\| undefined\}/)
+assert.match(goodDeals, /scrollIntoView\(\{ behavior: "smooth", block: "center" \}\)/)
 assert.equal((engine.match(/\.from\("receipt_items"\)/g) || []).length, 1, "Les identités doivent être chargées par lot")
 
 const shoppingListEngine = await read("src/services/shoppingList/shoppingListEngine.ts")
