@@ -876,6 +876,7 @@ function BudgetKazPeiApp({
             activeTab={shoppingTab}
             onTabChange={setShoppingTab}
             onOpenReceipts={() => setActiveNav("receipts")}
+            onNavigate={handleNavChange}
           />
         )}
 

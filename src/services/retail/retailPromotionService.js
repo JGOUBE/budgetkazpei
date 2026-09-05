@@ -154,6 +154,7 @@ export function toRetailPromotionViewModel(raw = {}, { now = new Date(), trusted
   const originalPrice = numberOrNull(raw.originalPrice ?? raw.original_price)
   const unitPrice = numberOrNull(raw.unitPrice ?? raw.unit_price)
   const promotionProven = raw.promotionProven ?? raw.promotion_proven ?? false
+  const productName = String(raw.productName ?? raw.product_name ?? raw.title ?? "").trim()
   const isEligible = trustedProjection
     ? raw.is_active !== false && raw.is_fresh !== false && promotionProven === true
     : isRetailPromotionEligible(raw, now)
@@ -162,7 +163,14 @@ export function toRetailPromotionViewModel(raw = {}, { now = new Date(), trusted
     id: raw.id ?? null,
     productId: raw.productId ?? raw.product_id ?? null,
     marketProductId: raw.marketProductId ?? raw.market_product_id ?? null,
-    productName: String(raw.productName ?? raw.product_name ?? raw.title ?? "").trim(),
+    productName,
+    normalizedProductName: normalizedLabel(raw.normalizedProductName ?? raw.normalized_product_name ?? productName),
+    controlledNormalization: Boolean(
+      raw.controlledNormalization ?? raw.controlled_normalization ?? raw.product_id ?? raw.market_product_id,
+    ),
+    validatedAliases: arrayValue(raw.validatedAliases ?? raw.validated_aliases)
+      .map(value => String(value || "").trim())
+      .filter(Boolean),
     brand: String(raw.brand || "").trim(),
     packageFormat: String(raw.packageFormat ?? raw.package_format ?? "").trim(),
     quantityValue: numberOrNull(raw.quantityValue ?? raw.quantity_value),
@@ -278,6 +286,23 @@ export function normalizePublishedGoodDeal(deal = {}) {
       : String(deal.price_note || "").trim(),
     show_fresh_observed_label: isLegacyLeaderObservedPromotion(deal),
   }
+}
+
+export async function loadActiveRetailPromotions({ client } = {}) {
+  if (!client) throw new Error("retail_promotion_client_required")
+
+  const result = await client
+    .from("published_retail_promotions")
+    .select("*")
+    .order("is_featured", { ascending: false })
+    .order("starts_at", { ascending: true, nullsFirst: false })
+
+  if (result.error && isMissingViewError(result.error)) return []
+  if (result.error) throw result.error
+
+  return deduplicateRetailPromotions((result.data || [])
+    .map(row => toRetailPromotionViewModel(row, { trustedProjection: true }))
+    .filter(promotion => promotion.isActive))
 }
 
 export async function loadPublishedGoodDeals({ client } = {}) {

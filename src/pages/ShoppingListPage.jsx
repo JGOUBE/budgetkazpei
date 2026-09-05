@@ -1,12 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from "react"
-import { Copy, Eye, Mail, MessageCircle, Save, ScanLine, Send, Share2, Trash2 } from "lucide-react"
+import { Copy, ExternalLink, Eye, Mail, MessageCircle, Save, ScanLine, Send, Share2, Tag, Trash2 } from "lucide-react"
 import { listShoppingItems } from "../features/shopping/services/shoppingEngine"
+import { supabase } from "../services/supabase"
+import { createAppSectionTarget } from "../services/appSectionNavigation"
+import { loadActiveRetailPromotions } from "../services/retail/retailPromotionService"
 import {
   buildShoppingListShareText,
   estimateShoppingList,
   getAutocompleteSuggestions,
   getPairingSuggestion,
 } from "../services/shoppingList/shoppingListEngine"
+import {
+  buildShoppingBasketSnapshotItems,
+  enrichShoppingBasketWithPromotions,
+} from "../services/shoppingList/shoppingPromotionEnrichment"
 import {
   listShoppingListSnapshots,
   markShoppingListSnapshotDeleted,
@@ -47,6 +54,15 @@ const COPY = {
     noProduct: "Aucun produit trouvé. Appuyez sur Ajouter pour créer ce produit.",
     empty: "Ajoute un produit pour commencer.",
     priceMissing: "prix à estimer",
+    historicalBudget: "Budget habituel estimé",
+    reliablePromotions: "Promos fiables repérées",
+    optimizedBudget: "Budget optimisé estimé",
+    optimizedInfo: "Calculé uniquement avec les offres dont le produit et le format correspondent de façon fiable.",
+    currentPromotion: "Promo actuelle repérée",
+    nearbyOffer: "Offre proche trouvée",
+    verifyOffer: "Vérifiez le produit et le format avant d'en tenir compte.",
+    potentialSaving: amount => `Économie potentielle : ${amount}`,
+    seeDeal: "Voir le bon plan",
     savedLists: "Mes listes sauvegardées",
     savedListsText: "Les listes partagées ou copiées restent disponibles 7 jours.",
     noSavedLists: "Aucune liste sauvegardée pour le moment.",
@@ -86,6 +102,15 @@ const COPY = {
     noProduct: "Nana poin produit trouvé. Appuie su Azouté pou créer produit-la.",
     empty: "Azout in produit pou komansé.",
     priceMissing: "prix pou estimer",
+    historicalBudget: "Bidjé habituel estimé",
+    reliablePromotions: "Bann promo fiables trouvées",
+    optimizedBudget: "Bidjé courses optimisé estimé",
+    optimizedInfo: "Kalkilé sèlman ek bann offres kot produit ek format lé reconnèt de fason fiable.",
+    currentPromotion: "Promo actuelle trouvée",
+    nearbyOffer: "In offre proche lé trouvée",
+    verifyOffer: "Vérifie produit-la ek son format avan pran li en compte.",
+    potentialSaving: amount => `Lékonomi possible : ${amount}`,
+    seeDeal: "Voir le bon plan",
     savedLists: "Mes lis sauvegardées",
     savedListsText: "Bann lis partagées ou copiées i reste disponible 7 jours.",
     noSavedLists: "Nana poin lis sauvegardée pou linstan.",
@@ -115,13 +140,14 @@ function snapshotTitle(txt) {
   return `${txt.snapshotTitle} - ${new Date().toLocaleDateString("fr-FR")}`
 }
 
-export default function ShoppingListPage({ user, isMobile = false, onOpenReceipts, language = "fr" }) {
+export default function ShoppingListPage({ user, isMobile = false, onOpenReceipts, onNavigate, language = "fr" }) {
   const locale = isKreolLanguage(language) ? "cr" : "fr"
   const txt = useMemo(
     () => ({ ...(locale === "cr" ? COPY.kreol : COPY.fr), ...languages[locale].shoppingList }),
     [locale],
   )
   const [shoppingItems, setShoppingItems] = useState([])
+  const [retailPromotions, setRetailPromotions] = useState([])
   const [items, setItems] = useState([])
   const [query, setQuery] = useState("")
   const [snapshots, setSnapshots] = useState([])
@@ -133,9 +159,17 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
 
   useEffect(() => {
     let ignore = false
-    listShoppingItems({ userId: user?.id }).then(rows => !ignore && setShoppingItems(rows || [])).catch(() => !ignore && setShoppingItems([]))
+    listShoppingItems({ userId: user?.id, includeProductIdentity: true }).then(rows => !ignore && setShoppingItems(rows || [])).catch(() => !ignore && setShoppingItems([]))
     return () => { ignore = true }
   }, [user?.id])
+
+  useEffect(() => {
+    let ignore = false
+    loadActiveRetailPromotions({ client: supabase })
+      .then(rows => !ignore && setRetailPromotions(rows || []))
+      .catch(() => !ignore && setRetailPromotions([]))
+    return () => { ignore = true }
+  }, [])
 
   useEffect(() => {
     let ignore = false
@@ -143,13 +177,29 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
     return () => { ignore = true }
   }, [user?.id])
 
-  const estimate = useMemo(() => estimateShoppingList(items, shoppingItems), [items, shoppingItems])
+  const historicalEstimate = useMemo(() => estimateShoppingList(items, shoppingItems), [items, shoppingItems])
+  const estimate = useMemo(
+    () => enrichShoppingBasketWithPromotions({ estimate: historicalEstimate, promotions: retailPromotions }),
+    [historicalEstimate, retailPromotions],
+  )
   const suggestions = useMemo(() => getAutocompleteSuggestions(query, shoppingItems), [query, shoppingItems])
   const pairing = useMemo(() => getPairingSuggestion(items, shoppingItems), [items, shoppingItems])
   const foodReceiptCount = useMemo(() => new Set((shoppingItems || []).map(item => item.receipt_id).filter(Boolean)).size, [shoppingItems])
   const learningReady = foodReceiptCount >= 3
   const shareText = useMemo(() => buildShoppingListShareText({ title: snapshotTitle(txt), estimate }), [estimate, txt])
   const hasQueryWithoutResult = query.trim().length > 0 && suggestions.length === 0
+
+  function openPromotion(promotion) {
+    if (!promotion || !onNavigate) return
+    onNavigate(createAppSectionTarget("goodDeals", {
+      goodDealsView: "product_promotion",
+      context: {
+        source: "shopping-list",
+        promotionId: promotion.id,
+        productId: promotion.productId,
+      },
+    }))
+  }
 
   function addItem(name) {
     const clean = String(name || query).trim()
@@ -168,7 +218,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
   }
 
   async function saveSnapshot(method, payload = {}) {
-    const rows = payload.items || estimate.items
+    const rows = payload.items || buildShoppingBasketSnapshotItems(estimate.items)
     try {
       const saved = await saveShoppingListSnapshot({
         userId: user?.id,
@@ -235,7 +285,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
 
     setShareModal({
       text: shareText,
-      items: estimate.items,
+      items: buildShoppingBasketSnapshotItems(estimate.items),
       totalEstimated: estimate.total,
       missingPriceCount: estimate.missingPriceCount,
       totalItems: estimate.totalItems,
@@ -282,6 +332,8 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
         items: snapshot.items,
         total: snapshot.totalEstimated,
         missingPriceCount: snapshot.missingPriceCount,
+        reliableSavingsTotal: snapshot.items.reduce((total, item) => total + Number(item.reliableSaving || 0), 0),
+        optimizedBasketEstimate: Math.max(0, snapshot.totalEstimated - snapshot.items.reduce((total, item) => total + Number(item.reliableSaving || 0), 0)),
       },
     })
     setShareModal({
@@ -314,11 +366,21 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
           <>
             <div style={{ color: COLORS.green, fontSize: 28, fontWeight: 950 }}>{txt.estimate} : {formatMontant(estimate.total)}</div>
             <div style={{ color: COLORS.muted, marginTop: 6 }}>{txt.basketRange(formatMontant(estimate.min), formatMontant(estimate.max))}</div>
+            {estimate.reliableSavingsTotal > 0 && (
+              <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, minmax(0, 1fr))", gap: 8, marginTop: 16 }}>
+                <SummaryAmount label={txt.historicalBudget} value={estimate.historicalBasketEstimate} color={COLORS.text} />
+                <SummaryAmount label={txt.reliablePromotions} value={-estimate.reliableSavingsTotal} color={COLORS.green} />
+                <SummaryAmount label={txt.optimizedBudget} value={estimate.optimizedBasketEstimate} color={COLORS.cyan} />
+              </div>
+            )}
           </>
         )}
         <div style={{ color: COLORS.muted, marginTop: 10, lineHeight: 1.5 }}>
           {txt.priceInfo}
         </div>
+        {learningReady && estimate.reliableSavingsTotal > 0 && (
+          <div style={{ color: COLORS.muted, marginTop: 6, fontSize: 12, lineHeight: 1.45 }}>{txt.optimizedInfo}</div>
+        )}
       </div>
 
       <div style={card({ borderColor: "#23D3D655" })}>
@@ -361,18 +423,26 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
 
       <div style={card()}>
         {estimate.items.length === 0 ? <div style={{ color: COLORS.muted }}>{txt.empty}</div> : estimate.items.map(item => (
-          <label key={item.id} style={{ display: "grid", gridTemplateColumns: "auto 1fr auto", gap: 10, alignItems: "center", color: COLORS.text, borderBottom: `1px solid ${COLORS.borderSubtle}`, padding: "10px 0" }}>
-            <input type="checkbox" checked={item.checked} onChange={e => setItems(prev => prev.map(row => row.id === item.id ? { ...row, checked: e.target.checked } : row))} />
-            <span style={{ textDecoration: item.checked ? "line-through" : "none" }}>
-              {item.name}
-              <span style={{ display: "block", color: COLORS.muted, fontSize: 12, marginTop: 2 }}>
-                {item.priceSource === "known" ? item.priceLabel : txt.priceMissing}
+          <div key={item.id} style={{ display: "grid", gridTemplateColumns: "auto minmax(0, 1fr) auto", gap: 10, alignItems: "start", color: COLORS.text, borderBottom: `1px solid ${COLORS.borderSubtle}`, padding: "12px 0" }}>
+            <input aria-label={item.name} type="checkbox" checked={item.checked} onChange={e => setItems(prev => prev.map(row => row.id === item.id ? { ...row, checked: e.target.checked } : row))} style={{ marginTop: 4 }} />
+            <div style={{ minWidth: 0 }}>
+              <span style={{ textDecoration: item.checked ? "line-through" : "none" }}>
+                {item.name}
+                <span style={{ display: "block", color: COLORS.muted, fontSize: 12, marginTop: 2 }}>
+                  {item.priceSource === "known" ? item.priceLabel : txt.priceMissing}
+                </span>
               </span>
-            </span>
-            <strong style={{ color: item.estimatedPrice ? COLORS.green : COLORS.muted }}>
+              {item.promotionMatchStatus === "reliable" && item.promotion && (
+                <PromotionHint item={item} txt={txt} onOpen={() => openPromotion(item.promotion)} reliable />
+              )}
+              {item.promotionMatchStatus === "suggested" && item.promotion && (
+                <PromotionHint item={item} txt={txt} onOpen={() => openPromotion(item.promotion)} />
+              )}
+            </div>
+            <strong style={{ color: item.estimatedPrice ? COLORS.green : COLORS.muted, whiteSpace: "nowrap" }}>
               {item.estimatedPrice ? formatMontant(item.estimatedPrice) : txt.priceMissing}
             </strong>
-          </label>
+          </div>
         ))}
       </div>
 
@@ -426,9 +496,15 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
         <Modal title={previewSnapshot.title} closeLabel={txt.close} onClose={() => setPreviewSnapshot(null)}>
           <div style={{ display: "grid", gap: 8 }}>
             {previewSnapshot.items.map((item, index) => (
-              <div key={`${item.name}-${index}`} style={{ display: "flex", justifyContent: "space-between", gap: 12, color: COLORS.text }}>
-                <span style={{ textDecoration: item.checked ? "line-through" : "none" }}>
+              <div key={`${item.name}-${index}`} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, color: COLORS.text }}>
+                <span style={{ textDecoration: item.checked ? "line-through" : "none", minWidth: 0 }}>
                   {item.name}{item.quantity ? ` · ${item.quantity}${item.unit ? ` ${item.unit}` : ""}` : ""}
+                  {item.promotionSnapshot && (
+                    <span style={{ display: "block", color: item.promotionMatchStatus === "suggested" ? COLORS.yellow : COLORS.green, fontSize: 12, marginTop: 3 }}>
+                      {item.promotionMatchStatus === "suggested" ? txt.nearbyOffer : txt.currentPromotion} : {formatMontant(item.promotionSnapshot.promoPrice)}
+                      {item.promotionSnapshot.retailerName ? ` chez ${item.promotionSnapshot.retailerName}` : ""}
+                    </span>
+                  )}
                 </span>
                 <strong style={{ color: item.estimatedPrice ? COLORS.green : COLORS.muted }}>
                   {item.estimatedPrice ? formatMontant(item.estimatedPrice) : txt.priceMissing}
@@ -444,6 +520,40 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
           </div>
         </Modal>
       )}
+    </div>
+  )
+}
+
+function SummaryAmount({ label, value, color }) {
+  return (
+    <div style={{ border: `1px solid ${COLORS.border}`, background: COLORS.row, borderRadius: 13, padding: 10 }}>
+      <div style={{ color: COLORS.muted, fontSize: 12 }}>{label}</div>
+      <strong style={{ display: "block", color, marginTop: 3 }}>{formatMontant(value)}</strong>
+    </div>
+  )
+}
+
+function PromotionHint({ item, txt, onOpen, reliable = false }) {
+  const promotion = item.promotion
+  const saving = reliable ? item.reliableSaving : item.possibleSaving
+  const store = [promotion.retailerName, promotion.storeName || promotion.storeCity].filter(Boolean).join(" · ")
+  return (
+    <div style={{ marginTop: 8, borderRadius: 12, padding: 10, background: reliable ? "rgba(34,197,94,.10)" : "rgba(245,158,11,.10)", border: `1px solid ${reliable ? `${COLORS.green}55` : `${COLORS.yellow}55`}` }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, color: reliable ? COLORS.green : COLORS.yellow, fontSize: 13, fontWeight: 950 }}>
+        <Tag size={15} aria-hidden="true" /> {reliable ? txt.currentPromotion : txt.nearbyOffer}
+      </div>
+      <div style={{ color: COLORS.text, fontSize: 13, marginTop: 4 }}>
+        {formatMontant(promotion.promoPrice)}{store ? ` chez ${store}` : ""}
+      </div>
+      {!reliable && <div style={{ color: COLORS.muted, fontSize: 12, marginTop: 3 }}>{txt.verifyOffer}</div>}
+      {Number(saving || 0) > 0 && (
+        <div style={{ color: reliable ? COLORS.green : COLORS.yellow, fontSize: 12, fontWeight: 850, marginTop: 3 }}>
+          {txt.potentialSaving(formatMontant(saving))}
+        </div>
+      )}
+      <button type="button" onClick={onOpen} style={{ minHeight: 38, marginTop: 8, borderRadius: 11, border: `1px solid ${COLORS.cyan}66`, background: COLORS.card, color: COLORS.text, fontWeight: 900, padding: "0 11px", display: "inline-flex", alignItems: "center", gap: 6 }}>
+        {txt.seeDeal} <ExternalLink size={14} aria-hidden="true" />
+      </button>
     </div>
   )
 }

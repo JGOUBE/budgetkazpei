@@ -2,6 +2,9 @@ import { supabase } from "../../../services/supabase"
 import { isItemEligibleForSmartShopping } from "../../../services/scan/receiptRules"
 import { guessBrand, normalizeProductName } from "./normalizer"
 import { computeUnitPrice, inferUnitFromName } from "./unitPrice"
+import { enrichShoppingItemsWithReceiptIdentities } from "./shoppingProductIdentity.js"
+
+export { enrichShoppingItemsWithReceiptIdentities } from "./shoppingProductIdentity.js"
 
 function money(value: number | string | null | undefined) {
   return Number(String(value ?? 0).replace(",", ".")) || 0
@@ -121,7 +124,13 @@ function buildShoppingRows({ userId, transactionId, receipt, items }: { userId: 
     .filter(row => row.normalized_name && row.price > 0 && !isParasiteProductName(row.product_name))
 }
 
-export async function listShoppingItems({ userId }: { userId?: string }) {
+export async function listShoppingItems({
+  userId,
+  includeProductIdentity = false,
+}: {
+  userId?: string
+  includeProductIdentity?: boolean
+}) {
   if (!userId) return []
 
   const { data, error } = await supabase
@@ -131,7 +140,25 @@ export async function listShoppingItems({ userId }: { userId?: string }) {
     .order("created_at", { ascending: false })
 
   if (error) throw error
-  return data || []
+  const shoppingItems = data || []
+  if (!includeProductIdentity || shoppingItems.length === 0) return shoppingItems
+
+  const receiptIds = [...new Set(shoppingItems.map(item => item.receipt_id).filter(Boolean))]
+  if (receiptIds.length === 0) return shoppingItems
+
+  const identityResult = await supabase
+    .from("receipt_items")
+    .select("receipt_id,name,corrected_name,normalized_name,market_product_id,market_matched,market_match_type,market_canonical_name,market_brand,market_package_format")
+    .eq("user_id", userId)
+    .eq("market_matched", true)
+    .in("receipt_id", receiptIds)
+
+  if (identityResult.error) {
+    console.warn("[shopping] Identités produits validées indisponibles, historique conservé sans enrichissement")
+    return shoppingItems
+  }
+
+  return enrichShoppingItemsWithReceiptIdentities(shoppingItems, identityResult.data || [])
 }
 
 export async function syncShoppingItemsFromReceipt({

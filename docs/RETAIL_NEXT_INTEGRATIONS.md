@@ -13,9 +13,13 @@ La fonction SQL `retail_observed_freshness_window()` est l'autorité sur cette f
 
 Le collecteur `services/promo-products-collector` propose des modes CLI readonly, import et incrémentaux pour Leader Price, Carrefour et E.Leclerc. Le dry-run est le défaut. Aucun scheduler propre à ce collecteur n'est versionné dans le dépôt actuel ; l'exploitation doit donc documenter séparément le job réellement déclenché.
 
-## B. Prochain branchement Courses intelligentes
+## B. Branchement Courses intelligentes
 
-Le contrat préparé est `findActivePromotionsForShoppingItems(shoppingItems, promotions)`. Pour chaque article, il retourne :
+`ShoppingListPage` charge les promotions actives par une seule lecture de `published_retail_promotions`. Si cette vue n'existe pas encore sur un environnement ancien, le service retourne une liste vide et la Liste de courses conserve intégralement son fonctionnement historique. Les identités `market_product` déjà validées sur les articles de tickets sont elles aussi chargées en une requête groupée par reçus, sans requête par ligne.
+
+Aucune migration supplémentaire n'est nécessaire pour ce branchement. Les promotions réelles apparaissent dès que la migration de consolidation `20260904220000_consolidate_retail_promotion_domain.sql`, qui crée la projection publique, est appliquée ; le frontend peut néanmoins être déployé avant elle sans casser l'ancien schéma.
+
+Le contrat `findActivePromotionsForShoppingItems(shoppingItems, promotions)` retourne pour chaque article :
 
 ```text
 shoppingItem
@@ -28,11 +32,11 @@ confidence
 needsReview[]
 ```
 
-L'ordre de preuve d'identité est : identifiant `shopping_product`, identifiant `market_product`, code-barres, alias explicitement validé, puis nom normalisé uniquement s'il provient des deux côtés d'une normalisation contrôlée. Aucun fuzzy match ne devient automatiquement une vérité.
+L'ordre de preuve d'identité est : identifiant `shopping_product`, identifiant `market_product`, code-barres, alias explicitement validé, puis nom normalisé uniquement s'il provient des deux côtés d'une normalisation contrôlée. Une contradiction d'identifiant interdit tout repli textuel. Le fuzzy produit au maximum l'état `suggested` et ne devient jamais une économie fiable.
 
-Les prix restent séparés : `historicalPrice`, `currentPromotionPrice`, `possibleSaving`, `reliableSaving`. Une économie fiable exige une identité fiable et un format compatible. Deux tailles d'une même famille ne sont comparées que si les deux prix unitaires permettent une normalisation ; une famille différente ou un format incomplet passe dans `needsReview`. Ce service n'est pas encore branché à `ShoppingListPage` et n'ajoute aucune promotion à la liste.
+Les prix restent séparés : `historicalPrice`, `promotionPrice`, `possibleSaving`, `reliableSaving`. Une économie fiable exige une identité fiable et un format compatible. Deux tailles d'une même famille ne sont comparées que si les deux prix unitaires permettent une normalisation ; une famille différente ou un format incomplet passe dans `needsReview`. `ShoppingListPage` affiche le meilleur résultat fiable ou la meilleure suggestion sans exposer les champs techniques du matching.
 
-Le calcul futur pourra donc être construit sans modifier l'estimation actuelle :
+Le service pur `shoppingPromotionEnrichment.js` conserve l'estimation historique comme référence et calcule :
 
 ```text
 budget habituel estimé
@@ -40,7 +44,11 @@ budget habituel estimé
 = budget courses optimisé estimé
 ```
 
-Il faudra dédupliquer les économies par article et quantité demandée, et ne jamais sommer `possibleSaving` quand `reliableSaving` est absent.
+Une seule meilleure promotion contribue par ligne ; les alternatives sont conservées dans le modèle sans être cumulées. `possibleSaving` n'est jamais sommé lorsque `reliableSaving` est absent. Une promotion peut rester visible si le prix historique manque, mais aucune économie n'est alors inventée.
+
+Les snapshots enregistrent une photographie informative et limitée des champs affichables de l'offre. Ils restent lisibles lorsque la promotion disparaît ou expire, sans réactiver l'offre comme vérité courante. La navigation « Voir le bon plan » passe par `createAppSectionTarget()`.
+
+TODO documenté : le chemin inverse « Bon plan → Ajouter à ma liste » n'est pas activé. Lorsqu'il sera réalisé, l'insertion directe devra exiger une identité produit fiable et un format connu ; les cas ambigus devront seulement ouvrir la liste avec un nom prérempli.
 
 ## C. Prochain chantier Conseiller Budget
 

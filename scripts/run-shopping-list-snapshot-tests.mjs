@@ -12,7 +12,15 @@ const rootUrl = new URL("../", import.meta.url)
 const read = path => readFile(new URL(path, rootUrl), "utf8")
 
 const originalItems = [
-  { id: "riz", name: "Riz", checked: false, quantity: 2, unit: "kg", estimatedPrice: 7.8 },
+  {
+    id: "riz",
+    name: "Riz",
+    checked: false,
+    quantity: 2,
+    unit: "kg",
+    estimatedPrice: 7.8,
+    promotionSnapshot: { id: "promo-riz", retailerName: "Carrefour Réunion", promoPrice: 6.9 },
+  },
   { id: "lait", name: "Lait", checked: true, estimatedPrice: 1.45 },
   { id: "pain", name: "Pain", checked: false, estimatedPrice: 0 },
 ]
@@ -27,6 +35,8 @@ originalItems[0].name = "Riz modifié"
 originalItems[0].quantity = 9
 assert.equal(snapshotItems[0].name, "Riz", "Editing the current list must not rewrite saved content")
 assert.equal(snapshotItems[0].quantity, 2, "Saved quantity must remain immutable")
+originalItems[0].promotionSnapshot.promoPrice = 8.5
+assert.equal(snapshotItems[0].promotionSnapshot.promoPrice, 6.9, "An expired promotion remains an immutable informational capture")
 
 const now = Date.parse("2026-08-27T10:00:00.000Z")
 assert.equal(isShoppingListSnapshotVisible({ status: "active", expiresAt: "2026-09-03T10:00:00.001Z" }, now), true)

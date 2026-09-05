@@ -42,6 +42,7 @@ export default function ShoppingHubPage({
   activeTab = "overview",
   onTabChange,
   onOpenReceipts,
+  onNavigate,
 }) {
   const isKreol = isKreolLanguage(language, t)
   const txt = isKreol ? COPY.kreol : COPY.fr
@@ -121,6 +122,7 @@ export default function ShoppingHubPage({
             isMobile={isMobile}
             language={language}
             onOpenReceipts={onOpenReceipts}
+            onNavigate={onNavigate}
           />
         )}
         {selectedTab === "savings" && (

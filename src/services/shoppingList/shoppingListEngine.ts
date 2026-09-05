@@ -19,6 +19,20 @@ function latestTimestamp(product: any) {
   return value ? new Date(value).getTime() || 0 : 0
 }
 
+function uniqueHistoryValue(history: any[] = [], keys: string[] = []) {
+  const values = new Set(
+    history
+      .map(row => keys.map(key => row?.[key]).find(value => value !== null && value !== undefined && value !== ""))
+      .filter(Boolean)
+      .map(String),
+  )
+  return values.size === 1 ? [...values][0] : null
+}
+
+function formatMoneyFr(value: unknown) {
+  return `${money(value).toFixed(2).replace(".", ",")} €`
+}
+
 export function getProductSuggestionScore(productName = "", query = "") {
   const cleanName = normalizeProductName(productName)
   const cleanQuery = normalizeProductName(query)
@@ -74,10 +88,19 @@ export function estimateShoppingList(items: any[] = [], shoppingItems: any[] = [
     const average = money(match?.averagePrice)
     const lastPrice = money(match?.lastPrice)
     const estimatedPrice = average || lastPrice
+    const exactHistoricalIdentity = Boolean(match && match.normalizedName === normalized)
+    const history = exactHistoricalIdentity ? match?.history || [] : []
+    const latest = history[0] || {}
+    const marketProductId = item.market_product_id || item.marketProductId ||
+      uniqueHistoryValue(history, ["market_product_id", "marketProductId"])
+    const shoppingProductId = item.shopping_product_id || item.shoppingProductId || item.product_id ||
+      uniqueHistoryValue(history, ["shopping_product_id", "shoppingProductId", "product_id"])
+    const barcode = item.barcode || uniqueHistoryValue(history, ["barcode"])
 
     return {
       ...item,
       estimatedPrice,
+      historicalPrice: estimatedPrice || null,
       lastKnownPrice: lastPrice,
       averagePrice: average,
       lowestPrice: money(match?.lowestPrice),
@@ -86,6 +109,18 @@ export function estimateShoppingList(items: any[] = [], shoppingItems: any[] = [
       priceLabel: estimatedPrice ? (Number(match?.purchaseCount || 0) > 1 ? "prix estimé" : "dernier prix connu") : "prix à estimer",
       knownStore: match?.history?.[0]?.store || "",
       purchaseCount: match?.purchaseCount || 0,
+      market_product_id: marketProductId || null,
+      shopping_product_id: shoppingProductId || null,
+      barcode: barcode || null,
+      brand: item.brand || latest.market_brand || latest.brand || null,
+      package_format: item.package_format || latest.market_package_format || null,
+      quantity: item.quantity || latest.quantity || null,
+      unit: item.unit || latest.unit || null,
+      price_per_unit: item.price_per_unit || latest.price_per_unit || null,
+      normalized_product_name: exactHistoricalIdentity ? match.normalizedName : null,
+      controlled_normalization: Boolean(
+        item.controlled_normalization === true || exactHistoricalIdentity && (marketProductId || shoppingProductId),
+      ),
     }
   })
 
@@ -104,21 +139,41 @@ export function estimateShoppingList(items: any[] = [], shoppingItems: any[] = [
 
 export function buildShoppingListShareText({ title = "Liste de courses BudgetKazPéi", estimate }: { title?: string; estimate: any }) {
   const rows = Array.isArray(estimate?.items) ? estimate.items : []
-  const lines = rows.map((item: any, index: number) => {
+  const lines = rows.flatMap((item: any, index: number) => {
     const price = money(item.estimatedPrice)
-    const priceText = price > 0 ? `${price.toFixed(2).replace(".", ",")} EUR` : "prix à estimer"
-    return `${index + 1}. ${item.name} - ${priceText}`
+    const priceText = price > 0 ? formatMoneyFr(price) : "prix à estimer"
+    const promotion = item.promotionSnapshot || item.promotion
+    const promotionPrice = money(promotion?.promoPrice ?? promotion?.promotionPrice)
+    const retailer = String(promotion?.retailerName || "").trim()
+    const promotionLabel = item.promotionMatchStatus === "suggested"
+      ? "Offre proche à vérifier"
+      : "Promo repérée"
+    const productLine = `${index + 1}. ${item.name} - ${priceText}`
+    if (!promotion || promotionPrice <= 0) return [productLine]
+    return [
+      productLine,
+      `   ${promotionLabel} : ${formatMoneyFr(promotionPrice)}${retailer ? ` chez ${retailer}` : ""}`,
+    ]
   })
 
   const total = money(estimate?.total)
   const missing = Number(estimate?.missingPriceCount || 0)
+  const reliableSavings = money(estimate?.reliableSavingsTotal)
+  const optimized = money(estimate?.optimizedBasketEstimate)
+  const promotionSummary = reliableSavings > 0
+    ? [
+        `Promos fiables repérées : -${formatMoneyFr(reliableSavings)}`,
+        `Budget optimisé estimé : ${formatMoneyFr(optimized)}`,
+      ]
+    : []
 
   return [
     title,
     "",
     ...lines,
     "",
-    `Total estimé : ${total.toFixed(2).replace(".", ",")} EUR`,
+    `Total estimé : ${formatMoneyFr(total)}`,
+    ...promotionSummary,
     `Produits : ${rows.length}`,
     `Prix manquants : ${missing}`,
     "",
