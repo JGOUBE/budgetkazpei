@@ -142,6 +142,47 @@ await deleteShoppingListSnapshotWithClient({
 })
 assert.equal(expiredRows[0].status, "active", "Expired snapshots must remain governed by the existing retention behavior")
 
+function createSnapshotSyncHarness(initialRows) {
+  let rows = initialRows
+  let requestVersion = 0
+  const deletedIds = new Set()
+  return {
+    beginRequest() {
+      requestVersion += 1
+      return requestVersion
+    },
+    markDeleted(id) {
+      deletedIds.add(id)
+      requestVersion += 1
+      rows = rows.filter(row => row.id !== id)
+    },
+    resolveRequest(version, nextRows) {
+      if (version !== requestVersion) return false
+      rows = nextRows.filter(row => !deletedIds.has(row.id))
+      return true
+    },
+    rows() {
+      return rows
+    },
+  }
+}
+
+const deletedUiSnapshot = { id: "snapshot-ui-deleted" }
+const retainedUiSnapshot = { id: "snapshot-ui-retained" }
+const syncHarness = createSnapshotSyncHarness([deletedUiSnapshot, retainedUiSnapshot])
+const staleRequest = syncHarness.beginRequest()
+syncHarness.markDeleted(deletedUiSnapshot.id)
+assert.deepEqual(syncHarness.rows(), [retainedUiSnapshot], "Backend success must remove only the deleted snapshot locally")
+assert.equal(
+  syncHarness.resolveRequest(staleRequest, [deletedUiSnapshot, retainedUiSnapshot]),
+  false,
+  "A response started before deletion must be ignored",
+)
+assert.deepEqual(syncHarness.rows(), [retainedUiSnapshot], "A stale response must not reinsert the deleted snapshot")
+const refreshRequest = syncHarness.beginRequest()
+assert.equal(syncHarness.resolveRequest(refreshRequest, [retainedUiSnapshot]), true)
+assert.deepEqual(syncHarness.rows(), [retainedUiSnapshot], "The authoritative refresh must keep other snapshots intact")
+
 const [page, service, migration] = await Promise.all([
   read("src/pages/ShoppingListPage.jsx"),
   read("src/services/shoppingList/shoppingListSnapshots.js"),
@@ -165,6 +206,11 @@ assert.match(page, /deleteInFlightRef\.current\.has\(id\)/, "A double click must
 assert.match(page, /try \{[\s\S]*markShoppingListSnapshotDeleted[\s\S]*setSnapshots\(prev => prev\.filter[\s\S]*setNotice\(\{ message: txt\.deleted, kind: "success" \}\)[\s\S]*catch \{[\s\S]*setNotice\(\{ message: txt\.deleteError, kind: "error" \}\)/, "The UI must mutate local state only after backend success and report failures")
 assert.match(page, /setPreviewSnapshot\(prev => prev\?\.id === id \? null : prev\)/, "Deleting a previewed snapshot must close its preview")
 assert.match(page, /disabled=\{isDeleting\}/, "The delete button must be disabled while its snapshot is being deleted")
+assert.match(page, /const snapshotRequestVersionRef = useRef\(0\)/, "Snapshot reads must share a request version")
+assert.match(page, /const deletedSnapshotIdsRef = useRef\(new Set\(\)\)/, "Deleted snapshot ids must remain excluded from stale responses")
+assert.match(page, /requestVersion === snapshotRequestVersionRef\.current[\s\S]*!deletedSnapshotIdsRef\.current\.has\(row\.id\)/, "Only the latest snapshot response may update UI state")
+assert.match(page, /markShoppingListSnapshotDeleted[\s\S]*deletedSnapshotIdsRef\.current\.add\(id\)[\s\S]*setSnapshots\(prev => prev\.filter\(row => row\.id !== id\)\)[\s\S]*await refreshSnapshots\(\)[\s\S]*setNotice\(\{ message: txt\.deleted, kind: "success" \}\)/, "Delete must remove locally, refresh from Supabase, then report success")
+assert.doesNotMatch(page, /async function refreshSnapshots\(\)[\s\S]*catch \{\s*setSnapshots\(\[\]\)/, "A failed refresh must preserve the locally deleted state")
 
 assert.match(migration, /new\.expires_at := new\.created_at \+ interval '7 days'/)
 assert.match(migration, /new\.expires_at := old\.expires_at/, "Clients must not be able to extend retention")

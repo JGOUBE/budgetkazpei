@@ -212,6 +212,8 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
   const [isSaving, setIsSaving] = useState(false)
   const [deletingSnapshotIds, setDeletingSnapshotIds] = useState(() => new Set())
   const saveInFlightRef = useRef(false)
+  const snapshotRequestVersionRef = useRef(0)
+  const deletedSnapshotIdsRef = useRef(new Set())
 
   useEffect(() => {
     saveShoppingListDraft({ userId: user?.id, items })
@@ -242,8 +244,21 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
 
   useEffect(() => {
     let ignore = false
-    listShoppingListSnapshots({ userId: user?.id }).then(rows => !ignore && setSnapshots(rows || [])).catch(() => !ignore && setSnapshots([]))
-    return () => { ignore = true }
+    deletedSnapshotIdsRef.current.clear()
+    const requestVersion = ++snapshotRequestVersionRef.current
+    listShoppingListSnapshots({ userId: user?.id })
+      .then(rows => {
+        if (!ignore && requestVersion === snapshotRequestVersionRef.current) {
+          setSnapshots((rows || []).filter(row => !deletedSnapshotIdsRef.current.has(row.id)))
+        }
+      })
+      .catch(() => {
+        if (!ignore && requestVersion === snapshotRequestVersionRef.current) setSnapshots([])
+      })
+    return () => {
+      ignore = true
+      if (requestVersion === snapshotRequestVersionRef.current) snapshotRequestVersionRef.current += 1
+    }
   }, [user?.id])
 
   const historicalEstimate = useMemo(() => estimateShoppingList(items, shoppingItems), [items, shoppingItems])
@@ -302,11 +317,15 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
   }
 
   async function refreshSnapshots() {
+    const requestVersion = ++snapshotRequestVersionRef.current
     try {
       const rows = await listShoppingListSnapshots({ userId: user?.id })
-      setSnapshots(rows || [])
-    } catch {
-      setSnapshots([])
+      if (requestVersion !== snapshotRequestVersionRef.current) return false
+      setSnapshots((rows || []).filter(row => !deletedSnapshotIdsRef.current.has(row.id)))
+      return true
+    } catch (error) {
+      if (import.meta.env.DEV) console.warn("[Shopping snapshots] refresh failed", error?.code || "unknown")
+      return false
     }
   }
 
@@ -422,8 +441,11 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
 
     try {
       await markShoppingListSnapshotDeleted({ userId: user?.id, id })
+      deletedSnapshotIdsRef.current.add(id)
+      snapshotRequestVersionRef.current += 1
       setSnapshots(prev => prev.filter(row => row.id !== id))
       setPreviewSnapshot(prev => prev?.id === id ? null : prev)
+      await refreshSnapshots()
       setNotice({ message: txt.deleted, kind: "success" })
     } catch {
       setNotice({ message: txt.deleteError, kind: "error" })
