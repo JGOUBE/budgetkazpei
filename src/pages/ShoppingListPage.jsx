@@ -206,6 +206,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
   const [items, setItems] = useState(() => loadShoppingListDraft({ userId: user?.id }))
   const [query, setQuery] = useState("")
   const [snapshots, setSnapshots] = useState([])
+  const [hiddenSnapshotIds, setHiddenSnapshotIds] = useState(() => new Set())
   const [shareModal, setShareModal] = useState(null)
   const [previewSnapshot, setPreviewSnapshot] = useState(null)
   const [notice, setNotice] = useState(null)
@@ -275,6 +276,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
   const learningReady = foodReceiptCount >= 3
   const shareText = useMemo(() => buildShoppingListShareText({ title: snapshotTitle(txt), estimate }), [estimate, txt])
   const hasQueryWithoutResult = query.trim().length > 0 && suggestions.historical.length === 0 && suggestions.retail.length === 0
+  const visibleSnapshots = snapshots.filter(snapshot => !hiddenSnapshotIds.has(snapshot.id))
 
   useEffect(() => {
     if (!import.meta.env.DEV) return
@@ -436,18 +438,64 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
     if (!id || deleteInFlightRef.current.has(id)) return
     if (!window.confirm(txt.deleteConfirm)) return
 
+    const previousSnapshot = snapshots.find(row => row.id === id) || null
+
     deleteInFlightRef.current.add(id)
     setDeletingSnapshotIds(prev => new Set(prev).add(id))
 
+    // UI tombstone: once deletion is confirmed, no stale async response can
+    // render this row again during the current session.
+    setHiddenSnapshotIds(prev => {
+      const next = new Set(prev)
+      next.add(id)
+      return next
+    })
+    setSnapshots(prev => prev.filter(row => row.id !== id))
+
     try {
       await markShoppingListSnapshotDeleted({ userId: user?.id, id })
-      deletedSnapshotIdsRef.current.add(id)
-      snapshotRequestVersionRef.current += 1
-      setSnapshots(prev => prev.filter(row => row.id !== id))
       setPreviewSnapshot(prev => prev?.id === id ? null : prev)
-      await refreshSnapshots()
+
+      try {
+        const rows = await listShoppingListSnapshots({ userId: user?.id })
+        if ((rows || []).some(row => row.id === id)) {
+          const error = new Error("snapshot_delete_not_persisted")
+          error.code = "snapshot_delete_not_persisted"
+          throw error
+        }
+        setSnapshots((rows || []).filter(row => row.id !== id))
+      } catch (verificationError) {
+        if (verificationError?.code === "snapshot_delete_not_persisted") {
+          throw verificationError
+        }
+        if (import.meta.env.DEV) {
+          console.warn("[Shopping snapshots] post-delete refresh unavailable", verificationError?.code || verificationError?.message || "unknown")
+        }
+      }
+
       setNotice({ message: txt.deleted, kind: "success" })
-    } catch {
+    } catch (error) {
+      setHiddenSnapshotIds(prev => {
+        const next = new Set(prev)
+        next.delete(id)
+        return next
+      })
+
+      try {
+        const rows = await listShoppingListSnapshots({ userId: user?.id })
+        setSnapshots(rows || [])
+      } catch {
+        if (previousSnapshot) {
+          setSnapshots(prev => [
+            previousSnapshot,
+            ...prev.filter(row => row.id !== previousSnapshot.id),
+          ])
+        }
+      }
+
+      if (import.meta.env.DEV) {
+        console.warn("[Shopping snapshots] deletion failed", error?.code || error?.message || "unknown")
+      }
       setNotice({ message: txt.deleteError, kind: "error" })
     } finally {
       deleteInFlightRef.current.delete(id)
@@ -609,9 +657,9 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
           </div>
         </div>
         <div style={{ display: "grid", gap: 10, marginTop: 14 }}>
-          {snapshots.length === 0 ? (
+          {visibleSnapshots.length === 0 ? (
             <div style={{ color: COLORS.muted }}>{txt.noSavedLists}</div>
-          ) : snapshots.map(snapshot => {
+          ) : visibleSnapshots.map(snapshot => {
             const isDeleting = deletingSnapshotIds.has(snapshot.id)
             return (
             <div key={snapshot.id} style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr auto", gap: 12, alignItems: "center", border: `1px solid ${COLORS.border}`, background: COLORS.row, borderRadius: 14, padding: 12 }}>

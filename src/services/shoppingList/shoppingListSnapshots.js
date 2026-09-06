@@ -6,6 +6,35 @@ import {
 } from "./shoppingListSnapshotModel"
 import { deleteShoppingListSnapshotWithClient } from "./shoppingListSnapshotDelete"
 
+const DELETED_SNAPSHOT_SESSION_KEY = "budgetkazpei:deleted-shopping-snapshots"
+
+function getDeletedSnapshotIds(userId) {
+  if (!userId || typeof window === "undefined") return new Set()
+
+  try {
+    const raw = window.sessionStorage.getItem(`${DELETED_SNAPSHOT_SESSION_KEY}:${userId}`)
+    const ids = raw ? JSON.parse(raw) : []
+    return new Set(Array.isArray(ids) ? ids.filter(Boolean) : [])
+  } catch {
+    return new Set()
+  }
+}
+
+function rememberDeletedSnapshot(userId, id) {
+  if (!userId || !id || typeof window === "undefined") return
+
+  try {
+    const ids = getDeletedSnapshotIds(userId)
+    ids.add(id)
+    window.sessionStorage.setItem(
+      `${DELETED_SNAPSHOT_SESSION_KEY}:${userId}`,
+      JSON.stringify([...ids]),
+    )
+  } catch {
+    // sessionStorage is only a UI race guard; backend remains authoritative.
+  }
+}
+
 function nowIso() {
   return new Date().toISOString()
 }
@@ -53,7 +82,13 @@ export async function listShoppingListSnapshots({ userId }) {
     .order("created_at", { ascending: false })
 
   if (error) throw error
-  return (data || []).map(normalizeSnapshot).filter(row => isShoppingListSnapshotVisible(row))
+
+  const deletedIds = getDeletedSnapshotIds(userId)
+
+  return (data || [])
+    .map(normalizeSnapshot)
+    .filter(row => isShoppingListSnapshotVisible(row))
+    .filter(row => !deletedIds.has(row.id))
 }
 
 export async function saveShoppingListSnapshot({
@@ -90,5 +125,12 @@ export async function saveShoppingListSnapshot({
 }
 
 export async function markShoppingListSnapshotDeleted({ userId, id }) {
-  return deleteShoppingListSnapshotWithClient({ client: supabase, userId, id })
+  const deletedId = await deleteShoppingListSnapshotWithClient({
+    client: supabase,
+    userId,
+    id,
+  })
+
+  rememberDeletedSnapshot(userId, deletedId)
+  return deletedId
 }
