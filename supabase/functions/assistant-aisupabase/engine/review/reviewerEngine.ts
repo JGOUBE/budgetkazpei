@@ -40,10 +40,15 @@ function isTrustedMoneyClaim(
   answer: string,
   value: string,
   trustedAmountClaims: TrustedAmountClaim[] = [],
+  trustedBudgetAmounts: number[] = [],
 ) {
-  return isTrustedAidAmountClaim(answer, value, trustedAmountClaims)
+  if (isTrustedAidAmountClaim(answer, value, trustedAmountClaims)) return true
+  const numbers = (String(value).replace(/\s+/g, "").replace(/,/g, ".").match(/\d+(?:\.\d+)?/g) || []).map(Number)
+  return numbers.length > 0 && numbers.every(number =>
+    trustedBudgetAmounts.some(amount => Math.abs(Number(amount) - number) < 0.001)
+  )
 }
-function removeMoneyClaims(answer: string, language: "fr" | "kreol", trustedAmountClaims: TrustedAmountClaim[] = []) {
+function removeMoneyClaims(answer: string, language: "fr" | "kreol", trustedAmountClaims: TrustedAmountClaim[] = [], trustedBudgetAmounts: number[] = []) {
   let revised = answer
   const amountReplacement = language === "kreol"
     ? "in montant pou vérifié avèk in simulation officielle"
@@ -53,7 +58,7 @@ function removeMoneyClaims(answer: string, language: "fr" | "kreol", trustedAmou
   const moneyAmounts = unique(revised.match(MONEY_PATTERN) || [])
 
   for (const value of [...moneyRanges, ...moneyAmounts]) {
-    if (isTrustedMoneyClaim(answer, value, trustedAmountClaims)) continue
+    if (isTrustedMoneyClaim(answer, value, trustedAmountClaims, trustedBudgetAmounts)) continue
 
     revised = revised.replace(
       value,
@@ -120,7 +125,7 @@ function removeDeadlineClaims(answer: string, language: "fr" | "kreol") {
   return revised
 }
 
-function detectIssues(answer: string, trustedAmountClaims: TrustedAmountClaim[] = []): ReviewIssue[] {
+function detectIssues(answer: string, trustedAmountClaims: TrustedAmountClaim[] = [], trustedBudgetAmounts: number[] = []): ReviewIssue[] {
   const issues: ReviewIssue[] = []
   const normalized = normalize(answer)
 
@@ -129,7 +134,7 @@ function detectIssues(answer: string, trustedAmountClaims: TrustedAmountClaim[] 
   const deadlines = unique(answer.match(DEADLINE_PATTERN) || [])
 
   for (const value of [...moneyRanges, ...moneyAmounts]) {
-    if (isTrustedMoneyClaim(answer, value, trustedAmountClaims)) continue
+    if (isTrustedMoneyClaim(answer, value, trustedAmountClaims, trustedBudgetAmounts)) continue
 
     issues.push({
       type: "amount",
@@ -216,11 +221,12 @@ export function reviewAssistantAnswer(
   answer: string,
   language: "fr" | "kreol" = "fr",
   trustedAmountClaims: TrustedAmountClaim[] = [],
+  trustedBudgetAmounts: number[] = [],
 ): ReviewResult {
-  const issues = detectIssues(answer, trustedAmountClaims)
+  const issues = detectIssues(answer, trustedAmountClaims, trustedBudgetAmounts)
 
   let revisedAnswer = answer
-  revisedAnswer = removeMoneyClaims(revisedAnswer, language, trustedAmountClaims)
+  revisedAnswer = removeMoneyClaims(revisedAnswer, language, trustedAmountClaims, trustedBudgetAmounts)
   revisedAnswer = removeDeadlineClaims(revisedAnswer, language)
   revisedAnswer = softenCertainty(revisedAnswer, language)
   revisedAnswer = addSafetySentenceIfNeeded(revisedAnswer, issues, language)

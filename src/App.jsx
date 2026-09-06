@@ -221,6 +221,7 @@ function BudgetKazPeiApp({
 
   const {
     transactions,
+    allTransactions,
     fetchTransactions,
     addTransaction,
     updateTransaction,
@@ -831,6 +832,9 @@ function BudgetKazPeiApp({
             isPremium={isPremium}
             isPremiumPlus={isPremiumPlus}
             transactions={transactions}
+            historyTransactions={allTransactions}
+            recurringCharges={abonnements}
+            budgetTargets={customBudgets}
             stats={{
               revenus,
               depenses,

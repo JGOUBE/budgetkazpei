@@ -1,6 +1,7 @@
 import { normalizeForAssistantMatch } from "./assistantLanguage.js"
 import { buildSavingsInsights } from "../savings/savingsEngine.ts"
 import { buildBudgetAdvisorContext } from "./budgetAdvisorContext.js"
+import { dateIsInBudgetRange, resolveBudgetPeriod } from "./budgetPeriodResolver.js"
 
 const CATEGORY_LABELS = {
   alimentaire: { fr: "l'alimentation", kr: "manzé" },
@@ -23,40 +24,6 @@ function optionalMoney(value) {
   if (value === null || value === undefined || value === "") return null
   const number = Number(String(value).replace(",", "."))
   return Number.isFinite(number) ? number : null
-}
-
-function toIsoDate(date) {
-  return date.toISOString().slice(0, 10)
-}
-
-function monthRange(offset = 0, now = new Date()) {
-  const start = new Date(now.getFullYear(), now.getMonth() + offset, 1)
-  const end = new Date(now.getFullYear(), now.getMonth() + offset + 1, 1)
-
-  return {
-    start,
-    end,
-    startDate: toIsoDate(start),
-    endDate: toIsoDate(end),
-  }
-}
-
-function parseDate(value) {
-  if (!value) return null
-  const raw = String(value).slice(0, 10)
-  const [year, month, day] = raw.split("-").map(Number)
-
-  if (Number.isFinite(year) && Number.isFinite(month) && Number.isFinite(day)) {
-    return new Date(year, month - 1, day)
-  }
-
-  const date = new Date(value)
-  return Number.isFinite(date.getTime()) ? date : null
-}
-
-function isInRange(value, range) {
-  const date = parseDate(value)
-  return Boolean(date && date >= range.start && date < range.end)
 }
 
 function categoryId(value = "") {
@@ -253,6 +220,7 @@ function monthSummary({ transactions = [], receipts = [], shoppingItems = [], by
 
   return {
     transactionsCount: transactions.length,
+    expenseTransactionsCount: transactions.filter(transaction => money(transaction.amount) < 0).length,
     expenses,
     incomes,
     categories,
@@ -313,29 +281,34 @@ export function buildAssistantInsights({
   shoppingItems = [],
   receipts = [],
   profile = {},
+  recurringCharges = [],
+  budgetTargets = [],
+  shoppingBasket = null,
+  question = "",
+  language = "fr",
+  dataAvailability = {},
   now = new Date(),
 } = {}) {
-  const currentRange = monthRange(0, now)
-  const previousRange = monthRange(-1, now)
+  const resolvedRanges = resolveBudgetPeriod(question, now, language)
+  const currentRange = resolvedRanges.current
+  const previousRange = resolvedRanges.previous
   const allTransactions = Array.isArray(historyTransactions) && historyTransactions.length > 0
     ? historyTransactions
     : transactions
 
-  const currentTransactions = allTransactions.filter(transaction => isInRange(transaction.date || transaction.created_at, currentRange))
-  const previousTransactions = allTransactions.filter(transaction => isInRange(transaction.date || transaction.created_at, previousRange))
+  const currentTransactions = allTransactions.filter(transaction => dateIsInBudgetRange(transaction.date || transaction.created_at, currentRange))
+  const previousTransactions = allTransactions.filter(transaction => dateIsInBudgetRange(transaction.date || transaction.created_at, previousRange))
 
-  const fallbackCurrentTransactions = currentTransactions.length > 0 ? currentTransactions : transactions
-
-  const currentReceipts = receipts.filter(receipt => isInRange(receipt.purchase_date || receipt.created_at, currentRange))
-  const previousReceipts = receipts.filter(receipt => isInRange(receipt.purchase_date || receipt.created_at, previousRange))
-  const currentShoppingItems = shoppingItems.filter(item => isInRange(item.created_at, currentRange))
-  const previousShoppingItems = shoppingItems.filter(item => isInRange(item.created_at, previousRange))
+  const currentReceipts = receipts.filter(receipt => dateIsInBudgetRange(receipt.purchase_date || receipt.created_at, currentRange))
+  const previousReceipts = receipts.filter(receipt => dateIsInBudgetRange(receipt.purchase_date || receipt.created_at, previousRange))
+  const currentShoppingItems = shoppingItems.filter(item => dateIsInBudgetRange(item.created_at, currentRange))
+  const previousShoppingItems = shoppingItems.filter(item => dateIsInBudgetRange(item.created_at, previousRange))
 
   const currentMonth = monthSummary({
-    transactions: fallbackCurrentTransactions,
+    transactions: currentTransactions,
     receipts: currentReceipts,
     shoppingItems: currentShoppingItems,
-    byCategory,
+    byCategory: [],
   })
   const previousMonth = monthSummary({
     transactions: previousTransactions,
@@ -343,12 +316,9 @@ export function buildAssistantInsights({
     shoppingItems: previousShoppingItems,
   })
 
-  if (money(stats.depenses) > currentMonth.expenses) {
-    currentMonth.expenses = money(stats.depenses)
-  }
-
-  const revenusFoyer = money(stats.revenus) || money(profile?.revenus_foyer) || currentMonth.incomes
-  const estimatedRemaining = money(stats.resteAVivre ?? stats.solde) || revenusFoyer - currentMonth.expenses
+  const configuredIncome = optionalMoney(profile?.revenus_foyer ?? stats.revenus)
+  const revenusFoyer = currentMonth.incomes > 0 ? currentMonth.incomes : configuredIncome
+  const estimatedRemaining = optionalMoney(stats.resteAVivre ?? stats.solde)
   const budgetUse = revenusFoyer > 0 ? Math.round((currentMonth.expenses / revenusFoyer) * 100) : 0
   const stores = groupStoreSpending({ receipts: currentReceipts, shoppingItems: currentShoppingItems })
   const frequentProducts = buildFrequentProducts(currentShoppingItems)
@@ -382,7 +352,7 @@ export function buildAssistantInsights({
   const smallRepeatedPurchases = buildSmallRepeatedPurchases(currentShoppingItems)
   const categoryIncreases = buildCategoryIncreases(currentMonth.categories, previousMonth.categories)
 
-  return {
+  const insights = {
     ranges: {
       current: currentRange,
       previous: previousRange,
@@ -399,13 +369,26 @@ export function buildAssistantInsights({
     frequentProducts,
     smallRepeatedPurchases,
     budgetInputs: {
-      income: optionalMoney(stats.revenus ?? profile?.revenus_foyer),
-      fixedExpenses: optionalMoney(stats.chargesFixes),
+      income: configuredIncome,
+      incomeDetails: profile?.revenus_details ?? null,
+      fixedExpenses: recurringCharges.length > 0 ? optionalMoney(stats.chargesFixes) : null,
       variableExpenses: optionalMoney(stats.depensesVariables),
       availableBalance: optionalMoney(stats.resteAVivre ?? stats.solde),
     },
+    recurringCharges,
+    budgetTargets: budgetTargets.length > 0 ? budgetTargets : byCategory,
+    shoppingBasket,
+    currentTransactions,
+    historyTransactions: allTransactions,
+    dataAvailability: {
+      transactions: dataAvailability.transactions !== false,
+      receipts: dataAvailability.receipts !== false,
+      shoppingItems: dataAvailability.shoppingItems !== false,
+      recurringCharges: dataAvailability.recurringCharges !== false,
+      emptyTransactionsKnown: dataAvailability.emptyTransactionsKnown === true,
+    },
     dataUsed: {
-      transactionsCount: fallbackCurrentTransactions.length,
+      transactionsCount: currentTransactions.length,
       previousTransactionsCount: previousTransactions.length,
       receiptsCount: currentMonth.receiptsCount,
       previousReceiptsCount: previousMonth.receiptsCount,
@@ -414,50 +397,36 @@ export function buildAssistantInsights({
       comparableProductsCount: storeComparisons.comparableProductsCount,
     },
   }
+
+  insights.budgetAdvisorContext = buildBudgetAdvisorContext(insights)
+  return insights
 }
 
-export function buildAssistantAiSummary(insights = {}) {
+export function buildAssistantAiSummary(insights = {}, intent = "budget_general") {
+  const context = insights.budgetAdvisorContext || buildBudgetAdvisorContext(insights)
+  const common = {
+    period: context.period,
+    dataCompleteness: context.dataCompleteness,
+  }
+  const intentFields = {
+    budget_remaining: ["income", "expenses", "remainingAfterFixedExpenses", "currentAvailableMargin", "spendingByCategory", "recentSignificantTransactions"],
+    budget_category: ["expenses", "spendingByCategory"],
+    budget_period_compare: ["expenses", "spendingByCategory", "periodComparison"],
+    budget_grocery: ["currentAvailableMargin", "grocery", "budgetTargets"],
+    budget_fixed_expenses: ["income", "expenses", "remainingAfterFixedExpenses", "recurringCharges"],
+    budget_subscriptions: ["expenses", "recurringCharges"],
+    budget_unusual_expense: ["unusualExpenses", "recentSignificantTransactions", "spendingByCategory"],
+    budget_savings: ["grocery"],
+    budget_shopping_affordability: ["currentAvailableMargin", "grocery", "budgetTargets"],
+  }
+  const fields = intentFields[intent]
+  const compactContext = fields
+    ? fields.reduce((result, field) => ({ ...result, [field]: context[field] }), common)
+    : context
+
   return {
-    currentMonthExpenses: money(insights.currentMonth?.expenses),
-    previousMonthExpenses: money(insights.previousMonth?.expenses),
-    householdIncome: money(insights.revenusFoyer),
-    estimatedRemaining: money(insights.estimatedRemaining),
-    budgetUse: money(insights.budgetUse),
-    topCategories: (insights.currentMonth?.topCategories || []).map(category => ({
-      id: category.id,
-      amount: money(category.amount),
-    })),
-    categoryIncreases: (insights.categoryIncreases || []).map(category => ({
-      id: category.id,
-      difference: money(category.difference),
-      percent: category.percent,
-    })),
-    receiptsCount: money(insights.currentMonth?.receiptsCount),
-    basketAverage: money(insights.currentMonth?.basketAverage),
-    stores: (insights.stores || []).slice(0, 5).map(store => ({
-      store: store.store,
-      totalSpend: money(store.totalSpend),
-      receiptsCount: money(store.receiptsCount),
-    })),
-    frequentProducts: (insights.frequentProducts || []).slice(0, 5).map(product => ({
-      label: product.label,
-      count: money(product.count),
-      totalSpend: money(product.totalSpend),
-    })),
-    reliableSavings: (insights.savings?.suggestions || []).slice(0, 5).map(item => ({
-      product: item.product,
-      referenceStore: item.referenceStore,
-      bestStore: item.bestStore,
-      referencePrice: money(item.referencePrice),
-      lowerObservedPrice: money(item.alternativePrice),
-      potentialSaving: money(item.potentialSaving),
-      normalizedComparison: Boolean(item.normalizedComparison),
-      unitLabel: item.unitLabel || "",
-      lastObservedAt: item.lastObservedAt || "",
-      observationsCount: money(item.observationsCount),
-    })),
-    totalReliablePotentialSaving: money(insights.savings?.totalPotential),
-    budgetAdvisorContext: buildBudgetAdvisorContext(insights),
+    intent,
+    budgetAdvisorContext: compactContext,
     dataUsed: insights.dataUsed || {},
   }
 }

@@ -25,6 +25,21 @@ function isKreolLang(t) {
 }
 
 function buildModes(isKreol, canUseAdvancedAdvisorTools) {
+  const quickQuestions = (isKreol
+    ? [
+        "Konbien i reste a moin ?",
+        "Kot mi dépans le plis ?",
+        "Mon bidzé courses i ogmant ?",
+        "Kosa mi pé réduire ?",
+        "Mon bann dépans la ogmanté ?",
+      ]
+    : [
+        "Combien me reste-t-il ?",
+        "Où est-ce que je dépense le plus ?",
+        "Mon budget courses augmente-t-il ?",
+        "Que puis-je réduire ?",
+        "Mes dépenses ont-elles augmenté ?",
+      ]).map(prompt => ({ mode: "budget_depenses", prompt, title: prompt }))
   const primary = [
     {
       mode: "budget_depenses",
@@ -52,10 +67,11 @@ function buildModes(isKreol, canUseAdvancedAdvisorTools) {
     },
   ]
 
-  if (!canUseAdvancedAdvisorTools) return { primary, advanced: [] }
+  if (!canUseAdvancedAdvisorTools) return { primary, advanced: [], quickQuestions }
 
   return {
     primary,
+    quickQuestions,
     advanced: [
     {
       mode: "preparer_dossier",
@@ -168,6 +184,9 @@ export default function ConseillerPage({
   isPremium,
   isPremiumPlus,
   transactions = [],
+  historyTransactions,
+  recurringCharges,
+  budgetTargets = [],
   stats = {},
   byCategory = [],
   onDiscover,
@@ -205,7 +224,11 @@ export default function ConseillerPage({
         modes={modes.primary}
         advancedModes={modes.advanced}
         access={access}
+        quickQuestions={modes.quickQuestions}
         transactions={transactions}
+        historyTransactions={historyTransactions}
+        recurringCharges={recurringCharges}
+        budgetTargets={budgetTargets}
         stats={stats}
         byCategory={byCategory}
       />

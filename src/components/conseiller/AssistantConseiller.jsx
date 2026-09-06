@@ -6,6 +6,7 @@ import {
   Sparkles,
   MessageCircle,
   UserRound,
+  ChevronRight,
 } from "lucide-react"
 import { useRef } from "react"
 
@@ -19,6 +20,14 @@ import {
 } from "../../services/advisorHandoff"
 import { useAssistantInsights } from "../../hooks/useAssistantInsights"
 import { buildAssistantAiSummary } from "../../services/ai/assistantInsightsService"
+import {
+  answerAssistantQuestion,
+  detectAssistantIntent,
+  isBudgetAssistantIntent,
+  selectAssistantActionLabel,
+  selectAssistantAnswerText,
+} from "../../services/ai/assistantIntentEngine"
+import { requestAppSectionNavigation } from "../../services/appSectionNavigation"
 import { resolveAdvisorLanguage } from "../../services/advisorLanguage"
 import { selectAidCandidatesForAdvisor } from "../../services/aidesRanking"
 import { prepareAdvisorAideContext } from "../../services/advisorAideContext"
@@ -225,7 +234,7 @@ function getModeLabel(mode = "general", isKreol = false) {
 function buildModeInstruction(mode = "general", isKreol = false) {
   const fr = {
     budget_depenses:
-      "Comportement : analyser le budget et les dépenses uniquement à partir du contexte financier agrégé. Ne pas inventer de cause. Présenter les prix comme des observations historiques et utiliser seulement les économies marquées fiables.",
+      "Comportement : répondre d'abord à la question avec les chiffres du contexte BudgetAdvisorContext. Ne jamais inventer revenu, dépense, cause, économie, marge ou comparaison. Séparer observation et interprétation, signaler les données manquantes, prioriser les facteurs utiles et proposer au maximum deux actions. Utiliser uniquement reliableSavingsTotal pour une économie personnelle ; un prix promo sans prix historique n'est pas une économie.",
     trouver_aide:
       "Comportement : chercher les aides les plus pertinentes, expliquer pourquoi elles peuvent correspondre, rester prudent, et proposer une seule prochaine action.",
     comprendre_courrier:
@@ -250,7 +259,7 @@ function buildModeInstruction(mode = "general", isKreol = false) {
 
   const kreol = {
     budget_depenses:
-      "Komportman : analiz bidzé ek dépans seulement avec contexte financier agrégé. Invente pa cause. Présente prix comme observation ancienne ek utilise seulement lékonomi marqué fiable.",
+      "Komportman : répond dabor kestyon-la avèk chiffres BudgetAdvisorContext. Invente jamais revenus, dépans, cause, lékonomi, marge ou comparaison. Sépare observation ek interprétation, signale donné i manque, priorise facteurs utiles ek propose maximum dé actions. Utilise seulement reliableSavingsTotal pou in lékonomi pèsonèl ; prix promo sans prix historique lé pa in lékonomi.",
     trouver_aide:
       "Komportman : rode bann aides les plus pertinentes, explique poukosa zot i pe correspond, reste prudent, ek propose une seule prochaine action.",
     comprendre_courrier:
@@ -307,9 +316,13 @@ export default function AssistantConseiller({
   t,
   user,
   modes = [],
+  quickQuestions = [],
   advancedModes = [],
   access,
   transactions = [],
+  historyTransactions,
+  recurringCharges,
+  budgetTargets = [],
   stats = {},
   byCategory = [],
 }) {
@@ -320,8 +333,6 @@ export default function AssistantConseiller({
   const [question, setQuestion] = useState("")
   const [assistantMode, setAssistantMode] = useState("general")
   const [quickQuestionSelected, setQuickQuestionSelected] = useState(false)
-  const [profile, setProfile] = useState(null)
-  const [loadingProfile, setLoadingProfile] = useState(false)
   const [loadingAssistant, setLoadingAssistant] = useState(false)
   const [history, setHistory] = useState(() =>
     user?.id ? advisorSessionByUser.get(user.id)?.history || [] : []
@@ -334,33 +345,29 @@ export default function AssistantConseiller({
   const textareaRef = useRef(null)
   const {
     insights: financialInsights,
+    buildForQuestion,
+    profile,
+    loading: loadingInsights,
     error: financialContextError,
   } = useAssistantInsights({
     userId: user?.id,
     transactions,
+    historyTransactions,
+    recurringCharges,
+    budgetTargets,
     stats,
     byCategory,
   })
-  const financialContext = useMemo(
-    () => buildAssistantAiSummary(financialInsights),
-    [financialInsights],
-  )
 
   const activeModeLabel = useMemo(() => {
     return getModeLabel(assistantMode, isKreol)
   }, [assistantMode, isKreol])
 
   const analyzeDisabled =
-    loadingProfile ||
+    loadingInsights ||
     loadingAssistant ||
     !question.trim() ||
     !access?.canUseAdvisor
-
-  useEffect(() => {
-    fetchProfile()
-    // The profile request is intentionally refreshed only when the authenticated user changes.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id])
 
   useEffect(() => {
     if (!user?.id) return
@@ -406,32 +413,6 @@ export default function AssistantConseiller({
     }
   }, [])
 
-  async function fetchProfile() {
-    if (!user?.id) {
-      setProfile(null)
-      return null
-    }
-
-    setLoadingProfile(true)
-
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", user.id)
-      .maybeSingle()
-
-    setLoadingProfile(false)
-
-    if (error) {
-      console.error("Erreur chargement profil conseiller:", error)
-      setProfile(null)
-      return null
-    }
-
-    setProfile(data || null)
-    return data || null
-  }
-
   async function fetchAides() {
     const { data, error } = await supabase
       .from("aides_reunion")
@@ -454,6 +435,8 @@ export default function AssistantConseiller({
     recentHistory,
     isQuickPreset,
     handoffContext,
+    questionInsights,
+    detectedIntent,
   }) {
     const interfaceLanguage = isKreol ? "kreol" : "fr"
     const assistantLanguage = resolveAdvisorLanguage({
@@ -474,6 +457,7 @@ export default function AssistantConseiller({
       selectedAides,
       assistantIsKreol
     )
+    const financialContext = buildAssistantAiSummary(questionInsights || financialInsights, detectedIntent)
 
     const localContext = {
       commune: currentProfile?.commune || "",
@@ -558,28 +542,17 @@ export default function AssistantConseiller({
     const requestedQuickPreset = Boolean(
       messageOverride?.quickQuestionSelected ?? quickQuestionSelected
     )
-    let currentProfile
-
-    try {
-      currentProfile = profile || (await fetchProfile())
-    } catch (error) {
-      console.error("Erreur chargement profil conseiller:", error)
-      setErrorMessage(
-        isKreol
-          ? "Inposib sharj out profil pou linstan."
-          : "Impossible de charger votre profil pour le moment."
+    const currentProfile = profile || {}
+    const interfaceLanguage = isKreol ? "kreol" : "fr"
+    const responseLanguage = resolveAdvisorLanguage({ message: sentQuestion, interfaceLanguage })
+    const detectedIntent = detectAssistantIntent(sentQuestion)
+    const questionInsights = buildForQuestion(sentQuestion, responseLanguage)
+    const shouldAnswerLocally = detectedIntent !== "unknown" && (
+      currentMode === "budget_depenses" ||
+      currentMode === "general" && (
+        isBudgetAssistantIntent(detectedIntent) || detectedIntent === "cheapest_stores"
       )
-      return
-    }
-
-    if (!currentProfile) {
-      setErrorMessage(
-        isKreol
-          ? "Inposib sharj out profil pou linstan."
-          : "Impossible de charger votre profil pour le moment."
-      )
-      return
-    }
+    )
 
     setLoadingAssistant(true)
     setErrorMessage("")
@@ -587,10 +560,35 @@ export default function AssistantConseiller({
     setPendingMessage({ question: sentQuestion, mode: currentMode })
     setQuestion("")
     setQuickQuestionSelected(false)
+
+    if (shouldAnswerLocally) {
+      const localResult = answerAssistantQuestion({ question: sentQuestion, insights: questionInsights })
+      const answer = selectAssistantAnswerText(localResult, responseLanguage)
+      setHistory(prev => [
+        {
+          id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          question: sentQuestion,
+          answer,
+          actions: localResult.actions || [],
+          language: responseLanguage,
+          mode: currentMode,
+          intent: localResult.intent,
+          source: "local",
+          createdAt: new Date().toISOString(),
+        },
+        ...prev,
+      ].slice(0, 6))
+      setLoadingAssistant(false)
+      setPendingMessage(null)
+      setAssistantMode("general")
+      setAdvisorHandoffContext(null)
+      return
+    }
+
     let result
 
     try {
-      const aides = await fetchAides()
+      const aides = currentMode === "budget_depenses" ? [] : await fetchAides()
 
       result = await callAssistantAi({
         sentQuestion,
@@ -600,6 +598,8 @@ export default function AssistantConseiller({
         recentHistory: history,
         isQuickPreset: requestedQuickPreset,
         handoffContext: advisorHandoffContext,
+        questionInsights,
+        detectedIntent,
       })
     } catch (error) {
       console.error("Erreur analyse conseiller:", error)
@@ -649,6 +649,7 @@ export default function AssistantConseiller({
           id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
           question: sentQuestion,
           answer,
+          actions: result.actions || [],
           language: result.language || (responseIsKreol ? "kreol" : "fr"),
           mode: currentMode,
           createdAt: new Date().toISOString(),
@@ -739,8 +740,8 @@ export default function AssistantConseiller({
               <div className="bkp-advisor-bubble bkp-advisor-bubble--assistant">
                 <strong>{isKreol ? "Bonzour !" : "Bonjour !"}</strong>
                 <p>{isKreol
-                  ? "Mi lé la pou aide aou ek out aides ek démarches. Choisis in suggestion ou écris out question."
-                  : "Je suis là pour vous aider avec vos aides et démarches. Choisissez une suggestion ou écrivez votre question."}</p>
+                  ? "Mi lé la pou aide aou ek out bidzé, courses, aides ek démarches. Choisis in suggestion ou écris out question."
+                  : "Je suis là pour vous aider avec votre budget, vos courses, vos aides et démarches. Choisissez une suggestion ou écrivez votre question."}</p>
               </div>
             </div>
           )}
@@ -758,7 +759,22 @@ export default function AssistantConseiller({
               </div>
               <div className="bkp-advisor-message bkp-advisor-message--assistant">
                 <span className="bkp-advisor-message-avatar" aria-hidden="true"><Bot size={18} /></span>
-                <div className="bkp-advisor-bubble bkp-advisor-bubble--assistant bkp-advisor-answer">{item.answer}</div>
+                <div className="bkp-advisor-bubble bkp-advisor-bubble--assistant bkp-advisor-answer">
+                  {item.answer}
+                  {Array.isArray(item.actions) && item.actions.length > 0 && (
+                    <div className="bkp-advisor-answer-actions">
+                      {item.actions.slice(0, 2).map(actionRow => {
+                        const label = selectAssistantActionLabel(actionRow, item.language)
+                        if (!label || actionRow.type !== "open_page") return null
+                        return (
+                          <button type="button" key={`${actionRow.target}-${label}`} onClick={() => requestAppSectionNavigation(actionRow.target)}>
+                            {label}<ChevronRight size={15} aria-hidden="true" />
+                          </button>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           ))}
@@ -800,6 +816,13 @@ export default function AssistantConseiller({
         <footer className="bkp-advisor-composer-zone">
           {chronologicalHistory.length === 0 && !pendingMessage && (
             <>
+              {quickQuestions.length > 0 && (
+                <div className="bkp-advisor-budget-quick" aria-label={isKreol ? "Kestions bidzé rapides" : "Questions budget rapides"}>
+                  {quickQuestions.map(mode => (
+                    <button type="button" key={mode.prompt} onClick={() => selectSuggestion(mode)}>{mode.title}</button>
+                  ))}
+                </div>
+              )}
               <div className="bkp-advisor-suggestions" aria-label={isKreol ? "Suggestions" : "Suggestions rapides"}>
                 {modes.map(mode => {
                   const Icon = mode.icon
@@ -840,7 +863,7 @@ export default function AssistantConseiller({
                 onKeyDown={handleComposerKeyDown}
                 placeholder={isKreol ? "Écris out question isi…" : "Écrivez votre question ici…"}
                 rows={1}
-                disabled={loadingAssistant || loadingProfile}
+                disabled={loadingAssistant || loadingInsights}
               />
             </div>
             <button type="button" className="bkp-advisor-send" onClick={() => handleAnalyze()} disabled={analyzeDisabled} aria-label={isKreol ? "Anvoy question" : "Envoyer la question"}>
@@ -966,7 +989,7 @@ export default function AssistantConseiller({
           }}
         >
           <Send size={16} />
-          {loadingProfile || loadingAssistant
+          {loadingInsights || loadingAssistant
             ? isKreol
               ? "Analyse an kour..."
               : "Analyse en cours..."

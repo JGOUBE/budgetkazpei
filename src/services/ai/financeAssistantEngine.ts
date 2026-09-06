@@ -140,6 +140,7 @@ async function answerWithSecureAi({ question, context, fallback }: { question: s
   const { data, error } = await supabase.functions.invoke("assistant-aisupabase", {
     body: {
       action: "finance_assistant_v2",
+      assistantMode: "budget_depenses",
       question: prompt,
       originalQuestion: question,
       language,
@@ -148,7 +149,7 @@ async function answerWithSecureAi({ question, context, fallback }: { question: s
       isQuickPreset: false,
       profile: context.profile || {},
       subscription_plan: context.profile?.plan || context.profile?.subscription_plan || "free",
-      localContext: summary,
+      localContext: { financial: summary },
     },
   })
 

@@ -100,6 +100,23 @@ function shouldConsumeAiExchange(message = "", isQuickPreset = false) {
   return countMeaningfulWords(message) > 0
 }
 
+function collectBudgetAmounts(value: unknown, amounts = new Set<number>(), field = ""): Set<number> {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    const monetaryField = /(amount|income|expense|margin|saving|estimate|spent|budget|price|total|balance)/i.test(field)
+    const nonMonetaryField = /(percent|count|score|share)/i.test(field)
+    if (monetaryField && !nonMonetaryField) amounts.add(Math.round((Math.abs(value) + Number.EPSILON) * 100) / 100)
+    return amounts
+  }
+  if (Array.isArray(value)) {
+    value.forEach(item => collectBudgetAmounts(item, amounts, field))
+    return amounts
+  }
+  if (value && typeof value === "object") {
+    Object.entries(value).forEach(([key, item]) => collectBudgetAmounts(item, amounts, key))
+  }
+  return amounts
+}
+
 function buildRefusalPrompt(body: any, language: AssistantLanguage) {
   const refusalText = String(body.refusalText || body.originalQuestion || body.question || "").trim()
   const demarche = body.demarche || {}
@@ -826,7 +843,14 @@ Deno.serve(async (req) => {
             issues: [],
             revisedAnswer: rawAnswer,
           }
-        : reviewAssistantAnswer(rawAnswer, context.language, toTrustedAmountClaims(trustedAidFacts))
+        : reviewAssistantAnswer(
+            rawAnswer,
+            context.language,
+            toTrustedAmountClaims(trustedAidFacts),
+            context.mode === "budget_depenses"
+              ? [...collectBudgetAmounts(context.body?.localContext?.financial?.budgetAdvisorContext)]
+              : [],
+          )
 
     const answer = reviewResult.revisedAnswer
     const mentionedTrustedAids = findMentionedTrustedAids(answer, trustedAidFacts)

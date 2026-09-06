@@ -1,28 +1,51 @@
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { supabase } from "../services/supabase"
 import { listShoppingItems } from "../features/shopping/services/shoppingEngine"
 import { buildAssistantInsights } from "../services/ai/assistantInsightsService"
+import { buildShoppingAdvisorContext } from "../services/ai/shoppingAdvisorContext"
+import { loadActiveRetailPromotions } from "../services/retail/retailPromotionService"
+import { loadShoppingListDraft } from "../services/shoppingList/shoppingListDraft"
 
 function getHistoryStartDate() {
-  const now = new Date()
-  return new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().slice(0, 10)
+  const date = new Date()
+  date.setDate(date.getDate() - 90)
+  return date.toISOString().slice(0, 10)
 }
 
-function isMissingColumnError(error) {
-  const message = String(error?.message || error?.details || "")
-  return error?.code === "PGRST204" || message.includes("Could not find") || message.includes("column")
+function resultOf(promise) {
+  return Promise.resolve(promise)
+    .then(result => result && typeof result === "object" && ("data" in result || "error" in result) ? result : { data: result, error: null })
+    .catch(error => ({ data: null, error }))
+}
+
+function normalizeSnapshot(row = null) {
+  if (!row) return null
+  return {
+    id: row.id,
+    items: Array.isArray(row.items) ? row.items : [],
+    totalEstimated: Number(row.total_estimated || 0),
+    missingPriceCount: Number(row.missing_price_count || 0),
+    totalItems: Number(row.total_items || 0),
+    createdAt: row.created_at,
+  }
 }
 
 export function useAssistantInsights({
   userId,
   transactions = [],
+  historyTransactions: providedHistoryTransactions,
+  recurringCharges: providedRecurringCharges,
+  budgetTargets = [],
   stats = {},
   byCategory = [],
 } = {}) {
   const [shoppingItems, setShoppingItems] = useState([])
   const [receipts, setReceipts] = useState([])
-  const [historyTransactions, setHistoryTransactions] = useState([])
+  const [loadedHistoryTransactions, setLoadedHistoryTransactions] = useState([])
+  const [loadedRecurringCharges, setLoadedRecurringCharges] = useState([])
   const [profile, setProfile] = useState(null)
+  const [shoppingBasket, setShoppingBasket] = useState(null)
+  const [availability, setAvailability] = useState({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
@@ -33,8 +56,11 @@ export function useAssistantInsights({
       if (!userId) {
         setShoppingItems([])
         setReceipts([])
-        setHistoryTransactions([])
+        setLoadedHistoryTransactions([])
+        setLoadedRecurringCharges([])
         setProfile(null)
+        setShoppingBasket(null)
+        setAvailability({})
         setLoading(false)
         setError("")
         return
@@ -42,78 +68,115 @@ export function useAssistantInsights({
 
       setLoading(true)
       setError("")
+      const historyStartDate = getHistoryStartDate()
+      const historyPromise = providedHistoryTransactions !== undefined
+        ? Promise.resolve({ data: providedHistoryTransactions, error: null })
+        : supabase.from("transactions").select("*").eq("user_id", userId).gte("date", historyStartDate).order("date", { ascending: false })
+      const recurringPromise = providedRecurringCharges !== undefined
+        ? Promise.resolve({ data: providedRecurringCharges, error: null })
+        : supabase.from("abonnements").select("*").eq("user_id", userId).order("created_at", { ascending: true })
 
-      try {
-        const historyStartDate = getHistoryStartDate()
-        const [shoppingRows, receiptsResult, transactionsResult, profileResult] = await Promise.all([
-          listShoppingItems({ userId }),
-          supabase
-            .from("receipts")
-            .select("id, store_name, merchant_name, normalized_store_name, purchase_date, total_amount, validation_status, budget_category, is_food_ticket, created_at")
-            .eq("user_id", userId)
-            .gte("purchase_date", historyStartDate)
-            .order("purchase_date", { ascending: false }),
-          supabase
-            .from("transactions")
-            .select("*")
-            .eq("user_id", userId)
-            .gte("date", historyStartDate)
-            .order("date", { ascending: false }),
-          supabase
-            .from("profiles")
-            .select("id, plan, premium, premium_plus, revenus_foyer, revenus_details")
-            .eq("id", userId)
-            .maybeSingle(),
-        ])
+      const [shoppingResult, receiptsResult, transactionsResult, profileResult, recurringResult, promotionsResult, snapshotResult] = await Promise.all([
+        resultOf(listShoppingItems({ userId, includeProductIdentity: true })),
+        resultOf(supabase
+          .from("receipts")
+          .select("id, store_name, merchant_name, normalized_store_name, purchase_date, total_amount, validation_status, budget_category, is_food_ticket, created_at")
+          .eq("user_id", userId)
+          .gte("purchase_date", historyStartDate)
+          .order("purchase_date", { ascending: false })),
+        resultOf(historyPromise),
+        resultOf(supabase.from("profiles").select("*").eq("id", userId).maybeSingle()),
+        resultOf(recurringPromise),
+        resultOf(loadActiveRetailPromotions({ client: supabase })),
+        resultOf(supabase
+          .from("shopping_list_snapshots")
+          .select("id, items, total_estimated, missing_price_count, total_items, created_at, expires_at")
+          .eq("user_id", userId)
+          .eq("status", "active")
+          .gt("expires_at", new Date().toISOString())
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle()),
+      ])
 
-        if (ignore) return
+      if (ignore) return
 
-        if (receiptsResult.error && !isMissingColumnError(receiptsResult.error)) throw receiptsResult.error
-        if (transactionsResult.error) throw transactionsResult.error
-        if (profileResult.error) throw profileResult.error
+      const nextShoppingItems = shoppingResult.data || []
+      const nextReceipts = receiptsResult.data || []
+      const nextTransactions = transactionsResult.data || []
+      const nextRecurringCharges = recurringResult.data || []
+      const draftItems = loadShoppingListDraft({ userId })
+      const nextShoppingBasket = buildShoppingAdvisorContext({
+        draftItems,
+        snapshot: normalizeSnapshot(snapshotResult.data),
+        shoppingItems: nextShoppingItems,
+        promotions: promotionsResult.data || [],
+      })
 
-        setShoppingItems(shoppingRows || [])
-        setReceipts(receiptsResult.data || [])
-        setHistoryTransactions(transactionsResult.data || [])
-        setProfile(profileResult.data || null)
-      } catch (loadError) {
-        console.error("Erreur contexte assistant:", loadError)
-        if (!ignore) {
-          setShoppingItems([])
-          setReceipts([])
-          setHistoryTransactions([])
-          setProfile(null)
-          setError("assistant_context_unavailable")
-        }
-      } finally {
-        if (!ignore) setLoading(false)
+      setShoppingItems(nextShoppingItems)
+      setReceipts(nextReceipts)
+      setLoadedHistoryTransactions(nextTransactions)
+      setLoadedRecurringCharges(nextRecurringCharges)
+      setProfile(profileResult.data || null)
+      setShoppingBasket(nextShoppingBasket)
+      setAvailability({
+        transactions: !transactionsResult.error,
+        receipts: !receiptsResult.error,
+        shoppingItems: !shoppingResult.error,
+        recurringCharges: !recurringResult.error,
+        emptyTransactionsKnown: !transactionsResult.error && nextTransactions.length === 0,
+      })
+
+      const importantError = transactionsResult.error || profileResult.error || recurringResult.error
+      if (importantError) {
+        console.error("Erreur contexte assistant:", importantError)
+        setError("assistant_context_partially_unavailable")
       }
     }
 
     load()
+      .catch(loadError => {
+        console.error("Erreur contexte assistant:", loadError)
+        if (!ignore) setError("assistant_context_unavailable")
+      })
+      .finally(() => {
+        if (!ignore) setLoading(false)
+      })
 
     return () => {
       ignore = true
     }
-  }, [userId])
+  }, [userId, providedHistoryTransactions, providedRecurringCharges])
 
-  const insights = useMemo(() => {
-    return buildAssistantInsights({
-      transactions,
-      historyTransactions,
-      stats,
-      byCategory,
-      shoppingItems,
-      receipts,
-      profile,
-    })
-  }, [transactions, historyTransactions, stats, byCategory, shoppingItems, receipts, profile])
+  const effectiveHistoryTransactions = providedHistoryTransactions ?? loadedHistoryTransactions
+  const effectiveRecurringCharges = providedRecurringCharges ?? loadedRecurringCharges
+
+  const buildForQuestion = useCallback((question = "", language = "fr") => buildAssistantInsights({
+    transactions,
+    historyTransactions: effectiveHistoryTransactions,
+    stats,
+    byCategory,
+    shoppingItems,
+    receipts,
+    profile,
+    recurringCharges: effectiveRecurringCharges,
+    budgetTargets,
+    shoppingBasket,
+    question,
+    language,
+    dataAvailability: availability,
+  }), [transactions, effectiveHistoryTransactions, stats, byCategory, shoppingItems, receipts, profile, effectiveRecurringCharges, budgetTargets, shoppingBasket, availability])
+
+  const insights = useMemo(() => buildForQuestion("", "fr"), [buildForQuestion])
 
   return {
     insights,
+    buildForQuestion,
     shoppingItems,
     receipts,
-    historyTransactions,
+    historyTransactions: effectiveHistoryTransactions,
+    recurringCharges: effectiveRecurringCharges,
+    shoppingBasket,
     profile,
     loading,
     error,
