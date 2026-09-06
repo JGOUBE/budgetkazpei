@@ -23,6 +23,7 @@ import {
   saveShoppingListSnapshot,
 } from "../services/shoppingList/shoppingListSnapshots"
 import { MANUAL_SAVE_METHOD } from "../services/shoppingList/shoppingListSnapshotModel"
+import { loadShoppingListDraft, saveShoppingListDraft } from "../services/shoppingList/shoppingListDraft"
 import { formatMontant } from "../utils/format"
 import { createColorAliases } from "../styles/designSystem"
 import { languages } from "../i18n"
@@ -83,6 +84,10 @@ const COPY = {
     missingPrices: count => `${count} prix à estimer`,
     view: "Voir",
     delete: "Supprimer",
+    deleting: "Suppression…",
+    deleteConfirm: "Supprimer cette liste sauvegardée ?",
+    deleted: "Liste supprimée.",
+    deleteError: "Impossible de supprimer cette liste.",
     shareTitle: "Partager la liste",
     copy: "Copier",
     close: "Fermer",
@@ -140,6 +145,10 @@ const COPY = {
     missingPrices: count => `${count} prix pou estimer`,
     view: "Voir",
     delete: "Supprimé",
+    deleting: "Suppression…",
+    deleteConfirm: "Supprim sa lis sauvegardée-la ?",
+    deleted: "Lis-la lé supprimée.",
+    deleteError: "Nou la pa réussi supprim sa lis-la.",
     shareTitle: "Partaz la lis",
     copy: "Copie",
     close: "Fèrmé",
@@ -194,14 +203,20 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
   )
   const [shoppingItems, setShoppingItems] = useState([])
   const [retailPromotions, setRetailPromotions] = useState([])
-  const [items, setItems] = useState([])
+  const [items, setItems] = useState(() => loadShoppingListDraft({ userId: user?.id }))
   const [query, setQuery] = useState("")
   const [snapshots, setSnapshots] = useState([])
   const [shareModal, setShareModal] = useState(null)
   const [previewSnapshot, setPreviewSnapshot] = useState(null)
   const [notice, setNotice] = useState(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [deletingSnapshotIds, setDeletingSnapshotIds] = useState(() => new Set())
   const saveInFlightRef = useRef(false)
+
+  useEffect(() => {
+    saveShoppingListDraft({ userId: user?.id, items })
+  }, [items, user?.id])
+  const deleteInFlightRef = useRef(new Set())
 
   useEffect(() => {
     let ignore = false
@@ -399,8 +414,27 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
   }
 
   async function deleteSnapshot(id) {
-    await markShoppingListSnapshotDeleted({ userId: user?.id, id })
-    setSnapshots(prev => prev.filter(row => row.id !== id))
+    if (!id || deleteInFlightRef.current.has(id)) return
+    if (!window.confirm(txt.deleteConfirm)) return
+
+    deleteInFlightRef.current.add(id)
+    setDeletingSnapshotIds(prev => new Set(prev).add(id))
+
+    try {
+      await markShoppingListSnapshotDeleted({ userId: user?.id, id })
+      setSnapshots(prev => prev.filter(row => row.id !== id))
+      setPreviewSnapshot(prev => prev?.id === id ? null : prev)
+      setNotice({ message: txt.deleted, kind: "success" })
+    } catch {
+      setNotice({ message: txt.deleteError, kind: "error" })
+    } finally {
+      deleteInFlightRef.current.delete(id)
+      setDeletingSnapshotIds(prev => {
+        const next = new Set(prev)
+        next.delete(id)
+        return next
+      })
+    }
   }
 
   function shareSavedSnapshot(snapshot) {
@@ -555,7 +589,9 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
         <div style={{ display: "grid", gap: 10, marginTop: 14 }}>
           {snapshots.length === 0 ? (
             <div style={{ color: COLORS.muted }}>{txt.noSavedLists}</div>
-          ) : snapshots.map(snapshot => (
+          ) : snapshots.map(snapshot => {
+            const isDeleting = deletingSnapshotIds.has(snapshot.id)
+            return (
             <div key={snapshot.id} style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr auto", gap: 12, alignItems: "center", border: `1px solid ${COLORS.border}`, background: COLORS.row, borderRadius: 14, padding: 12 }}>
               <div>
                 <div style={{ color: COLORS.text, fontWeight: 950 }}>{snapshot.title}</div>
@@ -572,10 +608,11 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 <SmallButton onClick={() => setPreviewSnapshot(snapshot)} icon={<Eye size={16} />} label={txt.view} />
                 <SmallButton onClick={() => shareSavedSnapshot(snapshot)} icon={<Send size={16} />} label={txt.share} />
-                <SmallButton onClick={() => deleteSnapshot(snapshot.id)} icon={<Trash2 size={16} />} label={txt.delete} danger />
+                <SmallButton onClick={() => deleteSnapshot(snapshot.id)} icon={<Trash2 size={16} />} label={isDeleting ? txt.deleting : txt.delete} disabled={isDeleting} danger />
               </div>
             </div>
-          ))}
+            )
+          })}
         </div>
       </div>
 
@@ -663,9 +700,9 @@ function PromotionHint({ item, txt, onOpen, reliable = false }) {
   )
 }
 
-function SmallButton({ icon, label, onClick, danger = false }) {
+function SmallButton({ icon, label, onClick, disabled = false, danger = false }) {
   return (
-    <button type="button" onClick={onClick} style={{ minHeight: 36, borderRadius: 12, border: `1px solid ${danger ? `${COLORS.danger}55` : COLORS.border}`, background: danger ? COLORS.redSoft : COLORS.card, color: danger ? COLORS.danger : COLORS.text, fontWeight: 850, padding: "0 10px", display: "inline-flex", alignItems: "center", gap: 6 }}>
+    <button type="button" onClick={onClick} disabled={disabled} style={{ minHeight: 36, borderRadius: 12, border: `1px solid ${danger ? `${COLORS.danger}55` : COLORS.border}`, background: danger ? COLORS.redSoft : COLORS.card, color: danger ? COLORS.danger : COLORS.text, fontWeight: 850, padding: "0 10px", display: "inline-flex", alignItems: "center", gap: 6, opacity: disabled ? 0.65 : 1, cursor: disabled ? "wait" : "pointer" }}>
       {icon} {label}
     </button>
   )

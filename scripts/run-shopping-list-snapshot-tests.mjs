@@ -5,6 +5,7 @@ import {
   isShoppingListSnapshotVisible,
   MANUAL_SAVE_METHOD,
 } from "../src/services/shoppingList/shoppingListSnapshotModel.js"
+import { deleteShoppingListSnapshotWithClient } from "../src/services/shoppingList/shoppingListSnapshotDelete.js"
 import fr from "../src/i18n/fr.js"
 import kreol from "../src/i18n/kreol.js"
 
@@ -43,6 +44,104 @@ assert.equal(isShoppingListSnapshotVisible({ status: "active", expiresAt: "2026-
 assert.equal(isShoppingListSnapshotVisible({ status: "active", expiresAt: "2026-08-27T10:00:00.000Z" }, now), false)
 assert.equal(isShoppingListSnapshotVisible({ status: "expired", expiresAt: "2026-09-03T10:00:00.001Z" }, now), false)
 
+function createDeleteClient({ rows, sessionUserId, failWith = null }) {
+  const calls = []
+  return {
+    calls,
+    from(table) {
+      const filters = []
+      const query = {
+        update(values, options) {
+          calls.push({ type: "update", table, values, options })
+          return query
+        },
+        eq(column, value) {
+          filters.push([column, value])
+          calls.push({ type: "eq", column, value })
+          return query
+        },
+        then(resolve, reject) {
+          if (failWith) return Promise.resolve({ count: null, error: failWith }).then(resolve, reject)
+
+          const matches = rows.filter(row =>
+            row.user_id === sessionUserId
+            && row.status === "active"
+            && new Date(row.expires_at).getTime() > now
+            && filters.every(([column, value]) => row[column] === value),
+          )
+          for (const row of matches) row.status = "deleted"
+          return Promise.resolve({ count: matches.length, error: null }).then(resolve, reject)
+        },
+      }
+      return query
+    },
+  }
+}
+
+const activeSnapshot = {
+  id: "snapshot-active",
+  user_id: "user-a",
+  status: "active",
+  expires_at: "2026-09-03T10:00:00.001Z",
+}
+const otherSnapshot = {
+  id: "snapshot-other",
+  user_id: "user-a",
+  status: "active",
+  expires_at: "2026-09-03T10:00:00.001Z",
+}
+const deleteRows = [activeSnapshot, otherSnapshot]
+const deleteClient = createDeleteClient({ rows: deleteRows, sessionUserId: "user-a" })
+
+assert.equal(
+  await deleteShoppingListSnapshotWithClient({ client: deleteClient, userId: "user-a", id: activeSnapshot.id }),
+  activeSnapshot.id,
+  "An active owned snapshot must be soft-deleted successfully",
+)
+assert.equal(activeSnapshot.status, "deleted", "The successful mutation must mark the target deleted")
+assert.deepEqual(
+  deleteRows.filter(row => isShoppingListSnapshotVisible(row, now)).map(row => row.id),
+  [otherSnapshot.id],
+  "A deleted snapshot must not return after reloading while other snapshots remain intact",
+)
+assert.equal(otherSnapshot.status, "active", "Deleting one snapshot must not affect another")
+assert.deepEqual(deleteClient.calls[0], {
+  type: "update",
+  table: "shopping_list_snapshots",
+  values: { status: "deleted" },
+  options: undefined,
+}, "Deletion must not request a representation or count of the hidden row")
+assert.ok(deleteClient.calls.some(call => call.type === "eq" && call.column === "status" && call.value === "active"))
+
+const failedRows = [{ ...otherSnapshot, id: "snapshot-failed" }]
+const supabaseFailure = Object.assign(new Error("Supabase unavailable"), { code: "503" })
+await assert.rejects(
+  deleteShoppingListSnapshotWithClient({
+    client: createDeleteClient({ rows: failedRows, sessionUserId: "user-a", failWith: supabaseFailure }),
+    userId: "user-a",
+    id: "snapshot-failed",
+  }),
+  error => error === supabaseFailure,
+  "A Supabase failure must be exposed to the UI",
+)
+assert.equal(failedRows[0].status, "active", "A backend failure must leave the snapshot visible")
+
+const foreignRows = [{ ...otherSnapshot, id: "snapshot-foreign", user_id: "user-b" }]
+await deleteShoppingListSnapshotWithClient({
+  client: createDeleteClient({ rows: foreignRows, sessionUserId: "user-a" }),
+  userId: "user-b",
+  id: "snapshot-foreign",
+})
+assert.equal(foreignRows[0].status, "active")
+
+const expiredRows = [{ ...otherSnapshot, id: "snapshot-expired", expires_at: "2026-08-27T09:59:59.999Z" }]
+await deleteShoppingListSnapshotWithClient({
+  client: createDeleteClient({ rows: expiredRows, sessionUserId: "user-a" }),
+  userId: "user-a",
+  id: "snapshot-expired",
+})
+assert.equal(expiredRows[0].status, "active", "Expired snapshots must remain governed by the existing retention behavior")
+
 const [page, service, migration] = await Promise.all([
   read("src/pages/ShoppingListPage.jsx"),
   read("src/services/shoppingList/shoppingListSnapshots.js"),
@@ -60,6 +159,12 @@ assert.match(service, /shareMethod = MANUAL_SAVE_METHOD/)
 assert.match(service, /share_method: shareMethod/, "The manual-save method must reach the inserted row")
 assert.match(service, /\.lte\("expires_at", nowIso\(\)\)/, "Expired snapshots must be opportunistically deleted")
 assert.match(service, /\.gt\("expires_at", nowIso\(\)\)/, "Expired snapshots must be excluded from reads")
+assert.doesNotMatch(service, /update\(\{ status: "deleted" \}\)[\s\S]*\.select\(/, "Soft delete must not return a row hidden by SELECT RLS")
+assert.match(page, /window\.confirm\(txt\.deleteConfirm\)/, "Deletion must require one confirmation")
+assert.match(page, /deleteInFlightRef\.current\.has\(id\)/, "A double click must not start a second deletion")
+assert.match(page, /try \{[\s\S]*markShoppingListSnapshotDeleted[\s\S]*setSnapshots\(prev => prev\.filter[\s\S]*setNotice\(\{ message: txt\.deleted, kind: "success" \}\)[\s\S]*catch \{[\s\S]*setNotice\(\{ message: txt\.deleteError, kind: "error" \}\)/, "The UI must mutate local state only after backend success and report failures")
+assert.match(page, /setPreviewSnapshot\(prev => prev\?\.id === id \? null : prev\)/, "Deleting a previewed snapshot must close its preview")
+assert.match(page, /disabled=\{isDeleting\}/, "The delete button must be disabled while its snapshot is being deleted")
 
 assert.match(migration, /new\.expires_at := new\.created_at \+ interval '7 days'/)
 assert.match(migration, /new\.expires_at := old\.expires_at/, "Clients must not be able to extend retention")

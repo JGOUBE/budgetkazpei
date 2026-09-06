@@ -4,6 +4,7 @@ import {
   isShoppingListSnapshotVisible,
   MANUAL_SAVE_METHOD,
 } from "./shoppingListSnapshotModel"
+import { deleteShoppingListSnapshotWithClient } from "./shoppingListSnapshotDelete"
 
 function nowIso() {
   return new Date().toISOString()
@@ -89,16 +90,5 @@ export async function saveShoppingListSnapshot({
 }
 
 export async function markShoppingListSnapshotDeleted({ userId, id }) {
-  if (!userId || !id) return null
-
-  const { data, error } = await supabase
-    .from("shopping_list_snapshots")
-    .update({ status: "deleted" })
-    .eq("user_id", userId)
-    .eq("id", id)
-    .select("*")
-    .maybeSingle()
-
-  if (error) throw error
-  return data ? normalizeSnapshot(data) : null
+  return deleteShoppingListSnapshotWithClient({ client: supabase, userId, id })
 }
