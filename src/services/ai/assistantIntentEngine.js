@@ -73,6 +73,29 @@ function percentText(value) {
   return Number.isFinite(number) ? `${Math.abs(Math.round(number))} %` : ""
 }
 
+function asksWhyRemainingIsLow(question = "") {
+  const text = normalizeForAssistantMatch(question)
+  return (
+    hasAny(text, ["pourquoi", "pou kosa", "pourkoi"]) &&
+    hasAny(text, ["si peu", "peu", "reste peu", "reste si peu", "ti gin", "reste pa bokou"])
+  )
+}
+
+function asksSpendingIncrease(question = "") {
+  const text = normalizeForAssistantMatch(question)
+  return hasAny(text, [
+    "augmente",
+    "augmentation",
+    "hausse",
+    "explose",
+    "depense plus",
+    "depenses plus",
+    "plus que",
+    "ogmant",
+    "depans plis",
+  ])
+}
+
 function missingResponse(intent, insights, field) {
   const messages = {
     income: {
@@ -172,6 +195,30 @@ function buildGroceryAnswer(question, insights) {
       actions: [action("shoppingList", "Voir ma liste de courses", "War ma liste courses")],
     })
   }
+  if (
+    asksSpendingIncrease(question) &&
+    grocery.changeAmount !== null &&
+    grocery.changeAmount !== undefined &&
+    Number(grocery.changeAmount) <= 0
+  ) {
+    const delta = Math.abs(Number(grocery.changeAmount))
+    const frDetail = delta === 0
+      ? "Le montant est identique à la période précédente comparable."
+      : `C'est ${formatMontant(delta)} de moins que sur la période précédente comparable.`
+    const krDetail = delta === 0
+      ? "Montant-la lé pareil ke période précédente comparable."
+      : `Lé ${formatMontant(delta)} moins ke période précédente comparable.`
+
+    return response({
+      fr: `Tes dépenses de courses n'ont pas augmenté ${periodPhrase(context)}. Tu as dépensé ${formatMontant(grocery.currentSpend)}. ${frDetail}`,
+      kr: `Out dépans courses la pa augmenté ${periodPhrase(context)}. Ou la dépans ${formatMontant(grocery.currentSpend)}. ${krDetail}`,
+      intent: ASSISTANT_INTENTS.BUDGET_GROCERY,
+      insights,
+      actions: [action("statistics", "Voir mes statistiques", "War mon bann statistik")],
+      confidence: 0.99,
+    })
+  }
+
   const comparisonFr = grocery.changeAmount === null || grocery.changeAmount === undefined
     ? " Je n'ai pas de période précédente comparable."
     : grocery.changeAmount === 0
@@ -230,6 +277,23 @@ function buildRemainingAnswer(question, insights) {
   if (!context.income?.available) return missingResponse(ASSISTANT_INTENTS.BUDGET_REMAINING, insights, "income")
   if (context.expenses?.fixed === null || context.expenses?.fixed === undefined) return missingResponse(ASSISTANT_INTENTS.BUDGET_REMAINING, insights, "fixed")
   const why = hasAny(normalizeForAssistantMatch(question), ["pourquoi", "pou kosa", "si peu", "ti gin"])
+
+  if (
+    asksWhyRemainingIsLow(question) &&
+    context.currentAvailableMargin !== null &&
+    context.currentAvailableMargin !== undefined &&
+    Number(context.currentAvailableMargin) >= 0
+  ) {
+    return response({
+      fr: `D'après les dépenses enregistrées dans BudgetKazPéi, je ne peux pas confirmer qu'il te reste peu ce mois-ci. Après tes charges fixes, il restait ${formatMontant(context.remainingAfterFixedExpenses)}. Tes dépenses variables enregistrées atteignent ${formatMontant(context.expenses?.variable || 0)}, ce qui laisse une marge estimée à ${formatMontant(context.currentAvailableMargin)}. Si ton solde réel est beaucoup plus bas, certaines dépenses ou charges ne sont probablement pas encore enregistrées dans BudgetKazPéi.`,
+      kr: `Dapré bann dépans anrezistré dann BudgetKazPéi, mi pé pa confirme ke i reste aou peu sa mwa-la. Apré out sarz fix, té reste ${formatMontant(context.remainingAfterFixedExpenses)}. Out dépans variables anrezistré i monte ${formatMontant(context.expenses?.variable || 0)}, sak i laisse in marge estimé ${formatMontant(context.currentAvailableMargin)}. Si out solde réel lé bokou pli bas, nana probablement bann dépans ou sarz pankor anrezistré dann BudgetKazPéi.`,
+      intent: ASSISTANT_INTENTS.BUDGET_REMAINING,
+      insights,
+      actions: [action("depenses", "Voir mes dépenses", "War mon bann dépans")],
+      confidence: 0.99,
+    })
+  }
+
   if (!why || context.currentAvailableMargin === null) {
     const marginFr = context.currentAvailableMargin === null
       ? " Je n'ai pas assez de dépenses variables enregistrées pour calculer la marge actuelle."
