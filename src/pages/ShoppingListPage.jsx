@@ -4,6 +4,7 @@ import { listShoppingItems } from "../features/shopping/services/shoppingEngine"
 import { supabase } from "../services/supabase"
 import { createAppSectionTarget } from "../services/appSectionNavigation"
 import { loadActiveRetailPromotions, resolveRetailPromotionDestination } from "../services/retail/retailPromotionService"
+import { loadPublishedRetailObservedPrices } from "../services/retail/retailObservedPriceService"
 import {
   buildShoppingListItemFromSuggestion,
   buildShoppingListShareText,
@@ -48,7 +49,7 @@ const COPY = {
     moreDataText: "Après quelques tickets, nous pourrons estimer vos prix habituels et vous aider à préparer vos courses.",
     estimate: "Estimation",
     basketRange: (min, max) => `Ce panier coûte généralement ${min} à ${max}.`,
-    priceInfo: "Les prix affichés sont basés sur vos tickets déjà scannés. Ils deviendront plus précis au fur et à mesure de vos prochains achats.",
+    priceInfo: "Les prix affichés viennent d’abord de vos tickets scannés. Sans historique personnel, BudgetKazPéi peut utiliser un prix retail validé récemment.",
     mixedBasketInfo: "Estimation basée sur vos derniers prix connus et les promos fiables actuellement repérées.",
     mixedPriceInfo: "Les produits sans prix habituel ni promo fiable restent à estimer.",
     learningCardTitle: "Vos Courses intelligentes s'améliorent avec le temps",
@@ -59,7 +60,10 @@ const COPY = {
     share: "Partager",
     habitualSuggestions: "Mes produits habituels",
     currentPromotionSuggestions: "Promos actuelles",
+    observedPriceSuggestions: "Prix observés",
     lastKnownPrice: amount => `Dernier prix connu : ${amount}`,
+    observedSuggestion: "Prix observé récemment",
+    observedLinePrice: retailer => retailer ? `Prix observé chez ${retailer}` : "Prix observé retail",
     promotionSuggestion: "Promo actuelle",
     noProduct: "Aucun produit trouvé. Appuyez sur Ajouter pour créer ce produit.",
     empty: "Ajoute un produit pour commencer.",
@@ -109,7 +113,7 @@ const COPY = {
     moreDataText: "Apré dé-trwa tiké, nou va estim out prix labitid ek éd aou prépar out courses.",
     estimate: "Estimasyon",
     basketRange: (min, max) => `Sa panié-la i kout généralement ${min} à ${max}.`,
-    priceInfo: "Bann prix affiché i vien de out tiké déjà scanné. Zot va devnir pli précis au fil de out prochain achats.",
+    priceInfo: "Bann prix i vien dabor de out tiké scanné. Si nana poin historique perso, BudgetKazPéi pé sèvi in prix retail validé récemment.",
     mixedBasketInfo: "Estimasyon i sèvi out derniers prix connus ek bann promo fiables nou la trouvé.",
     mixedPriceInfo: "Bann produits san prix habituel ni promo fiable i reste pou estimer.",
     learningCardTitle: "Out Courses intelligentes i améliore ek le temps",
@@ -120,7 +124,10 @@ const COPY = {
     share: "Partaze",
     habitualSuggestions: "Mes produits habituels",
     currentPromotionSuggestions: "Bann promo actuelles",
+    observedPriceSuggestions: "Bann prix observés",
     lastKnownPrice: amount => `Dernier prix connu : ${amount}`,
+    observedSuggestion: "Prix observé récemment",
+    observedLinePrice: retailer => retailer ? `Prix observé kot ${retailer}` : "Prix observé retail",
     promotionSuggestion: "Promo actuelle",
     noProduct: "Nana poin produit trouvé. Appuie su Azouté pou créer produit-la.",
     empty: "Azout in produit pou komansé.",
@@ -174,6 +181,7 @@ function AutocompleteSuggestion({ suggestion, txt, onSelect }) {
   const promotion = suggestion.activePromotion || suggestion.promotion
   const lastPrice = Number(suggestion.lastPrice || 0)
   const promoPrice = Number(promotion?.promoPrice || suggestion.promoPrice || 0)
+  const observedPrice = Number(suggestion.observedPrice || 0)
   const retailer = String(promotion?.retailerName || suggestion.retailerName || "").trim()
 
   return (
@@ -185,6 +193,12 @@ function AutocompleteSuggestion({ suggestion, txt, onSelect }) {
     >
       <span style={{ display: "block", fontWeight: 900 }}>{suggestion.label}</span>
       {lastPrice > 0 && <span style={{ display: "block", color: COLORS.muted, fontSize: 12, marginTop: 2 }}>{txt.lastKnownPrice(formatMontant(lastPrice))}</span>}
+      {!promotion && observedPrice > 0 && (
+        <>
+          <span style={{ display: "block", color: COLORS.green, fontSize: 12, fontWeight: 850, marginTop: 2 }}>{retailer ? `${retailer} · ` : ""}{formatMontant(observedPrice)}</span>
+          <span style={{ display: "block", color: COLORS.cyan, fontSize: 11, fontWeight: 900, marginTop: 2 }}>{txt.observedSuggestion}</span>
+        </>
+      )}
       {promotion && promoPrice > 0 && (
         <>
           <span style={{ display: "block", color: COLORS.green, fontSize: 12, fontWeight: 850, marginTop: 2 }}>{retailer ? `${retailer} · ` : ""}{formatMontant(promoPrice)}</span>
@@ -203,6 +217,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
   )
   const [shoppingItems, setShoppingItems] = useState([])
   const [retailPromotions, setRetailPromotions] = useState([])
+  const [retailObservedPrices, setRetailObservedPrices] = useState([])
   const [items, setItems] = useState(() => loadShoppingListDraft({ userId: user?.id }))
   const [query, setQuery] = useState("")
   const [snapshots, setSnapshots] = useState([])
@@ -245,6 +260,17 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
 
   useEffect(() => {
     let ignore = false
+    loadPublishedRetailObservedPrices({ client: supabase })
+      .then(rows => !ignore && setRetailObservedPrices(rows || []))
+      .catch(error => {
+        if (import.meta.env.DEV) console.warn("[Shopping retail] observed prices load failed", error?.code || "unknown")
+        if (!ignore) setRetailObservedPrices([])
+      })
+    return () => { ignore = true }
+  }, [])
+
+  useEffect(() => {
+    let ignore = false
     deletedSnapshotIdsRef.current.clear()
     const requestVersion = ++snapshotRequestVersionRef.current
     listShoppingListSnapshots({ userId: user?.id })
@@ -262,20 +288,26 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
     }
   }, [user?.id])
 
-  const historicalEstimate = useMemo(() => estimateShoppingList(items, shoppingItems), [items, shoppingItems])
+  const historicalEstimate = useMemo(
+    () => estimateShoppingList(items, shoppingItems, retailObservedPrices),
+    [items, shoppingItems, retailObservedPrices],
+  )
   const estimate = useMemo(
     () => enrichShoppingBasketWithPromotions({ estimate: historicalEstimate, promotions: retailPromotions }),
     [historicalEstimate, retailPromotions],
   )
   const suggestions = useMemo(
-    () => getShoppingAutocompleteSuggestions(query, shoppingItems, retailPromotions),
-    [query, shoppingItems, retailPromotions],
+    () => getShoppingAutocompleteSuggestions(query, shoppingItems, retailPromotions, retailObservedPrices),
+    [query, shoppingItems, retailPromotions, retailObservedPrices],
   )
   const pairing = useMemo(() => getPairingSuggestion(items, shoppingItems), [items, shoppingItems])
   const foodReceiptCount = useMemo(() => new Set((shoppingItems || []).map(item => item.receipt_id).filter(Boolean)).size, [shoppingItems])
   const learningReady = foodReceiptCount >= 3
   const shareText = useMemo(() => buildShoppingListShareText({ title: snapshotTitle(txt), estimate }), [estimate, txt])
-  const hasQueryWithoutResult = query.trim().length > 0 && suggestions.historical.length === 0 && suggestions.retail.length === 0
+  const hasQueryWithoutResult = query.trim().length > 0 &&
+    suggestions.historical.length === 0 &&
+    suggestions.observed.length === 0 &&
+    suggestions.retail.length === 0
   const visibleSnapshots = snapshots.filter(snapshot => !hiddenSnapshotIds.has(snapshot.id))
 
   useEffect(() => {
@@ -610,6 +642,14 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
             </div>
           </div>
         )}
+        {suggestions.observed.length > 0 && (
+          <div data-shopping-suggestion-group="observed" style={{ marginTop: 12 }}>
+            <div style={{ color: COLORS.muted, fontSize: 11, fontWeight: 950, letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 6 }}>{txt.observedPriceSuggestions}</div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {suggestions.observed.map(suggestion => <AutocompleteSuggestion key={suggestion.key} suggestion={suggestion} txt={txt} onSelect={() => addItem(suggestion)} />)}
+            </div>
+          </div>
+        )}
         {suggestions.retail.length > 0 && (
           <div data-shopping-suggestion-group="retail" style={{ marginTop: 12 }}>
             <div style={{ color: COLORS.muted, fontSize: 11, fontWeight: 950, letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 6 }}>{txt.currentPromotionSuggestions}</div>
@@ -626,13 +666,20 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
         {estimate.items.length === 0 ? <div style={{ color: COLORS.muted }}>{txt.empty}</div> : estimate.items.map(item => {
           const displayedPrice = Number(item.estimatedLineCost || 0)
           const priceLearning = item.historicalPrice === null && item.estimatedPriceSource === "promotion"
+          const retailObservedPrice = item.estimatedPriceSource === "retail_observed"
           return <div key={item.id} style={{ display: "grid", gridTemplateColumns: "auto minmax(0, 1fr) auto", gap: 10, alignItems: "start", color: COLORS.text, borderBottom: `1px solid ${COLORS.borderSubtle}`, padding: "12px 0" }}>
             <input aria-label={item.name} type="checkbox" checked={item.checked} onChange={e => setItems(prev => prev.map(row => row.id === item.id ? { ...row, checked: e.target.checked } : row))} style={{ marginTop: 4 }} />
             <div style={{ minWidth: 0 }}>
               <span style={{ textDecoration: item.checked ? "line-through" : "none" }}>
                 {item.name}
                 <span style={{ display: "block", color: COLORS.muted, fontSize: 12, marginTop: 2 }}>
-                  {priceLearning ? txt.usualPriceLearning : item.historicalPrice !== null ? item.priceLabel : txt.priceMissing}
+                  {priceLearning
+                    ? txt.usualPriceLearning
+                    : retailObservedPrice
+                      ? txt.observedLinePrice(item.retailObservedRetailerName)
+                      : item.historicalPrice !== null
+                        ? item.priceLabel
+                        : txt.priceMissing}
                 </span>
               </span>
               {item.promotionMatchStatus === "reliable" && item.promotion && (

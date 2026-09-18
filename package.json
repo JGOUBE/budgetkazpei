@@ -31,7 +31,8 @@
     "market:aliases:plan": "node scripts/prepare_market_alias_apply_plan.mjs",
     "test:market-alias-apply-plan": "node scripts/run-market-alias-apply-plan-tests.mjs",
     "market:aliases:apply-plan": "node scripts/apply_market_alias_plan.mjs",
-    "test:market-alias-atomic-apply": "node scripts/run-market-alias-atomic-apply-tests.mjs"
+    "test:market-alias-atomic-apply": "node scripts/run-market-alias-atomic-apply-tests.mjs",
+    "test:shopping-retail-catalog": "node scripts/run-shopping-retail-catalog-tests.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.0",

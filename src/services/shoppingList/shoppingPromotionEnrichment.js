@@ -130,6 +130,12 @@ export function enrichShoppingBasketWithPromotions({ estimate = {}, promotions =
   const items = estimateItems.map((item, index) => {
     const match = matches[index]
     const historicalPrice = moneyOrNull(item.historicalPrice)
+    const baseEstimatedPrice = moneyOrNull(item.estimatedPrice)
+    const baseEstimatedPriceSource = item.priceSource === "retail_observed"
+      ? "retail_observed"
+      : historicalPrice !== null && historicalPrice > 0
+        ? "historical"
+        : "missing"
     const promotionPrice = moneyOrNull(match?.promotion?.promoPrice)
     const reliablePromotion = match?.matchStatus === SHOPPING_PROMOTION_MATCH_STATUS.RELIABLE && promotionPrice !== null && promotionPrice > 0
     const reliableSaving = match?.reliableSaving ?? null
@@ -137,8 +143,8 @@ export function enrichShoppingBasketWithPromotions({ estimate = {}, promotions =
       ? historicalPrice !== null && historicalPrice > 0
         ? Math.max(0, roundedMoney(historicalPrice - Math.max(0, moneyOrNull(reliableSaving) || 0)))
         : promotionPrice
-      : historicalPrice !== null && historicalPrice > 0
-        ? historicalPrice
+      : baseEstimatedPrice !== null && baseEstimatedPrice > 0
+        ? baseEstimatedPrice
         : null
 
     return {
@@ -157,16 +163,28 @@ export function enrichShoppingBasketWithPromotions({ estimate = {}, promotions =
       estimatedPriceSource: reliablePromotion && (historicalPrice === null || Number(reliableSaving || 0) > 0)
         ? "promotion"
         : estimatedLineCost !== null
-          ? "historical"
+          ? baseEstimatedPriceSource
           : "missing",
     }
   })
 
-  const historicalBasketEstimate = Math.max(0, roundedMoney(estimate.total))
+  const historicalLinesTotal = Math.max(
+    0,
+    roundedMoney(items.reduce((total, item) => {
+      const historicalPrice = moneyOrNull(item.historicalPrice)
+      return total + (historicalPrice !== null && historicalPrice > 0 ? historicalPrice : 0)
+    }, 0)),
+  )
+  const suppliedBasketEstimate = moneyOrNull(estimate.total)
+  const historicalBasketEstimate = suppliedBasketEstimate !== null
+    ? Math.min(Math.max(0, roundedMoney(suppliedBasketEstimate)), historicalLinesTotal)
+    : historicalLinesTotal
   const reliableSavingsTotal = Math.min(
     historicalBasketEstimate,
     roundedMoney(items.reduce((total, item) => {
+      const historicalPrice = moneyOrNull(item.historicalPrice)
       const saving = moneyOrNull(item.reliableSaving)
+      if (historicalPrice === null || historicalPrice <= 0) return total
       return total + (saving !== null && saving > 0 ? saving : 0)
     }, 0)),
   )
@@ -174,9 +192,18 @@ export function enrichShoppingBasketWithPromotions({ estimate = {}, promotions =
     if (item.historicalPrice !== null || item.promotionMatchStatus !== SHOPPING_PROMOTION_MATCH_STATUS.RELIABLE) return total
     return total + Math.max(0, moneyOrNull(item.promotionPrice) || 0)
   }, 0))
+  const retailObservedOnlyTotal = roundedMoney(items.reduce((total, item) => {
+    if (item.historicalPrice !== null || item.estimatedPriceSource !== "retail_observed") return total
+    return total + Math.max(0, moneyOrNull(item.estimatedLineCost) || 0)
+  }, 0))
   const currentBasketEstimate = Math.max(
     0,
-    roundedMoney(historicalBasketEstimate - reliableSavingsTotal + reliablePromotionOnlyTotal),
+    roundedMoney(
+      historicalBasketEstimate
+      - reliableSavingsTotal
+      + reliablePromotionOnlyTotal
+      + retailObservedOnlyTotal
+    ),
   )
   const missingPriceCount = items.filter(item => item.estimatedLineCost === null).length
 

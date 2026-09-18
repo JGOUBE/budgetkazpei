@@ -78,6 +78,122 @@ export function getAutocompleteSuggestions(query = "", shoppingItems: any[] = []
     .slice(0, 6)
 }
 
+function normalizeRetailObservedSearchText(value = "") {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
+function getRetailObservedSuggestionScore(observed: any = {}, query = "") {
+  const cleanQuery = normalizeRetailObservedSearchText(query)
+  const cleanText = normalizeRetailObservedSearchText([
+    observed.productName,
+    observed.brand,
+    observed.packageFormat,
+  ].filter(Boolean).join(" "))
+
+  if (!cleanQuery || !cleanText) return -1
+
+  const queryWords = cleanQuery.split(" ").filter(Boolean)
+  const textWords = cleanText.split(" ").filter(Boolean)
+
+  if (cleanText === cleanQuery) return 100
+  if (cleanText.startsWith(cleanQuery)) return 80
+  if (textWords.some(word => word.startsWith(cleanQuery))) return 60
+  if (queryWords.every(word => cleanText.includes(word))) return 20
+
+  return -1
+}
+
+function retailObservedIdentityKey(observed: any = {}) {
+  const shoppingProductId = String(observed.productId || observed.product_id || "").trim()
+  const marketProductId = String(observed.marketProductId || observed.market_product_id || "").trim()
+  const barcode = String(observed.barcode || "").trim()
+  if (shoppingProductId) return `shopping:${shoppingProductId}`
+  if (marketProductId) return `market:${marketProductId}`
+  if (/^\d{8,14}$/.test(barcode)) return `barcode:${barcode}`
+  return ""
+}
+
+function retailObservedSuggestion(observed: any, suggestionScore: number) {
+  return {
+    key: `observed:${retailObservedIdentityKey(observed) || observed.id || observed.normalizedProductName}`,
+    source: "observed",
+    sources: ["observed"],
+    label: observed.productName,
+    normalizedName: observed.normalizedProductName || normalizeProductName(observed.productName),
+    suggestionScore,
+    productId: observed.productId || null,
+    shoppingProductId: observed.productId || null,
+    marketProductId: observed.marketProductId || null,
+    barcode: observed.barcode || null,
+    brand: observed.brand || null,
+    packageFormat: observed.packageFormat || null,
+    quantityValue: observed.quantityValue ?? null,
+    quantityUnit: observed.quantityUnit || null,
+    packCount: observed.packCount ?? null,
+    retailerSlug: observed.retailerSlug || "",
+    retailerName: observed.retailerName || "",
+    storeName: observed.storeName || "",
+    storeCity: observed.storeCity || "",
+    observedPrice: money(observed.price),
+    observedAt: observed.observedAt || null,
+    observedLastSeenAt: observed.lastSeenAt || null,
+    observedPriceIsFresh: observed.isFresh === true,
+    retailObservedPrice: observed,
+  }
+}
+
+function observedCompatibleWithItem(item: any = {}, observed: any = {}) {
+  const itemShoppingId = String(item.shopping_product_id || item.shoppingProductId || item.product_id || "").trim()
+  const itemMarketId = String(item.market_product_id || item.marketProductId || "").trim()
+  const itemBarcode = String(item.barcode || "").trim()
+  const observedShoppingId = String(observed.productId || observed.product_id || "").trim()
+  const observedMarketId = String(observed.marketProductId || observed.market_product_id || "").trim()
+  const observedBarcode = String(observed.barcode || "").trim()
+
+  if (itemShoppingId && observedShoppingId) return itemShoppingId === observedShoppingId
+  if (itemMarketId && observedMarketId) return itemMarketId === observedMarketId
+  if (itemBarcode && observedBarcode) return itemBarcode === observedBarcode
+
+  const itemName = normalizeProductName(item.name || item.normalized_product_name || "")
+  const observedName = normalizeProductName(observed.normalizedProductName || observed.productName || "")
+  if (!itemName || itemName !== observedName) return false
+
+  const itemBrand = normalizeProductName(item.brand || "")
+  const observedBrand = normalizeProductName(observed.brand || "")
+  if (itemBrand && observedBrand && itemBrand !== observedBrand) return false
+
+  const packageCheck = evaluatePromotionPackageCompatibility(item, observed)
+  return packageCheck.compatible || packageCheck.reason === "package_identity_missing"
+}
+
+function findReliableObservedPrice(item: any = {}, observedPrices: any[] = []) {
+  const compatible = (Array.isArray(observedPrices) ? observedPrices : [])
+    .filter(observed => observed?.isFresh === true && money(observed?.price) > 0)
+    .filter(observed => observedCompatibleWithItem(item, observed))
+
+  if (compatible.length === 0) return null
+
+  const identityKeys = new Set(
+    compatible
+      .map(retailObservedIdentityKey)
+      .filter(Boolean),
+  )
+  if (identityKeys.size > 1) return null
+
+  return compatible
+    .sort((left, right) => {
+      const leftTime = new Date(left.lastSeenAt || left.observedAt || 0).getTime() || 0
+      const rightTime = new Date(right.lastSeenAt || right.observedAt || 0).getTime() || 0
+      return rightTime - leftTime || String(right.id || "").localeCompare(String(left.id || ""))
+    })[0] || null
+}
+
 function retailPromotionIdentityKey(promotion: any = {}) {
   const productId = String(promotion.productId || "").trim()
   const marketProductId = String(promotion.marketProductId || "").trim()
@@ -152,6 +268,7 @@ export function getShoppingAutocompleteSuggestions(
   query = "",
   shoppingItems: any[] = [],
   retailPromotions: any[] = [],
+  retailObservedPrices: any[] = [],
 ) {
   const historical = getAutocompleteSuggestions(query, shoppingItems)
     .map(suggestion => ({ ...suggestion, key: `history:${suggestion.normalizedName}`, source: "history", sources: ["history"] }))
@@ -175,6 +292,31 @@ export function getShoppingAutocompleteSuggestions(
       retailPromotionOrder(left.promotion, right.promotion) ||
       String(left.label || "").localeCompare(String(right.label || ""), "fr"),
     )
+
+  const historicalNames = new Set(historical.map(item => normalizeProductName(item.label || "")))
+  const promotionIdentityKeys = new Set(retail.map(item => retailPromotionIdentityKey(item.promotion)).filter(Boolean))
+
+  const observed = (Array.isArray(retailObservedPrices) ? retailObservedPrices : [])
+    .map(observedPrice => ({
+      observedPrice,
+      score: getRetailObservedSuggestionScore(observedPrice, query),
+    }))
+    .filter(({ observedPrice, score }) => {
+      if (score < 0) return false
+      const name = normalizeProductName(observedPrice.productName || "")
+      if (historicalNames.has(name)) return false
+      const identity = retailObservedIdentityKey(observedPrice)
+      if (identity && promotionIdentityKeys.has(identity)) return false
+      return true
+    })
+    .map(({ observedPrice, score }) => retailObservedSuggestion(observedPrice, score))
+    .sort((left, right) =>
+      right.suggestionScore - left.suggestionScore ||
+      Number(Boolean(right.observedPriceIsFresh)) - Number(Boolean(left.observedPriceIsFresh)) ||
+      String(right.observedLastSeenAt || right.observedAt || "").localeCompare(String(left.observedLastSeenAt || left.observedAt || "")) ||
+      String(left.label || "").localeCompare(String(right.label || ""), "fr"),
+    )
+    .slice(0, 6)
 
   const mergedRetailKeys = new Set<string>()
   const mergedHistorical = historical.map(suggestion => {
@@ -211,6 +353,7 @@ export function getShoppingAutocompleteSuggestions(
 
   return {
     historical: mergedHistorical,
+    observed,
     retail: retail.filter(suggestion => !mergedRetailKeys.has(retailPromotionIdentityKey(suggestion.promotion))).slice(0, 6),
   }
 }
@@ -245,11 +388,21 @@ export function buildShoppingListItemFromSuggestion(suggestion: any = {}) {
     store_location_id: suggestion.storeLocationId || promotion.storeLocationId || null,
     store_name: suggestion.storeName || promotion.storeName || "",
     store_city: suggestion.storeCity || promotion.storeCity || "",
+    retail_observed_price: money(suggestion.observedPrice ?? suggestion.retailObservedPrice?.price) || null,
+    retail_observed_at: suggestion.observedAt || suggestion.retailObservedPrice?.observedAt || null,
+    retail_observed_last_seen_at: suggestion.observedLastSeenAt || suggestion.retailObservedPrice?.lastSeenAt || null,
+    retail_observed_price_is_fresh: suggestion.observedPriceIsFresh === true || suggestion.retailObservedPrice?.isFresh === true,
+    retail_observed_retailer_name: suggestion.retailerName || suggestion.retailObservedPrice?.retailerName || "",
+    retail_observed_store_name: suggestion.storeName || suggestion.retailObservedPrice?.storeName || "",
     controlled_normalization: Boolean(shoppingProductId || marketProductId),
   }
 }
 
-export function estimateShoppingList(items: any[] = [], shoppingItems: any[] = []) {
+export function estimateShoppingList(
+  items: any[] = [],
+  shoppingItems: any[] = [],
+  retailObservedPrices: any[] = [],
+) {
   // Toute l'historique est déjà chargé en mémoire. Le limiter aux 80 produits
   // les plus fréquents supprimait silencieusement les prix valides plus rares.
   const products = buildTopProducts(shoppingItems, Number.MAX_SAFE_INTEGER)
@@ -264,7 +417,7 @@ export function estimateShoppingList(items: any[] = [], shoppingItems: any[] = [
     })
     const average = money(match?.averagePrice)
     const lastPrice = money(match?.lastPrice)
-    const estimatedPrice = average || lastPrice
+    const historicalEstimatedPrice = average || lastPrice
     const exactHistoricalIdentity = Boolean(match && match.normalizedName === normalized)
     const history = exactHistoricalIdentity ? match?.history || [] : []
     const latest = history[0] || {}
@@ -273,18 +426,41 @@ export function estimateShoppingList(items: any[] = [], shoppingItems: any[] = [
     const shoppingProductId = item.shopping_product_id || item.shoppingProductId || item.product_id ||
       uniqueHistoryValue(history, ["shopping_product_id", "shoppingProductId", "product_id"])
     const barcode = item.barcode || uniqueHistoryValue(history, ["barcode"])
+    const identityItem = {
+      ...item,
+      market_product_id: marketProductId || null,
+      shopping_product_id: shoppingProductId || null,
+      barcode: barcode || null,
+      normalized_product_name: exactHistoricalIdentity ? match.normalizedName : item.normalized_product_name || null,
+      brand: item.brand || latest.market_brand || latest.brand || null,
+      package_format: item.package_format || latest.market_package_format || null,
+    }
+    const observed = historicalEstimatedPrice > 0
+      ? null
+      : findReliableObservedPrice(identityItem, retailObservedPrices)
+    const retailObservedPrice = money(observed?.price)
+    const estimatedPrice = historicalEstimatedPrice || retailObservedPrice
 
     return {
       ...item,
       estimatedPrice,
-      historicalPrice: estimatedPrice || null,
+      historicalPrice: historicalEstimatedPrice || null,
+      retailObservedPrice: retailObservedPrice || null,
+      retailObservedAt: observed?.observedAt || item.retail_observed_at || null,
+      retailObservedLastSeenAt: observed?.lastSeenAt || item.retail_observed_last_seen_at || null,
+      retailObservedRetailerName: observed?.retailerName || item.retail_observed_retailer_name || "",
+      retailObservedStoreName: observed?.storeName || item.retail_observed_store_name || "",
       lastKnownPrice: lastPrice,
       averagePrice: average,
       lowestPrice: money(match?.lowestPrice),
       highestPrice: money(match?.highestPrice),
-      priceSource: estimatedPrice ? "known" : "missing",
-      priceLabel: estimatedPrice ? (Number(match?.purchaseCount || 0) > 1 ? "prix estimé" : "dernier prix connu") : "prix à estimer",
-      knownStore: match?.history?.[0]?.store || "",
+      priceSource: historicalEstimatedPrice > 0 ? "known" : retailObservedPrice > 0 ? "retail_observed" : "missing",
+      priceLabel: historicalEstimatedPrice > 0
+        ? (Number(match?.purchaseCount || 0) > 1 ? "prix estimé" : "dernier prix connu")
+        : retailObservedPrice > 0
+          ? "prix observé"
+          : "prix à estimer",
+      knownStore: match?.history?.[0]?.store || observed?.storeName || "",
       purchaseCount: match?.purchaseCount || 0,
       market_product_id: marketProductId || null,
       shopping_product_id: shoppingProductId || null,
