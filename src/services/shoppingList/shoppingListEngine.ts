@@ -119,12 +119,53 @@ function retailObservedIdentityKey(observed: any = {}) {
   return ""
 }
 
+function isMeaningfulRetailBrand(value = "") {
+  const normalized = normalizeRetailObservedSearchText(value)
+  if (!normalized) return false
+
+  return !new Set([
+    "maison",
+    "sans marque",
+    "sans marque connue",
+    "non renseigne",
+    "non renseignee",
+    "generique",
+    "generic",
+    "mdd",
+  ]).has(normalized)
+}
+
+function buildRetailObservedDisplayLabel(observed: any = {}) {
+  const name = String(observed.productName || "").trim()
+  const brand = String(observed.brand || "").trim()
+  const packageFormat = String(observed.packageFormat || "").trim()
+
+  let label = name
+  const normalizedLabel = () => normalizeRetailObservedSearchText(label)
+
+  if (isMeaningfulRetailBrand(brand)) {
+    const normalizedBrand = normalizeRetailObservedSearchText(brand)
+    if (normalizedBrand && !normalizedLabel().includes(normalizedBrand)) {
+      label = `${label} ${brand}`.trim()
+    }
+  }
+
+  if (packageFormat) {
+    const normalizedFormat = normalizeRetailObservedSearchText(packageFormat)
+    if (normalizedFormat && !normalizedLabel().includes(normalizedFormat)) {
+      label = `${label} ${packageFormat}`.trim()
+    }
+  }
+
+  return label || name
+}
+
 function retailObservedSuggestion(observed: any, suggestionScore: number) {
   return {
     key: `observed:${retailObservedIdentityKey(observed) || observed.id || observed.normalizedProductName}`,
     source: "observed",
     sources: ["observed"],
-    label: observed.productName,
+    label: buildRetailObservedDisplayLabel(observed),
     normalizedName: observed.normalizedProductName || normalizeProductName(observed.productName),
     suggestionScore,
     productId: observed.productId || null,
@@ -398,6 +439,46 @@ export function buildShoppingListItemFromSuggestion(suggestion: any = {}) {
   }
 }
 
+function hasStructuredShoppingIdentity(item: any = {}) {
+  const shoppingProductId = String(item.shopping_product_id || item.shoppingProductId || item.product_id || "").trim()
+  const marketProductId = String(item.market_product_id || item.marketProductId || "").trim()
+  const barcode = String(item.barcode || "").trim()
+  return Boolean(shoppingProductId || marketProductId || /^\d{8,14}$/.test(barcode))
+}
+
+function historyRowMatchesStructuredIdentity(item: any = {}, row: any = {}) {
+  const itemShoppingProductId = String(item.shopping_product_id || item.shoppingProductId || item.product_id || "").trim()
+  const itemMarketProductId = String(item.market_product_id || item.marketProductId || "").trim()
+  const itemBarcode = String(item.barcode || "").trim()
+
+  const rowShoppingProductId = String(row.shopping_product_id || row.shoppingProductId || row.product_id || "").trim()
+  const rowMarketProductId = String(row.market_product_id || row.marketProductId || "").trim()
+  const rowBarcode = String(row.barcode || "").trim()
+
+  const comparable = []
+
+  if (itemShoppingProductId && rowShoppingProductId) {
+    comparable.push(itemShoppingProductId === rowShoppingProductId)
+  }
+  if (itemMarketProductId && rowMarketProductId) {
+    comparable.push(itemMarketProductId === rowMarketProductId)
+  }
+  if (/^\d{8,14}$/.test(itemBarcode) && /^\d{8,14}$/.test(rowBarcode)) {
+    comparable.push(itemBarcode === rowBarcode)
+  }
+
+  return comparable.some(Boolean)
+}
+
+function findStructuredHistoryProduct(products: any[] = [], item: any = {}) {
+  if (!hasStructuredShoppingIdentity(item)) return null
+
+  return (Array.isArray(products) ? products : []).find(product =>
+    (Array.isArray(product?.history) ? product.history : [])
+      .some(row => historyRowMatchesStructuredIdentity(item, row)),
+  ) || null
+}
+
 export function estimateShoppingList(
   items: any[] = [],
   shoppingItems: any[] = [],
@@ -409,12 +490,18 @@ export function estimateShoppingList(
 
   const rows = items.map(item => {
     const normalized = normalizeProductName(item.name)
-    const match = products.find(product => {
-      if (product.normalizedName === normalized) return true
-      if (normalized.length >= 4 && product.normalizedName.includes(normalized)) return true
-      if (product.normalizedName.length >= 4 && normalized.includes(product.normalizedName)) return true
-      return false
-    })
+    const structuredIdentity = hasStructuredShoppingIdentity(item)
+    const structuredMatch = structuredIdentity
+      ? findStructuredHistoryProduct(products, item)
+      : null
+    const match = structuredMatch || (!structuredIdentity
+      ? products.find(product => {
+          if (product.normalizedName === normalized) return true
+          if (normalized.length >= 4 && product.normalizedName.includes(normalized)) return true
+          if (product.normalizedName.length >= 4 && normalized.includes(product.normalizedName)) return true
+          return false
+        })
+      : null)
     const average = money(match?.averagePrice)
     const lastPrice = money(match?.lastPrice)
     const historicalEstimatedPrice = average || lastPrice

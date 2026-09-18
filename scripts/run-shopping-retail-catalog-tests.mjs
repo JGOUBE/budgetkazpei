@@ -73,6 +73,7 @@ const suggestions = getShoppingAutocompleteSuggestions(
 assert.equal(suggestions.historical.length, 0)
 assert.equal(suggestions.observed.length, 1)
 assert.equal(suggestions.observed[0].label, "Poubelle 55 L")
+assert.ok(!suggestions.observed[0].label.includes("Maison"))
 assert.equal(suggestions.observed[0].observedPrice, 12.9)
 
 const searchByFormat = getShoppingAutocompleteSuggestions(
@@ -103,8 +104,91 @@ const chocolateObserved = observed({
 for (const query of ["tablette", "chocolat", "nestlé", "nestle", "170", "170 gr"]) {
   const result = getShoppingAutocompleteSuggestions(query, [], [], [chocolateObserved])
   assert.equal(result.observed.length, 1, `Retail observed search should match "${query}"`)
-  assert.equal(result.observed[0].label, "Tablette de chocolat")
+  assert.equal(result.observed[0].label, "Tablette de chocolat NESTLÉ 170 gr")
 }
+
+const realPoubelleObserved = observed({
+  id: "obs-real-bin",
+  productId: "shopping-real-bin",
+  marketProductId: "market-real-bin",
+  productName: "Poubelle",
+  normalizedProductName: "poubelle",
+  brand: "",
+  packageFormat: "55 L",
+  quantityValue: 55,
+  quantityUnit: "l",
+  price: 9.95,
+  retailerSlug: "carrefour-reunion",
+  retailerName: "Carrefour Réunion",
+  storeName: "Carrefour Réunion",
+})
+
+const realPoubelleSuggestions = getShoppingAutocompleteSuggestions(
+  "poubelle",
+  [],
+  [],
+  [realPoubelleObserved],
+)
+assert.equal(realPoubelleSuggestions.observed.length, 1)
+assert.equal(realPoubelleSuggestions.observed[0].label, "Poubelle 55 L")
+
+const realPoubelleSelected = buildShoppingListItemFromSuggestion(
+  realPoubelleSuggestions.observed[0],
+)
+assert.equal(realPoubelleSelected.name, "Poubelle 55 L")
+
+const poubelleWithUnrelatedHistory = estimateShoppingList(
+  [{ id: "line-real-bin", ...realPoubelleSelected }],
+  [{
+    id: "old-bin-bags",
+    product_name: "20 SACS POUBELLE 20 L EK",
+    normalized_name: "20 sacs poubelle ek",
+    price: 1.44,
+    created_at: "2026-09-10T08:00:00Z",
+    market_product_id: "market-bin-bags",
+    shopping_product_id: "shopping-bin-bags",
+  }],
+  [realPoubelleObserved],
+)
+assert.equal(poubelleWithUnrelatedHistory.total, 9.95)
+assert.equal(poubelleWithUnrelatedHistory.items[0].historicalPrice, null)
+assert.equal(poubelleWithUnrelatedHistory.items[0].priceSource, "retail_observed")
+assert.equal(poubelleWithUnrelatedHistory.items[0].retailObservedPrice, 9.95)
+
+const preciseChocolateObserved = observed({
+  id: "obs-real-choco",
+  productId: "shopping-real-choco",
+  marketProductId: "market-real-choco",
+  productName: "Tablette de chocolat",
+  normalizedProductName: "tablette de chocolat",
+  brand: "NESTLÉ",
+  packageFormat: "170 gr",
+  quantityValue: 170,
+  quantityUnit: "g",
+  price: 3.85,
+  retailerSlug: "carrefour-market-reunion",
+  retailerName: "Carrefour Market Réunion",
+  storeName: "Carrefour Market Réunion",
+})
+
+const preciseChocolateSuggestions = getShoppingAutocompleteSuggestions(
+  "nestle",
+  [],
+  [],
+  [preciseChocolateObserved],
+)
+assert.equal(preciseChocolateSuggestions.observed.length, 1)
+assert.equal(
+  preciseChocolateSuggestions.observed[0].label,
+  "Tablette de chocolat NESTLÉ 170 gr",
+)
+const preciseChocolateSelected = buildShoppingListItemFromSuggestion(
+  preciseChocolateSuggestions.observed[0],
+)
+assert.equal(
+  preciseChocolateSelected.name,
+  "Tablette de chocolat NESTLÉ 170 gr",
+)
 
 const selected = buildShoppingListItemFromSuggestion(suggestions.observed[0])
 assert.equal(selected.market_product_id, "market-bin")
