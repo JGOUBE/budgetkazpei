@@ -148,7 +148,7 @@ class LeclercIncrementalReport:
                 "shopping_promotions": False,
                 "good_deals": False,
             },
-            "automatic_publication": False,
+            "automatic_publication": not self.dry_run and self.import_summary is not None,
         }
 
 
@@ -206,6 +206,17 @@ def run_eleclerc_reunion_incremental(
             raise RuntimeError("retail_import_summary_invalid")
         import_summary = {**result, "source_run_id": result.get("source_run_id") or source_run_id}
         candidates_created = _count_value(result.get("imported"))
+        try:
+            admin_client.rpc(
+                "retail_auto_publish_safe_candidates",
+                {
+                    "p_retailer_slug": RETAILER_SLUG,
+                    "p_source_run_id": source_run_id,
+                    "p_limit": max(100, len(candidates) * 2),
+                },
+            )
+        except Exception as exc:
+            errors.append(f"safe_auto_publication_failed:{exc}")
 
     counts = _count_actions(actions)
     destination = report_path or settings.report_path.parent / INCREMENTAL_REPORT_NAME

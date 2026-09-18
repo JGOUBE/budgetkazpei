@@ -288,11 +288,14 @@ class EleclercDriveReunionCollectorTests(unittest.TestCase):
             existing_rows=[],
             report_path=settings.report_path.parent / "incremental.json",
         )
-        self.assertEqual([call[0] for call in client.rpc_calls], ["retail_import_price_candidates"])
+        self.assertEqual(
+            [name for name, _ in client.rpc_calls],
+            ['retail_import_price_candidates', 'retail_auto_publish_safe_candidates'],
+        )
         item = client.rpc_calls[0][1]["p_items"][0]
-        self.assertIn("human_validation_required", item["match_warnings"])
+        self.assertNotIn("human_validation_required", item["match_warnings"])
         self.assertEqual(item["store_city"], "Saint-Leu")
-        self.assertFalse(report.to_dict()["automatic_publication"])
+        self.assertTrue(report.to_dict()["automatic_publication"])
 
     def test_only_pilot_store_is_allowed(self):
         settings = _settings("store-guard")

@@ -299,7 +299,10 @@ class CarrefourReunionCollectorTests(unittest.TestCase):
         self.assertEqual(report.metrics.candidates_created, 0)
         self.assertEqual(report.metrics.candidates_refreshed, 1)
         self.assertEqual(report.metrics.unchanged, 1)
-        self.assertEqual([name for name, _ in client.rpc_calls], ["retail_import_price_candidates"])
+        self.assertEqual(
+            [name for name, _ in client.rpc_calls],
+            ['retail_import_price_candidates'],
+        )
         self.assertEqual(client.rpc_calls[0][1]["p_source_run_id"], "run-15")
         self.assertEqual(client.rpc_calls[0][1]["p_items"][0]["duplicate_key"], "duplicate-15")
 
@@ -354,7 +357,10 @@ class CarrefourReunionCollectorTests(unittest.TestCase):
             existing_rows=[],
             report_path=settings.report_path.parent / "incremental-real.json",
         )
-        self.assertEqual([name for name, _ in client.rpc_calls], ["retail_import_price_candidates"])
+        self.assertEqual(
+            [name for name, _ in client.rpc_calls],
+            ['retail_import_price_candidates', 'retail_auto_publish_safe_candidates'],
+        )
         rpc_items = client.rpc_calls[0][1]["p_items"]
         self.assertTrue(rpc_items)
         self.assertTrue(all(item["store_city"] is None for item in rpc_items))

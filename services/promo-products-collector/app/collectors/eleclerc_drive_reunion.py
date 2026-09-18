@@ -434,7 +434,11 @@ def build_eleclerc_observation(
     if page.original_price and page.current_price and page.original_price > page.current_price:
         discount_percent = round((page.original_price - page.current_price) / page.original_price * 100, 2)
     validation_errors = list(page.errors)
-    match_warnings = ["human_validation_required"]
+    match_warnings = []
+    if not chosen_format:
+        match_warnings.append("missing_package_format")
+    elif package.quantity_value is None or not package.quantity_unit:
+        match_warnings.append("missing_quantity_identity")
     if page.source_reference and not reference_is_valid_ean:
         match_warnings.append("source_reference_not_valid_ean13")
     if not page.brand:
