@@ -181,12 +181,24 @@ def run_leader_price_incremental(
         refreshed, refresh_errors = _refresh_unchanged_candidates(admin_client, unchanged)
         errors.extend(refresh_errors)
         if candidates:
+            source_run_id = build_incremental_source_run_id(candidates)
             import_summary = import_leader_price_observations(
                 [item.observation for item in candidates],
                 client=admin_client,
-                source_run_id=build_incremental_source_run_id(candidates),
+                source_run_id=source_run_id,
                 report_path=collection.report_path,
             )
+            try:
+                admin_client.rpc(
+                    "retail_auto_publish_safe_candidates",
+                    {
+                        "p_retailer_slug": EXPECTED_RETAILER_SLUG,
+                        "p_source_run_id": source_run_id,
+                        "p_limit": max(100, len(candidates) * 2),
+                    },
+                )
+            except Exception as exc:
+                errors.append(f"safe_auto_publication_failed:{exc}")
 
     counts = _count_actions(actions)
     destination = report_path or settings.report_path.parent / INCREMENTAL_REPORT_NAME
