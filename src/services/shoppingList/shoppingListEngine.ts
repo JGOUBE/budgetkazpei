@@ -151,10 +151,12 @@ function isDescriptiveHistoricalLabel(value = "") {
     .filter(Boolean)
     .filter(word => !UNIT_WORDS.has(word))
 
-  // Une ancienne ligne sans prix fiable peut rester proposée si son libellé
-  // décrit réellement le produit. On évite ainsi de réintroduire des entrées
-  // génériques du type "MIMOLETTE" tout en gardant "Pomme Granny Smith".
-  return words.length >= 3
+  // Une ancienne ligne sans prix fiable peut rester proposée dès que son
+  // libellé apporte une précision réelle (variété, type, saveur, coupe, etc.).
+  // Cela couvre par exemple "Pomme Gala", "Jambon blanc" ou "Riz basmati"
+  // tout en gardant les libellés isolés trop génériques comme "MIMOLETTE"
+  // hors des suggestions tant qu'aucun format/poids fiable n'est connu.
+  return words.length >= 2
 }
 
 function historyHasVariableMeasureContext(history: any[] = [], label = "") {

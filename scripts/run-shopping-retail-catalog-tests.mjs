@@ -119,6 +119,31 @@ const grannyKgWithoutReliablePrice = getShoppingAutocompleteSuggestions("pomme",
 assert.equal(grannyKgWithoutReliablePrice.historical.length, 1)
 assert.equal(grannyKgWithoutReliablePrice.historical[0].lastPrice, 0)
 
+
+const jambonBlancWithoutReliablePrice = getShoppingAutocompleteSuggestions("jambon", [{
+  id: "ticket-jambon-blanc-no-reference-price",
+  product_name: "Jambon blanc",
+  normalized_name: "jambon blanc",
+  quantity: 1,
+  unit: "piece",
+  price: 2.89,
+  created_at: "2026-09-19T08:00:00Z",
+}], [], [])
+assert.equal(jambonBlancWithoutReliablePrice.historical.length, 1)
+assert.equal(jambonBlancWithoutReliablePrice.historical[0].lastPrice, 0)
+
+const rizBasmatiWithoutReliablePrice = getShoppingAutocompleteSuggestions("riz", [{
+  id: "ticket-riz-basmati-no-reference-price",
+  product_name: "Riz basmati",
+  normalized_name: "riz basmati",
+  quantity: 1,
+  unit: "piece",
+  price: 3.4,
+  created_at: "2026-09-19T08:00:00Z",
+}], [], [])
+assert.equal(rizBasmatiWithoutReliablePrice.historical.length, 1)
+assert.equal(rizBasmatiWithoutReliablePrice.historical[0].lastPrice, 0)
+
 const packagedMimolette = getShoppingAutocompleteSuggestions("mimo", [{
   id: "ticket-mimolette-200",
   product_name: "Mimolette vieille 200 g",
@@ -405,6 +430,7 @@ assert.equal(unknown.items[0].priceSource, "missing")
 console.log("[OK] Weighted ticket prices use €/kg or €/l instead of the paid line total")
 console.log("[OK] Ambiguous packaged labels do not expose an unqualified price")
 console.log("[OK] Descriptive historical products remain visible when their price is unusable")
+console.log("[OK] Two-word descriptive products also remain visible without exposing a doubtful price")
 console.log("[OK] Catalog promotions require a usable format or unit-price context")
 console.log("[OK] Retail observed-price projection model")
 console.log("[OK] Poubelle 55 L appears in retail autocomplete")
