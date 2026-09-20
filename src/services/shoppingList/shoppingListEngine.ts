@@ -141,6 +141,31 @@ function historyPriceReference(row: any = {}) {
   return null
 }
 
+function isDescriptiveHistoricalLabel(value = "") {
+  const clean = normalizeRetailObservedSearchText(value)
+  if (!clean) return false
+
+  const words = clean
+    .split(" ")
+    .map(word => word.trim())
+    .filter(Boolean)
+    .filter(word => !UNIT_WORDS.has(word))
+
+  // Une ancienne ligne sans prix fiable peut rester proposée si son libellé
+  // décrit réellement le produit. On évite ainsi de réintroduire des entrées
+  // génériques du type "MIMOLETTE" tout en gardant "Pomme Granny Smith".
+  return words.length >= 3
+}
+
+function historyHasVariableMeasureContext(history: any[] = [], label = "") {
+  if (/\b(?:kg|kgs?|kilogrammes?|au\s+kg|le\s+kg|vrac)\b/i.test(String(label || ""))) return true
+
+  return history.some(row => {
+    const unit = normalizeMeasureUnit(row?.unit)
+    return Boolean(unit)
+  })
+}
+
 function smartHistoricalProduct(product: any = {}) {
   const history = Array.isArray(product.history) ? product.history : []
   const references = history
@@ -160,6 +185,10 @@ function smartHistoricalProduct(product: any = {}) {
     }
   }
 
+  const hasPackage = hasExplicitPackageQuantity(label)
+  const hasVariableMeasureContext = historyHasVariableMeasureContext(history, label)
+  const descriptiveWithoutPrice = isDescriptiveHistoricalLabel(label)
+
   return {
     ...product,
     label,
@@ -168,7 +197,11 @@ function smartHistoricalProduct(product: any = {}) {
     lowestPrice: prices.length ? Math.min(...prices) : 0,
     highestPrice: prices.length ? Math.max(...prices) : 0,
     priceUnitLabel: preferredUnitLabel,
-    smartSuggestionEligible: prices.length > 0 || hasExplicitPackageQuantity(label),
+    smartSuggestionEligible:
+      prices.length > 0 ||
+      hasPackage ||
+      hasVariableMeasureContext ||
+      descriptiveWithoutPrice,
   }
 }
 
