@@ -92,10 +92,22 @@ function buildShoppingRows({ userId, transactionId, receipt, items }: { userId: 
       const productName = correctedName || originalName
       const normalizedName = item.normalized_name || normalizeProductName(productName)
       const inferred = inferUnitFromName(productName)
-      const quantity = money(item.quantity) || inferred.quantity || 1
-      const unit = item.unit || inferred.unit || "piece"
+      const explicitQuantity = money(item.quantity)
+      const explicitUnit = String(item.unit || "").trim().toLowerCase()
+      const inferredIsMeasured = inferred.unit !== "piece"
+      const explicitIsMeasured = explicitUnit && explicitUnit !== "piece" && explicitUnit !== "unite" && explicitUnit !== "unité"
+      const quantity = explicitIsMeasured && explicitQuantity > 0
+        ? explicitQuantity
+        : inferredIsMeasured
+          ? inferred.quantity
+          : explicitQuantity || inferred.quantity || 1
+      const unit = explicitIsMeasured
+        ? explicitUnit
+        : inferredIsMeasured
+          ? inferred.unit
+          : explicitUnit || "piece"
       const price = money(item.total_price) || money(item.price) || money(item.unit_price)
-      const unitPrice = computeUnitPrice({ price, quantity: inferred.quantity || quantity, unit })
+      const unitPrice = computeUnitPrice({ price, quantity, unit })
 
       return {
         user_id: userId,
