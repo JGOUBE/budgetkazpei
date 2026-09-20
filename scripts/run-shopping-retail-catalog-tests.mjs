@@ -93,6 +93,32 @@ const genericMimolette = getShoppingAutocompleteSuggestions("mimo", [{
 }], [], [])
 assert.equal(genericMimolette.historical.length, 0)
 
+
+const grannyWithoutReliablePrice = getShoppingAutocompleteSuggestions("pomme", [{
+  id: "ticket-granny-no-reference-price",
+  product_name: "Pomme Granny Smith",
+  normalized_name: "pomme granny smith",
+  quantity: 1,
+  unit: "piece",
+  price: 1.86,
+  created_at: "2026-09-19T08:00:00Z",
+}], [], [])
+assert.equal(grannyWithoutReliablePrice.historical.length, 1)
+assert.equal(grannyWithoutReliablePrice.historical[0].label, "Pomme Granny Smith")
+assert.equal(grannyWithoutReliablePrice.historical[0].lastPrice, 0)
+
+const grannyKgWithoutReliablePrice = getShoppingAutocompleteSuggestions("pomme", [{
+  id: "ticket-granny-kg-no-reference-price",
+  product_name: "POMME GRANNY AFS KG",
+  normalized_name: "pomme granny afs kg",
+  quantity: 1,
+  unit: "piece",
+  price: 1.01,
+  created_at: "2026-09-19T08:00:00Z",
+}], [], [])
+assert.equal(grannyKgWithoutReliablePrice.historical.length, 1)
+assert.equal(grannyKgWithoutReliablePrice.historical[0].lastPrice, 0)
+
 const packagedMimolette = getShoppingAutocompleteSuggestions("mimo", [{
   id: "ticket-mimolette-200",
   product_name: "Mimolette vieille 200 g",
@@ -378,6 +404,7 @@ assert.equal(unknown.items[0].priceSource, "missing")
 
 console.log("[OK] Weighted ticket prices use €/kg or €/l instead of the paid line total")
 console.log("[OK] Ambiguous packaged labels do not expose an unqualified price")
+console.log("[OK] Descriptive historical products remain visible when their price is unusable")
 console.log("[OK] Catalog promotions require a usable format or unit-price context")
 console.log("[OK] Retail observed-price projection model")
 console.log("[OK] Poubelle 55 L appears in retail autocomplete")
