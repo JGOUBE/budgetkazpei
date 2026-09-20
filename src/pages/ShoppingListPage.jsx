@@ -365,7 +365,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
       ? buildShoppingListItemFromSuggestion(value)
       : { name: String(value || query).trim() }
     if (!selectedItem.name) return
-    const identifiedItem = resolveActiveRetailPromotionIdentity(selectedItem, retailPromotions)
+    const identifiedItem = resolveActiveRetailPromotionIdentity(selectedItem, smartRetailPromotions)
     setItems(prev => [...prev, {
       ...identifiedItem,
       id: `${Date.now()}-${Math.random()}`,
