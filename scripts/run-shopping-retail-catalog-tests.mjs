@@ -147,6 +147,23 @@ assert.deepEqual(getSmartPromotionPriceReference(packagedPromotion), {
 })
 assert.equal(isRetailPromotionUsableForSmartShopping(packagedPromotion), true)
 
+
+const structuredPackPromotion = {
+  ...ambiguousPromotion,
+  quantityValue: 200,
+  quantityUnit: "g",
+}
+const structuredPackSuggestions = getShoppingAutocompleteSuggestions(
+  "mimo",
+  [],
+  [structuredPackPromotion],
+  [],
+)
+assert.equal(isRetailPromotionUsableForSmartShopping(structuredPackPromotion), true)
+assert.equal(structuredPackSuggestions.retail.length, 1)
+assert.equal(structuredPackSuggestions.retail[0].label, "Mimolette 200 g")
+assert.equal(structuredPackSuggestions.retail[0].promoPrice, 2.99)
+
 const deduped = deduplicateRetailObservedPrices([
   observed({ id: "old", price: 13.5, observedAt: "2026-09-17T05:00:00Z", lastSeenAt: "2026-09-17T05:00:00Z" }),
   observed({ id: "new", price: 12.9 }),
