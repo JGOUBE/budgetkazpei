@@ -8,6 +8,8 @@ import {
   buildShoppingListItemFromSuggestion,
   estimateShoppingList,
   getShoppingAutocompleteSuggestions,
+  getSmartPromotionPriceReference,
+  isRetailPromotionUsableForSmartShopping,
 } from "../src/services/shoppingList/shoppingListEngine.ts"
 import {
   enrichShoppingBasketWithPromotions,
@@ -56,6 +58,94 @@ const normalized = toRetailObservedPriceViewModel({
 assert.equal(normalized.price, 2.49)
 assert.equal(normalized.marketProductId, "market-choco")
 assert.equal(normalized.isFresh, true)
+
+
+// Prix ticket vendus au poids : la référence intelligente est le prix au kg,
+// recalculé depuis le montant réellement payé et le poids, même si une ancienne
+// valeur price_per_unit était erronée.
+const grannyHistory = [{
+  id: "ticket-granny",
+  product_name: "Pomme Granny Smith",
+  normalized_name: "pomme granny smith",
+  quantity: 0.428,
+  unit: "kg",
+  price: 1.86,
+  price_per_unit: 1.86,
+  created_at: "2026-09-19T08:00:00Z",
+}]
+const grannySuggestions = getShoppingAutocompleteSuggestions("pomme", grannyHistory, [], [])
+assert.equal(grannySuggestions.historical.length, 1)
+assert.equal(grannySuggestions.historical[0].lastPrice, 4.35)
+assert.equal(grannySuggestions.historical[0].priceUnitLabel, "€/kg")
+const grannyEstimate = estimateShoppingList([{ id: "apple", name: "Pomme Granny Smith" }], grannyHistory, [])
+assert.equal(grannyEstimate.items[0].historicalPrice, 4.35)
+assert.equal(grannyEstimate.items[0].priceUnitLabel, "€/kg")
+
+// Un libellé emballé sans grammage/quantité n'est pas une référence de prix.
+const genericMimolette = getShoppingAutocompleteSuggestions("mimo", [{
+  id: "ticket-mimolette-generic",
+  product_name: "MIMOLETTE",
+  normalized_name: "mimolette",
+  quantity: 1,
+  unit: "piece",
+  price: 3.24,
+  created_at: "2026-09-19T08:00:00Z",
+}], [], [])
+assert.equal(genericMimolette.historical.length, 0)
+
+const packagedMimolette = getShoppingAutocompleteSuggestions("mimo", [{
+  id: "ticket-mimolette-200",
+  product_name: "Mimolette vieille 200 g",
+  normalized_name: "mimolette vieille 200 g",
+  quantity: 200,
+  unit: "g",
+  price: 3.84,
+  price_per_unit: 19.2,
+  created_at: "2026-09-19T08:00:00Z",
+}], [], [])
+assert.equal(packagedMimolette.historical.length, 1)
+assert.equal(packagedMimolette.historical[0].lastPrice, 3.84)
+assert.equal(packagedMimolette.historical[0].priceUnitLabel, "")
+
+// Les prix retail/catalogue sans format ni unité exploitable ne sont pas
+// proposés comme prix observés.
+const ambiguousObserved = getShoppingAutocompleteSuggestions("mimo", [], [], [observed({
+  id: "obs-mimolette",
+  productId: "shopping-mimolette",
+  marketProductId: "market-mimolette",
+  productName: "Mimolette",
+  normalizedProductName: "mimolette",
+  packageFormat: "",
+  quantityValue: null,
+  quantityUnit: null,
+  price: 3.24,
+})])
+assert.equal(ambiguousObserved.observed.length, 0)
+
+const ambiguousPromotion = {
+  id: "promo-mimolette",
+  productId: "shopping-mimolette",
+  marketProductId: "market-mimolette",
+  productName: "Mimolette",
+  promoPrice: 2.99,
+  originalPrice: 3.49,
+  promotionProven: true,
+  isActive: true,
+}
+assert.equal(getSmartPromotionPriceReference(ambiguousPromotion), null)
+assert.equal(isRetailPromotionUsableForSmartShopping(ambiguousPromotion), false)
+
+const packagedPromotion = {
+  ...ambiguousPromotion,
+  productName: "Mimolette vieille 200 g",
+  packageFormat: "200 g",
+}
+assert.deepEqual(getSmartPromotionPriceReference(packagedPromotion), {
+  value: 2.99,
+  unitLabel: "",
+  kind: "package",
+})
+assert.equal(isRetailPromotionUsableForSmartShopping(packagedPromotion), true)
 
 const deduped = deduplicateRetailObservedPrices([
   observed({ id: "old", price: 13.5, observedAt: "2026-09-17T05:00:00Z", lastSeenAt: "2026-09-17T05:00:00Z" }),
@@ -269,6 +359,9 @@ const unknown = estimateShoppingList([{ id: "unknown", name: "Produit inconnu" }
 assert.equal(unknown.total, 0)
 assert.equal(unknown.items[0].priceSource, "missing")
 
+console.log("[OK] Weighted ticket prices use €/kg or €/l instead of the paid line total")
+console.log("[OK] Ambiguous packaged labels do not expose an unqualified price")
+console.log("[OK] Catalog promotions require a usable format or unit-price context")
 console.log("[OK] Retail observed-price projection model")
 console.log("[OK] Poubelle 55 L appears in retail autocomplete")
 console.log("[OK] Selected retail product keeps structured identity")
