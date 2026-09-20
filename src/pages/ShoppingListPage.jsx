@@ -11,6 +11,7 @@ import {
   estimateShoppingList,
   getShoppingAutocompleteSuggestions,
   getPairingSuggestion,
+  isRetailPromotionUsableForSmartShopping,
 } from "../services/shoppingList/shoppingListEngine"
 import {
   buildShoppingPromotionDiagnostics,
@@ -36,6 +37,13 @@ function daysUntil(dateValue) {
   const time = new Date(dateValue).getTime()
   if (!time) return 0
   return Math.max(0, Math.ceil((time - Date.now()) / 86400000))
+}
+
+function formatSmartPrice(value, unitLabel = "") {
+  const formatted = formatMontant(value)
+  if (unitLabel === "€/kg") return formatted.replace(/\s*€$/, " €/kg")
+  if (unitLabel === "€/l") return formatted.replace(/\s*€$/, " €/l")
+  return formatted
 }
 
 const COPY = {
@@ -180,7 +188,7 @@ function snapshotTitle(txt) {
 function AutocompleteSuggestion({ suggestion, txt, onSelect }) {
   const promotion = suggestion.activePromotion || suggestion.promotion
   const lastPrice = Number(suggestion.lastPrice || 0)
-  const promoPrice = Number(promotion?.promoPrice || suggestion.promoPrice || 0)
+  const promoPrice = Number(suggestion.promoPrice || 0)
   const observedPrice = Number(suggestion.observedPrice || 0)
   const retailer = String(promotion?.retailerName || suggestion.retailerName || "").trim()
 
@@ -192,16 +200,16 @@ function AutocompleteSuggestion({ suggestion, txt, onSelect }) {
       style={{ minHeight: 54, borderRadius: 14, border: `1px solid ${COLORS.cyan}55`, background: "rgba(35,211,214,.12)", color: COLORS.text, padding: "8px 12px", textAlign: "left" }}
     >
       <span style={{ display: "block", fontWeight: 900 }}>{suggestion.label}</span>
-      {lastPrice > 0 && <span style={{ display: "block", color: COLORS.muted, fontSize: 12, marginTop: 2 }}>{txt.lastKnownPrice(formatMontant(lastPrice))}</span>}
+      {lastPrice > 0 && <span style={{ display: "block", color: COLORS.muted, fontSize: 12, marginTop: 2 }}>{txt.lastKnownPrice(formatSmartPrice(lastPrice, suggestion.priceUnitLabel))}</span>}
       {!promotion && observedPrice > 0 && (
         <>
-          <span style={{ display: "block", color: COLORS.green, fontSize: 12, fontWeight: 850, marginTop: 2 }}>{retailer ? `${retailer} · ` : ""}{formatMontant(observedPrice)}</span>
+          <span style={{ display: "block", color: COLORS.green, fontSize: 12, fontWeight: 850, marginTop: 2 }}>{retailer ? `${retailer} · ` : ""}{formatSmartPrice(observedPrice, suggestion.observedPriceUnitLabel)}</span>
           <span style={{ display: "block", color: COLORS.cyan, fontSize: 11, fontWeight: 900, marginTop: 2 }}>{txt.observedSuggestion}</span>
         </>
       )}
       {promotion && promoPrice > 0 && (
         <>
-          <span style={{ display: "block", color: COLORS.green, fontSize: 12, fontWeight: 850, marginTop: 2 }}>{retailer ? `${retailer} · ` : ""}{formatMontant(promoPrice)}</span>
+          <span style={{ display: "block", color: COLORS.green, fontSize: 12, fontWeight: 850, marginTop: 2 }}>{retailer ? `${retailer} · ` : ""}{formatSmartPrice(promoPrice, suggestion.promoPriceUnitLabel)}</span>
           <span style={{ display: "block", color: COLORS.cyan, fontSize: 11, fontWeight: 900, marginTop: 2 }}>{txt.promotionSuggestion}</span>
         </>
       )}
@@ -292,9 +300,13 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
     () => estimateShoppingList(items, shoppingItems, retailObservedPrices),
     [items, shoppingItems, retailObservedPrices],
   )
+  const smartRetailPromotions = useMemo(
+    () => retailPromotions.filter(isRetailPromotionUsableForSmartShopping),
+    [retailPromotions],
+  )
   const estimate = useMemo(
-    () => enrichShoppingBasketWithPromotions({ estimate: historicalEstimate, promotions: retailPromotions }),
-    [historicalEstimate, retailPromotions],
+    () => enrichShoppingBasketWithPromotions({ estimate: historicalEstimate, promotions: smartRetailPromotions }),
+    [historicalEstimate, smartRetailPromotions],
   )
   const suggestions = useMemo(
     () => getShoppingAutocompleteSuggestions(query, shoppingItems, retailPromotions, retailObservedPrices),
@@ -690,7 +702,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
               )}
             </div>
             <strong style={{ color: displayedPrice ? COLORS.green : COLORS.muted, whiteSpace: "nowrap" }}>
-              {displayedPrice ? formatMontant(displayedPrice) : txt.priceMissing}
+              {displayedPrice ? formatSmartPrice(displayedPrice, item.priceUnitLabel) : txt.priceMissing}
             </strong>
           </div>
         })}
