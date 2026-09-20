@@ -37,6 +37,174 @@ function formatMoneyFr(value: unknown) {
   return `${money(value).toFixed(2).replace(".", ",")} €`
 }
 
+const PACKAGE_QUANTITY_PATTERN = /\b(?:\d+(?:[,.]\d+)?\s*(?:kg|kgs?|kilogrammes?|g|gr|grammes?|l|litres?|cl|ml|cm|mm|m)\b|\d+\s*x\s*\d+(?:[,.]\d+)?\s*(?:kg|g|gr|l|cl|ml)?\b|\d+\s*(?:tranches?|pieces?|pi[eè]ces?|unit[eé]s?)\b)/i
+
+function normalizeMeasureUnit(value = "") {
+  const clean = normalizeRetailObservedSearchText(value)
+  if (["kg", "kgs", "kilogramme", "kilogrammes"].includes(clean)) return "kg"
+  if (["g", "gr", "gramme", "grammes"].includes(clean)) return "g"
+  if (["l", "litre", "litres"].includes(clean)) return "l"
+  if (clean === "cl") return "cl"
+  if (clean === "ml") return "ml"
+  return ""
+}
+
+function unitReferenceLabel(unit = "") {
+  if (["kg", "g"].includes(unit)) return "€/kg"
+  if (["l", "cl", "ml"].includes(unit)) return "€/l"
+  return ""
+}
+
+function hasExplicitPackageQuantity(value = "") {
+  return PACKAGE_QUANTITY_PATTERN.test(String(value || ""))
+}
+
+function hasNamedUnitPriceContext(value = "") {
+  const clean = normalizeRetailObservedSearchText(value)
+  if (!clean) return ""
+  if (/(?:^|\s)(?:au |le )?kg(?:\s|$)/.test(clean) || clean.includes(" prix kg ")) return "kg"
+  if (/(?:^|\s)(?:au |le )?litre(?:\s|$)/.test(clean) || /(?:^|\s)(?:au |le )?l(?:\s|$)/.test(clean)) return "l"
+  return ""
+}
+
+function measuredReferenceFromLine({ price, quantity, unit, fallbackUnitPrice }: any = {}) {
+  const amount = money(price)
+  const qty = money(quantity)
+  const cleanUnit = normalizeMeasureUnit(unit)
+  const storedUnitPrice = money(fallbackUnitPrice)
+  if (!cleanUnit) return null
+
+  let value = 0
+  if (amount > 0 && qty > 0) {
+    if (cleanUnit === "kg" || cleanUnit === "l") value = amount / qty
+    if (cleanUnit === "g" || cleanUnit === "ml") value = amount / (qty / 1000)
+    if (cleanUnit === "cl") value = amount / (qty / 100)
+  } else if (storedUnitPrice > 0) {
+    value = storedUnitPrice
+  }
+
+  if (!Number.isFinite(value) || value <= 0) return null
+  return {
+    value: Number(value.toFixed(2)),
+    unitLabel: unitReferenceLabel(cleanUnit),
+    kind: "unit",
+  }
+}
+
+function historyPriceReference(row: any = {}) {
+  const productText = [
+    row.product_name,
+    row.corrected_name,
+    row.canonical_name,
+    row.market_canonical_name,
+    row.package_format,
+    row.market_package_format,
+  ].filter(Boolean).join(" ")
+  const hasPackage = hasExplicitPackageQuantity(productText)
+
+  if (!hasPackage) {
+    const measured = measuredReferenceFromLine({
+      price: row.price,
+      quantity: row.quantity,
+      unit: row.unit,
+      fallbackUnitPrice: row.price_per_unit,
+    })
+    if (measured) return measured
+  }
+
+  const rawPrice = money(row.price)
+  if (rawPrice > 0 && hasPackage) {
+    return { value: rawPrice, unitLabel: "", kind: "package" }
+  }
+
+  return null
+}
+
+function smartHistoricalProduct(product: any = {}) {
+  const history = Array.isArray(product.history) ? product.history : []
+  const references = history
+    .map(row => ({ row, reference: historyPriceReference(row) }))
+    .filter(entry => entry.reference?.value > 0)
+  const preferredUnitLabel = references[0]?.reference?.unitLabel ?? ""
+  const comparable = references.filter(entry => (entry.reference?.unitLabel ?? "") === preferredUnitLabel)
+  const prices = comparable.map(entry => money(entry.reference?.value)).filter(value => value > 0)
+  const packageFormat = uniqueHistoryValue(history, ["market_package_format", "package_format"]) || ""
+  let label = String(product.label || "").trim()
+
+  if (packageFormat) {
+    const normalizedLabel = normalizeRetailObservedSearchText(label)
+    const normalizedFormat = normalizeRetailObservedSearchText(packageFormat)
+    if (normalizedFormat && !normalizedLabel.includes(normalizedFormat)) {
+      label = `${label} ${packageFormat}`.trim()
+    }
+  }
+
+  return {
+    ...product,
+    label,
+    averagePrice: prices.length ? prices.reduce((sum, value) => sum + value, 0) / prices.length : 0,
+    lastPrice: prices[0] || 0,
+    lowestPrice: prices.length ? Math.min(...prices) : 0,
+    highestPrice: prices.length ? Math.max(...prices) : 0,
+    priceUnitLabel: preferredUnitLabel,
+    smartSuggestionEligible: prices.length > 0 || hasExplicitPackageQuantity(label),
+  }
+}
+
+function buildSmartShoppingProducts(shoppingItems: any[] = []) {
+  return buildTopProducts(shoppingItems, Number.MAX_SAFE_INTEGER).map(smartHistoricalProduct)
+}
+
+function retailObservedPriceReference(observed: any = {}) {
+  const productText = [observed.productName, observed.packageFormat].filter(Boolean).join(" ")
+  if (hasExplicitPackageQuantity(productText)) {
+    const rawPrice = money(observed.price)
+    return rawPrice > 0 ? { value: rawPrice, unitLabel: "", kind: "package" } : null
+  }
+
+  const unitPriceUnit = normalizeMeasureUnit(observed.unitPriceUnit)
+  const unitPrice = money(observed.unitPrice)
+  if (unitPrice > 0 && unitPriceUnit) {
+    return { value: unitPrice, unitLabel: unitReferenceLabel(unitPriceUnit), kind: "unit" }
+  }
+
+  const namedUnit = hasNamedUnitPriceContext(productText)
+  const rawPrice = money(observed.price)
+  if (namedUnit && rawPrice > 0) {
+    return { value: rawPrice, unitLabel: unitReferenceLabel(namedUnit), kind: "unit" }
+  }
+
+  return null
+}
+
+export function getSmartPromotionPriceReference(promotion: any = {}) {
+  const productText = [promotion.productName, promotion.packageFormat, promotion.conditions].filter(Boolean).join(" ")
+  if (hasExplicitPackageQuantity(productText)) {
+    const promoPrice = money(promotion.promoPrice)
+    return promoPrice > 0 ? { value: promoPrice, unitLabel: "", kind: "package" } : null
+  }
+
+  const unitPriceUnit = normalizeMeasureUnit(promotion.unitLabel || promotion.unitPriceUnit)
+  const unitPrice = money(promotion.unitPrice)
+  if (unitPrice > 0 && unitPriceUnit) {
+    return { value: unitPrice, unitLabel: unitReferenceLabel(unitPriceUnit), kind: "unit" }
+  }
+
+  const namedUnit = hasNamedUnitPriceContext(productText)
+  const promoPrice = money(promotion.promoPrice)
+  if (namedUnit && promoPrice > 0) {
+    return { value: promoPrice, unitLabel: unitReferenceLabel(namedUnit), kind: "unit" }
+  }
+
+  return null
+}
+
+export function isRetailPromotionUsableForSmartShopping(promotion: any = {}) {
+  return promotion?.isActive === true &&
+    promotion?.promotionProven === true &&
+    Boolean(getSmartPromotionPriceReference(promotion)?.value)
+}
+
 export function getProductSuggestionScore(productName = "", query = "") {
   const cleanName = normalizeProductName(productName)
   const cleanQuery = normalizeProductName(query)
@@ -63,12 +231,12 @@ export function getAutocompleteSuggestions(query = "", shoppingItems: any[] = []
   const clean = normalizeProductName(query)
   if (!clean) return []
 
-  return buildTopProducts(shoppingItems, Number.MAX_SAFE_INTEGER)
+  return buildSmartShoppingProducts(shoppingItems)
     .map(product => ({
       ...product,
       suggestionScore: getProductSuggestionScore(product.label, clean),
     }))
-    .filter(product => product.suggestionScore >= 0)
+    .filter(product => product.suggestionScore >= 0 && product.smartSuggestionEligible)
     .sort((a, b) =>
       b.suggestionScore - a.suggestionScore ||
       Number(b.purchaseCount || 0) - Number(a.purchaseCount || 0) ||
@@ -161,6 +329,7 @@ function buildRetailObservedDisplayLabel(observed: any = {}) {
 }
 
 function retailObservedSuggestion(observed: any, suggestionScore: number) {
+  const reference = retailObservedPriceReference(observed)
   return {
     key: `observed:${retailObservedIdentityKey(observed) || observed.id || observed.normalizedProductName}`,
     source: "observed",
@@ -181,7 +350,8 @@ function retailObservedSuggestion(observed: any, suggestionScore: number) {
     retailerName: observed.retailerName || "",
     storeName: observed.storeName || "",
     storeCity: observed.storeCity || "",
-    observedPrice: money(observed.price),
+    observedPrice: money(reference?.value),
+    observedPriceUnitLabel: reference?.unitLabel || "",
     observedAt: observed.observedAt || null,
     observedLastSeenAt: observed.lastSeenAt || null,
     observedPriceIsFresh: observed.isFresh === true,
@@ -215,7 +385,7 @@ function observedCompatibleWithItem(item: any = {}, observed: any = {}) {
 
 function findReliableObservedPrice(item: any = {}, observedPrices: any[] = []) {
   const compatible = (Array.isArray(observedPrices) ? observedPrices : [])
-    .filter(observed => observed?.isFresh === true && money(observed?.price) > 0)
+    .filter(observed => observed?.isFresh === true && Boolean(retailObservedPriceReference(observed)?.value))
     .filter(observed => observedCompatibleWithItem(item, observed))
 
   if (compatible.length === 0) return null
@@ -279,6 +449,7 @@ function historyPromotionCompatibility(suggestion: any = {}, promotion: any = {}
 }
 
 function retailSuggestion(promotion: any, suggestionScore: number) {
+  const reference = getSmartPromotionPriceReference(promotion)
   return {
     key: `retail:${retailPromotionIdentityKey(promotion)}`,
     source: "retail",
@@ -300,7 +471,8 @@ function retailSuggestion(promotion: any, suggestionScore: number) {
     storeLocationId: promotion.storeLocationId || null,
     storeName: promotion.storeName || "",
     storeCity: promotion.storeCity || "",
-    promoPrice: money(promotion.promoPrice),
+    promoPrice: money(reference?.value),
+    promoPriceUnitLabel: reference?.unitLabel || "",
     promotion,
   }
 }
@@ -343,7 +515,7 @@ export function getShoppingAutocompleteSuggestions(
       score: getRetailObservedSuggestionScore(observedPrice, query),
     }))
     .filter(({ observedPrice, score }) => {
-      if (score < 0) return false
+      if (score < 0 || !retailObservedPriceReference(observedPrice)?.value) return false
       const name = normalizeProductName(observedPrice.productName || "")
       if (historicalNames.has(name)) return false
       const identity = retailObservedIdentityKey(observedPrice)
@@ -486,7 +658,7 @@ export function estimateShoppingList(
 ) {
   // Toute l'historique est déjà chargé en mémoire. Le limiter aux 80 produits
   // les plus fréquents supprimait silencieusement les prix valides plus rares.
-  const products = buildTopProducts(shoppingItems, Number.MAX_SAFE_INTEGER)
+  const products = buildSmartShoppingProducts(shoppingItems)
 
   const rows = items.map(item => {
     const normalized = normalizeProductName(item.name)
@@ -525,7 +697,8 @@ export function estimateShoppingList(
     const observed = historicalEstimatedPrice > 0
       ? null
       : findReliableObservedPrice(identityItem, retailObservedPrices)
-    const retailObservedPrice = money(observed?.price)
+    const observedReference = observed ? retailObservedPriceReference(observed) : null
+    const retailObservedPrice = money(observedReference?.value)
     const estimatedPrice = historicalEstimatedPrice || retailObservedPrice
 
     return {
@@ -542,6 +715,7 @@ export function estimateShoppingList(
       lowestPrice: money(match?.lowestPrice),
       highestPrice: money(match?.highestPrice),
       priceSource: historicalEstimatedPrice > 0 ? "known" : retailObservedPrice > 0 ? "retail_observed" : "missing",
+      priceUnitLabel: historicalEstimatedPrice > 0 ? (match?.priceUnitLabel || "") : (observedReference?.unitLabel || ""),
       priceLabel: historicalEstimatedPrice > 0
         ? (Number(match?.purchaseCount || 0) > 1 ? "prix estimé" : "dernier prix connu")
         : retailObservedPrice > 0
