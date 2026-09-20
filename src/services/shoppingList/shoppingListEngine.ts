@@ -59,6 +59,27 @@ function hasExplicitPackageQuantity(value = "") {
   return PACKAGE_QUANTITY_PATTERN.test(String(value || ""))
 }
 
+function formatStructuredPackage(item: any = {}) {
+  const packageFormat = String(item.packageFormat || item.package_format || "").trim()
+  if (packageFormat) return packageFormat
+
+  const quantity = money(
+    item.totalQuantityValue ?? item.total_quantity_value ?? item.quantityValue ?? item.quantity_value,
+  )
+  const unit = String(
+    item.totalQuantityUnit ?? item.total_quantity_unit ?? item.quantityUnit ?? item.quantity_unit ?? "",
+  ).trim()
+  const packCount = Math.max(0, Math.round(money(item.packCount ?? item.pack_count)))
+
+  if (!(quantity > 0) || !unit) return ""
+  const quantityText = Number.isInteger(quantity) ? String(quantity) : String(quantity).replace(".", ",")
+  return packCount > 1 ? `${packCount} × ${quantityText} ${unit}` : `${quantityText} ${unit}`
+}
+
+function hasStructuredPackage(item: any = {}) {
+  return hasExplicitPackageQuantity(formatStructuredPackage(item))
+}
+
 function hasNamedUnitPriceContext(value = "") {
   const clean = normalizeRetailObservedSearchText(value)
   if (!clean) return ""
@@ -156,8 +177,9 @@ function buildSmartShoppingProducts(shoppingItems: any[] = []) {
 }
 
 function retailObservedPriceReference(observed: any = {}) {
-  const productText = [observed.productName, observed.packageFormat].filter(Boolean).join(" ")
-  if (hasExplicitPackageQuantity(productText)) {
+  const structuredPackage = formatStructuredPackage(observed)
+  const productText = [observed.productName, structuredPackage].filter(Boolean).join(" ")
+  if (hasExplicitPackageQuantity(productText) || hasStructuredPackage(observed)) {
     const rawPrice = money(observed.price)
     return rawPrice > 0 ? { value: rawPrice, unitLabel: "", kind: "package" } : null
   }
@@ -178,8 +200,9 @@ function retailObservedPriceReference(observed: any = {}) {
 }
 
 export function getSmartPromotionPriceReference(promotion: any = {}) {
-  const productText = [promotion.productName, promotion.packageFormat, promotion.conditions].filter(Boolean).join(" ")
-  if (hasExplicitPackageQuantity(productText)) {
+  const structuredPackage = formatStructuredPackage(promotion)
+  const productText = [promotion.productName, structuredPackage, promotion.conditions].filter(Boolean).join(" ")
+  if (hasExplicitPackageQuantity(productText) || hasStructuredPackage(promotion)) {
     const promoPrice = money(promotion.promoPrice)
     return promoPrice > 0 ? { value: promoPrice, unitLabel: "", kind: "package" } : null
   }
@@ -306,7 +329,7 @@ function isMeaningfulRetailBrand(value = "") {
 function buildRetailObservedDisplayLabel(observed: any = {}) {
   const name = String(observed.productName || "").trim()
   const brand = String(observed.brand || "").trim()
-  const packageFormat = String(observed.packageFormat || "").trim()
+  const packageFormat = formatStructuredPackage(observed)
 
   let label = name
   const normalizedLabel = () => normalizeRetailObservedSearchText(label)
@@ -448,13 +471,21 @@ function historyPromotionCompatibility(suggestion: any = {}, promotion: any = {}
   return normalizeProductName(suggestion.label || "") === normalizeProductName(promotion.productName || "")
 }
 
+function buildRetailPromotionDisplayLabel(promotion: any = {}) {
+  return buildRetailObservedDisplayLabel({
+    productName: promotion.productName,
+    brand: promotion.brand,
+    packageFormat: formatStructuredPackage(promotion),
+  })
+}
+
 function retailSuggestion(promotion: any, suggestionScore: number) {
   const reference = getSmartPromotionPriceReference(promotion)
   return {
     key: `retail:${retailPromotionIdentityKey(promotion)}`,
     source: "retail",
     sources: ["retail"],
-    label: promotion.productName,
+    label: buildRetailPromotionDisplayLabel(promotion),
     normalizedName: normalizeProductName(promotion.productName),
     suggestionScore,
     productId: promotion.productId || null,
