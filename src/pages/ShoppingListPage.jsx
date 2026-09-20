@@ -11,6 +11,7 @@ import {
   estimateShoppingList,
   getShoppingAutocompleteSuggestions,
   getPairingSuggestion,
+  getSmartPromotionPriceReference,
   isRetailPromotionUsableForSmartShopping,
 } from "../services/shoppingList/shoppingListEngine"
 import {
@@ -301,7 +302,18 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
     [items, shoppingItems, retailObservedPrices],
   )
   const smartRetailPromotions = useMemo(
-    () => retailPromotions.filter(isRetailPromotionUsableForSmartShopping),
+    () => retailPromotions
+      .filter(isRetailPromotionUsableForSmartShopping)
+      .map(promotion => {
+        const reference = getSmartPromotionPriceReference(promotion)
+        return {
+          ...promotion,
+          rawPromoPrice: promotion.promoPrice,
+          promoPrice: reference?.value ?? promotion.promoPrice,
+          smartPriceValue: reference?.value ?? null,
+          smartPriceUnitLabel: reference?.unitLabel || "",
+        }
+      }),
     [retailPromotions],
   )
   const estimate = useMemo(
@@ -766,7 +778,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
                   {item.name}{item.quantity ? ` · ${item.quantity}${item.unit ? ` ${item.unit}` : ""}` : ""}
                   {item.promotionSnapshot && (
                     <span style={{ display: "block", color: item.promotionMatchStatus === "suggested" ? COLORS.yellow : COLORS.green, fontSize: 12, marginTop: 3 }}>
-                      {item.promotionMatchStatus === "suggested" ? txt.nearbyOffer : txt.currentPromotion} : {formatMontant(item.promotionSnapshot.promoPrice)}
+                      {item.promotionMatchStatus === "suggested" ? txt.nearbyOffer : txt.currentPromotion} : {formatSmartPrice(item.promotionSnapshot.smartPriceValue ?? item.promotionSnapshot.promoPrice, item.promotionSnapshot.smartPriceUnitLabel)}
                       {item.promotionSnapshot.retailerName ? ` chez ${item.promotionSnapshot.retailerName}` : ""}
                     </span>
                   )}
@@ -814,7 +826,7 @@ function PromotionHint({ item, txt, onOpen, reliable = false }) {
         <Tag size={15} aria-hidden="true" /> {reliable ? txt.currentPromotion : txt.nearbyOffer}
       </div>
       <div style={{ color: COLORS.text, fontSize: 13, marginTop: 4 }}>
-        {formatMontant(promotion.promoPrice)}{store ? ` chez ${store}` : ""}
+        {formatSmartPrice(promotion.smartPriceValue ?? promotion.promoPrice, promotion.smartPriceUnitLabel)}{store ? ` chez ${store}` : ""}
       </div>
       {!reliable && <div style={{ color: COLORS.muted, fontSize: 12, marginTop: 3 }}>{txt.verifyOffer}</div>}
       {Number(saving || 0) > 0 && (
