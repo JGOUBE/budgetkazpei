@@ -50,8 +50,47 @@ function createDeleteClient({ rows, sessionUserId, failWith = null }) {
     calls,
     from(table) {
       const filters = []
+      let operation = "select"
+      let updateValues = null
+      const execute = () => {
+        if (failWith) return { data: null, count: null, error: failWith }
+
+        const matches = rows.filter(row =>
+          row.user_id === sessionUserId
+          && row.status === "active"
+          && new Date(row.expires_at).getTime() > now
+          && filters.every(([column, value]) => row[column] === value),
+        )
+
+        if (operation === "delete") {
+          for (const row of matches) {
+            const index = rows.indexOf(row)
+            if (index >= 0) rows.splice(index, 1)
+          }
+          return { data: null, count: matches.length, error: null }
+        }
+
+        if (operation === "update") {
+          for (const row of matches) Object.assign(row, updateValues)
+          return { data: null, count: matches.length, error: null }
+        }
+
+        return { data: matches[0] ? { id: matches[0].id } : null, count: matches.length, error: null }
+      }
       const query = {
+        select(columns) {
+          operation = "select"
+          calls.push({ type: "select", table, columns })
+          return query
+        },
+        delete() {
+          operation = "delete"
+          calls.push({ type: "delete", table })
+          return query
+        },
         update(values, options) {
+          operation = "update"
+          updateValues = values
           calls.push({ type: "update", table, values, options })
           return query
         },
@@ -60,17 +99,11 @@ function createDeleteClient({ rows, sessionUserId, failWith = null }) {
           calls.push({ type: "eq", column, value })
           return query
         },
+        maybeSingle() {
+          return Promise.resolve(execute())
+        },
         then(resolve, reject) {
-          if (failWith) return Promise.resolve({ count: null, error: failWith }).then(resolve, reject)
-
-          const matches = rows.filter(row =>
-            row.user_id === sessionUserId
-            && row.status === "active"
-            && new Date(row.expires_at).getTime() > now
-            && filters.every(([column, value]) => row[column] === value),
-          )
-          for (const row of matches) row.status = "deleted"
-          return Promise.resolve({ count: matches.length, error: null }).then(resolve, reject)
+          return Promise.resolve(execute()).then(resolve, reject)
         },
       }
       return query
@@ -98,7 +131,7 @@ assert.equal(
   activeSnapshot.id,
   "An active owned snapshot must be soft-deleted successfully",
 )
-assert.equal(activeSnapshot.status, "deleted", "The successful mutation must mark the target deleted")
+assert.equal(deleteRows.includes(activeSnapshot), false, "The successful mutation must remove the target")
 assert.deepEqual(
   deleteRows.filter(row => isShoppingListSnapshotVisible(row, now)).map(row => row.id),
   [otherSnapshot.id],
@@ -106,11 +139,9 @@ assert.deepEqual(
 )
 assert.equal(otherSnapshot.status, "active", "Deleting one snapshot must not affect another")
 assert.deepEqual(deleteClient.calls[0], {
-  type: "update",
+  type: "delete",
   table: "shopping_list_snapshots",
-  values: { status: "deleted" },
-  options: undefined,
-}, "Deletion must not request a representation or count of the hidden row")
+}, "Deletion must first attempt the physical-delete path used by the service")
 assert.ok(deleteClient.calls.some(call => call.type === "eq" && call.column === "status" && call.value === "active"))
 
 const failedRows = [{ ...otherSnapshot, id: "snapshot-failed" }]
@@ -203,13 +234,15 @@ assert.match(service, /\.gt\("expires_at", nowIso\(\)\)/, "Expired snapshots mus
 assert.doesNotMatch(service, /update\(\{ status: "deleted" \}\)[\s\S]*\.select\(/, "Soft delete must not return a row hidden by SELECT RLS")
 assert.match(page, /window\.confirm\(txt\.deleteConfirm\)/, "Deletion must require one confirmation")
 assert.match(page, /deleteInFlightRef\.current\.has\(id\)/, "A double click must not start a second deletion")
-assert.match(page, /try \{[\s\S]*markShoppingListSnapshotDeleted[\s\S]*setSnapshots\(prev => prev\.filter[\s\S]*setNotice\(\{ message: txt\.deleted, kind: "success" \}\)[\s\S]*catch \{[\s\S]*setNotice\(\{ message: txt\.deleteError, kind: "error" \}\)/, "The UI must mutate local state only after backend success and report failures")
+assert.match(page, /setHiddenSnapshotIds\(prev =>[\s\S]*next\.add\(id\)[\s\S]*setSnapshots\(prev => prev\.filter\(row => row\.id !== id\)\)/, "Deletion must hide the row immediately")
+assert.match(page, /await markShoppingListSnapshotDeleted[\s\S]*deletedSnapshotIdsRef\.current\.add\(id\)[\s\S]*setNotice\(\{ message: txt\.deleted, kind: "success" \}\)/, "Backend success must keep the deletion tombstone and report success")
+assert.match(page, /catch \(error\) \{[\s\S]*next\.delete\(id\)[\s\S]*setNotice\(\{ message: txt\.deleteError, kind: "error" \}\)/, "Backend failure must restore visibility and report the error")
 assert.match(page, /setPreviewSnapshot\(prev => prev\?\.id === id \? null : prev\)/, "Deleting a previewed snapshot must close its preview")
 assert.match(page, /disabled=\{isDeleting\}/, "The delete button must be disabled while its snapshot is being deleted")
 assert.match(page, /const snapshotRequestVersionRef = useRef\(0\)/, "Snapshot reads must share a request version")
 assert.match(page, /const deletedSnapshotIdsRef = useRef\(new Set\(\)\)/, "Deleted snapshot ids must remain excluded from stale responses")
 assert.match(page, /requestVersion === snapshotRequestVersionRef\.current[\s\S]*!deletedSnapshotIdsRef\.current\.has\(row\.id\)/, "Only the latest snapshot response may update UI state")
-assert.match(page, /markShoppingListSnapshotDeleted[\s\S]*deletedSnapshotIdsRef\.current\.add\(id\)[\s\S]*setSnapshots\(prev => prev\.filter\(row => row\.id !== id\)\)[\s\S]*await refreshSnapshots\(\)[\s\S]*setNotice\(\{ message: txt\.deleted, kind: "success" \}\)/, "Delete must remove locally, refresh from Supabase, then report success")
+assert.match(page, /markShoppingListSnapshotDeleted[\s\S]*deletedSnapshotIdsRef\.current\.add\(id\)[\s\S]*listShoppingListSnapshots[\s\S]*setSnapshots\(\(rows \|\| \[\]\)\.filter\(row => row\.id !== id\)\)/, "Delete must verify and refresh from Supabase without reintroducing the row")
 assert.doesNotMatch(page, /async function refreshSnapshots\(\)[\s\S]*catch \{\s*setSnapshots\(\[\]\)/, "A failed refresh must preserve the locally deleted state")
 
 assert.match(migration, /new\.expires_at := new\.created_at \+ interval '7 days'/)

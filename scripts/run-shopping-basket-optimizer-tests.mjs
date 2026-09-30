@@ -182,6 +182,24 @@ const incompatibleFormat = buildMultiRetailBasketOptimization({
 assert.equal(incompatibleFormat.retailOfferMatchedCount, 0)
 assert.equal(incompatibleFormat.optimizedTotal, 12.5)
 
+const quantityOptimization = buildMultiRetailBasketOptimization({
+  items: [{ ...basketItems[0], list_quantity: 3, estimatedLineCost: 37.5, estimatedPrice: 37.5 }],
+  observedPrices: [observed({ price: 9.95 })],
+  promotions: [],
+})
+assert.equal(quantityOptimization.items[0].selectedRetailOffer.unitPrice, 9.95)
+assert.equal(quantityOptimization.items[0].selectedCost, 29.85)
+assert.equal(quantityOptimization.retailerBreakdown[0].subtotal, 29.85)
+
+const incompleteOptimization = buildMultiRetailBasketOptimization({
+  items: [basketItems[0], { id: "unknown", name: "Produit inconnu", estimatedLineCost: null }],
+  observedPrices: [observed({ price: 9.95 })],
+  promotions: [],
+})
+assert.equal(incompleteOptimization.missingPriceCount, 1)
+assert.equal(incompleteOptimization.pricedItemCount, 1)
+assert.equal(incompleteOptimization.completePriceCoverage, false)
+
 console.log("[OK] Plusieurs enseignes conservees pour un meme produit")
 console.log("[OK] Meilleure offre fiable choisie par ligne")
 console.log("[OK] Une promo fiable peut battre un prix observe")
@@ -189,3 +207,5 @@ console.log("[OK] Prix retail deja integre reste attribue a son enseigne")
 console.log("[OK] Sous-totaux regroupes par enseigne")
 console.log("[OK] Prix observes perimes ignores")
 console.log("[OK] Conflits identite/format ignores")
+console.log("[OK] Quantites appliquees aux offres et sous-totaux enseignes")
+console.log("[OK] Couverture incomplete explicitement signalee")

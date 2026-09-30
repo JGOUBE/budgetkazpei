@@ -4,6 +4,7 @@ import {
 } from "../retail/shoppingPromotionMatching.js"
 import { normalizeProductName } from "../../features/shopping/services/normalizer.ts"
 import { extractComparablePackage } from "../savings/savingsEngine.ts"
+import { getShoppingListQuantity } from "./shoppingListItemModel.js"
 
 function moneyOrNull(value) {
   if (value === null || value === undefined || value === "") return null
@@ -70,7 +71,13 @@ function hasExplicitPackageConflict(item = {}, promotion = {}) {
     quantity: item.quantity_value ?? item.quantityValue ?? item.quantity,
     unit: item.quantity_unit ?? item.quantityUnit ?? item.unit,
   })
-  if (itemPackage.family === "unknown") return false
+  // Une saisie courte et générique ne reçoit pas silencieusement l'identité
+  // et le prix d'un conditionnement précis. Un libellé descriptif exact peut
+  // néanmoins conserver le comportement historique d'identification unique.
+  if (itemPackage.family === "unknown") {
+    const itemWords = normalizeProductName(item.name || item.product_name || "").split(" ").filter(Boolean)
+    return itemWords.length <= 2
+  }
 
   const promotionPackage = extractComparablePackage({
     product_name: [promotion.productName, promotion.packageFormat].filter(Boolean).join(" "),
@@ -132,20 +139,26 @@ export function enrichShoppingBasketWithPromotions({ estimate = {}, promotions =
   const matches = findActivePromotionsForShoppingItems(estimateItems, promotions)
   const items = estimateItems.map((item, index) => {
     const match = matches[index]
+    const listQuantity = getShoppingListQuantity(item)
     const historicalPrice = moneyOrNull(item.historicalPrice)
-    const baseEstimatedPrice = moneyOrNull(item.estimatedPrice)
+    const baseEstimatedPrice = moneyOrNull(item.estimatedLineCost ?? item.estimatedPrice)
     const baseEstimatedPriceSource = item.priceSource === "retail_observed"
       ? "retail_observed"
       : historicalPrice !== null && historicalPrice > 0
         ? "historical"
         : "missing"
-    const promotionPrice = moneyOrNull(match?.promotion?.promoPrice)
+    const promotionPrice = moneyOrNull(
+      match?.promotion?.smartPriceValue ?? match?.promotion?.promoPrice,
+    )
+    const promotionLinePrice = promotionPrice !== null && promotionPrice > 0
+      ? roundedMoney(promotionPrice * listQuantity)
+      : null
     const reliablePromotion = match?.matchStatus === SHOPPING_PROMOTION_MATCH_STATUS.RELIABLE && promotionPrice !== null && promotionPrice > 0
     const reliableSaving = match?.reliableSaving ?? null
     const estimatedLineCost = reliablePromotion
       ? historicalPrice !== null && historicalPrice > 0
         ? Math.max(0, roundedMoney(historicalPrice - Math.max(0, moneyOrNull(reliableSaving) || 0)))
-        : promotionPrice
+        : promotionLinePrice
       : baseEstimatedPrice !== null && baseEstimatedPrice > 0
         ? baseEstimatedPrice
         : null
@@ -156,6 +169,7 @@ export function enrichShoppingBasketWithPromotions({ estimate = {}, promotions =
       promotionMatchStatus: match?.matchStatus || SHOPPING_PROMOTION_MATCH_STATUS.NONE,
       promotion: match?.promotion || null,
       promotionPrice,
+      promotionLinePrice,
       promotionAlternatives: match?.alternatives || [],
       promotionSuggestions: match?.suggestions || [],
       possibleSaving: match?.possibleSaving ?? null,
@@ -193,7 +207,7 @@ export function enrichShoppingBasketWithPromotions({ estimate = {}, promotions =
   )
   const reliablePromotionOnlyTotal = roundedMoney(items.reduce((total, item) => {
     if (item.historicalPrice !== null || item.promotionMatchStatus !== SHOPPING_PROMOTION_MATCH_STATUS.RELIABLE) return total
-    return total + Math.max(0, moneyOrNull(item.promotionPrice) || 0)
+    return total + Math.max(0, moneyOrNull(item.promotionLinePrice) || 0)
   }, 0))
   const retailObservedOnlyTotal = roundedMoney(items.reduce((total, item) => {
     if (item.historicalPrice !== null || item.estimatedPriceSource !== "retail_observed") return total

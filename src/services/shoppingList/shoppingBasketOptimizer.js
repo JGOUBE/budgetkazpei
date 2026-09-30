@@ -4,6 +4,8 @@ import {
   findActivePromotionsForShoppingItems,
   resolvePromotionIdentityMatch,
 } from "../retail/shoppingPromotionMatching.js"
+import { getShoppingListQuantity } from "./shoppingListItemModel.js"
+import { areShoppingProductSemanticsCompatible } from "./shoppingProductCompatibility.js"
 
 function moneyOrNull(value) {
   if (value === null || value === undefined || value === "") return null
@@ -71,6 +73,8 @@ function brandsCompatible(item = {}, observed = {}) {
 }
 
 function observedMatchesItem(item = {}, observed = {}) {
+  if (!areShoppingProductSemanticsCompatible(item, observed)) return false
+
   const comparableObserved = {
     ...observed,
     controlledNormalization: Boolean(
@@ -165,13 +169,18 @@ export function buildMultiRetailBasketOptimization({
   promotions = [],
 } = {}) {
   const rows = (Array.isArray(items) ? items : []).map(item => {
+    const listQuantity = getShoppingListQuantity(item)
     const baseline = moneyOrNull(item.estimatedLineCost ?? item.estimatedPrice)
     const baselineSource = String(item.estimatedPriceSource || item.priceSource || "").trim()
 
     const offers = [
       ...observedCandidatesForItem(item, observedPrices),
       ...promotionCandidatesForItem(item, promotions),
-    ].sort(offerOrder)
+    ].map(offer => ({
+      ...offer,
+      unitPrice: offer.price,
+      price: roundMoney(offer.price * listQuantity),
+    })).sort(offerOrder)
 
     const bestRetailOffer = offers[0] || null
     const sameAsRetailBaseline = Boolean(
@@ -200,6 +209,7 @@ export function buildMultiRetailBasketOptimization({
     return {
       id: item.id || null,
       name: item.name || item.product_name || "",
+      listQuantity,
       baselineCost: baseline !== null && baseline > 0 ? roundMoney(baseline) : null,
       selectedCost,
       bestRetailOffer,
@@ -240,6 +250,8 @@ export function buildMultiRetailBasketOptimization({
       id: row.id,
       name: row.name,
       price: offer.price,
+      unitPrice: offer.unitPrice,
+      listQuantity: row.listQuantity,
       source: offer.source,
       storeName: offer.storeName || "",
       storeCity: offer.storeCity || "",
@@ -257,6 +269,7 @@ export function buildMultiRetailBasketOptimization({
   const retailOfferMatchedCount = rows.filter(row => row.hasReliableRetailOffer).length
   const selectedRetailOfferCount = rows.filter(row => row.selectedRetailOffer).length
   const missingPriceCount = rows.filter(row => row.missingPrice).length
+  const pricedItemCount = rows.length - missingPriceCount
 
   return {
     items: rows,
@@ -267,6 +280,8 @@ export function buildMultiRetailBasketOptimization({
     retailOfferMatchedCount,
     selectedRetailOfferCount,
     missingPriceCount,
+    pricedItemCount,
+    completePriceCoverage: rows.length > 0 && missingPriceCount === 0,
     retailerBreakdown,
     retailerCount: retailerBreakdown.length,
     splitAcrossRetailers: retailerBreakdown.length > 1,

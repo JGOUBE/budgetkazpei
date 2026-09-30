@@ -179,6 +179,15 @@ assert.equal(noodleBasket.items[0].historicalPrice, 0.74)
 assert.equal(noodleBasket.items[0].promotionPrice, 0.49)
 assert.equal(noodleBasket.items[0].reliableSaving, 0.25)
 
+const twoNoodleBasket = enrichShoppingBasketWithPromotions({
+  estimate: estimateShoppingList([{ ...identifiedNoodles, list_quantity: 2 }], noodleHistory),
+  promotions: [noodlePromotion],
+})
+assert.equal(twoNoodleBasket.items[0].historicalPrice, 1.48)
+assert.equal(twoNoodleBasket.items[0].promotionLinePrice, 0.98)
+assert.equal(twoNoodleBasket.items[0].reliableSaving, 0.5)
+assert.equal(twoNoodleBasket.total, 0.98)
+
 // Autocomplétion multi-source A-H.
 const historicalOnlySuggestions = getShoppingAutocompleteSuggestions("Produit historique", knownHistory, [])
 assert.equal(historicalOnlySuggestions.historical.length, 1)

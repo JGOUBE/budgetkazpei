@@ -1,4 +1,5 @@
 import assert from "node:assert/strict"
+import { readFile } from "node:fs/promises"
 
 import {
   deduplicateRetailObservedPrices,
@@ -14,6 +15,10 @@ import {
 import {
   enrichShoppingBasketWithPromotions,
 } from "../src/services/shoppingList/shoppingPromotionEnrichment.js"
+import {
+  findExactShoppingListDuplicate,
+  getShoppingListQuantity,
+} from "../src/services/shoppingList/shoppingListItemModel.js"
 
 function observed(overrides = {}) {
   return {
@@ -427,6 +432,96 @@ const unknown = estimateShoppingList([{ id: "unknown", name: "Produit inconnu" }
 assert.equal(unknown.total, 0)
 assert.equal(unknown.items[0].priceSource, "missing")
 
+// V15 : les familles de produits restent étanches dans l'autocomplétion.
+const semanticHistory = [
+  {
+    id: "fresh-apple",
+    product_name: "Pomme Granny Smith",
+    normalized_name: "pomme granny smith",
+    quantity: 0.5,
+    unit: "kg",
+    price: 2.25,
+    created_at: "2026-09-29T08:00:00Z",
+  },
+  {
+    id: "apple-juice",
+    product_name: "Jus de pomme 1 L",
+    normalized_name: "jus de pomme",
+    price: 2.4,
+    package_format: "1 L",
+    created_at: "2026-09-29T08:00:00Z",
+  },
+  {
+    id: "apple-compote",
+    product_name: "Compote de pomme 4 x 100 g",
+    normalized_name: "compote de pomme",
+    price: 2.8,
+    package_format: "4 x 100 g",
+    created_at: "2026-09-29T08:00:00Z",
+  },
+  {
+    id: "body-milk",
+    product_name: "Lait corporel 250 ml",
+    normalized_name: "lait corporel",
+    price: 5.9,
+    package_format: "250 ml",
+    category: "hygiène beauté",
+    created_at: "2026-09-29T08:00:00Z",
+  },
+]
+const appleSemanticSuggestions = getShoppingAutocompleteSuggestions("pomme", semanticHistory, [], [])
+assert.deepEqual(appleSemanticSuggestions.historical.map(item => item.label), ["Pomme Granny Smith"])
+const milkSemanticSuggestions = getShoppingAutocompleteSuggestions("lait", semanticHistory, [], [])
+assert.equal(milkSemanticSuggestions.historical.some(item => item.label.includes("corporel")), false)
+
+// Régression du lait à 9,89 € : un ancien pack ne devient pas le prix d'une
+// saisie générique tant que l'utilisateur n'a pas choisi cette référence.
+const milkPackHistory = [{
+  id: "milk-pack-989",
+  product_name: "Lait",
+  normalized_name: "lait",
+  market_package_format: "6 x 1 L",
+  price: 9.89,
+  created_at: "2026-09-29T08:00:00Z",
+}]
+const genericMilkEstimate = estimateShoppingList([{ id: "generic-milk", name: "Lait" }], milkPackHistory, [])
+assert.equal(genericMilkEstimate.total, 0)
+assert.equal(genericMilkEstimate.items[0].priceSource, "missing")
+
+// Les quantités de liste multiplient le prix de référence, sans détourner le
+// poids ticket utilisé pour calculer le prix au kilogramme.
+const twoKgApples = estimateShoppingList(
+  [{ id: "two-apples", name: "Pomme Granny Smith", list_quantity: 2 }],
+  grannyHistory,
+  [],
+)
+assert.equal(twoKgApples.items[0].estimatedUnitPrice, 4.35)
+assert.equal(twoKgApples.items[0].estimatedLineCost, 8.7)
+assert.equal(twoKgApples.total, 8.7)
+
+const exactReference = {
+  id: "milk-line",
+  name: "Lait demi-écrémé Candia 6 x 1 L",
+  shopping_product_id: "milk-candia-6x1",
+  brand: "Candia",
+  package_format: "6 x 1 L",
+  list_quantity: 2,
+}
+assert.equal(getShoppingListQuantity(exactReference), 2)
+assert.equal(findExactShoppingListDuplicate([exactReference], { ...exactReference, id: "new" })?.id, "milk-line")
+assert.equal(findExactShoppingListDuplicate([exactReference], {
+  ...exactReference,
+  id: "different-format",
+  package_format: "1 L",
+}), null)
+
+const shoppingPage = await readFile(new URL("../src/pages/ShoppingListPage.jsx", import.meta.url), "utf8")
+assert.match(shoppingPage, /findExactShoppingListDuplicate\(items, itemToAdd\)/)
+assert.match(shoppingPage, /setItems\(prev => prev\.filter\(item => item\.id !== id\)\)/)
+assert.match(shoppingPage, /label=\{txt\.removeItem\(item\.name\)\}/)
+assert.match(shoppingPage, /data-shopping-more-suggestions/)
+assert.match(shoppingPage, /let remaining = 4/)
+
 console.log("[OK] Weighted ticket prices use €/kg or €/l instead of the paid line total")
 console.log("[OK] Ambiguous packaged labels do not expose an unqualified price")
 console.log("[OK] Descriptive historical products remain visible when their price is unusable")
@@ -439,3 +534,7 @@ console.log("[OK] Fresh retail observed price estimates a line without inventing
 console.log("[OK] Personal ticket history keeps priority")
 console.log("[OK] Stale retail price stays searchable but is excluded from basket estimate")
 console.log("[OK] Reliable promotion can override retail observed price without inventing personal savings")
+console.log("[OK] Product categories and forms stay isolated in autocomplete")
+console.log("[OK] Generic milk does not inherit the 9.89 euro pack price")
+console.log("[OK] List quantities multiply reliable references without merging formats")
+console.log("[OK] Item deletion, exact-duplicate prompt and four-result disclosure stay wired")

@@ -1,5 +1,7 @@
 import { normalizeProductName } from "../../features/shopping/services/normalizer.ts"
 import { extractComparablePackage } from "../savings/savingsEngine.ts"
+import { getShoppingListQuantity } from "../shoppingList/shoppingListItemModel.js"
+import { areShoppingProductSemanticsCompatible } from "../shoppingList/shoppingProductCompatibility.js"
 
 export const SHOPPING_PROMOTION_MATCH_STATUS = Object.freeze({
   RELIABLE: "reliable",
@@ -213,9 +215,15 @@ function savingsFor(item, promotion, compatibility, reliable) {
   const historicalPrice = numberOrNull(
     item.historicalPrice ?? item.estimatedPrice ?? item.estimated_price ?? item.price,
   )
-  const promotionPrice = numberOrNull(promotion.promoPrice)
+  const historicalUnitPrice = numberOrNull(
+    item.historicalUnitPrice ?? item.estimatedUnitPrice ?? historicalPrice,
+  )
+  const promotionPrice = numberOrNull(
+    promotion.smartPriceValue ?? promotion.promoPrice,
+  )
+  const listQuantity = getShoppingListQuantity(item)
 
-  if (historicalPrice === null || historicalPrice <= 0 || promotionPrice === null || promotionPrice <= 0) {
+  if (historicalUnitPrice === null || historicalUnitPrice <= 0 || promotionPrice === null || promotionPrice <= 0) {
     return { historicalPrice, promotionPrice, possibleSaving: null, reliableSaving: null }
   }
 
@@ -223,11 +231,11 @@ function savingsFor(item, promotion, compatibility, reliable) {
     return { historicalPrice, promotionPrice, possibleSaving: null, reliableSaving: null }
   }
 
-  let saving = historicalPrice - promotionPrice
+  let saving = (historicalUnitPrice - promotionPrice) * listQuantity
   if (compatibility.normalizedComparison) {
-    const historicalUnitPrice = numberOrNull(item.price_per_unit ?? item.unit_price)
+    const comparableHistoricalUnitPrice = numberOrNull(item.price_per_unit ?? item.unit_price)
     const promotionUnitPrice = numberOrNull(promotion.unitPrice)
-    saving = (historicalUnitPrice - promotionUnitPrice) * compatibility.shoppingPackage.baseAmount
+    saving = (comparableHistoricalUnitPrice - promotionUnitPrice) * compatibility.shoppingPackage.baseAmount * listQuantity
   }
 
   const rounded = Math.max(0, Math.round((saving + Number.EPSILON) * 100) / 100)
@@ -265,6 +273,7 @@ export function findActivePromotionsForShoppingItems(shoppingItems = [], promoti
 
     for (const promotion of Array.isArray(promotions) ? promotions : []) {
       if (!promotion?.isActive || !promotion?.promotionProven) continue
+      if (!areShoppingProductSemanticsCompatible(shoppingItem, promotion)) continue
 
       const identity = resolvePromotionIdentityMatch(shoppingItem, promotion)
       if (identity.conflict) continue

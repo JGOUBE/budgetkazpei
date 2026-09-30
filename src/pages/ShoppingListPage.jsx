@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react"
-import { Copy, ExternalLink, Eye, Mail, MessageCircle, Save, ScanLine, Send, Share2, Tag, Trash2 } from "lucide-react"
+import { Copy, ExternalLink, Eye, Mail, MessageCircle, Minus, Plus, Save, ScanLine, Send, Share2, Tag, Trash2 } from "lucide-react"
 import { listShoppingItems } from "../features/shopping/services/shoppingEngine"
 import { supabase } from "../services/supabase"
 import { createAppSectionTarget } from "../services/appSectionNavigation"
@@ -31,6 +31,10 @@ import {
 import { MANUAL_SAVE_METHOD } from "../services/shoppingList/shoppingListSnapshotModel"
 import { buildMultiRetailBasketOptimization } from "../services/shoppingList/shoppingBasketOptimizer"
 import { loadShoppingListDraft, saveShoppingListDraft } from "../services/shoppingList/shoppingListDraft"
+import {
+  findExactShoppingListDuplicate,
+  getShoppingListQuantity,
+} from "../services/shoppingList/shoppingListItemModel"
 import { formatMontant } from "../utils/format"
 import { createColorAliases } from "../styles/designSystem"
 import { languages } from "../i18n"
@@ -106,6 +110,20 @@ const COPY = {
     expiresIn: days => `expire dans ${days} jour(s)`,
     products: count => `${count} produit(s)`,
     missingPrices: count => `${count} prix à estimer`,
+    incompleteEstimate: count => `${count} produit(s) sans prix : ce montant n'est pas le coût complet du panier.`,
+    knownSubtotal: "Sous-total connu",
+    multiRetailKnownSubtotal: "Sous-total connu optimisé",
+    compareDetails: "Voir la répartition par enseigne",
+    showMoreSuggestions: count => `Voir ${count} résultat(s) de plus`,
+    showFewerSuggestions: "Réduire les résultats",
+    removeItem: name => `Supprimer ${name}`,
+    decreaseQuantity: name => `Réduire la quantité de ${name}`,
+    increaseQuantity: name => `Augmenter la quantité de ${name}`,
+    quantity: count => `Quantité ${count}`,
+    duplicateTitle: name => `${name} est déjà dans la liste.`,
+    duplicateText: "Voulez-vous augmenter sa quantité ?",
+    increaseDuplicate: "Augmenter la quantité",
+    cancelDuplicate: "Annuler",
     view: "Voir",
     delete: "Supprimer",
     deleting: "Suppression…",
@@ -177,6 +195,20 @@ const COPY = {
     expiresIn: days => `expire dan ${days} jour(s)`,
     products: count => `${count} produit(s)`,
     missingPrices: count => `${count} prix pou estimer`,
+    incompleteEstimate: count => `${count} produit(s) san prix : montant-la lé pa coût complet panié-la.`,
+    knownSubtotal: "Sous-total connu",
+    multiRetailKnownSubtotal: "Sous-total connu optimisé",
+    compareDetails: "Gad répartition par enseigne",
+    showMoreSuggestions: count => `Gad ${count} résultat(s) an plis`,
+    showFewerSuggestions: "Rédui bann résultats",
+    removeItem: name => `Supprim ${name}`,
+    decreaseQuantity: name => `Diminu quantité ${name}`,
+    increaseQuantity: name => `Ogmant quantité ${name}`,
+    quantity: count => `Quantité ${count}`,
+    duplicateTitle: name => `${name} lé déjà dan la lis.`,
+    duplicateText: "Ou vé ogmant son quantité ?",
+    increaseDuplicate: "Ogmant quantité",
+    cancelDuplicate: "Anilé",
     view: "Voir",
     delete: "Supprimé",
     deleting: "Suppression…",
@@ -253,6 +285,8 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
   const [shareModal, setShareModal] = useState(null)
   const [previewSnapshot, setPreviewSnapshot] = useState(null)
   const [notice, setNotice] = useState(null)
+  const [showAllSuggestions, setShowAllSuggestions] = useState(false)
+  const [duplicateCandidate, setDuplicateCandidate] = useState(null)
   const [isSaving, setIsSaving] = useState(false)
   const [deletingSnapshotIds, setDeletingSnapshotIds] = useState(() => new Set())
   const saveInFlightRef = useRef(false)
@@ -350,10 +384,25 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
     () => enrichShoppingBasketWithPromotions({ estimate: historicalEstimate, promotions: smartRetailPromotions }),
     [historicalEstimate, smartRetailPromotions],
   )
-  const suggestions = useMemo(
+  const allSuggestions = useMemo(
     () => getShoppingAutocompleteSuggestions(query, shoppingItems, retailPromotions, retailObservedPrices),
     [query, shoppingItems, retailPromotions, retailObservedPrices],
   )
+  const suggestionCount = allSuggestions.historical.length + allSuggestions.observed.length + allSuggestions.retail.length
+  const suggestions = useMemo(() => {
+    if (showAllSuggestions) return allSuggestions
+    let remaining = 4
+    const take = rows => {
+      const visible = rows.slice(0, remaining)
+      remaining -= visible.length
+      return visible
+    }
+    return {
+      historical: take(allSuggestions.historical),
+      observed: take(allSuggestions.observed),
+      retail: take(allSuggestions.retail),
+    }
+  }, [allSuggestions, showAllSuggestions])
   const pairing = useMemo(() => getPairingSuggestion(items, shoppingItems), [items, shoppingItems])
   const foodReceiptCount = useMemo(() => new Set((shoppingItems || []).map(item => item.receipt_id).filter(Boolean)).size, [shoppingItems])
   const learningReady = foodReceiptCount >= 3
@@ -405,12 +454,37 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
       : { name: String(value || query).trim() }
     if (!selectedItem.name) return
     const identifiedItem = resolveActiveRetailPromotionIdentity(selectedItem, smartRetailPromotions)
+    const itemToAdd = { ...identifiedItem, list_quantity: 1 }
+    const duplicate = findExactShoppingListDuplicate(items, itemToAdd)
+    if (duplicate) {
+      setDuplicateCandidate({ existingId: duplicate.id, name: duplicate.name })
+      setQuery("")
+      return
+    }
     setItems(prev => [...prev, {
-      ...identifiedItem,
+      ...itemToAdd,
       id: `${Date.now()}-${Math.random()}`,
       checked: false,
     }])
+    setDuplicateCandidate(null)
     setQuery("")
+  }
+
+  function changeItemQuantity(id, delta) {
+    setItems(prev => prev.map(item => item.id === id
+      ? { ...item, list_quantity: Math.max(1, getShoppingListQuantity(item) + delta) }
+      : item))
+  }
+
+  function acceptDuplicateQuantity() {
+    if (!duplicateCandidate?.existingId) return
+    changeItemQuantity(duplicateCandidate.existingId, 1)
+    setDuplicateCandidate(null)
+  }
+
+  function removeItem(id) {
+    setItems(prev => prev.filter(item => item.id !== id))
+    setDuplicateCandidate(prev => prev?.existingId === id ? null : prev)
   }
 
   async function refreshSnapshots() {
@@ -549,6 +623,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
 
     try {
       await markShoppingListSnapshotDeleted({ userId: user?.id, id })
+      deletedSnapshotIdsRef.current.add(id)
       setPreviewSnapshot(prev => prev?.id === id ? null : prev)
 
       try {
@@ -626,26 +701,25 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-      <div style={card({ padding: isMobile ? 18 : 24 })}>
+      <div style={card({ padding: isMobile ? 18 : 24, order: 3 })}>
         <div style={{ color: COLORS.cyan, fontSize: 13, fontWeight: 950 }}>{txt.smartLabel}</div>
         <h2 style={{ color: COLORS.text, margin: "8px 0", fontFamily: "'DM Serif Display', serif", fontSize: isMobile ? 34 : 42, fontWeight: 400 }}>{txt.title}</h2>
-        {foodReceiptCount === 0 && estimate.total <= 0 ? (
+        {estimate.items.length > 0 ? (
           <>
-            <div style={{ color: COLORS.yellow, fontSize: 22, fontWeight: 950 }}>{txt.learningTitle}</div>
-            <div style={{ color: COLORS.muted, marginTop: 6 }}>{txt.learningText}</div>
-          </>
-        ) : !learningReady && estimate.total <= 0 ? (
-          <>
-            <div style={{ color: COLORS.yellow, fontSize: 22, fontWeight: 950 }}>{txt.moreDataTitle}</div>
-            <div style={{ color: COLORS.muted, marginTop: 6 }}>{txt.moreDataText}</div>
-          </>
-        ) : (
-          <>
-            <div style={{ color: COLORS.green, fontSize: 28, fontWeight: 950 }}>{txt.estimate} : {formatMontant(estimate.total)}</div>
+            <div style={{ color: COLORS.green, fontSize: 28, fontWeight: 950 }}>
+              {estimate.missingPriceCount > 0 ? txt.knownSubtotal : txt.estimate} : {formatMontant(estimate.total)}
+            </div>
+            {estimate.missingPriceCount > 0 && (
+              <div role="status" style={{ color: COLORS.yellow, marginTop: 6, fontWeight: 850 }}>
+                {txt.incompleteEstimate(estimate.missingPriceCount)}
+              </div>
+            )}
             <div style={{ color: COLORS.muted, marginTop: 6 }}>
               {estimate.promotionPricedItemCount > 0
                 ? txt.mixedBasketInfo
-                : txt.basketRange(formatMontant(estimate.min), formatMontant(estimate.max))}
+                : estimate.missingPriceCount > 0
+                  ? txt.mixedPriceInfo
+                  : txt.basketRange(formatMontant(estimate.min), formatMontant(estimate.max))}
             </div>
             {estimate.reliableSavingsTotal > 0 && (
               <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, minmax(0, 1fr))", gap: 8, marginTop: 16 }}>
@@ -655,7 +729,17 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
               </div>
             )}
           </>
-        )}
+        ) : foodReceiptCount === 0 ? (
+          <>
+            <div style={{ color: COLORS.yellow, fontSize: 22, fontWeight: 950 }}>{txt.learningTitle}</div>
+            <div style={{ color: COLORS.muted, marginTop: 6 }}>{txt.learningText}</div>
+          </>
+        ) : !learningReady && estimate.total <= 0 ? (
+          <>
+            <div style={{ color: COLORS.yellow, fontSize: 22, fontWeight: 950 }}>{txt.moreDataTitle}</div>
+            <div style={{ color: COLORS.muted, marginTop: 6 }}>{txt.moreDataText}</div>
+          </>
+        ) : null}
         {multiRetailOptimization.retailOfferMatchedCount > 0 && (
           <div
             data-shopping-multi-retail-optimizer
@@ -671,52 +755,64 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
               {txt.multiRetailTitle}
             </div>
             <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline", flexWrap: "wrap", marginTop: 6 }}>
-              <strong style={{ color: COLORS.text, fontSize: 24 }}>
-                {formatMontant(multiRetailOptimization.optimizedTotal)}
-              </strong>
+              <div>
+                <span style={{ display: "block", color: COLORS.muted, fontSize: 11 }}>
+                  {multiRetailOptimization.completePriceCoverage ? txt.optimizedBudget : txt.multiRetailKnownSubtotal}
+                </span>
+                <strong style={{ display: "block", color: COLORS.text, fontSize: 24 }}>
+                  {formatMontant(multiRetailOptimization.optimizedTotal)}
+                </strong>
+              </div>
               <span style={{ color: COLORS.muted, fontSize: 12 }}>
                 {txt.multiRetailCoverage(multiRetailOptimization.retailOfferMatchedCount, multiRetailOptimization.totalItems)}
               </span>
             </div>
+            {multiRetailOptimization.missingPriceCount > 0 && (
+              <div style={{ color: COLORS.yellow, fontSize: 12, fontWeight: 850, marginTop: 5 }}>
+                {txt.multiRetailKnownSubtotal} · {txt.incompleteEstimate(multiRetailOptimization.missingPriceCount)}
+              </div>
+            )}
             <div style={{ color: multiRetailOptimization.potentialSaving > 0 ? COLORS.green : COLORS.muted, fontWeight: 850, marginTop: 6 }}>
               {multiRetailOptimization.potentialSaving > 0
                 ? txt.multiRetailSaving(formatMontant(multiRetailOptimization.potentialSaving))
                 : txt.multiRetailNoSaving}
             </div>
-            {multiRetailOptimization.retailerBreakdown.length > 0 && (
-              <div style={{ display: "grid", gap: 6, marginTop: 10 }}>
-                {multiRetailOptimization.retailerBreakdown.map(retailer => (
-                  <div key={retailer.retailerKey} style={{ display: "flex", justifyContent: "space-between", gap: 12, color: COLORS.text, fontSize: 13 }}>
-                    <span>{retailer.retailerName} · {txt.retailerItems(retailer.itemCount)}</span>
-                    <strong>{formatMontant(retailer.subtotal)}</strong>
-                  </div>
-                ))}
-              </div>
-            )}
-            {multiRetailOptimization.splitAcrossRetailers && (
-              <div style={{ color: COLORS.yellow, fontSize: 12, marginTop: 8 }}>
-                {txt.multiRetailSplit}
-              </div>
-            )}
-            {multiRetailOptimization.selectedRetailOfferCount < multiRetailOptimization.totalItems && (
-              <div style={{ color: COLORS.muted, fontSize: 12, marginTop: 8 }}>
-                {txt.multiRetailFallback(
-                  multiRetailOptimization.totalItems - multiRetailOptimization.selectedRetailOfferCount
-                )}
-              </div>
-            )}
+            <details style={{ marginTop: 10 }}>
+              <summary style={{ color: COLORS.cyan, cursor: "pointer", fontWeight: 850 }}>{txt.compareDetails}</summary>
+              {multiRetailOptimization.retailerBreakdown.length > 0 && (
+                <div style={{ display: "grid", gap: 6, marginTop: 10 }}>
+                  {multiRetailOptimization.retailerBreakdown.map(retailer => (
+                    <div key={retailer.retailerKey} style={{ display: "flex", justifyContent: "space-between", gap: 12, color: COLORS.text, fontSize: 13 }}>
+                      <span>{retailer.retailerName} · {txt.retailerItems(retailer.itemCount)}</span>
+                      <strong>{formatMontant(retailer.subtotal)}</strong>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {multiRetailOptimization.splitAcrossRetailers && (
+                <div style={{ color: COLORS.yellow, fontSize: 12, marginTop: 8 }}>{txt.multiRetailSplit}</div>
+              )}
+              {multiRetailOptimization.selectedRetailOfferCount < multiRetailOptimization.totalItems && (
+                <div style={{ color: COLORS.muted, fontSize: 12, marginTop: 8 }}>
+                  {txt.multiRetailFallback(multiRetailOptimization.totalItems - multiRetailOptimization.selectedRetailOfferCount)}
+                </div>
+              )}
+            </details>
           </div>
         )}
 
-        <div style={{ color: COLORS.muted, marginTop: 10, lineHeight: 1.5 }}>
-          {estimate.promotionPricedItemCount > 0 ? txt.mixedPriceInfo : txt.priceInfo}
-        </div>
-        {learningReady && estimate.reliableSavingsTotal > 0 && (
-          <div style={{ color: COLORS.muted, marginTop: 6, fontSize: 12, lineHeight: 1.45 }}>{txt.optimizedInfo}</div>
-        )}
+        <details style={{ marginTop: 10 }}>
+          <summary style={{ color: COLORS.muted, cursor: "pointer", fontWeight: 800 }}>{txt.priceInfo}</summary>
+          <div style={{ color: COLORS.muted, marginTop: 8, lineHeight: 1.5 }}>
+            {estimate.promotionPricedItemCount > 0 ? txt.mixedPriceInfo : txt.priceInfo}
+          </div>
+          {learningReady && estimate.reliableSavingsTotal > 0 && (
+            <div style={{ color: COLORS.muted, marginTop: 6, fontSize: 12, lineHeight: 1.45 }}>{txt.optimizedInfo}</div>
+          )}
+        </details>
       </div>
 
-      <div style={card({ borderColor: "#23D3D655" })}>
+      <div style={card({ borderColor: "#23D3D655", order: 4 })}>
         <div style={{ display: "flex", gap: 12, alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap" }}>
           <div style={{ flex: "1 1 320px" }}>
             <div style={{ color: COLORS.cyan, fontWeight: 950, fontSize: 18 }}>{txt.learningCardTitle}</div>
@@ -731,14 +827,14 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
       </div>
 
       {notice?.message && (
-        <div role={notice.kind === "error" ? "alert" : "status"} style={{ background: notice.kind === "error" ? COLORS.redSoft : "rgba(35,211,214,.12)", border: `1px solid ${notice.kind === "error" ? `${COLORS.danger}55` : `${COLORS.cyan}55`}`, color: notice.kind === "error" ? COLORS.danger : COLORS.text, borderRadius: 14, padding: 12, fontWeight: 800 }}>
+        <div role={notice.kind === "error" ? "alert" : "status"} style={{ order: 0, background: notice.kind === "error" ? COLORS.redSoft : "rgba(35,211,214,.12)", border: `1px solid ${notice.kind === "error" ? `${COLORS.danger}55` : `${COLORS.cyan}55`}`, color: notice.kind === "error" ? COLORS.danger : COLORS.text, borderRadius: 14, padding: 12, fontWeight: 800 }}>
           {notice.message}
         </div>
       )}
 
-      <div style={card()}>
+      <div style={card({ order: 1 })}>
         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "minmax(0, 1fr)" : "minmax(0, 1fr) auto auto", gap: 10 }}>
-          <input data-shopping-add value={query} onChange={e => setQuery(e.target.value)} onKeyDown={e => e.key === "Enter" && addItem()} placeholder={txt.addPlaceholder} style={{ minHeight: 50, borderRadius: 14, border: `1px solid ${COLORS.inputBorder}`, background: COLORS.input, color: COLORS.text, padding: "0 14px" }} />
+          <input data-shopping-add value={query} onChange={e => { setQuery(e.target.value); setShowAllSuggestions(false) }} onKeyDown={e => e.key === "Enter" && addItem()} placeholder={txt.addPlaceholder} style={{ minHeight: 50, borderRadius: 14, border: `1px solid ${COLORS.inputBorder}`, background: COLORS.input, color: COLORS.text, padding: "0 14px" }} />
           <button type="button" onClick={() => addItem()} style={{ minHeight: 50, border: "none", borderRadius: 14, background: COLORS.accent, color: "#fff", fontWeight: 950, padding: "0 16px" }}>{txt.add}</button>
           <div data-shopping-list-actions style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8, minWidth: 0 }}>
             <button type="button" onClick={saveCurrentSnapshot} disabled={isSaving} style={{ minWidth: 0, minHeight: 50, border: `1px solid ${COLORS.cyan}66`, borderRadius: 14, background: "rgba(35,211,214,.12)", color: COLORS.text, fontSize: isMobile ? 12 : 13, fontWeight: 950, padding: "0 4px", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5, whiteSpace: "nowrap", opacity: isSaving ? 0.7 : 1, cursor: isSaving ? "wait" : "pointer" }}>
@@ -749,6 +845,16 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
             </button>
           </div>
         </div>
+        {duplicateCandidate && (
+          <div role="status" data-shopping-duplicate-prompt style={{ marginTop: 12, border: `1px solid ${COLORS.yellow}66`, borderRadius: 14, background: "rgba(245,158,11,.10)", padding: 12 }}>
+            <div style={{ color: COLORS.text, fontWeight: 900 }}>{txt.duplicateTitle(duplicateCandidate.name)}</div>
+            <div style={{ color: COLORS.muted, fontSize: 13, marginTop: 3 }}>{txt.duplicateText}</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 10 }}>
+              <button type="button" onClick={acceptDuplicateQuantity} style={{ minHeight: 42, border: "none", borderRadius: 12, background: COLORS.accent, color: "#fff", fontWeight: 900, padding: "0 13px" }}>{txt.increaseDuplicate}</button>
+              <button type="button" onClick={() => setDuplicateCandidate(null)} style={{ minHeight: 42, border: `1px solid ${COLORS.border}`, borderRadius: 12, background: COLORS.card, color: COLORS.text, fontWeight: 850, padding: "0 13px" }}>{txt.cancelDuplicate}</button>
+            </div>
+          </div>
+        )}
         {suggestions.historical.length > 0 && (
           <div data-shopping-suggestion-group="history" style={{ marginTop: 12 }}>
             <div style={{ color: COLORS.muted, fontSize: 11, fontWeight: 950, letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 6 }}>{txt.habitualSuggestions}</div>
@@ -773,13 +879,24 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
             </div>
           </div>
         )}
+        {suggestionCount > 4 && (
+          <button
+            type="button"
+            data-shopping-more-suggestions
+            onClick={() => setShowAllSuggestions(value => !value)}
+            style={{ minHeight: 42, marginTop: 12, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: COLORS.card, color: COLORS.cyan, fontWeight: 900, padding: "0 13px" }}
+          >
+            {showAllSuggestions ? txt.showFewerSuggestions : txt.showMoreSuggestions(suggestionCount - 4)}
+          </button>
+        )}
         {hasQueryWithoutResult && <div style={{ color: COLORS.muted, marginTop: 10 }}>{txt.noProduct}</div>}
         {pairing && <div style={{ color: COLORS.yellow, marginTop: 12, fontWeight: 900 }}>{pairing}</div>}
       </div>
 
-      <div style={card()}>
+      <div style={card({ order: 2 })}>
         {estimate.items.length === 0 ? <div style={{ color: COLORS.muted }}>{txt.empty}</div> : estimate.items.map(item => {
           const displayedPrice = Number(item.estimatedLineCost || 0)
+          const listQuantity = getShoppingListQuantity(item)
           const priceLearning = item.historicalPrice === null && item.estimatedPriceSource === "promotion"
           const retailObservedPrice = item.estimatedPriceSource === "retail_observed"
           return <div key={item.id} style={{ display: "grid", gridTemplateColumns: "auto minmax(0, 1fr) auto", gap: 10, alignItems: "start", color: COLORS.text, borderBottom: `1px solid ${COLORS.borderSubtle}`, padding: "12px 0" }}>
@@ -796,6 +913,12 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
                         ? item.priceLabel
                         : txt.priceMissing}
                 </span>
+                {listQuantity > 1 && (
+                  <span style={{ display: "block", color: COLORS.cyan, fontSize: 12, fontWeight: 850, marginTop: 2 }}>
+                    {txt.quantity(listQuantity)}
+                    {item.estimatedUnitPrice > 0 ? ` · ${formatSmartPrice(item.estimatedUnitPrice, item.priceUnitLabel)}` : ""}
+                  </span>
+                )}
               </span>
               {item.promotionMatchStatus === "reliable" && item.promotion && (
                 <PromotionHint item={item} txt={txt} onOpen={() => openPromotion(item.promotion)} reliable />
@@ -804,14 +927,40 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
                 <PromotionHint item={item} txt={txt} onOpen={() => openPromotion(item.promotion)} />
               )}
             </div>
-            <strong style={{ color: displayedPrice ? COLORS.green : COLORS.muted, whiteSpace: "nowrap" }}>
-              {displayedPrice ? formatSmartPrice(displayedPrice, item.priceUnitLabel) : txt.priceMissing}
-            </strong>
+            <div style={{ display: "grid", justifyItems: "end", gap: 7 }}>
+              <strong style={{ color: displayedPrice ? COLORS.green : COLORS.muted, whiteSpace: "nowrap" }}>
+                {displayedPrice
+                  ? listQuantity > 1
+                    ? formatMontant(displayedPrice)
+                    : formatSmartPrice(displayedPrice, item.priceUnitLabel)
+                  : txt.priceMissing}
+              </strong>
+              <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                <IconButton
+                  label={txt.decreaseQuantity(item.name)}
+                  onClick={() => changeItemQuantity(item.id, -1)}
+                  disabled={listQuantity <= 1}
+                  icon={<Minus size={16} aria-hidden="true" />}
+                />
+                <span aria-label={txt.quantity(listQuantity)} style={{ minWidth: 22, textAlign: "center", color: COLORS.text, fontSize: 13, fontWeight: 900 }}>{listQuantity}</span>
+                <IconButton
+                  label={txt.increaseQuantity(item.name)}
+                  onClick={() => changeItemQuantity(item.id, 1)}
+                  icon={<Plus size={16} aria-hidden="true" />}
+                />
+                <IconButton
+                  label={txt.removeItem(item.name)}
+                  onClick={() => removeItem(item.id)}
+                  icon={<Trash2 size={17} aria-hidden="true" />}
+                  danger
+                />
+              </div>
+            </div>
           </div>
         })}
       </div>
 
-      <div style={card()}>
+      <div style={card({ order: 5 })}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
           <div>
             <h2 style={{ color: COLORS.text, margin: 0, fontSize: 22 }}>{txt.savedLists}</h2>
@@ -866,7 +1015,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
             {previewSnapshot.items.map((item, index) => (
               <div key={`${item.name}-${index}`} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, color: COLORS.text }}>
                 <span style={{ textDecoration: item.checked ? "line-through" : "none", minWidth: 0 }}>
-                  {item.name}{item.quantity ? ` · ${item.quantity}${item.unit ? ` ${item.unit}` : ""}` : ""}
+                  {item.name}{getShoppingListQuantity(item) > 1 ? ` · ${txt.quantity(getShoppingListQuantity(item))}` : ""}
                   {item.promotionSnapshot && (
                     <span style={{ display: "block", color: item.promotionMatchStatus === "suggested" ? COLORS.yellow : COLORS.green, fontSize: 12, marginTop: 3 }}>
                       {item.promotionMatchStatus === "suggested" ? txt.nearbyOffer : txt.currentPromotion} : {formatSmartPrice(item.promotionSnapshot.smartPriceValue ?? item.promotionSnapshot.promoPrice, item.promotionSnapshot.smartPriceUnitLabel)}
@@ -881,7 +1030,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
             ))}
             {previewSnapshot.totalEstimated > 0 && (
               <div style={{ display: "flex", justifyContent: "space-between", gap: 12, borderTop: `1px solid ${COLORS.border}`, color: COLORS.text, paddingTop: 10, marginTop: 4 }}>
-                <strong>{txt.estimate}</strong>
+                <strong>{previewSnapshot.missingPriceCount > 0 ? txt.knownSubtotal : txt.estimate}</strong>
                 <strong style={{ color: COLORS.green }}>{formatMontant(previewSnapshot.totalEstimated)}</strong>
               </div>
             )}
@@ -936,6 +1085,21 @@ function SmallButton({ icon, label, onClick, disabled = false, danger = false })
   return (
     <button type="button" onClick={onClick} disabled={disabled} style={{ minHeight: 36, borderRadius: 12, border: `1px solid ${danger ? `${COLORS.danger}55` : COLORS.border}`, background: danger ? COLORS.redSoft : COLORS.card, color: danger ? COLORS.danger : COLORS.text, fontWeight: 850, padding: "0 10px", display: "inline-flex", alignItems: "center", gap: 6, opacity: disabled ? 0.65 : 1, cursor: disabled ? "wait" : "pointer" }}>
       {icon} {label}
+    </button>
+  )
+}
+
+function IconButton({ icon, label, onClick, disabled = false, danger = false }) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      onClick={onClick}
+      disabled={disabled}
+      style={{ width: 44, minWidth: 44, height: 44, display: "inline-grid", placeItems: "center", borderRadius: 11, border: `1px solid ${danger ? `${COLORS.danger}55` : COLORS.border}`, background: danger ? COLORS.redSoft : COLORS.card, color: danger ? COLORS.danger : COLORS.text, opacity: disabled ? 0.45 : 1, cursor: disabled ? "not-allowed" : "pointer" }}
+    >
+      {icon}
     </button>
   )
 }
