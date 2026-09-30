@@ -4,7 +4,10 @@ import { listShoppingItems } from "../features/shopping/services/shoppingEngine"
 import { supabase } from "../services/supabase"
 import { createAppSectionTarget } from "../services/appSectionNavigation"
 import { loadActiveRetailPromotions, resolveRetailPromotionDestination } from "../services/retail/retailPromotionService"
-import { loadPublishedRetailObservedPrices } from "../services/retail/retailObservedPriceService"
+import {
+  loadPublishedRetailObservedPriceOffers,
+  loadPublishedRetailObservedPrices,
+} from "../services/retail/retailObservedPriceService"
 import {
   buildShoppingListItemFromSuggestion,
   buildShoppingListShareText,
@@ -26,6 +29,7 @@ import {
   saveShoppingListSnapshot,
 } from "../services/shoppingList/shoppingListSnapshots"
 import { MANUAL_SAVE_METHOD } from "../services/shoppingList/shoppingListSnapshotModel"
+import { buildMultiRetailBasketOptimization } from "../services/shoppingList/shoppingBasketOptimizer"
 import { loadShoppingListDraft, saveShoppingListDraft } from "../services/shoppingList/shoppingListDraft"
 import { formatMontant } from "../utils/format"
 import { createColorAliases } from "../styles/designSystem"
@@ -81,6 +85,13 @@ const COPY = {
     reliablePromotions: "Promos fiables repérées",
     optimizedBudget: "Budget optimisé estimé",
     optimizedInfo: "Calculé uniquement avec les offres dont le produit et le format correspondent de façon fiable.",
+    multiRetailTitle: "Panier optimisé multi-enseignes",
+    multiRetailCoverage: (covered, total) => `${covered}/${total} produit(s) avec une offre retail fiable`,
+    multiRetailSaving: amount => `Écart potentiel : ${amount}`,
+    multiRetailNoSaving: "Les meilleurs prix repérés sont déjà intégrés à votre estimation.",
+    multiRetailSplit: "Ce total peut répartir les achats entre plusieurs enseignes.",
+    multiRetailFallback: count => `${count} produit(s) restent basés sur votre estimation actuelle faute d'offre retail plus avantageuse.`,
+    retailerItems: count => `${count} article(s)`,
     currentPromotion: "Promo actuelle repérée",
     usualPriceLearning: "Prix habituel à apprendre",
     nearbyOffer: "Offre proche trouvée",
@@ -145,6 +156,13 @@ const COPY = {
     reliablePromotions: "Bann promo fiables trouvées",
     optimizedBudget: "Bidjé courses optimisé estimé",
     optimizedInfo: "Kalkilé sèlman ek bann offres kot produit ek format lé reconnèt de fason fiable.",
+    multiRetailTitle: "Panié optimisé plusieurs enseignes",
+    multiRetailCoverage: (covered, total) => `${covered}/${total} produit(s) ek in offre retail fiable`,
+    multiRetailSaving: amount => `Écart possible : ${amount}`,
+    multiRetailNoSaving: "Bann meilleurs prix trouvés lé déjà dan out estimasyon.",
+    multiRetailSplit: "Sa total-la pé réparti bann achats entre plusieurs enseignes.",
+    multiRetailFallback: count => `${count} produit(s) i reste su out estimasyon actuelle faute d'offre retail pli intéressante.`,
+    retailerItems: count => `${count} article(s)`,
     currentPromotion: "Promo actuelle trouvée",
     usualPriceLearning: "Prix habituel pou aprann",
     nearbyOffer: "In offre proche lé trouvée",
@@ -227,6 +245,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
   const [shoppingItems, setShoppingItems] = useState([])
   const [retailPromotions, setRetailPromotions] = useState([])
   const [retailObservedPrices, setRetailObservedPrices] = useState([])
+  const [retailObservedOffers, setRetailObservedOffers] = useState([])
   const [items, setItems] = useState(() => loadShoppingListDraft({ userId: user?.id }))
   const [query, setQuery] = useState("")
   const [snapshots, setSnapshots] = useState([])
@@ -280,6 +299,17 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
 
   useEffect(() => {
     let ignore = false
+    loadPublishedRetailObservedPriceOffers({ client: supabase })
+      .then(rows => !ignore && setRetailObservedOffers(rows || []))
+      .catch(error => {
+        if (import.meta.env.DEV) console.warn("[Shopping retail] multi-retailer prices load failed", error?.code || "unknown")
+        if (!ignore) setRetailObservedOffers([])
+      })
+    return () => { ignore = true }
+  }, [])
+
+  useEffect(() => {
+    let ignore = false
     deletedSnapshotIdsRef.current.clear()
     const requestVersion = ++snapshotRequestVersionRef.current
     listShoppingListSnapshots({ userId: user?.id })
@@ -327,6 +357,15 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
   const pairing = useMemo(() => getPairingSuggestion(items, shoppingItems), [items, shoppingItems])
   const foodReceiptCount = useMemo(() => new Set((shoppingItems || []).map(item => item.receipt_id).filter(Boolean)).size, [shoppingItems])
   const learningReady = foodReceiptCount >= 3
+  const multiRetailOptimization = useMemo(
+    () => buildMultiRetailBasketOptimization({
+      items: estimate.items,
+      observedPrices: retailObservedOffers,
+      promotions: smartRetailPromotions,
+    }),
+    [estimate.items, retailObservedOffers, smartRetailPromotions],
+  )
+
   const shareText = useMemo(() => buildShoppingListShareText({ title: snapshotTitle(txt), estimate }), [estimate, txt])
   const hasQueryWithoutResult = query.trim().length > 0 &&
     suggestions.historical.length === 0 &&
@@ -617,6 +656,58 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
             )}
           </>
         )}
+        {multiRetailOptimization.retailOfferMatchedCount > 0 && (
+          <div
+            data-shopping-multi-retail-optimizer
+            style={{
+              marginTop: 16,
+              border: `1px solid ${COLORS.cyan}55`,
+              borderRadius: 16,
+              background: "rgba(35,211,214,.08)",
+              padding: 14,
+            }}
+          >
+            <div style={{ color: COLORS.cyan, fontWeight: 950, fontSize: 13 }}>
+              {txt.multiRetailTitle}
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline", flexWrap: "wrap", marginTop: 6 }}>
+              <strong style={{ color: COLORS.text, fontSize: 24 }}>
+                {formatMontant(multiRetailOptimization.optimizedTotal)}
+              </strong>
+              <span style={{ color: COLORS.muted, fontSize: 12 }}>
+                {txt.multiRetailCoverage(multiRetailOptimization.retailOfferMatchedCount, multiRetailOptimization.totalItems)}
+              </span>
+            </div>
+            <div style={{ color: multiRetailOptimization.potentialSaving > 0 ? COLORS.green : COLORS.muted, fontWeight: 850, marginTop: 6 }}>
+              {multiRetailOptimization.potentialSaving > 0
+                ? txt.multiRetailSaving(formatMontant(multiRetailOptimization.potentialSaving))
+                : txt.multiRetailNoSaving}
+            </div>
+            {multiRetailOptimization.retailerBreakdown.length > 0 && (
+              <div style={{ display: "grid", gap: 6, marginTop: 10 }}>
+                {multiRetailOptimization.retailerBreakdown.map(retailer => (
+                  <div key={retailer.retailerKey} style={{ display: "flex", justifyContent: "space-between", gap: 12, color: COLORS.text, fontSize: 13 }}>
+                    <span>{retailer.retailerName} · {txt.retailerItems(retailer.itemCount)}</span>
+                    <strong>{formatMontant(retailer.subtotal)}</strong>
+                  </div>
+                ))}
+              </div>
+            )}
+            {multiRetailOptimization.splitAcrossRetailers && (
+              <div style={{ color: COLORS.yellow, fontSize: 12, marginTop: 8 }}>
+                {txt.multiRetailSplit}
+              </div>
+            )}
+            {multiRetailOptimization.selectedRetailOfferCount < multiRetailOptimization.totalItems && (
+              <div style={{ color: COLORS.muted, fontSize: 12, marginTop: 8 }}>
+                {txt.multiRetailFallback(
+                  multiRetailOptimization.totalItems - multiRetailOptimization.selectedRetailOfferCount
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         <div style={{ color: COLORS.muted, marginTop: 10, lineHeight: 1.5 }}>
           {estimate.promotionPricedItemCount > 0 ? txt.mixedPriceInfo : txt.priceInfo}
         </div>

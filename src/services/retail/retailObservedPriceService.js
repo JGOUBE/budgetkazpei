@@ -77,6 +77,43 @@ export function toRetailObservedPriceViewModel(raw = {}) {
   }
 }
 
+function outletKey(item = {}) {
+  const identity = identityKey(item)
+  if (!identity) return ""
+
+  const retailer = normalizedText(item.retailerSlug || item.retailer_slug || item.retailerName || item.retailer_name)
+  const store = normalizedText(
+    item.storeSlug || item.store_slug ||
+    item.storeName || item.store_name ||
+    item.storeCity || item.store_city ||
+    "all-stores"
+  )
+
+  return `${identity}|${retailer || "unknown-retailer"}|${store || "all-stores"}`
+}
+
+export function deduplicateRetailObservedPriceOffers(rows = []) {
+  const byOutlet = new Map()
+
+  for (const row of Array.isArray(rows) ? rows : []) {
+    const key = outletKey(row)
+    if (!key || !row?.productName || !(Number(row?.price) > 0)) continue
+
+    const current = byOutlet.get(key)
+    const rowTime = validTime(row.lastSeenAt) || validTime(row.observedAt)
+    const currentTime = validTime(current?.lastSeenAt) || validTime(current?.observedAt)
+
+    if (!current ||
+        Number(Boolean(row.isFresh)) > Number(Boolean(current.isFresh)) ||
+        (Boolean(row.isFresh) === Boolean(current.isFresh) && rowTime > currentTime) ||
+        (Boolean(row.isFresh) === Boolean(current.isFresh) && rowTime === currentTime && String(row.id) > String(current.id))) {
+      byOutlet.set(key, row)
+    }
+  }
+
+  return [...byOutlet.values()]
+}
+
 export function deduplicateRetailObservedPrices(rows = []) {
   const byIdentity = new Map()
 
@@ -96,6 +133,24 @@ export function deduplicateRetailObservedPrices(rows = []) {
   }
 
   return [...byIdentity.values()]
+}
+
+export async function loadPublishedRetailObservedPriceOffers({ client } = {}) {
+  if (!client) throw new Error("retail_observed_price_client_required")
+
+  const result = await client
+    .from(VIEW_NAME)
+    .select("*")
+    .order("is_fresh", { ascending: false })
+    .order("last_seen_at", { ascending: false, nullsFirst: false })
+    .order("observed_at", { ascending: false })
+
+  if (result.error && isMissingViewError(result.error)) return []
+  if (result.error) throw result.error
+
+  return deduplicateRetailObservedPriceOffers(
+    (result.data || []).map(toRetailObservedPriceViewModel),
+  )
 }
 
 export async function loadPublishedRetailObservedPrices({ client } = {}) {
