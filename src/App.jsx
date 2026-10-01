@@ -670,6 +670,33 @@ function BudgetKazPeiApp({
           />
         )}
 
+        {activeNav !== "dashboard" && (
+          <button
+            type="button"
+            onClick={() => handleNavChange("dashboard")}
+            style={{
+              minHeight: 42,
+              marginBottom: 16,
+              padding: "0 14px",
+              borderRadius: 14,
+              border: `1px solid ${COLORS.border}`,
+              background: COLORS.card,
+              color: COLORS.text,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              fontFamily: "inherit",
+              fontSize: 13,
+              fontWeight: 900,
+              cursor: "pointer",
+              boxShadow: "0 6px 16px rgba(15,23,42,.06)",
+            }}
+          >
+            <BkIcons.home size={17} />
+            {lang === "fr" ? "Retour Accueil" : "Retour Akèy"}
+          </button>
+        )}
+
         {activeNav === "dashboard" && (
           <HomePage
             language={lang}
