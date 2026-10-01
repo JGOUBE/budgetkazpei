@@ -99,6 +99,10 @@ const TEXT = {
       ? `Analyses IA illimitées — ${quota.planLabel}`
       : `Analyses IA : ${quota.used} / ${quota.limit} — ${quota.planLabel}`,
     methodTitle: "Choisissez une méthode",
+    smallTicket: "Petit ticket",
+    mediumTicket: "Ticket moyen",
+    largeTicket: "Grand ticket",
+    scanInfoAria: "Informations sur le scan",
     privacyTitle: "Confidentialité du scan",
     privacy: "Votre ticket est transmis de façon sécurisée à notre service de reconnaissance afin d’en extraire les informations utiles.",
     privacyLink: "En savoir plus",
@@ -205,6 +209,10 @@ const TEXT = {
       ? `Analiz IA san limit — ${quota.planLabel}`
       : `Analiz IA : ${quota.used} / ${quota.limit} — ${quota.planLabel}`,
     methodTitle: "Swazi in fason",
+    smallTicket: "Ti tiké",
+    mediumTicket: "Tiké mwayen",
+    largeTicket: "Gran tiké",
+    scanInfoAria: "Zinformasyon su scan-la",
     privacyTitle: "Konfidansyalité scan-la",
     privacy: "Out tiké lé anvoyé an tout sékirité dann nout servis pou tir bann zinformasion itil.",
     privacyLink: "Konn plis",
@@ -1089,6 +1097,7 @@ export default function ReceiptsPage({
   const [pendingImagePath, setPendingImagePath] = useState(null)
   const [showBlockedDetectedLines, setShowBlockedDetectedLines] = useState(false)
   const [longTicketMode, setLongTicketMode] = useState(false)
+  const [showScanInfo, setShowScanInfo] = useState(false)
   const [longTicketPhotoCount, setLongTicketPhotoCount] = useState(null)
   const [longTicketFiles, setLongTicketFiles] = useState([null, null, null])
   const automatedScanDisabled = busy || quota.loading
@@ -2243,42 +2252,60 @@ export default function ReceiptsPage({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 18, paddingBottom: isMobile ? 24 : 0 }}>
-      <div style={cardStyle({ padding: isMobile ? 18 : 24 })}>
+      <div style={cardStyle({ padding: isMobile ? 18 : 24, position: "relative" })}>
+        <button
+          type="button"
+          onClick={() => setShowScanInfo(true)}
+          aria-label={txt.scanInfoAria}
+          style={{
+            position: "absolute", top: 14, right: 14, width: 40, height: 40,
+            borderRadius: "50%", border: `1px solid ${COLORS.cyan}55`,
+            background: `${COLORS.cyan}12`, color: COLORS.cyan,
+            fontFamily: "Georgia, serif", fontSize: 22, fontWeight: 900, cursor: "pointer",
+          }}
+        >
+          i
+        </button>
         <div style={{ color: COLORS.cyan, fontSize: 13, fontWeight: 900, marginBottom: 7 }}>
           {txt.scanTitle}
         </div>
-        <h1 style={{ margin: 0, color: COLORS.text, fontFamily: "'DM Serif Display', serif", fontSize: isMobile ? 30 : 38 }}>
+        <h1 style={{ margin: 0, paddingRight: 48, color: COLORS.text, fontFamily: "'DM Serif Display', serif", fontSize: isMobile ? 30 : 38 }}>
           {txt.title}
         </h1>
-        <aside style={{
-          margin: "14px 0",
-          padding: "13px 14px",
-          border: `1px solid ${COLORS.cyan}35`,
-          borderRadius: 14,
-          background: `${COLORS.cyan}0D`,
-        }}>
-          <div style={{ color: COLORS.cyan, fontSize: 13, fontWeight: 900, marginBottom: 5 }}>
-            {txt.privacyTitle}
-          </div>
-          <p style={{ color: COLORS.muted, lineHeight: 1.55, margin: 0, fontSize: 13 }}>
-            {txt.privacy}{" "}
-            <a
-              href="/privacy#tickets-scanner"
-              style={{ color: COLORS.cyan, fontWeight: 900, textUnderlineOffset: 3 }}
-            >
-              {txt.privacyLink}
-            </a>
-          </p>
-        </aside>
-        <p style={{ color: COLORS.cyan, lineHeight: 1.5, margin: "0 0 14px", fontSize: 13, fontWeight: 800 }}>
-          {txt.foodHint}
-        </p>
-        <div style={{ color: COLORS.yellow, fontSize: 13, fontWeight: 900 }}>
-          {quota.loading
-            ? txt.quotaLoading
-            : (isKreol ? formatReceiptQuotaTicketsLabelKr(quota) : formatReceiptQuotaTicketsLabelFr(quota))}
+        <div style={{ marginTop: 16, display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+          <strong style={{ color: COLORS.yellow, fontSize: 16 }}>{quota.planLabel || (isPremiumPlus ? "Premium+" : isPremium ? "Premium" : "Gratuit")}</strong>
+          <span style={{ color: COLORS.muted, fontSize: 13, fontWeight: 800 }}>
+            {isKreol ? "Tiké sa mwa :" : "Tickets ce mois :"} {quota.loading ? "…" : quota.used}
+          </span>
         </div>
       </div>
+
+      {showScanInfo && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={txt.privacyTitle}
+          onClick={() => setShowScanInfo(false)}
+          style={{
+            position: "fixed", inset: 0, zIndex: 120, background: "rgba(3,10,24,.62)",
+            display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
+          }}
+        >
+          <div onClick={event => event.stopPropagation()} style={cardStyle({ width: "100%", maxWidth: 430, padding: 22, position: "relative" })}>
+            <button type="button" onClick={() => setShowScanInfo(false)} aria-label="Fermer" style={{
+              position: "absolute", top: 12, right: 12, width: 40, height: 40, border: 0,
+              background: "transparent", color: COLORS.text, fontSize: 25, cursor: "pointer",
+            }}>×</button>
+            <div style={{ color: COLORS.cyan, fontFamily: "Georgia, serif", fontSize: 28, fontWeight: 900, marginBottom: 12 }}>ⓘ</div>
+            <h2 style={{ color: COLORS.text, margin: "0 42px 12px 0", fontFamily: "'DM Serif Display', serif" }}>{txt.privacyTitle}</h2>
+            <p style={{ color: COLORS.muted, lineHeight: 1.6, fontSize: 14 }}>{txt.privacy}{" "}
+              <a href="/privacy#tickets-scanner" style={{ color: COLORS.cyan, fontWeight: 900 }}>{txt.privacyLink}</a>
+            </p>
+            <div style={{ height: 1, background: COLORS.border, margin: "16px 0" }} />
+            <p style={{ color: COLORS.muted, lineHeight: 1.6, margin: 0, fontSize: 14 }}>{txt.foodHint}</p>
+          </div>
+        </div>
+      )}
 
       {scanError && <ScanErrorMessage details={scanError} />}
 
@@ -2321,29 +2348,23 @@ export default function ReceiptsPage({
         </div>
       )}
 
-      {showMethodActions && (
-        <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 950, marginBottom: -6 }}>
-          {txt.methodTitle}
-        </div>
-      )}
-
-      <div style={{ display: showMethodActions ? "grid" : "none", gridTemplateColumns: isMobile ? "1fr" : "repeat(4, 1fr)", gap: 12 }}>
+      <div style={{ display: showMethodActions ? "grid" : "none", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 12 }}>
         <ActionButton
-          label={txt.camera}
-          Icon={BkIcons.scan}
+          label={txt.smallTicket}
+          Icon={BkIcons.receipts}
           disabled={automatedScanDisabled}
           onClick={() => cameraRef.current.click()}
           variant="primary"
         />
         <ActionButton
-          label={txt.gallery}
+          label={txt.mediumTicket}
           Icon={BkIcons.receipts}
           disabled={automatedScanDisabled}
-          onClick={() => galleryRef.current.click()}
+          onClick={() => cameraRef.current.click()}
           variant="secondary"
         />
         <ActionButton
-          label={txt.longTicket}
+          label={txt.largeTicket}
           Icon={BkIcons.receipts}
           disabled={automatedScanDisabled}
           onClick={openLongTicketMode}
