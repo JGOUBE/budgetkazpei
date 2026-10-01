@@ -507,7 +507,7 @@ function BudgetKazPeiApp({
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            padding: "12px 16px",
+            padding: "12px 10px",
             height: 60,
           }}
         >
@@ -531,8 +531,7 @@ function BudgetKazPeiApp({
             aria-label={lang === "fr" ? "Retour à l’accueil" : "Retour akèy"}
             style={{
               position: "absolute",
-              left: "50%",
-              transform: "translateX(-50%)",
+              left: 48,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -545,11 +544,11 @@ function BudgetKazPeiApp({
               border: 0,
             }}
           >
-            <AppLogo size={36} />
-            <span style={{ fontSize: 17, fontWeight: 950, color: COLORS.text, lineHeight: 1, whiteSpace: "nowrap" }}>BudgetKazPéi</span>
+            <AppLogo size={34} />
+            <span style={{ fontSize: 15, fontWeight: 950, color: COLORS.text, lineHeight: 1, whiteSpace: "nowrap" }}>BudgetKazPéi</span>
           </button>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
             <button
               type="button"
               onClick={toggleLang}
@@ -560,7 +559,7 @@ function BudgetKazPeiApp({
                 color: COLORS.text,
                 cursor: "pointer",
                 padding: "4px 5px",
-                minWidth: 40,
+                minWidth: 30,
                 fontSize: 11,
                 fontWeight: 900,
                 fontFamily: "inherit",
@@ -671,24 +670,7 @@ function BudgetKazPeiApp({
           />
         )}
 
-        {isMobile && activeNav !== "dashboard" && (
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: 16,
-            }}
-          >
-            <h1
-              style={{
-                margin: 0,
-                fontSize: 20,
-                fontFamily: "'DM Serif Display', serif",
-                fontWeight: 400,
-              }}
-            >
-              {activeNav === "dashboard" && (lang === "fr" ? "Accueil" : "Akèy")}
+        {activeNav === "dashboard" && (lang === "fr" ? "Accueil" : "Akèy")}
               {activeNav === "revenus" && (lang === "fr" ? "Revenus du mois" : "Larzan i rantre")}
               {activeNav === "depenses" && t("nav", "depenses")}
               {activeNav === "solde" && (lang === "fr" ? "Solde disponible" : "Larzan disponible")}
@@ -733,6 +715,8 @@ function BudgetKazPeiApp({
           <HomePage
             language={lang}
             isMobile={isMobile}
+            profile={profile}
+            user={user}
             onNavigate={handleNavChange}
             onAddExpense={() => setShowModal(true)}
           />
