@@ -670,47 +670,6 @@ function BudgetKazPeiApp({
           />
         )}
 
-        {activeNav === "dashboard" && (lang === "fr" ? "Accueil" : "Akèy")}
-              {activeNav === "revenus" && (lang === "fr" ? "Revenus du mois" : "Larzan i rantre")}
-              {activeNav === "depenses" && t("nav", "depenses")}
-              {activeNav === "solde" && (lang === "fr" ? "Solde disponible" : "Larzan disponible")}
-              {activeNav === "shopping" && (lang === "fr" ? "Mes courses" : "Mon bann courses")}
-              {activeNav === "statistics" && (lang === "fr" ? "Mes stats" : "Mon bann stats")}
-              {activeNav === "aides" && t("nav", "aides")}
-              {activeNav === "demarches" && (lang === "fr" ? "Mes demarches" : "Mon demars")}
-              {activeNav === "conseiller" && (lang === "fr" ? "Conseiller" : "Konseye")}
-              {activeNav === "contact" && (lang === "fr" ? "Contactez-nous" : "Contacte a nou")}
-              {activeNav === "abonnements" && t("nav", "abonnements")}
-              {activeNav === "opportunites" && t("nav", "opportunites")}
-              {activeNav === "goodDeals" && (lang === "fr" ? "Mes bons plans" : "Mon bann bon plan")}
-              {activeNav === "goodDealsAdminReview" && "Validation bons plans"}
-              {activeNav === "retailPriceAdminReview" && "Validation prix et promotions"}
-              {activeNav === "goodDealsEventsAdminReview" && "Événements à venir"}
-              {activeNav === "historique" && t("nav", "monthlyHistory")}
-              {activeNav === "profil" && t("nav", "profil")}
-              {activeNav === "premium" && t("nav", "premium")}
-            </h1>
-
-            <button
-              type="button"
-              onClick={toggleLang}
-              style={{
-                background: "transparent",
-                border: `1px solid ${COLORS.border}`,
-                borderRadius: 8,
-                padding: "6px 10px",
-                color: COLORS.muted,
-                cursor: "pointer",
-                fontSize: 12,
-                fontFamily: "inherit",
-              }}
-            >
-              {lang === "fr" ? "Kreol" : "Francais"}
-            </button>
-            <ThemeToggle compact />
-          </div>
-        )}
-
         {activeNav === "dashboard" && (
           <HomePage
             language={lang}
