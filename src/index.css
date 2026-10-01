@@ -355,3 +355,66 @@ button:not(:disabled)[style*="#ef4444"]:active {
     transform: none !important;
   }
 }
+
+
+/* =========================================================
+   BudgetKazPéi — boutons premium V2
+   Relief cohérent, contour net, profondeur et toucher 44px+
+   ========================================================= */
+button:not(:disabled),
+[role="button"]:not([aria-disabled="true"]),
+input[type="button"]:not(:disabled),
+input[type="submit"]:not(:disabled) {
+  min-height: 44px;
+  border-width: 1px;
+  border-style: solid;
+  border-color: color-mix(in srgb, currentColor 24%, var(--bkp-border, #d8e0e8));
+  box-shadow:
+    0 8px 0 color-mix(in srgb, currentColor 11%, transparent),
+    0 13px 24px rgba(15, 23, 42, .11),
+    inset 0 1px 0 rgba(255,255,255,.70),
+    inset 0 -1px 0 rgba(15,23,42,.08);
+  text-shadow: 0 1px 0 rgba(255,255,255,.22);
+}
+
+button:not(:disabled):hover,
+[role="button"]:not([aria-disabled="true"]):hover,
+input[type="button"]:not(:disabled):hover,
+input[type="submit"]:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 9px 0 color-mix(in srgb, currentColor 12%, transparent),
+    0 16px 28px rgba(15, 23, 42, .14),
+    inset 0 1px 0 rgba(255,255,255,.78),
+    inset 0 -1px 0 rgba(15,23,42,.08);
+}
+
+button:not(:disabled):active,
+[role="button"]:not([aria-disabled="true"]):active,
+input[type="button"]:not(:disabled):active,
+input[type="submit"]:not(:disabled):active {
+  transform: translateY(4px) scale(.985) !important;
+  box-shadow:
+    0 2px 0 color-mix(in srgb, currentColor 13%, transparent),
+    0 5px 10px rgba(15,23,42,.13),
+    inset 0 2px 5px rgba(15,23,42,.12) !important;
+}
+
+[data-theme="dark"] button:not(:disabled),
+[data-theme="dark"] [role="button"]:not([aria-disabled="true"]) {
+  border-color: color-mix(in srgb, currentColor 36%, rgba(255,255,255,.14));
+  box-shadow:
+    0 8px 0 rgba(0,0,0,.24),
+    0 14px 28px rgba(0,0,0,.30),
+    inset 0 1px 0 rgba(255,255,255,.16),
+    inset 0 -1px 0 rgba(0,0,0,.22);
+}
+
+@media (max-width: 430px) {
+  button,
+  [role="button"],
+  input[type="button"],
+  input[type="submit"] {
+    min-height: 46px;
+  }
+}
