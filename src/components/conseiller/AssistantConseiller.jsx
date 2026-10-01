@@ -92,6 +92,25 @@ const MODE_LABELS = {
 
 const advisorSessionByUser = new Map()
 
+function formatAdvisorAnswer(value = "") {
+  const text = String(value || "").replace(/\r\n/g, "\n")
+  const lines = text.split("\n")
+  const nodes = []
+
+  lines.forEach((line, lineIndex) => {
+    const parts = line.split(/(\*\*[^*]+\*\*)/g).filter(Boolean)
+    parts.forEach((part, partIndex) => {
+      const strong = /^\*\*[^*]+\*\*$/.test(part)
+      nodes.push(strong
+        ? <strong key={`${lineIndex}-${partIndex}`}>{part.slice(2, -2)}</strong>
+        : <span key={`${lineIndex}-${partIndex}`}>{part.replace(/\*\*/g, "")}</span>)
+    })
+    if (lineIndex < lines.length - 1) nodes.push(<br key={`br-${lineIndex}`} />)
+  })
+
+  return nodes
+}
+
 function normalizeText(value = "") {
   return String(value || "")
     .toLowerCase()
@@ -760,7 +779,7 @@ export default function AssistantConseiller({
               <div className="bkp-advisor-message bkp-advisor-message--assistant">
                 <span className="bkp-advisor-message-avatar" aria-hidden="true"><Bot size={18} /></span>
                 <div className="bkp-advisor-bubble bkp-advisor-bubble--assistant bkp-advisor-answer">
-                  {item.answer}
+                  {formatAdvisorAnswer(item.answer)}
                   {Array.isArray(item.actions) && item.actions.length > 0 && (
                     <div className="bkp-advisor-answer-actions">
                       {item.actions.slice(0, 2).map(actionRow => {
@@ -1070,7 +1089,7 @@ export default function AssistantConseiller({
               </div>
 
               <div style={{ whiteSpace: "pre-line", lineHeight: 1.65 }}>
-                {item.answer}
+                {formatAdvisorAnswer(item.answer)}
               </div>
             </div>
           ))}
