@@ -692,7 +692,7 @@ function BudgetKazPeiApp({
               boxShadow: "0 6px 16px rgba(15,23,42,.06)",
             }}
           >
-            <BkIcons.home size={17} />
+            <BkIcons.dashboard size={17} />
             {lang === "fr" ? "Retour Accueil" : "Retour Akèy"}
           </button>
         )}
