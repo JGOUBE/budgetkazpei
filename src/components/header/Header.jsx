@@ -5,10 +5,10 @@ import AppLogo from "../AppLogo"
 import ThemeToggle from "../ThemeToggle"
 import { useTheme } from "../../styles/ThemeProvider"
 
-export default function Header({ activeNav, onAdd, lang, onToggleLang, t, commune }) {
+export default function Header({ activeNav, lang, onToggleLang, t, commune, onProfile }) {
   useTheme()
   const LocationIcon = BkIcons.location
-  const AddIcon = BkIcons.add
+  const ProfileIcon = BkIcons.user
 
   const titles = {
     dashboard: { section: "nav", key: "dashboard" },
@@ -22,7 +22,9 @@ export default function Header({ activeNav, onAdd, lang, onToggleLang, t, commun
   const mois = now.toLocaleDateString("fr-FR", { month: "long", year: "numeric" })
   const moisFormate = mois.charAt(0).toUpperCase() + mois.slice(1)
   const lieu = commune ? `${commune}, La Reunion` : t("header", "location")
-  const title = activeNav === "contact"
+  const title = activeNav === "dashboard"
+    ? (lang === "fr" ? "Accueil" : "Akèy")
+    : activeNav === "contact"
     ? (lang === "fr" ? "Contactez-nous" : "Contacte a nou")
     : activeNav === "goodDealsAdminReview"
       ? "Validation bons plans"
@@ -55,20 +57,21 @@ export default function Header({ activeNav, onAdd, lang, onToggleLang, t, commun
         <ThemeToggle />
         <LanguageSwitcher lang={lang} onToggle={onToggleLang} />
         <button
-          onClick={onAdd}
+          type="button"
+          onClick={onProfile}
+          aria-label={lang === "fr" ? "Mon profil" : "Mon profil"}
           style={buttonStyle({
-            background: ds.primary,
-            border: "none",
-            padding: "0 18px",
-            color: "#fff",
-            display: "flex",
+            background: ds.card,
+            border: `1px solid ${ds.border}`,
+            padding: 0,
+            width: 48,
+            color: ds.textPrimary,
+            display: "inline-flex",
             alignItems: "center",
-            gap: 8,
-            boxShadow: `0 4px 20px ${ds.primary}44`,
+            justifyContent: "center",
           })}
         >
-          <AddIcon size={18} />
-          {t("header", "addButton")}
+          <ProfileIcon size={20} />
         </button>
       </div>
     </div>
