@@ -5,16 +5,10 @@ import AppLogo from "../AppLogo"
 
 const NAV_ITEMS = [
   { id: "dashboard", icon: BkIcons.dashboard, section: "nav", key: "dashboard" },
-  { id: "shopping", icon: BkIcons.shopping, section: "nav", key: "shopping" },
-  { id: "receipts", icon: BkIcons.receipts, section: "nav", key: "receipts" },
-  { id: "depenses", icon: BkIcons.depenses, section: "nav", key: "depenses" },
   { id: "goodDeals", icon: BkIcons.deals, section: "nav", key: "goodDeals" },
   { id: "statistics", icon: BkIcons.stats, section: "nav", key: "statistics" },
-  { id: "aides", icon: BkIcons.aides, section: "nav", key: "aides" },
-  { id: "conseiller", icon: BkIcons.assistant, section: "nav", key: "conseiller" },
   { id: "abonnements", icon: BkIcons.abonnements, section: "nav", key: "abonnements" },
   { id: "historique", icon: BkIcons.calendar, section: "nav", key: "monthlyHistory", premiumOnly: true },
-  { id: "profil", icon: BkIcons.user, section: "nav", key: "profil" },
 ]
 
 const ADMIN_ITEMS = [
@@ -73,7 +67,7 @@ export default function Sidebar({
   const premiumColor = isPremiumPlus || isPremium ? ds.purple : ds.warning
 
   function getNavLabel(item) {
-    if (item.id === "dashboard") return isKreol ? "Tablo de bor" : "Tableau de bord"
+    if (item.id === "dashboard") return isKreol ? "Akèy" : "Accueil"
     if (item.id === "receipts") return isKreol ? "Mon bann tiket" : "Mes tickets"
     if (item.id === "goodDeals") {
       return isKreol ? "Mon bann bon plan" : "Mes bons plans"
@@ -124,7 +118,7 @@ export default function Sidebar({
         <button
           type="button"
           onClick={() => onNavChange("dashboard")}
-          aria-label={isKreol ? "Retour tablo débor" : "Retour au tableau de bord"}
+          aria-label={isKreol ? "Retour akèy" : "Retour à l’accueil"}
           style={{
             width: "100%",
             display: "flex",
