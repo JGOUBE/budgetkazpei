@@ -21,6 +21,7 @@ import Header from "./components/header/Header"
 import AddTransactionModal from "./components/modals/AddTransactionModal"
 import EditTransactionModal from "./components/modals/EditTransactionModal"
 import Dashboard from "./components/dashboard/Dashboard"
+import HomePage from "./pages/HomePage"
 import RevenusPage from "./components/dashboard/RevenusPage"
 import DepensesPage from "./components/dashboard/DepensesPage"
 import SoldePage from "./components/dashboard/SoldePage"
@@ -527,7 +528,7 @@ function BudgetKazPeiApp({
           <button
             type="button"
             onClick={() => handleNavChange("dashboard")}
-            aria-label={lang === "fr" ? "Retour au tableau de bord" : "Retour tablo débor"}
+            aria-label={lang === "fr" ? "Retour à l’accueil" : "Retour akèy"}
             style={{
               position: "absolute",
               left: "50%",
@@ -548,25 +549,44 @@ function BudgetKazPeiApp({
             <span style={{ fontSize: 17, fontWeight: 950, color: COLORS.text, lineHeight: 1, whiteSpace: "nowrap" }}>BudgetKazPéi</span>
           </button>
 
-          <button
-            type="button"
-            onClick={() => setShowModal(true)}
-            style={{
-              background: COLORS.accent,
-              border: "none",
-              borderRadius: 10,
-              padding: "8px 14px",
-              color: "#fff",
-              cursor: "pointer",
-              fontWeight: 700,
-              fontFamily: "inherit",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <BkIcons.add size={20} />
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+            <button
+              type="button"
+              onClick={toggleLang}
+              aria-label={lang === "fr" ? "Passer en créole" : "Passer en français"}
+              style={{
+                background: "transparent",
+                border: "none",
+                color: COLORS.text,
+                cursor: "pointer",
+                padding: "4px 5px",
+                minWidth: 40,
+                fontSize: 11,
+                fontWeight: 900,
+                fontFamily: "inherit",
+              }}
+            >
+              {lang === "fr" ? "KR" : "FR"}
+            </button>
+            <ThemeToggle compact />
+            <button
+              type="button"
+              onClick={() => handleNavChange("profil")}
+              aria-label={lang === "fr" ? "Mon profil" : "Mon profil"}
+              style={{
+                background: "transparent",
+                border: "none",
+                color: COLORS.text,
+                cursor: "pointer",
+                padding: 4,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <BkIcons.user size={21} />
+            </button>
+          </div>
         </div>
       )}
 
@@ -643,15 +663,15 @@ function BudgetKazPeiApp({
         {!isMobile && (
           <Header
             activeNav={activeNav}
-            onAdd={() => setShowModal(true)}
             lang={lang}
             onToggleLang={toggleLang}
             t={appT}
             commune={profile?.commune || ""}
+            onProfile={() => handleNavChange("profil")}
           />
         )}
 
-        {isMobile && (
+        {isMobile && activeNav !== "dashboard" && (
           <div
             style={{
               display: "flex",
@@ -668,7 +688,7 @@ function BudgetKazPeiApp({
                 fontWeight: 400,
               }}
             >
-              {activeNav === "dashboard" && t("nav", "dashboard")}
+              {activeNav === "dashboard" && (lang === "fr" ? "Accueil" : "Akèy")}
               {activeNav === "revenus" && (lang === "fr" ? "Revenus du mois" : "Larzan i rantre")}
               {activeNav === "depenses" && t("nav", "depenses")}
               {activeNav === "solde" && (lang === "fr" ? "Solde disponible" : "Larzan disponible")}
@@ -710,37 +730,10 @@ function BudgetKazPeiApp({
         )}
 
         {activeNav === "dashboard" && (
-          <Dashboard
-            userId={user?.id}
-            stats={{
-              revenus,
-              depenses,
-              solde,
-              chargesFixes,
-              depensesVariables,
-              resteAVivre,
-              tauxChargesFixes,
-            }}
-            byCategory={byCategory}
-            pieData={pieData}
-            transactions={transactions}
-            abonnements={abonnements}
-            t={t}
+          <HomePage
+            language={lang}
             isMobile={isMobile}
-            isPremium={isPremium}
-            customBudgets={customBudgets}
-            onSaveBudgets={saveBudgets}
-            onGoPremium={() => setActiveNav("premium")}
-            opportunitiesCount={dashboardOpportunitiesCount}
-            commune={profile?.commune || ""}
-            profile={profile}
-            onOpenOpportunities={() => setActiveNav("opportunites")}
-            onOpenRevenus={() => setActiveNav("revenus")}
-            onOpenDepenses={() => setActiveNav("depenses")}
-            onOpenSolde={() => setActiveNav("solde")}
-            onOpenReceipts={() => setActiveNav("receipts")}
-            onOpenShopping={() => setActiveNav("shopping")}
-            onOpenStats={() => setActiveNav("statistics")}
+            onNavigate={handleNavChange}
             onAddExpense={() => setShowModal(true)}
           />
         )}
@@ -1032,63 +1025,6 @@ function BudgetKazPeiApp({
           />
         )}
       </div>
-
-      {isMobile && (
-        <div
-          style={{
-            position: "fixed",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            zIndex: 50,
-            background: ds.elevated,
-            borderTop: `1px solid ${COLORS.border}`,
-            display: "flex",
-            justifyContent: "space-around",
-            padding: "8px 8px calc(12px + env(safe-area-inset-bottom))",
-            boxShadow: themeName === "light"
-              ? "0 -8px 24px rgba(20,32,51,.10)"
-              : "0 -16px 36px rgba(0,0,0,.28)",
-          }}
-        >
-          {[
-            { id: "shopping", icon: BkIcons.shopping, label: lang === "fr" ? "Courses" : "Courses" },
-            { id: "statistics", icon: BkIcons.stats, label: lang === "fr" ? "Stats" : "Stats" },
-            { id: "aides", icon: BkIcons.aides, label: "Aides" },
-            { id: "conseiller", icon: BkIcons.assistant, label: lang === "fr" ? "Conseiller" : "Konseye" },
-            { id: "profil", icon: BkIcons.user, label: t("nav", "profil") },
-          ].map(item => {
-            const Icon = item.icon
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => handleNavChange(item.id)}
-                style={{
-                  border: "none",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: 3,
-                  cursor: "pointer",
-                  minHeight: 52,
-                  minWidth: 58,
-                  padding: "6px 8px",
-                  borderRadius: 14,
-                  color: activeNav === item.id ? COLORS.accent : COLORS.muted,
-                  background: activeNav === item.id ? "rgba(249,115,22,.14)" : "transparent",
-                  transition: "transform .18s ease, background .18s ease, color .18s ease",
-                }}
-              >
-                <Icon size={20} />
-                <span style={{ fontSize: 9, fontFamily: "inherit" }}>
-                  {item.label}
-                </span>
-              </button>
-            )
-          })}
-        </div>
-      )}
 
       {showModal && (
         <AddTransactionModal
