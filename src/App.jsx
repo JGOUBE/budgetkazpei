@@ -670,6 +670,7 @@ function BudgetKazPeiApp({
           />
         )}
 
+        <div className={activeNav === "dashboard" ? undefined : "bkp-premium-zone"}>
         {activeNav !== "dashboard" && (
           <button
             type="button"
@@ -994,6 +995,7 @@ function BudgetKazPeiApp({
             t={t}
           />
         )}
+        </div>
       </div>
 
       {showModal && (
