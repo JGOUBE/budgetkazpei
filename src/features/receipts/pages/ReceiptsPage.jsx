@@ -1162,15 +1162,15 @@ export default function ReceiptsPage({
     }
   }
 
-  function openLongTicketMode() {
-    if (longTicketMode) {
-      resetLongTicketScan()
-      setMessage("")
-      return
-    }
-
+  function openMultiPhotoTicketMode(count) {
     setLongTicketMode(true)
+    setLongTicketPhotoCount(count)
+    setLongTicketFiles([null, null, null])
     setMessage("")
+  }
+
+  function openLongTicketMode() {
+    openMultiPhotoTicketMode(3)
   }
 
   function resetLongTicketScan() {
@@ -2360,7 +2360,7 @@ export default function ReceiptsPage({
           label={txt.mediumTicket}
           Icon={BkIcons.receipts}
           disabled={automatedScanDisabled}
-          onClick={() => cameraRef.current.click()}
+          onClick={() => openMultiPhotoTicketMode(2)}
           variant="secondary"
         />
         <ActionButton
@@ -2382,22 +2382,6 @@ export default function ReceiptsPage({
 
       {showMethodActions && longTicketMode && (
         <div style={{ display: "grid", gap: 10, marginTop: -3, padding: "0 2px 2px" }}>
-          {!longTicketPhotoCount && (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8, maxWidth: isMobile ? 300 : 360 }}>
-              {[2, 3].map(count => (
-                <button
-                  key={count}
-                  type="button"
-                  disabled={automatedScanDisabled}
-                  onClick={() => selectLongTicketPhotoCount(count)}
-                  style={{ minHeight: 42, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: COLORS.cardLight, color: COLORS.text, fontWeight: 950, fontFamily: "inherit", fontSize: 14 }}
-                >
-                  {count === 2 ? txt.longTicketTwoPhotos : txt.longTicketThreePhotos}
-                </button>
-              ))}
-            </div>
-          )}
-
           {longTicketPhotoCount && (
             <>
               <div style={{ color: COLORS.text, fontSize: 14, fontWeight: 950 }}>
