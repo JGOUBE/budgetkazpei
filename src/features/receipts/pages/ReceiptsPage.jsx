@@ -2696,10 +2696,10 @@ function ActionButton({
 
   const palettes = {
     primary: {
-      background: COLORS.accent,
-      border: COLORS.accent,
+      background: "linear-gradient(145deg, #14B8A6, #0F8F83)",
+      border: "#2DD4BF",
       color: "#FFFFFF",
-      shadow: "0 10px 22px rgba(249,115,22,.22)",
+      shadow: "inset 2px 2px 0 rgba(255,255,255,.24), inset -4px -5px 9px rgba(4,95,87,.18), 0 6px 0 #08766D, 0 12px 22px rgba(20,184,166,.24)",
     },
     secondary: {
       background: `color-mix(in srgb, ${COLORS.cyan} 14%, ${COLORS.card})`,
@@ -3249,7 +3249,7 @@ function HistoryList({ txt, rows, busy, onOpen, onDelete }) {
                 </span>
               </span>
               <span style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: 8 }}>
-                <button type="button" disabled={busy} onClick={() => onOpen(row)} style={{ minHeight: 40, borderRadius: 12, border: "none", background: COLORS.accent, color: "#fff", fontWeight: 950, padding: "0 12px" }}>
+                <button type="button" disabled={busy} onClick={() => onOpen(row)} style={{ minHeight: 40, borderRadius: 12, border: "none", background: "linear-gradient(145deg, #14B8A6, #0F8F83)", color: "#fff", border: "1px solid #2DD4BF", boxShadow: "inset 2px 2px 0 rgba(255,255,255,.24), 0 5px 0 #08766D, 0 10px 18px rgba(20,184,166,.22)", fontWeight: 950, padding: "0 12px" }}>
                   {isBudgetOkArticlesPartial(row) || (hasReliableBudgetForReceipt(row) && !isLockedScannedReceipt(row))
                     ? txt.correctArticles
                     : isLockedScannedReceipt(row) || receiptHasUnreliableArticleCount(row)
