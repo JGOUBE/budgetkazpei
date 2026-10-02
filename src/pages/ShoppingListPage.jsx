@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react"
-import { Copy, ExternalLink, Eye, Info, Mail, MessageCircle, Minus, Plus, Save, Send, Share2, Tag, Trash2 } from "lucide-react"
+import { Copy, ExternalLink, Eye, Mail, MessageCircle, Minus, Plus, Save, Send, Share2, Tag, Trash2 } from "lucide-react"
 import { listShoppingItems } from "../features/shopping/services/shoppingEngine"
 import { supabase } from "../services/supabase"
 import { createAppSectionTarget } from "../services/appSectionNavigation"
@@ -289,7 +289,6 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
   const [duplicateCandidate, setDuplicateCandidate] = useState(null)
   const [isSaving, setIsSaving] = useState(false)
   const [deletingSnapshotIds, setDeletingSnapshotIds] = useState(() => new Set())
-  const [showShoppingInfo, setShowShoppingInfo] = useState(false)
   const saveInFlightRef = useRef(false)
   const snapshotRequestVersionRef = useRef(0)
   const deletedSnapshotIdsRef = useRef(new Set())
@@ -802,15 +801,6 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
           </div>
         )}
 
-        <button
-          type="button"
-          aria-label={locale === "cr" ? "Informations su Courses intelligentes" : "Informations sur les Courses intelligentes"}
-          title={locale === "cr" ? "Informations" : "Informations"}
-          onClick={() => setShowShoppingInfo(true)}
-          style={{ width: 44, minWidth: 44, height: 44, marginTop: 12, borderRadius: 14, border: "1px solid #C4A0F6", background: "linear-gradient(145deg, #E9D5FF, #D8B4FE)", color: "#6327B8", display: "inline-grid", placeItems: "center", cursor: "pointer", boxShadow: "inset 2px 2px 0 rgba(255,255,255,.55), 0 5px 0 #B692DE, 0 9px 16px rgba(126,34,206,.14)" }}
-        >
-          <Info size={20} aria-hidden="true" />
-        </button>
       </div>
 
       {notice?.message && (
@@ -983,22 +973,6 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
           })}
         </div>
       </div>
-
-      {showShoppingInfo && (
-        <Modal
-          title={locale === "cr" ? "Courses intelligentes" : "Courses intelligentes"}
-          closeLabel={txt.close}
-          onClose={() => setShowShoppingInfo(false)}
-        >
-          <div style={{ color: COLORS.text, lineHeight: 1.55 }}>
-            <p style={{ margin: "0 0 10px" }}>{txt.priceInfo}</p>
-            <p style={{ margin: "0 0 10px" }}>{txt.learningCardText}</p>
-            {learningReady && estimate.reliableSavingsTotal > 0 && (
-              <p style={{ margin: 0, color: COLORS.muted }}>{txt.optimizedInfo}</p>
-            )}
-          </div>
-        </Modal>
-      )}
 
       {shareModal && (
         <Modal title={txt.shareTitle} closeLabel={txt.close} onClose={() => setShareModal(null)}>
