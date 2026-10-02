@@ -32,13 +32,13 @@ const GOOD_DEALS_INTERACTION_STYLES = `
 `
 
 const CATEGORY_OPTIONS = [
-  { id: "all", fr: "Tous", kr: "Tout", icon: BkIcons.deals },
-  { id: "shopping", fr: "Promos & bons prix", kr: "Promo ek bon pri", icon: BkIcons.shopping },
-  { id: "food", fr: "Restaurants", kr: "Manzé", icon: BkIcons.food },
-  { id: "home", fr: "Maison & services", kr: "Kaz & servis", icon: BkIcons.homeServices },
-  { id: "transport", fr: "Transport", kr: "Transport", icon: BkIcons.transport },
-  { id: "leisure", fr: "Loisirs & famille", kr: "Sorti & famiy", icon: BkIcons.leisure },
-  { id: "local", fr: "Commerces locaux", kr: "Komers lokal", icon: BkIcons.store },
+  { id: "all", fr: "Tous", kr: "Tout", icon: BkIcons.deals, bg: "#FFD8C8", fg: "#C94A1B", edge: "#E9A98E" },
+  { id: "shopping", fr: "Promos & bons prix", kr: "Promo ek bon pri", icon: BkIcons.shopping, bg: "#FFE9A6", fg: "#8A6200", edge: "#D7BD69" },
+  { id: "food", fr: "Restaurants", kr: "Manzé", icon: BkIcons.food, bg: "#FFD4D8", fg: "#A93646", edge: "#E5A4AB" },
+  { id: "home", fr: "Maison & services", kr: "Kaz & servis", icon: BkIcons.homeServices, bg: "#E5D7FF", fg: "#6435A5", edge: "#BDA7E0" },
+  { id: "transport", fr: "Transport", kr: "Transport", icon: BkIcons.transport, bg: "#D5EBFF", fg: "#17669A", edge: "#9EC9E7" },
+  { id: "leisure", fr: "Loisirs & famille", kr: "Sorti & famiy", icon: BkIcons.leisure, bg: "#D5F4DF", fg: "#247447", edge: "#A3D4B3" },
+  { id: "local", fr: "Commerces locaux", kr: "Komers lokal", icon: BkIcons.store, bg: "#D1F1EE", fg: "#176C67", edge: "#9ACFC9" },
 ]
 
 const LEISURE_VIEW_OPTIONS = [
@@ -860,7 +860,7 @@ function AreaExplorerDialog({
               ...pageTheme.hoverVars,
               width: 42,
               height: 42,
-              minHeight: 42,
+              minHeight: 38,
               borderRadius: 13,
               border: `1px solid ${pageTheme.border}`,
               background: pageTheme.buttonBackground,
@@ -968,6 +968,7 @@ function AreaExplorerDialog({
 
 function DealCard({ deal, isKreol, highlighted = false }) {
   const pageTheme = getGoodDealsThemeStyles()
+  const categoryPalette = CATEGORY_OPTIONS.find(option => option.id === normalizeCategory(deal.category)) || CATEGORY_OPTIONS[0]
   const location = getDealLocation(deal)
   const locality = String(deal.locality || "").trim()
   const territoryName = String(deal.territory_name || "").trim()
@@ -1173,8 +1174,10 @@ function DealCard({ deal, isKreol, highlighted = false }) {
               minHeight: 44,
               border: "none",
               borderRadius: 13,
-              background: COLORS.accent,
-              color: "#fff",
+              background: `linear-gradient(145deg, ${categoryPalette.bg}, ${categoryPalette.edge})`,
+              color: categoryPalette.fg,
+              border: `1px solid ${categoryPalette.edge}`,
+              boxShadow: `inset 2px 2px 0 rgba(255,255,255,.45), 0 5px 0 ${categoryPalette.edge}, 0 9px 16px rgba(15,23,42,.12)`,
               cursor: "pointer",
               fontFamily: "inherit",
               fontWeight: 950,
@@ -1240,9 +1243,13 @@ function CategoryButton({ option, active, isKreol, onClick }) {
         gap: 8,
         padding: "0 13px",
         borderRadius: 999,
-        border: active ? `1px solid ${COLORS.accent}66` : `1px solid ${pageTheme.border}`,
-        background: active ? pageTheme.selectedBackground : pageTheme.buttonBackground,
-        color: active ? COLORS.accent : COLORS.text,
+        border: `1px solid ${option.edge}`,
+        background: option.bg,
+        color: option.fg,
+        boxShadow: active
+          ? `inset 2px 2px 0 rgba(255,255,255,.55), 0 5px 0 ${option.edge}, 0 9px 15px rgba(15,23,42,.14)`
+          : `inset 2px 2px 0 rgba(255,255,255,.45), 0 3px 0 ${option.edge}, 0 7px 12px rgba(15,23,42,.10)`,
+        transform: active ? "translateY(-1px)" : "none",
         cursor: "pointer",
         fontFamily: "inherit",
         fontSize: 12,
@@ -2078,19 +2085,19 @@ export default function GoodDealsPage({
           background: pageTheme.heroBackground,
           border: `1px solid ${COLORS.accent}33`,
           borderRadius: isMobile ? 24 : 28,
-          padding: isMobile ? 22 : 30,
+          padding: isMobile ? 16 : 24,
           boxShadow: pageTheme.elevatedShadow,
         }}
       >
         <div
           style={{
             position: "absolute",
-            width: 180,
-            height: 180,
+            width: 140,
+            height: 140,
             borderRadius: 999,
             background: `${COLORS.accent}12`,
-            right: -60,
-            top: -70,
+            right: -48,
+            top: -58,
           }}
         />
 
@@ -2100,23 +2107,23 @@ export default function GoodDealsPage({
             BudgetKazPéi local
           </div>
 
-          <h1 style={{ margin: "12px 0 8px", color: COLORS.text, fontSize: isMobile ? 30 : 42, lineHeight: 1.02, fontWeight: 950 }}>
+          <h1 style={{ margin: "8px 0 5px", color: COLORS.text, fontSize: isMobile ? 27 : 38, lineHeight: 1.02, fontWeight: 950 }}>
             {isKreol ? "Mon bann bon plan" : "Mes bons plans"}
           </h1>
 
-          <p style={{ margin: 0, color: pageTheme.secondaryText, fontSize: isMobile ? 14 : 16, lineHeight: 1.65 }}>
+          <p style={{ margin: 0, color: pageTheme.secondaryText, fontSize: isMobile ? 13 : 15, lineHeight: 1.45 }}>
             {isKreol
               ? "Trouv bann lof, servis ek bon plan utile près koté ou, sélectionné pou La Rényon."
               : "Découvrez des offres, des services et des bons plans utiles près de chez vous, sélectionnés pour La Réunion."}
           </p>
 
-          <div style={{ display: "flex", alignItems: "center", gap: 9, flexWrap: "wrap", marginTop: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginTop: 11 }}>
             <div
               style={{
                 display: "inline-flex",
                 alignItems: "center",
                 gap: 8,
-                minHeight: 42,
+                minHeight: 38,
                 padding: "0 12px",
                 borderRadius: 999,
                 background: pageTheme.cardBackground,
@@ -2141,7 +2148,7 @@ export default function GoodDealsPage({
               className="good-deals-hoverable"
               style={{
                 ...pageTheme.hoverVars,
-                minHeight: 42,
+                minHeight: 38,
                 padding: "0 13px",
                 borderRadius: 999,
                 border: `1px solid ${COLORS.cyan}44`,
@@ -2163,7 +2170,7 @@ export default function GoodDealsPage({
                 className="good-deals-hoverable"
                 style={{
                   ...pageTheme.hoverVars,
-                  minHeight: 42,
+                  minHeight: 38,
                   padding: "0 12px",
                   borderRadius: 999,
                   border: `1px solid ${pageTheme.border}`,
