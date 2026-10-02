@@ -68,6 +68,7 @@ export default function AddTransactionModal({ onAdd, onClose, onOpenReceipts, t 
       }}
     >
       <div
+        className="bkp-modal-premium"
         onClick={e => e.stopPropagation()}
         style={{
           background: COLORS.card,
