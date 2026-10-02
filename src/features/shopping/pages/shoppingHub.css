@@ -145,3 +145,24 @@
   .bkp-savings-prices { grid-template-columns: 1fr; }
   .bkp-savings-prices span { min-height: 0; }
 }
+
+/* Mes courses — palette C premium */
+.bkp-shopping-hero { position: relative; padding-right: 58px; }
+.bkp-shopping-info {
+  position: absolute; top: 14px; right: 14px; width: 34px; min-width: 34px; height: 34px; min-height: 34px;
+  display: grid; place-items: center; padding: 0; color: #6d28d9;
+  background: #f5f0ff; border: 1px solid #d8c7f5; border-radius: 11px;
+  box-shadow: 0 3px 0 #cbb7ea, 0 6px 12px rgb(76 29 149 / 10%);
+}
+.bkp-shopping-tabs button:nth-child(1) { color:#176b67; background:linear-gradient(145deg,#dcf7f2,#c5eee7); border-color:#a7ddd4; box-shadow:0 5px 0 #91c9c0,0 9px 15px rgb(23 107 103 / 13%); }
+.bkp-shopping-tabs button:nth-child(2) { color:#5b2aa6; background:linear-gradient(145deg,#f1e7ff,#dfc9fb); border-color:#c9a9ef; box-shadow:0 5px 0 #b996df,0 9px 15px rgb(91 42 166 / 13%); }
+.bkp-shopping-tabs button:nth-child(3) { color:#78520a; background:linear-gradient(145deg,#fff2c8,#f4d77d); border-color:#e2c05e; box-shadow:0 5px 0 #c9a94e,0 9px 15px rgb(120 82 10 / 13%); }
+.bkp-shopping-tabs button.is-active { filter:saturate(1.08); transform:translateY(-1px); }
+.bkp-shopping-tabs button:nth-child(1) svg { color:#168c84; }
+.bkp-shopping-tabs button:nth-child(2) svg { color:#7c3aed; }
+.bkp-shopping-tabs button:nth-child(3) svg { color:#b47b0a; }
+.bkp-shopping-info-backdrop { position:fixed; inset:0; z-index:120; display:grid; place-items:center; padding:18px; background:rgb(15 23 42 / 48%); }
+.bkp-shopping-info-modal { width:min(390px,100%); padding:18px; color:var(--bkp-text); background:var(--bkp-card); border:1px solid var(--bkp-border); border-radius:20px; box-shadow:var(--bkp-shadow); }
+.bkp-shopping-info-title { font-family:var(--bkp-font-display,"DM Serif Display",serif); font-size:25px; }
+.bkp-shopping-info-modal p { color:var(--bkp-muted); line-height:1.5; }
+.bkp-shopping-info-modal button { min-height:42px; padding:0 16px; color:#fff; font-weight:850; background:linear-gradient(145deg,#8b5cf6,#6d28d9); border:1px solid #a78bfa; border-radius:13px; }
