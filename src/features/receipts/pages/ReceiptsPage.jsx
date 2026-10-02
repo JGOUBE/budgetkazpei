@@ -2696,32 +2696,32 @@ function ActionButton({
 
   const palettes = {
     primary: {
-      background: "linear-gradient(145deg, #14B8A6, #0F8F83)",
-      border: "#2DD4BF",
+      background: "linear-gradient(145deg, #20C997, #07956F)",
+      border: "#42DDB0",
       color: "#FFFFFF",
-      shadow: "inset 2px 2px 0 rgba(255,255,255,.24), inset -4px -5px 9px rgba(4,95,87,.18), 0 6px 0 #08766D, 0 12px 22px rgba(20,184,166,.24)",
+      shadow: "inset 2px 2px 0 rgba(255,255,255,.26), inset -4px -5px 9px rgba(0,88,65,.18), 0 6px 0 #087A5C, 0 12px 22px rgba(7,149,111,.24)",
     },
     secondary: {
-      background: "linear-gradient(145deg, #DBEEFF, #9CCDF7)",
-      border: "#63AFE9",
-      color: "#075E9B",
-      shadow: "inset 2px 2px 0 rgba(255,255,255,.68), inset -4px -5px 9px rgba(21,94,150,.13), 0 6px 0 #6EA9D2, 0 12px 22px rgba(30,136,210,.18)",
+      background: "linear-gradient(145deg, #66B4E6, #347FAF)",
+      border: "#7CC4EF",
+      color: "#FFFFFF",
+      shadow: "inset 2px 2px 0 rgba(255,255,255,.28), inset -4px -5px 9px rgba(17,73,110,.17), 0 6px 0 #28678F, 0 12px 22px rgba(52,127,175,.22)",
     },
     special: {
       background: active
-        ? "linear-gradient(145deg, #8B5CF6, #6D35E8)"
-        : "linear-gradient(145deg, #EADFFF, #CDB4FF)",
-      border: "#A77AF8",
-      color: active ? "#FFFFFF" : "#6230D5",
+        ? "linear-gradient(145deg, #B46BC8, #8D4AA3)"
+        : "linear-gradient(145deg, #C887D7, #9F5CB4)",
+      border: "#D49AE0",
+      color: "#FFFFFF",
       shadow: active
-        ? "inset 2px 2px 0 rgba(255,255,255,.24), 0 6px 0 #5125B8, 0 12px 22px rgba(109,53,232,.22)"
-        : "inset 2px 2px 0 rgba(255,255,255,.65), inset -4px -5px 9px rgba(98,48,213,.12), 0 6px 0 #A98DE1, 0 12px 22px rgba(109,53,232,.16)",
+        ? "inset 2px 2px 0 rgba(255,255,255,.25), 0 6px 0 #713582, 0 12px 22px rgba(141,74,163,.23)"
+        : "inset 2px 2px 0 rgba(255,255,255,.27), inset -4px -5px 9px rgba(83,35,96,.15), 0 6px 0 #814394, 0 12px 22px rgba(159,92,180,.20)",
     },
     neutral: {
-      background: "linear-gradient(145deg, #FFF5D9, #FFD98B)",
-      border: "#E9B94D",
-      color: "#704A00",
-      shadow: "inset 2px 2px 0 rgba(255,255,255,.72), inset -4px -5px 9px rgba(130,88,0,.12), 0 6px 0 #C79B38, 0 12px 22px rgba(197,148,38,.17)",
+      background: "linear-gradient(145deg, #F5D08B, #DDAE5D)",
+      border: "#F1D39C",
+      color: "#4D350A",
+      shadow: "inset 2px 2px 0 rgba(255,255,255,.35), inset -4px -5px 9px rgba(104,68,9,.14), 0 6px 0 #B98B42, 0 12px 22px rgba(185,139,66,.20)",
     },
   }
 
@@ -3251,7 +3251,7 @@ function HistoryList({ txt, rows, busy, onOpen, onDelete }) {
                 </span>
               </span>
               <span style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: 8 }}>
-                <button type="button" disabled={busy} onClick={() => onOpen(row)} style={{ minHeight: 40, borderRadius: 12, border: "none", background: "linear-gradient(145deg, #14B8A6, #0F8F83)", color: "#fff", border: "1px solid #2DD4BF", boxShadow: "inset 2px 2px 0 rgba(255,255,255,.24), 0 5px 0 #08766D, 0 10px 18px rgba(20,184,166,.22)", fontWeight: 950, padding: "0 12px" }}>
+                <button type="button" disabled={busy} onClick={() => onOpen(row)} style={{ minHeight: 40, borderRadius: 12, border: "none", background: "linear-gradient(145deg, #20C997, #07956F)", color: "#fff", border: "1px solid #42DDB0", boxShadow: "inset 2px 2px 0 rgba(255,255,255,.24), 0 5px 0 #087A5C, 0 10px 18px rgba(7,149,111,.22)", fontWeight: 950, padding: "0 12px" }}>
                   {isBudgetOkArticlesPartial(row) || (hasReliableBudgetForReceipt(row) && !isLockedScannedReceipt(row))
                     ? txt.correctArticles
                     : isLockedScannedReceipt(row) || receiptHasUnreliableArticleCount(row)
