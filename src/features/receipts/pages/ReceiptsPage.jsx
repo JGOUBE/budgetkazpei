@@ -2702,24 +2702,26 @@ function ActionButton({
       shadow: "inset 2px 2px 0 rgba(255,255,255,.24), inset -4px -5px 9px rgba(4,95,87,.18), 0 6px 0 #08766D, 0 12px 22px rgba(20,184,166,.24)",
     },
     secondary: {
-      background: `color-mix(in srgb, ${COLORS.cyan} 14%, ${COLORS.card})`,
-      border: `color-mix(in srgb, ${COLORS.cyan} 58%, ${COLORS.border})`,
-      color: COLORS.cyan,
-      shadow: "none",
+      background: "linear-gradient(145deg, #DBEEFF, #9CCDF7)",
+      border: "#63AFE9",
+      color: "#075E9B",
+      shadow: "inset 2px 2px 0 rgba(255,255,255,.68), inset -4px -5px 9px rgba(21,94,150,.13), 0 6px 0 #6EA9D2, 0 12px 22px rgba(30,136,210,.18)",
     },
     special: {
       background: active
-        ? COLORS.purple
-        : `color-mix(in srgb, ${COLORS.purple} 14%, ${COLORS.card})`,
-      border: COLORS.purple,
-      color: active ? "#FFFFFF" : COLORS.purple,
-      shadow: active ? "0 10px 22px rgba(139,92,246,.20)" : "none",
+        ? "linear-gradient(145deg, #8B5CF6, #6D35E8)"
+        : "linear-gradient(145deg, #EADFFF, #CDB4FF)",
+      border: "#A77AF8",
+      color: active ? "#FFFFFF" : "#6230D5",
+      shadow: active
+        ? "inset 2px 2px 0 rgba(255,255,255,.24), 0 6px 0 #5125B8, 0 12px 22px rgba(109,53,232,.22)"
+        : "inset 2px 2px 0 rgba(255,255,255,.65), inset -4px -5px 9px rgba(98,48,213,.12), 0 6px 0 #A98DE1, 0 12px 22px rgba(109,53,232,.16)",
     },
     neutral: {
-      background: COLORS.card,
-      border: COLORS.border,
-      color: COLORS.text,
-      shadow: "none",
+      background: "linear-gradient(145deg, #FFF5D9, #FFD98B)",
+      border: "#E9B94D",
+      color: "#704A00",
+      shadow: "inset 2px 2px 0 rgba(255,255,255,.72), inset -4px -5px 9px rgba(130,88,0,.12), 0 6px 0 #C79B38, 0 12px 22px rgba(197,148,38,.17)",
     },
   }
 
