@@ -2600,16 +2600,16 @@ function LongTicketPhotoSlot({
       onClick={onClick}
       aria-label={`${label} — ${file ? retakeLabel : takeLabel}`}
       style={{
-        minHeight: 132,
+        minHeight: file ? 92 : 88,
         borderRadius: 16,
         border: `1px solid ${file ? COLORS.cyan : COLORS.border}`,
         background: file
           ? `color-mix(in srgb, ${COLORS.cyan} 8%, ${COLORS.card})`
           : COLORS.cardLight,
         color: COLORS.text,
-        padding: 10,
+        padding: "8px 10px",
         display: "grid",
-        gridTemplateColumns: previewUrl ? "84px 1fr" : "1fr",
+        gridTemplateColumns: previewUrl ? "58px 1fr" : "1fr",
         gap: 10,
         alignItems: "center",
         textAlign: "left",
@@ -2623,8 +2623,8 @@ function LongTicketPhotoSlot({
           src={previewUrl}
           alt=""
           style={{
-            width: 84,
-            height: 104,
+            width: 58,
+            height: 68,
             objectFit: "cover",
             borderRadius: 11,
             border: `1px solid ${COLORS.border}`,
@@ -2650,7 +2650,7 @@ function LongTicketPhotoSlot({
 
         {!file && (
           <span style={{
-            minHeight: 54,
+            minHeight: 30,
             borderRadius: 11,
             border: `1px dashed ${COLORS.border}`,
             display: "flex",
@@ -2658,7 +2658,7 @@ function LongTicketPhotoSlot({
             justifyContent: "center",
             color: COLORS.cyan,
           }}>
-            <BkIcons.scan size={22} aria-hidden="true" />
+            <BkIcons.scan size={18} aria-hidden="true" />
           </span>
         )}
       </span>
