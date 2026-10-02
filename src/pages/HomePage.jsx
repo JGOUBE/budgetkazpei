@@ -8,6 +8,7 @@ const ACTIONS = [
   { id: "expense", fr: "Ajouter une dépense", kr: "Azout in dépans", icon: "depenses", light: ["#effff3", "#bcefc9"], dark: ["#073c2c", "#10293a"], accent: "#18a84c" },
   { id: "aides", fr: "Mes aides et mes droits", kr: "Mon bann èd ek mon bann drwa", icon: "aides", light: ["#f7f0ff", "#dbc7ff"], dark: ["#35107b", "#171d3c"], accent: "#7128ff" },
   { id: "conseiller", fr: "Mon conseiller", kr: "Mon konseye", icon: "assistant", light: ["#f8efff", "#d9f4ff"], dark: ["#251d59", "#083a55"], accent: "#00a8d6" },
+  { id: "goodDeals", fr: "Les bons plans !", kr: "Bann bon plan !", icon: "deals", light: ["#fff9e8", "#ffe7a8"], dark: ["#4a3510", "#24283b"], accent: "#e5a100" },
 ]
 
 function firstName(profile, user) {
@@ -41,7 +42,7 @@ export default function HomePage({ language = "fr", isMobile = false, profile, u
       }}>
         {ACTIONS.map((item, index) => {
           const Icon = BkIcons[item.icon]
-          const full = index === ACTIONS.length - 1
+          const full = index >= ACTIONS.length - 2
           const gradient = dark ? item.dark : item.light
           return (
             <button
@@ -50,8 +51,8 @@ export default function HomePage({ language = "fr", isMobile = false, profile, u
               onClick={item.id === "expense" ? onAddExpense : () => onNavigate(item.id)}
               style={{
                 gridColumn: full ? "1 / -1" : "auto",
-                minHeight: full ? (isMobile ? 126 : 145) : (isMobile ? 158 : 176),
-                padding: isMobile ? "18px 12px" : "24px 20px",
+                minHeight: full ? (isMobile ? 94 : 112) : (isMobile ? 158 : 176),
+                padding: full ? (isMobile ? "14px 16px" : "18px 20px") : (isMobile ? "18px 12px" : "24px 20px"),
                 borderRadius: 24,
                 border: `1px solid ${dark ? item.accent + "88" : item.accent + "66"}`,
                 background: `linear-gradient(145deg, ${gradient[0]}, ${gradient[1]})`,
@@ -73,13 +74,13 @@ export default function HomePage({ language = "fr", isMobile = false, profile, u
               onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)" }}
             >
               <span style={{
-                width: full ? 58 : 62, height: full ? 58 : 62, borderRadius: "50%",
+                width: full ? 48 : 62, height: full ? 48 : 62, borderRadius: "50%",
                 display: "inline-flex", alignItems: "center", justifyContent: "center",
                 background: `linear-gradient(145deg, ${item.accent}, ${item.accent}cc)`,
                 color: "#fff", border: "1px solid rgba(255,255,255,.52)",
                 boxShadow: dark ? `0 7px 16px ${item.accent}55, inset 0 2px 2px rgba(255,255,255,.25)` : `0 7px 14px ${item.accent}45, inset 0 2px 2px rgba(255,255,255,.55)`,
                 flexShrink: 0,
-              }}><Icon size={29} strokeWidth={2.2} /></span>
+              }}><Icon size={full ? 24 : 29} strokeWidth={2.2} /></span>
               <span style={{ fontSize: isMobile ? 16 : 18, fontWeight: 900, lineHeight: 1.15, maxWidth: 180 }}>
                 {isKreol ? item.kr : item.fr}
               </span>
