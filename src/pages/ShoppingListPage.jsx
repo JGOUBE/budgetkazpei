@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react"
-import { Copy, ExternalLink, Eye, Mail, MessageCircle, Minus, Plus, Save, ScanLine, Send, Share2, Tag, Trash2 } from "lucide-react"
+import { Copy, ExternalLink, Eye, Info, Mail, MessageCircle, Minus, Plus, Save, Send, Share2, Tag, Trash2 } from "lucide-react"
 import { listShoppingItems } from "../features/shopping/services/shoppingEngine"
 import { supabase } from "../services/supabase"
 import { createAppSectionTarget } from "../services/appSectionNavigation"
@@ -289,6 +289,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
   const [duplicateCandidate, setDuplicateCandidate] = useState(null)
   const [isSaving, setIsSaving] = useState(false)
   const [deletingSnapshotIds, setDeletingSnapshotIds] = useState(() => new Set())
+  const [showShoppingInfo, setShowShoppingInfo] = useState(false)
   const saveInFlightRef = useRef(false)
   const snapshotRequestVersionRef = useRef(0)
   const deletedSnapshotIdsRef = useRef(new Set())
@@ -801,29 +802,15 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
           </div>
         )}
 
-        <details style={{ marginTop: 10 }}>
-          <summary style={{ color: COLORS.muted, cursor: "pointer", fontWeight: 800 }}>{txt.priceInfo}</summary>
-          <div style={{ color: COLORS.muted, marginTop: 8, lineHeight: 1.5 }}>
-            {estimate.promotionPricedItemCount > 0 ? txt.mixedPriceInfo : txt.priceInfo}
-          </div>
-          {learningReady && estimate.reliableSavingsTotal > 0 && (
-            <div style={{ color: COLORS.muted, marginTop: 6, fontSize: 12, lineHeight: 1.45 }}>{txt.optimizedInfo}</div>
-          )}
-        </details>
-      </div>
-
-      <div style={card({ borderColor: "#23D3D655", order: 4 })}>
-        <div style={{ display: "flex", gap: 12, alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap" }}>
-          <div style={{ flex: "1 1 320px" }}>
-            <div style={{ color: COLORS.cyan, fontWeight: 950, fontSize: 18 }}>{txt.learningCardTitle}</div>
-            <p style={{ color: COLORS.muted, lineHeight: 1.55, margin: "8px 0 0" }}>
-              {txt.learningCardText}
-            </p>
-          </div>
-          <button type="button" onClick={onOpenReceipts} style={{ minHeight: 44, border: "none", borderRadius: 14, background: COLORS.accent, color: "#fff", fontWeight: 950, padding: "0 16px", display: "inline-flex", alignItems: "center", gap: 8 }}>
-            <ScanLine size={18} /> {txt.scan}
-          </button>
-        </div>
+        <button
+          type="button"
+          aria-label={locale === "cr" ? "Informations su Courses intelligentes" : "Informations sur les Courses intelligentes"}
+          title={locale === "cr" ? "Informations" : "Informations"}
+          onClick={() => setShowShoppingInfo(true)}
+          style={{ width: 44, minWidth: 44, height: 44, marginTop: 12, borderRadius: 14, border: "1px solid #C4A0F6", background: "linear-gradient(145deg, #E9D5FF, #D8B4FE)", color: "#6327B8", display: "inline-grid", placeItems: "center", cursor: "pointer", boxShadow: "inset 2px 2px 0 rgba(255,255,255,.55), 0 5px 0 #B692DE, 0 9px 16px rgba(126,34,206,.14)" }}
+        >
+          <Info size={20} aria-hidden="true" />
+        </button>
       </div>
 
       {notice?.message && (
@@ -835,12 +822,12 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
       <div style={card({ order: 1 })}>
         <div style={{ display: "grid", gridTemplateColumns: isMobile ? "minmax(0, 1fr)" : "minmax(0, 1fr) auto auto", gap: 10 }}>
           <input data-shopping-add value={query} onChange={e => { setQuery(e.target.value); setShowAllSuggestions(false) }} onKeyDown={e => e.key === "Enter" && addItem()} placeholder={txt.addPlaceholder} style={{ minHeight: 50, borderRadius: 14, border: `1px solid ${COLORS.inputBorder}`, background: COLORS.input, color: COLORS.text, padding: "0 14px" }} />
-          <button type="button" onClick={() => addItem()} style={{ minHeight: 50, border: "none", borderRadius: 14, background: COLORS.accent, color: "#fff", fontWeight: 950, padding: "0 16px" }}>{txt.add}</button>
+          <button type="button" onClick={() => addItem()} style={{ minHeight: 50, border: "none", borderRadius: 14, background: "linear-gradient(145deg, #8B5CF6, #6D28D9)", color: "#fff", border: "1px solid #A78BFA", boxShadow: "inset 2px 2px 0 rgba(255,255,255,.25), 0 6px 0 #5421B8, 0 12px 22px rgba(109,40,217,.22)", fontWeight: 950, padding: "0 16px" }}>{txt.add}</button>
           <div data-shopping-list-actions style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8, minWidth: 0 }}>
-            <button type="button" onClick={saveCurrentSnapshot} disabled={isSaving} style={{ minWidth: 0, minHeight: 50, border: `1px solid ${COLORS.cyan}66`, borderRadius: 14, background: "rgba(35,211,214,.12)", color: COLORS.text, fontSize: isMobile ? 12 : 13, fontWeight: 950, padding: "0 4px", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5, whiteSpace: "nowrap", opacity: isSaving ? 0.7 : 1, cursor: isSaving ? "wait" : "pointer" }}>
+            <button type="button" onClick={saveCurrentSnapshot} disabled={isSaving} style={{ minWidth: 0, minHeight: 50, border: "1px solid #C4A0F6", borderRadius: 14, background: "linear-gradient(145deg, #F2E9FF, #E1D1FA)", color: "#4F238C", fontSize: isMobile ? 12 : 13, fontWeight: 950, padding: "0 4px", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5, whiteSpace: "nowrap", opacity: isSaving ? 0.7 : 1, cursor: isSaving ? "wait" : "pointer" }}>
               <Save size={17} aria-hidden="true" /> <span>{isSaving ? txt.saving : txt.save}</span>
             </button>
-            <button type="button" onClick={startShare} style={{ minWidth: 0, minHeight: 50, border: `1px solid ${COLORS.cyan}66`, borderRadius: 14, background: "rgba(35,211,214,.12)", color: COLORS.text, fontSize: isMobile ? 12 : 13, fontWeight: 950, padding: "0 4px", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5, whiteSpace: "nowrap" }}>
+            <button type="button" onClick={startShare} style={{ minWidth: 0, minHeight: 50, border: "1px solid #C4A0F6", borderRadius: 14, background: "linear-gradient(145deg, #F2E9FF, #E1D1FA)", color: "#4F238C", fontSize: isMobile ? 12 : 13, fontWeight: 950, padding: "0 4px", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5, whiteSpace: "nowrap" }}>
               <Share2 size={17} aria-hidden="true" /> <span>{txt.share}</span>
             </button>
           </div>
@@ -996,6 +983,22 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
           })}
         </div>
       </div>
+
+      {showShoppingInfo && (
+        <Modal
+          title={locale === "cr" ? "Courses intelligentes" : "Courses intelligentes"}
+          closeLabel={txt.close}
+          onClose={() => setShowShoppingInfo(false)}
+        >
+          <div style={{ color: COLORS.text, lineHeight: 1.55 }}>
+            <p style={{ margin: "0 0 10px" }}>{txt.priceInfo}</p>
+            <p style={{ margin: "0 0 10px" }}>{txt.learningCardText}</p>
+            {learningReady && estimate.reliableSavingsTotal > 0 && (
+              <p style={{ margin: 0, color: COLORS.muted }}>{txt.optimizedInfo}</p>
+            )}
+          </div>
+        </Modal>
+      )}
 
       {shareModal && (
         <Modal title={txt.shareTitle} closeLabel={txt.close} onClose={() => setShareModal(null)}>
