@@ -509,7 +509,7 @@ button:not(:disabled)[style*="#ef4444"]:active {
 
 
 /* =========================================================
-   Accueil — Lo Mavéli en tissu, souple et sans débordement
+   Accueil — fond Réunion + mer en filigrane plein écran
    ========================================================= */
 .bkp-home-reunion-watermark {
   position: relative;
@@ -520,94 +520,39 @@ button:not(:disabled)[style*="#ef4444"]:active {
 .bkp-home-reunion-watermark::before {
   content: "";
   position: absolute;
-  z-index: -1;
+  inset: 0;
+  z-index: -2;
   pointer-events: none;
-  width: 112%;
-  height: 94%;
-  left: -6%;
-  top: 7%;
-  border-radius: 48% 34% 46% 38% / 15% 22% 18% 25%;
-  transform: perspective(900px) rotateZ(-8deg) rotateY(-6deg) rotateX(3deg) skewY(-1.5deg);
-  transform-origin: 52% 18%;
-  background:
-    linear-gradient(158deg, transparent 0 48.7%, rgba(224,34,43,.48) 49% 55.5%, transparent 55.8%),
-    conic-gradient(from 221deg at 50% 27%,
-      #1762a8 0deg 12deg,
-      rgba(255,211,0,.78) 12deg 20deg,
-      #1762a8 20deg 31deg,
-      rgba(255,211,0,.70) 31deg 39deg,
-      #1762a8 39deg 50deg,
-      rgba(255,211,0,.62) 50deg 58deg,
-      #1762a8 58deg 360deg);
-  opacity: .31;
-  filter: saturate(1.18) contrast(1.04);
-  clip-path: polygon(
-    0 7%, 8% 4%, 17% 6%, 27% 3%, 38% 6%, 49% 2%, 60% 5%, 71% 3%, 82% 7%, 92% 4%, 100% 8%,
-    100% 91%, 91% 95%, 81% 92%, 70% 96%, 59% 93%, 48% 97%, 37% 93%, 26% 96%, 15% 92%, 6% 95%, 0 91%
-  );
-  -webkit-mask-image:
-    linear-gradient(90deg, transparent 0%, #000 5%, #000 95%, transparent 100%),
-    radial-gradient(ellipse at 50% 44%, #000 10%, rgba(0,0,0,.96) 58%, rgba(0,0,0,.48) 84%, transparent 100%);
-  mask-image:
-    linear-gradient(90deg, transparent 0%, #000 5%, #000 95%, transparent 100%),
-    radial-gradient(ellipse at 50% 44%, #000 10%, rgba(0,0,0,.96) 58%, rgba(0,0,0,.48) 84%, transparent 100%);
+  background-image: url("/reunion-watermark.svg");
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+  opacity: .34;
+  filter: saturate(.92) contrast(.94);
 }
 .bkp-home-reunion-watermark::after {
   content: "";
   position: absolute;
+  inset: 0;
   z-index: -1;
   pointer-events: none;
-  width: 108%;
-  height: 88%;
-  left: -4%;
-  top: 10%;
-  border-radius: 50%;
-  transform: rotate(-8deg);
-  background: repeating-linear-gradient(
-    103deg,
-    rgba(255,255,255,.11) 0 5%,
-    rgba(255,255,255,0) 9% 17%,
-    rgba(8,31,66,.07) 21% 25%,
-    rgba(255,255,255,0) 29% 38%
-  );
-  opacity: .42;
-  filter: blur(7px);
+  background: rgba(255,255,255,.18);
 }
 [data-theme="dark"] .bkp-home-reunion-watermark::before {
-  background:
-    linear-gradient(158deg, transparent 0 48.7%, rgba(246,55,61,.66) 49% 55.5%, transparent 55.8%),
-    conic-gradient(from 221deg at 50% 27%,
-      #1768bc 0deg 12deg,
-      rgba(255,220,24,.90) 12deg 20deg,
-      #1768bc 20deg 31deg,
-      rgba(255,220,24,.82) 31deg 39deg,
-      #1768bc 39deg 50deg,
-      rgba(255,220,24,.74) 50deg 58deg,
-      #1768bc 58deg 360deg);
-  opacity: .35;
-  filter: saturate(1.28) brightness(1.05);
+  opacity: .30;
+  filter: saturate(.95) brightness(.68) contrast(.92);
 }
 [data-theme="dark"] .bkp-home-reunion-watermark::after {
-  background: repeating-linear-gradient(
-    103deg,
-    rgba(255,255,255,.08) 0 5%,
-    rgba(255,255,255,0) 9% 17%,
-    rgba(0,0,0,.15) 21% 25%,
-    rgba(255,255,255,0) 29% 38%
-  );
-  opacity: .46;
+  background: rgba(7,18,38,.20);
 }
 @media (max-width: 767px) {
   .bkp-home-reunion-watermark {
     border-radius: 0;
     overflow-x: clip;
+    min-height: calc(100dvh - 76px);
   }
   .bkp-home-reunion-watermark::before {
-    width: 114%;
-    height: 95%;
-    left: -7%;
-    top: 8%;
-    transform: perspective(720px) rotateZ(-9deg) rotateY(-7deg) rotateX(4deg) skewY(-1.8deg);
+    background-position: center top;
   }
 }
 html, body, #root {
