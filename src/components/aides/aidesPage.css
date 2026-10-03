@@ -222,3 +222,36 @@
 @media (prefers-reduced-motion: reduce) {
   .bkp-spin { animation: none; }
 }
+
+/* Couleurs par catégorie — repérage rapide, relief conservé. */
+.bkp-aide-card { --aide-tint: var(--bkp-card); --aide-accent: var(--bkp-primary); background: linear-gradient(145deg, color-mix(in srgb, var(--aide-tint) 72%, var(--bkp-card)), var(--bkp-card)); border-color: color-mix(in srgb, var(--aide-accent) 28%, var(--bkp-border)); }
+.bkp-aide-card--logement { --aide-tint:#dceeff; --aide-accent:#2782d8; }
+.bkp-aide-card--famille, .bkp-aide-card--scolarite { --aide-tint:#ddf7e8; --aide-accent:#25a765; }
+.bkp-aide-card--emploi, .bkp-aide-card--formation { --aide-tint:#e8e1ff; --aide-accent:#7356d8; }
+.bkp-aide-card--energie { --aide-tint:#fff0b8; --aide-accent:#d59b00; }
+.bkp-aide-card--mobilite, .bkp-aide-card--transport { --aide-tint:#dff4f5; --aide-accent:#159ca3; }
+.bkp-aide-card--sante, .bkp-aide-card--handicap { --aide-tint:#d9f6f0; --aide-accent:#159b80; }
+.bkp-aide-card--etudiant, .bkp-aide-card--jeunesse { --aide-tint:#e4edff; --aide-accent:#4e73d8; }
+.bkp-aide-card--social, .bkp-aide-card--revenus, .bkp-aide-card--ccas { --aide-tint:#ffe5d7; --aide-accent:#df6a2d; }
+.bkp-aide-card--sport { --aide-tint:#ffe2c8; --aide-accent:#ef741c; }
+.bkp-aide-card--entreprise, .bkp-aide-card--administratif { --aide-tint:#eee8ff; --aide-accent:#7656c8; }
+.bkp-aide-card--credit, .bkp-aide-card--surendettement { --aide-tint:#ffe1e5; --aide-accent:#c94e60; }
+.bkp-aide-card--senior, .bkp-aide-card--retraite { --aide-tint:#f1e4cf; --aide-accent:#9b7440; }
+.bkp-aide-card .bkp-aide-next { border-left:3px solid var(--aide-accent); }
+.bkp-aide-card .bkp-button-primary { background:var(--aide-accent); border-color:var(--aide-accent); box-shadow:0 4px 0 color-mix(in srgb,var(--aide-accent) 72%,#000),0 8px 16px rgb(15 23 42 / 14%); }
+
+.bkp-category-filters button { box-shadow:0 3px 0 rgb(15 23 42 / 12%),0 7px 13px rgb(15 23 42 / 10%); }
+.bkp-category-filters button[data-category="logement"] { background:#e8f4ff; }
+.bkp-category-filters button[data-category="famille"], .bkp-category-filters button[data-category="scolarite"] { background:#e7f9ee; }
+.bkp-category-filters button[data-category="emploi"], .bkp-category-filters button[data-category="formation"] { background:#eee9ff; }
+.bkp-category-filters button[data-category="energie"] { background:#fff4c9; }
+.bkp-category-filters button[data-category="mobilite"], .bkp-category-filters button[data-category="transport"] { background:#e5f7f7; }
+.bkp-category-filters button[data-category="sante"], .bkp-category-filters button[data-category="handicap"] { background:#e2f8f2; }
+.bkp-category-filters button[data-category="sport"] { background:#ffe9d5; }
+.bkp-category-filters button[data-category="social"], .bkp-category-filters button[data-category="revenus"], .bkp-category-filters button[data-category="ccas"] { background:#ffeadf; }
+.bkp-category-filters button[data-category="entreprise"], .bkp-category-filters button[data-category="administratif"] { background:#f0ebff; }
+.bkp-category-filters button[data-category="credit"], .bkp-category-filters button[data-category="surendettement"] { background:#ffe8eb; }
+.bkp-category-filters button[data-category="senior"], .bkp-category-filters button[data-category="retraite"] { background:#f5ecdf; }
+.bkp-category-filters button.is-active { transform:translateY(1px); box-shadow:0 2px 0 rgb(15 23 42 / 12%),0 5px 9px rgb(15 23 42 / 9%); }
+[data-theme="dark"] .bkp-aide-card { background:linear-gradient(145deg,color-mix(in srgb,var(--aide-accent) 20%,var(--bkp-card)),var(--bkp-card)); }
+[data-theme="dark"] .bkp-category-filters button { background:color-mix(in srgb,var(--bkp-card) 88%,#fff); }
