@@ -51,7 +51,6 @@ import { BkIcons } from "./components/icons-budgetkazpei"
 import { createColorAliases, ds } from "./styles/designSystem"
 import { useTheme } from "./styles/ThemeProvider"
 import AppLogo from "./components/AppLogo"
-import ThemeToggle from "./components/ThemeToggle"
 import { getPlanFlags, normalizePlan } from "./config/plans"
 import { createAdvisorHandoff, storeAdvisorHandoff } from "./services/advisorHandoff"
 import { resolveAppSectionTarget } from "./services/appSectionNavigation"
@@ -570,7 +569,6 @@ function BudgetKazPeiApp({
             >
               {lang === "fr" ? "KR" : "FR"}
             </button>
-            <ThemeToggle compact className="bkp-header-theme" />
             <button
               type="button"
               className="bkp-header-profile"
