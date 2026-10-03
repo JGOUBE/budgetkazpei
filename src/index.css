@@ -355,3 +355,154 @@ button:not(:disabled)[style*="#ef4444"]:active {
     transform: none !important;
   }
 }
+
+
+/* =========================================================
+   BudgetKazPéi — actions premium intérieures
+   Le header reste volontairement neutre.
+   ========================================================= */
+.bkp-premium-zone button:not(:disabled),
+.bkp-premium-zone [role="button"]:not([aria-disabled="true"]),
+.bkp-premium-zone input[type="button"]:not(:disabled),
+.bkp-premium-zone input[type="submit"]:not(:disabled) {
+  min-height: 46px;
+  border-width: 1px !important;
+  border-style: solid !important;
+  border-color: color-mix(in srgb, currentColor 34%, var(--bkp-border, #d8e0e8)) !important;
+  border-radius: max(14px, inherit);
+  box-shadow:
+    0 7px 0 color-mix(in srgb, currentColor 12%, rgba(25,36,60,.07)),
+    0 13px 24px rgba(15,23,42,.13),
+    inset 0 2px 1px rgba(255,255,255,.72),
+    inset 0 -2px 4px rgba(15,23,42,.09) !important;
+  text-shadow: 0 1px 0 rgba(255,255,255,.24);
+}
+
+.bkp-premium-zone button:not(:disabled):hover,
+.bkp-premium-zone [role="button"]:not([aria-disabled="true"]):hover {
+  transform: translateY(-2px);
+  filter: brightness(1.035) saturate(1.08);
+  box-shadow:
+    0 9px 0 color-mix(in srgb, currentColor 13%, rgba(25,36,60,.07)),
+    0 17px 28px rgba(15,23,42,.16),
+    inset 0 2px 1px rgba(255,255,255,.78),
+    inset 0 -2px 4px rgba(15,23,42,.08) !important;
+}
+
+.bkp-premium-zone button:not(:disabled):active,
+.bkp-premium-zone [role="button"]:not([aria-disabled="true"]):active {
+  transform: translateY(4px) scale(.985) !important;
+  box-shadow:
+    0 2px 0 color-mix(in srgb, currentColor 13%, transparent),
+    0 5px 10px rgba(15,23,42,.13),
+    inset 0 3px 7px rgba(15,23,42,.16) !important;
+}
+
+/* Les petites actions neutres gagnent une teinte pastel sans écraser
+   les couleurs métier déjà définies en inline. */
+.bkp-premium-zone button:not(:disabled)[style*="background: transparent"],
+.bkp-premium-zone button:not(:disabled)[style*="background: \"transparent\""] {
+  background: linear-gradient(145deg, rgba(255,255,255,.94), rgba(238,246,255,.92)) !important;
+}
+
+[data-theme="dark"] .bkp-premium-zone button:not(:disabled),
+[data-theme="dark"] .bkp-premium-zone [role="button"]:not([aria-disabled="true"]) {
+  border-color: color-mix(in srgb, currentColor 42%, rgba(255,255,255,.15)) !important;
+  box-shadow:
+    0 7px 0 rgba(0,0,0,.27),
+    0 14px 27px rgba(0,0,0,.32),
+    inset 0 2px 1px rgba(255,255,255,.16),
+    inset 0 -2px 5px rgba(0,0,0,.25) !important;
+}
+
+@media (max-width: 430px) {
+  .bkp-premium-zone button,
+  .bkp-premium-zone [role="button"],
+  .bkp-premium-zone input[type="button"],
+  .bkp-premium-zone input[type="submit"] {
+    min-height: 48px;
+  }
+}
+
+
+/* =========================================================
+   BudgetKazPéi — Premium UI V3
+   Même langage de relief que les cartes de l'Accueil.
+   Le header/navigation haute reste exclu via .bkp-premium-zone.
+   ========================================================= */
+.bkp-premium-zone button:not(:disabled),
+.bkp-premium-zone [role="button"]:not([aria-disabled="true"]),
+.bkp-modal-premium button:not(:disabled) {
+  border-radius: 16px !important;
+  border: 1px solid color-mix(in srgb, currentColor 30%, rgba(120,140,170,.28)) !important;
+  box-shadow:
+    inset 2px 2px 0 rgba(255,255,255,.42),
+    inset -4px -5px 10px rgba(15,23,42,.10),
+    0 6px 0 rgba(15,23,42,.10),
+    0 11px 20px rgba(15,23,42,.18) !important;
+  font-weight: 850;
+}
+
+.bkp-premium-zone button:not(:disabled):hover,
+.bkp-premium-zone [role="button"]:not([aria-disabled="true"]):hover,
+.bkp-modal-premium button:not(:disabled):hover {
+  transform: translateY(-2px);
+  filter: brightness(1.045) saturate(1.08);
+  box-shadow:
+    inset 2px 2px 0 rgba(255,255,255,.52),
+    inset -4px -5px 10px rgba(15,23,42,.09),
+    0 8px 0 rgba(15,23,42,.10),
+    0 15px 25px rgba(15,23,42,.20) !important;
+}
+
+.bkp-premium-zone button:not(:disabled):active,
+.bkp-premium-zone [role="button"]:not([aria-disabled="true"]):active,
+.bkp-modal-premium button:not(:disabled):active {
+  transform: translateY(4px) scale(.985) !important;
+  box-shadow:
+    inset 2px 3px 7px rgba(15,23,42,.16),
+    0 2px 0 rgba(15,23,42,.10),
+    0 5px 9px rgba(15,23,42,.13) !important;
+}
+
+/* Les actions transparentes deviennent de vrais boutons secondaires,
+   sans toucher aux couleurs des actions principales. */
+.bkp-premium-zone button:not(:disabled)[style*="transparent"],
+.bkp-modal-premium button:not(:disabled)[style*="transparent"] {
+  background: linear-gradient(145deg, rgba(255,255,255,.12), rgba(125,165,220,.08)) !important;
+}
+
+/* Modales : profondeur premium identique aux écrans intérieurs. */
+.bkp-modal-premium {
+  box-shadow:
+    inset 1px 1px 0 rgba(255,255,255,.10),
+    0 28px 80px rgba(5,12,30,.34) !important;
+}
+
+.bkp-modal-premium input,
+.bkp-modal-premium select,
+.bkp-premium-zone input,
+.bkp-premium-zone select {
+  min-height: 46px;
+  border-radius: 13px !important;
+  box-shadow:
+    inset 0 2px 5px rgba(15,23,42,.08),
+    0 1px 0 rgba(255,255,255,.08);
+}
+
+[data-theme="dark"] .bkp-premium-zone button:not(:disabled),
+[data-theme="dark"] .bkp-premium-zone [role="button"]:not([aria-disabled="true"]),
+[data-theme="dark"] .bkp-modal-premium button:not(:disabled) {
+  box-shadow:
+    inset 2px 2px 0 rgba(255,255,255,.13),
+    inset -4px -5px 10px rgba(0,0,0,.20),
+    0 6px 0 rgba(0,0,0,.28),
+    0 12px 23px rgba(0,0,0,.34) !important;
+}
+
+@media (max-width: 430px) {
+  .bkp-premium-zone button,
+  .bkp-modal-premium button {
+    min-height: 48px;
+  }
+}

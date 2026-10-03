@@ -21,6 +21,7 @@ import Header from "./components/header/Header"
 import AddTransactionModal from "./components/modals/AddTransactionModal"
 import EditTransactionModal from "./components/modals/EditTransactionModal"
 import Dashboard from "./components/dashboard/Dashboard"
+import HomePage from "./pages/HomePage"
 import RevenusPage from "./components/dashboard/RevenusPage"
 import DepensesPage from "./components/dashboard/DepensesPage"
 import SoldePage from "./components/dashboard/SoldePage"
@@ -506,7 +507,7 @@ function BudgetKazPeiApp({
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            padding: "12px 16px",
+            padding: "12px 10px",
             height: 60,
           }}
         >
@@ -527,11 +528,10 @@ function BudgetKazPeiApp({
           <button
             type="button"
             onClick={() => handleNavChange("dashboard")}
-            aria-label={lang === "fr" ? "Retour au tableau de bord" : "Retour tablo débor"}
+            aria-label={lang === "fr" ? "Retour à l’accueil" : "Retour akèy"}
             style={{
               position: "absolute",
-              left: "50%",
-              transform: "translateX(-50%)",
+              left: 48,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -544,29 +544,48 @@ function BudgetKazPeiApp({
               border: 0,
             }}
           >
-            <AppLogo size={36} />
-            <span style={{ fontSize: 17, fontWeight: 950, color: COLORS.text, lineHeight: 1, whiteSpace: "nowrap" }}>BudgetKazPéi</span>
+            <AppLogo size={34} />
+            <span style={{ fontSize: 15, fontWeight: 950, color: COLORS.text, lineHeight: 1, whiteSpace: "nowrap" }}>BudgetKazPéi</span>
           </button>
 
-          <button
-            type="button"
-            onClick={() => setShowModal(true)}
-            style={{
-              background: COLORS.accent,
-              border: "none",
-              borderRadius: 10,
-              padding: "8px 14px",
-              color: "#fff",
-              cursor: "pointer",
-              fontWeight: 700,
-              fontFamily: "inherit",
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <BkIcons.add size={20} />
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+            <button
+              type="button"
+              onClick={toggleLang}
+              aria-label={lang === "fr" ? "Passer en créole" : "Passer en français"}
+              style={{
+                background: "transparent",
+                border: "none",
+                color: COLORS.text,
+                cursor: "pointer",
+                padding: "4px 5px",
+                minWidth: 30,
+                fontSize: 11,
+                fontWeight: 900,
+                fontFamily: "inherit",
+              }}
+            >
+              {lang === "fr" ? "KR" : "FR"}
+            </button>
+            <ThemeToggle compact />
+            <button
+              type="button"
+              onClick={() => handleNavChange("profil")}
+              aria-label={lang === "fr" ? "Mon profil" : "Mon profil"}
+              style={{
+                background: "transparent",
+                border: "none",
+                color: COLORS.text,
+                cursor: "pointer",
+                padding: 4,
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <BkIcons.user size={21} />
+            </button>
+          </div>
         </div>
       )}
 
@@ -643,104 +662,49 @@ function BudgetKazPeiApp({
         {!isMobile && (
           <Header
             activeNav={activeNav}
-            onAdd={() => setShowModal(true)}
             lang={lang}
             onToggleLang={toggleLang}
             t={appT}
             commune={profile?.commune || ""}
+            onProfile={() => handleNavChange("profil")}
           />
         )}
 
-        {isMobile && (
-          <div
+        <div className={activeNav === "dashboard" ? undefined : "bkp-premium-zone"}>
+        {activeNav !== "dashboard" && (
+          <button
+            type="button"
+            onClick={() => handleNavChange("dashboard")}
             style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
+              minHeight: 42,
               marginBottom: 16,
+              padding: "0 14px",
+              borderRadius: 14,
+              border: `1px solid ${COLORS.border}`,
+              background: COLORS.card,
+              color: COLORS.text,
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              fontFamily: "inherit",
+              fontSize: 13,
+              fontWeight: 900,
+              cursor: "pointer",
+              boxShadow: "0 6px 16px rgba(15,23,42,.06)",
             }}
           >
-            <h1
-              style={{
-                margin: 0,
-                fontSize: 20,
-                fontFamily: "'DM Serif Display', serif",
-                fontWeight: 400,
-              }}
-            >
-              {activeNav === "dashboard" && t("nav", "dashboard")}
-              {activeNav === "revenus" && (lang === "fr" ? "Revenus du mois" : "Larzan i rantre")}
-              {activeNav === "depenses" && t("nav", "depenses")}
-              {activeNav === "solde" && (lang === "fr" ? "Solde disponible" : "Larzan disponible")}
-              {activeNav === "shopping" && (lang === "fr" ? "Mes courses" : "Mon bann courses")}
-              {activeNav === "statistics" && (lang === "fr" ? "Mes stats" : "Mon bann stats")}
-              {activeNav === "aides" && t("nav", "aides")}
-              {activeNav === "demarches" && (lang === "fr" ? "Mes demarches" : "Mon demars")}
-              {activeNav === "conseiller" && (lang === "fr" ? "Conseiller" : "Konseye")}
-              {activeNav === "contact" && (lang === "fr" ? "Contactez-nous" : "Contacte a nou")}
-              {activeNav === "abonnements" && t("nav", "abonnements")}
-              {activeNav === "opportunites" && t("nav", "opportunites")}
-              {activeNav === "goodDeals" && (lang === "fr" ? "Mes bons plans" : "Mon bann bon plan")}
-              {activeNav === "goodDealsAdminReview" && "Validation bons plans"}
-              {activeNav === "retailPriceAdminReview" && "Validation prix et promotions"}
-              {activeNav === "goodDealsEventsAdminReview" && "Événements à venir"}
-              {activeNav === "historique" && t("nav", "monthlyHistory")}
-              {activeNav === "profil" && t("nav", "profil")}
-              {activeNav === "premium" && t("nav", "premium")}
-            </h1>
-
-            <button
-              type="button"
-              onClick={toggleLang}
-              style={{
-                background: "transparent",
-                border: `1px solid ${COLORS.border}`,
-                borderRadius: 8,
-                padding: "6px 10px",
-                color: COLORS.muted,
-                cursor: "pointer",
-                fontSize: 12,
-                fontFamily: "inherit",
-              }}
-            >
-              {lang === "fr" ? "Kreol" : "Francais"}
-            </button>
-            <ThemeToggle compact />
-          </div>
+            <BkIcons.dashboard size={17} />
+            {lang === "fr" ? "Retour Accueil" : "Retour Akèy"}
+          </button>
         )}
 
         {activeNav === "dashboard" && (
-          <Dashboard
-            userId={user?.id}
-            stats={{
-              revenus,
-              depenses,
-              solde,
-              chargesFixes,
-              depensesVariables,
-              resteAVivre,
-              tauxChargesFixes,
-            }}
-            byCategory={byCategory}
-            pieData={pieData}
-            transactions={transactions}
-            abonnements={abonnements}
-            t={t}
+          <HomePage
+            language={lang}
             isMobile={isMobile}
-            isPremium={isPremium}
-            customBudgets={customBudgets}
-            onSaveBudgets={saveBudgets}
-            onGoPremium={() => setActiveNav("premium")}
-            opportunitiesCount={dashboardOpportunitiesCount}
-            commune={profile?.commune || ""}
             profile={profile}
-            onOpenOpportunities={() => setActiveNav("opportunites")}
-            onOpenRevenus={() => setActiveNav("revenus")}
-            onOpenDepenses={() => setActiveNav("depenses")}
-            onOpenSolde={() => setActiveNav("solde")}
-            onOpenReceipts={() => setActiveNav("receipts")}
-            onOpenShopping={() => setActiveNav("shopping")}
-            onOpenStats={() => setActiveNav("statistics")}
+            user={user}
+            onNavigate={handleNavChange}
             onAddExpense={() => setShowModal(true)}
           />
         )}
@@ -1031,64 +995,8 @@ function BudgetKazPeiApp({
             t={t}
           />
         )}
-      </div>
-
-      {isMobile && (
-        <div
-          style={{
-            position: "fixed",
-            bottom: 0,
-            left: 0,
-            right: 0,
-            zIndex: 50,
-            background: ds.elevated,
-            borderTop: `1px solid ${COLORS.border}`,
-            display: "flex",
-            justifyContent: "space-around",
-            padding: "8px 8px calc(12px + env(safe-area-inset-bottom))",
-            boxShadow: themeName === "light"
-              ? "0 -8px 24px rgba(20,32,51,.10)"
-              : "0 -16px 36px rgba(0,0,0,.28)",
-          }}
-        >
-          {[
-            { id: "shopping", icon: BkIcons.shopping, label: lang === "fr" ? "Courses" : "Courses" },
-            { id: "statistics", icon: BkIcons.stats, label: lang === "fr" ? "Stats" : "Stats" },
-            { id: "aides", icon: BkIcons.aides, label: "Aides" },
-            { id: "conseiller", icon: BkIcons.assistant, label: lang === "fr" ? "Conseiller" : "Konseye" },
-            { id: "profil", icon: BkIcons.user, label: t("nav", "profil") },
-          ].map(item => {
-            const Icon = item.icon
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => handleNavChange(item.id)}
-                style={{
-                  border: "none",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  gap: 3,
-                  cursor: "pointer",
-                  minHeight: 52,
-                  minWidth: 58,
-                  padding: "6px 8px",
-                  borderRadius: 14,
-                  color: activeNav === item.id ? COLORS.accent : COLORS.muted,
-                  background: activeNav === item.id ? "rgba(249,115,22,.14)" : "transparent",
-                  transition: "transform .18s ease, background .18s ease, color .18s ease",
-                }}
-              >
-                <Icon size={20} />
-                <span style={{ fontSize: 9, fontFamily: "inherit" }}>
-                  {item.label}
-                </span>
-              </button>
-            )
-          })}
         </div>
-      )}
+      </div>
 
       {showModal && (
         <AddTransactionModal

@@ -1,5 +1,5 @@
 import { useRef, useState } from "react"
-import { BarChart3, ListChecks, ShoppingBasket } from "lucide-react"
+import { BarChart3, Info, ListChecks, ShoppingBasket } from "lucide-react"
 import ShoppingListPage from "../../../pages/ShoppingListPage"
 import SavingsPage from "../../../pages/SavingsPage"
 import ShoppingInsightsPage from "./ShoppingInsightsPage"
@@ -47,6 +47,7 @@ export default function ShoppingHubPage({
   const isKreol = isKreolLanguage(language, t)
   const txt = isKreol ? COPY.kreol : COPY.fr
   const [internalTab, setInternalTab] = useState(() => normalizeTab(activeTab))
+  const [showInfo, setShowInfo] = useState(false)
   const tabRefs = useRef([])
   const selectedTab = onTabChange ? normalizeTab(activeTab) : internalTab
 
@@ -81,7 +82,21 @@ export default function ShoppingHubPage({
           <h1>{txt.title}</h1>
           <span>{txt.subtitle}</span>
         </div>
+        <button type="button" className="bkp-shopping-info" aria-label="Informations Mes courses" onClick={() => setShowInfo(true)}>
+          <Info size={17} aria-hidden="true" />
+        </button>
       </header>
+
+      {showInfo && (
+        <div className="bkp-shopping-info-backdrop" role="presentation" onClick={() => setShowInfo(false)}>
+          <div className="bkp-shopping-info-modal" role="dialog" aria-modal="true" aria-label="Informations Mes courses" onClick={event => event.stopPropagation()}>
+            <div className="bkp-shopping-info-title">Mes courses</div>
+            <p>{txt.subtitle}</p>
+            <p>{isKreol ? "Plus ou scan bann tiké manzé, plus BudgetKazPéi i rekonèt out produits ek retrouve out derniers prix." : "Plus vous scannez de tickets alimentaires, plus BudgetKazPéi reconnaît vos produits et retrouve vos derniers prix."}</p>
+            <button type="button" onClick={() => setShowInfo(false)}>{isKreol ? "Fèrmé" : "Fermer"}</button>
+          </div>
+        </div>
+      )}
 
       <div className="bkp-shopping-tabs" role="tablist" aria-label={txt.tabLabel}>
         {SHOPPING_TABS.map((tab, index) => {

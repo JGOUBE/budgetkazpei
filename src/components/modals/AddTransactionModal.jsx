@@ -68,6 +68,7 @@ export default function AddTransactionModal({ onAdd, onClose, onOpenReceipts, t 
       }}
     >
       <div
+        className="bkp-modal-premium"
         onClick={e => e.stopPropagation()}
         style={{
           background: COLORS.card,
@@ -100,7 +101,9 @@ export default function AddTransactionModal({ onAdd, onClose, onOpenReceipts, t 
               marginBottom: 14,
               border: "none",
               borderRadius: 14,
-              background: "linear-gradient(135deg, rgba(249,115,22,.90), rgba(251,146,60,.82))",
+              background: "linear-gradient(145deg, #A855F7, #7E22CE)",
+              border: "1px solid #C084FC",
+              boxShadow: "inset 2px 2px 0 rgba(255,255,255,.30), inset -4px -5px 9px rgba(76,29,149,.18), 0 6px 0 #6418A8, 0 12px 22px rgba(126,34,206,.26)",
               color: "#fff",
               cursor: "pointer",
               fontFamily: "inherit",
@@ -120,8 +123,9 @@ export default function AddTransactionModal({ onAdd, onClose, onOpenReceipts, t 
               flex: 1,
               padding: "9px 0",
               borderRadius: 10,
-              border: `1px solid ${form.type === "depense" ? "rgba(249,115,22,.38)" : COLORS.border}`,
-              background: form.type === "depense" ? "rgba(249,115,22,.12)" : "transparent",
+              border: `1px solid ${form.type === "depense" ? "#C4A0F6" : COLORS.border}`,
+              background: form.type === "depense" ? "linear-gradient(145deg, #E9D5FF, #D8B4FE)" : "transparent",
+              boxShadow: form.type === "depense" ? "inset 2px 2px 0 rgba(255,255,255,.48), 0 5px 0 #B692DE, 0 9px 16px rgba(126,34,206,.14)" : undefined,
               color: COLORS.text,
               cursor: "pointer",
               fontSize: 13,
@@ -139,8 +143,9 @@ export default function AddTransactionModal({ onAdd, onClose, onOpenReceipts, t 
               flex: 1,
               padding: "9px 0",
               borderRadius: 10,
-              border: `1px solid ${isIncome ? "rgba(34,197,94,.38)" : COLORS.border}`,
-              background: isIncome ? "rgba(34,197,94,.12)" : "transparent",
+              border: `1px solid ${isIncome ? "#F2CC63" : COLORS.border}`,
+              background: isIncome ? "linear-gradient(145deg, #FFF0B8, #F6D66F)" : "transparent",
+              boxShadow: isIncome ? "inset 2px 2px 0 rgba(255,255,255,.50), 0 5px 0 #D5AF45, 0 9px 16px rgba(213,175,69,.17)" : undefined,
               color: COLORS.text,
               cursor: "pointer",
               fontSize: 13,
@@ -253,9 +258,9 @@ export default function AddTransactionModal({ onAdd, onClose, onOpenReceipts, t 
               padding: "10px 0",
               borderRadius: 10,
               border: "none",
-              background: isIncome
-                ? "rgba(34,197,94,.88)"
-                : "linear-gradient(135deg, rgba(249,115,22,.94), rgba(251,146,60,.88))",
+              background: "linear-gradient(145deg, #A855F7, #7E22CE)",
+              border: "1px solid #C084FC",
+              boxShadow: "inset 2px 2px 0 rgba(255,255,255,.30), inset -4px -5px 9px rgba(76,29,149,.18), 0 6px 0 #6418A8, 0 12px 22px rgba(126,34,206,.25)",
               color: "#fff",
               cursor: "pointer",
               fontWeight: 800,

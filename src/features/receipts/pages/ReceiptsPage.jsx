@@ -99,6 +99,10 @@ const TEXT = {
       ? `Analyses IA illimitées — ${quota.planLabel}`
       : `Analyses IA : ${quota.used} / ${quota.limit} — ${quota.planLabel}`,
     methodTitle: "Choisissez une méthode",
+    smallTicket: "Petit ticket",
+    mediumTicket: "Ticket moyen",
+    largeTicket: "Grand ticket",
+    scanInfoAria: "Informations sur le scan",
     privacyTitle: "Confidentialité du scan",
     privacy: "Votre ticket est transmis de façon sécurisée à notre service de reconnaissance afin d’en extraire les informations utiles.",
     privacyLink: "En savoir plus",
@@ -205,6 +209,10 @@ const TEXT = {
       ? `Analiz IA san limit — ${quota.planLabel}`
       : `Analiz IA : ${quota.used} / ${quota.limit} — ${quota.planLabel}`,
     methodTitle: "Swazi in fason",
+    smallTicket: "Ti tiké",
+    mediumTicket: "Tiké mwayen",
+    largeTicket: "Gran tiké",
+    scanInfoAria: "Zinformasyon su scan-la",
     privacyTitle: "Konfidansyalité scan-la",
     privacy: "Out tiké lé anvoyé an tout sékirité dann nout servis pou tir bann zinformasion itil.",
     privacyLink: "Konn plis",
@@ -1089,6 +1097,7 @@ export default function ReceiptsPage({
   const [pendingImagePath, setPendingImagePath] = useState(null)
   const [showBlockedDetectedLines, setShowBlockedDetectedLines] = useState(false)
   const [longTicketMode, setLongTicketMode] = useState(false)
+  const [showScanInfo, setShowScanInfo] = useState(false)
   const [longTicketPhotoCount, setLongTicketPhotoCount] = useState(null)
   const [longTicketFiles, setLongTicketFiles] = useState([null, null, null])
   const automatedScanDisabled = busy || quota.loading
@@ -1153,15 +1162,15 @@ export default function ReceiptsPage({
     }
   }
 
-  function openLongTicketMode() {
-    if (longTicketMode) {
-      resetLongTicketScan()
-      setMessage("")
-      return
-    }
-
+  function openMultiPhotoTicketMode(count) {
     setLongTicketMode(true)
+    setLongTicketPhotoCount(count)
+    setLongTicketFiles([null, null, null])
     setMessage("")
+  }
+
+  function openLongTicketMode() {
+    openMultiPhotoTicketMode(3)
   }
 
   function resetLongTicketScan() {
@@ -2243,42 +2252,60 @@ export default function ReceiptsPage({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 18, paddingBottom: isMobile ? 24 : 0 }}>
-      <div style={cardStyle({ padding: isMobile ? 18 : 24 })}>
+      <div style={cardStyle({ padding: isMobile ? 18 : 24, position: "relative" })}>
+        <button
+          type="button"
+          onClick={() => setShowScanInfo(true)}
+          aria-label={txt.scanInfoAria}
+          style={{
+            position: "absolute", top: 14, right: 14, width: 40, height: 40,
+            borderRadius: "50%", border: `1px solid ${COLORS.cyan}55`,
+            background: `${COLORS.cyan}12`, color: COLORS.cyan,
+            fontFamily: "Georgia, serif", fontSize: 22, fontWeight: 900, cursor: "pointer",
+          }}
+        >
+          i
+        </button>
         <div style={{ color: COLORS.cyan, fontSize: 13, fontWeight: 900, marginBottom: 7 }}>
           {txt.scanTitle}
         </div>
-        <h1 style={{ margin: 0, color: COLORS.text, fontFamily: "'DM Serif Display', serif", fontSize: isMobile ? 30 : 38 }}>
+        <h1 style={{ margin: 0, paddingRight: 48, color: COLORS.text, fontFamily: "'DM Serif Display', serif", fontSize: isMobile ? 30 : 38 }}>
           {txt.title}
         </h1>
-        <aside style={{
-          margin: "14px 0",
-          padding: "13px 14px",
-          border: `1px solid ${COLORS.cyan}35`,
-          borderRadius: 14,
-          background: `${COLORS.cyan}0D`,
-        }}>
-          <div style={{ color: COLORS.cyan, fontSize: 13, fontWeight: 900, marginBottom: 5 }}>
-            {txt.privacyTitle}
-          </div>
-          <p style={{ color: COLORS.muted, lineHeight: 1.55, margin: 0, fontSize: 13 }}>
-            {txt.privacy}{" "}
-            <a
-              href="/privacy#tickets-scanner"
-              style={{ color: COLORS.cyan, fontWeight: 900, textUnderlineOffset: 3 }}
-            >
-              {txt.privacyLink}
-            </a>
-          </p>
-        </aside>
-        <p style={{ color: COLORS.cyan, lineHeight: 1.5, margin: "0 0 14px", fontSize: 13, fontWeight: 800 }}>
-          {txt.foodHint}
-        </p>
-        <div style={{ color: COLORS.yellow, fontSize: 13, fontWeight: 900 }}>
-          {quota.loading
-            ? txt.quotaLoading
-            : (isKreol ? formatReceiptQuotaTicketsLabelKr(quota) : formatReceiptQuotaTicketsLabelFr(quota))}
+        <div style={{ marginTop: 16, display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+          <strong style={{ color: COLORS.yellow, fontSize: 16 }}>{quota.planLabel || (isPremiumPlus ? "Premium+" : isPremium ? "Premium" : "Gratuit")}</strong>
+          <span style={{ color: COLORS.muted, fontSize: 13, fontWeight: 800 }}>
+            {isKreol ? "Tiké sa mwa :" : "Tickets ce mois :"} {quota.loading ? "…" : quota.used}
+          </span>
         </div>
       </div>
+
+      {showScanInfo && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={txt.privacyTitle}
+          onClick={() => setShowScanInfo(false)}
+          style={{
+            position: "fixed", inset: 0, zIndex: 120, background: "rgba(3,10,24,.62)",
+            display: "flex", alignItems: "center", justifyContent: "center", padding: 20,
+          }}
+        >
+          <div onClick={event => event.stopPropagation()} style={cardStyle({ width: "100%", maxWidth: 430, padding: 22, position: "relative" })}>
+            <button type="button" onClick={() => setShowScanInfo(false)} aria-label="Fermer" style={{
+              position: "absolute", top: 12, right: 12, width: 40, height: 40, border: 0,
+              background: "transparent", color: COLORS.text, fontSize: 25, cursor: "pointer",
+            }}>×</button>
+            <div style={{ color: COLORS.cyan, fontFamily: "Georgia, serif", fontSize: 28, fontWeight: 900, marginBottom: 12 }}>ⓘ</div>
+            <h2 style={{ color: COLORS.text, margin: "0 42px 12px 0", fontFamily: "'DM Serif Display', serif" }}>{txt.privacyTitle}</h2>
+            <p style={{ color: COLORS.muted, lineHeight: 1.6, fontSize: 14 }}>{txt.privacy}{" "}
+              <a href="/privacy#tickets-scanner" style={{ color: COLORS.cyan, fontWeight: 900 }}>{txt.privacyLink}</a>
+            </p>
+            <div style={{ height: 1, background: COLORS.border, margin: "16px 0" }} />
+            <p style={{ color: COLORS.muted, lineHeight: 1.6, margin: 0, fontSize: 14 }}>{txt.foodHint}</p>
+          </div>
+        </div>
+      )}
 
       {scanError && <ScanErrorMessage details={scanError} />}
 
@@ -2321,29 +2348,23 @@ export default function ReceiptsPage({
         </div>
       )}
 
-      {showMethodActions && (
-        <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 950, marginBottom: -6 }}>
-          {txt.methodTitle}
-        </div>
-      )}
-
-      <div style={{ display: showMethodActions ? "grid" : "none", gridTemplateColumns: isMobile ? "1fr" : "repeat(4, 1fr)", gap: 12 }}>
+      <div style={{ display: showMethodActions ? "grid" : "none", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, 1fr)", gap: 12 }}>
         <ActionButton
-          label={txt.camera}
-          Icon={BkIcons.scan}
+          label={txt.smallTicket}
+          Icon={BkIcons.receipts}
           disabled={automatedScanDisabled}
           onClick={() => cameraRef.current.click()}
           variant="primary"
         />
         <ActionButton
-          label={txt.gallery}
+          label={txt.mediumTicket}
           Icon={BkIcons.receipts}
           disabled={automatedScanDisabled}
-          onClick={() => galleryRef.current.click()}
+          onClick={() => openMultiPhotoTicketMode(2)}
           variant="secondary"
         />
         <ActionButton
-          label={txt.longTicket}
+          label={txt.largeTicket}
           Icon={BkIcons.receipts}
           disabled={automatedScanDisabled}
           onClick={openLongTicketMode}
@@ -2361,22 +2382,6 @@ export default function ReceiptsPage({
 
       {showMethodActions && longTicketMode && (
         <div style={{ display: "grid", gap: 10, marginTop: -3, padding: "0 2px 2px" }}>
-          {!longTicketPhotoCount && (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8, maxWidth: isMobile ? 300 : 360 }}>
-              {[2, 3].map(count => (
-                <button
-                  key={count}
-                  type="button"
-                  disabled={automatedScanDisabled}
-                  onClick={() => selectLongTicketPhotoCount(count)}
-                  style={{ minHeight: 42, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: COLORS.cardLight, color: COLORS.text, fontWeight: 950, fontFamily: "inherit", fontSize: 14 }}
-                >
-                  {count === 2 ? txt.longTicketTwoPhotos : txt.longTicketThreePhotos}
-                </button>
-              ))}
-            </div>
-          )}
-
           {longTicketPhotoCount && (
             <>
               <div style={{ color: COLORS.text, fontSize: 14, fontWeight: 950 }}>
@@ -2595,16 +2600,16 @@ function LongTicketPhotoSlot({
       onClick={onClick}
       aria-label={`${label} — ${file ? retakeLabel : takeLabel}`}
       style={{
-        minHeight: 132,
+        minHeight: file ? 92 : 88,
         borderRadius: 16,
         border: `1px solid ${file ? COLORS.cyan : COLORS.border}`,
         background: file
           ? `color-mix(in srgb, ${COLORS.cyan} 8%, ${COLORS.card})`
           : COLORS.cardLight,
         color: COLORS.text,
-        padding: 10,
+        padding: "8px 10px",
         display: "grid",
-        gridTemplateColumns: previewUrl ? "84px 1fr" : "1fr",
+        gridTemplateColumns: previewUrl ? "58px 1fr" : "1fr",
         gap: 10,
         alignItems: "center",
         textAlign: "left",
@@ -2618,8 +2623,8 @@ function LongTicketPhotoSlot({
           src={previewUrl}
           alt=""
           style={{
-            width: 84,
-            height: 104,
+            width: 58,
+            height: 68,
             objectFit: "cover",
             borderRadius: 11,
             border: `1px solid ${COLORS.border}`,
@@ -2645,7 +2650,7 @@ function LongTicketPhotoSlot({
 
         {!file && (
           <span style={{
-            minHeight: 54,
+            minHeight: 30,
             borderRadius: 11,
             border: `1px dashed ${COLORS.border}`,
             display: "flex",
@@ -2653,7 +2658,7 @@ function LongTicketPhotoSlot({
             justifyContent: "center",
             color: COLORS.cyan,
           }}>
-            <BkIcons.scan size={22} aria-hidden="true" />
+            <BkIcons.scan size={18} aria-hidden="true" />
           </span>
         )}
       </span>
@@ -2675,30 +2680,32 @@ function ActionButton({
 
   const palettes = {
     primary: {
-      background: COLORS.accent,
-      border: COLORS.accent,
+      background: "linear-gradient(145deg, #20C997, #07956F)",
+      border: "#42DDB0",
       color: "#FFFFFF",
-      shadow: "0 10px 22px rgba(249,115,22,.22)",
+      shadow: "inset 2px 2px 0 rgba(255,255,255,.26), inset -4px -5px 9px rgba(0,88,65,.18), 0 6px 0 #087A5C, 0 12px 22px rgba(7,149,111,.24)",
     },
     secondary: {
-      background: `color-mix(in srgb, ${COLORS.cyan} 14%, ${COLORS.card})`,
-      border: `color-mix(in srgb, ${COLORS.cyan} 58%, ${COLORS.border})`,
-      color: COLORS.cyan,
-      shadow: "none",
+      background: "linear-gradient(145deg, #66B4E6, #347FAF)",
+      border: "#7CC4EF",
+      color: "#FFFFFF",
+      shadow: "inset 2px 2px 0 rgba(255,255,255,.28), inset -4px -5px 9px rgba(17,73,110,.17), 0 6px 0 #28678F, 0 12px 22px rgba(52,127,175,.22)",
     },
     special: {
       background: active
-        ? COLORS.purple
-        : `color-mix(in srgb, ${COLORS.purple} 14%, ${COLORS.card})`,
-      border: COLORS.purple,
-      color: active ? "#FFFFFF" : COLORS.purple,
-      shadow: active ? "0 10px 22px rgba(139,92,246,.20)" : "none",
+        ? "linear-gradient(145deg, #B46BC8, #8D4AA3)"
+        : "linear-gradient(145deg, #C887D7, #9F5CB4)",
+      border: "#D49AE0",
+      color: "#FFFFFF",
+      shadow: active
+        ? "inset 2px 2px 0 rgba(255,255,255,.25), 0 6px 0 #713582, 0 12px 22px rgba(141,74,163,.23)"
+        : "inset 2px 2px 0 rgba(255,255,255,.27), inset -4px -5px 9px rgba(83,35,96,.15), 0 6px 0 #814394, 0 12px 22px rgba(159,92,180,.20)",
     },
     neutral: {
-      background: COLORS.card,
-      border: COLORS.border,
-      color: COLORS.text,
-      shadow: "none",
+      background: "linear-gradient(145deg, #F5D08B, #DDAE5D)",
+      border: "#F1D39C",
+      color: "#4D350A",
+      shadow: "inset 2px 2px 0 rgba(255,255,255,.35), inset -4px -5px 9px rgba(104,68,9,.14), 0 6px 0 #B98B42, 0 12px 22px rgba(185,139,66,.20)",
     },
   }
 
@@ -3228,7 +3235,7 @@ function HistoryList({ txt, rows, busy, onOpen, onDelete }) {
                 </span>
               </span>
               <span style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: 8 }}>
-                <button type="button" disabled={busy} onClick={() => onOpen(row)} style={{ minHeight: 40, borderRadius: 12, border: "none", background: COLORS.accent, color: "#fff", fontWeight: 950, padding: "0 12px" }}>
+                <button type="button" disabled={busy} onClick={() => onOpen(row)} style={{ minHeight: 40, borderRadius: 12, border: "none", background: "linear-gradient(145deg, #20C997, #07956F)", color: "#fff", border: "1px solid #42DDB0", boxShadow: "inset 2px 2px 0 rgba(255,255,255,.24), 0 5px 0 #087A5C, 0 10px 18px rgba(7,149,111,.22)", fontWeight: 950, padding: "0 12px" }}>
                   {isBudgetOkArticlesPartial(row) || (hasReliableBudgetForReceipt(row) && !isLockedScannedReceipt(row))
                     ? txt.correctArticles
                     : isLockedScannedReceipt(row) || receiptHasUnreliableArticleCount(row)
