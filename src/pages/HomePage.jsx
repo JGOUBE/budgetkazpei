@@ -25,7 +25,7 @@ export default function HomePage({ language = "fr", isMobile = false, profile, u
   return (
     <main className="bkp-home-reunion-watermark" style={{ width: "100%", maxWidth: 940, margin: "0 auto", padding: isMobile ? "34px 0 22px" : "22px 0 48px" }}>
       <h1 style={{
-        margin: isMobile ? "6px 2px 30px" : "8px 2px 30px",
+        margin: isMobile ? "-14px 2px 50px" : "0 2px 38px",
         color: dark ? "#f8fbff" : "#101f4f",
         fontFamily: "'DM Serif Display', serif",
         fontSize: isMobile ? 31 : 38,
