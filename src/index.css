@@ -509,7 +509,7 @@ button:not(:disabled)[style*="#ef4444"]:active {
 
 
 /* =========================================================
-   Accueil — drapeau réunionnais en filigrane dynamique
+   Accueil — Lo Mavéli, vrai motif drapeau en perspective
    ========================================================= */
 .bkp-home-reunion-watermark {
   position: relative;
@@ -520,42 +520,50 @@ button:not(:disabled)[style*="#ef4444"]:active {
   position: absolute;
   z-index: -1;
   pointer-events: none;
-  inset: -38px -18px -24px;
-  border-radius: 28px;
-  transform: perspective(780px) rotateZ(-8deg) rotateX(5deg) scale(1.08);
-  transform-origin: 72% 28%;
+  width: 116%;
+  height: 92%;
+  left: -9%;
+  top: 7%;
+  border-radius: 34px;
+  transform: perspective(900px) rotateZ(-9deg) rotateY(-7deg) rotateX(3deg);
+  transform-origin: 50% 20%;
   background:
-    linear-gradient(132deg, transparent 0 51%, rgba(226,32,45,.26) 51.4% 58%, transparent 58.5%),
-    conic-gradient(from 226deg at 72% 32%,
-      rgba(20,79,154,.20) 0deg 11deg,
-      rgba(255,205,0,.36) 11deg 19deg,
-      rgba(20,79,154,.18) 19deg 29deg,
-      rgba(255,205,0,.31) 29deg 37deg,
-      rgba(20,79,154,.16) 37deg 47deg,
-      rgba(255,205,0,.27) 47deg 55deg,
-      rgba(20,79,154,.14) 55deg 360deg);
-  filter: saturate(1.22);
-  opacity: .78;
+    linear-gradient(156deg, transparent 0 48.7%, rgba(224,34,43,.48) 49% 55.5%, transparent 55.8%),
+    conic-gradient(from 221deg at 50% 27%,
+      #1762a8 0deg 12deg,
+      rgba(255,211,0,.78) 12deg 20deg,
+      #1762a8 20deg 31deg,
+      rgba(255,211,0,.70) 31deg 39deg,
+      #1762a8 39deg 50deg,
+      rgba(255,211,0,.62) 50deg 58deg,
+      #1762a8 58deg 360deg);
+  opacity: .30;
+  filter: saturate(1.18) contrast(1.05);
+  -webkit-mask-image: radial-gradient(ellipse at 50% 42%, #000 12%, rgba(0,0,0,.92) 46%, rgba(0,0,0,.38) 76%, transparent 98%);
+  mask-image: radial-gradient(ellipse at 50% 42%, #000 12%, rgba(0,0,0,.92) 46%, rgba(0,0,0,.38) 76%, transparent 98%);
 }
 [data-theme="dark"] .bkp-home-reunion-watermark::before {
   background:
-    linear-gradient(132deg, transparent 0 51%, rgba(242,48,58,.36) 51.4% 58%, transparent 58.5%),
-    conic-gradient(from 226deg at 72% 32%,
-      rgba(17,77,166,.38) 0deg 11deg,
-      rgba(255,214,10,.48) 11deg 19deg,
-      rgba(17,77,166,.34) 19deg 29deg,
-      rgba(255,214,10,.42) 29deg 37deg,
-      rgba(17,77,166,.30) 37deg 47deg,
-      rgba(255,214,10,.36) 47deg 55deg,
-      rgba(8,42,99,.25) 55deg 360deg);
-  filter: saturate(1.3) brightness(.92);
-  opacity: .9;
+    linear-gradient(156deg, transparent 0 48.7%, rgba(246,55,61,.66) 49% 55.5%, transparent 55.8%),
+    conic-gradient(from 221deg at 50% 27%,
+      #1768bc 0deg 12deg,
+      rgba(255,220,24,.90) 12deg 20deg,
+      #1768bc 20deg 31deg,
+      rgba(255,220,24,.82) 31deg 39deg,
+      #1768bc 39deg 50deg,
+      rgba(255,220,24,.74) 50deg 58deg,
+      #1768bc 58deg 360deg);
+  opacity: .34;
+  filter: saturate(1.28) brightness(1.05);
 }
 @media (max-width: 767px) {
   .bkp-home-reunion-watermark::before {
-    inset: -56px -8px -30px;
-    border-radius: 0;
-    transform: perspective(640px) rotateZ(-10deg) rotateX(6deg) scale(1.12);
+    width: 122%;
+    height: 94%;
+    left: -12%;
+    top: 8%;
+    border-radius: 18px;
+    transform: perspective(720px) rotateZ(-10deg) rotateY(-8deg) rotateX(4deg);
   }
 }
 
