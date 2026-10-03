@@ -560,6 +560,31 @@ html, body, #root {
   overflow-x: hidden;
 }
 
+/* Accueil : le même visuel continue sous le header et jusqu'aux bords de l'écran. */
+.bkp-dashboard-shell {
+  position: relative;
+  isolation: isolate;
+  background: transparent !important;
+}
+.bkp-dashboard-shell::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -3;
+  pointer-events: none;
+  background: url("/reunion-watermark.svg") center center / cover no-repeat;
+  opacity: .34;
+  filter: saturate(.92) contrast(.94);
+}
+[data-theme="dark"].bkp-dashboard-shell::before {
+  opacity: .30;
+  filter: saturate(.95) brightness(.68) contrast(.92);
+}
+.bkp-dashboard-shell .bkp-home-reunion-watermark::before,
+.bkp-dashboard-shell .bkp-home-reunion-watermark::after {
+  display: none;
+}
+
 /* Header mobile — trois commandes distinctes, colorées et en relief. */
 .bkp-header-lang,
 .bkp-header-theme,
