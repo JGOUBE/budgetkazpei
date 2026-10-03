@@ -3224,25 +3224,18 @@ function HistoryList({ txt, rows, busy, onOpen, onDelete }) {
               color: COLORS.text,
               padding: 12,
               display: "grid",
-              gridTemplateColumns: "1fr auto",
-              gap: 12,
-              alignItems: "center",
+              gap: 10,
             }}>
-              <span>
-                <strong>{buildReceiptHistorySummary(row, formatMontant)}</strong>
-                <span style={{ display: "block", color: COLORS.muted, fontSize: 12, marginTop: 4 }}>
-                  {getReceiptArticleCountLabel(row, txt)}
-                </span>
-              </span>
-              <span style={{ display: "flex", flexWrap: "wrap", justifyContent: "flex-end", gap: 8 }}>
-                <button type="button" disabled={busy} onClick={() => onOpen(row)} style={{ minHeight: 40, borderRadius: 12, border: "none", background: "linear-gradient(145deg, #20C997, #07956F)", color: "#fff", border: "1px solid #42DDB0", boxShadow: "inset 2px 2px 0 rgba(255,255,255,.24), 0 5px 0 #087A5C, 0 10px 18px rgba(7,149,111,.22)", fontWeight: 950, padding: "0 12px" }}>
+              <strong>{buildReceiptHistorySummary(row, formatMontant)}</strong>
+              <span style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, width: "100%" }}>
+                <button type="button" disabled={busy} onClick={() => onOpen(row)} style={{ minHeight: 40, borderRadius: 12, background: "linear-gradient(145deg, #55DDB7, #20B88E)", color: "#083D32", border: "1px solid #79E8C9", boxShadow: "inset 2px 2px 0 rgba(255,255,255,.34), 0 4px 0 #159474, 0 8px 14px rgba(32,184,142,.18)", fontWeight: 950, padding: "0 8px", fontSize: 13 }}>
                   {isBudgetOkArticlesPartial(row) || (hasReliableBudgetForReceipt(row) && !isLockedScannedReceipt(row))
                     ? txt.correctArticles
                     : isLockedScannedReceipt(row) || receiptHasUnreliableArticleCount(row)
                       ? txt.viewDetails
                       : "Modifier"}
                 </button>
-                <button type="button" disabled={busy} onClick={() => onDelete(row)} style={{ minHeight: 40, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "transparent", color: COLORS.muted, fontWeight: 950, padding: "0 12px" }}>
+                <button type="button" disabled={busy} onClick={() => onDelete(row)} style={{ minHeight: 40, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "linear-gradient(145deg, #ffffff, #edf3f9)", color: COLORS.muted, fontWeight: 950, padding: "0 8px", fontSize: 13 }}>
                   {txt.deleteTicket}
                 </button>
               </span>
