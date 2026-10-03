@@ -506,3 +506,60 @@ button:not(:disabled)[style*="#ef4444"]:active {
     min-height: 48px;
   }
 }
+
+
+/* =========================================================
+   Accueil — filigrane drapeau réunionnais (Lo Mavéli)
+   Identité locale discrète, sans modifier les cartes.
+   ========================================================= */
+.bkp-home-reunion-watermark {
+  position: relative;
+  isolation: isolate;
+}
+
+.bkp-home-reunion-watermark::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  pointer-events: none;
+  inset: -18px -22px -34px;
+  border-radius: 28px;
+  background:
+    linear-gradient(26deg, transparent 0 45%, rgba(229, 35, 45, .055) 45.2% 51%, transparent 51.2%),
+    conic-gradient(
+      from 248deg at 50% 31%,
+      transparent 0deg 10deg,
+      rgba(255, 205, 0, .09) 10deg 17deg,
+      transparent 17deg 28deg,
+      rgba(255, 205, 0, .075) 28deg 35deg,
+      transparent 35deg 46deg,
+      rgba(255, 205, 0, .06) 46deg 53deg,
+      transparent 53deg 360deg
+    ),
+    linear-gradient(180deg, rgba(20, 79, 154, .025), rgba(20, 79, 154, .008) 68%, transparent);
+  opacity: .95;
+}
+
+[data-theme="dark"] .bkp-home-reunion-watermark::before {
+  background:
+    linear-gradient(26deg, transparent 0 45%, rgba(238, 48, 56, .065) 45.2% 51%, transparent 51.2%),
+    conic-gradient(
+      from 248deg at 50% 31%,
+      transparent 0deg 10deg,
+      rgba(255, 214, 10, .075) 10deg 17deg,
+      transparent 17deg 28deg,
+      rgba(255, 214, 10, .06) 28deg 35deg,
+      transparent 35deg 46deg,
+      rgba(255, 214, 10, .05) 46deg 53deg,
+      transparent 53deg 360deg
+    ),
+    linear-gradient(180deg, rgba(19, 84, 165, .12), rgba(5, 26, 53, .035) 72%, transparent);
+  opacity: .9;
+}
+
+@media (max-width: 767px) {
+  .bkp-home-reunion-watermark::before {
+    inset: -12px -10px -34px;
+    border-radius: 0;
+  }
+}
