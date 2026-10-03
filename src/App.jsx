@@ -551,6 +551,7 @@ function BudgetKazPeiApp({
           <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
             <button
               type="button"
+              className="bkp-header-lang"
               onClick={toggleLang}
               aria-label={lang === "fr" ? "Passer en créole" : "Passer en français"}
               style={{
@@ -567,9 +568,10 @@ function BudgetKazPeiApp({
             >
               {lang === "fr" ? "KR" : "FR"}
             </button>
-            <ThemeToggle compact />
+            <ThemeToggle compact className="bkp-header-theme" />
             <button
               type="button"
+              className="bkp-header-profile"
               onClick={() => handleNavChange("profil")}
               aria-label={lang === "fr" ? "Mon profil" : "Mon profil"}
               style={{
@@ -652,7 +654,7 @@ function BudgetKazPeiApp({
         style={{
           flex: 1,
           padding: isMobile
-            ? "76px 16px calc(96px + env(safe-area-inset-bottom))"
+            ? `76px 16px ${activeNav === "dashboard" ? "calc(24px + env(safe-area-inset-bottom))" : "calc(96px + env(safe-area-inset-bottom))"}`
             : "32px 28px 48px",
           overflowY: "auto",
           maxHeight: isMobile ? "none" : "100vh",
