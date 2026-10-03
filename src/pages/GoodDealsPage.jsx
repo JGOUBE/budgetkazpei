@@ -26,8 +26,17 @@ const GOOD_DEALS_INTERACTION_STYLES = `
     transform: translateY(-1px);
   }
 
-  .good-deals-primary:hover {
+  .good-deals-primary:not(.good-deals-detail):hover {
     background: var(--good-deals-primary-hover) !important;
+  }
+
+  .good-deals-detail:hover,
+  .good-deals-detail:focus,
+  .good-deals-detail:focus-visible,
+  .good-deals-detail:active {
+    background: var(--deal-button-bg) !important;
+    color: var(--deal-button-fg) !important;
+    border-color: var(--deal-button-edge) !important;
   }
 `
 
@@ -1167,9 +1176,12 @@ function DealCard({ deal, isKreol, highlighted = false }) {
           <button
             type="button"
             onClick={() => window.open(dealUrl, "_blank", "noopener,noreferrer")}
-            className="good-deals-primary"
+            className="good-deals-primary good-deals-detail"
             style={{
               ...pageTheme.primaryHoverVars,
+              "--deal-button-bg": `linear-gradient(145deg, ${categoryPalette.bg}, ${categoryPalette.edge})`,
+              "--deal-button-fg": categoryPalette.fg,
+              "--deal-button-edge": categoryPalette.edge,
               width: "100%",
               minHeight: 44,
               border: "none",
