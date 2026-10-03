@@ -506,3 +506,119 @@ button:not(:disabled)[style*="#ef4444"]:active {
     min-height: 48px;
   }
 }
+
+
+/* =========================================================
+   Accueil — fond Réunion + mer en filigrane plein écran
+   ========================================================= */
+.bkp-home-reunion-watermark {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 28px;
+}
+.bkp-home-reunion-watermark::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  pointer-events: none;
+  background-image: url("/reunion-watermark.svg");
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+  opacity: .34;
+  filter: saturate(.92) contrast(.94);
+}
+.bkp-home-reunion-watermark::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: rgba(255,255,255,.18);
+}
+[data-theme="dark"] .bkp-home-reunion-watermark::before {
+  opacity: .30;
+  filter: saturate(.95) brightness(.68) contrast(.92);
+}
+[data-theme="dark"] .bkp-home-reunion-watermark::after {
+  background: rgba(7,18,38,.20);
+}
+@media (max-width: 767px) {
+  .bkp-home-reunion-watermark {
+    border-radius: 0;
+    overflow-x: clip;
+    min-height: calc(100dvh - 76px);
+  }
+  .bkp-home-reunion-watermark::before {
+    background-position: center top;
+  }
+}
+html, body, #root {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+/* Accueil : le même visuel continue sous le header et jusqu'aux bords de l'écran. */
+.bkp-dashboard-shell {
+  position: relative;
+  isolation: isolate;
+  background: transparent !important;
+}
+.bkp-dashboard-shell::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -3;
+  pointer-events: none;
+  background: url("/reunion-watermark.svg") center center / cover no-repeat;
+  opacity: .34;
+  filter: saturate(.92) contrast(.94);
+}
+[data-theme="dark"].bkp-dashboard-shell::before {
+  opacity: .30;
+  filter: saturate(.95) brightness(.68) contrast(.92);
+}
+.bkp-dashboard-shell .bkp-home-reunion-watermark::before,
+.bkp-dashboard-shell .bkp-home-reunion-watermark::after {
+  display: none;
+}
+
+/* Header mobile — trois commandes distinctes, colorées et en relief. */
+.bkp-header-lang,
+.bkp-header-theme,
+.bkp-header-profile {
+  border-radius: 14px !important;
+  border: 1px solid rgba(15,23,42,.13) !important;
+  box-shadow: inset 1px 1px 0 rgba(255,255,255,.78), 0 4px 0 rgba(15,23,42,.10), 0 8px 14px rgba(15,23,42,.13) !important;
+}
+.bkp-header-lang {
+  min-width: 38px !important;
+  background: linear-gradient(145deg,#ffe58a,#f4b400) !important;
+  color: #17233d !important;
+}
+.bkp-header-theme {
+  background: linear-gradient(145deg,#e9f4ff,#bfdcff) !important;
+  color: #174b87 !important;
+}
+.bkp-header-profile {
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(145deg,#d9fae7,#55d99a) !important;
+  color: #086844 !important;
+}
+[data-theme="dark"] .bkp-header-lang {
+  background: linear-gradient(145deg,#ffd84a,#d99a00) !important;
+  color: #182033 !important;
+}
+[data-theme="dark"] .bkp-header-theme {
+  background: linear-gradient(145deg,#173e72,#0c2851) !important;
+  color: #dcecff !important;
+  border-color: #315b8c !important;
+}
+[data-theme="dark"] .bkp-header-profile {
+  background: linear-gradient(145deg,#18b66e,#087448) !important;
+  color: #f3fff9 !important;
+  border-color: #30c983 !important;
+}

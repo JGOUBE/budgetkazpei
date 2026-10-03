@@ -2,7 +2,7 @@ import { BkIcons } from "./icons-budgetkazpei"
 import { ds, buttonStyle } from "../styles/designSystem"
 import { useTheme } from "../styles/ThemeProvider"
 
-export default function ThemeToggle({ compact = false }) {
+export default function ThemeToggle({ compact = false, className = "" }) {
   const { isDark, toggleTheme } = useTheme()
   const Icon = isDark ? BkIcons.light : BkIcons.dark
   const label = isDark ? "Activer le mode clair" : "Activer le mode sombre"
@@ -10,6 +10,7 @@ export default function ThemeToggle({ compact = false }) {
   return (
     <button
       type="button"
+      className={className}
       onClick={toggleTheme}
       aria-label={label}
       title={label}

@@ -277,7 +277,7 @@ function AideCard({ aide, isKreol, tracked, saving, onAdd }) {
   const steps = isKreol ? aide.stepsKr : aide.stepsFr
 
   return (
-    <article className="bkp-aide-card">
+    <article className={`bkp-aide-card bkp-aide-card--${aide.category || "autres"}`}>
       <div className="bkp-aide-card-head">
         <div>
           <span className="bkp-aide-category">{categoryLabel(aide.category, isKreol)}</span>
@@ -527,7 +527,7 @@ export default function AidesPage({ t, isPremiumPlus = false, user, onDiscover, 
               <div className="bkp-aides-searchbox"><Search size={19} aria-hidden="true" /><input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder={isKreol ? "Kaz, marmay, kouran, RSA…" : "Logement, enfant, énergie, RSA…"} aria-label={isKreol ? "Rod dann katalog aides" : "Rechercher dans le catalogue des aides"} />{query && <button type="button" onClick={() => setQuery("")} aria-label={isKreol ? "Efase recherche" : "Effacer la recherche"}><X size={17} /></button>}</div>
               <div className="bkp-category-filters" aria-label={isKreol ? "Filtre kategori" : "Filtres par catégorie"}>
                 <button type="button" className={category === "all" ? "is-active" : ""} aria-pressed={category === "all"} onClick={() => setCategory("all")}>{isKreol ? "Tout" : "Toutes"}</button>
-                {categories.map(item => <button type="button" className={category === item ? "is-active" : ""} aria-pressed={category === item} onClick={() => setCategory(item)} key={item}>{categoryLabel(item, isKreol)}</button>)}
+                {categories.map(item => <button type="button" data-category={item} className={category === item ? "is-active" : ""} aria-pressed={category === item} onClick={() => setCategory(item)} key={item}>{categoryLabel(item, isKreol)}</button>)}
               </div>
               <p className="bkp-result-count" aria-live="polite">{searchResults.length} {isKreol ? "aide trouvée" : "aide(s) trouvée(s)"}</p>
               {searchResults.length ? <div className="bkp-aides-grid">{searchResults.map(aide => <AideCard key={aide.id} aide={aide} isKreol={isKreol} tracked={trackedIds.has(Number(aide.id))} saving={savingId === `aide-${aide.id}`} onAdd={addToDemarches} />)}</div> : <EmptyState isKreol={isKreol} type="search" onAction={() => { setQuery(""); setCategory("all") }} />}
