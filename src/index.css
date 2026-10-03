@@ -622,3 +622,15 @@ html, body, #root {
   color: #f3fff9 !important;
   border-color: #30c983 !important;
 }
+
+/* Mode clair unique : les actions pleines restent colorées mais moins sombres. */
+.bkp-premium-zone button:not(:disabled),
+.bkp-premium-zone [role="button"]:not([aria-disabled="true"]),
+.bkp-modal-premium button:not(:disabled) {
+  filter: brightness(1.075) saturate(.92);
+}
+.bkp-premium-zone button:not(:disabled):hover,
+.bkp-premium-zone [role="button"]:not([aria-disabled="true"]):hover,
+.bkp-modal-premium button:not(:disabled):hover {
+  filter: brightness(1.11) saturate(.95);
+}
