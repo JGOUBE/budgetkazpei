@@ -523,7 +523,7 @@ button:not(:disabled)[style*="#ef4444"]:active {
   inset: 0;
   z-index: -2;
   pointer-events: none;
-  background-image: url("/reunion-watermark.svg");
+  background-image: url("/reunion-flag-unified-v2.svg");
   background-size: cover;
   background-position: center top;
   background-repeat: no-repeat;
@@ -572,7 +572,7 @@ html, body, #root {
   inset: 0;
   z-index: -3;
   pointer-events: none;
-  background: url("/reunion-watermark.svg") center center / cover no-repeat;
+  background: url("/reunion-flag-unified-v2.svg") center center / cover no-repeat;
   opacity: .34;
   filter: saturate(.92) contrast(.94);
 }
