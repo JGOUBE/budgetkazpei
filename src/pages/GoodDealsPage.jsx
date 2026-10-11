@@ -2319,6 +2319,12 @@ export default function GoodDealsPage({
         />
       )}
 
+      {!loading && !error && visibleDeals.length > 0 && activeCategory !== "leisure" && (
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          <ContactDealLink commune={activeAreaLabel} isKreol={isKreol} />
+        </div>
+      )}
+
       {activeCategory === "leisure" && (
         <LeisureMissingDealNotice commune={activeAreaLabel} isKreol={isKreol} isMobile={isMobile} />
       )}
