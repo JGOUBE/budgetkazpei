@@ -11,9 +11,17 @@ class SaintPaulEventsParser(GenericEventParser):
 
     def parse(self, source: SourceDefinition, document: SourceDocument):
         candidates = super().parse(source, document)
+        valid_events = []
         for candidate in candidates:
+            # A municipality homepage is not an event. Never publish it as one.
+            if not candidate.starts_at:
+                continue
+            title = (candidate.title or "").strip().lower()
+            if title.startswith(("accueil", "ville de saint-paul", "mairie de saint-paul")):
+                continue
             candidate.business_name = "Ville de Saint-Paul"
             candidate.organizer_name = "Ville de Saint-Paul"
             candidate.commune = "Saint-Paul"
             candidate.tags = ["commune", "saint-paul"]
-        return candidates
+            valid_events.append(candidate)
+        return valid_events
