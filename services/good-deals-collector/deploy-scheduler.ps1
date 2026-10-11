@@ -33,7 +33,7 @@ if ($LASTEXITCODE -eq 0) {
   gcloud scheduler jobs update http $SchedulerName `
     --project $ProjectId `
     --location $Location `
-    --schedule "30 5 1,15 * *" `
+    --schedule "30 5 * * *" `
     --time-zone "Indian/Reunion" `
     --uri $jobUri `
     --http-method POST `
@@ -44,7 +44,7 @@ else {
   gcloud scheduler jobs create http $SchedulerName `
     --project $ProjectId `
     --location $Location `
-    --schedule "30 5 1,15 * *" `
+    --schedule "30 5 * * *" `
     --time-zone "Indian/Reunion" `
     --uri $jobUri `
     --http-method POST `
