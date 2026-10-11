@@ -38,9 +38,11 @@ def score_candidate(candidate: Candidate) -> tuple[int, list[str], list[str], st
     else:
         errors.append("portee_geographique_absente")
 
-    if candidate.content_kind != "promotion":
+    is_catalog = candidate.content_kind == "promotion" and bool({"catalogue", "catalog"} & set(candidate.tags))
+
+    if candidate.content_kind != "promotion" or is_catalog:
         score += 15
-        reasons.append("prix_non_requis")
+        reasons.append("prix_non_requis_pour_catalogue" if is_catalog else "prix_non_requis")
     elif candidate.promo_price is not None:
         score += 15
         reasons.append("prix_promo_fiable")
@@ -62,7 +64,7 @@ def score_candidate(candidate: Candidate) -> tuple[int, list[str], list[str], st
     if candidate.ends_at and candidate.ends_at.replace(tzinfo=timezone.utc) < now:
         errors.append("contenu_deja_expire")
 
-    if candidate.content_kind == "promotion" and not candidate.normalized_product_name:
+    if candidate.content_kind == "promotion" and not is_catalog and not candidate.normalized_product_name:
         errors.append("produit_non_identifie")
 
     if candidate.content_kind == "event" and not candidate.starts_at:
