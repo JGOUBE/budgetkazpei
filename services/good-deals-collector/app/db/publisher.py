@@ -200,6 +200,19 @@ class PublisherService:
 
     @classmethod
     def _validate_candidate(cls, candidate: Candidate) -> None:
+        if cls._is_catalog_candidate(candidate):
+            # A catalog must have a verifiable period; otherwise the frontend
+            # could show an undated or expired leaflet as a current promotion.
+            if candidate.starts_at is None or candidate.ends_at is None:
+                raise ValueError("catalog_publication_requires_verified_dates")
+            start = candidate.starts_at
+            end = candidate.ends_at
+            if start.tzinfo is None:
+                start = start.replace(tzinfo=timezone.utc)
+            if end.tzinfo is None:
+                end = end.replace(tzinfo=timezone.utc)
+            if end < start or end < datetime.now(timezone.utc):
+                raise ValueError("catalog_publication_invalid_or_expired_period")
         if candidate.scope_type not in ALLOWED_SCOPE_TYPES:
             raise ValueError(f"invalid scope_type for good deal publication: {candidate.scope_type}")
 
