@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import urllib.parse
 import urllib.request
+from urllib.error import HTTPError
 
 
 class SupabaseAdminClient:
@@ -32,11 +33,27 @@ class SupabaseAdminClient:
             request_headers.update(headers)
         body = None if payload is None else json.dumps(payload, ensure_ascii=True).encode("utf-8")
         request = urllib.request.Request(url, data=body, headers=request_headers, method=method)
-        with urllib.request.urlopen(request, timeout=30) as response:
-            data = response.read().decode("utf-8")
-            if not data:
-                return []
-            return json.loads(data)
+        try:
+            with urllib.request.urlopen(request, timeout=30) as response:
+                data = response.read().decode("utf-8")
+                if not data:
+                    return []
+                return json.loads(data)
+        except HTTPError as exc:
+            # Keep request credentials and data out of diagnostic logs.
+            try:
+                body = json.loads(exc.read(4096).decode("utf-8", errors="replace"))
+                diagnostic = {
+                    key: str(body[key])[:300]
+                    for key in ("code", "message", "hint")
+                    if isinstance(body, dict) and body.get(key) is not None
+                }
+            except (ValueError, UnicodeError):
+                diagnostic = {}
+            raise RuntimeError(
+                f"supabase_http_error method={method} table={path.split('/')[0]} "
+                f"status={exc.code} diagnostic={json.dumps(diagnostic, ensure_ascii=True)}"
+            ) from None
 
     def select(self, table: str, *, filters: dict[str, str] | None = None, columns: str = "*") -> list[dict[str, object]]:
         query = {"select": columns}
