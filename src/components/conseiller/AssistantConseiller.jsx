@@ -855,7 +855,7 @@ export default function AssistantConseiller({
               </div>
               {advancedModes.length > 0 && (
                 <details className="bkp-advisor-advanced">
-                  <summary>{isKreol ? "Bann zouti démarches Premium+" : "Outils démarches Premium+"}</summary>
+                  <summary>{isKreol ? "Bann zouti démarches Premium" : "Outils démarches Premium"}</summary>
                   <div>
                     {advancedModes.map(mode => {
                       const Icon = mode.icon
