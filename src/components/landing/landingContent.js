@@ -36,7 +36,7 @@ const PLAN_COPY = {
     [PLAN_IDS.premium]: {
       name: PLAN_NAMES[PLAN_IDS.premium], cta: "Découvrir Premium",
       intro: "BudgetKazPéi me conseille au quotidien.",
-      items: ["Tout le Gratuit", PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premium], "Historique et statistiques avancées", "Alertes budget et export PDF", "Conseiller BudgetKazPéi — utilisation limitée"],
+      items: ["Tout le Gratuit", PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premium], "Historique et statistiques avancées", "Alertes budget et export PDF", "Conseiller BudgetKazPéi et outils avancés"],
     },
   },
   kr: {
@@ -48,7 +48,7 @@ const PLAN_COPY = {
     [PLAN_IDS.premium]: {
       name: "Premium", cta: "Dékouv Premium",
       intro: "BudgetKazPéi i konsey amwin dann mon kotidien.",
-      items: ["Tout sak lé dann Gratis", "10 scans par mwa", "Istorik ek statistik avansé", "Alèrt bidjé ek èksport PDF", "Konseyé BudgetKazPéi — itilizasion limité"],
+      items: ["Tout sak lé dann Gratis", "Scans tiké inkliz", "Istorik ek statistik avansé", "Alèrt bidjé ek èksport PDF", "Konseyé BudgetKazPéi ek bann zouti avansé"],
     },
   },
 }
