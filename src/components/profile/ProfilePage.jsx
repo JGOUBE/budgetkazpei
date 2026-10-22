@@ -880,7 +880,7 @@ export default function ProfilePage({ user, t }) {
               {tr(isKreol, "Découvrir Premium", "Découvre Premium")}
             </div>
             <div style={{ fontSize: 13, color: COLORS.muted, lineHeight: 1.6 }}>
-              {tr(isKreol, "Comparez les options Premium et Premium sur le site BudgetKazPéi.", "Compare bann options Premium ek Premium su site BudgetKazPéi.")}
+              {tr(isKreol, "Découvrez l’offre Premium sur le site BudgetKazPéi.", "Dékouv lof Premium su site BudgetKazPéi.")}
             </div>
           </div>
 
@@ -899,19 +899,6 @@ export default function ProfilePage({ user, t }) {
               </div>
             </div>
 
-            <div
-              style={{
-                background: "rgba(167,139,250,.08)",
-                border: "1px solid rgba(167,139,250,.25)",
-                borderRadius: 14,
-                padding: 14,
-              }}
-            >
-              <div style={{ color: COLORS.purple, fontWeight: 800, marginBottom: 6 }}>Premium</div>
-              <div style={{ color: COLORS.muted, fontSize: 13, lineHeight: 1.55 }}>
-                {tr(isKreol, "Conseiller IA avancé, aide administrative personnalisée, courriers et accompagnement plus complet.", "Conseiller IA avancé, aide administrative personnalisée, courriers ek accompagnement pli complet.")}
-              </div>
-            </div>
           </div>
 
           <button
