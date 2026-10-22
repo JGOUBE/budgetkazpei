@@ -95,9 +95,9 @@ const TEXT = {
     longTicketMissing: count => `Ajoutez les ${count} photos du ticket.`,
     longTicketNeedCount: count => `Sélectionnez exactement ${count} images dans l’ordre du haut vers le bas.`,
     longTicketMerging: count => `Analyse des ${count} parties du ticket...`,
-    quota: quota => quota.plan === "premium_plus"
-      ? `Analyses IA illimitées — ${quota.planLabel}`
-      : `Analyses IA : ${quota.used} / ${quota.limit} — ${quota.planLabel}`,
+    quota: quota => quota.isUnlimitedForUser
+      ? `Scans de tickets inclus — ${quota.planLabel}`
+      : `Scans de tickets : ${quota.used} / ${quota.limit} — ${quota.planLabel}`,
     methodTitle: "Choisissez une méthode",
     smallTicket: "Petit ticket",
     mediumTicket: "Ticket moyen",
@@ -205,9 +205,9 @@ const TEXT = {
     longTicketMissing: count => `Azout ${count} foto tiké-la.`,
     longTicketNeedCount: count => `Swazi exactement ${count} zimaz depi lao ziska anba.`,
     longTicketMerging: count => `Analiz ${count} parti tiké-la...`,
-    quota: quota => quota.plan === "premium_plus"
-      ? `Analiz IA san limit — ${quota.planLabel}`
-      : `Analiz IA : ${quota.used} / ${quota.limit} — ${quota.planLabel}`,
+    quota: quota => quota.isUnlimitedForUser
+      ? `Scan tiké inkliz — ${quota.planLabel}`
+      : `Scan tiké : ${quota.used} / ${quota.limit} — ${quota.planLabel}`,
     methodTitle: "Swazi in fason",
     smallTicket: "Ti tiké",
     mediumTicket: "Tiké mwayen",
@@ -1284,7 +1284,7 @@ export default function ReceiptsPage({
         ? splitStillNeedsReview
           ? "Tike-la ankor difisil pou lir. Korize bann zinformasyon avan anrezistre."
           : splitRetryUsed
-            ? "Lektir renforcee Premium+ fini. Verifie bann zinfo avan anrezistre."
+            ? "Lektir renforcé Premium fini. Verifie bann zinfo avan anrezistre."
           : longUsableReview
             ? "Tike long-la le lir an parti. Verifie bann lalinn avan anrezistre."
           : requiresQuickReview
@@ -1293,7 +1293,7 @@ export default function ReceiptsPage({
         : splitStillNeedsReview
           ? "Le ticket reste difficile à lire. Corrigez les informations avant d'enregistrer."
           : splitRetryUsed
-            ? "Lecture renforcée Premium+ terminée. Vérifiez les informations avant d'enregistrer."
+            ? "Lecture renforcée Premium terminée. Vérifiez les informations avant d'enregistrer."
           : longUsableReview
             ? "Ticket long lu partiellement. Vérifiez les lignes avant d'enregistrer."
           : requiresQuickReview
@@ -2273,7 +2273,7 @@ export default function ReceiptsPage({
           {txt.title}
         </h1>
         <div style={{ marginTop: 16, display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
-          <strong style={{ color: COLORS.yellow, fontSize: 16 }}>{quota.planLabel || (isPremiumPlus ? "Premium+" : isPremium ? "Premium" : "Gratuit")}</strong>
+          <strong style={{ color: COLORS.yellow, fontSize: 16 }}>{quota.planLabel || (isPremiumPlus || isPremium ? "Premium" : "Gratuit")}</strong>
           <span style={{ color: COLORS.muted, fontSize: 13, fontWeight: 800 }}>
             {isKreol ? "Tiké sa mwa :" : "Tickets ce mois :"} {quota.loading ? "…" : quota.used}
           </span>
