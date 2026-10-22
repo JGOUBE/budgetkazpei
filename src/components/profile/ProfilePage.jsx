@@ -312,18 +312,14 @@ export default function ProfilePage({ user, t }) {
   const initiale = (form.nom || user?.email || "?")[0].toUpperCase()
 
   const plan = subscriptionPlan || normalizeSubscriptionPlan(profile)
-  const isPremiumPlus = plan === "premium_plus"
-  const isPremiumClassic = plan === "premium"
-  const hasPremiumAccess = isPremiumClassic || isPremiumPlus
+  const hasPremiumAccess = plan === "premium" || plan === "premium_plus"
 
-  const accountLabel = isPremiumPlus
-    ? "Compte Premium+"
-    : isPremiumClassic
-      ? "Compte Premium"
-      : tr(isKreol, "Compte Gratuit", "Compte gratuit")
+  const accountLabel = hasPremiumAccess
+    ? "Compte Premium"
+    : tr(isKreol, "Compte Gratuit", "Compte gratuit")
 
   const accountIcon = ""
-  const accountColor = isPremiumPlus ? COLORS.purple : hasPremiumAccess ? COLORS.yellow : COLORS.muted
+  const accountColor = hasPremiumAccess ? COLORS.yellow : COLORS.muted
 
   function openPremiumOptions() {
     window.open("/premium", "_blank", "noopener,noreferrer")
