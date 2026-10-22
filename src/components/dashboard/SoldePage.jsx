@@ -18,12 +18,14 @@ function moneyValue(value) {
 export default function SoldePage({
   stats = {},
   isMobile = false,
+  isPremium = false,
   isPremiumPlus = false,
   onGoPremium,
   t,
 }) {
   useTheme()
   const isKreol = getIsKreol(t)
+  const hasPremiumAccess = isPremium || isPremiumPlus
 
   const revenus = moneyValue(stats.revenus)
   const depenses = moneyValue(stats.depenses)
@@ -97,14 +99,14 @@ export default function SoldePage({
           padding: 20,
         }}
       >
-        <div style={{ color: isPremiumPlus ? COLORS.green : "#DDD6FE", fontSize: 17, fontWeight: 900 }}>
+        <div style={{ color: hasPremiumAccess ? COLORS.green : "#DDD6FE", fontSize: 17, fontWeight: 900 }}>
           {isKreol ? "Projection fin de mois" : "Projection fin de mois"}
         </div>
         <p style={{ color: COLORS.muted, fontSize: 13, lineHeight: 1.55, marginBottom: 0 }}>
           {isKreol ? "BudgetKazPéi pourra estimer lo solde probable à la fin du mois."
             : "BudgetKazPéi pourra estimer le solde probable à la fin du mois."}
         </p>
-        {!isPremiumPlus && onGoPremium && (
+        {!hasPremiumAccess && onGoPremium && (
           <button
             type="button"
             onClick={onGoPremium}
@@ -120,7 +122,7 @@ export default function SoldePage({
               fontFamily: "inherit",
             }}
           >
-            Découvrir Premium+
+            Découvrir Premium
           </button>
         )}
       </div>
