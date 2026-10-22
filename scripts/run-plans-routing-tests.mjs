@@ -116,7 +116,7 @@ assert.equal(PLAN_SCAN_POLICY[PLAN_IDS.premiumPlus].commercialScanLimit, null)
 assert.equal(PLAN_SCAN_POLICY[PLAN_IDS.premiumPlus].operationalScanLimit, 50)
 assert.equal(PLAN_SCAN_POLICY[PLAN_IDS.premiumPlus].isUnlimitedForUser, true)
 assert.equal(PLAN_SCAN_POLICY[PLAN_IDS.premiumPlus].isSafetyLimited, true)
-assert.equal(getPlanPublicScanLabel(PLAN_IDS.premiumPlus), "Scans illimités")
+assert.equal(getPlanPublicScanLabel(PLAN_IDS.premiumPlus), "Scans de tickets illimités")
 assert.match(PREMIUM_PLUS_SAFETY_MESSAGE, /nombre inhabituel de scans/, "Premium safety message missing")
 assert.notDeepEqual(
   [PLAN_SCAN_LIMITS[PLAN_IDS.free], PLAN_SCAN_LIMITS[PLAN_IDS.premium], PLAN_SCAN_LIMITS[PLAN_IDS.premiumPlus]],
