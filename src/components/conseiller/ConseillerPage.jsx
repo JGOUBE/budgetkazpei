@@ -206,14 +206,12 @@ export default function ConseillerPage({
         <div>
           <span className="bkp-advisor-planbar-icon" aria-hidden="true"><Bot size={18} /></span>
           <div>
-            <strong>{access.canUseAdvancedAdvisorTools ? "Conseiller BudgetKazPéi+" : "Conseiller BudgetKazPéi"}</strong>
+            <strong>Conseiller BudgetKazPéi</strong>
             <span>{isKreol ? "Konseye pèrsone pou out situation" : "Un conseiller personnalisé pour votre situation"}</span>
           </div>
         </div>
         <span className="bkp-advisor-usage-label">
-          {access.publicUsageLabel === "unlimited"
-            ? (isKreol ? "Itilizasion san limit" : "Utilisation illimitée")
-            : (isKreol ? "Itilizasion limité" : "Utilisation limitée")}
+          {isKreol ? "Incliz dann Premium" : "Inclus dans Premium"}
         </span>
       </div>
 
