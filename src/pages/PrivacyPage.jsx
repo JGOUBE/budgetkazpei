@@ -57,7 +57,7 @@ export default function PrivacyPage() {
       <LegalSection title="7. Finalités et bases légales" eyebrow="Pourquoi ces traitements ont lieu">
         <ul>
           <li><strong>Exécution du service :</strong> créer et sécuriser le compte, afficher le budget, enregistrer les opérations, tickets, listes, aides et démarches demandés par l’utilisateur.</li>
-          <li><strong>Mesures contractuelles et exécution de l’abonnement :</strong> présenter, activer et gérer les offres Premium et Premium et leurs quotas.</li>
+          <li><strong>Mesures contractuelles et exécution de l’abonnement :</strong> présenter, activer et gérer l’offre Premium et ses droits d’accès.</li>
           <li><strong>Intérêt légitime :</strong> protéger le service, prévenir les abus, diagnostiquer les erreurs et améliorer les associations de produits et les informations de prix, dans le respect des droits des utilisateurs.</li>
           <li><strong>Consentement ou autorisation de l’appareil lorsque nécessaire :</strong> accès facultatif à la position pour retrouver une commune, et autres fonctions optionnelles qui le demandent.</li>
           <li><strong>Obligations légales :</strong> éléments nécessaires à la gestion des paiements, de la facturation et des demandes relatives aux droits.</li>
@@ -94,7 +94,7 @@ export default function PrivacyPage() {
           <li><strong>Vercel :</strong> hébergement et diffusion de l’application web.</li>
           <li><strong>Google Cloud :</strong> infrastructure technique utilisée notamment pour le traitement du scanner de tickets.</li>
           <li><strong>OpenAI :</strong> génération des réponses du Conseiller à partir du contexte transmis.</li>
-          <li><strong>Stripe :</strong> paiement et gestion des abonnements ; BudgetKazPéi conserve des identifiants et statuts d’abonnement, pas les numéros complets de carte.</li>
+          <li><strong>Stripe :</strong> paiement et gestion des abonnements souscrits sur le site web ; BudgetKazPéi conserve des identifiants et statuts d’abonnement, pas les numéros complets de carte.</li>\n          <li><strong>Google Play :</strong> paiement et gestion des abonnements souscrits dans l’application Android distribuée par Google Play.</li>
           <li><strong>Google :</strong> authentification lorsque l’utilisateur choisit la connexion Google.</li>
           <li><strong>OpenStreetMap / Nominatim :</strong> conversion facultative de coordonnées en commune.</li>
         </ul>
