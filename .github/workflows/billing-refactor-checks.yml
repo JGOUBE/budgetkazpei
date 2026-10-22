@@ -1,6 +1,8 @@
 name: Billing refactor checks
 
 on:
+  push:
+    branches: [billing-free-premium-20261022]
   pull_request:
     branches: [main]
   workflow_dispatch:
