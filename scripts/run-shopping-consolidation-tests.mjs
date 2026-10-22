@@ -97,14 +97,14 @@ assert.equal(resolveAppSectionTarget("savings").shoppingTab, "savings")
 assert.equal(resolveAppSectionTarget("financeAssistant").section, "conseiller")
 assert.equal(resolveAppSectionTarget("financeAssistant").advisorMode, "budget_depenses")
 
-// Accès financier : Premium et Premium+, jamais Gratuit, avec une seule
+// Accès financier : Premium, jamais Gratuit, avec une seule
 // politique de Conseiller côté interface et côté serveur.
 assert.equal(getAdvisorAccess("free").canUseAdvisor, false)
 assert.equal(getAdvisorAccess("premium").allowedModes.includes("budget_depenses"), true)
-assert.equal(getAdvisorAccess("premium_plus").allowedModes.includes("budget_depenses"), true)
+assert.equal(getAdvisorAccess("premium_plus").plan, "premium")
 assert.equal(getServerAdvisorAccess("free").canUseAdvisor, false)
 assert.equal(getServerAdvisorAccess("premium").canUseAdvisor, true)
-assert.equal(getServerAdvisorAccess("premium_plus").canUseAdvisor, true)
+assert.equal(getServerAdvisorAccess("premium_plus").plan, "premium")
 
 const [app, sidebar, hub, savingsPage, advisor, backend] = await Promise.all([
   read("src/App.jsx"),
