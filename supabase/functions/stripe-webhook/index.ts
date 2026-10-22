@@ -91,6 +91,7 @@ serve(async (req) => {
             .update({
               premium: false,
               premium_plus: false,
+      billing_source: "stripe",
               subscription_type: "free",
               stripe_subscription_status: "canceled",
               premium_cancel_at: new Date().toISOString(),
@@ -115,6 +116,7 @@ serve(async (req) => {
       .update({
         premium: active,
         premium_plus: false,
+      billing_source: "stripe",
         subscription_type: active ? period : "free",
         stripe_customer_id: customerId,
         stripe_subscription_id: subscriptionId,
