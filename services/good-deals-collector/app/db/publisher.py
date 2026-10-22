@@ -183,7 +183,9 @@ class PublisherService:
     def _resolve_availability_status(candidate: Candidate) -> str:
         if candidate.content_kind == "permanent_leisure":
             return "open"
-        return "active"
+        # good_deals_availability_status_valid allows check_before_visit,
+        # not active. A dated promotion still requires verification in store.
+        return "check_before_visit"
 
     @staticmethod
     def _is_catalog_candidate(candidate: Candidate) -> bool:
