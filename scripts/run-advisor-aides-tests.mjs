@@ -752,8 +752,8 @@ const app = await read("src/App.jsx")
 const sidebar = await read("src/components/sidebar/Sidebar.jsx")
 
 assert.match(policy, /free:\s*0/)
-assert.match(policy, /premium:\s*50/)
-assert.match(policy, /premium_plus:\s*250/)
+assert.match(policy, /premium:\s*250/)
+assert.doesNotMatch(policy, /premium_plus:\s*250/)
 assert.match(backend, /auth\.getUser\(token\)/)
 assert.match(backend, /from\("user_subscriptions"\)/)
 assert.match(backend, /if \(!access\.canUseAdvisor\)/)
@@ -776,8 +776,8 @@ assert.equal(
 
 assert.match(advisorPage, /if \(!access\.canUseAdvisor\)/)
 assert.match(advisorPage, /LockedAdvisor/)
-assert.match(advisorPage, /Utilisation limitée/)
-assert.match(advisorPage, /Utilisation illimitée/)
+assert.doesNotMatch(advisorPage, /Utilisation limitée/)
+assert.doesNotMatch(advisorPage, /Utilisation illimitée/)
 assert.match(aidesPage, /role="tablist"/)
 assert.match(aidesPage, /Pour moi/)
 assert.match(aidesPage, /Rechercher/)
@@ -797,7 +797,7 @@ for (const file of sourceFiles) {
 }
 assert.deepEqual(activeImports, [], "AssistantAides ne doit plus constituer un parcours actif")
 
-console.log("✓ Droits Gratuit / Premium / Premium+ vérifiés")
+console.log("✓ Droits Gratuit / Premium vérifiés")
 console.log("✓ Modes standard et avancés vérifiés")
 console.log("✓ Autorité serveur et absence de limites publiques vérifiées")
 console.log("✓ Recherche FR / kréol vérifiée")
