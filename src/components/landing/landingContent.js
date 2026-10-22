@@ -35,8 +35,8 @@ const PLAN_COPY = {
     },
     [PLAN_IDS.premium]: {
       name: PLAN_NAMES[PLAN_IDS.premium], cta: "Découvrir Premium",
-      intro: "BudgetKazPéi me conseille au quotidien.",
-      items: ["Tout le Gratuit", PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premium], "Historique et statistiques avancées", "Alertes budget et export PDF", "Conseiller BudgetKazPéi — utilisation limitée"],
+      intro: "Toutes les fonctions avancées de BudgetKazPéi dans une seule offre.",
+      items: ["Tout le Gratuit", PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premium], "Historique et statistiques avancées", "Alertes budget et export PDF", "Conseiller BudgetKazPéi", "Accompagnement avancé des démarches", "Dossiers, courriers, emails, relances, rendez-vous et recours"],
     },
     [PLAN_IDS.premiumPlus]: {
       name: PLAN_NAMES[PLAN_IDS.premiumPlus], cta: "Découvrir Premium+",
@@ -52,8 +52,8 @@ const PLAN_COPY = {
     },
     [PLAN_IDS.premium]: {
       name: "Premium", cta: "Dékouv Premium",
-      intro: "BudgetKazPéi i konsey amwin dann mon kotidien.",
-      items: ["Tout sak lé dann Gratis", "10 scans par mwa", "Istorik ek statistik avansé", "Alèrt bidjé ek èksport PDF", "Konseyé BudgetKazPéi — itilizasion limité"],
+      intro: "Tout bann fonksyon avansé BudgetKazPéi dann in sèl lof.",
+      items: ["Tout sak lé dann Gratis", "Scans tiké inklu", "Istorik ek statistik avansé", "Alèrt bidjé ek èksport PDF", "Konseyé BudgetKazPéi", "Lakonpagnman avansé pou bann demars", "Dosyé, kourrié, email, relans, randévou ek rekour"],
     },
     [PLAN_IDS.premiumPlus]: {
       name: "Premium+", cta: "Dékouv Premium+",
