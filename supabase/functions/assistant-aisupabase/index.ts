@@ -646,8 +646,8 @@ async function buildAssistantContext(params: {
           success: false,
           code: "advanced_advisor_subscription_required",
           error: isKreol
-            ? "Fonksion-la lé réservée pou Premium+."
-            : "Cette fonctionnalité est réservée à Premium+.",
+            ? "Fonksion-la lé réservée pou Premium."
+            : "Cette fonctionnalité est réservée à Premium.",
         },
         403,
       ),
