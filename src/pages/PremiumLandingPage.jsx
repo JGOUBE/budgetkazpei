@@ -53,10 +53,8 @@ const PREMIUM_CONTENT = {
       freeCta: "Commencer gratuitement",
       dashboardCta: "Accéder à mon tableau de bord",
       premiumCta: "Choisir Premium",
-      premiumPlusCta: "Choisir Premium",
-      premiumGuestCta: "Créer mon compte pour Premium",
-      premiumPlusGuestCta: "Créer mon compte pour Premium",
-      normalUse: "Utilisation illimitée dans le cadre d'un usage normal du service.",
+       premiumGuestCta: "Créer mon compte pour Premium",
+       normalUse: "Utilisation illimitée dans le cadre d'un usage normal du service.",
       comingSoonTitle: "En préparation",
       comingSoonText:
         "Les comparaisons intelligentes et les Bons plans personnalisés seront ajoutés progressivement, à mesure que la base locale s'enrichit.",
@@ -153,10 +151,8 @@ const PREMIUM_CONTENT = {
       freeCta: "Koumans gratis",
       dashboardCta: "Alé su mon tablo débor",
       premiumCta: "Swazi Premium",
-      premiumPlusCta: "Swazi Premium",
-      premiumGuestCta: "Kré mon kont pou Premium",
-      premiumPlusGuestCta: "Kré mon kont pou Premium",
-      normalUse: "Itilizasion san limit dann kad in lizaz normal servis-la.",
+       premiumGuestCta: "Kré mon kont pou Premium",
+       normalUse: "Itilizasion san limit dann kad in lizaz normal servis-la.",
       comingSoonTitle: "An préparasyon",
       comingSoonText:
         "Konparézon entélizan ek Bon Plan pèsonalizé va ariv progressivement, amezir baz lokal-la i grandi.",
@@ -254,8 +250,7 @@ function usePremiumSeo(content, language) {
 function PlanCard({ plan, content, isAuthenticated }) {
   const isFree = plan.id === PLAN_IDS.free
   const isPremium = plan.id === PLAN_IDS.premium
-  const isPremiumPlus = plan.id === PLAN_IDS.premiumPlus
-  const badge = isPremium ? content.recommended : isPremiumPlus ? content.complete : null
+  const badge = isPremium ? content.recommended : null
   const ctaLabel = isFree
     ? isAuthenticated
       ? content.dashboardCta
@@ -285,7 +280,6 @@ function PlanCard({ plan, content, isAuthenticated }) {
         </div>
         {!isFree && <p className="premium-plan__billing">{content.monthly}</p>}
         <p className="premium-plan__intro">{plan.intro}</p>
-        {isPremiumPlus && <p className="premium-plan__usage-note">{content.normalUse}</p>}
       </div>
 
       <ul className="premium-plan__features">
