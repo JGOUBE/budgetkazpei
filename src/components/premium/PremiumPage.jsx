@@ -1,14 +1,20 @@
 import {
   BadgeCheck,
   ChartNoAxesCombined,
-  Crown,
   ScanLine,
   ShieldCheck,
   Sparkles,
   Star,
 } from "lucide-react"
 import { createColorAliases } from "../../styles/designSystem"
-import { PLAN_IDS, PLAN_NAMES, PLAN_PRICES, PLAN_PUBLIC_SCAN_LABELS } from "../../config/plans"
+import {
+  PLAN_ANNUAL_PRICES,
+  PLAN_IDS,
+  PLAN_NAMES,
+  PLAN_PRICES,
+  PLAN_PUBLIC_SCAN_LABELS,
+  normalizePlan,
+} from "../../config/plans"
 
 const COLORS = createColorAliases()
 const PREMIUM_URL = "/decouvrir"
@@ -26,12 +32,6 @@ const PLAN_META = {
     border: "rgba(250,204,21,.30)",
     background: "linear-gradient(180deg, rgba(250,204,21,.10), rgba(255,255,255,0))",
   },
-  [PLAN_IDS.premiumPlus]: {
-    icon: Crown,
-    accent: COLORS.purple,
-    border: "rgba(167,139,250,.30)",
-    background: "linear-gradient(180deg, rgba(167,139,250,.12), rgba(255,255,255,0))",
-  },
 }
 
 // Exported for the plan regression suite as well as the component below.
@@ -39,25 +39,23 @@ const PLAN_META = {
 export const PREMIUM_PAGE_COPY = {
   fr: {
     pageEyebrow: "Offres BudgetKazPéi",
-    pageTitle: "Choisissez la formule adaptée à votre rythme.",
+    pageTitle: "Deux formules. Pas de niveau intermédiaire.",
     pageText:
-      "Comparez ce qui est disponible avec Gratuit, le conseil au quotidien de Premium et l'accompagnement avancé de Premium+.",
+      "Commencez gratuitement, puis passez à Premium pour débloquer toutes les fonctions avancées de BudgetKazPéi.",
     currentTitle: "Votre formule actuelle",
     currentLoading: "Chargement de votre formule...",
     currentFree: "Mode découverte actif",
     currentActive: "Statut actif",
     currentManage: "Gérer mon offre",
     compareTitle: "Comparer les formules",
-    compareText: "Des cartes plus courtes, avec les bénéfices immédiats d'abord.",
+    compareText: "Gratuit pour commencer. Premium pour tout débloquer.",
     soonTitle: "Bientôt disponibles",
-    soonText: "Ces fonctions restent séparées des avantages déjà utilisables pour éviter toute confusion produit.",
+    soonText: "Ces fonctions seront ajoutées progressivement sans créer une nouvelle formule.",
     freeBadge: "Découverte",
-    premiumBadge: "Populaire",
-    premiumPlusBadge: "Accompagnement complet",
+    premiumBadge: "Tout débloqué",
     currentBadge: "Actuel",
     freeIntro: "Pour suivre l'essentiel de votre budget sans friction.",
-    premiumIntro: "BudgetKazPéi vous conseille dans votre gestion quotidienne.",
-    premiumPlusIntro: "BudgetKazPéi vous accompagne dans des démarches concrètes.",
+    premiumIntro: "Toutes les fonctions avancées réunies dans une seule offre.",
     freeFeatures: [
       "Sans publicité",
       "Budget mensuel et catégories",
@@ -71,12 +69,8 @@ export const PREMIUM_PAGE_COPY = {
       PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premium],
       "Historique et statistiques avancées",
       "Export PDF et alertes budget",
-      "Conseiller BudgetKazPéi — utilisation limitée",
-    ],
-    premiumPlusFeatures: [
-      "Tout le Premium",
-      PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premiumPlus],
-      "Conseiller BudgetKazPéi+ — utilisation illimitée",
+      "Conseiller BudgetKazPéi",
+      "Accompagnement avancé des démarches",
       "Dossiers, courriers, emails, relances, rendez-vous et recours",
     ],
     soonFeatures: [
@@ -87,63 +81,55 @@ export const PREMIUM_PAGE_COPY = {
     scanCardTitles: {
       [PLAN_IDS.free]: PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.free],
       [PLAN_IDS.premium]: PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premium],
-      [PLAN_IDS.premiumPlus]: PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premiumPlus],
     },
     statusCardTitles: {
       [PLAN_IDS.free]: "BudgetKazPéi",
       [PLAN_IDS.premium]: "Premium actif",
-      [PLAN_IDS.premiumPlus]: "Premium+ actif",
     },
     statusCardTexts: {
       [PLAN_IDS.free]: "Découverte simple, sans engagement.",
-      [PLAN_IDS.premium]: "Plus d'analyses, plus d'historique.",
-      [PLAN_IDS.premiumPlus]: "Accompagnement avancé des démarches.",
+      [PLAN_IDS.premium]: "Toutes les fonctions avancées sont débloquées.",
     },
-    scanInfoTitle: "Contrat scanner",
-    scanInfoFree: "Gratuit affiche la vraie allocation gratuite.",
-    scanInfoPremium: "Premium suit son quota commercial en clair.",
-    scanInfoPremiumPlus: "Profitez de vos scans inclus, avec une protection contre les utilisations inhabituelles.",
+    scanInfoFree: "Le scanner reste disponible en mode découverte avec une allocation limitée.",
+    scanInfoPremium: "Les scans sont inclus ; une limite technique invisible protège uniquement contre les usages anormaux.",
+    monthlyLabel: "Mensuel",
+    annualLabel: "Annuel",
+    annualSaving: "Environ 2 mois offerts",
   },
   kr: {
     pageEyebrow: "Bann offres BudgetKazPéi",
-    pageTitle: "Swazi lof ki korespond ek out kotidien.",
+    pageTitle: "Dé formule. Pa bezoin in nivo an milyé.",
     pageText:
-      "Koumans dan Gratuit, épi pas dan Premium kan ou néna bezoin plis scans, plis analiz ek plis lakonpagnman.",
+      "Koumans gratis, épi pas Premium pou débloque tout bann fonksyon avansé BudgetKazPéi.",
     currentTitle: "Out formule aktiel",
     currentLoading: "Nou pe charz out formule...",
     currentFree: "Mode dékouvèrt aktif",
     currentActive: "Aktif",
     currentManage: "Gèr mon lof",
     compareTitle: "Konpar bann offres",
-    compareText: "Bann kart pli kout, ek an prémyé sak ou kapav servi tout suite.",
+    compareText: "Gratis pou koumansé. Premium pou débloque tout.",
     soonTitle: "An préparasyon",
-    soonText: "Sa bann fonksyon-la lé séparé avèk bann avantaj déjà disponib pou pa mélanz sak ou kapav servi ek sak lé ankor an préparasyon.",
+    soonText: "Sa bann fonksyon-la va ariv piti a piti san kré in lot formule.",
     freeBadge: "Pou dékouv",
-    premiumBadge: "Nou konsey",
-    premiumPlusBadge: "Lakonpagnman complet",
+    premiumBadge: "Tout débloqué",
     currentBadge: "Aktiel",
-    freeIntro: "Pou dékouv BudgetKazPéi ek koumans swiv sak lé esansyèl.",
-    premiumIntro: "BudgetKazPéi i konsey aou dann out gestion kotidien.",
-    premiumPlusIntro: "BudgetKazPéi i akonpagn aou dann bann demars konkrè.",
+    freeIntro: "Pou dékouv BudgetKazPéi ek swiv sak lé esansyèl.",
+    premiumIntro: "Tout bann fonksyon avansé ansanm dann in sèl offre.",
     freeFeatures: [
       "San piblisité",
       "Bidjé esansyèl",
       "Larzan i rantre, dépans ek istorik senp",
-      "Aksé pou dékouv scanner-la",
+      PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.free],
       "Bann Bon Plan lokal",
       "🔒 Konseyé BudgetKazPéi pou dékouv dann Premium",
     ],
     premiumFeatures: [
-      "Tout sak lé dann Gratuit",
-      "10 scans par mwa",
+      "Tout sak lé dann Gratis",
+      PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premium],
       "Istorik ek statistik avansé",
       "Èksport PDF ek alèrt bidjé",
-      "Konseyé BudgetKazPéi — itilizasion limité",
-    ],
-    premiumPlusFeatures: [
-      "Tout sak lé dann Premium",
-      "Scans san limit",
-      "Konseyé BudgetKazPéi+ — itilizasion san limit",
+      "Konseyé BudgetKazPéi",
+      "Lakonpagnman avansé bann demars",
       "Dosyé, kourrié, email, relans, randévou ek rekour",
     ],
     soonFeatures: [
@@ -152,44 +138,58 @@ export const PREMIUM_PAGE_COPY = {
       "Veille pèsonalizé su bann èd ek drwa",
     ],
     scanCardTitles: {
-      [PLAN_IDS.free]: "Aksé pou dékouv scanner-la",
-      [PLAN_IDS.premium]: "10 scans par mwa",
-      [PLAN_IDS.premiumPlus]: "Scans san limit",
+      [PLAN_IDS.free]: PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.free],
+      [PLAN_IDS.premium]: PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premium],
     },
     statusCardTitles: {
       [PLAN_IDS.free]: "BudgetKazPéi",
       [PLAN_IDS.premium]: "Premium aktif",
-      [PLAN_IDS.premiumPlus]: "Premium+ aktif",
     },
     statusCardTexts: {
       [PLAN_IDS.free]: "Pou dékouv sinp, san langazman.",
-      [PLAN_IDS.premium]: "Plis analiz, plis istorik.",
-      [PLAN_IDS.premiumPlus]: "Lakonpagnman avansé pou bann demars.",
+      [PLAN_IDS.premium]: "Tout bann fonksyon avansé lé débloqué.",
     },
-    scanInfoTitle: "Kontra scanner",
-    scanInfoFree: "Gratuit i afis vré kantite gratuit an kler.",
-    scanInfoPremium: "Premium i gard so quota komersial an kler.",
-    scanInfoPremiumPlus: "Profit out scans, ek in protéksyon si lorizaz i devien pa normal.",
+    scanInfoFree: "Scanner-la i reste disponib pou dékouv avèk in kantite limité.",
+    scanInfoPremium: "Bann scans lé inkliz ; in limit teknik kaché i protéz zis kont bann lizaz pa normal.",
+    monthlyLabel: "Chak mwa",
+    annualLabel: "Par an",
+    annualSaving: "Apepré 2 mwa offert",
   },
 }
 
 function planBadgeLabel(planId, currentPlanId, labels) {
   if (planId === currentPlanId) return labels.currentBadge
   if (planId === PLAN_IDS.premium) return labels.premiumBadge
-  if (planId === PLAN_IDS.premiumPlus) return labels.premiumPlusBadge
   return labels.freeBadge
 }
 
 function planSummary(planId, labels) {
-  if (planId === PLAN_IDS.free) return labels.freeIntro
-  if (planId === PLAN_IDS.premium) return labels.premiumIntro
-  return labels.premiumPlusIntro
+  return planId === PLAN_IDS.premium ? labels.premiumIntro : labels.freeIntro
 }
 
 function planFeatures(planId, labels) {
-  if (planId === PLAN_IDS.free) return labels.freeFeatures
-  if (planId === PLAN_IDS.premium) return labels.premiumFeatures
-  return labels.premiumPlusFeatures
+  return planId === PLAN_IDS.premium ? labels.premiumFeatures : labels.freeFeatures
+}
+
+function CheckIcon({ accent }) {
+  return (
+    <span
+      style={{
+        width: 22,
+        height: 22,
+        borderRadius: 999,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: `${accent}16`,
+        color: accent,
+        flexShrink: 0,
+        marginTop: 1,
+      }}
+    >
+      <ShieldCheck size={14} strokeWidth={2.3} />
+    </span>
+  )
 }
 
 function PlanCard({ planId, currentPlanId, labels }) {
@@ -252,9 +252,16 @@ function PlanCard({ planId, currentPlanId, labels }) {
         </span>
       </div>
 
-      <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+      {planId === PLAN_IDS.premium ? (
+        <div style={{ display: "grid", gap: 5 }}>
+          <div style={{ color: COLORS.text, fontSize: 28, fontWeight: 950 }}>{PLAN_PRICES[planId]}</div>
+          <div style={{ color: COLORS.muted, fontSize: 13 }}>
+            {PLAN_ANNUAL_PRICES[PLAN_IDS.premium]} · {labels.annualSaving}
+          </div>
+        </div>
+      ) : (
         <div style={{ color: COLORS.text, fontSize: 28, fontWeight: 950 }}>{PLAN_PRICES[planId]}</div>
-      </div>
+      )}
 
       <div style={{ display: "grid", gap: 10 }}>
         {planFeatures(planId, labels).map(feature => (
@@ -268,27 +275,6 @@ function PlanCard({ planId, currentPlanId, labels }) {
   )
 }
 
-function CheckIcon({ accent }) {
-  return (
-    <span
-      style={{
-        width: 22,
-        height: 22,
-        borderRadius: 999,
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: `${accent}16`,
-        color: accent,
-        flexShrink: 0,
-        marginTop: 1,
-      }}
-    >
-      <ShieldCheck size={14} strokeWidth={2.3} />
-    </span>
-  )
-}
-
 export default function PremiumPage({
   isPremium,
   isPremiumPlus = false,
@@ -298,12 +284,10 @@ export default function PremiumPage({
 }) {
   const isKreol = t("nav", "dashboard") === "Tablo débor"
   const labels = isKreol ? PREMIUM_PAGE_COPY.kr : PREMIUM_PAGE_COPY.fr
-  const resolvedPlanId = isPremiumPlus
-    ? PLAN_IDS.premiumPlus
-    : isPremium
-      ? PLAN_IDS.premium
-      : currentPlan
-  const hasPremiumAccess = resolvedPlanId !== PLAN_IDS.free
+  const resolvedPlanId = (isPremium || isPremiumPlus)
+    ? PLAN_IDS.premium
+    : normalizePlan(currentPlan)
+  const hasPremiumAccess = resolvedPlanId === PLAN_IDS.premium
   const CurrentIcon = PLAN_META[resolvedPlanId]?.icon || Star
 
   function openPremiumOptions() {
@@ -311,20 +295,12 @@ export default function PremiumPage({
   }
 
   return (
-    <div
-      style={{
-        width: "100%",
-        maxWidth: 1120,
-        margin: "0 auto",
-        display: "grid",
-        gap: 20,
-      }}
-    >
+    <div style={{ width: "100%", maxWidth: 1120, margin: "0 auto", display: "grid", gap: 20 }}>
       <section
         style={{
           borderRadius: 26,
           border: `1px solid ${COLORS.border}`,
-          background: `linear-gradient(135deg, ${COLORS.card}, rgba(35,211,214,.08), rgba(167,139,250,.10))`,
+          background: `linear-gradient(135deg, ${COLORS.card}, rgba(35,211,214,.08), rgba(250,204,21,.10))`,
           padding: 24,
           display: "grid",
           gap: 18,
@@ -397,21 +373,6 @@ export default function PremiumPage({
                 </div>
               </div>
             </div>
-
-            <span
-              style={{
-                borderRadius: 999,
-                padding: "7px 11px",
-                fontSize: 11,
-                fontWeight: 900,
-                color: PLAN_META[resolvedPlanId].accent,
-                background: `${PLAN_META[resolvedPlanId].accent}14`,
-                border: `1px solid ${PLAN_META[resolvedPlanId].border}`,
-                alignSelf: "start",
-              }}
-            >
-              {subscriptionLoading ? labels.currentLoading : resolvedPlanId === PLAN_IDS.free ? labels.currentFree : labels.currentActive}
-            </span>
           </div>
 
           {!subscriptionLoading && (
@@ -419,12 +380,12 @@ export default function PremiumPage({
               <InfoTile
                 icon={ScanLine}
                 title={labels.scanCardTitles[resolvedPlanId]}
-                text={resolvedPlanId === PLAN_IDS.premiumPlus ? labels.scanInfoPremiumPlus : resolvedPlanId === PLAN_IDS.premium ? labels.scanInfoPremium : labels.scanInfoFree}
+                text={resolvedPlanId === PLAN_IDS.premium ? labels.scanInfoPremium : labels.scanInfoFree}
               />
               <InfoTile
                 icon={ChartNoAxesCombined}
                 title={PLAN_PRICES[resolvedPlanId]}
-                text={resolvedPlanId === PLAN_IDS.free ? labels.freeIntro : resolvedPlanId === PLAN_IDS.premium ? labels.premiumIntro : labels.premiumPlusIntro}
+                text={resolvedPlanId === PLAN_IDS.premium ? labels.premiumIntro : labels.freeIntro}
               />
               <InfoTile
                 icon={Sparkles}
@@ -441,15 +402,12 @@ export default function PremiumPage({
           <div style={{ color: COLORS.cyan, fontSize: 13, fontWeight: 900, textTransform: "uppercase", letterSpacing: ".08em", marginBottom: 6 }}>
             {labels.compareTitle}
           </div>
-          <div style={{ color: COLORS.muted, fontSize: 14, lineHeight: 1.55 }}>
-            {labels.compareText}
-          </div>
+          <div style={{ color: COLORS.muted, fontSize: 14, lineHeight: 1.55 }}>{labels.compareText}</div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16 }}>
           <PlanCard planId={PLAN_IDS.free} currentPlanId={resolvedPlanId} labels={labels} />
           <PlanCard planId={PLAN_IDS.premium} currentPlanId={resolvedPlanId} labels={labels} />
-          <PlanCard planId={PLAN_IDS.premiumPlus} currentPlanId={resolvedPlanId} labels={labels} />
         </div>
       </section>
 
@@ -464,55 +422,15 @@ export default function PremiumPage({
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <span
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 14,
-              display: "inline-flex",
-              alignItems: "center",
-              justifyContent: "center",
-              background: "rgba(35,211,214,.12)",
-              color: COLORS.cyan,
-            }}
-          >
-            <Sparkles size={20} strokeWidth={2.2} />
-          </span>
+          <Sparkles size={20} strokeWidth={2.2} color={COLORS.cyan} />
           <div>
             <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 900 }}>{labels.soonTitle}</div>
             <div style={{ color: COLORS.muted, fontSize: 14, lineHeight: 1.5 }}>{labels.soonText}</div>
           </div>
         </div>
-
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
           {labels.soonFeatures.map(feature => (
-            <div
-              key={feature}
-              style={{
-                borderRadius: 18,
-                border: `1px dashed ${COLORS.border}`,
-                background: COLORS.card,
-                padding: 14,
-                display: "flex",
-                gap: 10,
-                alignItems: "flex-start",
-              }}
-            >
-              <span
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 12,
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  background: "rgba(167,139,250,.12)",
-                  color: COLORS.purple,
-                  flexShrink: 0,
-                }}
-              >
-                <Sparkles size={15} strokeWidth={2.2} />
-              </span>
+            <div key={feature} style={{ borderRadius: 18, border: `1px dashed ${COLORS.border}`, background: COLORS.card, padding: 14 }}>
               <span style={{ color: COLORS.text, fontSize: 14, lineHeight: 1.45 }}>{feature}</span>
             </div>
           ))}
@@ -524,16 +442,7 @@ export default function PremiumPage({
 
 function InfoTile({ icon: Icon, title, text }) {
   return (
-    <div
-      style={{
-        borderRadius: 18,
-        border: `1px solid ${COLORS.border}`,
-        background: COLORS.card,
-        padding: 14,
-        display: "grid",
-        gap: 8,
-      }}
-    >
+    <div style={{ borderRadius: 18, border: `1px solid ${COLORS.border}`, background: COLORS.card, padding: 14, display: "grid", gap: 8 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <Icon size={16} strokeWidth={2.2} color={COLORS.cyan} />
         <span style={{ color: COLORS.text, fontSize: 14, fontWeight: 900 }}>{title}</span>
