@@ -24,29 +24,19 @@ export const ADVISOR_MODES = Object.freeze([
 ])
 
 export function getAdvisorAccess(planInput, legacyFlags = {}) {
-  const legacyPlan = legacyFlags.isPremiumPlus
-    ? PLAN_IDS.premiumPlus
-    : legacyFlags.isPremium
-      ? PLAN_IDS.premium
-      : planInput
+  const legacyPlan = legacyFlags.isPremiumPlus || legacyFlags.isPremium
+    ? PLAN_IDS.premium
+    : planInput
   const plan = normalizePlan(legacyPlan)
-  const canUseAdvisor = plan === PLAN_IDS.premium || plan === PLAN_IDS.premiumPlus
-  const canUseAdvancedAdvisorTools = plan === PLAN_IDS.premiumPlus
+  const canUseAdvisor = plan === PLAN_IDS.premium
+  const canUseAdvancedAdvisorTools = canUseAdvisor
 
   return {
     plan,
     canUseAdvisor,
     canUseAdvancedAdvisorTools,
-    publicUsageLabel: canUseAdvancedAdvisorTools
-      ? "unlimited"
-      : canUseAdvisor
-        ? "limited"
-        : "locked",
-    allowedModes: canUseAdvancedAdvisorTools
-      ? ADVISOR_MODES
-      : canUseAdvisor
-        ? STANDARD_ADVISOR_MODES
-        : [],
+    publicUsageLabel: canUseAdvisor ? "included" : "locked",
+    allowedModes: canUseAdvisor ? ADVISOR_MODES : [],
   }
 }
 
