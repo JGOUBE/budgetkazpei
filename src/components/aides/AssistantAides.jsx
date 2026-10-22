@@ -46,7 +46,7 @@ function getCurrentYearNumber() {
 function getAiPlan(profile = {}, isPremium = false) {
   const rawPlan = normalizeText(profile?.subscription_plan || profile?.plan || "")
 
-  if (isTrue(profile?.premium_plus) || rawPlan.includes("premium_plus") || rawPlan.includes("premium plus")) return "premium_plus"
+  if (isTrue(profile?.premium_plus) || rawPlan.includes("premium_plus") || rawPlan.includes("premium plus")) return "premium"
   if (isTrue(profile?.premium) || rawPlan.includes("premium")) return "premium"
   if (isPremium) return "premium"
 
@@ -58,7 +58,7 @@ function getAiLimit(profile = {}, isPremium = false) {
 }
 
 function getAiPlanLabel(plan = "free") {
-  if (plan === "premium_plus") return "Premium+"
+  if (plan === "premium_plus") return "Premium"
   if (plan === "premium") return "Premium"
   return "Gratuit"
 }
@@ -2239,8 +2239,8 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
     if (used >= limit) {
       alert(
         isKreol
-          ? "Ou la itilize tout out échanges pou sa mwa-la. Premium+ i donn ziska 250 échanges par mwa."
-          : "Vous avez utilisé tous vos échanges du mois. Premium+ vous donne jusqu’à 250 échanges par mois."
+          ? "Ou la itilize tout out échanges pou sa mwa-la. Premium i inkliz lo Konseyé, avèk in limit teknik de sékirité an fon."
+          : "Vous avez utilisé tous vos échanges du mois. Premium inclut le Conseiller, avec une limite technique de sécurité en arrière-plan."
       )
       return false
     }
@@ -2929,8 +2929,8 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
           setAiUsage(result.usage || aiUsage)
           alert(
             isKreol
-              ? "Ou la utilisé tout out échanges pou sa mwa-la. Premium+ i donn ziska 250 échanges par mwa."
-              : "Vous avez utilisé tous vos échanges du mois. Premium+ vous donne jusqu’à 250 échanges par mois."
+              ? "Ou la utilisé tout out échanges pou sa mwa-la. Premium i inkliz lo Konseyé, avèk in limit teknik de sékirité an fon."
+              : "Vous avez utilisé tous vos échanges du mois. Premium inclut le Conseiller, avec une limite technique de sécurité en arrière-plan."
           )
           return
         }
@@ -3021,7 +3021,7 @@ export default function AssistantAides({ isPremium, isMobile, t, user }) {
           </div>
           {aiQuotaReached && (
             <div style={{ color: COLORS.red, fontSize: 13, fontWeight: 800 }}>
-              {isKreol ? "Ou la utilisé tout out échanges pou sa mwa-la. Premium+ i donn ziska 250 échanges par mwa." : "Vous avez utilisé tous vos échanges du mois. Premium+ vous donne jusqu’à 250 échanges par mois."}
+              {isKreol ? "Ou la utilisé tout out échanges pou sa mwa-la. Premium i inkliz lo Konseyé, avèk in limit teknik de sékirité an fon." : "Vous avez utilisé tous vos échanges du mois. Premium inclut le Conseiller, avec une limite technique de sécurité en arrière-plan."}
             </div>
           )}
         </div>
