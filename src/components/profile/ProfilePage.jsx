@@ -53,7 +53,7 @@ const REQUEST_TYPES = [
   { value: "suggestion", fr: "Suggérer une amélioration", kr: "Propoz in amélioration" },
   { value: "propose_services", fr: "Proposer ses services", kr: "Propoz out servis" },
   { value: "propose_bon_plan", fr: "Proposer un bon plan ou une sortie", kr: "Propoz in bon plan ou in sorti" },
-  { value: "premium", fr: "Question Premium / Premium+", kr: "Question Premium / Premium+" },
+  { value: "premium", fr: "Question Premium", kr: "Question Premium" },
 ]
 
 const inputStyle = () => ({
@@ -354,7 +354,7 @@ export default function ProfilePage({ user, t }) {
         suggestion: tr(isKreol, "Suggestion d’amélioration", "Suggestion amélioration"),
         propose_services: tr(isKreol, "Proposition de services", "Propoz servis"),
         propose_bon_plan: tr(isKreol, "Proposition de bon plan ou de sortie", "Propoz bon plan ou sorti"),
-        premium: tr(isKreol, "Question Premium / Premium+", "Question Premium / Premium+"),
+        premium: tr(isKreol, "Question Premium", "Question Premium"),
       }
 
       const { error: insertError } = await supabase
@@ -880,7 +880,7 @@ export default function ProfilePage({ user, t }) {
               {tr(isKreol, "Découvrir Premium", "Découvre Premium")}
             </div>
             <div style={{ fontSize: 13, color: COLORS.muted, lineHeight: 1.6 }}>
-              {tr(isKreol, "Comparez les options Premium et Premium+ sur le site BudgetKazPéi.", "Compare bann options Premium ek Premium+ su site BudgetKazPéi.")}
+              {tr(isKreol, "Comparez les options Premium sur le site BudgetKazPéi.", "Compare loff Premium su site BudgetKazPéi.")}
             </div>
           </div>
 
@@ -907,7 +907,7 @@ export default function ProfilePage({ user, t }) {
                 padding: 14,
               }}
             >
-              <div style={{ color: COLORS.purple, fontWeight: 800, marginBottom: 6 }}>Premium+</div>
+              <div style={{ color: COLORS.yellow, fontWeight: 800, marginBottom: 6 }}>Premium</div>
               <div style={{ color: COLORS.muted, fontSize: 13, lineHeight: 1.55 }}>
                 {tr(isKreol, "Conseiller IA avancé, aide administrative personnalisée, courriers et accompagnement plus complet.", "Conseiller IA avancé, aide administrative personnalisée, courriers ek accompagnement pli complet.")}
               </div>
@@ -941,11 +941,11 @@ export default function ProfilePage({ user, t }) {
 function normalizeSubscriptionPlan(profile = {}) {
   const cleanPlan = String(profile?.plan || "").toLowerCase().trim()
 
-  if (cleanPlan === "premium_plus") return "premium_plus"
+  if (cleanPlan === "premium_plus") return "premium"
   if (cleanPlan === "premium") return "premium"
   if (cleanPlan === "free") return "free"
 
-  if (profile?.premium_plus === true) return "premium_plus"
+  if (profile?.premium_plus === true) return "premium"
   if (profile?.premium === true || profile?.is_premium === true) return "premium"
 
   return "free"
