@@ -21,6 +21,7 @@ export default function RevenusPage({
   transactions = [],
   user,
   profile = {},
+  isPremium = false,
   isPremiumPlus = false,
   onRefreshTransactions,
   onGoPremium,
