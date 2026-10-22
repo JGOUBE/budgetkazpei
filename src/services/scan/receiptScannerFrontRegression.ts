@@ -243,16 +243,16 @@ export async function runReceiptScannerFrontRegressionFixtures(): Promise<Regres
     source: "scan_usage",
   })
   const premiumPlusLabel = formatReceiptQuotaLabelFr(premiumPlusQuota)
-  results.push(assertEqual("quota-premium-plus-unlimited-label", premiumPlusLabel, "Analyses IA illimitées — Premium+"))
-  results.push(assertFalse("quota-premium-plus-label-hides-digits", /\d/.test(premiumPlusLabel)))
-  results.push(assertFalse("quota-premium-plus-label-hides-safety-limit", premiumPlusLabel.includes("50")))
+  results.push(assertEqual("quota-premium-legacy-alias-label", premiumPlusLabel, "Scans de tickets inclus — Premium"))
+  results.push(assertFalse("quota-premium-legacy-alias-hides-digits", /\d/.test(premiumPlusLabel)))
+  results.push(assertFalse("quota-premium-legacy-alias-hides-safety-limit", premiumPlusLabel.includes("50")))
   const premiumPlusSafetyQuota = resolveReceiptQuotaState({
     usage: { used: 50, aiUsed: 50, manualUsed: 0, plan: "premium_plus" },
     fallbackPlan: "free",
     source: "scan_usage",
   })
-  results.push(assertTrue("quota-premium-plus-safety-flag", premiumPlusSafetyQuota.safetyLimitReached))
-  results.push(assertEqual("quota-premium-plus-safety-label-stays-commercial", formatReceiptQuotaLabelFr(premiumPlusSafetyQuota), "Analyses IA illimitées — Premium+"))
+  results.push(assertTrue("quota-premium-legacy-alias-safety-flag", premiumPlusSafetyQuota.safetyLimitReached))
+  results.push(assertEqual("quota-premium-legacy-alias-safety-label-stays-commercial", formatReceiptQuotaLabelFr(premiumPlusSafetyQuota), "Scans de tickets inclus — Premium"))
   results.push(assertTrue("quota-refresh-after-python-success", shouldRefreshQuotaAfterPythonScan({ engineUsed: "python" })))
 
   const quotaApiError = new ReceiptScannerApiError({
