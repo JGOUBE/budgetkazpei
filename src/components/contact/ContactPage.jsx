@@ -14,7 +14,7 @@ const REQUEST_TYPES = [
   { value: "suggestion", fr: "Suggérer une amélioration", kr: "Propoz in amélioration" },
   { value: "propose_services", fr: "Proposer ses services", kr: "Propoz out servis" },
   { value: "propose_bon_plan", fr: "Proposer un bon plan ou une sortie", kr: "Propoz in bon plan ou in sorti" },
-  { value: "premium", fr: "Question Premium / Premium+", kr: "Question Premium / Premium+" },
+  { value: "premium", fr: "Question Premium", kr: "Question Premium" },
 ]
 
 function getContactPageTheme() {
@@ -101,7 +101,7 @@ export default function ContactPage({ user, t }) {
         suggestion: tr(isKreol, "Suggestion d'amélioration", "Suggestion amélioration"),
         propose_services: tr(isKreol, "Proposition de services", "Propoz servis"),
         propose_bon_plan: tr(isKreol, "Proposition de bon plan ou de sortie", "Propoz bon plan ou sorti"),
-        premium: tr(isKreol, "Question Premium / Premium+", "Question Premium / Premium+"),
+        premium: tr(isKreol, "Question Premium", "Question Premium"),
       }
 
       const subject = subjectByType[typeDemande] || "Message utilisateur"
