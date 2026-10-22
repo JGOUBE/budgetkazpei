@@ -13,7 +13,7 @@ const supabase = createClient(
 
 const PRICE_MAP: Record<
   string,
-  { plan: "premium" | "premium_plus"; period: "monthly" | "yearly" }
+  { plan: "premium"; period: "monthly" | "yearly" }
 > = {
   "price_1TkkITBQ1hdaYjbCbm0rfH3C": {
     plan: "premium",
@@ -24,11 +24,11 @@ const PRICE_MAP: Record<
     period: "yearly",
   },
   "price_1TkkISBQ1hdaYjbCk7QaDdnu": {
-    plan: "premium_plus",
+    plan: "premium",
     period: "monthly",
   },
   "price_1TkkIUBQ1hdaYjbCJQwgfJOo": {
-    plan: "premium_plus",
+    plan: "premium",
     period: "yearly",
   },
 }
@@ -114,7 +114,7 @@ serve(async (req) => {
       .from("profiles")
       .update({
         premium: active,
-        premium_plus: active && plan === "premium_plus",
+        premium_plus: false,
         subscription_type: active ? period : "free",
         stripe_customer_id: customerId,
         stripe_subscription_id: subscriptionId,
