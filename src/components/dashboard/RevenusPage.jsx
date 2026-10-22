@@ -21,6 +21,7 @@ export default function RevenusPage({
   transactions = [],
   user,
   profile = {},
+  isPremium = false,
   isPremiumPlus = false,
   onRefreshTransactions,
   onGoPremium,
@@ -90,7 +91,7 @@ export default function RevenusPage({
       />
 
       <LockedPremiumPlusCard
-        isUnlocked={isPremiumPlus}
+        isUnlocked={isPremiumPlus || isPremium}
         onGoPremium={onGoPremium}
         title={isKreol ? "Analiz evolution revenus" : "Analyse evolution revenus"}
         text={
@@ -325,7 +326,7 @@ function LockedPremiumPlusCard({ isUnlocked, title, text, onGoPremium, isKreol =
       </p>
       {!isUnlocked && onGoPremium && (
         <button type="button" onClick={onGoPremium} style={{ marginTop: 14, background: "rgba(167,139,250,.18)", border: "1px solid rgba(167,139,250,.35)", color: "#DDD6FE", borderRadius: 12, padding: "10px 13px", cursor: "pointer", fontWeight: 900, fontFamily: "inherit" }}>
-          {isKreol ? "Dekouvrir Premium+" : "Decouvrir Premium+"}
+          {isKreol ? "Dékouv Premium" : "Découvrir Premium"}
         </button>
       )}
     </div>

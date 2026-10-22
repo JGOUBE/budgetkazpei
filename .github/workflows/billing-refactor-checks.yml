@@ -1,0 +1,28 @@
+name: Billing refactor checks
+
+on:
+  push:
+    branches: [billing-free-premium-20261022]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+      - run: npm run test:plans-routing
+      - run: npm run test:landing
+      - run: npm run test:advisor-aides
+      - run: npm run test:commercial-consolidation
+      - run: npm run test:shopping-consolidation

@@ -36,12 +36,7 @@ const PLAN_COPY = {
     [PLAN_IDS.premium]: {
       name: PLAN_NAMES[PLAN_IDS.premium], cta: "Découvrir Premium",
       intro: "BudgetKazPéi me conseille au quotidien.",
-      items: ["Tout le Gratuit", PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premium], "Historique et statistiques avancées", "Alertes budget et export PDF", "Conseiller BudgetKazPéi — utilisation limitée"],
-    },
-    [PLAN_IDS.premiumPlus]: {
-      name: PLAN_NAMES[PLAN_IDS.premiumPlus], cta: "Découvrir Premium+",
-      intro: "BudgetKazPéi m'accompagne dans mes actions concrètes.",
-      items: ["Tout le Premium", PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premiumPlus], "Conseiller BudgetKazPéi+ — utilisation illimitée", "Accompagnement avancé des démarches", "Dossiers, courriers, emails, relances et rendez-vous", "Compréhension des refus et préparation des recours"],
+      items: ["Tout le Gratuit", PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premium], "Historique et statistiques avancées", "Alertes budget et export PDF", "Conseiller BudgetKazPéi et outils avancés"],
     },
   },
   kr: {
@@ -53,12 +48,7 @@ const PLAN_COPY = {
     [PLAN_IDS.premium]: {
       name: "Premium", cta: "Dékouv Premium",
       intro: "BudgetKazPéi i konsey amwin dann mon kotidien.",
-      items: ["Tout sak lé dann Gratis", "10 scans par mwa", "Istorik ek statistik avansé", "Alèrt bidjé ek èksport PDF", "Konseyé BudgetKazPéi — itilizasion limité"],
-    },
-    [PLAN_IDS.premiumPlus]: {
-      name: "Premium+", cta: "Dékouv Premium+",
-      intro: "BudgetKazPéi i akonpagn amwin dann mon bann aksion konkrè.",
-      items: ["Tout sak lé dann Premium", "Scans san limit", "Konseyé BudgetKazPéi+ — itilizasion san limit", "Lakonpagnman avansé pou bann demars", "Dosyé, kourrié, email, relans ek randévou", "Konprann bann refi ek prépar bann rekour"],
+      items: ["Tout sak lé dann Gratis", "Scans tiké inkliz", "Istorik ek statistik avansé", "Alèrt bidjé ek èksport PDF", "Konseyé BudgetKazPéi ek bann zouti avansé"],
     },
   },
 }

@@ -57,7 +57,7 @@ export default function PrivacyPage() {
       <LegalSection title="7. Finalités et bases légales" eyebrow="Pourquoi ces traitements ont lieu">
         <ul>
           <li><strong>Exécution du service :</strong> créer et sécuriser le compte, afficher le budget, enregistrer les opérations, tickets, listes, aides et démarches demandés par l’utilisateur.</li>
-          <li><strong>Mesures contractuelles et exécution de l’abonnement :</strong> présenter, activer et gérer les offres Premium et Premium+ et leurs quotas.</li>
+          <li><strong>Mesures contractuelles et exécution de l’abonnement :</strong> présenter, activer et gérer l’offre Premium et ses limites techniques de sécurité.</li>
           <li><strong>Intérêt légitime :</strong> protéger le service, prévenir les abus, diagnostiquer les erreurs et améliorer les associations de produits et les informations de prix, dans le respect des droits des utilisateurs.</li>
           <li><strong>Consentement ou autorisation de l’appareil lorsque nécessaire :</strong> accès facultatif à la position pour retrouver une commune, et autres fonctions optionnelles qui le demandent.</li>
           <li><strong>Obligations légales :</strong> éléments nécessaires à la gestion des paiements, de la facturation et des demandes relatives aux droits.</li>

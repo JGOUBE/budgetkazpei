@@ -47,15 +47,13 @@ for (const obsolete of [
 
 const free = PUBLIC_PLAN_CARDS.find(plan => plan.id === PLAN_IDS.free)
 const premium = PUBLIC_PLAN_CARDS.find(plan => plan.id === PLAN_IDS.premium)
-const premiumPlus = PUBLIC_PLAN_CARDS.find(plan => plan.id === PLAN_IDS.premiumPlus)
-
-assert.equal(PUBLIC_PLAN_CARDS.length, 3)
+ 
+assert.equal(PUBLIC_PLAN_CARDS.length, 2)
 assert.equal(free.items.some(item => item.status === PLAN_FEATURE_STATUS.locked && /Conseiller BudgetKazPéi/.test(item.text)), true)
 assert.equal(free.items.some(item => item.status === PLAN_FEATURE_STATUS.included && /Conseiller BudgetKazPéi/.test(item.text)), false)
-assert.equal(premium.items.some(item => /Conseiller BudgetKazPéi — utilisation limitée/.test(item.text)), true)
-assert.equal(premiumPlus.items.some(item => /Conseiller BudgetKazPéi\+ — utilisation illimitée/.test(item.text)), true)
-assert.equal(premiumPlus.items.some(item => /Dossiers, courriers, emails, relances et rendez-vous/.test(item.text)), true)
-assert.equal(premiumPlus.items.some(item => /refus et préparation des recours/.test(item.text)), true)
+assert.equal(premium.items.some(item => /Conseiller BudgetKazPéi/.test(item.text)), true)
+assert.equal(premium.items.some(item => /Dossiers, courriers, emails, relances et rendez-vous/.test(item.text)), true)
+assert.equal(premium.items.some(item => /recours/.test(item.text)), true)
 
 assert.deepEqual(resolveAuthRoute({ pathname: DISCOVER_ROUTE }), { type: "render", page: "premium" })
 assert.deepEqual(resolveAuthRoute({ pathname: DISCOVER_ROUTE, isAuthenticated: true }), { type: "render", page: "premium" })
@@ -70,7 +68,7 @@ assert.match(advisor, /Découvrir Premium/)
 assert.match(advisor, /if \(!access\.canUseAdvisor\)/)
 assert.doesNotMatch(advisor.match(/function LockedAdvisor[\s\S]*?\n\}/)?.[0] || "", /AssistantConseiller|textarea|input/)
 assert.equal((aides.match(/<PremiumPlusPromotion/g) || []).length, 1)
-assert.match(aides, /Accompagnement avancé des démarches — Premium\+/)
+assert.match(aides, /Accompagnement avancé des démarches — Premium/)
 
 assert.match(statistics, /themeName === "dark"/)
 assert.match(statistics, /const \{ themeName, tokens \} = useTheme\(\)/)
@@ -79,6 +77,6 @@ assert.match(statistics, /linear-gradient\(135deg, \$\{colors\.bg\}/)
 assert.match(statistics, /colors\.pastelBlue[\s\S]{0,120}colors\.card/)
 assert.doesNotMatch(statistics, /createColorAliases/)
 
-console.log("✓ Doctrine commerciale Gratuit / Premium / Premium+ vérifiée")
+console.log("✓ Doctrine commerciale Gratuit / Premium vérifiée")
 console.log("✓ /decouvrir, CTA et teaser Conseiller vérifiés")
-console.log("✓ Paywall Premium+ et correctif sombre Mes stats vérifiés")
+console.log("✓ Paywall Premium et correctif sombre Mes stats vérifiés")

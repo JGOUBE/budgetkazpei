@@ -4395,7 +4395,10 @@ Deno.serve(async (req) => {
       body.userPlan || body.plan || imageMeta.user_plan || "free",
     );
     const isPremiumPlus =
-      userPlan === "premium_plus" || body.isPremiumPlus === true;
+      userPlan === "premium" ||
+      userPlan === "premium_plus" ||
+      body.isPremium === true ||
+      body.isPremiumPlus === true;
     const splitRetryDisabledByClient = Boolean(
       imageMeta.disable_split_retry ??
         imageMeta.disableSplitRetry ??
@@ -6080,7 +6083,7 @@ Deno.serve(async (req) => {
         primaryError:
           "Primary vision did not return usable data before local fallback.",
         providerMessage:
-          "OpenAI Vision tried once; local fallback available but Premium+ split should run first.",
+          "OpenAI Vision tried once; local fallback available but Premium enhanced split should run first.",
         baseReceipt: localReceipt,
         primaryConfidence: 25,
       });

@@ -55,15 +55,13 @@ export default function Sidebar({
     user?.email?.split("@")[0] ||
     "Utilisateur"
 
-  const premiumButtonLabel = isPremiumPlus
-    ? "Gérer Premium+"
-    : isPremium
-      ? "Passer à Premium+"
-      : isKreol
-        ? "Vir Premium"
-        : "Découvrir Premium"
+  const premiumButtonLabel = isPremium || isPremiumPlus
+    ? (isKreol ? "Gèr Premium" : "Gérer Premium")
+    : isKreol
+      ? "Vir Premium"
+      : "Découvrir Premium"
 
-  const premiumColor = isPremiumPlus || isPremium ? ds.purple : ds.warning
+  const premiumColor = isPremium || isPremiumPlus ? ds.purple : ds.warning
 
   function getNavLabel(item) {
     if (item.id === "dashboard") return isKreol ? "Akèy" : "Accueil"

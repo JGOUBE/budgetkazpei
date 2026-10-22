@@ -1183,7 +1183,7 @@ function DemarchePremiumTools({
           marginBottom: 8,
         }}
       >
-        {isPremiumPlus ? "✨ Premium+" : "🔒 Premium+"}{" "}
+        {isPremiumPlus ? "✨ Premium" : "🔒 Premium"}{" "}
         {isKreol ? "Zouti pou démarche" : "Outils pour cette démarche"}
       </div>
 
@@ -1201,8 +1201,8 @@ function DemarchePremiumTools({
                     ? "Fonction bientôt disponible"
                     : "Fonction bientôt disponible"
                 : isKreol
-                  ? "Réservé Premium+"
-                  : "Réservé Premium+"
+                  ? "Réservé Premium"
+                  : "Réservé Premium"
             }
             style={{
               display: "flex",
@@ -1289,7 +1289,7 @@ function PreparationDossierPanel({ demarche, isKreol, isMobile, onClose }) {
                 marginBottom: 6,
               }}
             >
-              ✨ Premium+ · {isKreol ? "Prépar dossier" : "Préparer mon dossier"}
+              ✨ Premium · {isKreol ? "Prépar dossier" : "Préparer mon dossier"}
             </div>
 
             <h2
@@ -1529,7 +1529,7 @@ function GeneratedEmailPanel({ demarche, isKreol, isMobile, onClose }) {
                 marginBottom: 6,
               }}
             >
-              ✨ Premium+ · {isKreol ? "Génér email" : "Générer un email"}
+              ✨ Premium · {isKreol ? "Génér email" : "Générer un email"}
             </div>
 
             <h2
@@ -1747,7 +1747,7 @@ function GeneratedLetterPanel({ demarche, isKreol, isMobile, onClose }) {
                 marginBottom: 6,
               }}
             >
-              ✨ Premium+ · {isKreol ? "Génér courrier" : "Générer un courrier"}
+              ✨ Premium · {isKreol ? "Génér courrier" : "Générer un courrier"}
             </div>
 
             <h2
@@ -1944,8 +1944,9 @@ function UnderstandRefusalPanel({ demarche, isKreol, isMobile, onClose }) {
           isKreol,
           isQuickPreset: false,
           profile: {
-            premium_plus: true,
-            subscription_plan: "premium_plus",
+            premium: true,
+            premium_plus: false,
+            subscription_plan: "premium",
           },
           demarche: {
             title: demarche.title || "",
@@ -2038,7 +2039,7 @@ function UnderstandRefusalPanel({ demarche, isKreol, isMobile, onClose }) {
                 marginBottom: 6,
               }}
             >
-              ✨ Premium+ · {isKreol ? "Comprann refus" : "Comprendre un refus"}
+              ✨ Premium · {isKreol ? "Comprann refus" : "Comprendre un refus"}
             </div>
 
             <h2
@@ -2627,7 +2628,7 @@ function AdminReminderPanel({ demarche, reminder, isKreol, isMobile, onSave, onD
                 marginBottom: 6,
               }}
             >
-              ✨ Premium+ · {isKreol ? "Rappel administratif" : "Rappel administratif"}
+              ✨ Premium · {isKreol ? "Rappel administratif" : "Rappel administratif"}
             </div>
 
             <h2
@@ -2868,7 +2869,7 @@ function ComingSoonPanel({ demarche, isKreol, isMobile, tool, onClose }) {
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
           <div>
             <div style={{ color: COLORS.purple, fontWeight: 900, fontSize: 13, marginBottom: 6 }}>
-              ✨ Premium+ · {toolLabels[tool] || "Fonction"}
+              ✨ Premium · {toolLabels[tool] || "Fonction"}
             </div>
             <h2
               style={{
@@ -3264,7 +3265,7 @@ function PrepareAppealPanel({ demarche, isKreol, isMobile, onClose }) {
                 marginBottom: 6,
               }}
             >
-              ✨ Premium+ · {isKreol ? "Prépar recours" : "Préparer un recours"}
+              ✨ Premium · {isKreol ? "Prépar recours" : "Préparer un recours"}
             </div>
 
             <h2

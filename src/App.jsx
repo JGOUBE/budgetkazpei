@@ -726,6 +726,7 @@ function BudgetKazPeiApp({
             user={user}
             profile={profile}
             isMobile={isMobile}
+            isPremium={isPremium}
             isPremiumPlus={isPremiumPlus}
             onEditTransaction={setEditingTransaction}
             onRefreshTransactions={fetchTransactions}
@@ -771,6 +772,7 @@ function BudgetKazPeiApp({
               tauxChargesFixes,
             }}
             isMobile={isMobile}
+            isPremium={isPremium}
             isPremiumPlus={isPremiumPlus}
             onGoPremium={() => setActiveNav("premium")}
             t={t}

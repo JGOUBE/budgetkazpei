@@ -15,16 +15,15 @@ const CONTACT_EMAIL = "contact.budgetkazpei@gmail.com"
 const LANDING_LANGUAGE_STORAGE_KEY = "budgetkazpei-public-language"
 
 const STRIPE_LINKS = {
-  premiumMonthly: "https://buy.stripe.com/7sYbJ0fIR2JU4yua1ggMw00",
-  premiumPlusMonthly: "https://buy.stripe.com/7sY28qdAJ1FQ6GCddsgMw03",
+  premiumMonthly: "https://buy.stripe.com/7sY28qdAJ1FQ6GCddsgMw03",
 }
 
 const PREMIUM_CONTENT = {
   fr: {
     seo: {
-      title: "Offres BudgetKazPéi — Gratuit, Premium et Premium+",
+      title: "Offres BudgetKazPéi — Gratuit, Premium",
       description:
-        "Comparez les offres Gratuit, Premium et Premium+ de BudgetKazPéi et choisissez le niveau d'accompagnement adapté à votre quotidien.",
+        "Comparez les offres Gratuit, Premium de BudgetKazPéi et choisissez le niveau d'accompagnement adapté à votre quotidien.",
     },
     navItems: [
       { label: "Offres", href: "#offres" },
@@ -35,7 +34,7 @@ const PREMIUM_CONTENT = {
       eyebrow: "Découvrir BudgetKazPéi",
       title: "Découvrez, soyez conseillé, puis accompagné.",
       text:
-        "Gratuit pose les bases. Premium ajoute le Conseiller pour la gestion quotidienne. Premium+ vous accompagne dans des démarches concrètes.",
+        "Gratuit pose les bases. Premium débloque le Conseiller, les fonctions avancées et l’accompagnement des démarches.",
       trust: [
         "Sans engagement",
         "Paiement sécurisé par Stripe",
@@ -44,20 +43,16 @@ const PREMIUM_CONTENT = {
     },
     offers: {
       eyebrow: "Les offres",
-      title: "Trois niveaux, faciles à comparer.",
+      title: "Deux formules, faciles à comparer.",
       intro:
-        "Chaque formule reprend les outils de la précédente et ajoute un accompagnement plus complet.",
+        "Commencez gratuitement, puis passez à Premium pour débloquer toutes les fonctions avancées.",
       recommended: "Recommandé",
-      complete: "Accompagnement complet",
       monthly: "Mensuel",
       perMonth: "/mois",
       freeCta: "Commencer gratuitement",
       dashboardCta: "Accéder à mon tableau de bord",
       premiumCta: "Choisir Premium",
-      premiumPlusCta: "Choisir Premium+",
-      premiumGuestCta: "Créer mon compte pour Premium",
-      premiumPlusGuestCta: "Créer mon compte pour Premium+",
-      normalUse: "Utilisation illimitée dans le cadre d'un usage normal du service.",
+       premiumGuestCta: "Créer mon compte pour Premium",
       comingSoonTitle: "En préparation",
       comingSoonText:
         "Les comparaisons intelligentes et les Bons plans personnalisés seront ajoutés progressivement, à mesure que la base locale s'enrichit.",
@@ -76,12 +71,7 @@ const PREMIUM_CONTENT = {
         {
           label: "Je veux être conseillé au quotidien",
           plan: "Premium",
-          text: "Le Conseiller analyse budget, dépenses, habitudes, courses et aides, avec une utilisation limitée.",
-        },
-        {
-          label: "Je veux agir avec un accompagnement avancé",
-          plan: "Premium+",
-          text: "Pour préparer dossiers, courriers, emails, relances, rendez-vous et recours.",
+          text: "Le Conseiller analyse budget, dépenses, habitudes, courses et aides et donne accès aux outils avancés.",
         },
       ],
     },
@@ -90,12 +80,12 @@ const PREMIUM_CONTENT = {
       title: "Questions fréquentes",
       items: [
         [
-          "Quelle est la différence entre Premium et Premium+ ?",
-          "Premium donne accès au Conseiller BudgetKazPéi en utilisation limitée pour la gestion quotidienne. Premium+ ajoute une utilisation illimitée dans le cadre d'un usage normal et l'accompagnement avancé des démarches.",
+          "Que comprend Premium ?",
+          "Premium réunit le Conseiller BudgetKazPéi, les fonctions avancées, les scans de tickets inclus et l’accompagnement des démarches dans une seule formule.",
         ],
         [
           "Que se passe-t-il lorsque j'atteins ma limite de scans ?",
-          "Avec Premium, le scanner redevient disponible au début du mois suivant. Vous pouvez toujours ajouter ou corriger une dépense manuellement.",
+          "Premium inclut les scans de tickets. Une limite technique de sécurité, non commerciale, protège seulement le service contre les usages anormaux.",
         ],
         [
           "Le scanner de tickets est-il obligatoire ?",
@@ -122,9 +112,9 @@ const PREMIUM_CONTENT = {
   },
   kr: {
     seo: {
-      title: "Bann offres BudgetKazPéi — Gratis, Premium ek Premium+",
+      title: "Bann offres BudgetKazPéi — Gratis, Premium",
       description:
-        "Konpar bann offres Gratis, Premium ek Premium+ BudgetKazPéi é swazi lakonpagnman ki korespond ek out kotidien.",
+        "Konpar bann offres Gratis, Premium BudgetKazPéi é swazi lakonpagnman ki korespond ek out kotidien.",
     },
     navItems: [
       { label: "Bann offres", href: "#offres" },
@@ -135,7 +125,7 @@ const PREMIUM_CONTENT = {
       eyebrow: "Dékouv BudgetKazPéi",
       title: "Dékouv, gagn konsey, épi gagn lakonpagnman.",
       text:
-        "Gratis i poz bann baz. Premium i azout Konseyé-la pou lo kotidien. Premium+ i akonpagn aou dann bann demars konkrè.",
+        "Gratis i poz bann baz. Premium i débloque Konseyé-la, bann fonksyon avansé ek lakonpagnman bann demars.",
       trust: [
         "San langazman",
         "Payman sekirizé par Stripe",
@@ -144,20 +134,16 @@ const PREMIUM_CONTENT = {
     },
     offers: {
       eyebrow: "Bann offres",
-      title: "Trois nivo, fasil pou konparé.",
+      title: "Dé formule, fasil pou konparé.",
       intro:
-        "Sak formule i repran bann zouti formule avan é i azout in lakonpagnman pli konplé.",
+        "Koumans gratis, épi pas Premium pou débloque tout bann fonksyon avansé.",
       recommended: "Nou konsey",
-      complete: "Lakonpagnman konplé",
       monthly: "Chak mwa",
       perMonth: "/mwa",
       freeCta: "Koumans gratis",
       dashboardCta: "Alé su mon tablo débor",
       premiumCta: "Swazi Premium",
-      premiumPlusCta: "Swazi Premium+",
-      premiumGuestCta: "Kré mon kont pou Premium",
-      premiumPlusGuestCta: "Kré mon kont pou Premium+",
-      normalUse: "Itilizasion san limit dann kad in lizaz normal servis-la.",
+       premiumGuestCta: "Kré mon kont pou Premium",
       comingSoonTitle: "An préparasyon",
       comingSoonText:
         "Konparézon entélizan ek Bon Plan pèsonalizé va ariv progressivement, amezir baz lokal-la i grandi.",
@@ -176,12 +162,7 @@ const PREMIUM_CONTENT = {
         {
           label: "Mi vé gagn konsey dann mon kotidien",
           plan: "Premium",
-          text: "Konseyé-la i analiz bidjé, dépans, labitid, courses ek èd, avèk in itilizasion limité.",
-        },
-        {
-          label: "Mi vé azir avèk in lakonpagnman avansé",
-          plan: "Premium+",
-          text: "Pou prépar dosyé, kourrié, email, relans, randévou ek rekour.",
+          text: "Konseyé-la i analiz bidjé, dépans, labitid, courses ek èd é i donn aksé bann zouti avansé.",
         },
       ],
     },
@@ -190,12 +171,12 @@ const PREMIUM_CONTENT = {
       title: "Kestion souvan pozé",
       items: [
         [
-          "Kosa lé diferans ant Premium ek Premium+ ?",
-          "Premium i donn aksé Konseyé BudgetKazPéi an itilizasion limité pou lo kotidien. Premium+ i azout in itilizasion san limit dann kad in lizaz normal ek lakonpagnman avansé pou bann demars.",
+          "Kosa Premium i donn aou ?",
+          "Premium i regroup Konseyé BudgetKazPéi, bann fonksyon avansé, scans tiké inkliz ek lakonpagnman bann demars dann in sèl formule.",
         ],
         [
           "Kosa i ariv kan mi ariv mon limit scans ?",
-          "Avèk Premium, scanner-la i revien disponib komansman mwa apré. Ou pé touzour azout ou korij in dépans amain.",
+          "Premium i inkliz bann scans tiké. In limit teknik kaché i protéz zis kont bann lizaz pa normal.",
         ],
         [
           "Scanner tiké-la lé obligatoire ?",
@@ -255,24 +236,19 @@ function usePremiumSeo(content, language) {
 function PlanCard({ plan, content, isAuthenticated }) {
   const isFree = plan.id === PLAN_IDS.free
   const isPremium = plan.id === PLAN_IDS.premium
-  const isPremiumPlus = plan.id === PLAN_IDS.premiumPlus
-  const badge = isPremium ? content.recommended : isPremiumPlus ? content.complete : null
+  const badge = isPremium ? content.recommended : null
   const ctaLabel = isFree
     ? isAuthenticated
       ? content.dashboardCta
       : content.freeCta
-    : isPremium
-      ? (isAuthenticated ? content.premiumCta : content.premiumGuestCta)
-      : (isAuthenticated ? content.premiumPlusCta : content.premiumPlusGuestCta)
+    : (isAuthenticated ? content.premiumCta : content.premiumGuestCta)
   const href = isFree
     ? isAuthenticated
       ? "/app"
       : "/register"
     : !isAuthenticated
       ? "/register"
-      : isPremium
-        ? STRIPE_LINKS.premiumMonthly
-        : STRIPE_LINKS.premiumPlusMonthly
+      : STRIPE_LINKS.premiumMonthly
   const displayPrice = plan.price.replace(/\/mois$/, "")
 
   return (
@@ -290,7 +266,6 @@ function PlanCard({ plan, content, isAuthenticated }) {
         </div>
         {!isFree && <p className="premium-plan__billing">{content.monthly}</p>}
         <p className="premium-plan__intro">{plan.intro}</p>
-        {isPremiumPlus && <p className="premium-plan__usage-note">{content.normalUse}</p>}
       </div>
 
       <ul className="premium-plan__features">

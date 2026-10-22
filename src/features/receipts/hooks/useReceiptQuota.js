@@ -33,26 +33,26 @@ export function resolveReceiptQuotaState({
 
 export function formatReceiptQuotaLabelFr(quota) {
   return quota?.isUnlimitedForUser
-    ? `Analyses IA illimitées — ${quota.planLabel}`
-    : `Analyses IA : ${quota.used} / ${quota.limit} — ${quota.planLabel}`
+    ? `Scans de tickets inclus — ${quota.planLabel}`
+    : `Scans de tickets : ${quota.used} / ${quota.limit} — ${quota.planLabel}`
 }
 
 export function formatReceiptQuotaLabelKr(quota) {
   return quota?.isUnlimitedForUser
-    ? `Analiz IA san limit — ${quota.planLabel}`
-    : `Analiz IA : ${quota.used} / ${quota.limit} — ${quota.planLabel}`
+    ? `Scan tiké inkliz — ${quota.planLabel}`
+    : `Scan tiké : ${quota.used} / ${quota.limit} — ${quota.planLabel}`
 }
 
 export function formatReceiptQuotaTicketsLabelFr(quota) {
   return quota?.isUnlimitedForUser
-    ? `Premium+ actif — Utilisation du mois : ${quota.used}`
-    : `Analyses IA : ${quota.used} / ${quota.limit} — ${quota.planLabel}`
+    ? `Premium actif — Utilisation du mois : ${quota.used}`
+    : `Scans de tickets : ${quota.used} / ${quota.limit} — ${quota.planLabel}`
 }
 
 export function formatReceiptQuotaTicketsLabelKr(quota) {
   return quota?.isUnlimitedForUser
-    ? `Premium+ actif — Itilizasyon sa mwa-la : ${quota.used}`
-    : `Analiz IA : ${quota.used} / ${quota.limit} — ${quota.planLabel}`
+    ? `Premium actif — Itilizasyon sa mwa-la : ${quota.used}`
+    : `Scan tiké : ${quota.used} / ${quota.limit} — ${quota.planLabel}`
 }
 
 export function getReceiptQuotaBlockingMessage(quota, txt) {

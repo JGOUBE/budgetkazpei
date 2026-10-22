@@ -779,7 +779,7 @@ function RecommendedActionsCard({
         )}
         {!hasPremiumAccess && onGoPremium && (
           <ActionChip onClick={onGoPremium} color="#DDD6FE">
-            Premium+
+            Premium
           </ActionChip>
         )}
       </div>
@@ -831,7 +831,7 @@ function PremiumLockedCard({ t, isMobile, hasPremiumAccess, hasPremiumPlusAccess
         <PremiumFeature
           locked={!hasPremiumPlusAccess}
           title={isKreol ? "Analyse avancée" : "Analyse avancée"}
-          text="Premium+"
+          text="Premium"
         />
       </div>
 

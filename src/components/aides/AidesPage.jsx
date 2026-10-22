@@ -313,10 +313,10 @@ function PremiumPlusPromotion({ isKreol, onDiscover }) {
     <aside className="bkp-aides-premium-promo">
       <span aria-hidden="true"><Crown size={21} /></span>
       <div>
-        <strong>{isKreol ? "Akonpagnman avansé bann demars — Premium+" : "Accompagnement avancé des démarches — Premium+"}</strong>
+        <strong>{isKreol ? "Akonpagnman avansé bann demars — Premium" : "Accompagnement avancé des démarches — Premium"}</strong>
         <p>{isKreol ? "Prépar dosyé, kourrié, email, relans, randévou, refi ek rekour dann Konseyé-la." : "Préparez dossiers, courriers, emails, relances et rendez-vous, puis comprenez les refus et préparez les recours dans le Conseiller."}</p>
       </div>
-      <button type="button" onClick={onDiscover}>{isKreol ? "Dékouv Premium+" : "Découvrir Premium+"}</button>
+      <button type="button" onClick={onDiscover}>{isKreol ? "Dékouv Premium" : "Découvrir Premium"}</button>
     </aside>
   )
 }
@@ -367,7 +367,7 @@ function DemarcheCard({ demarche, isKreol, isPremiumPlus, saving, onStatusChange
       </div>
 
       {isPremiumPlus && actions.length > 0 && (
-        <div className="bkp-demarche-tools" aria-label={isKreol ? "Zouti Konseye Premium+" : "Outils du Conseiller Premium+"}>
+        <div className="bkp-demarche-tools" aria-label={isKreol ? "Zouti Konseye Premium" : "Outils du Conseiller Premium"}>
           {actions.map(action => {
             const Icon = action.Icon
             return <button type="button" key={action.id} onClick={() => launchAction(action)}><Icon size={16} />{isKreol ? action.kr : action.fr}</button>
@@ -391,7 +391,8 @@ function DemarcheCard({ demarche, isKreol, isPremiumPlus, saving, onStatusChange
   )
 }
 
-export default function AidesPage({ t, isPremiumPlus = false, user, onDiscover, initialTab = "pour_moi" }) {
+export default function AidesPage({ t, isPremium = false, isPremiumPlus = false, user, onDiscover, initialTab = "pour_moi" }) {
+  const hasPremiumAccess = isPremium || isPremiumPlus
   const isKreol = isKreolLang(t)
   const [activeTab, setActiveTab] = useState(initialTab)
   const [profile, setProfile] = useState(null)
@@ -537,8 +538,8 @@ export default function AidesPage({ t, isPremiumPlus = false, user, onDiscover, 
           {activeTab === "demarches" && (
             <section id="aides-panel-demarches" role="tabpanel" aria-labelledby="aides-tab-demarches" className="bkp-aides-panel">
               <div className="bkp-panel-heading"><div><span><ClipboardList size={15} />{isKreol ? "Suivi manuel" : "Suivi manuel"}</span><h2>{isKreol ? "Mon bann demars" : "Mes démarches"}</h2><p>{isKreol ? "Miz a zour léta ek retrouve proshin aksion pou sak demande." : "Mettez à jour le statut et retrouvez la prochaine action de chaque demande."}</p></div></div>
-              {!isPremiumPlus && demarches.length > 0 && <PremiumPlusPromotion isKreol={isKreol} onDiscover={onDiscover} />}
-              {demarches.length ? <div className="bkp-demarches-list">{demarches.map(demarche => <DemarcheCard key={demarche.id} demarche={demarche} isKreol={isKreol} isPremiumPlus={isPremiumPlus} saving={savingId === `demarche-${demarche.id}`} onStatusChange={updateStatus} onDelete={deleteDemarche} />)}</div> : <EmptyState isKreol={isKreol} type="demarches" onAction={() => setActiveTab("rechercher")} />}
+              {!hasPremiumAccess && demarches.length > 0 && <PremiumPlusPromotion isKreol={isKreol} onDiscover={onDiscover} />}
+              {demarches.length ? <div className="bkp-demarches-list">{demarches.map(demarche => <DemarcheCard key={demarche.id} demarche={demarche} isKreol={isKreol} isPremiumPlus={hasPremiumAccess} saving={savingId === `demarche-${demarche.id}`} onStatusChange={updateStatus} onDelete={deleteDemarche} />)}</div> : <EmptyState isKreol={isKreol} type="demarches" onAction={() => setActiveTab("rechercher")} />}
             </section>
           )}
         </>
