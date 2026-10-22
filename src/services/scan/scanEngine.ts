@@ -771,7 +771,7 @@ export async function runSmartScan(file: File, options: ScanEngineOptions = {}) 
     emit(options.onProgress, "optimizing", "Optimisation de l'image...", 12)
     const optimized = await optimizeReceiptImage(file)
 
-    emit(options.onProgress, "reading", options.plan === "premium_plus" ? "Lecture renforcee Premium+ en cours." : "Lecture du ticket...", 30)
+    emit(options.onProgress, "reading", options.plan === "premium" || options.plan === "premium_plus" ? "Lecture renforcée Premium en cours." : "Lecture du ticket...", 30)
     const ocrStartedAt = performance.now()
     const imageMeta = {
       original_image_width: optimized.originalWidth,
