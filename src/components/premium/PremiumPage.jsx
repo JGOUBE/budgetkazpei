@@ -1,3 +1,4 @@
+import { useState } from "react"
 import {
   BadgeCheck,
   ChartNoAxesCombined,
@@ -7,6 +8,13 @@ import {
   Star,
 } from "lucide-react"
 import { createColorAliases } from "../../styles/designSystem"
+import {
+  GOOGLE_PLAY_MONTHLY_BASE_PLAN_ID,
+  GOOGLE_PLAY_YEARLY_BASE_PLAN_ID,
+  isGooglePlayBillingAvailable,
+  purchaseGooglePlayPremium,
+  restoreGooglePlayPremium,
+} from "../../services/billing/googlePlayBilling"
 import {
   PLAN_ANNUAL_PRICES,
   PLAN_IDS,
@@ -276,6 +284,7 @@ function PlanCard({ planId, currentPlanId, labels }) {
 }
 
 export default function PremiumPage({
+  user,
   isPremium,
   isPremiumPlus = false,
   currentPlan = PLAN_IDS.free,
@@ -289,9 +298,94 @@ export default function PremiumPage({
     : normalizePlan(currentPlan)
   const hasPremiumAccess = resolvedPlanId === PLAN_IDS.premium
   const CurrentIcon = PLAN_META[resolvedPlanId]?.icon || Star
+  const googlePlayBilling = isGooglePlayBillingAvailable()
+  const [billingBusy, setBillingBusy] = useState(false)
+  const [billingMessage, setBillingMessage] = useState("")
 
   function openPremiumOptions() {
+    if (googlePlayBilling && !hasPremiumAccess) {
+      document.getElementById("android-premium-purchase")?.scrollIntoView({ behavior: "smooth", block: "center" })
+      return
+    }
+
+    if (googlePlayBilling && hasPremiumAccess) {
+      window.open(
+        "https://play.google.com/store/account/subscriptions?package=com.budgetkazpei.app",
+        "_blank",
+        "noopener,noreferrer",
+      )
+      return
+    }
+
     window.open(PREMIUM_URL, "_blank", "noopener,noreferrer")
+  }
+
+  async function buyWithGooglePlay(basePlanId) {
+    if (!user?.id || billingBusy) return
+
+    setBillingBusy(true)
+    setBillingMessage("")
+    try {
+      const result = await purchaseGooglePlayPremium({ basePlanId, userId: user.id })
+      if (result.pending) {
+        setBillingMessage(isKreol ? "Payman an atant konfirmasion Google Play." : "Paiement en attente de confirmation Google Play.")
+        return
+      }
+
+      window.dispatchEvent(new CustomEvent("budgetkazpei:profile-updated", {
+        detail: {
+          premium: true,
+          is_premium: true,
+          premium_plus: false,
+          plan: "premium",
+          billing_source: "google_play",
+          subscription_type: basePlanId === GOOGLE_PLAY_YEARLY_BASE_PLAN_ID ? "yearly" : "monthly",
+          premium_until: result.verification?.expiresAt || null,
+        },
+      }))
+      setBillingMessage(isKreol ? "Premium lé aktif." : "Premium est activé.")
+    } catch (error) {
+      const message = String(error?.message || error || "")
+      if (!/annul/i.test(message)) {
+        setBillingMessage(
+          isKreol
+            ? "Nou la pa réussi valide payman Google Play. Rééséye."
+            : "Le paiement Google Play n’a pas pu être validé. Réessayez.",
+        )
+      }
+    } finally {
+      setBillingBusy(false)
+    }
+  }
+
+  async function restoreGooglePlay() {
+    if (billingBusy) return
+
+    setBillingBusy(true)
+    setBillingMessage("")
+    try {
+      const result = await restoreGooglePlayPremium()
+      if (!result.restored) {
+        setBillingMessage(isKreol ? "Nana pa abonman Premium pou restaure." : "Aucun abonnement Premium actif à restaurer.")
+        return
+      }
+
+      window.dispatchEvent(new CustomEvent("budgetkazpei:profile-updated", {
+        detail: {
+          premium: true,
+          is_premium: true,
+          premium_plus: false,
+          plan: "premium",
+          billing_source: "google_play",
+          premium_until: result.verification?.expiresAt || null,
+        },
+      }))
+      setBillingMessage(isKreol ? "Abonman Premium restauré." : "Abonnement Premium restauré.")
+    } catch {
+      setBillingMessage(isKreol ? "Restaurasion impossible pou linstan." : "Restauration impossible pour le moment.")
+    } finally {
+      setBillingBusy(false)
+    }
   }
 
   return (
@@ -410,6 +504,93 @@ export default function PremiumPage({
           <PlanCard planId={PLAN_IDS.premium} currentPlanId={resolvedPlanId} labels={labels} />
         </div>
       </section>
+
+      {googlePlayBilling && !hasPremiumAccess && (
+        <section
+          id="android-premium-purchase"
+          style={{
+            borderRadius: 22,
+            border: `1px solid ${COLORS.yellow}55`,
+            background: `linear-gradient(135deg, ${COLORS.card}, rgba(250,204,21,.08))`,
+            padding: 20,
+            display: "grid",
+            gap: 14,
+          }}
+        >
+          <div>
+            <div style={{ color: COLORS.text, fontSize: 20, fontWeight: 950 }}>
+              {isKreol ? "Pas Premium avèk Google Play" : "Passer Premium avec Google Play"}
+            </div>
+            <div style={{ color: COLORS.muted, marginTop: 6, fontSize: 14, lineHeight: 1.5 }}>
+              {isKreol
+                ? "Swazi chak mwa ousa par an. Payman ek renovelman lé géré par Google Play."
+                : "Choisissez le mensuel ou l’annuel. Le paiement et le renouvellement sont gérés par Google Play."}
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
+            <button
+              type="button"
+              disabled={billingBusy || !user?.id}
+              onClick={() => buyWithGooglePlay(GOOGLE_PLAY_MONTHLY_BASE_PLAN_ID)}
+              style={{
+                minHeight: 52,
+                borderRadius: 15,
+                border: `1px solid ${COLORS.yellow}66`,
+                background: COLORS.yellow,
+                color: "#07111F",
+                fontWeight: 950,
+                cursor: billingBusy ? "wait" : "pointer",
+                fontFamily: "inherit",
+              }}
+            >
+              {billingBusy ? "…" : `Premium · ${PLAN_PRICES[PLAN_IDS.premium]}`}
+            </button>
+
+            <button
+              type="button"
+              disabled={billingBusy || !user?.id}
+              onClick={() => buyWithGooglePlay(GOOGLE_PLAY_YEARLY_BASE_PLAN_ID)}
+              style={{
+                minHeight: 52,
+                borderRadius: 15,
+                border: `1px solid ${COLORS.cyan}66`,
+                background: "rgba(35,211,214,.12)",
+                color: COLORS.text,
+                fontWeight: 950,
+                cursor: billingBusy ? "wait" : "pointer",
+                fontFamily: "inherit",
+              }}
+            >
+              {billingBusy ? "…" : `Premium · ${PLAN_ANNUAL_PRICES[PLAN_IDS.premium]}`}
+            </button>
+          </div>
+
+          <button
+            type="button"
+            disabled={billingBusy}
+            onClick={restoreGooglePlay}
+            style={{
+              justifySelf: "start",
+              border: 0,
+              background: "transparent",
+              color: COLORS.cyan,
+              cursor: billingBusy ? "wait" : "pointer",
+              padding: 0,
+              fontWeight: 850,
+              fontFamily: "inherit",
+            }}
+          >
+            {isKreol ? "Restaure mon abonman" : "Restaurer mon abonnement"}
+          </button>
+
+          {billingMessage && (
+            <div role="status" style={{ color: COLORS.text, fontSize: 13, lineHeight: 1.5 }}>
+              {billingMessage}
+            </div>
+          )}
+        </section>
+      )}
 
       <section
         style={{
