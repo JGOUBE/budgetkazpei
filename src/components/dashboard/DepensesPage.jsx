@@ -191,7 +191,7 @@ export default function DepensesPage({
         unlocked={isPremiumPlus}
         title={isKreol ? "Analiz bidze avance" : "Analyse budgetaire avancee"}
         text={isKreol ? "Detecte bann kategori problematik, depans trop for ek potentiel lekonomi." : "Detecter les categories problematiques, depenses excessives et potentiels d'economies."}
-        required="Premium+"
+        required="Premium"
         onGoPremium={onGoPremium}
         Icon={BkIcons.stats}
       />
@@ -200,7 +200,7 @@ export default function DepensesPage({
         unlocked={isPremiumPlus}
         title={isKreol ? "Courses intelligentes" : "Courses intelligentes"}
         text={isKreol ? "Analiz manze, panier, bidze conseille ek konsey pou fer lekonomi." : "Analyse alimentaire, panier, budget recommande et conseils d'economies."}
-        required="Premium+"
+        required="Premium"
         onGoPremium={onGoPremium}
         Icon={BkIcons.shopping}
       />
@@ -417,7 +417,7 @@ function LockedCard({ unlocked, title, text, required, onGoPremium, Icon }) {
             fontFamily: "inherit",
           }}
         >
-          {required === "Premium+" ? "Premium+" : required}
+          {required === "Premium" ? "Premium" : required}
         </button>
       )}
     </div>

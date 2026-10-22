@@ -313,10 +313,10 @@ function PremiumPlusPromotion({ isKreol, onDiscover }) {
     <aside className="bkp-aides-premium-promo">
       <span aria-hidden="true"><Crown size={21} /></span>
       <div>
-        <strong>{isKreol ? "Akonpagnman avansé bann demars — Premium+" : "Accompagnement avancé des démarches — Premium+"}</strong>
+        <strong>{isKreol ? "Akonpagnman avansé bann demars — Premium" : "Accompagnement avancé des démarches — Premium"}</strong>
         <p>{isKreol ? "Prépar dosyé, kourrié, email, relans, randévou, refi ek rekour dann Konseyé-la." : "Préparez dossiers, courriers, emails, relances et rendez-vous, puis comprenez les refus et préparez les recours dans le Conseiller."}</p>
       </div>
-      <button type="button" onClick={onDiscover}>{isKreol ? "Dékouv Premium+" : "Découvrir Premium+"}</button>
+      <button type="button" onClick={onDiscover}>{isKreol ? "Dékouv Premium" : "Découvrir Premium"}</button>
     </aside>
   )
 }
@@ -367,7 +367,7 @@ function DemarcheCard({ demarche, isKreol, isPremiumPlus, saving, onStatusChange
       </div>
 
       {isPremiumPlus && actions.length > 0 && (
-        <div className="bkp-demarche-tools" aria-label={isKreol ? "Zouti Konseye Premium+" : "Outils du Conseiller Premium+"}>
+        <div className="bkp-demarche-tools" aria-label={isKreol ? "Zouti Konseye Premium" : "Outils du Conseiller Premium"}>
           {actions.map(action => {
             const Icon = action.Icon
             return <button type="button" key={action.id} onClick={() => launchAction(action)}><Icon size={16} />{isKreol ? action.kr : action.fr}</button>

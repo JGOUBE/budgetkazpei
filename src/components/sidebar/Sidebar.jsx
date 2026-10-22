@@ -55,13 +55,11 @@ export default function Sidebar({
     user?.email?.split("@")[0] ||
     "Utilisateur"
 
-  const premiumButtonLabel = isPremiumPlus
-    ? "Gérer Premium+"
-    : isPremium
-      ? "Passer à Premium+"
-      : isKreol
-        ? "Vir Premium"
-        : "Découvrir Premium"
+  const premiumButtonLabel = isPremium
+    ? (isKreol ? "Gèr Premium" : "Gérer Premium")
+    : isKreol
+      ? "Vir Premium"
+      : "Découvrir Premium"
 
   const premiumColor = isPremiumPlus || isPremium ? ds.purple : ds.warning
 

@@ -120,7 +120,7 @@ export default function SoldePage({
               fontFamily: "inherit",
             }}
           >
-            Découvrir Premium+
+            Découvrir Premium
           </button>
         )}
       </div>

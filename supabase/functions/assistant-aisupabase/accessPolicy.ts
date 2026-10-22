@@ -1,4 +1,4 @@
-export type AdvisorPlan = "free" | "premium" | "premium_plus"
+export type AdvisorPlan = "free" | "premium"
 
 export type AssistantMode =
   | "general"
@@ -32,10 +32,15 @@ export const ADVANCED_ADVISOR_MODES: readonly AssistantMode[] = [
   "preparer_rdv",
 ]
 
+export const ADVISOR_MODES: readonly AssistantMode[] = [
+  ...STANDARD_ADVISOR_MODES,
+  ...ADVANCED_ADVISOR_MODES,
+]
+
+// Internal safety limit only. It is intentionally not marketed as a user-facing quota.
 export const ADVISOR_SAFETY_LIMITS: Readonly<Record<AdvisorPlan, number>> = {
   free: 0,
-  premium: 50,
-  premium_plus: 250,
+  premium: 250,
 }
 
 export function shouldBlockAdvisorUsage(
@@ -49,15 +54,13 @@ export function shouldBlockAdvisorUsage(
   return consumesExchange && plan === "premium" && used >= ADVISOR_SAFETY_LIMITS.premium
 }
 
+// Kept for backward-compatible imports. Premium now blocks at the hidden safety limit.
 export function shouldMonitorAdvisorUsage(
   planInput: unknown,
   usedInput: unknown,
   consumesExchange = true,
 ) {
-  const plan = normalizeAdvisorPlan(planInput)
-  const used = Math.max(0, Number(usedInput) || 0)
-
-  return consumesExchange && plan === "premium_plus" && used >= ADVISOR_SAFETY_LIMITS.premium_plus
+  return shouldBlockAdvisorUsage(planInput, usedInput, consumesExchange)
 }
 
 function isTrue(value: unknown) {
@@ -70,7 +73,7 @@ export function normalizeAdvisorPlan(value: unknown): AdvisorPlan {
     .toLowerCase()
     .replace(/[-\s]+/g, "_")
 
-  if (clean.includes("premium_plus") || clean.includes("premium+")) return "premium_plus"
+  if (clean.includes("premium_plus") || clean.includes("premium+")) return "premium"
   if (clean.includes("premium")) return "premium"
   return "free"
 }
@@ -83,34 +86,31 @@ export function resolveServerPlan(params: {
   const profile = params.profile || {}
   const subscriptionStatus = String(subscription.status || "").toLowerCase()
 
-  if (subscriptionStatus === "active") {
+  if (subscriptionStatus === "active" || subscriptionStatus === "trialing") {
     return normalizeAdvisorPlan(subscription.plan)
   }
 
   const profilePlan = normalizeAdvisorPlan(profile.subscription_plan || profile.plan)
   if (profilePlan !== "free") return profilePlan
-  if (isTrue(profile.premium_plus)) return "premium_plus"
-  if (isTrue(profile.premium) || isTrue(profile.is_premium)) return "premium"
+  if (isTrue(profile.premium_plus) || isTrue(profile.premium) || isTrue(profile.is_premium)) return "premium"
   return "free"
 }
 
 export function getAdvisorAccess(planInput: unknown) {
   const plan = normalizeAdvisorPlan(planInput)
-  const canUseAdvisor = plan === "premium" || plan === "premium_plus"
-  const canUseAdvancedAdvisorTools = plan === "premium_plus"
+  const canUseAdvisor = plan === "premium"
 
   return {
     plan,
     canUseAdvisor,
-    canUseAdvancedAdvisorTools,
+    canUseAdvancedAdvisorTools: canUseAdvisor,
     safetyLimit: ADVISOR_SAFETY_LIMITS[plan],
   }
 }
 
 export function parseAssistantMode(value: unknown): AssistantMode | null {
   const mode = String(value || "general").trim().toLowerCase().replace(/[\s-]+/g, "_")
-  const allowed = [...STANDARD_ADVISOR_MODES, ...ADVANCED_ADVISOR_MODES]
-  return allowed.includes(mode as AssistantMode) ? mode as AssistantMode : null
+  return ADVISOR_MODES.includes(mode as AssistantMode) ? mode as AssistantMode : null
 }
 
 export function isAdvancedAdvisorMode(mode: AssistantMode) {
