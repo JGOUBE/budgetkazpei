@@ -6,6 +6,8 @@ import {
   getLandingContent,
 } from "../components/landing/landingContent"
 import {
+  PLAN_ANNUAL_PRICES,
+  PLAN_ANNUAL_SAVINGS_LABEL,
   PLAN_FEATURE_STATUS,
   PLAN_IDS,
 } from "../config/plans"
@@ -47,16 +49,15 @@ const PREMIUM_CONTENT = {
       intro:
         "Commencez gratuitement, puis passez à Premium pour débloquer toutes les fonctions avancées.",
       recommended: "Recommandé",
-      complete: "Accompagnement complet",
       monthly: "Mensuel",
+      annual: "Annuel",
       perMonth: "/mois",
+      perYear: "/an",
+      annualSavings: "Économisez plus de 30 %",
       freeCta: "Commencer gratuitement",
       dashboardCta: "Accéder à mon tableau de bord",
       premiumCta: "Choisir Premium",
-      premiumPlusCta: "Choisir Premium+",
       premiumGuestCta: "Créer mon compte pour Premium",
-      premiumPlusGuestCta: "Créer mon compte pour Premium+",
-      normalUse: "Utilisation illimitée dans le cadre d'un usage normal du service.",
       comingSoonTitle: "En préparation",
       comingSoonText:
         "Les comparaisons intelligentes et les Bons plans personnalisés seront ajoutés progressivement, à mesure que la base locale s'enrichit.",
@@ -116,9 +117,9 @@ const PREMIUM_CONTENT = {
   },
   kr: {
     seo: {
-      title: "Bann offres BudgetKazPéi — Gratis, Premium ek Premium+",
+      title: "Bann offres BudgetKazPéi — Gratis ek Premium",
       description:
-        "Konpar bann offres Gratis, Premium ek Premium+ BudgetKazPéi é swazi lakonpagnman ki korespond ek out kotidien.",
+        "Konpar bann offres Gratis ek Premium BudgetKazPéi é swazi formule ki korespond ek out kotidien.",
     },
     navItems: [
       { label: "Bann offres", href: "#offres" },
@@ -142,16 +143,15 @@ const PREMIUM_CONTENT = {
       intro:
         "Sak formule i repran bann zouti formule avan é i azout in lakonpagnman pli konplé.",
       recommended: "Nou konsey",
-      complete: "Lakonpagnman konplé",
       monthly: "Chak mwa",
+      annual: "Par an",
       perMonth: "/mwa",
+      perYear: "/an",
+      annualSavings: "Ékonomiz plis 30 %",
       freeCta: "Koumans gratis",
       dashboardCta: "Alé su mon tablo débor",
       premiumCta: "Swazi Premium",
-      premiumPlusCta: "Swazi Premium+",
       premiumGuestCta: "Kré mon kont pou Premium",
-      premiumPlusGuestCta: "Kré mon kont pou Premium+",
-      normalUse: "Itilizasion san limit dann kad in lizaz normal servis-la.",
       comingSoonTitle: "An préparasyon",
       comingSoonText:
         "Konparézon entélizan ek Bon Plan pèsonalizé va ariv progressivement, amezir baz lokal-la i grandi.",
@@ -170,7 +170,7 @@ const PREMIUM_CONTENT = {
         {
           label: "Mi vé gagn konsey dann mon kotidien",
           plan: "Premium",
-          text: "Konseyé-la i analiz bidjé, dépans, labitid, courses ek èd, avèk in itilizasion limité.",
+          text: "Konseyé-la i analiz bidjé, dépans, labitid, courses ek èd, avek bann zouti avansé pou demars.",
         },
       ],
     },
@@ -179,12 +179,12 @@ const PREMIUM_CONTENT = {
       title: "Kestion souvan pozé",
       items: [
         [
-          "Kosa lé diferans ant Premium ek Premium+ ?",
-          "Premium i donn aksé Konseyé BudgetKazPéi an itilizasion limité pou lo kotidien. Premium+ i azout in itilizasion san limit dann kad in lizaz normal ek lakonpagnman avansé pou bann demars.",
+          "Kosa Premium i konpran ?",
+          "Premium i rasanm Konseyé BudgetKazPéi, bann analiz avansé, scanner tiké ek lakonpagnman pou bann demars.",
         ],
         [
           "Kosa i ariv kan mi ariv mon limit scans ?",
-          "Avèk Premium, scanner-la i revien disponib komansman mwa apré. Ou pé touzour azout ou korij in dépans amain.",
+          "Premium i inklu bann scans tiké. In proteksyon interne i pé limite tanporèrman in itilizasion inhabitiel pou protez servis-la.",
         ],
         [
           "Scanner tiké-la lé obligatoire ?",
@@ -272,7 +272,16 @@ function PlanCard({ plan, content, isAuthenticated }) {
           <strong className="premium-plan__price">{displayPrice}</strong>
           {!isFree && <span>{content.perMonth}</span>}
         </div>
-        {!isFree && <p className="premium-plan__billing">{content.monthly}</p>}
+        {!isFree && (
+          <div className="premium-plan__billing">
+            <p>{content.monthly}</p>
+            <p>
+              <strong>{PLAN_ANNUAL_PRICES[PLAN_IDS.premium]}</strong> {content.perYear}
+              {" · "}
+              <span>{content.annualSavings || PLAN_ANNUAL_SAVINGS_LABEL}</span>
+            </p>
+          </div>
+        )}
         <p className="premium-plan__intro">{plan.intro}</p>
       </div>
 
