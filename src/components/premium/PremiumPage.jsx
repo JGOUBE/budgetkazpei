@@ -1,14 +1,13 @@
 import {
   BadgeCheck,
   ChartNoAxesCombined,
-  Crown,
   ScanLine,
   ShieldCheck,
   Sparkles,
   Star,
 } from "lucide-react"
 import { createColorAliases } from "../../styles/designSystem"
-import { PLAN_IDS, PLAN_NAMES, PLAN_PRICES, PLAN_PUBLIC_SCAN_LABELS } from "../../config/plans"
+import { PLAN_ANNUAL_PRICES, PLAN_ANNUAL_SAVINGS_LABEL, PLAN_IDS, PLAN_NAMES, PLAN_PRICES, PLAN_PUBLIC_SCAN_LABELS } from "../../config/plans"
 
 const COLORS = createColorAliases()
 const PREMIUM_URL = "/decouvrir"
@@ -26,12 +25,6 @@ const PLAN_META = {
     border: "rgba(250,204,21,.30)",
     background: "linear-gradient(180deg, rgba(250,204,21,.10), rgba(255,255,255,0))",
   },
-  [PLAN_IDS.premiumPlus]: {
-    icon: Crown,
-    accent: COLORS.purple,
-    border: "rgba(167,139,250,.30)",
-    background: "linear-gradient(180deg, rgba(167,139,250,.12), rgba(255,255,255,0))",
-  },
 }
 
 // Exported for the plan regression suite as well as the component below.
@@ -41,7 +34,7 @@ export const PREMIUM_PAGE_COPY = {
     pageEyebrow: "Offres BudgetKazPéi",
     pageTitle: "Choisissez la formule adaptée à votre rythme.",
     pageText:
-      "Comparez ce qui est disponible avec Gratuit, le conseil au quotidien de Premium et l'accompagnement avancé de Premium+.",
+      "Deux formules seulement : Gratuit pour commencer, Premium pour débloquer toutes les fonctions avancées.",
     currentTitle: "Votre formule actuelle",
     currentLoading: "Chargement de votre formule...",
     currentFree: "Mode découverte actif",
@@ -53,11 +46,9 @@ export const PREMIUM_PAGE_COPY = {
     soonText: "Ces fonctions restent séparées des avantages déjà utilisables pour éviter toute confusion produit.",
     freeBadge: "Découverte",
     premiumBadge: "Populaire",
-    premiumPlusBadge: "Accompagnement complet",
     currentBadge: "Actuel",
     freeIntro: "Pour suivre l'essentiel de votre budget sans friction.",
-    premiumIntro: "BudgetKazPéi vous conseille dans votre gestion quotidienne.",
-    premiumPlusIntro: "BudgetKazPéi vous accompagne dans des démarches concrètes.",
+    premiumIntro: "Conseiller, analyses, scanner et accompagnement avancé réunis dans une seule offre.",
     freeFeatures: [
       "Sans publicité",
       "Budget mensuel et catégories",
@@ -71,12 +62,8 @@ export const PREMIUM_PAGE_COPY = {
       PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premium],
       "Historique et statistiques avancées",
       "Export PDF et alertes budget",
-      "Conseiller BudgetKazPéi — utilisation limitée",
-    ],
-    premiumPlusFeatures: [
-      "Tout le Premium",
-      PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premiumPlus],
-      "Conseiller BudgetKazPéi+ — utilisation illimitée",
+      "Conseiller BudgetKazPéi",
+      "Accompagnement avancé des démarches",
       "Dossiers, courriers, emails, relances, rendez-vous et recours",
     ],
     soonFeatures: [
@@ -87,22 +74,18 @@ export const PREMIUM_PAGE_COPY = {
     scanCardTitles: {
       [PLAN_IDS.free]: PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.free],
       [PLAN_IDS.premium]: PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premium],
-      [PLAN_IDS.premiumPlus]: PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premiumPlus],
     },
     statusCardTitles: {
       [PLAN_IDS.free]: "BudgetKazPéi",
       [PLAN_IDS.premium]: "Premium actif",
-      [PLAN_IDS.premiumPlus]: "Premium+ actif",
     },
     statusCardTexts: {
       [PLAN_IDS.free]: "Découverte simple, sans engagement.",
       [PLAN_IDS.premium]: "Plus d'analyses, plus d'historique.",
-      [PLAN_IDS.premiumPlus]: "Accompagnement avancé des démarches.",
     },
     scanInfoTitle: "Contrat scanner",
     scanInfoFree: "Gratuit affiche la vraie allocation gratuite.",
-    scanInfoPremium: "Premium suit son quota commercial en clair.",
-    scanInfoPremiumPlus: "Profitez de vos scans inclus, avec une protection contre les utilisations inhabituelles.",
+    scanInfoPremium: "Premium inclut les scans, avec une protection interne contre les usages inhabituels.",
   },
   kr: {
     pageEyebrow: "Bann offres BudgetKazPéi",
@@ -120,11 +103,9 @@ export const PREMIUM_PAGE_COPY = {
     soonText: "Sa bann fonksyon-la lé séparé avèk bann avantaj déjà disponib pou pa mélanz sak ou kapav servi ek sak lé ankor an préparasyon.",
     freeBadge: "Pou dékouv",
     premiumBadge: "Nou konsey",
-    premiumPlusBadge: "Lakonpagnman complet",
     currentBadge: "Aktiel",
     freeIntro: "Pou dékouv BudgetKazPéi ek koumans swiv sak lé esansyèl.",
     premiumIntro: "BudgetKazPéi i konsey aou dann out gestion kotidien.",
-    premiumPlusIntro: "BudgetKazPéi i akonpagn aou dann bann demars konkrè.",
     freeFeatures: [
       "San piblisité",
       "Bidjé esansyèl",
@@ -135,15 +116,11 @@ export const PREMIUM_PAGE_COPY = {
     ],
     premiumFeatures: [
       "Tout sak lé dann Gratuit",
-      "10 scans par mwa",
+      "Scans tiké inklu",
       "Istorik ek statistik avansé",
       "Èksport PDF ek alèrt bidjé",
-      "Konseyé BudgetKazPéi — itilizasion limité",
-    ],
-    premiumPlusFeatures: [
-      "Tout sak lé dann Premium",
-      "Scans san limit",
-      "Konseyé BudgetKazPéi+ — itilizasion san limit",
+      "Konseyé BudgetKazPéi",
+      "Lakonpagnman avansé pou bann demars",
       "Dosyé, kourrié, email, relans, randévou ek rekour",
     ],
     soonFeatures: [
@@ -154,42 +131,35 @@ export const PREMIUM_PAGE_COPY = {
     scanCardTitles: {
       [PLAN_IDS.free]: "Aksé pou dékouv scanner-la",
       [PLAN_IDS.premium]: "10 scans par mwa",
-      [PLAN_IDS.premiumPlus]: "Scans san limit",
     },
     statusCardTitles: {
       [PLAN_IDS.free]: "BudgetKazPéi",
       [PLAN_IDS.premium]: "Premium aktif",
-      [PLAN_IDS.premiumPlus]: "Premium+ aktif",
     },
     statusCardTexts: {
       [PLAN_IDS.free]: "Pou dékouv sinp, san langazman.",
       [PLAN_IDS.premium]: "Plis analiz, plis istorik.",
-      [PLAN_IDS.premiumPlus]: "Lakonpagnman avansé pou bann demars.",
     },
     scanInfoTitle: "Kontra scanner",
     scanInfoFree: "Gratuit i afis vré kantite gratuit an kler.",
-    scanInfoPremium: "Premium i gard so quota komersial an kler.",
-    scanInfoPremiumPlus: "Profit out scans, ek in protéksyon si lorizaz i devien pa normal.",
+    scanInfoPremium: "Premium i inklu bann scans, avek in proteksyon interne si itilizasion-la lé inhabitiel.",
   },
 }
 
 function planBadgeLabel(planId, currentPlanId, labels) {
   if (planId === currentPlanId) return labels.currentBadge
   if (planId === PLAN_IDS.premium) return labels.premiumBadge
-  if (planId === PLAN_IDS.premiumPlus) return labels.premiumPlusBadge
   return labels.freeBadge
 }
 
 function planSummary(planId, labels) {
   if (planId === PLAN_IDS.free) return labels.freeIntro
-  if (planId === PLAN_IDS.premium) return labels.premiumIntro
-  return labels.premiumPlusIntro
+  return labels.premiumIntro
 }
 
 function planFeatures(planId, labels) {
   if (planId === PLAN_IDS.free) return labels.freeFeatures
-  if (planId === PLAN_IDS.premium) return labels.premiumFeatures
-  return labels.premiumPlusFeatures
+  return labels.premiumFeatures
 }
 
 function PlanCard({ planId, currentPlanId, labels }) {
@@ -252,8 +222,20 @@ function PlanCard({ planId, currentPlanId, labels }) {
         </span>
       </div>
 
-      <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-        <div style={{ color: COLORS.text, fontSize: 28, fontWeight: 950 }}>{PLAN_PRICES[planId]}</div>
+      <div style={{ display: "grid", gap: 6 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+          <div style={{ color: COLORS.text, fontSize: 28, fontWeight: 950 }}>{PLAN_PRICES[planId]}</div>
+          {planId === PLAN_IDS.premium && (
+            <span style={{ color: COLORS.muted, fontSize: 13, fontWeight: 800 }}>
+              ou {PLAN_ANNUAL_PRICES[PLAN_IDS.premium]}
+            </span>
+          )}
+        </div>
+        {planId === PLAN_IDS.premium && (
+          <span style={{ color: COLORS.green, fontSize: 12, fontWeight: 900 }}>
+            {PLAN_ANNUAL_SAVINGS_LABEL}
+          </span>
+        )}
       </div>
 
       <div style={{ display: "grid", gap: 10 }}>
@@ -298,11 +280,9 @@ export default function PremiumPage({
 }) {
   const isKreol = t("nav", "dashboard") === "Tablo débor"
   const labels = isKreol ? PREMIUM_PAGE_COPY.kr : PREMIUM_PAGE_COPY.fr
-  const resolvedPlanId = isPremiumPlus
-    ? PLAN_IDS.premiumPlus
-    : isPremium
-      ? PLAN_IDS.premium
-      : currentPlan
+  const resolvedPlanId = isPremiumPlus || isPremium || currentPlan === PLAN_IDS.premiumPlus
+    ? PLAN_IDS.premium
+    : currentPlan
   const hasPremiumAccess = resolvedPlanId !== PLAN_IDS.free
   const CurrentIcon = PLAN_META[resolvedPlanId]?.icon || Star
 
@@ -419,12 +399,12 @@ export default function PremiumPage({
               <InfoTile
                 icon={ScanLine}
                 title={labels.scanCardTitles[resolvedPlanId]}
-                text={resolvedPlanId === PLAN_IDS.premiumPlus ? labels.scanInfoPremiumPlus : resolvedPlanId === PLAN_IDS.premium ? labels.scanInfoPremium : labels.scanInfoFree}
+                text={resolvedPlanId === PLAN_IDS.premium ? labels.scanInfoPremium : labels.scanInfoFree}
               />
               <InfoTile
                 icon={ChartNoAxesCombined}
-                title={PLAN_PRICES[resolvedPlanId]}
-                text={resolvedPlanId === PLAN_IDS.free ? labels.freeIntro : resolvedPlanId === PLAN_IDS.premium ? labels.premiumIntro : labels.premiumPlusIntro}
+                title={resolvedPlanId === PLAN_IDS.premium ? `${PLAN_PRICES[PLAN_IDS.premium]} · ${PLAN_ANNUAL_PRICES[PLAN_IDS.premium]}` : PLAN_PRICES[resolvedPlanId]}
+                text={resolvedPlanId === PLAN_IDS.free ? labels.freeIntro : labels.premiumIntro}
               />
               <InfoTile
                 icon={Sparkles}
@@ -449,7 +429,6 @@ export default function PremiumPage({
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
           <PlanCard planId={PLAN_IDS.free} currentPlanId={resolvedPlanId} labels={labels} />
           <PlanCard planId={PLAN_IDS.premium} currentPlanId={resolvedPlanId} labels={labels} />
-          <PlanCard planId={PLAN_IDS.premiumPlus} currentPlanId={resolvedPlanId} labels={labels} />
         </div>
       </section>
 

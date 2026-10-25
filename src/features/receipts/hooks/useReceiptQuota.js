@@ -45,13 +45,13 @@ export function formatReceiptQuotaLabelKr(quota) {
 
 export function formatReceiptQuotaTicketsLabelFr(quota) {
   return quota?.isUnlimitedForUser
-    ? `Premium+ actif — Utilisation du mois : ${quota.used}`
+    ? `Premium actif — Utilisation du mois : ${quota.used}`
     : `Analyses IA : ${quota.used} / ${quota.limit} — ${quota.planLabel}`
 }
 
 export function formatReceiptQuotaTicketsLabelKr(quota) {
   return quota?.isUnlimitedForUser
-    ? `Premium+ actif — Itilizasyon sa mwa-la : ${quota.used}`
+    ? `Premium actif — Itilizasyon sa mwa-la : ${quota.used}`
     : `Analiz IA : ${quota.used} / ${quota.limit} — ${quota.planLabel}`
 }
 

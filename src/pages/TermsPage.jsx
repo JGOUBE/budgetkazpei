@@ -7,13 +7,13 @@ export default function TermsPage() {
     <LegalPageLayout
       currentPath="/terms"
       title="Conditions générales d’utilisation"
-      updatedAt="3 septembre 2026"
+      updatedAt="25 octobre 2026"
       intro="Ces conditions encadrent l’utilisation de BudgetKazPéi et complètent la Politique de confidentialité."
     >
       <LegalSection title="1. Objet du service">
         <p>BudgetKazPéi aide à suivre un budget personnel ou familial, organiser ses courses, consulter des bons plans et informations de prix, repérer des aides potentielles et préparer des démarches.</p>
         <LegalCallout>
-          <p><strong>L’offre Gratuit restera sans publicité.</strong> Premium et Premium+ financent des fonctionnalités, quotas et niveaux d’accompagnement supplémentaires ; ils ne servent pas à retirer des annonces.</p>
+          <p><strong>L’offre Gratuit restera sans publicité.</strong> Premium finance des fonctionnalités, quotas et niveaux d’accompagnement supplémentaires ; ils ne servent pas à retirer des annonces.</p>
         </LegalCallout>
       </LegalSection>
 
@@ -36,9 +36,9 @@ export default function TermsPage() {
         <p>Les prix observés, promotions, disponibilités et informations commerciales peuvent évoluer. BudgetKazPéi fait son possible pour proposer des informations utiles et à jour, mais l’affichage en magasin ou le prix effectivement pratiqué par l’enseigne au moment de l’achat reste la référence.</p>
       </LegalSection>
 
-      <LegalSection title="6. Offres Premium et Premium+">
-        <p>Les offres payantes donnent accès à des fonctionnalités et quotas supplémentaires décrits sur la page des offres. Les tarifs et caractéristiques applicables sont ceux affichés au moment de la souscription.</p>
-        <p>Les paiements sont traités par Stripe. La gestion ou la résiliation d’un abonnement suit les moyens proposés dans le parcours d’abonnement. Une résiliation empêche le renouvellement mais ne vaut pas, à elle seule, demande de suppression du compte.</p>
+      <LegalSection title="6. Offre Premium">
+        <p>L’offre Premium donne accès aux fonctionnalités avancées décrites sur la page des offres. Elle est proposée à 4,99 € par mois ou 39,99 € par an. L’offre annuelle permet d’économiser plus de 30 % par rapport à douze mensualités. Les tarifs et caractéristiques applicables sont ceux affichés au moment de la souscription.</p>
+        <p>Sur le site web, les paiements sont traités par Stripe. Dans l’application Android distribuée par Google Play, les abonnements peuvent être traités par Google Play Billing. La gestion ou la résiliation d’un abonnement suit les moyens proposés dans le parcours d’abonnement. Une résiliation empêche le renouvellement mais ne vaut pas, à elle seule, demande de suppression du compte.</p>
       </LegalSection>
 
       <LegalSection title="7. Usage acceptable">
