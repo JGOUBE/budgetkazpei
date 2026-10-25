@@ -7,7 +7,7 @@ import {
   Star,
 } from "lucide-react"
 import { createColorAliases } from "../../styles/designSystem"
-import { PLAN_IDS, PLAN_NAMES, PLAN_PRICES, PLAN_PUBLIC_SCAN_LABELS } from "../../config/plans"
+import { PLAN_ANNUAL_PRICES, PLAN_ANNUAL_SAVINGS_LABEL, PLAN_IDS, PLAN_NAMES, PLAN_PRICES, PLAN_PUBLIC_SCAN_LABELS } from "../../config/plans"
 
 const COLORS = createColorAliases()
 const PREMIUM_URL = "/decouvrir"
@@ -222,8 +222,20 @@ function PlanCard({ planId, currentPlanId, labels }) {
         </span>
       </div>
 
-      <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
-        <div style={{ color: COLORS.text, fontSize: 28, fontWeight: 950 }}>{PLAN_PRICES[planId]}</div>
+      <div style={{ display: "grid", gap: 6 }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+          <div style={{ color: COLORS.text, fontSize: 28, fontWeight: 950 }}>{PLAN_PRICES[planId]}</div>
+          {planId === PLAN_IDS.premium && (
+            <span style={{ color: COLORS.muted, fontSize: 13, fontWeight: 800 }}>
+              ou {PLAN_ANNUAL_PRICES[PLAN_IDS.premium]}
+            </span>
+          )}
+        </div>
+        {planId === PLAN_IDS.premium && (
+          <span style={{ color: COLORS.green, fontSize: 12, fontWeight: 900 }}>
+            {PLAN_ANNUAL_SAVINGS_LABEL}
+          </span>
+        )}
       </div>
 
       <div style={{ display: "grid", gap: 10 }}>
@@ -391,7 +403,7 @@ export default function PremiumPage({
               />
               <InfoTile
                 icon={ChartNoAxesCombined}
-                title={PLAN_PRICES[resolvedPlanId]}
+                title={resolvedPlanId === PLAN_IDS.premium ? `${PLAN_PRICES[PLAN_IDS.premium]} · ${PLAN_ANNUAL_PRICES[PLAN_IDS.premium]}` : PLAN_PRICES[resolvedPlanId]}
                 text={resolvedPlanId === PLAN_IDS.free ? labels.freeIntro : labels.premiumIntro}
               />
               <InfoTile
