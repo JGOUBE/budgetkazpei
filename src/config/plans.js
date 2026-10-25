@@ -61,9 +61,11 @@ export const PLAN_PRICES = {
 
 export const PLAN_ANNUAL_PRICES = {
   [PLAN_IDS.free]: null,
-  [PLAN_IDS.premium]: "49,99 €/an",
-  [PLAN_IDS.premiumPlus]: "49,99 €/an",
+  [PLAN_IDS.premium]: "39,99 €/an",
+  [PLAN_IDS.premiumPlus]: "39,99 €/an",
 }
+
+export const PLAN_ANNUAL_SAVINGS_LABEL = "Économisez plus de 30 %"
 
 export const PLAN_NAMES = {
   [PLAN_IDS.free]: "Gratuit",
