@@ -38,8 +38,8 @@ const PREMIUM_CONTENT = {
       text:
         "Gratuit pose les bases. Premium réunit le Conseiller, les analyses avancées et l’accompagnement des démarches.",
       trust: [
-        "Sans engagement",
-        "Paiement sécurisé par Stripe",
+        "Mensuel ou annuel",
+        "Paiement sécurisé sur le web",
         "Disponible en français et en créole réunionnais",
       ],
     },
@@ -56,7 +56,7 @@ const PREMIUM_CONTENT = {
       annualSavings: "Économisez plus de 30 %",
       freeCta: "Commencer gratuitement",
       dashboardCta: "Accéder à mon tableau de bord",
-      premiumCta: "Choisir Premium",
+      premiumCta: "Choisir Premium — 4,99 €/mois",
       premiumGuestCta: "Créer mon compte pour Premium",
       comingSoonTitle: "En préparation",
       comingSoonText:
@@ -132,8 +132,8 @@ const PREMIUM_CONTENT = {
       text:
         "Gratis i poz bann baz. Premium i rasanm Konseyé-la, bann analiz avansé ek lakonpagnman pou bann demars.",
       trust: [
-        "San langazman",
-        "Payman sekirizé par Stripe",
+        "Chak mwa ou par an",
+        "Payman sekirizé su web",
         "Disponib an fransé ek kréol rényoné",
       ],
     },
@@ -150,7 +150,7 @@ const PREMIUM_CONTENT = {
       annualSavings: "Ékonomiz plis 30 %",
       freeCta: "Koumans gratis",
       dashboardCta: "Alé su mon tablo débor",
-      premiumCta: "Swazi Premium",
+      premiumCta: "Swazi Premium — 4,99 €/mwa",
       premiumGuestCta: "Kré mon kont pou Premium",
       comingSoonTitle: "An préparasyon",
       comingSoonText:
@@ -241,6 +241,10 @@ function usePremiumSeo(content, language) {
   }, [content, language])
 }
 
+function languageLabel(content) {
+  return content.annual === "Annuel" ? "option annuelle à activer" : "formule aniel pou aktive"
+}
+
 function PlanCard({ plan, content, isAuthenticated }) {
   const isFree = plan.id === PLAN_IDS.free
   const isPremium = plan.id === PLAN_IDS.premium
@@ -276,9 +280,11 @@ function PlanCard({ plan, content, isAuthenticated }) {
           <div className="premium-plan__billing">
             <p>{content.monthly}</p>
             <p>
-              <strong>{PLAN_ANNUAL_PRICES[PLAN_IDS.premium]}</strong> {content.perYear}
+              <strong>{PLAN_ANNUAL_PRICES[PLAN_IDS.premium]}</strong>
               {" · "}
               <span>{content.annualSavings || PLAN_ANNUAL_SAVINGS_LABEL}</span>
+              {" · "}
+              <span>{languageLabel(content)}</span>
             </p>
           </div>
         )}
