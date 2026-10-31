@@ -396,10 +396,48 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
     }
   }, [user?.id])
 
-  const historicalEstimate = useMemo(
-    () => estimateShoppingList(items, shoppingItems, retailObservedPrices),
-    [items, shoppingItems, retailObservedPrices],
-  )
+  const historicalEstimate = useMemo(() => {
+    const result = estimateShoppingList(items, shoppingItems, retailObservedPrices)
+    // The shopping-list budget uses the actual package price, never the €/kg or €/L
+    // comparison price. Match the full package identity (not a generic "lait").
+    const key = value => String(value || "").normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "")
+    const latest = new Map()
+    for (const price of sharedUnitPrices) {
+      if (price.product_id && !latest.has(price.product_id)) latest.set(price.product_id, price)
+    }
+    const byName = new Map(sharedCatalog.map(product => [key(product.display_name), product.id]))
+    const rows = result.items.map(item => {
+      if (Number(item.estimatedLineCost) > 0) return item
+      const productId = item.shopping_product_id || item.shoppingProductId || byName.get(key(item.name))
+      const price = latest.get(productId)
+      if (!price || !(Number(price.price) > 0)) return item
+      const packagePrice = Number(price.price)
+      const count = getShoppingListQuantity(item)
+      const linePrice = Number((packagePrice * count).toFixed(2))
+      return {
+        ...item,
+        estimatedUnitPrice: packagePrice,
+        estimatedLineCost: linePrice,
+        estimatedPrice: linePrice,
+        retailObservedUnitPrice: packagePrice,
+        retailObservedPrice: linePrice,
+        retailObservedAt: price.observed_at,
+        retailObservedRetailerName: "E.Leclerc Le Portail",
+        priceSource: "retail_observed",
+        estimatedPriceSource: "retail_observed",
+        priceLabel: "prix relevé",
+        priceUnitLabel: "",
+        comparisonUnitPrice: Number(price.unit_price) || null,
+        comparisonUnitLabel: price.unit_label || "",
+      }
+    })
+    const total = rows.reduce((sum, row) => sum + (Number(row.estimatedLineCost) || 0), 0)
+    return {
+      ...result, items: rows, total, min: total * 0.92, max: total * 1.08,
+      missingPriceCount: rows.filter(row => !(Number(row.estimatedLineCost) > 0)).length,
+    }
+  }, [items, shoppingItems, retailObservedPrices, sharedCatalog, sharedUnitPrices])
   const smartRetailPromotions = useMemo(
     () => retailPromotions
       .filter(isRetailPromotionUsableForSmartShopping)
@@ -993,6 +1031,12 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
                         ? item.priceLabel
                         : txt.priceMissing}
                 </span>
+                {item.comparisonUnitPrice > 0 && (
+                  <span style={{ display: "block", color: COLORS.green, fontSize: 12, fontWeight: 800, marginTop: 2 }}>
+                    {formatSmartPrice(item.comparisonUnitPrice, item.comparisonUnitLabel)}
+                    {item.retailObservedAt ? ` · Relevé le ${new Date(item.retailObservedAt).toLocaleDateString("fr-FR")}` : ""}
+                  </span>
+                )}
                 {listQuantity > 1 && (
                   <span style={{ display: "block", color: COLORS.cyan, fontSize: 12, fontWeight: 850, marginTop: 2 }}>
                     {txt.quantity(listQuantity)}
