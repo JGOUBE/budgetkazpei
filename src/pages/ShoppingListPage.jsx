@@ -252,7 +252,8 @@ function AutocompleteSuggestion({ suggestion, txt, onSelect }) {
     >
       <span style={{ display: "block", fontWeight: 900 }}>{suggestion.label}</span>
       {lastPrice > 0 && <span style={{ display: "block", color: COLORS.muted, fontSize: 12, marginTop: 2 }}>{txt.lastKnownPrice(formatSmartPrice(lastPrice, suggestion.priceUnitLabel))}</span>}
-      {!promotion && observedPrice > 0 && (
+      {observedPrice > 0 && suggestion.source === "history" && <span style={{ display: "block", color: COLORS.green, fontSize: 12, fontWeight: 850 }}>Prix comparable : {formatSmartPrice(observedPrice, suggestion.observedPriceUnitLabel)} · Pack {formatMontant(suggestion.packPrice)}</span>}
+      {!promotion && observedPrice > 0 && suggestion.source !== "history" && (
         <>
           <span style={{ display: "block", color: COLORS.green, fontSize: 12, fontWeight: 850, marginTop: 2 }}>{retailer ? `${retailer} · ` : ""}{formatSmartPrice(observedPrice, suggestion.observedPriceUnitLabel)}</span>
           {suggestion.packPrice > 0 && <span style={{ display: "block", color: COLORS.muted, fontSize: 11 }}>Conditionnement : {formatMontant(suggestion.packPrice)}</span>}
@@ -418,10 +419,32 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
     () => enrichShoppingBasketWithPromotions({ estimate: historicalEstimate, promotions: smartRetailPromotions }),
     [historicalEstimate, smartRetailPromotions],
   )
-  const allSuggestions = useMemo(
-    () => getShoppingAutocompleteSuggestions(query, shoppingItems, retailPromotions, retailObservedPrices),
-    [query, shoppingItems, retailPromotions, retailObservedPrices],
-  )
+  const allSuggestions = useMemo(() => {
+    const result = getShoppingAutocompleteSuggestions(query, shoppingItems, retailPromotions, retailObservedPrices)
+    const normalize = value => String(value || "").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()
+    const prices = new Map()
+    for (const price of sharedUnitPrices) {
+      if (price.product_id && !prices.has(price.product_id)) prices.set(price.product_id, price)
+    }
+    const catalogByName = new Map(sharedCatalog.map(product => [normalize(product.display_name), product]))
+    return {
+      ...result,
+      historical: result.historical.map(suggestion => {
+        const catalogProduct = catalogByName.get(normalize(suggestion.label))
+        const price = catalogProduct && prices.get(catalogProduct.id)
+        if (!price) return suggestion
+        return {
+          ...suggestion,
+          shoppingProductId: catalogProduct.id,
+          observedPrice: price.unit_price,
+          observedPriceUnitLabel: price.unit_label,
+          packPrice: price.price,
+          observedAt: price.observed_at,
+          retailerName: "E.Leclerc Le Portail · " + (price.commune || ""),
+        }
+      }),
+    }
+  }, [query, shoppingItems, retailPromotions, retailObservedPrices, sharedCatalog, sharedUnitPrices])
   const catalogSuggestions = useMemo(() => {
     const normalize = value => String(value || "").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()
     const terms = normalize(query).split(" ").filter(Boolean)
