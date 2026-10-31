@@ -255,6 +255,8 @@ function AutocompleteSuggestion({ suggestion, txt, onSelect }) {
       {!promotion && observedPrice > 0 && (
         <>
           <span style={{ display: "block", color: COLORS.green, fontSize: 12, fontWeight: 850, marginTop: 2 }}>{retailer ? `${retailer} · ` : ""}{formatSmartPrice(observedPrice, suggestion.observedPriceUnitLabel)}</span>
+          {suggestion.packPrice > 0 && <span style={{ display: "block", color: COLORS.muted, fontSize: 11 }}>Conditionnement : {formatMontant(suggestion.packPrice)}</span>}
+          {suggestion.observedAt && <span style={{ display: "block", color: COLORS.muted, fontSize: 11 }}>Prix relevé le {new Date(suggestion.observedAt).toLocaleDateString("fr-FR")}</span>}
           <span style={{ display: "block", color: COLORS.cyan, fontSize: 11, fontWeight: 900, marginTop: 2 }}>{txt.observedSuggestion}</span>
         </>
       )}
@@ -276,6 +278,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
   )
   const [shoppingItems, setShoppingItems] = useState([])
   const [sharedCatalog, setSharedCatalog] = useState([])
+  const [sharedUnitPrices, setSharedUnitPrices] = useState([])
   const [retailPromotions, setRetailPromotions] = useState([])
   const [retailObservedPrices, setRetailObservedPrices] = useState([])
   const [retailObservedOffers, setRetailObservedOffers] = useState([])
@@ -322,6 +325,21 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
         if (!ignore) setSharedCatalog(data || [])
       })
       .catch(() => { if (!ignore) setSharedCatalog([]) })
+    return () => { ignore = true }
+  }, [])
+
+  useEffect(() => {
+    let ignore = false
+    supabase.from("shopping_price_observations")
+      .select("product_id,price,quantity,unit_label,unit_price,observed_at,retailer_slug,commune,locality")
+      .eq("is_publishable", true)
+      .order("observed_at", { ascending: false })
+      .limit(1500)
+      .then(({ data, error }) => {
+        if (error) throw error
+        if (!ignore) setSharedUnitPrices(data || [])
+      })
+      .catch(() => { if (!ignore) setSharedUnitPrices([]) })
     return () => { ignore = true }
   }, [])
 
@@ -411,6 +429,10 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
     const history = new Set(allSuggestions.historical.map(row => normalize(row.label)))
     const priorLists = [...items, ...snapshots.flatMap(snapshot => Array.isArray(snapshot.items) ? snapshot.items : [])]
     const listed = new Set(priorLists.map(row => normalize(row.name || row.product_name || row.label)))
+    const latestPrices = new Map()
+    for (const price of sharedUnitPrices) {
+      if (price.product_id && !latestPrices.has(price.product_id)) latestPrices.set(price.product_id, price)
+    }
     return sharedCatalog
       .filter(row => {
         const name = normalize(row.display_name)
@@ -420,14 +442,20 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
         const label = row.display_name
         const norm = normalize(label)
         const used = listed.has(norm)
+        const sharedPrice = latestPrices.get(row.id)
         return { key: "catalog:" + row.id, source: "catalog", label, normalizedName: row.normalized_name,
           shoppingProductId: row.id, brand: row.brand, packageFormat: row.size_label,
+          observedPrice: sharedPrice?.unit_price ?? null,
+          observedPriceUnitLabel: sharedPrice?.unit_label || "",
+          packPrice: sharedPrice?.price ?? null,
+          observedAt: sharedPrice?.observed_at || null,
+          retailerName: sharedPrice ? "E.Leclerc Le Portail · " + (sharedPrice.commune || "") : "",
           category: row.category, subcategory: row.subcategory,
           rank: (used ? 100 : 0) + (norm === normalize(query) ? 50 : norm.startsWith(normalize(query)) ? 20 : 0) }
       })
       .sort((left, right) => right.rank - left.rank || left.label.localeCompare(right.label, "fr"))
       .slice(0, 12)
-  }, [query, sharedCatalog, allSuggestions.historical, items, snapshots])
+  }, [query, sharedCatalog, sharedUnitPrices, allSuggestions.historical, items, snapshots])
   const suggestionCount = allSuggestions.historical.length + allSuggestions.observed.length + allSuggestions.retail.length + catalogSuggestions.length
   const suggestions = useMemo(() => {
     if (showAllSuggestions) return allSuggestions
