@@ -409,8 +409,11 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
     const byName = new Map(sharedCatalog.map(product => [key(product.display_name), product.id]))
     const rows = result.items.map(item => {
       if (Number(item.estimatedLineCost) > 0) return item
-      const productId = item.shopping_product_id || item.shoppingProductId || byName.get(key(item.name))
-      const price = latest.get(productId)
+      // Existing drafts may hold an obsolete or unrelated product ID.
+      // Resolve the exact package name first; do not let stale IDs hide a valid price.
+      const exactNameId = byName.get(key(item.name))
+      const productId = exactNameId || item.shopping_product_id || item.shoppingProductId
+      const price = latest.get(productId) || (exactNameId ? latest.get(exactNameId) : null)
       if (!price || !(Number(price.price) > 0)) return item
       const packagePrice = Number(price.price)
       const count = getShoppingListQuantity(item)
