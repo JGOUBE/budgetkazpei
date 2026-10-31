@@ -421,7 +421,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
   )
   const allSuggestions = useMemo(() => {
     const result = getShoppingAutocompleteSuggestions(query, shoppingItems, retailPromotions, retailObservedPrices)
-    const normalize = value => String(value || "").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()
+    const normalize = value => String(value || "").normalize("NFD").replace(/[^\x00-\x7F]/g, char => ({ "é":"e", "è":"e", "ê":"e", "à":"a", "ù":"u", "ç":"c", "ô":"o", "î":"i" }[char] || char)).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()
     const prices = new Map()
     for (const price of sharedUnitPrices) {
       if (price.product_id && !prices.has(price.product_id)) prices.set(price.product_id, price)
@@ -446,7 +446,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
     }
   }, [query, shoppingItems, retailPromotions, retailObservedPrices, sharedCatalog, sharedUnitPrices])
   const catalogSuggestions = useMemo(() => {
-    const normalize = value => String(value || "").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()
+    const normalize = value => String(value || "").normalize("NFD").replace(/[^\x00-\x7F]/g, char => ({ "é":"e", "è":"e", "ê":"e", "à":"a", "ù":"u", "ç":"c", "ô":"o", "î":"i" }[char] || char)).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()
     const terms = normalize(query).split(" ").filter(Boolean)
     if (!terms.length) return []
     const history = new Set(allSuggestions.historical.map(row => normalize(row.label)))
@@ -481,7 +481,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
   }, [query, sharedCatalog, sharedUnitPrices, allSuggestions.historical, items, snapshots])
   const suggestionCount = allSuggestions.historical.length + allSuggestions.observed.length + allSuggestions.retail.length + catalogSuggestions.length
   const suggestions = useMemo(() => {
-    if (showAllSuggestions) return allSuggestions
+    if (showAllSuggestions) return { ...allSuggestions, catalog: catalogSuggestions }
     let remaining = 4
     const take = rows => {
       const visible = rows.slice(0, remaining)
