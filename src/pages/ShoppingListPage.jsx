@@ -275,6 +275,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
     [locale],
   )
   const [shoppingItems, setShoppingItems] = useState([])
+  const [sharedCatalog, setSharedCatalog] = useState([])
   const [retailPromotions, setRetailPromotions] = useState([])
   const [retailObservedPrices, setRetailObservedPrices] = useState([])
   const [retailObservedOffers, setRetailObservedOffers] = useState([])
@@ -308,6 +309,21 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
       })
     return () => { ignore = true }
   }, [user?.id])
+
+  useEffect(() => {
+    let ignore = false
+    supabase.from("shopping_products")
+      .select("id,display_name,normalized_name,brand,size_label,category,subcategory")
+      .eq("is_active", true)
+      .order("display_name")
+      .limit(1500)
+      .then(({ data, error }) => {
+        if (error) throw error
+        if (!ignore) setSharedCatalog(data || [])
+      })
+      .catch(() => { if (!ignore) setSharedCatalog([]) })
+    return () => { ignore = true }
+  }, [])
 
   useEffect(() => {
     let ignore = false
@@ -388,7 +404,31 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
     () => getShoppingAutocompleteSuggestions(query, shoppingItems, retailPromotions, retailObservedPrices),
     [query, shoppingItems, retailPromotions, retailObservedPrices],
   )
-  const suggestionCount = allSuggestions.historical.length + allSuggestions.observed.length + allSuggestions.retail.length
+  const catalogSuggestions = useMemo(() => {
+    const normalize = value => String(value || "").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()
+    const terms = normalize(query).split(" ").filter(Boolean)
+    if (!terms.length) return []
+    const history = new Set(allSuggestions.historical.map(row => normalize(row.label)))
+    const priorLists = [...items, ...snapshots.flatMap(snapshot => Array.isArray(snapshot.items) ? snapshot.items : [])]
+    const listed = new Set(priorLists.map(row => normalize(row.name || row.product_name || row.label)))
+    return sharedCatalog
+      .filter(row => {
+        const name = normalize(row.display_name)
+        return !history.has(name) && terms.every(term => name.includes(term))
+      })
+      .map(row => {
+        const label = row.display_name
+        const norm = normalize(label)
+        const used = listed.has(norm)
+        return { key: "catalog:" + row.id, source: "catalog", label, normalizedName: row.normalized_name,
+          shoppingProductId: row.id, brand: row.brand, packageFormat: row.size_label,
+          category: row.category, subcategory: row.subcategory,
+          rank: (used ? 100 : 0) + (norm === normalize(query) ? 50 : norm.startsWith(normalize(query)) ? 20 : 0) }
+      })
+      .sort((left, right) => right.rank - left.rank || left.label.localeCompare(right.label, "fr"))
+      .slice(0, 12)
+  }, [query, sharedCatalog, allSuggestions.historical, items, snapshots])
+  const suggestionCount = allSuggestions.historical.length + allSuggestions.observed.length + allSuggestions.retail.length + catalogSuggestions.length
   const suggestions = useMemo(() => {
     if (showAllSuggestions) return allSuggestions
     let remaining = 4
@@ -401,8 +441,9 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
       historical: take(allSuggestions.historical),
       observed: take(allSuggestions.observed),
       retail: take(allSuggestions.retail),
+      catalog: take(catalogSuggestions),
     }
-  }, [allSuggestions, showAllSuggestions])
+  }, [allSuggestions, catalogSuggestions, showAllSuggestions])
   const pairing = useMemo(() => getPairingSuggestion(items, shoppingItems), [items, shoppingItems])
   const foodReceiptCount = useMemo(() => new Set((shoppingItems || []).map(item => item.receipt_id).filter(Boolean)).size, [shoppingItems])
   const learningReady = foodReceiptCount >= 3
@@ -419,7 +460,8 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
   const hasQueryWithoutResult = query.trim().length > 0 &&
     suggestions.historical.length === 0 &&
     suggestions.observed.length === 0 &&
-    suggestions.retail.length === 0
+    suggestions.retail.length === 0 &&
+    suggestions.catalog.length === 0
   const visibleSnapshots = snapshots.filter(snapshot => !hiddenSnapshotIds.has(snapshot.id))
 
   useEffect(() => {
@@ -853,6 +895,16 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
             <div style={{ color: COLORS.muted, fontSize: 11, fontWeight: 950, letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 6 }}>{txt.currentPromotionSuggestions}</div>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               {suggestions.retail.map(suggestion => <AutocompleteSuggestion key={suggestion.key} suggestion={suggestion} txt={txt} onSelect={() => addItem(suggestion)} />)}
+            </div>
+          </div>
+        )}
+        {suggestions.catalog.length > 0 && (
+          <div data-shopping-suggestion-group="catalog" style={{ marginTop: 12 }}>
+            <div style={{ color: COLORS.muted, fontSize: 11, fontWeight: 950, letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 6 }}>
+              {locale === "cr" ? "Produits catalogue" : "Catalogue partagé"}
+            </div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {suggestions.catalog.map(suggestion => <AutocompleteSuggestion key={suggestion.key} suggestion={suggestion} txt={txt} onSelect={() => addItem(suggestion)} />)}
             </div>
           </div>
         )}
