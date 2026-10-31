@@ -213,14 +213,12 @@ export function enrichShoppingBasketWithPromotions({ estimate = {}, promotions =
     if (item.historicalPrice !== null || item.estimatedPriceSource !== "retail_observed") return total
     return total + Math.max(0, moneyOrNull(item.estimatedLineCost) || 0)
   }, 0))
+  // The basket total must reflect every priced line (personal history, shared
+  // verified pack price or reliable promotion), not only historical purchases.
   const currentBasketEstimate = Math.max(
     0,
-    roundedMoney(
-      historicalBasketEstimate
-      - reliableSavingsTotal
-      + reliablePromotionOnlyTotal
-      + retailObservedOnlyTotal
-    ),
+    roundedMoney(items.reduce((total, item) =>
+      total + Math.max(0, moneyOrNull(item.estimatedLineCost) || 0), 0)),
   )
   const missingPriceCount = items.filter(item => item.estimatedLineCost === null).length
 
