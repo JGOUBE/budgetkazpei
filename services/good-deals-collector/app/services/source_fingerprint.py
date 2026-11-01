@@ -222,6 +222,26 @@ def extract_run_market_catalog_entries(source: SourceDefinition, document: Sourc
 
         starts_at, ends_at = parse_french_date_range(period_text, default_year=2026)
 
+        # Some Run Market cards use a stale interactive-catalogue URL while
+        # showing new dates on the surrounding page. Never promote a July
+        # leaflet as a November offer merely because the card says November.
+        url_period_match = re.search(
+            r"(\\d{1,2})-([a-z]+)-au-(\\d{1,2})-([a-z]+)-(20\\d{2})",
+            canonical_url,
+            flags=re.IGNORECASE,
+        )
+        if url_period_match and starts_at and ends_at:
+            day1, month1, day2, month2, year = url_period_match.groups()
+            link_start, link_end = parse_french_date_range(
+                f"du {day1} {month1} {year} au {day2} {month2} {year}",
+                default_year=int(year),
+            )
+            if link_start and link_end and (
+                link_start.date() != starts_at.date()
+                or link_end.date() != ends_at.date()
+            ):
+                continue
+
         image_url = None
         background_matches = re.findall(
             r'background-image:url\("([^"]+)"\)',
