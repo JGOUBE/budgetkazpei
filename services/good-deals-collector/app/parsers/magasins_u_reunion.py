@@ -16,12 +16,12 @@ from .generic_catalog import GenericCatalogParser
 # Extract the dated article links rather than guessing a single period
 # from the home page (which can contain several, including expired ones).
 CATALOGUE_LINK_RE = re.compile(
-    r'<a\\b[^>]*\\bhref\\s*=\\s*["\\\']([^"\\\']+)["\\\'][^>]*>(.*?)</a>',
+    r'<a\b[^>]*\bhref\s*=\s*["\\']([^"\\']+)["\\'][^>]*>(.*?)</a>',
     re.IGNORECASE | re.DOTALL,
 )
 DATE_RANGE_RE = re.compile(
-    r'\\bdu\\s+(\\d{1,2})(?:er)?(?:\\s+([a-zA-Zéèêëàâîïôùûüç]+))?'
-    r'\\s+au\\s+(\\d{1,2})(?:er)?\\s+([a-zA-Zéèêëàâîïôùûüç]+)\\s+(20\\d{2})\\b',
+    r'\bdu\s+(\d{1,2})(?:er)?(?:\s+([a-zA-Zéèêëàâîïôùûüç]+))?'
+    r'\s+au\s+(\d{1,2})(?:er)?\s+([a-zA-Zéèêëàâîïôùûüç]+)\s+(20\d{2})\b',
     re.IGNORECASE,
 )
 
@@ -37,7 +37,7 @@ class MagasinsUReunionParser(GenericCatalogParser):
         for match in CATALOGUE_LINK_RE.finditer(raw):
             href, anchor_html = match.groups()
             title = re.sub(r"<[^>]+>", " ", anchor_html)
-            title = re.sub(r"\\s+", " ", html.unescape(title)).strip()
+            title = re.sub(r"\s+", " ", html.unescape(title)).strip()
             if "catalogue" not in normalize_text(title):
                 continue
             date_match = DATE_RANGE_RE.search(title)
