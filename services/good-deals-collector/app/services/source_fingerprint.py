@@ -226,7 +226,7 @@ def extract_run_market_catalog_entries(source: SourceDefinition, document: Sourc
         # showing new dates on the surrounding page. Never promote a July
         # leaflet as a November offer merely because the card says November.
         url_period_match = re.search(
-            r"(\\d{1,2})-([a-z]+)-au-(\\d{1,2})-([a-z]+)-(20\\d{2})",
+            r"(\d{1,2})-([a-z]+)-au-(\d{1,2})-([a-z]+)-(20\d{2})",
             canonical_url,
             flags=re.IGNORECASE,
         )
