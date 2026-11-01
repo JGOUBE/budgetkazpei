@@ -16,7 +16,7 @@ from .generic_catalog import GenericCatalogParser
 # Extract the dated article links rather than guessing a single period
 # from the home page (which can contain several, including expired ones).
 CATALOGUE_LINK_RE = re.compile(
-    r'<a\b[^>]*\bhref\s*=\s*["\\']([^"\\']+)["\\'][^>]*>(.*?)</a>',
+    r'<a\\b[^>]*\\bhref\\s*=\\s*"([^"]+)"[^>]*>(.*?)</a>',
     re.IGNORECASE | re.DOTALL,
 )
 DATE_RANGE_RE = re.compile(
