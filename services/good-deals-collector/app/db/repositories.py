@@ -74,9 +74,15 @@ class InMemoryRepositories:
         return source_id
 
     def get_last_snapshot_hash(self, source_slug: str) -> str | None:
+        # A failed attempt must not certify the page as already processed.
+        # A failed publication writes a "failed" snapshot after a "parsed"
+        # one; only inspect the latest attempt, including failed records.
         for snapshot in reversed(list(self.snapshots.values())):
-            if snapshot["source_slug"] == source_slug and snapshot.get("sha256"):
-                return snapshot["sha256"]  # type: ignore[return-value]
+            if snapshot["source_slug"] != source_slug:
+                continue
+            if snapshot.get("status") == "failed":
+                return None
+            return snapshot.get("sha256")  # type: ignore[return-value]
         return None
 
     def record_snapshot(
@@ -306,9 +312,12 @@ class SupabaseRepositories:
     def get_last_snapshot_hash(self, source_slug: str) -> str | None:
         rows = self.client.select(
             "good_deal_source_snapshots",
-            filters={"source_slug": f"eq.{source_slug}", "sha256": "not.is.null", "order": "checked_at.desc", "limit": "1"},
+            filters={"source_slug": f"eq.{source_slug}", "order": "checked_at.desc", "limit": "1"},
+            columns="sha256,processing_status",
         )
-        return str(rows[0]["sha256"]) if rows else None
+        if not rows or rows[0].get("processing_status") == "failed":
+            return None
+        return str(rows[0]["sha256"]) if rows[0].get("sha256") else None
 
     def record_snapshot(
         self,
