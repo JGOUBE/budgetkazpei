@@ -73,6 +73,10 @@ class BaseCollector:
 
     def collect(self, source: SourceDefinition, settings: Settings) -> SourceDocument:
         response = self.fetcher.fetch(source, settings)
+        if response.status_code != 200:
+            # Never fingerprint a 403/404/500 page as an official catalogue:
+            # it may change on every request and waste billed parsing time.
+            raise RuntimeError(f"source_http_status_{response.status_code}:{source.slug}")
         extracted_text = self.extract_text(response.content, response.headers.get("content-type", "application/octet-stream"))
         return SourceDocument(
             source_slug=source.slug,
