@@ -1,53 +1,66 @@
+# BudgetKazPei catalogue cadence: two checks per month, no automatic activation.
+# Safe default: print the planned change. No jobs or IAM permissions are created.
 param(
   [string]$ProjectId = "budgetkazpei",
-  [string]$Region = "europe-west9",
-  [string]$Location = "europe-west9",
-  [string]$JobName = "budgetkazpei-good-deals-collector",
+  [string]$Location = "europe-west1",
   [string]$SchedulerName = "budgetkazpei-good-deals-collector-schedule",
-  [string]$SchedulerServiceAccount = "budgetkazpei-good-deals-scheduler@$ProjectId.iam.gserviceaccount.com"
+  [string]$Schedule = "30 6 4,18 * *",
+  [switch]$Apply,
+  [switch]$Resume
 )
 
 $ErrorActionPreference = "Stop"
+Write-Host "Job existant   : $SchedulerName"
+Write-Host "Region         : $Location"
+Write-Host "Calendrier     : $Schedule (Indian/Reunion)"
+Write-Host "Activation     : " $(if ($Resume) { "demandee explicitement" } else { "INTERDITE / reste suspendu" })
 
-$activeProject = gcloud config get-value project 2>$null
+if ($Resume -and -not $Apply) {
+  throw "-Resume ne peut etre utilise qu'avec -Apply."
+}
+if (-not $Apply) {
+  Write-Host "Aucune modification appliquee. Utiliser -Apply pour configurer le job en restant suspendu."
+  return
+}
+
+$activeProject = (& gcloud.cmd config get-value project 2>$null).Trim()
 if ($activeProject -ne $ProjectId) {
   throw "Projet Google Cloud actif inattendu: '$activeProject'. Attendu: '$ProjectId'."
 }
 
-Write-Host "Verification du compte de service Scheduler..."
-gcloud iam service-accounts describe $SchedulerServiceAccount --project $ProjectId 1>$null 2>$null
+# The existing job is in europe-west1 (Cloud Run is in europe-west9).
+# Never create a second scheduler in a different region by mistake.
+& gcloud.cmd scheduler jobs describe $SchedulerName --location $Location --project $ProjectId 1>$null 2>$null
 if ($LASTEXITCODE -ne 0) {
-  gcloud iam service-accounts create "budgetkazpei-good-deals-scheduler" --display-name "BudgetKazPei Good Deals Scheduler" --project $ProjectId
+  throw "Job introuvable dans $Location. Aucune creation automatique: verifier sa region dans Cloud Console."
 }
 
-gcloud projects add-iam-policy-binding $ProjectId `
-  --member "serviceAccount:$SchedulerServiceAccount" `
-  --role "roles/run.invoker" `
-  --quiet
+# Update schedule only, preserving the existing Cloud Run target and OAuth identity.
+& gcloud.cmd scheduler jobs update http $SchedulerName `
+  --project $ProjectId `
+  --location $Location `
+  --schedule $Schedule `
+  --time-zone "Indian/Reunion" `
+  --max-retry-attempts 0
 
-$jobUri = "https://$Region-run.googleapis.com/apis/run.googleapis.com/v1/namespaces/$ProjectId/jobs/$JobName:run"
+if ($LASTEXITCODE -ne 0) {
+  throw "Echec de mise a jour du calendrier Cloud Scheduler."
+}
 
-Write-Host "Creation ou mise a jour du Cloud Scheduler $SchedulerName"
-gcloud scheduler jobs describe $SchedulerName --location $Location --project $ProjectId 1>$null 2>$null
-if ($LASTEXITCODE -eq 0) {
-  gcloud scheduler jobs update http $SchedulerName `
-    --project $ProjectId `
-    --location $Location `
-    --schedule "30 5 * * *" `
-    --time-zone "Indian/Reunion" `
-    --uri $jobUri `
-    --http-method POST `
-    --oauth-service-account-email $SchedulerServiceAccount `
-    --oauth-token-scope "https://www.googleapis.com/auth/cloud-platform"
+$state = (& gcloud.cmd scheduler jobs describe $SchedulerName --location $Location --project $ProjectId --format "value(state)").Trim()
+if ($LASTEXITCODE -ne 0) { throw "Impossible de verifier l'etat de la tache." }
+
+if ($Resume) {
+  if ($state -eq "PAUSED") {
+    & gcloud.cmd scheduler jobs resume $SchedulerName --location $Location --project $ProjectId
+    if ($LASTEXITCODE -ne 0) { throw "Impossible de reprendre la tache." }
+  }
+  Write-Host "Tache activee sur demande explicite."
 }
 else {
-  gcloud scheduler jobs create http $SchedulerName `
-    --project $ProjectId `
-    --location $Location `
-    --schedule "30 5 * * *" `
-    --time-zone "Indian/Reunion" `
-    --uri $jobUri `
-    --http-method POST `
-    --oauth-service-account-email $SchedulerServiceAccount `
-    --oauth-token-scope "https://www.googleapis.com/auth/cloud-platform"
+  if ($state -ne "PAUSED") {
+    & gcloud.cmd scheduler jobs pause $SchedulerName --location $Location --project $ProjectId
+    if ($LASTEXITCODE -ne 0) { throw "Impossible de suspendre la tache: suspendre depuis la console." }
+  }
+  Write-Host "Calendrier mis a jour. Tache toujours suspendue."
 }
