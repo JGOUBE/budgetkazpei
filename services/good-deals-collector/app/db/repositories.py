@@ -77,7 +77,9 @@ class InMemoryRepositories:
     def is_source_enabled(self, source_slug: str) -> bool:
         row = self.sources.get(source_slug)
         # Preserve local smoke-test behavior when a source is not registered.
-        return row is None or row.get("is_active", True) is not False
+        return row is None or row.get(
+            "is_active", getattr(row.get("source"), "is_active", True)
+        ) is not False
 
     def get_last_snapshot_hash(self, source_slug: str) -> str | None:
         # A failed attempt must not certify the page as already processed.
