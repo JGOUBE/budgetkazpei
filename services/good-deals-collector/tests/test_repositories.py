@@ -1,9 +1,10 @@
 import unittest
 from datetime import datetime, timedelta, timezone
 
-from app.db.repositories import DryRunRepositories, InMemoryRepositories
+from app.db.repositories import DryRunRepositories, InMemoryRepositories, SupabaseRepositories
 from app.models.candidate import Candidate
 from app.models.document import SourceDocument
+from app.models.source import SourceDefinition
 
 
 class RepositoryTests(unittest.TestCase):
@@ -199,6 +200,86 @@ class RepositoryTests(unittest.TestCase):
         pending = repositories.list_candidates_pending_publication()
 
         self.assertEqual([candidate.external_key for candidate in pending], ["approved:1"])
+
+
+    def test_failed_publish_snapshot_requires_reprocessing_same_hash(self):
+        repository = InMemoryRepositories()
+        doc = SourceDocument(
+            source_slug="source", source_url="https://example.com",
+            final_url="https://example.com", content_type="text/html",
+            http_status=200, content_bytes=b"catalogues", extracted_text="catalogues",
+            sha256="stable-hash",
+        )
+        repository.record_snapshot("source", "id", doc, changed=True, status="parsed")
+        self.assertEqual(repository.get_last_snapshot_hash("source"), "stable-hash")
+        repository.record_snapshot("source", "id", doc, changed=False, status="failed", error_message="publication failed")
+        self.assertIsNone(repository.get_last_snapshot_hash("source"))
+        repository.record_snapshot("source", "id", doc, changed=True, status="parsed")
+        self.assertEqual(repository.get_last_snapshot_hash("source"), "stable-hash")
+
+    def test_same_external_key_is_eligible_for_retry_but_new_leaflet_is_not(self):
+        repository = InMemoryRepositories()
+        saved = Candidate(
+            source_slug="source", external_key="source:leaflet-a",
+            content_family="shopping", content_kind="promotion",
+            title="Catalogue", description="Catalogue",
+            source_url="https://example.com/a", scope_type="island",
+            duplicate_key="same-leaflet",
+        )
+        repository.save_candidate("source:id", "snapshot:1", saved)
+        self.assertIsNone(
+            repository.find_duplicate_candidate_id("same-leaflet", external_key="source:leaflet-a")
+        )
+        self.assertIsNotNone(
+            repository.find_duplicate_candidate_id("same-leaflet", external_key="source:leaflet-b")
+        )
+
+    def test_source_disabled_by_admin_is_not_enabled(self):
+        repository = InMemoryRepositories()
+        source = SourceDefinition(
+            slug="source", name="Source disabled", content_family="shopping",
+            source_type="html", source_url="https://example.com",
+            official_domain="example.com", parser_key="generic_catalog",
+            scope_type="island", is_active=False,
+        )
+        repository.ensure_source(source)
+        self.assertFalse(repository.is_source_enabled(source.slug))
+        self.assertTrue(repository.is_source_enabled("unregistered"))
+
+    def test_supabase_failed_snapshot_must_not_hide_publish_failure(self):
+        class FakeClient:
+            def __init__(self, data):
+                self.data = data
+                self.calls = []
+
+            def select(self, table, *, filters=None, columns="*"):
+                self.calls.append((table, filters, columns))
+                return self.data
+
+        client = FakeClient([{"sha256": "same-hash", "processing_status": "failed"}])
+        repository = SupabaseRepositories(client)
+        self.assertIsNone(repository.get_last_snapshot_hash("source"))
+        self.assertEqual(client.calls[0][2], "sha256,processing_status")
+        self.assertNotIn("sha256", client.calls[0][1])
+        client.data = [{"sha256": "same-hash", "processing_status": "parsed"}]
+        self.assertEqual(repository.get_last_snapshot_hash("source"), "same-hash")
+
+    def test_supabase_source_disable_and_duplicate_exclusion(self):
+        class FakeClient:
+            def __init__(self):
+                self.calls = []
+
+            def select(self, table, *, filters=None, columns="*"):
+                self.calls.append((table, filters, columns))
+                if table == "good_deal_sources":
+                    return [{"is_active": False}]
+                return []
+
+        client = FakeClient()
+        repository = SupabaseRepositories(client)
+        self.assertFalse(repository.is_source_enabled("disabled-source"))
+        self.assertIsNone(repository.find_duplicate_candidate_id("digest", external_key="catalogue-a"))
+        self.assertEqual(client.calls[1][1]["external_key"], "neq.catalogue-a")
 
 
 if __name__ == "__main__":
