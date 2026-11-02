@@ -26,6 +26,7 @@ class RepositoryProtocol(Protocol):
     def start_run(self, run_key: str, trigger_type: str, mode: str) -> None: ...
     def finish_run(self, summary: RunSummary) -> None: ...
     def ensure_source(self, source: SourceDefinition) -> str: ...
+    def is_source_enabled(self, source_slug: str) -> bool: ...
     def get_last_snapshot_hash(self, source_slug: str) -> str | None: ...
     def record_snapshot(self, source_slug: str, source_id: str, document: SourceDocument, changed: bool, status: str, error_message: str | None = None) -> str: ...
     def save_candidate(self, source_id: str, snapshot_id: str | None, candidate: Candidate) -> str: ...
@@ -72,6 +73,11 @@ class InMemoryRepositories:
         source_id = f"source:{source.slug}"
         self.sources[source.slug] = {"id": source_id, "source": source}
         return source_id
+
+    def is_source_enabled(self, source_slug: str) -> bool:
+        row = self.sources.get(source_slug)
+        # Preserve local smoke-test behavior when a source is not registered.
+        return row is None or row.get("is_active", True) is not False
 
     def get_last_snapshot_hash(self, source_slug: str) -> str | None:
         # A failed attempt must not certify the page as already processed.
@@ -284,6 +290,15 @@ class SupabaseRepositories:
                 "finished_at": datetime.now(timezone.utc).isoformat(),
             },
         )
+
+    def is_source_enabled(self, source_slug: str) -> bool:
+        rows = self.client.select(
+            "good_deal_sources",
+            filters={"slug": f"eq.{source_slug}", "limit": "1"},
+            columns="is_active",
+        )
+        # A new source is enabled only when the trusted registry selects it.
+        return not rows or rows[0].get("is_active") is True
 
     def ensure_source(self, source: SourceDefinition) -> str:
         existing_rows = self.client.select(
@@ -577,6 +592,9 @@ class DryRunRepositories:
 
     def ensure_source(self, source: SourceDefinition) -> str:
         return self.technical_repositories.ensure_source(source)
+
+    def is_source_enabled(self, source_slug: str) -> bool:
+        return self.technical_repositories.is_source_enabled(source_slug)
 
     def get_last_snapshot_hash(self, source_slug: str) -> str | None:
         return self.technical_repositories.get_last_snapshot_hash(source_slug)
