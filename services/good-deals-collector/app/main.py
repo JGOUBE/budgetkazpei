@@ -156,8 +156,21 @@ def run(settings: Settings, *, requested_max_sources: int | None = None, trigger
             **expiration_result.as_metrics(),
         },
     )
+    source_results = {}
     for source in sources:
         result = process_source(source, settings, repositories, collectors, parsers, publisher)
+        source_results[source.slug] = {
+            "status": "disabled" if result.skipped_reason == "disabled"
+                else "failed" if result.error_message
+                else "unchanged" if result.skipped_reason == "unchanged"
+                else "processed",
+            "changed": bool(result.changed),
+            "detected": len(result.candidates),
+            "published": sum(item.status == "published" for item in result.candidates),
+            "duplicates": sum(item.status == "duplicate" for item in result.candidates),
+            "review": sum(item.status == "needs_review" for item in result.candidates),
+            "error": result.error_message or "",
+        }
         if result.skipped_reason == "disabled":
             summary.metrics["sources_skipped_disabled"] = summary.metrics.get("sources_skipped_disabled", 0) + 1
             continue
@@ -183,6 +196,9 @@ def run(settings: Settings, *, requested_max_sources: int | None = None, trigger
                 summary.rejected_count += 1
             elif candidate.status == "expired":
                 summary.expired_count += 1
+    # This compact per-source scorecard is persisted in the existing JSONB
+    # metrics column; it requires no additional schema, scraper, or Cloud Run job.
+    summary.metrics["source_results"] = source_results
     approved_publication = process_pending_approved_candidates(settings, repositories, publisher, summary)
     summary.metrics.update(approved_publication.as_metrics())
     LOGGER.info(
