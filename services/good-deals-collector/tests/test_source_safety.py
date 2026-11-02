@@ -4,6 +4,7 @@ import unittest
 from unittest.mock import Mock
 
 from app.collectors.registry import get_default_sources
+from app.config import Settings
 from app.db.repositories import InMemoryRepositories, SupabaseRepositories
 from app.main import process_source
 from app.models.candidate import Candidate
@@ -105,6 +106,31 @@ class SourceSafetyTests(unittest.TestCase):
         self.assertIsNotNone(
             repo.find_duplicate_candidate_id(candidate.duplicate_key, external_key="another-catalogue")
         )
+
+
+    def test_default_collection_is_dry_run_without_explicit_opt_in(self):
+        from unittest.mock import patch
+        with patch.dict("os.environ", {"COLLECTOR_DRY_RUN": ""}, clear=False):
+            # Empty env values are not an opt-in to publish.
+            settings = Settings.from_env()
+        self.assertTrue(settings.collector_dry_run)
+
+    def test_source_scorecard_is_available_without_cloud_run(self):
+        from unittest.mock import patch
+        from app.main import run
+        repo = InMemoryRepositories()
+        repo.sources[self.source.slug] = {"is_active": False, "source": self.source}
+        settings = Settings.from_env().with_overrides(
+            collector_mode="shopping", collector_dry_run=True, collector_max_sources=1
+        )
+        collector = Mock()
+        with patch("app.main.get_default_sources", return_value=[self.source]), patch(
+            "app.main.get_repository", return_value=repo
+        ), patch("app.main.get_collectors", return_value={"html": collector}):
+            summary = run(settings)
+        self.assertEqual(summary.metrics["source_results"][self.source.slug]["status"], "disabled")
+        self.assertEqual(summary.metrics["source_results"][self.source.slug]["detected"], 0)
+        collector.collect.assert_not_called()
 
 
 if __name__ == "__main__":
