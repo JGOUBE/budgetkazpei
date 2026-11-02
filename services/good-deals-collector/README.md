@@ -160,19 +160,71 @@ Lecture des logs:
 gcloud logging read "resource.type=cloud_run_job AND labels.\"run.googleapis.com/job_name\"=\"budgetkazpei-good-deals-collector\"" --project budgetkazpei --limit 100 --format json
 ```
 
-## Creation du Scheduler
+## Cadence sobre et protection contre les frais (novembre 2026)
 
-Ne creer le Scheduler qu'apres validation manuelle du Job en dry-run.
+La collecte quotidienne n'est plus le regime recommande pour les catalogues.
+Les catalogues E.Leclerc et Auchan demarrent souvent pres du debut et du milieu
+du mois. Un premier essai raisonnable est **les 4 et 18 a 06h30 (Indian/Reunion)** :
+deux passages par mois, plutot que trente. Cette cadence pourra etre reajustee
+en fonction des dates officielles observees. Une collecte ponctuelle reste possible
+en cas d'operation exceptionnelle, apres verification du besoin.
+
+**Etat de production : les quatre jobs Cloud Scheduler ont ete suspendus par le proprietaire.
+Ne pas les reprendre pendant les tests.** Le script `deploy-scheduler.ps1` :
+
+- affiche uniquement le plan sans `-Apply` ;
+- modifie uniquement la cadence du job existant dans **europe-west1** ;
+- ne cree jamais un nouveau Scheduler et ne modifie ni sa cible ni son identite OAuth ;
+- conserve le job suspendu sauf si `-Apply -Resume` est volontairement fourni ;
+- desactive les tentatives de relance Scheduler (`--max-retry-attempts 0`).
+
+Previsualiser sans acces Google Cloud ni frais :
 
 ```powershell
 .\deploy-scheduler.ps1
 ```
 
-Le script maintient un seul scheduler:
+Configurer **sans activer** (a faire seulement apres validation des tests) :
 
-- cron `30 5 1,15 * *`
-- fuseau `Indian/Reunion`
-- appel HTTP au job Cloud Run
+```powershell
+.\deploy-scheduler.ps1 -Apply
+```
+
+La reactivation eventuelle demanderait `-Apply -Resume`, **pas pour maintenant**.
+Les trois jobs incrementaux Carrefour/E.Leclerc/Leader Price restent egalement
+suspendus jusqu'a audit de leur rendement et de leurs sources ; leur calendrier
+n'est pas change par ce script.
+
+### Pistes de correction et criteres de qualite
+
+- E.Leclerc : lien du catalogue lu independamment de l'ordre des attributs HTML ;
+  dates exigees avant publication, sans inventer une periode.
+- Carrefour : accepter une periode abregee du type « du 02 au 08 novembre »
+  uniquement si elle se situe pres de la date d'observation.
+- Run Market : utiliser l'index officiel `/accueil-2/` et les liens Calameo,
+  sans republier une ancienne brochure avec de nouvelles dates.
+- L'absence d'entrees reste une erreur visible dans les logs, jamais une
+  fausse publication reussie.
+- La colonne `trigger_type` etait codee en dur a `manual` pour chaque run ;
+  les nouvelles executions seront `unknown` sauf identification explicite du
+  lanceur via `--trigger-type`. Les anciennes valeurs ne prouvent pas la
+  presence d'un declencheur manuel.
+
+### Controle avant toute reactivation
+
+1. Executer les tests hors Cloud Run : `python -m unittest discover -s tests -v`.
+2. Tester les HTML officiels actuels hors Google Cloud (ou avec des captures
+   locales), sans requete Cloud Run payante, et verifier titres/liens/dates.
+3. Comparer pour chaque enseigne les entrees fiables et les doublons ; aucune
+   publication de dates incertaines ou de liens de catalogue perimes.
+4. Examiner les logs des executions Cloud Run : qui lance les jobs vers 06h00 ?
+   La colonne `trigger_type=manual` historique ne permet **pas** de repondre.
+5. Controler les tarifs Google Cloud et l'absence de nouveaux declencheurs
+   avant de reprogrammer le job. Les catalogues historiques restent conserves.
+
+La nouvelle URL Run Market dans le registre local doit egalement etre repercutee
+dans `good_deal_sources.source_url` lors du deploiement, si le tableau de bord
+admin affiche cette table. Aucun changement Supabase n'est effectue ici.
 
 ## Logs
 
