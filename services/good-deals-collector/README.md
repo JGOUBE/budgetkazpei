@@ -214,6 +214,44 @@ n'est pas change par ce script.
   lanceur via `--trigger-type`. Les anciennes valeurs ne prouvent pas la
   presence d'un declencheur manuel.
 
+### Protections supplementaires et rendement reel
+
+Analyse Supabase (30 jours avant le 2 novembre 2026) :
+
+| Source | Controles | Echecs | Nouveaux candidats publies |
+| --- | ---: | ---: | ---: |
+| Auchan Saint-Louis | 23 | 1 | 2 |
+| Carrefour | 25 | 2 | 0 |
+| E.Leclerc | 27 | 10 | 2 |
+| Run Market | 23 | 18 | 1 |
+| Magasins U | 23 | 1 | 0 |
+
+Les chiffres sont un instantane des candidats dont la ligne a ete creee sur
+la periode (pas un journal immuable). **Run Market est retire de la selection
+automatique dans le registre local** : il reste testable ponctuellement par
+`--source-slug run-market-reunion-home --dry-run`. Il ne faut pas lancer ce
+test sur Cloud Run tant que les pages ne sont pas validees localement.
+
+Protections nouvelles :
+
+- Une source desactivee via `good_deal_sources.is_active=false` est ignoree
+  **avant** l'appel reseau, meme si le registre local la connait.
+- Une tentative de publication echouee ne doit pas devenir un faux cache
+  « aucun changement » lors du passage suivant.
+- Un candidat avec le meme `external_key` n'est pas un doublon de lui-meme :
+  il peut etre republie apres une erreur, sans cacher les vrais doublons.
+- Une page HTTP 403/404/500 n'est jamais consideree comme une page de catalogues.
+- Sans credentials Supabase, une execution non dry-run echoue explicitement
+  plutot que de « publier » seulement en memoire.
+- Un publieur qui ne retourne pas d'identifiant est comptabilise comme erreur.
+- Les `metrics.source_results` permettent de lire les statistiques par source
+  dans le rapport de chaque execution (sans une table supplementaire).
+
+La frequence de 2 fois par mois reste **une hypothese a confirmer** :
+Carrefour publie parfois des catalogues hebdomadaires. Le calcul doit porter
+sur le nombre de promotions encore valides et visibles, pas seulement sur
+le nombre de taches executees.
+
 ### Controle avant toute reactivation
 
 1. Executer les tests hors Cloud Run : `python -m unittest discover -s tests -v`.
