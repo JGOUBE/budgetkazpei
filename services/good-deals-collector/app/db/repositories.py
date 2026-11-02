@@ -29,7 +29,7 @@ class RepositoryProtocol(Protocol):
     def get_last_snapshot_hash(self, source_slug: str) -> str | None: ...
     def record_snapshot(self, source_slug: str, source_id: str, document: SourceDocument, changed: bool, status: str, error_message: str | None = None) -> str: ...
     def save_candidate(self, source_id: str, snapshot_id: str | None, candidate: Candidate) -> str: ...
-    def find_duplicate_candidate_id(self, duplicate_key: str) -> str | None: ...
+    def find_duplicate_candidate_id(self, duplicate_key: str, *, external_key: str | None = None) -> str | None: ...
     def find_saved_candidate(self, source_slug: str, external_key: str) -> Candidate | None: ...
     def mark_candidate(self, candidate: Candidate, *, status: str, published_good_deal_id: str | None = None) -> None: ...
     def expire_stale_records(self, *, dry_run: bool, now: datetime | None = None) -> ExpirationMaintenanceResult: ...
@@ -122,8 +122,16 @@ class InMemoryRepositories:
             self.duplicates.setdefault(candidate.duplicate_key, storage_key)
         return storage_key
 
-    def find_duplicate_candidate_id(self, duplicate_key: str) -> str | None:
-        return self.duplicates.get(duplicate_key)
+    def find_duplicate_candidate_id(self, duplicate_key: str, *, external_key: str | None = None) -> str | None:
+        storage_key = self.duplicates.get(duplicate_key)
+        if not storage_key:
+            return None
+        existing = self.candidates.get(storage_key)
+        # Rediscovery of the same external catalogue is not a duplicate
+        # of another catalogue: it can repair a previously failed publication.
+        if existing and external_key and existing.external_key == external_key:
+            return None
+        return storage_key
 
     def find_saved_candidate(self, source_slug: str, external_key: str) -> Candidate | None:
         return self.candidates.get(self._candidate_storage_key(source_slug, external_key))
@@ -360,8 +368,13 @@ class SupabaseRepositories:
         rows = self.client.upsert("good_deal_candidates", [row], on_conflict="source_id,external_key")
         return str(rows[0]["id"])
 
-    def find_duplicate_candidate_id(self, duplicate_key: str) -> str | None:
-        rows = self.client.select("good_deal_candidates", filters={"duplicate_key": f"eq.{duplicate_key}", "limit": "1"})
+    def find_duplicate_candidate_id(self, duplicate_key: str, *, external_key: str | None = None) -> str | None:
+        filters = {"duplicate_key": f"eq.{duplicate_key}", "limit": "1"}
+        if external_key:
+            # The same leaflet may already be staged under the same external key;
+            # excluding it is essential for idempotent retries and corrections.
+            filters["external_key"] = f"neq.{external_key}"
+        rows = self.client.select("good_deal_candidates", filters=filters, columns="id")
         return str(rows[0]["id"]) if rows else None
 
     def find_saved_candidate(self, source_slug: str, external_key: str) -> Candidate | None:
@@ -589,8 +602,8 @@ class DryRunRepositories:
     def save_candidate(self, source_id: str, snapshot_id: str | None, candidate: Candidate) -> str:
         return self.transient_repositories.save_candidate(source_id, snapshot_id, candidate)
 
-    def find_duplicate_candidate_id(self, duplicate_key: str) -> str | None:
-        return self.transient_repositories.find_duplicate_candidate_id(duplicate_key)
+    def find_duplicate_candidate_id(self, duplicate_key: str, *, external_key: str | None = None) -> str | None:
+        return self.transient_repositories.find_duplicate_candidate_id(duplicate_key, external_key=external_key)
 
     def find_saved_candidate(self, source_slug: str, external_key: str) -> Candidate | None:
         return self.transient_repositories.find_saved_candidate(source_slug, external_key)
