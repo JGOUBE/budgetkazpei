@@ -203,6 +203,10 @@ n'est pas change par ce script.
   uniquement si elle se situe pres de la date d'observation.
 - Run Market : utiliser l'index officiel `/accueil-2/` et les liens Calameo,
   sans republier une ancienne brochure avec de nouvelles dates.
+- Doublons : distinguer les catalogues par leur lien normalise, pas seulement
+  par le titre generique « Nouveau catalogue » et les dates.
+- Mesure : `diagnostic-catalogues.sql` lit directement Supabase et permet de
+  comparer les erreurs, les nouvelles publications et les doublons sans Cloud Run.
 - L'absence d'entrees reste une erreur visible dans les logs, jamais une
   fausse publication reussie.
 - La colonne `trigger_type` etait codee en dur a `manual` pour chaque run ;
