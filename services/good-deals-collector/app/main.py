@@ -47,6 +47,10 @@ def build_argument_parser() -> argparse.ArgumentParser:
 
 def get_repository(settings: Settings) -> RepositoryProtocol:
     if not settings.supabase_url or not settings.supabase_service_role_key:
+        if not settings.collector_dry_run:
+            # A billed Cloud Run execution must never report success after
+            # silently replacing the production database with in-memory data.
+            raise RuntimeError("collector_supabase_credentials_required_for_publication")
         return InMemoryRepositories()
     technical_repository = SupabaseRepositories(
         SupabaseAdminClient(settings.supabase_url, settings.supabase_service_role_key),
@@ -298,6 +302,11 @@ def process_pending_approved_candidates(settings, repositories, publisher, summa
                 summary.candidates_published += 1
             else:
                 result.failed += 1
+                summary.errors_count += 1
+                summary.error_summary.append({
+                    "source_slug": candidate.source_slug,
+                    "error": "approved_candidate_publisher_returned_no_id",
+                })
         except Exception as exc:  # pragma: no cover - defensive logging path
             result.failed += 1
             summary.errors_count += 1
