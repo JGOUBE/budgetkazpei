@@ -3,9 +3,8 @@ from __future__ import annotations
 import html
 import re
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from urllib.parse import urlsplit
-from zoneinfo import ZoneInfo
 
 from app.models.document import SourceDocument
 from app.models.source import SourceDefinition
@@ -80,7 +79,7 @@ def _parse_catalog_period(value: str | None, *, reference_date: datetime | None 
     """Resolve dated catalog periods without inventing an unbounded year."""
     if not value:
         return None, None
-    today = reference_date or datetime.now(ZoneInfo("Indian/Reunion")).replace(tzinfo=None)
+    today = reference_date or datetime.now(timezone(timedelta(hours=4))).replace(tzinfo=None)
     text = normalize_text(value)
     starts_at, ends_at = parse_french_date_range(value, default_year=today.year)
 
