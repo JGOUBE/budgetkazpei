@@ -37,6 +37,9 @@ def get_default_sources() -> list[SourceDefinition]:
             parser_key="run_market_reunion",
             scope_type="island",
             retailer_slug="run-market-reunion",
+            # High failure rate in production: keep automated collection off
+            # until the revised extraction is validated against live HTML.
+            is_active=False,
         ),
         SourceDefinition(
             slug="auchan-saint-louis-catalogues",
