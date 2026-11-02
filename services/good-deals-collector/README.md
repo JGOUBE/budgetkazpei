@@ -252,6 +252,26 @@ Carrefour publie parfois des catalogues hebdomadaires. Le calcul doit porter
 sur le nombre de promotions encore valides et visibles, pas seulement sur
 le nombre de taches executees.
 
+### Protections supplementaires pour limiter les executions inutiles
+
+- `COLLECTOR_DRY_RUN` vaut **true par defaut** : toute publication necessite
+  l'activation explicite de `COLLECTOR_DRY_RUN=false`.
+- Une source dont `good_deal_sources.is_active=false` n'est pas interrogee
+  (aucun HTTP pour cette source), meme si le registre du code l'indique active.
+- Un candidat deja en base avec la meme `external_key` n'est pas marque
+  comme doublon de lui-meme.
+- Une empreinte issue d'une tentative echouee ne bloque plus un nouvel essai.
+- Si une source ou l'enregistrement du journal d'erreur echoue, les autres
+  sources continuent au lieu de perdre toute la collecte.
+- Chaque execution ecrit un petit tableau de resultat par source dans
+  `good_deal_ingestion_runs.metrics.source_results` : publies,
+  doublons, elements a revoir, erreurs et changements, sans nouvelle table.
+
+**Important** : ce sont des protections du code de la branche de travail,
+pas une modification de la production ni une preuve de rendement reel.
+Tester d'abord les parseurs sur les pages officielles actuelles et executer
+la suite unitaire en local, puis faire un essai controle avant tout Scheduler.
+
 ### Controle avant toute reactivation
 
 1. Executer les tests hors Cloud Run : `python -m unittest discover -s tests -v`.
