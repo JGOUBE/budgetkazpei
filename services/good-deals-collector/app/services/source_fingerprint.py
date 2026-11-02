@@ -69,8 +69,8 @@ AUCHAN_CARD_RE = re.compile(
     flags=re.IGNORECASE | re.DOTALL,
 )
 # Read anchor attributes independently: their order and target=_blank are not stable.
-ELECLERC_LINK_RE = re.compile(r'<a\\b([^>]*)>(.*?)</a>', flags=re.IGNORECASE | re.DOTALL)
-RUN_MARKET_LINK_RE = re.compile(r'<a\\b([^>]*)>(.*?)</a>', flags=re.IGNORECASE | re.DOTALL)
+ELECLERC_LINK_RE = re.compile(r'<a\b([^>]*)>(.*?)</a>', flags=re.IGNORECASE | re.DOTALL)
+RUN_MARKET_LINK_RE = re.compile(r'<a\b([^>]*)>(.*?)</a>', flags=re.IGNORECASE | re.DOTALL)
 
 WEEKDAYS_RE = r"(?:lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)"
 RUN_MARKET_CATALOG_HOSTS = {"runmarket.interactive-catalogue.com", "www.calameo.com", "calameo.com"}
@@ -87,8 +87,8 @@ def _parse_catalog_period(value: str | None, *, reference_date: datetime | None 
     # Carrefour often writes "DU LUNDI 02 AU DIMANCHE 08 NOVEMBRE".
     if not starts_at or not ends_at:
         compact = re.search(
-            rf"\\bdu\\s+(?:{WEEKDAYS_RE}\\s+)?(\\d{{1,2}})\\s+au\\s+"
-            rf"(?:{WEEKDAYS_RE}\\s+)?(\\d{{1,2}})\\s+([a-z]+)(?:\\s+(20\\d{{2}}))?\\b",
+            rf"\bdu\s+(?:{WEEKDAYS_RE}\s+)?(\d{{1,2}})\s+au\s+"
+            rf"(?:{WEEKDAYS_RE}\s+)?(\d{{1,2}})\s+([a-z]+)(?:\s+(20\d{{2}}))?\b",
             text,
         )
         if compact:
@@ -108,7 +108,7 @@ def _parse_catalog_period(value: str | None, *, reference_date: datetime | None 
 
     # When the page omitted the year, accept only a period near the time of
     # observation. Never resurrect a prior year's flyer.
-    if not re.search(r"\\b20\\d{2}\\b", value) and (
+    if not re.search(r"\b20\d{2}\b", value) and (
         ends_at < today - timedelta(days=21)
         or starts_at > today + timedelta(days=55)
     ):
@@ -357,7 +357,7 @@ def _finalize_entries(entries: list[CatalogEntry], source_slug: str) -> list[Cat
 
 
 def _extract_attr(attrs: str, name: str) -> str | None:
-    match = re.search(rf'{re.escape(name)}\\s*=\\s*([\"\'])(.+?)\\1', attrs, flags=re.IGNORECASE | re.DOTALL)
+    match = re.search(rf'{re.escape(name)}\s*=\s*([\"\'])(.+?)\1', attrs, flags=re.IGNORECASE | re.DOTALL)
     return _clean_text(match.group(2)) if match else None
 
 
