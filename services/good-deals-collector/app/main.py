@@ -41,6 +41,7 @@ def build_argument_parser() -> argparse.ArgumentParser:
     parser.add_argument("--dry-run", action="store_true", help="Run the collector without publishing")
     parser.add_argument("--max-sources", type=int, default=None, help="Limit the number of active sources")
     parser.add_argument("--source-slug", default=None, help="Collect a single source slug, including inactive sources")
+    parser.add_argument("--trigger-type", choices=("manual", "scheduler", "unknown"), default="unknown")
     return parser
 
 
@@ -129,14 +130,16 @@ def select_sources(settings: Settings, parsers, *, requested_max_sources: int | 
     return selected_sources
 
 
-def run(settings: Settings, *, requested_max_sources: int | None = None) -> RunSummary:
+def run(settings: Settings, *, requested_max_sources: int | None = None, trigger_type: str = "unknown") -> RunSummary:
     collectors = get_collectors()
     parsers = get_parsers()
     sources = select_sources(settings, parsers, requested_max_sources=requested_max_sources)
     run_key = f"{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}-{uuid4().hex[:8]}"
     repositories = get_repository(settings)
     publisher = PublisherService(repositories)
-    repositories.start_run(run_key, "manual", settings.collector_mode)
+    # Cloud Run invocations cannot be identified from the job process alone.
+    # Default to "unknown" until a trusted launcher explicitly sets the type.
+    repositories.start_run(run_key, trigger_type, settings.collector_mode)
 
     summary = RunSummary(run_key=run_key, status="running", sources_total=len(sources))
     expiration_result = repositories.expire_stale_records(dry_run=settings.collector_dry_run)
@@ -316,7 +319,7 @@ def main() -> int:
         collector_max_sources=args.max_sources,
     )
     configure_logging(settings.collector_log_level)
-    summary = run(settings, requested_max_sources=args.max_sources)
+    summary = run(settings, requested_max_sources=args.max_sources, trigger_type=args.trigger_type)
     print(
         f"sources_checked={summary.sources_checked} "
         f"changes={summary.sources_changed} "
