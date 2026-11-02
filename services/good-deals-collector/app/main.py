@@ -227,8 +227,10 @@ def process_source(source, settings, repositories, collectors, parsers, publishe
         snapshot_id = repositories.record_snapshot(source.slug, source_id, document, changed, "parsed")
         for candidate in candidates:
             candidate.duplicate_key = build_duplicate_key(candidate)
-            duplicate_id = repositories.find_duplicate_candidate_id(candidate.duplicate_key)
-            if duplicate_id and duplicate_id != candidate.external_key:
+            duplicate_id = repositories.find_duplicate_candidate_id(
+                candidate.duplicate_key, external_key=candidate.external_key
+            )
+            if duplicate_id:
                 candidate.possible_duplicate_id = duplicate_id
                 candidate.status = "duplicate"
             score, reasons, errors, status = score_candidate(candidate)
