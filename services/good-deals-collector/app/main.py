@@ -207,8 +207,10 @@ def process_source(source, settings, repositories, collectors, parsers, publishe
             extra={"source_slug": source.slug, "action": "source_guard", "result": "disabled"},
         )
         return SourceProcessingResult(source_slug=source.slug, changed=False, skipped_reason="disabled")
-    source_id = repositories.ensure_source(source)
+    # One missing or broken source must not abort collection of other retailers.
+    source_id = None
     try:
+        source_id = repositories.ensure_source(source)
         document = collector.collect(source, settings)
         fingerprint = build_source_fingerprint(source, document)
         document.sha256 = fingerprint.sha256
@@ -258,14 +260,21 @@ def process_source(source, settings, repositories, collectors, parsers, publishe
                     candidate.published_good_deal_id = published_id
         return SourceProcessingResult(source_slug=source.slug, changed=True, candidates=candidates)
     except Exception as exc:  # pragma: no cover - defensive logging path
-        repositories.record_snapshot(
-            source.slug,
-            source_id,
-            document if "document" in locals() else _build_error_document(source),
-            changed=False,
-            status="failed",
-            error_message=str(exc),
-        )
+        if source_id is not None:
+            try:
+                repositories.record_snapshot(
+                    source.slug,
+                    source_id,
+                    document if "document" in locals() else _build_error_document(source),
+                    changed=False,
+                    status="failed",
+                    error_message=str(exc),
+                )
+            except Exception:
+                LOGGER.exception(
+                    "Failed to record source error snapshot",
+                    extra={"source_slug": source.slug, "action": "snapshot", "result": "failed"},
+                )
         LOGGER.exception("Source processing failed", extra={"source_slug": source.slug, "action": "process_source", "result": "failed", "error_type": exc.__class__.__name__})
         return SourceProcessingResult(source_slug=source.slug, changed=False, error_message=str(exc))
 
