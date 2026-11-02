@@ -8,9 +8,15 @@ from pathlib import Path
 
 def _env_bool(name: str, default: bool) -> bool:
     raw = os.getenv(name)
-    if raw is None:
+    if raw is None or not raw.strip():
         return default
-    return raw.strip().lower() in {"1", "true", "yes", "on"}
+    value = raw.strip().lower()
+    if value in {"1", "true", "yes", "on"}:
+        return True
+    if value in {"0", "false", "no", "off"}:
+        return False
+    # A misspelled environment variable must not silently enable publication.
+    raise ValueError(f"Invalid boolean value for {name}: {raw!r}")
 
 
 def _env_int(name: str, default: int) -> int:
