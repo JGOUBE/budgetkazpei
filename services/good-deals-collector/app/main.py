@@ -154,6 +154,9 @@ def run(settings: Settings, *, requested_max_sources: int | None = None, trigger
     )
     for source in sources:
         result = process_source(source, settings, repositories, collectors, parsers, publisher)
+        if result.skipped_reason == "disabled":
+            summary.metrics["sources_skipped_disabled"] = summary.metrics.get("sources_skipped_disabled", 0) + 1
+            continue
         summary.sources_checked += 1
         if result.changed:
             summary.sources_changed += 1
@@ -161,7 +164,7 @@ def run(settings: Settings, *, requested_max_sources: int | None = None, trigger
             summary.errors_count += 1
             summary.error_summary.append({"source_slug": source.slug, "error": result.error_message})
             continue
-        if result.skipped_reason == "unchanged":
+        if result.skipped_reason:
             continue
         summary.documents_processed += 1
         for candidate in result.candidates:
@@ -198,6 +201,12 @@ def process_source(source, settings, repositories, collectors, parsers, publishe
         parser = parsers["generic_catalog" if source.content_family == "shopping" else "generic_event"]
     if source.parser_key == "pending":
         return SourceProcessingResult(source_slug=source.slug, changed=False, skipped_reason="pending_parser")
+    if not repositories.is_source_enabled(source.slug):
+        LOGGER.info(
+            "Inactive source skipped without fetching",
+            extra={"source_slug": source.slug, "action": "source_guard", "result": "disabled"},
+        )
+        return SourceProcessingResult(source_slug=source.slug, changed=False, skipped_reason="disabled")
     source_id = repositories.ensure_source(source)
     try:
         document = collector.collect(source, settings)
