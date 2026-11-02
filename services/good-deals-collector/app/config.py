@@ -47,7 +47,7 @@ class Settings:
             supabase_url=os.getenv("SUPABASE_URL"),
             supabase_service_role_key=os.getenv("SUPABASE_SERVICE_ROLE_KEY"),
             collector_mode=os.getenv("COLLECTOR_MODE", "full").strip().lower(),
-            collector_dry_run=_env_bool("COLLECTOR_DRY_RUN", False),
+            collector_dry_run=_env_bool("COLLECTOR_DRY_RUN", True),
             collector_source_slug=(os.getenv("COLLECTOR_SOURCE_SLUG") or "").strip() or None,
             collector_max_sources=_env_int("COLLECTOR_MAX_SOURCES", 25),
             collector_max_documents=_env_int("COLLECTOR_MAX_DOCUMENTS", 40),
