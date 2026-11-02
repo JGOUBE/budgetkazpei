@@ -432,12 +432,13 @@ class SourceFingerprintTests(unittest.TestCase):
         right = build_source_fingerprint(source, _make_document(source, changed_html))
         self.assertNotEqual(left.sha256, right.sha256)
 
-    def test_run_market_fingerprint_changes_when_period_changes(self):
+    def test_run_market_rejects_period_contradicting_the_leaflet_link(self):
         source = self.sources["run-market-reunion-home"]
         changed_html = RUN_MARKET_HTML_A.replace("2 aout 2026", "3 aout 2026", 1)
-        left = build_source_fingerprint(source, _make_document(source, RUN_MARKET_HTML_A))
-        right = build_source_fingerprint(source, _make_document(source, changed_html))
-        self.assertNotEqual(left.sha256, right.sha256)
+        # The leaflet URL still identifies the period ending 2 August.
+        # A changed surrounding title cannot authenticate a new validity date.
+        with self.assertRaises(FingerprintExtractionError):
+            build_source_fingerprint(source, _make_document(source, changed_html))
 
     def test_run_market_fingerprint_changes_when_catalog_removed(self):
         source = self.sources["run-market-reunion-home"]
