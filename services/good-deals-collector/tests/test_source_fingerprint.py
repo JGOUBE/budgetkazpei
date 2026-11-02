@@ -1,9 +1,10 @@
 import unittest
+from datetime import datetime
 
 from app.collectors.registry import get_default_sources
 from app.models.document import SourceDocument
 from app.services.hashing import sha256_text
-from app.services.source_fingerprint import FingerprintExtractionError, build_source_fingerprint
+from app.services.source_fingerprint import FingerprintExtractionError, build_source_fingerprint, extract_eleclerc_catalog_entries, extract_run_market_catalog_entries, _parse_catalog_period
 
 
 CARREFOUR_HTML_A = """
@@ -449,6 +450,72 @@ class SourceFingerprintTests(unittest.TestCase):
         source = self.sources["run-market-reunion-home"]
         with self.assertRaises(FingerprintExtractionError):
             build_source_fingerprint(source, _make_document(source, "<html><body><script>rotating</script></body></html>"))
+
+
+    def test_short_carrefour_period_uses_observation_year_only_near_current_date(self):
+        start, end = _parse_catalog_period(
+            "DU LUNDI 02 AU DIMANCHE 08 NOVEMBRE",
+            reference_date=datetime(2026, 11, 2),
+        )
+        self.assertEqual(start, datetime(2026, 11, 2))
+        self.assertEqual(end, datetime(2026, 11, 8))
+
+        stale_start, stale_end = _parse_catalog_period(
+            "DU LUNDI 02 AU DIMANCHE 08 JANVIER",
+            reference_date=datetime(2026, 11, 2),
+        )
+        self.assertIsNone(stale_start)
+        self.assertIsNone(stale_end)
+
+    def test_eleclerc_accepts_reordered_attributes_and_no_target(self):
+        source = self.sources["e-leclerc-reunion-catalogues"]
+        html_text = """
+        <ul>
+          <li><a title="Catalogue E.Leclerc Reunion. Spécial Gaming (ESPACE CULTUREL). Du 3 Novembre Au 15 Novembre 2026"
+                 class="catalogue" href="/public/catalogues/26run23-EC">Spécial Gaming</a></li>
+        </ul>
+        """
+        entries = extract_eleclerc_catalog_entries(source, _make_document(source, html_text))
+        self.assertEqual(len(entries), 1)
+        self.assertEqual(entries[0].starts_at, datetime(2026, 11, 3))
+        self.assertEqual(entries[0].ends_at, datetime(2026, 11, 15))
+        self.assertEqual(entries[0].stable_id, "26run23-EC")
+
+    def test_eleclerc_dates_in_same_list_item_are_accepted(self):
+        source = self.sources["e-leclerc-reunion-catalogues"]
+        html_text = """
+        <li><a class="catalog" href="/public/catalogues/26run23-HYPER">Ma fidélité récompensée</a>
+          <span>Du 3 Novembre Au 15 Novembre 2026</span></li>
+        """
+        entries = extract_eleclerc_catalog_entries(source, _make_document(source, html_text))
+        self.assertEqual(len(entries), 1)
+        self.assertEqual(entries[0].ends_at, datetime(2026, 11, 15))
+
+    def test_run_market_recognizes_official_calameo_catalogue_links(self):
+        source = self.sources["run-market-reunion-home"]
+        self.assertEqual(source.source_url, "https://www.run-market.re/accueil-2/")
+        html_text = """
+        <section>
+          <p>Du lundi 26 octobre au dimanche 8 novembre 2026</p>
+          <h2>Nouveau catalogue</h2>
+          <a class="catalogue" href="https://www.calameo.com/read/006370411296d361b400d">Découvrir</a>
+        </section>
+        """
+        entries = extract_run_market_catalog_entries(source, _make_document(source, html_text))
+        self.assertEqual(len(entries), 1)
+        self.assertEqual(entries[0].starts_at, datetime(2026, 10, 26))
+        self.assertEqual(entries[0].ends_at, datetime(2026, 11, 8))
+
+    def test_run_market_rejects_recycled_july_url_for_november_dates(self):
+        source = self.sources["run-market-reunion-home"]
+        html_text = """
+        <section><p>Du lundi 26 octobre au dimanche 8 novembre 2026</p>
+          <h2>Nouveau catalogue</h2>
+          <a href="https://runmarket.interactive-catalogue.com/petit-prix-20-juillet-au-2-aout-2026/?page=1">Découvrir</a>
+        </section>
+        """
+        with self.assertRaises(FingerprintExtractionError):
+            extract_run_market_catalog_entries(source, _make_document(source, html_text))
 
 
 if __name__ == "__main__":
