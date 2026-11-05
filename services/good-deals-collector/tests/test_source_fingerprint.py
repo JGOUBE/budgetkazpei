@@ -492,6 +492,24 @@ class SourceFingerprintTests(unittest.TestCase):
         self.assertEqual(len(entries), 1)
         self.assertEqual(entries[0].ends_at, datetime(2026, 11, 15))
 
+    def test_eleclerc_includes_official_pdf_catalogue(self):
+        source = self.sources["e-leclerc-reunion-catalogues"]
+        html_text = """
+        <ul class="catalogs">
+          <li><a href="/public/pdf/26runJOUETS.pdf"
+                 title="Catalogue E.Leclerc Reunion. La fabuleuse Fabrique des Jouets. Du 3 Novembre Au 6 Decembre 2026">
+            La fabuleuse Fabrique des Jouets à prix E.Leclerc
+          </a></li>
+          <li><a href="/uploads/other-file.pdf" title="Brochure autre">Autre fichier</a></li>
+        </ul>
+        """
+        entries = extract_eleclerc_catalog_entries(source, _make_document(source, html_text))
+        self.assertEqual(len(entries), 1)
+        self.assertEqual(entries[0].stable_id, "26runJOUETS.pdf")
+        self.assertTrue(entries[0].canonical_url.endswith("/public/pdf/26runJOUETS.pdf"))
+        self.assertEqual(entries[0].starts_at, datetime(2026, 11, 3))
+        self.assertEqual(entries[0].ends_at, datetime(2026, 12, 6))
+
     def test_run_market_recognizes_official_calameo_catalogue_links(self):
         source = self.sources["run-market-reunion-home"]
         self.assertEqual(source.source_url, "https://www.run-market.re/accueil-2/")
