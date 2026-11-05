@@ -19,7 +19,7 @@ for (const [section, group] of [["history", "historical"], ["observed", "observe
 }
 
 const css = readFileSync(new URL("../src/index.css", import.meta.url), "utf8");
-assert.match(css, /#root \\.bkp-shopping-suggestion-list > button\\.bkp-shopping-suggestion-row/);
+assert.match(css, /#root \.bkp-shopping-suggestion-list > button\.bkp-shopping-suggestion-row/);
 assert.match(css, /border-radius: 0 !important/);
 assert.match(css, /box-shadow: none !important/);
 assert.match(css, /background-image: none !important/);
