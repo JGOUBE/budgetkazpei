@@ -30,6 +30,8 @@ import {
 } from "../services/shoppingList/shoppingListSnapshots"
 import { MANUAL_SAVE_METHOD } from "../services/shoppingList/shoppingListSnapshotModel"
 import { buildMultiRetailBasketOptimization } from "../services/shoppingList/shoppingBasketOptimizer"
+import { formatSharedPriceRetailer, getSharedPriceStatusLabel } from "../services/shoppingList/sharedPricePresentation"
+import { loadSharedShoppingCatalog, loadSharedShoppingPrices } from "../services/shoppingList/sharedCatalogLoader"
 import { loadShoppingListDraft, saveShoppingListDraft } from "../services/shoppingList/shoppingListDraft"
 import {
   findExactShoppingListDuplicate,
@@ -257,7 +259,7 @@ function AutocompleteSuggestion({ suggestion, txt, onSelect }) {
         <>
           <span style={{ display: "block", color: COLORS.green, fontSize: 12, fontWeight: 850, marginTop: 2 }}>{retailer ? `${retailer} · ` : ""}{formatSmartPrice(observedPrice, suggestion.observedPriceUnitLabel)}</span>
           {suggestion.packPrice > 0 && <span style={{ display: "block", color: COLORS.muted, fontSize: 11 }}>Conditionnement : {formatMontant(suggestion.packPrice)}</span>}
-          {suggestion.observedAt && <span style={{ display: "block", color: COLORS.muted, fontSize: 11 }}>Prix relevé le {new Date(suggestion.observedAt).toLocaleDateString("fr-FR")}</span>}
+          {suggestion.observedAt && <span style={{ display: "block", color: COLORS.muted, fontSize: 11 }}>{getSharedPriceStatusLabel(suggestion.observedAt)} · Relevé le {new Date(suggestion.observedAt).toLocaleDateString("fr-FR")}</span>}
           <span style={{ display: "block", color: COLORS.cyan, fontSize: 11, fontWeight: 900, marginTop: 2 }}>{txt.observedSuggestion}</span>
         </>
       )}
@@ -316,30 +318,16 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
 
   useEffect(() => {
     let ignore = false
-    supabase.from("shopping_products")
-      .select("id,display_name,normalized_name,brand,size_label,category,subcategory")
-      .eq("is_active", true)
-      .order("display_name")
-      .limit(1500)
-      .then(({ data, error }) => {
-        if (error) throw error
-        if (!ignore) setSharedCatalog(data || [])
-      })
+    loadSharedShoppingCatalog({ client: supabase })
+      .then(data => { if (!ignore) setSharedCatalog(data || []) })
       .catch(() => { if (!ignore) setSharedCatalog([]) })
     return () => { ignore = true }
   }, [])
 
   useEffect(() => {
     let ignore = false
-    supabase.from("shopping_price_observations")
-      .select("product_id,price,quantity,unit_label,unit_price,observed_at,retailer_slug,commune,locality")
-      .eq("is_publishable", true)
-      .order("observed_at", { ascending: false })
-      .limit(1500)
-      .then(({ data, error }) => {
-        if (error) throw error
-        if (!ignore) setSharedUnitPrices(data || [])
-      })
+    loadSharedShoppingPrices({ client: supabase })
+      .then(data => { if (!ignore) setSharedUnitPrices(data || []) })
       .catch(() => { if (!ignore) setSharedUnitPrices([]) })
     return () => { ignore = true }
   }, [])
@@ -426,10 +414,10 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
         retailObservedUnitPrice: packagePrice,
         retailObservedPrice: linePrice,
         retailObservedAt: price.observed_at,
-        retailObservedRetailerName: "E.Leclerc Le Portail",
+        retailObservedRetailerName: formatSharedPriceRetailer(price),
         priceSource: "retail_observed",
         estimatedPriceSource: "retail_observed",
-        priceLabel: "prix relevé",
+        priceLabel: getSharedPriceStatusLabel(price.observed_at),
         priceUnitLabel: "",
         comparisonUnitPrice: Number(price.unit_price) || null,
         comparisonUnitLabel: price.unit_label || "",
@@ -481,7 +469,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
           observedPriceUnitLabel: price.unit_label,
           packPrice: price.price,
           observedAt: price.observed_at,
-          retailerName: "E.Leclerc Le Portail · " + (price.commune || ""),
+          retailerName: formatSharedPriceRetailer(price),
         }
       }),
     }
@@ -513,7 +501,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
           observedPriceUnitLabel: sharedPrice?.unit_label || "",
           packPrice: sharedPrice?.price ?? null,
           observedAt: sharedPrice?.observed_at || null,
-          retailerName: sharedPrice ? "E.Leclerc Le Portail · " + (sharedPrice.commune || "") : "",
+          retailerName: sharedPrice ? formatSharedPriceRetailer(sharedPrice) : "",
           category: row.category, subcategory: row.subcategory,
           rank: (used ? 100 : 0) + (norm === normalize(query) ? 50 : norm.startsWith(normalize(query)) ? 20 : 0) }
       })
@@ -1029,7 +1017,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
                   {priceLearning
                     ? txt.usualPriceLearning
                     : retailObservedPrice
-                      ? txt.observedLinePrice(item.retailObservedRetailerName)
+                      ? `${txt.observedLinePrice(item.retailObservedRetailerName)} · ${getSharedPriceStatusLabel(item.retailObservedAt)}`
                       : item.historicalPrice !== null
                         ? item.priceLabel
                         : txt.priceMissing}
