@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { CATEGORIES } from "../../../data/categories"
 import { formatMontant } from "../../../utils/format"
 import { createManualReceiptDraft } from "../utils/receiptParser"
-import { getReceiptAmountReconciliation, suggestReceiptCategory } from "../utils/receiptReconciliation"
 import {
   applyValidatedReceiptItemDraft,
   buildReceiptItemPersistenceUpdates,
@@ -430,7 +429,6 @@ function getValidDraftItems(draft = {}) {
         ...item,
         name: String(item.name || item.ocr_name || "Produit à vérifier").trim(),
         total_price: item.total_price ?? item.price ?? item.unit_price ?? "",
-        category: suggestReceiptCategory(item),
         item_status: finalStatus,
         status: finalStatus,
         review_status: qualityStatus,
@@ -1105,9 +1103,6 @@ export default function ReceiptsPage({
   const automatedScanDisabled = busy || quota.loading
 
   const globalCategory = draft?.items?.[0]?.category || "alimentaire"
-  const draftReconciliation = getReceiptAmountReconciliation({
-    items: getValidDraftItems(draft || {}), totalAmount: draft?.total_amount,
-  })
   const receiptRows = useMemo(() => Array.isArray(receipts) ? receipts : [], [receipts])
   const showMethodActions = mode === "history"
 
@@ -1233,13 +1228,7 @@ export default function ReceiptsPage({
   }
 
   async function processCompletedScan(scan, sourceFile) {
-    const parsed = {
-      ...scan.receipt,
-      items: (Array.isArray(scan.receipt?.items) ? scan.receipt.items : []).map(item => ({
-        ...item,
-        category: suggestReceiptCategory(item),
-      })),
-    }
+    const parsed = scan.receipt
     setScanProgress({
       step: "finalizing",
       label: txt.analysisPreparing,
@@ -1713,11 +1702,6 @@ export default function ReceiptsPage({
       return
     }
     const validItems = getValidDraftItems(draft)
-    const reconciliation = getReceiptAmountReconciliation({ items: validItems, totalAmount: draft.total_amount })
-    if (reconciliation.mismatch) {
-      setMessage(`Écart de ${Math.abs(reconciliation.difference).toFixed(2).replace(".", ",")} € entre les articles et le total du ticket. Corrigez ou supprimez les lignes erronées avant d'enregistrer.`)
-      return
-    }
 
     setBusy(true)
 
@@ -1799,11 +1783,6 @@ export default function ReceiptsPage({
       return
     }
     const validItems = getValidDraftItems(draft)
-    const reconciliation = getReceiptAmountReconciliation({ items: validItems, totalAmount: draft.total_amount })
-    if (reconciliation.mismatch) {
-      setMessage(`Écart de ${Math.abs(reconciliation.difference).toFixed(2).replace(".", ",")} € entre les articles et le total du ticket. Corrigez les lignes avant d'enregistrer.`)
-      return
-    }
 
     setBusy(true)
     setScanError(null)
@@ -3002,14 +2981,9 @@ function ValidationForm({
               {txt.totalReviewMessage}
             </div>
           )}
-          {draftReconciliation.count > 0 && (
-            <div style={{ color: draftReconciliation.mismatch ? COLORS.red : COLORS.muted, fontSize: 12, marginTop: 5 }}>
-              {txt.estimatedLinesSum} {formatMontant(draftReconciliation.total)}
-              {draftReconciliation.mismatch && (
-                <span style={{ display: "block", fontWeight: 800, marginTop: 4 }}>
-                  Écart de {formatMontant(Math.abs(draftReconciliation.difference))} : vérifiez les articles ou sous-totaux avant d'enregistrer.
-                </span>
-              )}
+          {draft.estimated_items_sum > 0 && (
+            <div style={{ color: COLORS.muted, fontSize: 12, marginTop: 5 }}>
+              {txt.estimatedLinesSum} {formatMontant(Number(draft.estimated_items_sum || 0))}
             </div>
           )}
         </Field>
