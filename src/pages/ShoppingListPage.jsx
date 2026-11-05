@@ -31,6 +31,7 @@ import {
 import { MANUAL_SAVE_METHOD } from "../services/shoppingList/shoppingListSnapshotModel"
 import { buildMultiRetailBasketOptimization } from "../services/shoppingList/shoppingBasketOptimizer"
 import { formatSharedPriceRetailer, getSharedPriceStatusLabel } from "../services/shoppingList/sharedPricePresentation"
+import { loadSharedShoppingCatalog, loadSharedShoppingPrices } from "../services/shoppingList/sharedCatalogLoader"
 import { loadShoppingListDraft, saveShoppingListDraft } from "../services/shoppingList/shoppingListDraft"
 import {
   findExactShoppingListDuplicate,
@@ -317,30 +318,16 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
 
   useEffect(() => {
     let ignore = false
-    supabase.from("shopping_products")
-      .select("id,display_name,normalized_name,brand,size_label,category,subcategory")
-      .eq("is_active", true)
-      .order("display_name")
-      .limit(1500)
-      .then(({ data, error }) => {
-        if (error) throw error
-        if (!ignore) setSharedCatalog(data || [])
-      })
+    loadSharedShoppingCatalog({ client: supabase })
+      .then(data => { if (!ignore) setSharedCatalog(data || []) })
       .catch(() => { if (!ignore) setSharedCatalog([]) })
     return () => { ignore = true }
   }, [])
 
   useEffect(() => {
     let ignore = false
-    supabase.from("shopping_price_observations")
-      .select("product_id,price,quantity,unit_label,unit_price,observed_at,retailer_slug,commune,locality")
-      .eq("is_publishable", true)
-      .order("observed_at", { ascending: false })
-      .limit(1500)
-      .then(({ data, error }) => {
-        if (error) throw error
-        if (!ignore) setSharedUnitPrices(data || [])
-      })
+    loadSharedShoppingPrices({ client: supabase })
+      .then(data => { if (!ignore) setSharedUnitPrices(data || []) })
       .catch(() => { if (!ignore) setSharedUnitPrices([]) })
     return () => { ignore = true }
   }, [])
