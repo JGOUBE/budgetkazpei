@@ -2814,6 +2814,13 @@ function ValidationForm({
   const visibleDraftItems = (draft.items || [])
     .map((item, index) => ({ item, index }))
     .filter(row => !isBlockedReceiptItem(row.item))
+  // Recalculer depuis les lignes réellement affichées : estimated_items_sum fourni
+  // par l'OCR peut inclure un sous-total et ne se met pas à jour après correction.
+  const visibleItemsSumCents = visibleDraftItems.reduce((sum, { item }) => {
+    const amount = Number(String(item.total_price ?? item.price ?? 0).replace(",", "."))
+    return sum + (Number.isFinite(amount) && amount > 0 ? Math.round(amount * 100) : 0)
+  }, 0)
+  const visibleItemsSum = visibleItemsSumCents / 100
   const editableDraftItems = (draft.items || [])
     .map((item, index) => ({ item, index }))
     .filter(row => {
@@ -2981,9 +2988,14 @@ function ValidationForm({
               {txt.totalReviewMessage}
             </div>
           )}
-          {draft.estimated_items_sum > 0 && (
+          {visibleItemsSumCents > 0 && (
             <div style={{ color: COLORS.muted, fontSize: 12, marginTop: 5 }}>
-              {txt.estimatedLinesSum} {formatMontant(Number(draft.estimated_items_sum || 0))}
+              Somme des articles affichés : {formatMontant(visibleItemsSum)}
+              {Math.abs(visibleItemsSum - Number(draft.total_amount || 0)) > 0.02 && (
+                <span style={{ display: "block", color: COLORS.yellow, fontWeight: 800, marginTop: 4 }}>
+                  Écart avec le total du ticket : vérifiez les articles avant enregistrement.
+                </span>
+              )}
             </div>
           )}
         </Field>
