@@ -32,6 +32,7 @@ import { MANUAL_SAVE_METHOD } from "../services/shoppingList/shoppingListSnapsho
 import { buildMultiRetailBasketOptimization } from "../services/shoppingList/shoppingBasketOptimizer"
 import { formatSharedPriceRetailer } from "../services/shoppingList/sharedPricePresentation"
 import { loadSharedShoppingCatalog, loadSharedShoppingPrices } from "../services/shoppingList/sharedCatalogLoader"
+import { filterShoppingIntentSuggestions, hasUsefulShoppingQuery } from "../services/shoppingList/shoppingQueryRelevance"
 import { loadShoppingListDraft, saveShoppingListDraft } from "../services/shoppingList/shoppingListDraft"
 import {
   findExactShoppingListDuplicate,
@@ -446,7 +447,9 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
     [historicalEstimate, smartRetailPromotions],
   )
   const allSuggestions = useMemo(() => {
-    const result = getShoppingAutocompleteSuggestions(query, shoppingItems, retailPromotions, retailObservedPrices)
+    const result = hasUsefulShoppingQuery(query)
+      ? getShoppingAutocompleteSuggestions(query, shoppingItems, retailPromotions, retailObservedPrices)
+      : { historical: [], observed: [], retail: [] }
     const normalize = value => String(value || "").normalize("NFD").replace(/[^\x00-\x7F]/g, char => ({ "é":"e", "è":"e", "ê":"e", "à":"a", "ù":"u", "ç":"c", "ô":"o", "î":"i" }[char] || char)).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()
     const prices = new Map()
     for (const price of sharedUnitPrices) {
@@ -455,7 +458,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
     const catalogByName = new Map(sharedCatalog.map(product => [normalize(product.display_name), product]))
     return {
       ...result,
-      historical: result.historical.map(suggestion => {
+      historical: filterShoppingIntentSuggestions(result.historical, query).map(suggestion => {
         const catalogProduct = catalogByName.get(normalize(suggestion.label))
         const price = catalogProduct && prices.get(catalogProduct.id)
         if (!price) return suggestion
@@ -469,12 +472,14 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
           retailerName: formatSharedPriceRetailer(price),
         }
       }),
+      observed: filterShoppingIntentSuggestions(result.observed, query),
+      retail: filterShoppingIntentSuggestions(result.retail, query),
     }
   }, [query, shoppingItems, retailPromotions, retailObservedPrices, sharedCatalog, sharedUnitPrices])
   const catalogSuggestions = useMemo(() => {
     const normalize = value => String(value || "").normalize("NFD").replace(/[^\x00-\x7F]/g, char => ({ "é":"e", "è":"e", "ê":"e", "à":"a", "ù":"u", "ç":"c", "ô":"o", "î":"i" }[char] || char)).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()
     const terms = normalize(query).split(" ").filter(Boolean)
-    if (!terms.length) return []
+    if (!hasUsefulShoppingQuery(query) || !terms.length) return []
     const history = new Set(allSuggestions.historical.map(row => normalize(row.label)))
     const priorLists = [...items, ...snapshots.flatMap(snapshot => Array.isArray(snapshot.items) ? snapshot.items : [])]
     const listed = new Set(priorLists.map(row => normalize(row.name || row.product_name || row.label)))
@@ -482,7 +487,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
     for (const price of sharedUnitPrices) {
       if (price.product_id && !latestPrices.has(price.product_id)) latestPrices.set(price.product_id, price)
     }
-    return sharedCatalog
+    return filterShoppingIntentSuggestions(sharedCatalog, query)
       .filter(row => {
         const name = normalize(row.display_name)
         return !history.has(name) && terms.every(term => name.includes(term))
