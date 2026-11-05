@@ -30,7 +30,7 @@ import {
 } from "../services/shoppingList/shoppingListSnapshots"
 import { MANUAL_SAVE_METHOD } from "../services/shoppingList/shoppingListSnapshotModel"
 import { buildMultiRetailBasketOptimization } from "../services/shoppingList/shoppingBasketOptimizer"
-import { formatSharedPriceRetailer, getSharedPriceStatusLabel, isSharedPriceHistorical } from "../services/shoppingList/sharedPricePresentation"
+import { formatSharedPriceRetailer, getSharedPriceStatusLabel } from "../services/shoppingList/sharedPricePresentation"
 import { loadShoppingListDraft, saveShoppingListDraft } from "../services/shoppingList/shoppingListDraft"
 import {
   findExactShoppingListDuplicate,
