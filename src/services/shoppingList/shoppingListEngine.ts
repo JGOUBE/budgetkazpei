@@ -62,7 +62,10 @@ function unitReferenceLabel(unit = "") {
 }
 
 function hasExplicitPackageQuantity(value = "") {
-  return PACKAGE_QUANTITY_PATTERN.test(String(value || ""))
+  const label = String(value || "")
+  // Tickets may print compact multipacks such as "U3X20CL": a word boundary
+  // before the 3 is absent, but 3 × 20 cl is still a package, not 1 cl.
+  return PACKAGE_QUANTITY_PATTERN.test(label) || /(?:^|[^0-9])\d+\s*x\s*\d+(?:[,.]\d+)?\s*(?:kg|g|gr|l|cl|ml)\b/i.test(label)
 }
 
 function formatStructuredPackage(item: any = {}) {

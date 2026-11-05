@@ -538,7 +538,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
           observedAt: sharedPrice?.observed_at || null,
           retailerName: sharedPrice ? formatSharedPriceRetailer(sharedPrice) : "",
           category: row.category, subcategory: row.subcategory,
-          rank: (used ? 100 : 0) + (norm === normalize(query) ? 50 : norm.startsWith(normalize(query)) ? 20 : 0) }
+          rank: (used ? 100 : 0) + (norm === normalize(query) ? 50 : norm.startsWith(normalize(query)) ? 20 : 0) + (Number(sharedPrice?.price) > 0 ? 25 : 0) }
       })
       .sort((left, right) => right.rank - left.rank || left.label.localeCompare(right.label, "fr"))
       .slice(0, 12)
