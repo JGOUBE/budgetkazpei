@@ -113,11 +113,16 @@ def select_sources(settings: Settings, parsers, *, requested_max_sources: int | 
             for source in all_sources
             if source.is_active and source_allowed_in_mode(source.content_family, settings.collector_mode) and _source_is_supported(source, parsers)
         ]
-        effective_max_sources = settings.collector_max_sources
-        if effective_max_sources >= 0:
-            selected_sources = available_sources[:effective_max_sources]
-        else:
-            selected_sources = available_sources
+        # A caller-provided cap must constrain the actual number of HTTP
+        # sources, not only the log message. Negative values are rejected
+        # rather than silently disabling this cost safeguard.
+        effective_max_sources = (
+            settings.collector_max_sources if requested_max_sources is None
+            else requested_max_sources
+        )
+        if effective_max_sources < 0:
+            raise ValueError("collector_max_sources_must_be_non_negative")
+        selected_sources = available_sources[:effective_max_sources]
 
     LOGGER.info(
         "Selected collector sources",
