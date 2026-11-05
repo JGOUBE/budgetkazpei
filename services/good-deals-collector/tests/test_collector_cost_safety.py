@@ -16,6 +16,15 @@ class CollectorCostSafetyTests(unittest.TestCase):
         self.assertIn('"30 6 4,18 * *"', text)
         self.assertIn('"europe-west1"', text)
 
+    def test_deployment_defaults_to_safe_dry_run_and_bounded_execution(self):
+        text = (ROOT / "deploy-job.ps1").read_text(encoding="utf-8")
+        self.assertIn("[bool]$DryRun = $true", text)
+        self.assertIn("[int]$MaxSources = 7", text)
+        self.assertIn("[int]$TaskTimeoutSeconds = 600", text)
+        self.assertIn('"--max-retries",', text)
+        self.assertIn('"0",', text)
+        self.assertIn('"\${TaskTimeoutSeconds}s",', text)
+
     def test_run_trigger_never_claims_manual_without_evidence(self):
         text = (ROOT / "app" / "main.py").read_text(encoding="utf-8")
         self.assertIn('trigger_type: str = "unknown"', text)
