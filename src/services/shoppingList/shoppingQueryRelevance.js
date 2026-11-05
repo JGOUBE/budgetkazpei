@@ -12,7 +12,7 @@ export function hasUsefulShoppingQuery(query = "") {
 // deliberately for "lait corps" or other body care.
 export function isFoodMilkQuery(query = "") {
   const text = normalizeShoppingQuery(query)
-  if (!/^lait(?: |$)/.test(text)) return false
+  if (!(text === "lai" || /^lait(?: |$)/.test(text))) return false
   return !/\b(corps|peau|visage|hydratant|mixa|cica|solaire|demaquillant)\b/.test(text)
 }
 export function isMilkCosmeticLabel(label = "") {
