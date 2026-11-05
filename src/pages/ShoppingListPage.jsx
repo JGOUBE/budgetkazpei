@@ -295,8 +295,8 @@ function AutocompleteSuggestion({ suggestion, txt, onSelect }) {
         {promotion && <span style={{ color: COLORS.green, fontSize: 11 }}>{txt.promotionSuggestion}</span>}
       </span>
       <span style={{ display: "grid", gap: 3, justifyItems: "end", maxWidth: 110, textAlign: "right" }}>
-        <span style={{ fontWeight: 800, fontSize: 13, color: price ? COLORS.green : COLORS.muted, whiteSpace: "nowrap" }}>
-          {price || "—"}
+        <span style={{ fontWeight: price ? 800 : 600, fontSize: price ? 13 : 11, color: price ? COLORS.green : COLORS.muted, whiteSpace: "nowrap" }}>
+          {price || "À relever"}
         </span>
         {unitPrice && <span style={{ color: COLORS.muted, fontSize: 10, whiteSpace: "nowrap" }}>{unitPrice}</span>}
       </span>
