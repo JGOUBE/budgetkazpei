@@ -142,7 +142,11 @@ def extract_eleclerc_catalog_entries(source: SourceDefinition, document: SourceD
     for match in ELECLERC_LINK_RE.finditer(cleaned_html):
         attrs, label_html = match.groups()
         href = _extract_attr(attrs, "href")
-        if not href or "/public/catalogues/" not in href.lower():
+        # E.Leclerc distributes catalogues as either online flipbooks or PDFs.
+        if not href or not (
+            "/public/catalogues/" in href.lower()
+            or ("/public/pdf/" in href.lower() and href.lower().split("?", 1)[0].endswith(".pdf"))
+        ):
             continue
         canonical_url = normalize_url(href, document.final_url or source.source_url)
         if not canonical_url or urlsplit(canonical_url).hostname not in {"www.e-leclerc.re", "e-leclerc.re"}:
