@@ -44,6 +44,11 @@ class CatalogValidityTests(unittest.TestCase):
 
     def test_publisher_saves_matching_inclusive_dates_in_catalogue_and_deal(self):
         candidate = self.catalogue()
+        future = datetime.now(timezone.utc) + timedelta(days=20)
+        candidate.starts_at = datetime(future.year, future.month, future.day)
+        candidate.ends_at = candidate.starts_at + timedelta(days=5)
+        expected_start = candidate.starts_at.date().isoformat() + "T00:00:00+04:00"
+        expected_end = candidate.ends_at.date().isoformat() + "T23:59:59+04:00"
         repositories = InMemoryRepositories()
         source = SourceDefinition(
             slug=candidate.source_slug,
@@ -60,9 +65,9 @@ class CatalogValidityTests(unittest.TestCase):
         PublisherService(repositories).publish_candidate(candidate)
         catalogue = next(iter(repositories.catalogs.values()))
         deal = next(iter(repositories.good_deals.values()))
-        self.assertEqual(catalogue["ends_at"], "2026-11-08T23:59:59+04:00")
+        self.assertEqual(catalogue["ends_at"], expected_end)
         self.assertEqual(deal["ends_at"], catalogue["ends_at"])
-        self.assertEqual(deal["starts_at"], "2026-11-03T00:00:00+04:00")
+        self.assertEqual(deal["starts_at"], expected_start)
 
     def test_timed_event_is_not_changed_to_end_of_day(self):
         event = Candidate(
