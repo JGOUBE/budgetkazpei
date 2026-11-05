@@ -26,10 +26,11 @@ class RepositoryProtocol(Protocol):
     def start_run(self, run_key: str, trigger_type: str, mode: str) -> None: ...
     def finish_run(self, summary: RunSummary) -> None: ...
     def ensure_source(self, source: SourceDefinition) -> str: ...
+    def is_source_enabled(self, source_slug: str) -> bool: ...
     def get_last_snapshot_hash(self, source_slug: str) -> str | None: ...
     def record_snapshot(self, source_slug: str, source_id: str, document: SourceDocument, changed: bool, status: str, error_message: str | None = None) -> str: ...
     def save_candidate(self, source_id: str, snapshot_id: str | None, candidate: Candidate) -> str: ...
-    def find_duplicate_candidate_id(self, duplicate_key: str) -> str | None: ...
+    def find_duplicate_candidate_id(self, duplicate_key: str, *, external_key: str | None = None) -> str | None: ...
     def find_saved_candidate(self, source_slug: str, external_key: str) -> Candidate | None: ...
     def mark_candidate(self, candidate: Candidate, *, status: str, published_good_deal_id: str | None = None) -> None: ...
     def expire_stale_records(self, *, dry_run: bool, now: datetime | None = None) -> ExpirationMaintenanceResult: ...
@@ -73,10 +74,23 @@ class InMemoryRepositories:
         self.sources[source.slug] = {"id": source_id, "source": source}
         return source_id
 
+    def is_source_enabled(self, source_slug: str) -> bool:
+        row = self.sources.get(source_slug)
+        # Preserve local smoke-test behavior when a source is not registered.
+        return row is None or row.get(
+            "is_active", getattr(row.get("source"), "is_active", True)
+        ) is not False
+
     def get_last_snapshot_hash(self, source_slug: str) -> str | None:
+        # A failed attempt must not certify the page as already processed.
+        # A failed publication writes a "failed" snapshot after a "parsed"
+        # one; only inspect the latest attempt, including failed records.
         for snapshot in reversed(list(self.snapshots.values())):
-            if snapshot["source_slug"] == source_slug and snapshot.get("sha256"):
-                return snapshot["sha256"]  # type: ignore[return-value]
+            if snapshot["source_slug"] != source_slug:
+                continue
+            if snapshot.get("status") == "failed":
+                return None
+            return snapshot.get("sha256")  # type: ignore[return-value]
         return None
 
     def record_snapshot(
@@ -116,8 +130,16 @@ class InMemoryRepositories:
             self.duplicates.setdefault(candidate.duplicate_key, storage_key)
         return storage_key
 
-    def find_duplicate_candidate_id(self, duplicate_key: str) -> str | None:
-        return self.duplicates.get(duplicate_key)
+    def find_duplicate_candidate_id(self, duplicate_key: str, *, external_key: str | None = None) -> str | None:
+        storage_key = self.duplicates.get(duplicate_key)
+        if not storage_key:
+            return None
+        existing = self.candidates.get(storage_key)
+        # Rediscovery of the same external catalogue is not a duplicate
+        # of another catalogue: it can repair a previously failed publication.
+        if existing and external_key and existing.external_key == external_key:
+            return None
+        return storage_key
 
     def find_saved_candidate(self, source_slug: str, external_key: str) -> Candidate | None:
         return self.candidates.get(self._candidate_storage_key(source_slug, external_key))
@@ -271,6 +293,15 @@ class SupabaseRepositories:
             },
         )
 
+    def is_source_enabled(self, source_slug: str) -> bool:
+        rows = self.client.select(
+            "good_deal_sources",
+            filters={"slug": f"eq.{source_slug}", "limit": "1"},
+            columns="is_active",
+        )
+        # A new source is enabled only when the trusted registry selects it.
+        return not rows or rows[0].get("is_active") is True
+
     def ensure_source(self, source: SourceDefinition) -> str:
         existing_rows = self.client.select(
             "good_deal_sources",
@@ -306,9 +337,12 @@ class SupabaseRepositories:
     def get_last_snapshot_hash(self, source_slug: str) -> str | None:
         rows = self.client.select(
             "good_deal_source_snapshots",
-            filters={"source_slug": f"eq.{source_slug}", "sha256": "not.is.null", "order": "checked_at.desc", "limit": "1"},
+            filters={"source_slug": f"eq.{source_slug}", "order": "checked_at.desc", "limit": "1"},
+            columns="sha256,processing_status",
         )
-        return str(rows[0]["sha256"]) if rows else None
+        if not rows or rows[0].get("processing_status") == "failed":
+            return None
+        return str(rows[0]["sha256"]) if rows[0].get("sha256") else None
 
     def record_snapshot(
         self,
@@ -351,8 +385,13 @@ class SupabaseRepositories:
         rows = self.client.upsert("good_deal_candidates", [row], on_conflict="source_id,external_key")
         return str(rows[0]["id"])
 
-    def find_duplicate_candidate_id(self, duplicate_key: str) -> str | None:
-        rows = self.client.select("good_deal_candidates", filters={"duplicate_key": f"eq.{duplicate_key}", "limit": "1"})
+    def find_duplicate_candidate_id(self, duplicate_key: str, *, external_key: str | None = None) -> str | None:
+        filters = {"duplicate_key": f"eq.{duplicate_key}", "limit": "1"}
+        if external_key:
+            # The same leaflet may already be staged under the same external key;
+            # excluding it is essential for idempotent retries and corrections.
+            filters["external_key"] = f"neq.{external_key}"
+        rows = self.client.select("good_deal_candidates", filters=filters, columns="id")
         return str(rows[0]["id"]) if rows else None
 
     def find_saved_candidate(self, source_slug: str, external_key: str) -> Candidate | None:
@@ -556,6 +595,9 @@ class DryRunRepositories:
     def ensure_source(self, source: SourceDefinition) -> str:
         return self.technical_repositories.ensure_source(source)
 
+    def is_source_enabled(self, source_slug: str) -> bool:
+        return self.technical_repositories.is_source_enabled(source_slug)
+
     def get_last_snapshot_hash(self, source_slug: str) -> str | None:
         return self.technical_repositories.get_last_snapshot_hash(source_slug)
 
@@ -580,8 +622,8 @@ class DryRunRepositories:
     def save_candidate(self, source_id: str, snapshot_id: str | None, candidate: Candidate) -> str:
         return self.transient_repositories.save_candidate(source_id, snapshot_id, candidate)
 
-    def find_duplicate_candidate_id(self, duplicate_key: str) -> str | None:
-        return self.transient_repositories.find_duplicate_candidate_id(duplicate_key)
+    def find_duplicate_candidate_id(self, duplicate_key: str, *, external_key: str | None = None) -> str | None:
+        return self.transient_repositories.find_duplicate_candidate_id(duplicate_key, external_key=external_key)
 
     def find_saved_candidate(self, source_slug: str, external_key: str) -> Candidate | None:
         return self.transient_repositories.find_saved_candidate(source_slug, external_key)

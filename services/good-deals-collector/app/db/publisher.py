@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 
 from app.models.candidate import Candidate
 from app.services.normalization import normalize_text
+from app.services.catalog_period import publication_period
 
 from .repositories import RepositoryProtocol
 
@@ -24,6 +25,9 @@ class PublisherService:
 
         self._validate_candidate(candidate)
 
+        validity_starts_at, validity_ends_at = publication_period(candidate)
+        start_iso = validity_starts_at.isoformat() if validity_starts_at else None
+        end_iso = validity_ends_at.isoformat() if validity_ends_at else None
         now = datetime.now(timezone.utc).isoformat()
         business_id = self.repositories.upsert_business(
             {
@@ -97,8 +101,8 @@ class PublisherService:
                         "commune": candidate.commune,
                         "micro_region": candidate.micro_region,
                         "store_location_id": store_location_id,
-                        "starts_at": candidate.starts_at.isoformat() if candidate.starts_at else None,
-                        "ends_at": candidate.ends_at.isoformat() if candidate.ends_at else None,
+                        "starts_at": start_iso,
+                        "ends_at": end_iso,
                         "source_url": candidate.source_url,
                         "source_kind": "collector",
                         "verification_status": "published",
@@ -125,8 +129,8 @@ class PublisherService:
                         "unit_price": candidate.unit_price,
                         "unit_label": candidate.unit_label,
                         "conditions": candidate.price_note,
-                        "starts_at": candidate.starts_at.isoformat() if candidate.starts_at else None,
-                        "ends_at": candidate.ends_at.isoformat() if candidate.ends_at else None,
+                        "starts_at": start_iso,
+                        "ends_at": end_iso,
                         "source_url": candidate.source_url,
                         "source_page": candidate.source_page,
                         "verification_status": "published",
@@ -148,8 +152,8 @@ class PublisherService:
                 "scope_type": candidate.scope_type,
                 "commune": candidate.commune,
                 "micro_region": candidate.micro_region,
-                "starts_at": candidate.starts_at.isoformat() if candidate.starts_at else None,
-                "ends_at": candidate.ends_at.isoformat() if candidate.ends_at else None,
+                "starts_at": start_iso,
+                "ends_at": end_iso,
                 "source_url": candidate.source_url,
                 "verification_status": "published",
                 "deal_type": self._resolve_deal_type(candidate),
@@ -163,7 +167,7 @@ class PublisherService:
                 "availability_status": self._resolve_availability_status(candidate),
                 "last_verified_at": candidate.detected_at.isoformat() if candidate.detected_at else None,
                 "source_still_available": True,
-                "next_check_at": None if candidate.content_kind == "permanent_leisure" else candidate.ends_at.isoformat() if candidate.ends_at else None,
+                "next_check_at": None if candidate.content_kind == "permanent_leisure" else end_iso,
                 "is_active": True,
                 "updated_at": now,
             }
@@ -207,8 +211,9 @@ class PublisherService:
             # could show an undated or expired leaflet as a current promotion.
             if candidate.starts_at is None or candidate.ends_at is None:
                 raise ValueError("catalog_publication_requires_verified_dates")
-            start = candidate.starts_at
-            end = candidate.ends_at
+            start, end = publication_period(candidate)
+            if start is None or end is None:
+                raise ValueError("catalog_publication_requires_verified_dates")
             if start.tzinfo is None:
                 start = start.replace(tzinfo=timezone.utc)
             if end.tzinfo is None:

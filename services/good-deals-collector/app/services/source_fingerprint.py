@@ -3,7 +3,8 @@ from __future__ import annotations
 import html
 import re
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
+from urllib.parse import urlsplit
 
 from app.models.document import SourceDocument
 from app.models.source import SourceDefinition
@@ -66,14 +67,52 @@ AUCHAN_CARD_RE = re.compile(
     r'<a href="([^"]+)"[^>]*class="a-link">',
     flags=re.IGNORECASE | re.DOTALL,
 )
-ELECLERC_LINK_RE = re.compile(
-    r'<li>\s*<a href="([^"]+)"[^>]*target="_blank"[^>]*title="([^"]*Catalogue E\.Leclerc[^"]*)"[^>]*>(.*?)</a>\s*</li>',
-    flags=re.IGNORECASE | re.DOTALL,
-)
-RUN_MARKET_LINK_RE = re.compile(
-    r'<a[^>]+href="([^"]*interactive-catalogue[^"]*)"[^>]*>(.*?)</a>',
-    flags=re.IGNORECASE | re.DOTALL,
-)
+# Read anchor attributes independently: their order and target=_blank are not stable.
+ELECLERC_LINK_RE = re.compile(r'<a\b([^>]*)>(.*?)</a>', flags=re.IGNORECASE | re.DOTALL)
+RUN_MARKET_LINK_RE = re.compile(r'<a\b([^>]*)>(.*?)</a>', flags=re.IGNORECASE | re.DOTALL)
+
+WEEKDAYS_RE = r"(?:lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche)"
+RUN_MARKET_CATALOG_HOSTS = {"runmarket.interactive-catalogue.com", "www.calameo.com", "calameo.com"}
+
+
+def _parse_catalog_period(value: str | None, *, reference_date: datetime | None = None):
+    """Resolve dated catalog periods without inventing an unbounded year."""
+    if not value:
+        return None, None
+    today = reference_date or datetime.now(timezone(timedelta(hours=4))).replace(tzinfo=None)
+    text = normalize_text(value)
+    starts_at, ends_at = parse_french_date_range(value, default_year=today.year)
+
+    # Carrefour often writes "DU LUNDI 02 AU DIMANCHE 08 NOVEMBRE".
+    if not starts_at or not ends_at:
+        compact = re.search(
+            rf"\bdu\s+(?:{WEEKDAYS_RE}\s+)?(\d{{1,2}})\s+au\s+"
+            rf"(?:{WEEKDAYS_RE}\s+)?(\d{{1,2}})\s+([a-z]+)(?:\s+(20\d{{2}}))?\b",
+            text,
+        )
+        if compact:
+            first, last, month, stated_year = compact.groups()
+            year = int(stated_year) if stated_year else today.year
+            starts_at, ends_at = parse_french_date_range(
+                f"du {first} {month} {year} au {last} {month} {year}",
+                default_year=year,
+            )
+
+    if not starts_at or not ends_at:
+        return None, None
+    if ends_at < starts_at:
+        # Explicit December-to-January promotions are handled by the date
+        # parser when both years are present. For an undated year, stay safe.
+        return None, None
+
+    # When the page omitted the year, accept only a period near the time of
+    # observation. Never resurrect a prior year's flyer.
+    if not re.search(r"\b20\d{2}\b", value) and (
+        ends_at < today - timedelta(days=21)
+        or starts_at > today + timedelta(days=55)
+    ):
+        return None, None
+    return starts_at, ends_at
 
 
 def build_source_fingerprint(source: SourceDefinition, document: SourceDocument) -> SourceFingerprint:
@@ -101,15 +140,37 @@ def extract_eleclerc_catalog_entries(source: SourceDefinition, document: SourceD
     cleaned_html = _strip_html_comments(document.content_bytes.decode("utf-8", errors="ignore"))
     entries: list[CatalogEntry] = []
     for match in ELECLERC_LINK_RE.finditer(cleaned_html):
-        href, title_attr, label_html = match.groups()
-        if "/public/catalogues/" not in href:
+        attrs, label_html = match.groups()
+        href = _extract_attr(attrs, "href")
+        # E.Leclerc distributes catalogues as either online flipbooks or PDFs.
+        if not href or not (
+            "/public/catalogues/" in href.lower()
+            or ("/public/pdf/" in href.lower() and href.lower().split("?", 1)[0].endswith(".pdf"))
+        ):
             continue
         canonical_url = normalize_url(href, document.final_url or source.source_url)
-        if not canonical_url:
+        if not canonical_url or urlsplit(canonical_url).hostname not in {"www.e-leclerc.re", "e-leclerc.re"}:
             continue
         label = _clean_text(label_html)
-        title_text = _clean_text(title_attr)
-        starts_at, ends_at = parse_french_date_range(title_text, default_year=2026)
+        title_text = _extract_attr(attrs, "title") or ""
+        if not label:
+            label = _clean_text(title_text.split(". Du ")[0])
+        if not label:
+            continue
+
+        starts_at, ends_at = _parse_catalog_period(title_text)
+        period_text = title_text
+        if not starts_at or not ends_at:
+            # Only inspect the same <li> so an adjacent flyer cannot lend
+            # its dates to a different link.
+            parent_start = cleaned_html.rfind("<li", 0, match.start())
+            parent_end = cleaned_html.find("</li>", match.end())
+            if parent_start >= 0 and 0 <= parent_end - parent_start <= 3000:
+                surrounding = _clean_text(cleaned_html[parent_start:parent_end])
+                candidate_start, candidate_end = _parse_catalog_period(surrounding)
+                if candidate_start and candidate_end:
+                    starts_at, ends_at = candidate_start, candidate_end
+                    period_text = surrounding
         store_format = _extract_format(label) or _extract_format(title_text)
         stable_id = canonical_url.rstrip("/").rsplit("/", 1)[-1]
         entries.append(
@@ -118,12 +179,12 @@ def extract_eleclerc_catalog_entries(source: SourceDefinition, document: SourceD
                 canonical_url=canonical_url,
                 starts_at=starts_at,
                 ends_at=ends_at,
-                period_text=title_text,
+                period_text=period_text,
                 store_format=store_format,
                 brand="E.Leclerc Reunion",
                 stable_id=stable_id,
                 scope_label="Reunion",
-                source_excerpt=title_text,
+                source_excerpt=period_text,
             )
         )
     return _finalize_entries(entries, source.slug)
@@ -139,7 +200,7 @@ def extract_carrefour_catalog_entries(source: SourceDefinition, document: Source
             continue
         image_url = normalize_url(image_src, document.final_url or source.source_url)
         period_text = _clean_text(subtitle_html)
-        starts_at, ends_at = parse_french_date_range(period_text, default_year=2026)
+        starts_at, ends_at = _parse_catalog_period(period_text)
         stable_id = _extract_attr(anchor_attrs, "data-flipping-book-id") or _extract_stable_id_from_url(canonical_url)
         entries.append(
             CatalogEntry(
@@ -168,7 +229,7 @@ def extract_auchan_catalog_entries(source: SourceDefinition, document: SourceDoc
             continue
         image_url = normalize_url(image_src, document.final_url or source.source_url)
         period_text = _clean_text(period_html)
-        starts_at, ends_at = parse_french_date_range(period_text, default_year=2026)
+        starts_at, ends_at = _parse_catalog_period(period_text)
         entries.append(
             CatalogEntry(
                 title=_clean_text(title_html),
@@ -190,9 +251,12 @@ def extract_run_market_catalog_entries(source: SourceDefinition, document: Sourc
     html_text = _strip_html_comments(document.content_bytes.decode("utf-8", errors="ignore"))
     entries: list[CatalogEntry] = []
     for match in RUN_MARKET_LINK_RE.finditer(html_text):
-        href, anchor_html = match.groups()
+        attrs, anchor_html = match.groups()
+        href = _extract_attr(attrs, "href")
+        if not href:
+            continue
         canonical_url = normalize_url(href, document.final_url or source.source_url)
-        if not canonical_url:
+        if not canonical_url or urlsplit(canonical_url).hostname not in RUN_MARKET_CATALOG_HOSTS:
             continue
 
         before_context = html_text[max(0, match.start() - 8000) : match.start()]
@@ -220,7 +284,7 @@ def extract_run_market_catalog_entries(source: SourceDefinition, document: Sourc
         if not title:
             title = _extract_stable_id_from_url(canonical_url) or ""
 
-        starts_at, ends_at = parse_french_date_range(period_text, default_year=2026)
+        starts_at, ends_at = _parse_catalog_period(period_text)
 
         # Some Run Market cards use a stale interactive-catalogue URL while
         # showing new dates on the surrounding page. Never promote a July
@@ -296,8 +360,8 @@ def _finalize_entries(entries: list[CatalogEntry], source_slug: str) -> list[Cat
 
 
 def _extract_attr(attrs: str, name: str) -> str | None:
-    match = re.search(rf'{re.escape(name)}="([^"]+)"', attrs, flags=re.IGNORECASE)
-    return _clean_text(match.group(1)) if match else None
+    match = re.search(rf'{re.escape(name)}\s*=\s*([\"\'])(.+?)\1', attrs, flags=re.IGNORECASE | re.DOTALL)
+    return _clean_text(match.group(2)) if match else None
 
 
 def _extract_format(value: str | None) -> str | None:

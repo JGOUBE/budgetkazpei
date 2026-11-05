@@ -160,19 +160,133 @@ Lecture des logs:
 gcloud logging read "resource.type=cloud_run_job AND labels.\"run.googleapis.com/job_name\"=\"budgetkazpei-good-deals-collector\"" --project budgetkazpei --limit 100 --format json
 ```
 
-## Creation du Scheduler
+## Cadence sobre et protection contre les frais (novembre 2026)
 
-Ne creer le Scheduler qu'apres validation manuelle du Job en dry-run.
+La collecte quotidienne n'est plus le regime recommande pour les catalogues.
+Les catalogues E.Leclerc et Auchan demarrent souvent pres du debut et du milieu
+du mois. Un premier essai raisonnable est **les 4 et 18 a 06h30 (Indian/Reunion)** :
+deux passages par mois, plutot que trente. Cette cadence pourra etre reajustee
+en fonction des dates officielles observees. Une collecte ponctuelle reste possible
+en cas d'operation exceptionnelle, apres verification du besoin.
+
+**Etat de production : les quatre jobs Cloud Scheduler ont ete suspendus par le proprietaire.
+Ne pas les reprendre pendant les tests.** Le script `deploy-scheduler.ps1` :
+
+- affiche uniquement le plan sans `-Apply` ;
+- modifie uniquement la cadence du job existant dans **europe-west1** ;
+- ne cree jamais un nouveau Scheduler et ne modifie ni sa cible ni son identite OAuth ;
+- conserve le job suspendu sauf si `-Apply -Resume` est volontairement fourni ;
+- desactive les tentatives de relance Scheduler (`--max-retry-attempts 0`).
+
+Previsualiser sans acces Google Cloud ni frais :
 
 ```powershell
 .\deploy-scheduler.ps1
 ```
 
-Le script maintient un seul scheduler:
+Configurer **sans activer** (a faire seulement apres validation des tests) :
 
-- cron `30 5 1,15 * *`
-- fuseau `Indian/Reunion`
-- appel HTTP au job Cloud Run
+```powershell
+.\deploy-scheduler.ps1 -Apply
+```
+
+La reactivation eventuelle demanderait `-Apply -Resume`, **pas pour maintenant**.
+Les trois jobs incrementaux Carrefour/E.Leclerc/Leader Price restent egalement
+suspendus jusqu'a audit de leur rendement et de leurs sources ; leur calendrier
+n'est pas change par ce script.
+
+### Pistes de correction et criteres de qualite
+
+- E.Leclerc : lien du catalogue lu independamment de l'ordre des attributs HTML ;
+  dates exigees avant publication, sans inventer une periode.
+- Carrefour : accepter une periode abregee du type « du 02 au 08 novembre »
+  uniquement si elle se situe pres de la date d'observation.
+- Run Market : utiliser l'index officiel `/accueil-2/` et les liens Calameo,
+  sans republier une ancienne brochure avec de nouvelles dates.
+- Doublons : distinguer les catalogues par leur lien normalise, pas seulement
+  par le titre generique « Nouveau catalogue » et les dates.
+- Mesure : `diagnostic-catalogues.sql` lit directement Supabase et permet de
+  comparer les erreurs, les nouvelles publications et les doublons sans Cloud Run.
+- L'absence d'entrees reste une erreur visible dans les logs, jamais une
+  fausse publication reussie.
+- La colonne `trigger_type` etait codee en dur a `manual` pour chaque run ;
+  les nouvelles executions seront `unknown` sauf identification explicite du
+  lanceur via `--trigger-type`. Les anciennes valeurs ne prouvent pas la
+  presence d'un declencheur manuel.
+
+### Protections supplementaires et rendement reel
+
+Analyse Supabase (30 jours avant le 2 novembre 2026) :
+
+| Source | Controles | Echecs | Nouveaux candidats publies |
+| --- | ---: | ---: | ---: |
+| Auchan Saint-Louis | 23 | 1 | 2 |
+| Carrefour | 25 | 2 | 0 |
+| E.Leclerc | 27 | 10 | 2 |
+| Run Market | 23 | 18 | 1 |
+| Magasins U | 23 | 1 | 0 |
+
+Les chiffres sont un instantane des candidats dont la ligne a ete creee sur
+la periode (pas un journal immuable). **Run Market est retire de la selection
+automatique dans le registre local** : il reste testable ponctuellement par
+`--source-slug run-market-reunion-home --dry-run`. Il ne faut pas lancer ce
+test sur Cloud Run tant que les pages ne sont pas validees localement.
+
+Protections nouvelles :
+
+- Une source desactivee via `good_deal_sources.is_active=false` est ignoree
+  **avant** l'appel reseau, meme si le registre local la connait.
+- Une tentative de publication echouee ne doit pas devenir un faux cache
+  « aucun changement » lors du passage suivant.
+- Un candidat avec le meme `external_key` n'est pas un doublon de lui-meme :
+  il peut etre republie apres une erreur, sans cacher les vrais doublons.
+- Une page HTTP 403/404/500 n'est jamais consideree comme une page de catalogues.
+- Sans credentials Supabase, une execution non dry-run echoue explicitement
+  plutot que de « publier » seulement en memoire.
+- Un publieur qui ne retourne pas d'identifiant est comptabilise comme erreur.
+- Les `metrics.source_results` permettent de lire les statistiques par source
+  dans le rapport de chaque execution (sans une table supplementaire).
+
+La frequence de 2 fois par mois reste **une hypothese a confirmer** :
+Carrefour publie parfois des catalogues hebdomadaires. Le calcul doit porter
+sur le nombre de promotions encore valides et visibles, pas seulement sur
+le nombre de taches executees.
+
+### Protections supplementaires pour limiter les executions inutiles
+
+- `COLLECTOR_DRY_RUN` vaut **true par defaut** : toute publication necessite
+  l'activation explicite de `COLLECTOR_DRY_RUN=false`.
+- Une source dont `good_deal_sources.is_active=false` n'est pas interrogee
+  (aucun HTTP pour cette source), meme si le registre du code l'indique active.
+- Un candidat deja en base avec la meme `external_key` n'est pas marque
+  comme doublon de lui-meme.
+- Une empreinte issue d'une tentative echouee ne bloque plus un nouvel essai.
+- Si une source ou l'enregistrement du journal d'erreur echoue, les autres
+  sources continuent au lieu de perdre toute la collecte.
+- Chaque execution ecrit un petit tableau de resultat par source dans
+  `good_deal_ingestion_runs.metrics.source_results` : publies,
+  doublons, elements a revoir, erreurs et changements, sans nouvelle table.
+
+**Important** : ce sont des protections du code de la branche de travail,
+pas une modification de la production ni une preuve de rendement reel.
+Tester d'abord les parseurs sur les pages officielles actuelles et executer
+la suite unitaire en local, puis faire un essai controle avant tout Scheduler.
+
+### Controle avant toute reactivation
+
+1. Executer les tests hors Cloud Run : `python -m unittest discover -s tests -v`.
+2. Tester les HTML officiels actuels hors Google Cloud (ou avec des captures
+   locales), sans requete Cloud Run payante, et verifier titres/liens/dates.
+3. Comparer pour chaque enseigne les entrees fiables et les doublons ; aucune
+   publication de dates incertaines ou de liens de catalogue perimes.
+4. Examiner les logs des executions Cloud Run : qui lance les jobs vers 06h00 ?
+   La colonne `trigger_type=manual` historique ne permet **pas** de repondre.
+5. Controler les tarifs Google Cloud et l'absence de nouveaux declencheurs
+   avant de reprogrammer le job. Les catalogues historiques restent conserves.
+
+La nouvelle URL Run Market dans le registre local doit egalement etre repercutee
+dans `good_deal_sources.source_url` lors du deploiement, si le tableau de bord
+admin affiche cette table. Aucun changement Supabase n'est effectue ici.
 
 ## Logs
 
