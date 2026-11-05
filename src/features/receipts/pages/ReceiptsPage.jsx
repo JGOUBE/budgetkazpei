@@ -3,6 +3,7 @@ import { CATEGORIES } from "../../../data/categories"
 import { formatMontant } from "../../../utils/format"
 import { createManualReceiptDraft } from "../utils/receiptParser"
 import { suggestPersonalAliasesForScan } from "../services/personalReceiptAliases"
+import { attachVerifiedShoppingLinks } from "../services/verifiedShoppingLinks"
 import {
   applyValidatedReceiptItemDraft,
   buildReceiptItemPersistenceUpdates,
@@ -1235,6 +1236,11 @@ export default function ReceiptsPage({
       parsed = await suggestPersonalAliasesForScan({ userId: user?.id, draft: parsed })
     } catch (aliasError) {
       console.warn("[scanner] Suggestions personnelles indisponibles", aliasError)
+    }
+    try {
+      parsed = await attachVerifiedShoppingLinks({ userId: user?.id, draft: parsed })
+    } catch (linkError) {
+      console.warn("[scanner] Liens catalogue indisponibles", linkError)
     }
     setScanProgress({
       step: "finalizing",
@@ -3087,6 +3093,11 @@ function ValidationForm({
                   {Math.round(item.confidence_score || 0)} %
                 </span>
               </div>
+              {item._verified_shopping_product_id && (
+                <div style={{ color: COLORS.green, fontSize: 12, fontWeight: 850 }}>
+                  Référence identifiée dans les Courses intelligentes : {item._verified_shopping_product_name}
+                </div>
+              )}
               {item._personal_alias_suggestion === true && (
                 <div style={{ color: COLORS.yellow, fontSize: 12, fontWeight: 850 }}>
                   Suggestion issue de vos anciens tickets : vérifiez puis validez l'article.
