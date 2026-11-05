@@ -276,6 +276,30 @@ class PipelineTests(unittest.TestCase):
 
         self.assertEqual(summary.sources_checked, 5)
 
+    def test_explicit_run_cap_limits_actual_http_sources_even_if_env_is_higher(self):
+        sources = self._supported_shopping_sources()
+        parser = _StaticParser()
+        settings = self.settings.with_overrides(collector_mode="shopping", collector_max_sources=5)
+        with patch("app.main.get_default_sources", return_value=sources), patch(
+            "app.main.get_collectors", return_value={"html": _StaticCollector()}
+        ), patch("app.main.get_parsers", return_value={
+            source.parser_key: parser for source in sources
+        }), patch("app.main.get_repository", return_value=InMemoryRepositories()), patch(
+            "app.main.build_source_fingerprint", side_effect=lambda source, document: self._fingerprint_for(source)
+        ):
+            summary = run(settings, requested_max_sources=2)
+        self.assertEqual(summary.sources_checked, 2)
+
+    def test_negative_source_cap_is_rejected_before_any_network_io(self):
+        sources = self._supported_shopping_sources()
+        with patch("app.main.get_default_sources", return_value=sources), patch(
+            "app.main.get_collectors", return_value={"html": _StaticCollector()}
+        ), patch("app.main.get_parsers", return_value={
+            source.parser_key: _StaticParser() for source in sources
+        }):
+            with self.assertRaisesRegex(ValueError, "collector_max_sources_must_be_non_negative"):
+                run(self.settings.with_overrides(collector_mode="shopping"), requested_max_sources=-1)
+
     def test_env_max_sources_is_used_when_cli_is_absent(self):
         sources = self._supported_shopping_sources()
         parser = _StaticParser()
