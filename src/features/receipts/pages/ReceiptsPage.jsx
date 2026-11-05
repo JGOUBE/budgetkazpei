@@ -1799,6 +1799,11 @@ export default function ReceiptsPage({
       return
     }
     const validItems = getValidDraftItems(draft)
+    const reconciliation = getReceiptAmountReconciliation({ items: validItems, totalAmount: draft.total_amount })
+    if (reconciliation.mismatch) {
+      setMessage(`Écart de ${Math.abs(reconciliation.difference).toFixed(2).replace(".", ",")} € entre les articles et le total du ticket. Corrigez les lignes avant d'enregistrer.`)
+      return
+    }
 
     setBusy(true)
     setScanError(null)
