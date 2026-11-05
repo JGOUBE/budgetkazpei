@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { CATEGORIES } from "../../../data/categories"
 import { formatMontant } from "../../../utils/format"
 import { createManualReceiptDraft } from "../utils/receiptParser"
+import { suggestPersonalAliasesForScan } from "../services/personalReceiptAliases"
 import {
   applyValidatedReceiptItemDraft,
   buildReceiptItemPersistenceUpdates,
@@ -1228,7 +1229,13 @@ export default function ReceiptsPage({
   }
 
   async function processCompletedScan(scan, sourceFile) {
-    const parsed = scan.receipt
+    // Personal alias lookup is optional: scan must still work if history is unavailable.
+    let parsed = scan.receipt
+    try {
+      parsed = await suggestPersonalAliasesForScan({ userId: user?.id, draft: parsed })
+    } catch (aliasError) {
+      console.warn("[scanner] Suggestions personnelles indisponibles", aliasError)
+    }
     setScanProgress({
       step: "finalizing",
       label: txt.analysisPreparing,
@@ -3080,6 +3087,11 @@ function ValidationForm({
                   {Math.round(item.confidence_score || 0)} %
                 </span>
               </div>
+              {item._personal_alias_suggestion === true && (
+                <div style={{ color: COLORS.yellow, fontSize: 12, fontWeight: 850 }}>
+                  Suggestion issue de vos anciens tickets : vérifiez puis validez l'article.
+                </div>
+              )}
               {item.ocr_name && item.ocr_name !== item.name && (
                 <div style={{ color: COLORS.muted, fontSize: 12, lineHeight: 1.4 }}>
                   Texte OCR : {item.ocr_name}
