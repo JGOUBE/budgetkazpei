@@ -242,31 +242,63 @@ function AutocompleteSuggestion({ suggestion, txt, onSelect }) {
   const lastPrice = Number(suggestion.lastPrice || 0)
   const promoPrice = Number(suggestion.promoPrice || 0)
   const observedPrice = Number(suggestion.observedPrice || 0)
+  const packagePrice = Number(suggestion.packPrice || 0)
   const retailer = String(promotion?.retailerName || suggestion.retailerName || "").trim()
+  const observedDate = suggestion.observedAt && !Number.isNaN(new Date(suggestion.observedAt).getTime())
+    ? new Date(suggestion.observedAt).toLocaleDateString("fr-FR")
+    : null
+  const price = promoPrice > 0
+    ? formatSmartPrice(promoPrice, suggestion.promoPriceUnitLabel)
+    : suggestion.source === "history" && lastPrice > 0
+      ? formatSmartPrice(lastPrice, suggestion.priceUnitLabel)
+      : packagePrice > 0
+        ? formatMontant(packagePrice)
+        : observedPrice > 0
+          ? formatSmartPrice(observedPrice, suggestion.observedPriceUnitLabel)
+          : null
+  const unitPrice = !promotion && observedPrice > 0 && packagePrice > 0
+    ? formatSmartPrice(observedPrice, suggestion.observedPriceUnitLabel)
+    : null
+  const details = [
+    retailer,
+    observedDate ? `Prix relevé le ${observedDate}` : "",
+  ].filter(Boolean).join(" · ")
 
   return (
     <button
       data-shopping-suggestion-source={suggestion.source}
       type="button"
       onClick={onSelect}
-      style={{ minHeight: 54, borderRadius: 14, border: `1px solid ${COLORS.cyan}55`, background: "rgba(35,211,214,.12)", color: COLORS.text, padding: "8px 12px", textAlign: "left" }}
+      aria-label={`Ajouter ${suggestion.label}${price ? `, ${price}` : ""}`}
+      style={{
+        display: "grid",
+        gridTemplateColumns: "minmax(0, 1fr) auto",
+        alignItems: "center",
+        gap: 10,
+        width: "100%",
+        minHeight: 52,
+        padding: "9px 12px",
+        border: "none",
+        borderBottom: `1px solid ${COLORS.borderSubtle}`,
+        borderRadius: 0,
+        background: "transparent",
+        color: COLORS.text,
+        textAlign: "left",
+        cursor: "pointer",
+        boxShadow: "none",
+      }}
     >
-      <span style={{ display: "block", fontWeight: 900 }}>{suggestion.label}</span>
-      {lastPrice > 0 && <span style={{ display: "block", color: COLORS.muted, fontSize: 12, marginTop: 2 }}>{txt.lastKnownPrice(formatSmartPrice(lastPrice, suggestion.priceUnitLabel))}</span>}
-      {observedPrice > 0 && suggestion.source === "history" && <span style={{ display: "block", color: COLORS.green, fontSize: 12, fontWeight: 850 }}>Prix comparable : {formatSmartPrice(observedPrice, suggestion.observedPriceUnitLabel)} · Pack {formatMontant(suggestion.packPrice)}</span>}
-      {!promotion && observedPrice > 0 && suggestion.source !== "history" && (
-        <>
-          <span style={{ display: "block", color: COLORS.green, fontSize: 12, fontWeight: 850, marginTop: 2 }}>{retailer ? `${retailer} · ` : ""}{formatSmartPrice(observedPrice, suggestion.observedPriceUnitLabel)}</span>
-          {suggestion.packPrice > 0 && <span style={{ display: "block", color: COLORS.muted, fontSize: 11 }}>Prix du produit : {formatMontant(suggestion.packPrice)}</span>}
-          {suggestion.observedAt && <span style={{ display: "block", color: COLORS.muted, fontSize: 11 }}>Prix relevé le {new Date(suggestion.observedAt).toLocaleDateString("fr-FR")}</span>}
-        </>
-      )}
-      {promotion && promoPrice > 0 && (
-        <>
-          <span style={{ display: "block", color: COLORS.green, fontSize: 12, fontWeight: 850, marginTop: 2 }}>{retailer ? `${retailer} · ` : ""}{formatSmartPrice(promoPrice, suggestion.promoPriceUnitLabel)}</span>
-          <span style={{ display: "block", color: COLORS.cyan, fontSize: 11, fontWeight: 900, marginTop: 2 }}>{txt.promotionSuggestion}</span>
-        </>
-      )}
+      <span style={{ display: "grid", gap: 3, minWidth: 0 }}>
+        <span style={{ fontSize: 13, fontWeight: 750, overflowWrap: "anywhere", lineHeight: 1.3 }}>{suggestion.label}</span>
+        {details && <span style={{ color: COLORS.muted, fontSize: 11, lineHeight: 1.3 }}>{details}</span>}
+        {promotion && <span style={{ color: COLORS.green, fontSize: 11 }}>{txt.promotionSuggestion}</span>}
+      </span>
+      <span style={{ display: "grid", gap: 3, justifyItems: "end", maxWidth: 110, textAlign: "right" }}>
+        <span style={{ fontWeight: 800, fontSize: 13, color: price ? COLORS.green : COLORS.muted, whiteSpace: "nowrap" }}>
+          {price || "—"}
+        </span>
+        {unitPrice && <span style={{ color: COLORS.muted, fontSize: 10, whiteSpace: "nowrap" }}>{unitPrice}</span>}
+      </span>
     </button>
   )
 }
@@ -959,7 +991,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
         {suggestions.historical.length > 0 && (
           <div data-shopping-suggestion-group="history" style={{ marginTop: 12 }}>
             <div style={{ color: COLORS.muted, fontSize: 11, fontWeight: 950, letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 6 }}>{txt.habitualSuggestions}</div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <div style={{ display: "grid", gap: 0, border: `1px solid ${COLORS.borderSubtle}`, borderRadius: 12, overflow: "hidden", background: COLORS.card }}>
               {suggestions.historical.map(suggestion => <AutocompleteSuggestion key={suggestion.key} suggestion={suggestion} txt={txt} onSelect={() => addItem(suggestion)} />)}
             </div>
           </div>
@@ -967,7 +999,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
         {suggestions.observed.length > 0 && (
           <div data-shopping-suggestion-group="observed" style={{ marginTop: 12 }}>
             <div style={{ color: COLORS.muted, fontSize: 11, fontWeight: 950, letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 6 }}>{txt.observedPriceSuggestions}</div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <div style={{ display: "grid", gap: 0, border: `1px solid ${COLORS.borderSubtle}`, borderRadius: 12, overflow: "hidden", background: COLORS.card }}>
               {suggestions.observed.map(suggestion => <AutocompleteSuggestion key={suggestion.key} suggestion={suggestion} txt={txt} onSelect={() => addItem(suggestion)} />)}
             </div>
           </div>
@@ -975,7 +1007,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
         {suggestions.retail.length > 0 && (
           <div data-shopping-suggestion-group="retail" style={{ marginTop: 12 }}>
             <div style={{ color: COLORS.muted, fontSize: 11, fontWeight: 950, letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 6 }}>{txt.currentPromotionSuggestions}</div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <div style={{ display: "grid", gap: 0, border: `1px solid ${COLORS.borderSubtle}`, borderRadius: 12, overflow: "hidden", background: COLORS.card }}>
               {suggestions.retail.map(suggestion => <AutocompleteSuggestion key={suggestion.key} suggestion={suggestion} txt={txt} onSelect={() => addItem(suggestion)} />)}
             </div>
           </div>
@@ -985,7 +1017,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
             <div style={{ color: COLORS.muted, fontSize: 11, fontWeight: 950, letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 6 }}>
               {locale === "cr" ? "Produits catalogue" : "Catalogue partagé"}
             </div>
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <div style={{ display: "grid", gap: 0, border: `1px solid ${COLORS.borderSubtle}`, borderRadius: 12, overflow: "hidden", background: COLORS.card }}>
               {suggestions.catalog.map(suggestion => <AutocompleteSuggestion key={suggestion.key} suggestion={suggestion} txt={txt} onSelect={() => addItem(suggestion)} />)}
             </div>
           </div>
