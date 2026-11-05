@@ -30,7 +30,7 @@ import {
 } from "../services/shoppingList/shoppingListSnapshots"
 import { MANUAL_SAVE_METHOD } from "../services/shoppingList/shoppingListSnapshotModel"
 import { buildMultiRetailBasketOptimization } from "../services/shoppingList/shoppingBasketOptimizer"
-import { formatSharedPriceRetailer, getSharedPriceStatusLabel } from "../services/shoppingList/sharedPricePresentation"
+import { formatSharedPriceRetailer } from "../services/shoppingList/sharedPricePresentation"
 import { loadSharedShoppingCatalog, loadSharedShoppingPrices } from "../services/shoppingList/sharedCatalogLoader"
 import { loadShoppingListDraft, saveShoppingListDraft } from "../services/shoppingList/shoppingListDraft"
 import {
@@ -81,7 +81,6 @@ const COPY = {
     currentPromotionSuggestions: "Promos actuelles",
     observedPriceSuggestions: "Prix observés",
     lastKnownPrice: amount => `Dernier prix connu : ${amount}`,
-    observedSuggestion: "Prix observé récemment",
     observedLinePrice: retailer => retailer ? `Prix observé chez ${retailer}` : "Prix observé retail",
     promotionSuggestion: "Promo actuelle",
     noProduct: "Aucun produit trouvé. Appuyez sur Ajouter pour créer ce produit.",
@@ -166,7 +165,6 @@ const COPY = {
     currentPromotionSuggestions: "Bann promo actuelles",
     observedPriceSuggestions: "Bann prix observés",
     lastKnownPrice: amount => `Dernier prix connu : ${amount}`,
-    observedSuggestion: "Prix observé récemment",
     observedLinePrice: retailer => retailer ? `Prix observé kot ${retailer}` : "Prix observé retail",
     promotionSuggestion: "Promo actuelle",
     noProduct: "Nana poin produit trouvé. Appuie su Azouté pou créer produit-la.",
@@ -258,9 +256,8 @@ function AutocompleteSuggestion({ suggestion, txt, onSelect }) {
       {!promotion && observedPrice > 0 && suggestion.source !== "history" && (
         <>
           <span style={{ display: "block", color: COLORS.green, fontSize: 12, fontWeight: 850, marginTop: 2 }}>{retailer ? `${retailer} · ` : ""}{formatSmartPrice(observedPrice, suggestion.observedPriceUnitLabel)}</span>
-          {suggestion.packPrice > 0 && <span style={{ display: "block", color: COLORS.muted, fontSize: 11 }}>Conditionnement : {formatMontant(suggestion.packPrice)}</span>}
-          {suggestion.observedAt && <span style={{ display: "block", color: COLORS.muted, fontSize: 11 }}>{getSharedPriceStatusLabel(suggestion.observedAt)} · Relevé le {new Date(suggestion.observedAt).toLocaleDateString("fr-FR")}</span>}
-          <span style={{ display: "block", color: COLORS.cyan, fontSize: 11, fontWeight: 900, marginTop: 2 }}>{txt.observedSuggestion}</span>
+          {suggestion.packPrice > 0 && <span style={{ display: "block", color: COLORS.muted, fontSize: 11 }}>Prix du produit : {formatMontant(suggestion.packPrice)}</span>}
+          {suggestion.observedAt && <span style={{ display: "block", color: COLORS.muted, fontSize: 11 }}>Prix relevé le {new Date(suggestion.observedAt).toLocaleDateString("fr-FR")}</span>}
         </>
       )}
       {promotion && promoPrice > 0 && (
@@ -417,7 +414,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
         retailObservedRetailerName: formatSharedPriceRetailer(price),
         priceSource: "retail_observed",
         estimatedPriceSource: "retail_observed",
-        priceLabel: getSharedPriceStatusLabel(price.observed_at),
+        priceLabel: price.observed_at ? `Prix relevé le ${new Date(price.observed_at).toLocaleDateString("fr-FR")}` : "Prix relevé",
         priceUnitLabel: "",
         comparisonUnitPrice: Number(price.unit_price) || null,
         comparisonUnitLabel: price.unit_label || "",
@@ -1017,7 +1014,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
                   {priceLearning
                     ? txt.usualPriceLearning
                     : retailObservedPrice
-                      ? `${txt.observedLinePrice(item.retailObservedRetailerName)} · ${getSharedPriceStatusLabel(item.retailObservedAt)}`
+                      ? `${item.retailObservedRetailerName || "Magasin"} · ${item.retailObservedAt ? `Prix relevé le ${new Date(item.retailObservedAt).toLocaleDateString("fr-FR")}` : "Prix relevé"}`
                       : item.historicalPrice !== null
                         ? item.priceLabel
                         : txt.priceMissing}
@@ -1025,7 +1022,6 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
                 {item.comparisonUnitPrice > 0 && (
                   <span style={{ display: "block", color: COLORS.green, fontSize: 12, fontWeight: 800, marginTop: 2 }}>
                     {formatSmartPrice(item.comparisonUnitPrice, item.comparisonUnitLabel)}
-                    {item.retailObservedAt ? ` · Relevé le ${new Date(item.retailObservedAt).toLocaleDateString("fr-FR")}` : ""}
                   </span>
                 )}
                 {listQuantity > 1 && (
