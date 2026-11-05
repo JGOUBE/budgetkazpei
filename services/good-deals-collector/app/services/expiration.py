@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 from app.models.candidate import Candidate
+from app.services.catalog_period import publication_period
 
 
 def _as_utc(value: datetime | None) -> datetime | None:
@@ -16,7 +17,8 @@ def is_expired(candidate: Candidate, *, now: datetime | None = None) -> bool:
     current = now or datetime.now(timezone.utc)
     if candidate.content_kind == "permanent_leisure":
         return False
-    ends_at = _as_utc(candidate.ends_at)
+    _, inclusive_end = publication_period(candidate)
+    ends_at = _as_utc(inclusive_end)
     return bool(ends_at and ends_at < current)
 
 
