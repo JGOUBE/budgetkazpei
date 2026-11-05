@@ -165,10 +165,7 @@ def run(settings: Settings, *, requested_max_sources: int | None = None, trigger
     for source in sources:
         result = process_source(source, settings, repositories, collectors, parsers, publisher)
         source_results[source.slug] = {
-            "status": "disabled" if result.skipped_reason == "disabled"
-                else "failed" if result.error_message
-                else "unchanged" if result.skipped_reason == "unchanged"
-                else "processed",
+            "status": "failed" if result.error_message else (result.skipped_reason or "processed"),
             "changed": bool(result.changed),
             "detected": len(result.candidates),
             "published": sum(item.status == "published" for item in result.candidates),
@@ -379,6 +376,11 @@ def main() -> int:
         f"duplicates={summary.duplicates_detected} "
         f"errors={summary.errors_count}"
     )
+    # If every consulted source failed, do not report a successful Cloud Run
+    # job just because the error rows were recorded. The deployment disables
+    # retries, so this signal adds no automatic extra billable execution.
+    if summary.sources_checked > 0 and summary.errors_count >= summary.sources_checked:
+        return 1
     return 0 if summary.status in {"completed", "completed_with_errors"} else 1
 
 
