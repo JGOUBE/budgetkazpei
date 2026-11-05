@@ -634,3 +634,49 @@ html, body, #root {
 .bkp-modal-premium button:not(:disabled):hover {
   filter: brightness(1.17) saturate(.86);
 }
+
+
+/* Courses intelligentes — suggestions en véritables lignes, sans relief.
+   Ces règles ciblées neutralisent uniquement les styles globaux des boutons. */
+#root .bkp-shopping-suggestion-list {
+  border-radius: 10px;
+  box-shadow: none !important;
+}
+#root .bkp-shopping-suggestion-list > button.bkp-shopping-suggestion-row,
+#root .bkp-shopping-suggestion-list > button.bkp-shopping-suggestion-row:not(:disabled) {
+  display: grid;
+  width: 100%;
+  min-height: 52px;
+  border: 0 !important;
+  border-bottom: 1px solid var(--bkp-border, #d8e0e8) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+  background-image: none !important;
+  transform: none !important;
+  filter: none !important;
+  margin: 0 !important;
+}
+#root .bkp-shopping-suggestion-list > button.bkp-shopping-suggestion-row:last-child {
+  border-bottom: 0 !important;
+}
+#root .bkp-shopping-suggestion-list > button.bkp-shopping-suggestion-row:not(:disabled):hover {
+  background: rgba(35, 211, 214, .055) !important;
+  box-shadow: none !important;
+  transform: none !important;
+  filter: none !important;
+}
+#root .bkp-shopping-suggestion-list > button.bkp-shopping-suggestion-row:not(:disabled):active {
+  background: rgba(35, 211, 214, .10) !important;
+  box-shadow: none !important;
+  transform: none !important;
+  filter: none !important;
+}
+#root .bkp-shopping-suggestion-list > button.bkp-shopping-suggestion-row::after {
+  display: none !important;
+}
+#root .bkp-shopping-suggestion-list > button.bkp-shopping-suggestion-row:focus-visible {
+  outline: 2px solid var(--bkp-focus-ring, #23d3d6);
+  outline-offset: -3px;
+  z-index: 1;
+}

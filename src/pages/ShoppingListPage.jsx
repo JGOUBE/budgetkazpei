@@ -267,6 +267,7 @@ function AutocompleteSuggestion({ suggestion, txt, onSelect }) {
   return (
     <button
       data-shopping-suggestion-source={suggestion.source}
+      className="bkp-shopping-suggestion-row"
       type="button"
       onClick={onSelect}
       aria-label={`Ajouter ${suggestion.label}${price ? `, ${price}` : ""}`}
@@ -991,7 +992,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
         {suggestions.historical.length > 0 && (
           <div data-shopping-suggestion-group="history" style={{ marginTop: 12 }}>
             <div style={{ color: COLORS.muted, fontSize: 11, fontWeight: 950, letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 6 }}>{txt.habitualSuggestions}</div>
-            <div style={{ display: "grid", gap: 0, border: `1px solid ${COLORS.borderSubtle}`, borderRadius: 12, overflow: "hidden", background: COLORS.card }}>
+            <div className="bkp-shopping-suggestion-list" style={{ display: "grid", gap: 0, border: `1px solid ${COLORS.borderSubtle}`, borderRadius: 10, overflow: "hidden", background: COLORS.card }}>
               {suggestions.historical.map(suggestion => <AutocompleteSuggestion key={suggestion.key} suggestion={suggestion} txt={txt} onSelect={() => addItem(suggestion)} />)}
             </div>
           </div>
@@ -999,7 +1000,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
         {suggestions.observed.length > 0 && (
           <div data-shopping-suggestion-group="observed" style={{ marginTop: 12 }}>
             <div style={{ color: COLORS.muted, fontSize: 11, fontWeight: 950, letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 6 }}>{txt.observedPriceSuggestions}</div>
-            <div style={{ display: "grid", gap: 0, border: `1px solid ${COLORS.borderSubtle}`, borderRadius: 12, overflow: "hidden", background: COLORS.card }}>
+            <div className="bkp-shopping-suggestion-list" style={{ display: "grid", gap: 0, border: `1px solid ${COLORS.borderSubtle}`, borderRadius: 10, overflow: "hidden", background: COLORS.card }}>
               {suggestions.observed.map(suggestion => <AutocompleteSuggestion key={suggestion.key} suggestion={suggestion} txt={txt} onSelect={() => addItem(suggestion)} />)}
             </div>
           </div>
@@ -1007,7 +1008,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
         {suggestions.retail.length > 0 && (
           <div data-shopping-suggestion-group="retail" style={{ marginTop: 12 }}>
             <div style={{ color: COLORS.muted, fontSize: 11, fontWeight: 950, letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 6 }}>{txt.currentPromotionSuggestions}</div>
-            <div style={{ display: "grid", gap: 0, border: `1px solid ${COLORS.borderSubtle}`, borderRadius: 12, overflow: "hidden", background: COLORS.card }}>
+            <div className="bkp-shopping-suggestion-list" style={{ display: "grid", gap: 0, border: `1px solid ${COLORS.borderSubtle}`, borderRadius: 10, overflow: "hidden", background: COLORS.card }}>
               {suggestions.retail.map(suggestion => <AutocompleteSuggestion key={suggestion.key} suggestion={suggestion} txt={txt} onSelect={() => addItem(suggestion)} />)}
             </div>
           </div>
@@ -1017,7 +1018,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
             <div style={{ color: COLORS.muted, fontSize: 11, fontWeight: 950, letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 6 }}>
               {locale === "cr" ? "Produits catalogue" : "Catalogue partagé"}
             </div>
-            <div style={{ display: "grid", gap: 0, border: `1px solid ${COLORS.borderSubtle}`, borderRadius: 12, overflow: "hidden", background: COLORS.card }}>
+            <div className="bkp-shopping-suggestion-list" style={{ display: "grid", gap: 0, border: `1px solid ${COLORS.borderSubtle}`, borderRadius: 10, overflow: "hidden", background: COLORS.card }}>
               {suggestions.catalog.map(suggestion => <AutocompleteSuggestion key={suggestion.key} suggestion={suggestion} txt={txt} onSelect={() => addItem(suggestion)} />)}
             </div>
           </div>
