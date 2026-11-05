@@ -20,7 +20,7 @@ create policy shopping_market_links_authenticated_read
 with candidate as (
   select m.id market_id, s.id shopping_id,
     regexp_match(lower(btrim(s.size_label)),
-      '^([0-9]+([.,][0-9]+)?)\\s*(kg|g|ml|cl|l)$') size_match,
+      '^([0-9]+([.,][0-9]+)?)[[:space:]]*(kg|g|ml|cl|l)$') size_match,
     m.package_size_value market_size, m.package_size_unit market_unit
   from public.market_products m
   join public.shopping_products s on lower(btrim(m.canonical_name))=lower(btrim(s.display_name))
