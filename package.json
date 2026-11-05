@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/run-receipt-personal-alias-tests.mjs && vite build",
+    "build": "node scripts/run-verified-shopping-link-tests.mjs && vite build",
     "test": "node scripts/run-assistant-tests.mjs",
     "test:scanner": "node scripts/run-scanner-regression.mjs",
     "test:landing": "node scripts/run-landing-tests.mjs",
@@ -34,7 +34,8 @@
     "test:market-alias-atomic-apply": "node scripts/run-market-alias-atomic-apply-tests.mjs",
     "test:shopping-retail-catalog": "node scripts/run-shopping-retail-catalog-tests.mjs",
     "test:shopping-optimizer": "node scripts/run-shopping-basket-optimizer-tests.mjs",
-    "test:receipt-personal-alias": "node scripts/run-receipt-personal-alias-tests.mjs"
+    "test:receipt-personal-alias": "node scripts/run-receipt-personal-alias-tests.mjs",
+    "test:verified-shopping-links": "node scripts/run-verified-shopping-link-tests.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.0",
