@@ -1233,7 +1233,13 @@ export default function ReceiptsPage({
   }
 
   async function processCompletedScan(scan, sourceFile) {
-    const parsed = scan.receipt
+    const parsed = {
+      ...scan.receipt,
+      items: (Array.isArray(scan.receipt?.items) ? scan.receipt.items : []).map(item => ({
+        ...item,
+        category: suggestReceiptCategory(item),
+      })),
+    }
     setScanProgress({
       step: "finalizing",
       label: txt.analysisPreparing,
