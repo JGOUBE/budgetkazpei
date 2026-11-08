@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react"
-import { Copy, ExternalLink, Eye, Mail, MessageCircle, Minus, Plus, Save, Send, Share2, Tag, Trash2 } from "lucide-react"
+import { Copy, ExternalLink, Eye, Mail, MessageCircle, Minus, Pencil, Plus, Save, Send, Share2, Tag, Trash2 } from "lucide-react"
 import { listShoppingItems } from "../features/shopping/services/shoppingEngine"
 import { supabase } from "../services/supabase"
 import { createAppSectionTarget } from "../services/appSectionNavigation"
@@ -27,6 +27,7 @@ import {
   listShoppingListSnapshots,
   markShoppingListSnapshotDeleted,
   saveShoppingListSnapshot,
+  updateShoppingListSnapshot,
 } from "../services/shoppingList/shoppingListSnapshots"
 import { MANUAL_SAVE_METHOD } from "../services/shoppingList/shoppingListSnapshotModel"
 import { buildMultiRetailBasketOptimization } from "../services/shoppingList/shoppingBasketOptimizer"
@@ -321,6 +322,8 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
   const searchInputRef = useRef(null)
   const [searchFocused, setSearchFocused] = useState(false)
   const [snapshots, setSnapshots] = useState([])
+  const [editingSnapshot, setEditingSnapshot] = useState(null)
+  const [editingSnapshotOriginal, setEditingSnapshotOriginal] = useState("")
   const [hiddenSnapshotIds, setHiddenSnapshotIds] = useState(() => new Set())
   const [shareModal, setShareModal] = useState(null)
   const [previewSnapshot, setPreviewSnapshot] = useState(null)
@@ -697,6 +700,29 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
     }
   }
 
+  function editSavedSnapshot(snapshot) {
+    if (!snapshot?.items?.length) return
+    const restored = snapshot.items.map((item, index) => ({
+      ...item,
+      id: item.id || `saved-${snapshot.id}-${index}`,
+      name: item.name || item.product_name || item.label || "",
+      list_quantity: getShoppingListQuantity(item),
+      checked: Boolean(item.checked),
+    }))
+    setItems(restored)
+    setEditingSnapshot(snapshot)
+    setEditingSnapshotOriginal(JSON.stringify(restored))
+    setQuery("")
+    setPreviewSnapshot(null)
+    setNotice(null)
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }
+
+  function cancelSnapshotEdit() {
+    setEditingSnapshot(null)
+    setEditingSnapshotOriginal("")
+  }
+
   async function saveCurrentSnapshot() {
     if (saveInFlightRef.current) return
     if (estimate.items.length === 0) {
@@ -708,8 +734,24 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
     setIsSaving(true)
 
     try {
-      const saved = await saveSnapshot(MANUAL_SAVE_METHOD)
+      const existing = editingSnapshot
+      const changed = Boolean(existing) && JSON.stringify(items) !== editingSnapshotOriginal
+      if (existing && !changed) {
+        setNotice({ message: locale === "cr" ? "Lis-la pa la sanjé." : "Liste inchangée : date de suppression conservée.", kind: "success" })
+        return
+      }
+      const saved = existing
+        ? await updateShoppingListSnapshot({
+            userId: user?.id,
+            id: existing.id,
+            items: buildShoppingBasketSnapshotItems(estimate.items),
+            totalEstimated: estimate.total,
+            missingPriceCount: estimate.missingPriceCount,
+            totalItems: estimate.totalItems,
+          })
+        : await saveSnapshot(MANUAL_SAVE_METHOD)
       if (!saved) throw new Error("snapshot_not_saved")
+      if (existing) cancelSnapshotEdit()
       await refreshSnapshots()
       setNotice({ message: txt.saved, kind: "success" })
     } catch {
@@ -990,6 +1032,12 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
         <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 10 }}>
           <input ref={searchInputRef} data-shopping-add value={query} onFocus={() => setSearchFocused(true)} onBlur={() => setSearchFocused(false)} onChange={e => { setQuery(e.target.value); setShowAllSuggestions(false); if (isMobile) window.requestAnimationFrame(() => searchInputRef.current?.scrollIntoView({ block: "start", behavior: "smooth" })) }} onKeyDown={e => e.key === "Enter" && addItem()} placeholder={txt.addPlaceholder} style={{ minHeight: 50, scrollMarginTop: 100, borderRadius: 14, border: `1px solid ${COLORS.inputBorder}`, background: COLORS.input, color: COLORS.text, padding: "0 14px" }} />
         </div>
+        {editingSnapshot && (
+          <div style={{ marginTop: 10, display: "flex", gap: 8, alignItems: "center", justifyContent: "space-between", color: COLORS.text, fontSize: 12 }}>
+            <span>{locale === "cr" ? "Ou i modifi" : "Modification"} : {editingSnapshot.title}</span>
+            <button type="button" onClick={cancelSnapshotEdit} style={{ border: 0, background: "transparent", color: COLORS.muted, fontWeight: 800 }}>Annuler</button>
+          </div>
+        )}
         {duplicateCandidate && (
           <div role="status" data-shopping-duplicate-prompt style={{ marginTop: 12, border: `1px solid ${COLORS.yellow}66`, borderRadius: 14, background: "rgba(245,158,11,.10)", padding: 12 }}>
             <div style={{ color: COLORS.text, fontWeight: 900 }}>{txt.duplicateTitle(duplicateCandidate.name)}</div>
@@ -1050,7 +1098,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
           <button type="button" onClick={() => addItem()} style={{ minHeight: 50, border: "none", borderRadius: 14, background: "linear-gradient(145deg, #8B5CF6, #6D28D9)", color: "#fff", border: "1px solid #A78BFA", boxShadow: "inset 2px 2px 0 rgba(255,255,255,.25), 0 6px 0 #5421B8, 0 12px 22px rgba(109,40,217,.22)", fontWeight: 950, padding: "0 16px" }}>{txt.add}</button>
           <div data-shopping-list-actions style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8, minWidth: 0 }}>
             <button type="button" onClick={saveCurrentSnapshot} disabled={isSaving} style={{ minWidth: 0, minHeight: 50, border: "1px solid #C4A0F6", borderRadius: 14, background: "linear-gradient(145deg, #F2E9FF, #E1D1FA)", color: "#4F238C", fontSize: isMobile ? 12 : 13, fontWeight: 950, padding: "0 4px", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5, whiteSpace: "nowrap", opacity: isSaving ? 0.7 : 1, cursor: isSaving ? "wait" : "pointer" }}>
-              <Save size={17} aria-hidden="true" /> <span>{isSaving ? txt.saving : txt.save}</span>
+              <Save size={17} aria-hidden="true" /> <span>{isSaving ? txt.saving : editingSnapshot ? (locale === "cr" ? "Anrezistré modifikasion" : "Enregistrer les modifications") : txt.save}</span>
             </button>
             <button type="button" onClick={startShare} style={{ minWidth: 0, minHeight: 50, border: "1px solid #C4A0F6", borderRadius: 14, background: "linear-gradient(145deg, #F2E9FF, #E1D1FA)", color: "#4F238C", fontSize: isMobile ? 12 : 13, fontWeight: 950, padding: "0 4px", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5, whiteSpace: "nowrap" }}>
               <Share2 size={17} aria-hidden="true" /> <span>{txt.share}</span>
@@ -1137,7 +1185,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
           <div>
             <h2 style={{ color: COLORS.text, margin: 0, fontSize: 22 }}>{txt.savedLists}</h2>
-            <div style={{ color: COLORS.muted, marginTop: 4 }}>{txt.savedListsText}</div>
+            <div style={{ color: COLORS.muted, marginTop: 4 }}>{locale === "cr" ? "7 zour san modifikasion, la lis i efas." : "Suppression après 7 jours sans modification."}</div>
           </div>
         </div>
         <div style={{ display: "grid", gap: 10, marginTop: 14 }}>
@@ -1151,7 +1199,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
                 <div style={{ color: COLORS.text, fontWeight: 950 }}>{snapshot.title}</div>
                 <div style={{ color: COLORS.muted, marginTop: 4, fontSize: 13 }}>
                   {[
-                    new Date(snapshot.createdAt).toLocaleDateString("fr-FR"),
+                    new Date(snapshot.updatedAt || snapshot.createdAt).toLocaleDateString("fr-FR"),
                     txt.expiresIn(daysUntil(snapshot.expiresAt)),
                     txt.products(snapshot.totalItems),
                     snapshot.totalEstimated > 0 ? txt.estimatedTotal(formatMontant(snapshot.totalEstimated)) : null,
@@ -1160,6 +1208,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
                 </div>
               </div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <SmallButton onClick={() => editSavedSnapshot(snapshot)} icon={<Pencil size={16} />} label={locale === "cr" ? "Modifié" : "Modifier"} />
                 <SmallButton onClick={() => setPreviewSnapshot(snapshot)} icon={<Eye size={16} />} label={txt.view} />
                 <SmallButton onClick={() => shareSavedSnapshot(snapshot)} icon={<Send size={16} />} label={txt.share} />
                 <SmallButton onClick={() => deleteSnapshot(snapshot.id)} icon={<Trash2 size={16} />} label={isDeleting ? txt.deleting : txt.delete} disabled={isDeleting} danger />
