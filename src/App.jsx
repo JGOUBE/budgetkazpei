@@ -835,6 +835,7 @@ function BudgetKazPeiApp({
         {activeNav === "receipts" && (
           <ReceiptsPage
             user={user}
+            isAdmin={isAdmin}
             t={t}
             isMobile={isMobile}
             isPremium={isPremium}
