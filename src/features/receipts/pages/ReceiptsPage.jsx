@@ -1059,6 +1059,7 @@ async function mergeReceiptImagesVertically(files = []) {
 
 export default function ReceiptsPage({
   user,
+  isAdmin = false,
   t,
   isMobile = false,
   isPremium = false,
@@ -1293,7 +1294,7 @@ export default function ReceiptsPage({
       const splitRetryUsed = Boolean(scan.metrics?.splitRetryUsed)
       const splitStillNeedsReview = splitRetryUsed && (String(parsed.scan_status || "").includes("manual_review_required") || String(parsed.scan_status || "").includes("long_manual_review"))
       const longUsableReview = String(parsed.scan_status || "").includes("long_usable_review")
-      setMessage(isKreol
+      setMessage(!isAdmin ? "" : isKreol
         ? splitStillNeedsReview
           ? "Tike-la ankor difisil pou lir. Korize bann zinformasyon avan anrezistre."
           : splitRetryUsed
@@ -1355,11 +1356,11 @@ export default function ReceiptsPage({
     setDuplicateReceipt(null)
     setAllowDuplicateImport(false)
     setMode("validate")
-    setMessage(buildScanPreviewSummary({
+    setMessage(isAdmin ? buildScanPreviewSummary({
       detectedItemsCount,
       reviewItemsCount,
       txt,
-    }))
+    }) : "")
   }
 
   async function handleLongTicketScan() {
@@ -1862,7 +1863,9 @@ export default function ReceiptsPage({
         console.warn("[scanner] scan_usage ou scan_metrics ERREUR exacte:", usageError)
       }
 
-      setMessage(txt.saved)
+      setMessage(!isAdmin && draft.ocr_status !== "manual" && Number(importResult.shoppingItemsCreated || 0) > 0
+        ? `${txt.saved} · ${importResult.shoppingItemsCreated} prix transmis à Courses intelligentes`
+        : txt.saved)
       setDraft(null)
       setReceipt(null)
       setDuplicateReceipt(null)
@@ -2498,6 +2501,7 @@ export default function ReceiptsPage({
       {mode === "validate" && draft && (
         <ValidationForm
           txt={txt}
+          isAdmin={isAdmin}
           draft={draft}
           busy={busy}
           validationView={validationView}
@@ -2530,6 +2534,7 @@ export default function ReceiptsPage({
       {mode === "history" && (
         <HistoryList
           txt={txt}
+          isAdmin={isAdmin}
           rows={receiptRows}
           busy={busy}
           onOpen={openDetail}
@@ -2540,6 +2545,7 @@ export default function ReceiptsPage({
       {mode === "detail" && detail && (
         <ReceiptDetail
           txt={txt}
+          isAdmin={isAdmin}
           receipt={detail}
           imageUrl={detailImageUrl}
           busy={busy}
@@ -2805,6 +2811,7 @@ function AnalysisScreen({ progress, txt }) {
 function ValidationForm({
   txt,
   draft,
+  isAdmin = false,
   busy,
   validationView,
   duplicateReceipt,
@@ -2857,6 +2864,75 @@ function ValidationForm({
     reviewItemsCount,
     txt,
   })
+
+  const simpleScan = !isAdmin && draft.ocr_status !== "manual"
+  const trustedPriceCount = draft.is_food_ticket && !draft.total_needs_review && !String(draft.scan_status || "").includes("manual_review_required")
+    ? getValidDraftItems(draft).filter(item => isItemEligibleForSmartShopping(item)).length
+    : 0
+  if (simpleScan) {
+    const totalValue = Number(draft.total_amount || 0)
+    return (
+      <div style={cardStyle({ display: "grid", gap: 14, maxWidth: 520, margin: "0 auto", width: "100%", boxSizing: "border-box" })}>
+        <h2 style={{ color: COLORS.text, margin: 0, fontSize: 22 }}>
+          {txt.ticketReady}
+        </h2>
+        <div style={{ color: COLORS.muted, fontSize: 13 }}>
+          {[draft.store_name, draft.purchase_date].filter(Boolean).join(" · ")}
+        </div>
+        <div style={{ background: COLORS.cardLight, borderRadius: 16, padding: "18px 12px", textAlign: "center" }}>
+          <div style={{ color: COLORS.muted, fontSize: 13 }}>{txt.total}</div>
+          {totalValue > 0 && !draft.total_needs_review ? (
+            <strong style={{ color: COLORS.text, display: "block", fontSize: 32, marginTop: 5 }}>{formatMontant(totalValue)}</strong>
+          ) : (
+            <div style={{ color: COLORS.yellow, fontWeight: 800, marginTop: 6 }}>
+              {txt.totalReview || txt.total}
+            </div>
+          )}
+        </div>
+        <label style={{ color: COLORS.muted, fontSize: 13, display: "grid", gap: 7 }}>
+          {totalValue > 0 && !draft.total_needs_review
+            ? (txt === TEXT.kr ? "Korize montan si i fo" : "Corriger le total si nécessaire")
+            : (txt.totalReview || txt.total)}
+          <input
+            aria-label={txt.total}
+            type="number"
+            inputMode="decimal"
+            min="0.01"
+            step="0.01"
+            style={inputStyle()}
+            value={draft.total_amount ?? ""}
+            onChange={event => setDraft(prev => ({
+              ...prev,
+              total_amount: event.target.value,
+              total_needs_review: Number(event.target.value || 0) <= 0,
+              total_source: Number(event.target.value || 0) > 0 ? "user_confirmed" : "missing_or_unreliable",
+              total_confidence: Number(event.target.value || 0) > 0 ? 1 : 0,
+            }))}
+          />
+        </label>
+        {trustedPriceCount > 0 && (
+          <div style={{ color: COLORS.green, fontSize: 13, fontWeight: 800, textAlign: "center" }}>
+            {trustedPriceCount} {txt === TEXT.kr ? "pri pou Courses intelligentes" : "prix proposés à Courses intelligentes"}
+          </div>
+        )}
+        {duplicateReceipt && !allowDuplicateImport && (
+          <div style={{ display: "grid", gap: 8, padding: 12, border: `1px solid ${COLORS.border}`, borderRadius: 12 }}>
+            <strong style={{ color: COLORS.yellow }}>{txt.duplicateTitle}</strong>
+            <div style={{ color: COLORS.muted, fontSize: 13 }}>{txt.duplicateMessage}</div>
+            <button type="button" style={{ ...inputStyle(), cursor: "pointer" }} onClick={() => {
+              setAllowDuplicateImport(true)
+              setDraft(prev => ({ ...prev, duplicate_confirmed: true, duplicate_of_receipt_id: duplicateReceipt.id }))
+            }}>{txt.duplicateAddAnyway}</button>
+          </div>
+        )}
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1.3fr)", gap: 10 }}>
+          <ActionButton label={txt.cancel} onClick={onCancel} disabled={busy} variant="neutral" />
+          <ActionButton label={busy ? txt.savingTicketShort : txt.saveTicket} onClick={onSave} disabled={busy || Boolean(validationError) || (duplicateReceipt && !allowDuplicateImport)} />
+        </div>
+        {busy && <SavingReceiptNotice txt={txt} />}
+      </div>
+    )
+  }
 
   if (validationView === "preview") {
     return (
@@ -3241,7 +3317,7 @@ function MetaChip({ label, strong = false }) {
   )
 }
 
-function HistoryList({ txt, rows, busy, onOpen, onDelete }) {
+function HistoryList({ txt, rows, busy, isAdmin = false, onOpen, onDelete }) {
   const safeRows = Array.isArray(rows) ? rows : []
 
   return (
@@ -3264,7 +3340,7 @@ function HistoryList({ txt, rows, busy, onOpen, onDelete }) {
               <strong>{buildReceiptHistorySummary(row, formatMontant)}</strong>
               <span style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, width: "100%" }}>
                 <button type="button" disabled={busy} onClick={() => onOpen(row)} style={{ minHeight: 40, borderRadius: 12, background: "linear-gradient(145deg, #70E5C5, #39C9A2)", color: "#083D32", border: "1px solid #91ECD3", boxShadow: "inset 2px 2px 0 rgba(255,255,255,.38), 0 4px 0 #27A985, 0 8px 14px rgba(32,184,142,.15)", fontWeight: 950, padding: "0 7px", fontSize: 12 }}>
-                  {isBudgetOkArticlesPartial(row) || (hasReliableBudgetForReceipt(row) && !isLockedScannedReceipt(row))
+                  {!isAdmin ? txt.viewDetails : isBudgetOkArticlesPartial(row) || (hasReliableBudgetForReceipt(row) && !isLockedScannedReceipt(row))
                     ? txt.correctArticles
                     : isLockedScannedReceipt(row) || receiptHasUnreliableArticleCount(row)
                       ? txt.viewDetails
@@ -3285,6 +3361,7 @@ function HistoryList({ txt, rows, busy, onOpen, onDelete }) {
 function ReceiptDetail({
   txt,
   receipt,
+  isAdmin = false,
   imageUrl,
   busy,
   onBack,
@@ -3372,6 +3449,41 @@ function ReceiptDetail({
       ...prev,
       [itemId]: createReceiptItemDraft(persistedItem),
     }))
+  }
+
+  if (!isAdmin && receipt.ocr_status !== "manual") {
+    const contributed = receipt.is_food_ticket ? (receipt.receipt_items || []).filter(item => isItemEligibleForSmartShopping(item)).length : 0
+    return (
+      <div style={cardStyle({ display: "grid", gap: 12, maxWidth: 520, margin: "0 auto", width: "100%", boxSizing: "border-box" })}>
+        <button type="button" onClick={onBack} style={{ color: COLORS.cyan, border: 0, background: "transparent", textAlign: "left", fontWeight: 850 }}>
+          ← {txt.title}
+        </button>
+        <h2 style={{ margin: 0, color: COLORS.text }}>{receipt.store_name || txt.scanTitle}</h2>
+        <div style={{ color: COLORS.muted, fontSize: 13 }}>{receipt.purchase_date}</div>
+        <div style={{ background: COLORS.cardLight, borderRadius: 14, padding: 18, textAlign: "center" }}>
+          <div style={{ color: COLORS.muted, fontSize: 13 }}>{txt.total}</div>
+          <strong style={{ color: COLORS.text, fontSize: 30 }}>{formatMontant(Number(receipt.total_amount || 0))}</strong>
+        </div>
+        {contributed > 0 && (
+          <div style={{ textAlign: "center", color: COLORS.green, fontSize: 13, fontWeight: 800 }}>
+            {contributed} {txt === TEXT.kr ? "pri pou Courses intelligentes" : "prix retenus pour Courses intelligentes"}
+          </div>
+        )}
+        {imageUrl && (
+          <div>
+            <button type="button" onClick={() => setShowOriginal(prev => !prev)} style={{ minHeight: 44, border: `1px solid ${COLORS.border}`, borderRadius: 12, background: COLORS.cardLight, color: COLORS.text, width: "100%", fontWeight: 800 }}>
+              {showOriginal ? "Masquer la photo" : "Voir la photo du ticket"}
+            </button>
+            {showOriginal && <img src={imageUrl} alt="Photo du ticket" style={{ width: "100%", maxHeight: 420, objectFit: "contain", borderRadius: 12, marginTop: 10 }} />}
+          </div>
+        )}
+        <ActionButton label="Scanner un autre ticket" onClick={onScanAnother} disabled={busy} />
+        <ActionButton label="Retour à Mes tickets" onClick={onBackToTickets || onBack} disabled={busy} variant="neutral" />
+        <button type="button" onClick={onDelete} disabled={busy} style={{ minHeight: 44, border: 0, background: "transparent", color: COLORS.red, fontWeight: 800 }}>
+          {txt.deleteTicket}
+        </button>
+      </div>
+    )
   }
 
   return (
