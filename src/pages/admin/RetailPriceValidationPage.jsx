@@ -797,10 +797,10 @@ export default function RetailPriceValidationPage({
         </div>
       )}
 
-      {selectedIds.length > 0 && (
+      {(selectedObservedApprovalIds.length > 0 || selectedPromotionApprovalIds.length > 0 || selectedObservedPublishIds.length > 0 || selectedPromotionPublishIds.length > 0) && (
         <div style={{ display: "grid", gap: 10, border: `1px solid ${ds.border}`, borderRadius: 18, background: ds.surface, padding: 16 }}>
           <div style={{ color: ds.textPrimary, fontWeight: 900 }}>
-            {`${selectedIds.length} element(s) selectionnes`}
+            {`${selectedIds.length} sélectionné${selectedIds.length > 1 ? "s" : ""}`}
           </div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             {selectedObservedApprovalIds.length > 0 && (
@@ -840,10 +840,10 @@ export default function RetailPriceValidationPage({
       <div style={{ display: "grid", gap: 18, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 390px), 1fr))", minWidth: 0 }}>
         <div style={{ border: `1px solid ${ds.border}`, borderRadius: 18, background: ds.surface, overflow: "hidden", minWidth: 0 }}>
           <div style={{ padding: "14px 16px", borderBottom: `1px solid ${ds.border}`, color: ds.textSecondary, fontWeight: 800, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span>{loadingItems ? "Chargement..." : `${filteredItems.length} candidat(s)`}</span>
+            <span>{loadingItems ? "Chargement..." : `${filteredItems.length} produits${selectedIds.length ? ` · ${selectedIds.length} sélectionné${selectedIds.length > 1 ? "s" : ""}` : ""}`}</span>
             {filteredItems.length > 0 && (
               <button type="button" onClick={toggleSelectAll} style={{ border: 0, background: "transparent", color: ds.primary, cursor: "pointer", fontWeight: 800 }}>
-                {selectedIds.length === filteredItems.length ? "Tout deselectionner" : "Tout selectionner"}
+                {selectedIds.length === filteredItems.length ? "Désélectionner" : "Tout sélectionner"}
               </button>
             )}
           </div>
@@ -852,52 +852,55 @@ export default function RetailPriceValidationPage({
             {filteredItems.map(item => {
               const active = item.id === selectedItem?.id
               const checked = selectedIds.includes(item.id)
-              const bucket = getRetailAdminBucket(item)
+              const linked = hasReferenceProduct(item)
               return (
                 <div
                   key={item.id}
                   style={{
                     borderBottom: `1px solid ${ds.border}`,
-                    background: active ? "rgba(249,115,22,.08)" : "transparent",
-                    padding: 14,
-                    display: "grid",
-                    gap: 8,
+                    borderLeft: active ? `3px solid ${ds.primary}` : "3px solid transparent",
+                    background: active ? "rgba(249,115,22,.055)" : "transparent",
+                    padding: "10px 9px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    minWidth: 0,
                   }}
                 >
-                  <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
-                    <input type="checkbox" checked={checked} onChange={() => toggleSelection(item.id)} />
-                    <button
-                      type="button"
-                      onClick={() => setSelectedId(item.id)}
-                      style={{
-                        flex: 1,
-                        border: 0,
-                        background: "transparent",
-                        textAlign: "left",
-                        cursor: "pointer",
-                        padding: 0,
-                        display: "grid",
-                        gap: 8,
-                        fontFamily: "inherit",
-                      }}
-                    >
-                      <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>
-                        <strong style={{ color: ds.textPrimary }}>{item.product_name}</strong>
-                        <Badge tone={stageTone(bucket)}>{getRetailAdminBucketLabel(bucket)}</Badge>
-                      </div>
-                      <div style={{ color: ds.textSecondary, fontSize: 13 }}>
-                        {[item.brand, item.package_format, item.store_name].filter(Boolean).join(" · ")}
-                      </div>
-                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                        <Badge tone={item.price_type === "promotion" ? "warning" : "neutral"}>
-                          {item.price_type === "promotion" ? "Promotion" : "Prix observe"}
-                        </Badge>
-                        <Badge tone={hasReferenceProduct(item) ? "success" : "danger"}>
-                          {getRetailProductStateLabel(item)}
-                        </Badge>
-                      </div>
-                    </button>
-                  </div>
+                  <input
+                    aria-label={`Sélectionner ${item.product_name}`}
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => toggleSelection(item.id)}
+                    style={{ flexShrink: 0, margin: 0, width: 16, height: 16 }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setSelectedId(item.id)}
+                    style={{
+                      minWidth: 0,
+                      flex: 1,
+                      border: 0,
+                      background: "transparent",
+                      textAlign: "left",
+                      cursor: "pointer",
+                      padding: 0,
+                      display: "grid",
+                      gap: 4,
+                      fontFamily: "inherit",
+                    }}
+                  >
+                    <strong style={{ color: ds.textPrimary, fontSize: 14, fontWeight: 800, lineHeight: 1.35, overflowWrap: "anywhere" }}>
+                      {item.product_name}
+                    </strong>
+                    <span style={{ color: ds.textSecondary, fontSize: 12, lineHeight: 1.35, overflowWrap: "anywhere" }}>
+                      {[item.brand, item.package_format, item.store_name].filter(Boolean).join(" · ")}
+                    </span>
+                    <span style={{ fontSize: 11, lineHeight: 1.35, color: linked ? ds.success : ds.danger, fontWeight: 700 }}>
+                      {item.price_type === "promotion" ? "Promo" : "Prix relevé"} · {linked ? "Associé" : "À associer"}
+                    </span>
+                  </button>
+                  <span aria-hidden="true" style={{ color: ds.textSecondary, fontSize: 20, flexShrink: 0 }}>›</span>
                 </div>
               )
             })}
