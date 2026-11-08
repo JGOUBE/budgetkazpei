@@ -696,15 +696,16 @@ export default function RetailPriceValidationPage({
   }
 
   return (
-    <div style={{ display: "grid", gap: 18 }}>
+    <div style={{ display: "grid", gap: 14, minWidth: 0, width: "100%", maxWidth: "100%" }}>
       <div
         style={{
           background: `linear-gradient(135deg, ${ds.surface}, ${ds.elevated})`,
           border: `1px solid ${ds.border}`,
-          borderRadius: 24,
-          padding: 20,
+          borderRadius: 18,
+          padding: "clamp(12px, 3vw, 20px)",
+          minWidth: 0,
           display: "grid",
-          gap: 14,
+          gap: 12,
         }}
       >
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
@@ -712,11 +713,11 @@ export default function RetailPriceValidationPage({
             <div style={{ color: ds.primary, fontWeight: 900, fontSize: 12, letterSpacing: ".08em", textTransform: "uppercase" }}>
               Administration privee
             </div>
-            <h2 style={{ margin: "6px 0 4px", color: ds.textPrimary, fontSize: 28, lineHeight: 1.05 }}>
-              Publication des promotions et prix observes retail
+            <h2 style={{ margin: "4px 0", color: ds.textPrimary, fontSize: "clamp(20px, 4vw, 26px)", lineHeight: 1.15, overflowWrap: "anywhere" }}>
+              Validation des prix
             </h2>
             <p style={{ margin: 0, color: ds.textSecondary, maxWidth: 820 }}>
-              Validation privee reservee a Jacques. Un candidat n'est considere publie que lorsqu'il est visible publiquement et rattache a un produit de reference.
+              Vérifier, associer et publier les relevés.
             </p>
           </div>
 
@@ -725,11 +726,11 @@ export default function RetailPriceValidationPage({
             onClick={() => onGoBack?.()}
             style={buttonStyle()}
           >
-            Retour au tableau de bord
+            Retour
           </button>
         </div>
 
-        <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
+        <div style={{ display: "grid", gap: 10, minWidth: 0, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 220px), 1fr))" }}>
           <LabeledField label="Collecte">
             <select
               value={selectedRunId || ""}
@@ -757,7 +758,7 @@ export default function RetailPriceValidationPage({
           </LabeledField>
         </div>
 
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <div style={{ display: "grid", gap: 8, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 135px), 1fr))" }}>
           {["needs_review", "ready", "published", "rejected"].map(bucket => {
             const active = filters.bucket === bucket
             return (
@@ -765,7 +766,7 @@ export default function RetailPriceValidationPage({
                 key={bucket}
                 type="button"
                 onClick={() => setFilters(current => ({ ...current, bucket }))}
-                style={tabButtonStyle(active)}
+                style={{ ...tabButtonStyle(active), minWidth: 0, padding: "8px 10px", borderRadius: 12, fontSize: 13 }}
               >
                 {`${getRetailAdminBucketLabel(bucket)} (${stageCounts[bucket] || 0})`}
               </button>
@@ -774,9 +775,9 @@ export default function RetailPriceValidationPage({
         </div>
 
         {selectedRun && (
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
             <Badge>{`${selectedRun.candidates_total} produits`}</Badge>
-            <Badge tone="success">{`${selectedRun.observed_prices_total} prix observes`}</Badge>
+            <Badge tone="success">{`${selectedRun.observed_prices_total} prix relevés`}</Badge>
             <Badge tone="warning">{`${selectedRun.promotions_total} promotions prouvees`}</Badge>
             <Badge>{`${selectedRun.matched_total} produits associes`}</Badge>
             <Badge tone="danger">{`${selectedRun.unmatched_total} produits a associer`}</Badge>
@@ -836,8 +837,8 @@ export default function RetailPriceValidationPage({
         </div>
       )}
 
-      <div style={{ display: "grid", gap: 18, gridTemplateColumns: "minmax(320px, 1fr) minmax(380px, 1.15fr)" }}>
-        <div style={{ border: `1px solid ${ds.border}`, borderRadius: 22, background: ds.surface, overflow: "hidden" }}>
+      <div style={{ display: "grid", gap: 18, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 390px), 1fr))", minWidth: 0 }}>
+        <div style={{ border: `1px solid ${ds.border}`, borderRadius: 18, background: ds.surface, overflow: "hidden", minWidth: 0 }}>
           <div style={{ padding: "14px 16px", borderBottom: `1px solid ${ds.border}`, color: ds.textSecondary, fontWeight: 800, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <span>{loadingItems ? "Chargement..." : `${filteredItems.length} candidat(s)`}</span>
             {filteredItems.length > 0 && (
@@ -903,9 +904,9 @@ export default function RetailPriceValidationPage({
           </div>
         </div>
 
-        <div style={{ border: `1px solid ${ds.border}`, borderRadius: 22, background: ds.surface, padding: 18, display: "grid", gap: 14 }}>
+        <div style={{ border: `1px solid ${ds.border}`, borderRadius: 18, background: ds.surface, padding: "clamp(12px, 3vw, 18px)", minWidth: 0, display: "grid", gap: 12 }}>
           {!selectedItem || !activeDraft ? (
-            <div style={{ color: ds.textSecondary }}>Selectionnez un candidat pour le corriger ou le valider.</div>
+            <div style={{ color: ds.textSecondary }}>Sélectionnez un produit.</div>
           ) : (
             <>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
@@ -939,7 +940,7 @@ export default function RetailPriceValidationPage({
                 </div>
               )}
 
-              <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
+              <div style={{ display: "grid", gap: 12, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 180px), 1fr))" }}>
                 <LabeledField label="Type">
                   <div style={{ ...inputStyle(), display: "flex", alignItems: "center" }}>
                     {selectedItem.price_type === "promotion" ? "Promotion" : "Prix observe"}
@@ -1013,7 +1014,7 @@ export default function RetailPriceValidationPage({
                   <Badge tone={hasReferenceProduct(selectedItem) ? "success" : "danger"}>
                     {hasReferenceProduct(selectedItem)
                       ? `Produit associe : ${selectedItem.matched_market_product_name || selectedItem.matched_market_product_id}`
-                      : "Produit de reference a associer"}
+                      : "À associer"}
                   </Badge>
                   {selectedItem.match_method && <Badge>{selectedItem.match_method}</Badge>}
                   {selectedItem.match_confidence !== null && selectedItem.match_confidence !== undefined && (
@@ -1022,12 +1023,12 @@ export default function RetailPriceValidationPage({
                 </div>
                 {!hasReferenceProduct(stagedSelectedItem) && (
                   <div style={{ color: ds.warning, fontSize: 13, lineHeight: 1.5 }}>
-                    Publication bloquee tant qu'aucun produit de reference n'est associe.
+                    Associer un produit avant publication.
                   </div>
                 )}
               </div>
 
-              <div style={{ display: "grid", gap: 10, gridTemplateColumns: "1fr auto" }}>
+              <div style={{ display: "grid", gap: 10, gridTemplateColumns: "minmax(0, 1fr) auto" }}>
                 <input
                   value={marketSearch}
                   onChange={event => setMarketSearch(event.target.value)}
