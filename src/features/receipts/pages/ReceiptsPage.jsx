@@ -2866,7 +2866,9 @@ function ValidationForm({
   })
 
   const simpleScan = !isAdmin && draft.ocr_status !== "manual"
-  const trustedPriceCount = getValidDraftItems(draft).filter(item => isItemEligibleForSmartShopping(item)).length
+  const trustedPriceCount = draft.is_food_ticket && !draft.total_needs_review && !String(draft.scan_status || "").includes("manual_review_required")
+    ? getValidDraftItems(draft).filter(item => isItemEligibleForSmartShopping(item)).length
+    : 0
   if (simpleScan) {
     const totalValue = Number(draft.total_amount || 0)
     return (
@@ -3449,8 +3451,8 @@ function ReceiptDetail({
     }))
   }
 
-  if (!isAdmin) {
-    const contributed = (receipt.receipt_items || []).filter(item => isItemEligibleForSmartShopping(item)).length
+  if (!isAdmin && receipt.ocr_status !== "manual") {
+    const contributed = receipt.is_food_ticket ? (receipt.receipt_items || []).filter(item => isItemEligibleForSmartShopping(item)).length : 0
     return (
       <div style={cardStyle({ display: "grid", gap: 12, maxWidth: 520, margin: "0 auto", width: "100%", boxSizing: "border-box" })}>
         <button type="button" onClick={onBack} style={{ color: COLORS.cyan, border: 0, background: "transparent", textAlign: "left", fontWeight: 850 }}>
