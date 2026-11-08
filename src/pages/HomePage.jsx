@@ -23,7 +23,7 @@ export default function HomePage({ language = "fr", isMobile = false, profile, u
   const name = firstName(profile, user)
 
   return (
-    <main className="bkp-home-reunion-watermark" style={{ width: "100%", maxWidth: 940, margin: "0 auto", padding: isMobile ? "34px 0 22px" : "22px 0 48px" }}>
+    <main className="bkp-home-reunion-watermark" style={{ width: "100%", maxWidth: 940, boxSizing: "border-box", margin: "0 auto", padding: isMobile ? "34px 16px 22px" : "22px 0 48px" }}>
       <h1 style={{
         margin: isMobile ? "-14px 2px 50px" : "0 2px 38px",
         color: dark ? "#f8fbff" : "#101f4f",
@@ -37,8 +37,8 @@ export default function HomePage({ language = "fr", isMobile = false, profile, u
 
       <div style={{
         display: "grid",
-        gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(2, minmax(0, 1fr))",
-        gap: isMobile ? 14 : 20,
+        gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+        gap: isMobile ? 12 : 20,
       }}>
         {ACTIONS.map((item, index) => {
           const Icon = BkIcons[item.icon]
