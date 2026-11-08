@@ -318,6 +318,8 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
   const [retailObservedOffers, setRetailObservedOffers] = useState([])
   const [items, setItems] = useState(() => loadShoppingListDraft({ userId: user?.id }))
   const [query, setQuery] = useState("")
+  const searchInputRef = useRef(null)
+  const [searchFocused, setSearchFocused] = useState(false)
   const [snapshots, setSnapshots] = useState([])
   const [hiddenSnapshotIds, setHiddenSnapshotIds] = useState(() => new Set())
   const [shareModal, setShareModal] = useState(null)
@@ -541,11 +543,29 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
           rank: (used ? 100 : 0) + (norm === normalize(query) ? 50 : norm.startsWith(normalize(query)) ? 20 : 0) + (Number(sharedPrice?.price) > 0 ? 25 : 0) }
       })
       .sort((left, right) => right.rank - left.rank || left.label.localeCompare(right.label, "fr"))
+      .filter((row, index, rows) => rows.findIndex(other => normalize(other.label) === normalize(row.label)) === index)
       .slice(0, 12)
   }, [query, sharedCatalog, sharedUnitPrices, allSuggestions.historical, items, snapshots])
-  const suggestionCount = allSuggestions.historical.length + allSuggestions.observed.length + allSuggestions.retail.length + catalogSuggestions.length
+  // Suggestions from tickets, catalogue and retail may describe the same article.
+  // Keep the first (priority: personal history, observed prices, promotions, catalogue)
+  // without combining distinct brands, formats or product names.
+  const uniqueSuggestions = useMemo(() => {
+    const normalize = value => String(value || "").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()
+    const seen = new Set()
+    const output = {}
+    for (const [group, rows] of Object.entries({ historical: allSuggestions.historical, observed: allSuggestions.observed, retail: allSuggestions.retail, catalog: catalogSuggestions })) {
+      output[group] = rows.filter(row => {
+        const key = normalize(row.label)
+        if (!key || seen.has(key)) return false
+        seen.add(key)
+        return true
+      })
+    }
+    return output
+  }, [allSuggestions, catalogSuggestions])
+  const suggestionCount = Object.values(uniqueSuggestions).reduce((total, rows) => total + rows.length, 0)
   const suggestions = useMemo(() => {
-    if (showAllSuggestions) return { ...allSuggestions, catalog: catalogSuggestions }
+    if (showAllSuggestions) return uniqueSuggestions
     let remaining = 4
     const take = rows => {
       const visible = rows.slice(0, remaining)
@@ -553,12 +573,12 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
       return visible
     }
     return {
-      historical: take(allSuggestions.historical),
-      observed: take(allSuggestions.observed),
-      retail: take(allSuggestions.retail),
-      catalog: take(catalogSuggestions),
+      historical: take(uniqueSuggestions.historical),
+      observed: take(uniqueSuggestions.observed),
+      retail: take(uniqueSuggestions.retail),
+      catalog: take(uniqueSuggestions.catalog),
     }
-  }, [allSuggestions, catalogSuggestions, showAllSuggestions])
+  }, [uniqueSuggestions, showAllSuggestions])
   const pairing = useMemo(() => getPairingSuggestion(items, shoppingItems), [items, shoppingItems])
   const foodReceiptCount = useMemo(() => new Set((shoppingItems || []).map(item => item.receipt_id).filter(Boolean)).size, [shoppingItems])
   const learningReady = foodReceiptCount >= 3
@@ -967,17 +987,8 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
       )}
 
       <div style={card({ order: 1 })}>
-        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "minmax(0, 1fr)" : "minmax(0, 1fr) auto auto", gap: 10 }}>
-          <input data-shopping-add value={query} onChange={e => { setQuery(e.target.value); setShowAllSuggestions(false) }} onKeyDown={e => e.key === "Enter" && addItem()} placeholder={txt.addPlaceholder} style={{ minHeight: 50, borderRadius: 14, border: `1px solid ${COLORS.inputBorder}`, background: COLORS.input, color: COLORS.text, padding: "0 14px" }} />
-          <button type="button" onClick={() => addItem()} style={{ minHeight: 50, border: "none", borderRadius: 14, background: "linear-gradient(145deg, #8B5CF6, #6D28D9)", color: "#fff", border: "1px solid #A78BFA", boxShadow: "inset 2px 2px 0 rgba(255,255,255,.25), 0 6px 0 #5421B8, 0 12px 22px rgba(109,40,217,.22)", fontWeight: 950, padding: "0 16px" }}>{txt.add}</button>
-          <div data-shopping-list-actions style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8, minWidth: 0 }}>
-            <button type="button" onClick={saveCurrentSnapshot} disabled={isSaving} style={{ minWidth: 0, minHeight: 50, border: "1px solid #C4A0F6", borderRadius: 14, background: "linear-gradient(145deg, #F2E9FF, #E1D1FA)", color: "#4F238C", fontSize: isMobile ? 12 : 13, fontWeight: 950, padding: "0 4px", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5, whiteSpace: "nowrap", opacity: isSaving ? 0.7 : 1, cursor: isSaving ? "wait" : "pointer" }}>
-              <Save size={17} aria-hidden="true" /> <span>{isSaving ? txt.saving : txt.save}</span>
-            </button>
-            <button type="button" onClick={startShare} style={{ minWidth: 0, minHeight: 50, border: "1px solid #C4A0F6", borderRadius: 14, background: "linear-gradient(145deg, #F2E9FF, #E1D1FA)", color: "#4F238C", fontSize: isMobile ? 12 : 13, fontWeight: 950, padding: "0 4px", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5, whiteSpace: "nowrap" }}>
-              <Share2 size={17} aria-hidden="true" /> <span>{txt.share}</span>
-            </button>
-          </div>
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr)", gap: 10 }}>
+          <input ref={searchInputRef} data-shopping-add value={query} onFocus={() => setSearchFocused(true)} onBlur={() => setSearchFocused(false)} onChange={e => { setQuery(e.target.value); setShowAllSuggestions(false); if (isMobile) window.requestAnimationFrame(() => searchInputRef.current?.scrollIntoView({ block: "start", behavior: "smooth" })) }} onKeyDown={e => e.key === "Enter" && addItem()} placeholder={txt.addPlaceholder} style={{ minHeight: 50, scrollMarginTop: 100, borderRadius: 14, border: `1px solid ${COLORS.inputBorder}`, background: COLORS.input, color: COLORS.text, padding: "0 14px" }} />
         </div>
         {duplicateCandidate && (
           <div role="status" data-shopping-duplicate-prompt style={{ marginTop: 12, border: `1px solid ${COLORS.yellow}66`, borderRadius: 14, background: "rgba(245,158,11,.10)", padding: 12 }}>
@@ -989,6 +1000,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
             </div>
           </div>
         )}
+        <div data-shopping-autocomplete style={{ maxHeight: isMobile && searchFocused ? "min(42dvh, 280px)" : "none", overflowY: isMobile && searchFocused ? "auto" : "visible", overscrollBehavior: "contain" }}>
         {suggestions.historical.length > 0 && (
           <div data-shopping-suggestion-group="history" style={{ marginTop: 12 }}>
             <div style={{ color: COLORS.muted, fontSize: 11, fontWeight: 950, letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 6 }}>{txt.habitualSuggestions}</div>
@@ -1033,6 +1045,18 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
             {showAllSuggestions ? txt.showFewerSuggestions : txt.showMoreSuggestions(suggestionCount - 4)}
           </button>
         )}
+        </div>
+        <div data-shopping-add-actions style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "minmax(0, 1fr) auto", gap: 10, marginTop: 12 }}>
+          <button type="button" onClick={() => addItem()} style={{ minHeight: 50, border: "none", borderRadius: 14, background: "linear-gradient(145deg, #8B5CF6, #6D28D9)", color: "#fff", border: "1px solid #A78BFA", boxShadow: "inset 2px 2px 0 rgba(255,255,255,.25), 0 6px 0 #5421B8, 0 12px 22px rgba(109,40,217,.22)", fontWeight: 950, padding: "0 16px" }}>{txt.add}</button>
+          <div data-shopping-list-actions style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 8, minWidth: 0 }}>
+            <button type="button" onClick={saveCurrentSnapshot} disabled={isSaving} style={{ minWidth: 0, minHeight: 50, border: "1px solid #C4A0F6", borderRadius: 14, background: "linear-gradient(145deg, #F2E9FF, #E1D1FA)", color: "#4F238C", fontSize: isMobile ? 12 : 13, fontWeight: 950, padding: "0 4px", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5, whiteSpace: "nowrap", opacity: isSaving ? 0.7 : 1, cursor: isSaving ? "wait" : "pointer" }}>
+              <Save size={17} aria-hidden="true" /> <span>{isSaving ? txt.saving : txt.save}</span>
+            </button>
+            <button type="button" onClick={startShare} style={{ minWidth: 0, minHeight: 50, border: "1px solid #C4A0F6", borderRadius: 14, background: "linear-gradient(145deg, #F2E9FF, #E1D1FA)", color: "#4F238C", fontSize: isMobile ? 12 : 13, fontWeight: 950, padding: "0 4px", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5, whiteSpace: "nowrap" }}>
+              <Share2 size={17} aria-hidden="true" /> <span>{txt.share}</span>
+            </button>
+          </div>
+        </div>
         {hasQueryWithoutResult && <div style={{ color: COLORS.muted, marginTop: 10 }}>{txt.noProduct}</div>}
         {pairing && <div style={{ color: COLORS.yellow, marginTop: 12, fontWeight: 900 }}>{pairing}</div>}
       </div>
