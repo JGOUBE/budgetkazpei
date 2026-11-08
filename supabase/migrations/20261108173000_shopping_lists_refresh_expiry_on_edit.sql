@@ -23,10 +23,7 @@ begin
   else
     new.created_at := old.created_at;
     if new.items is distinct from old.items
-       or new.title is distinct from old.title
-       or new.total_estimated is distinct from old.total_estimated
-       or new.missing_price_count is distinct from old.missing_price_count
-       or new.total_items is distinct from old.total_items then
+       or new.title is distinct from old.title then
       new.updated_at := now();
       new.expires_at := new.updated_at + interval '7 days';
     else
