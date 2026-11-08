@@ -48,6 +48,7 @@ function normalizeSnapshot(row = {}) {
     missingPriceCount: Number(row.missing_price_count || 0),
     totalItems: Number(row.total_items || 0),
     createdAt: row.created_at,
+    updatedAt: row.updated_at || row.created_at,
     expiresAt: row.expires_at,
     sharedAt: row.shared_at,
     shareMethod: row.share_method,
@@ -133,4 +134,28 @@ export async function markShoppingListSnapshotDeleted({ userId, id }) {
 
   rememberDeletedSnapshot(userId, deletedId)
   return deletedId
+}
+
+export async function updateShoppingListSnapshot({
+  userId, id, items = [], totalEstimated = 0, missingPriceCount = 0, totalItems = 0,
+}) {
+  if (!userId || !id) throw new Error("missing_snapshot")
+  const snapshotItems = cloneShoppingListSnapshotItems(items)
+  const { data, error } = await supabase
+    .from("shopping_list_snapshots")
+    .update({
+      items: snapshotItems,
+      total_estimated: Number(totalEstimated || 0),
+      missing_price_count: Number(missingPriceCount || 0),
+      total_items: Number(totalItems ?? snapshotItems.length),
+    })
+    .eq("id", id)
+    .eq("user_id", userId)
+    .eq("status", "active")
+    .gt("expires_at", nowIso())
+    .select("*")
+    .single()
+  if (error) throw error
+  if (!data) throw new Error("snapshot_update_not_saved")
+  return normalizeSnapshot(data)
 }
