@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react"
-import { Copy, ExternalLink, Eye, Mail, MessageCircle, Minus, Plus, Save, Send, Share2, Tag, Trash2 } from "lucide-react"
+import { Copy, ExternalLink, Eye, Mail, MessageCircle, Minus, Pencil, Plus, Save, Send, Share2, Tag, Trash2 } from "lucide-react"
 import { listShoppingItems } from "../features/shopping/services/shoppingEngine"
 import { supabase } from "../services/supabase"
 import { createAppSectionTarget } from "../services/appSectionNavigation"
@@ -1208,7 +1208,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
                 </div>
               </div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                <SmallButton onClick={() => editSavedSnapshot(snapshot)} icon={<Eye size={16} />} label={locale === "cr" ? "Modifié" : "Modifier"} />
+                <SmallButton onClick={() => editSavedSnapshot(snapshot)} icon={<Pencil size={16} />} label={locale === "cr" ? "Modifié" : "Modifier"} />
                 <SmallButton onClick={() => setPreviewSnapshot(snapshot)} icon={<Eye size={16} />} label={txt.view} />
                 <SmallButton onClick={() => shareSavedSnapshot(snapshot)} icon={<Send size={16} />} label={txt.share} />
                 <SmallButton onClick={() => deleteSnapshot(snapshot.id)} icon={<Trash2 size={16} />} label={isDeleting ? txt.deleting : txt.delete} disabled={isDeleting} danger />
