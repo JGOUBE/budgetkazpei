@@ -431,15 +431,17 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
       .replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "")
     // Older verified prices are useful to display with their date, but they
     // must not silently become current basket estimates.
-    const latest = new Map()
+    const publishedPrices = new Map()
     const freshnessCutoff = Date.now() - 90 * 24 * 60 * 60 * 1000
+    // Prices are sorted newest first by loadSharedShoppingPrices. Preserve the
+    // latest verified observation for display regardless of age.
     for (const price of sharedUnitPrices) {
-      const observedAt = new Date(price.observed_at).getTime()
-      if (price.product_id && observedAt >= freshnessCutoff && !latest.has(price.product_id)) {
-        latest.set(price.product_id, price)
+      if (price.product_id && Number(price.price) > 0 && !publishedPrices.has(price.product_id)) {
+        publishedPrices.set(price.product_id, price)
       }
     }
     const byName = new Map(sharedCatalog.map(product => [key(product.display_name), product.id]))
+    const catalogById = new Map(sharedCatalog.map(product => [product.id, product]))
     const rows = result.items.map(item => {
       if (Number(item.estimatedLineCost) > 0) return item
       // A user-selected published price belongs to the exact selected product.
@@ -474,12 +476,25 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
           priceUnitLabel: "",
         }
       }
-      // Existing drafts may hold an obsolete or unrelated product ID.
-      // Resolve the exact package name first; do not let stale IDs hide a valid price.
+      // Saved lists and drafts created before prices were carried over still
+      // need to display the dated catalogue reference for the exact product.
       const exactNameId = byName.get(key(item.name))
-      const productId = exactNameId || item.shopping_product_id || item.shoppingProductId
-      const price = latest.get(productId) || (exactNameId ? latest.get(exactNameId) : null)
-      if (!price || !(Number(price.price) > 0)) return item
+      const storedId = item.shopping_product_id || item.shoppingProductId
+      const storedProduct = storedId && catalogById.get(storedId)
+      const productId = exactNameId ||
+        (storedProduct && key(storedProduct.display_name) === key(item.name) ? storedId : null)
+      const price = productId ? publishedPrices.get(productId) : null
+      if (!price) return item
+      const observedAt = new Date(price.observed_at).getTime()
+      if (!Number.isFinite(observedAt) || observedAt > Date.now()) return item
+      if (observedAt < freshnessCutoff) {
+        return {
+          ...item,
+          datedReferencePrice: Number((Number(price.price) * getShoppingListQuantity(item)).toFixed(2)),
+          datedReferenceAt: price.observed_at,
+          datedReferenceRetailer: formatSharedPriceRetailer(price),
+        }
+      }
       const packagePrice = Number(price.price)
       const count = getShoppingListQuantity(item)
       const linePrice = Number((packagePrice * count).toFixed(2))
