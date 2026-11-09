@@ -429,9 +429,15 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
     // comparison price. Match the full package identity (not a generic "lait").
     const key = value => String(value || "").replace(/œ/g, "oe").replace(/Œ/g, "Oe").normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "")
+    // Older verified prices are useful to display with their date, but they
+    // must not silently become current basket estimates.
     const latest = new Map()
+    const freshnessCutoff = Date.now() - 90 * 24 * 60 * 60 * 1000
     for (const price of sharedUnitPrices) {
-      if (price.product_id && !latest.has(price.product_id)) latest.set(price.product_id, price)
+      const observedAt = new Date(price.observed_at).getTime()
+      if (price.product_id && observedAt >= freshnessCutoff && !latest.has(price.product_id)) {
+        latest.set(price.product_id, price)
+      }
     }
     const byName = new Map(sharedCatalog.map(product => [key(product.display_name), product.id]))
     const rows = result.items.map(item => {
