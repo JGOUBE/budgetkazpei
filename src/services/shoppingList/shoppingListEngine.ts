@@ -43,7 +43,7 @@ function formatMoneyFr(value: unknown) {
   return `${money(value).toFixed(2).replace(".", ",")} €`
 }
 
-const PACKAGE_QUANTITY_PATTERN = /\b(?:\d+(?:[,.]\d+)?\s*(?:kg|kgs?|kilogrammes?|g|gr|grammes?|l|litres?|cl|ml|cm|mm|m)\b|\d+\s*x\s*\d+(?:[,.]\d+)?\s*(?:kg|g|gr|l|cl|ml)?\b|\d+\s*(?:tranches?|pieces?|pi[eè]ces?|unit[eé]s?)\b)/i
+const PACKAGE_QUANTITY_PATTERN = /\b(?:\d+(?:[,.]\d+)?\s*(?:kg|kgs?|kilogrammes?|g|gr|grammes?|l|litres?|cl|ml|cm|mm|m)\b|\d+\s*x\s*\d+(?:[,.]\d+)?\s*(?:kg|g|gr|l|cl|ml)?\b|\d+\s*(?:tranches?|pieces?|pi[eè]ces?|unit[eé]s?|oeufs?|œufs?)\b|x\s*\d+\b)/i
 
 function normalizeMeasureUnit(value = "") {
   const clean = normalizeRetailObservedSearchText(value)
