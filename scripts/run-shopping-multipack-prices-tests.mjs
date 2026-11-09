@@ -52,3 +52,9 @@ const datedUi = readFileSync(new URL("../src/pages/ShoppingListPage.jsx", import
 assert.match(datedUi,/datedReferencePrice > 0 \? formatMontant\(datedReferencePrice\)/);
 assert.match(datedUi,/selectedDate >= freshnessCutoff/);
 console.log("OK: selected Kokot box price survives add-to-list and stale reference stays dated.");
+
+const savedListUi = readFileSync(new URL("../src/pages/ShoppingListPage.jsx", import.meta.url), "utf8");
+assert.match(savedListUi,/publishedPrices\.get\(productId\)/, "The basket must resolve catalog prices again for saved or old list items");
+assert.match(savedListUi,/datedReferencePrice: Number\(\(Number\(price\.price\)/, "A dated older catalog price must remain visible on the basket line");
+assert.match(savedListUi,/key\(storedProduct\.display_name\) === key\(item\.name\)/, "Do not carry prices across different package names");
+console.log("OK: old saved shopping items recover exact-product dated prices.");
