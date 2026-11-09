@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/run-verified-shopping-link-tests.mjs && node scripts/run-shopping-price-copy-tests.mjs && node scripts/run-shopping-query-relevance-tests.mjs && node scripts/run-shopping-compact-rows-tests.mjs && node scripts/run-shopping-multipack-prices-tests.mjs && vite build",
+    "build": "node scripts/run-verified-shopping-link-tests.mjs && node scripts/run-shopping-price-copy-tests.mjs && node scripts/run-shopping-query-relevance-tests.mjs && node scripts/run-shopping-compact-rows-tests.mjs && node scripts/run-shopping-multipack-prices-tests.mjs && node scripts/run-shopping-dated-price-display-tests.mjs && vite build",
     "test": "node scripts/run-assistant-tests.mjs",
     "test:scanner": "node scripts/run-scanner-regression.mjs",
     "test:landing": "node scripts/run-landing-tests.mjs",
@@ -39,7 +39,8 @@
     "test:shopping-price-copy": "node scripts/run-shopping-price-copy-tests.mjs",
     "test:shopping-query-relevance": "node scripts/run-shopping-query-relevance-tests.mjs",
     "test:shopping-compact-rows": "node scripts/run-shopping-compact-rows-tests.mjs",
-    "test:shopping-multipack-prices": "node scripts/run-shopping-multipack-prices-tests.mjs"
+    "test:shopping-multipack-prices": "node scripts/run-shopping-multipack-prices-tests.mjs",
+    "test:shopping-dated-prices": "node scripts/run-shopping-dated-price-display-tests.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.0",

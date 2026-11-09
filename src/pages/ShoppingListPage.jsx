@@ -33,6 +33,7 @@ import { MANUAL_SAVE_METHOD } from "../services/shoppingList/shoppingListSnapsho
 import { buildMultiRetailBasketOptimization } from "../services/shoppingList/shoppingBasketOptimizer"
 import { formatSharedPriceRetailer } from "../services/shoppingList/sharedPricePresentation"
 import { loadSharedShoppingCatalog, loadSharedShoppingPrices } from "../services/shoppingList/sharedCatalogLoader"
+import { getDatedShoppingListPrice } from "../services/shoppingList/shoppingDatedPriceDisplay"
 import { filterShoppingIntentSuggestions, hasUsefulShoppingQuery } from "../services/shoppingList/shoppingQueryRelevance"
 import { loadShoppingListDraft, saveShoppingListDraft } from "../services/shoppingList/shoppingListDraft"
 import {
@@ -1197,7 +1198,16 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
           const listQuantity = getShoppingListQuantity(item)
           const priceLearning = item.historicalPrice === null && item.estimatedPriceSource === "promotion"
           const retailObservedPrice = item.estimatedPriceSource === "retail_observed"
-          const datedReferencePrice = Number(item.datedReferencePrice || 0)
+          // Resolve the dated price at the point of display, independently of
+          // the current-budget estimator. This also repairs older saved lists.
+          const fallback = !displayedPrice
+            ? getDatedShoppingListPrice({
+                item, products: sharedCatalog, observations: sharedUnitPrices,
+              })
+            : null
+          const datedReferencePrice = Number(item.datedReferencePrice || fallback?.price || 0)
+          const datedReferenceAt = item.datedReferenceAt || fallback?.observedAt
+          const datedReferenceRetailer = item.datedReferenceRetailer || fallback?.retailer || ""
           return <div key={item.id} style={{ display: "grid", gridTemplateColumns: "auto minmax(0, 1fr) auto", gap: 10, alignItems: "start", color: COLORS.text, borderBottom: `1px solid ${COLORS.borderSubtle}`, padding: "12px 0" }}>
             <input aria-label={item.name} type="checkbox" checked={item.checked} onChange={e => setItems(prev => prev.map(row => row.id === item.id ? { ...row, checked: e.target.checked } : row))} style={{ marginTop: 4 }} />
             <div style={{ minWidth: 0 }}>
@@ -1205,7 +1215,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
                 {item.name}
                 <span style={{ display: "block", color: COLORS.muted, fontSize: 12, marginTop: 2 }}>
                   {datedReferencePrice > 0 && !displayedPrice
-                    ? `${item.datedReferenceRetailer ? item.datedReferenceRetailer + " · " : ""}Prix relevé le ${new Date(item.datedReferenceAt).toLocaleDateString("fr-FR")} · Ancien relevé`
+                    ? `${datedReferenceRetailer ? datedReferenceRetailer + " · " : ""}Prix relevé le ${new Date(datedReferenceAt).toLocaleDateString("fr-FR")} · Ancien relevé`
                     : priceLearning
                     ? txt.usualPriceLearning
                     : retailObservedPrice
