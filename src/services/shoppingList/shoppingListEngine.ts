@@ -702,6 +702,14 @@ export function buildShoppingListItemFromSuggestion(suggestion: any = {}) {
     store_location_id: suggestion.storeLocationId || promotion.storeLocationId || null,
     store_name: suggestion.storeName || promotion.storeName || "",
     store_city: suggestion.storeCity || promotion.storeCity || "",
+    // Persist the price shown on the selected suggestion, separately from an
+    // up-to-date estimate. An old dated reference must never turn into a
+    // silently current basket price.
+    selected_pack_price: money(suggestion.packPrice) ||
+      (!suggestion.observedPriceUnitLabel ? money(suggestion.observedPrice) : 0) ||
+      money(suggestion.retailObservedPrice?.price) || null,
+    selected_price_observed_at: suggestion.observedAt || suggestion.retailObservedPrice?.observedAt || null,
+    selected_price_retailer: suggestion.retailerName || suggestion.retailObservedPrice?.retailerName || "",
     retail_observed_price: money(suggestion.observedPrice ?? suggestion.retailObservedPrice?.price) || null,
     retail_observed_at: suggestion.observedAt || suggestion.retailObservedPrice?.observedAt || null,
     retail_observed_last_seen_at: suggestion.observedLastSeenAt || suggestion.retailObservedPrice?.lastSeenAt || null,

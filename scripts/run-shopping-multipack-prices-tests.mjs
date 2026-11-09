@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { getShoppingAutocompleteSuggestions } from "../src/services/shoppingList/shoppingListEngine.ts";
+import { getShoppingAutocompleteSuggestions, buildShoppingListItemFromSuggestion, estimateShoppingList } from "../src/services/shoppingList/shoppingListEngine.ts";
 
 // Ticket réel : produit U3X20CL = trois briques de 20 cl vendues 2,59 €.
 // Une quantité "1" désigne un lot, pas un centilitre.
@@ -42,3 +42,13 @@ assert.equal(eggBox.observed[0].observedPriceUnitLabel, "");
 assert.equal(eggBox.observed[0].observedPriceIsFresh, false, "Old price must never become a fresh estimate");
 assert.match(page, /packPrice: sharedPrice\?\.price/, "Published catalogue box price must be displayed");
 console.log("OK: published egg box prices use pack totals, with old prices kept dated.");
+
+const kokotSuggestion = {label:"Œufs plein air Kokot x12",source:"catalog",shoppingProductId:"kokot-12",packPrice:5.35,observedAt:"2026-06-19T00:00:00Z",retailerName:"Leclerc"};
+const kokotAdded = buildShoppingListItemFromSuggestion(kokotSuggestion);
+assert.equal(kokotAdded.selected_pack_price, 5.35, "Displayed catalog box price must survive add-to-list");
+assert.equal(kokotAdded.selected_price_observed_at, "2026-06-19T00:00:00Z");
+assert.equal(estimateShoppingList([{...kokotAdded,id:"kokot-test",list_quantity:1}],[],[]).items[0].selected_pack_price,5.35);
+const datedUi = readFileSync(new URL("../src/pages/ShoppingListPage.jsx", import.meta.url),"utf8");
+assert.match(datedUi,/datedReferencePrice > 0 \? formatMontant\(datedReferencePrice\)/);
+assert.match(datedUi,/selectedDate >= freshnessCutoff/);
+console.log("OK: selected Kokot box price survives add-to-list and stale reference stays dated.");

@@ -442,6 +442,38 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
     const byName = new Map(sharedCatalog.map(product => [key(product.display_name), product.id]))
     const rows = result.items.map(item => {
       if (Number(item.estimatedLineCost) > 0) return item
+      // A user-selected published price belongs to the exact selected product.
+      // Retain it as a dated reference even when older than 90 days.
+      const selectedPrice = Number(item.selected_pack_price || 0)
+      const selectedAt = item.selected_price_observed_at
+      const selectedDate = selectedAt ? new Date(selectedAt).getTime() : NaN
+      const selectedReference = selectedPrice > 0 && Number.isFinite(selectedDate) && selectedDate <= Date.now()
+      const isSelectedRecent = selectedReference && selectedDate >= freshnessCutoff
+      if (selectedReference && !isSelectedRecent) {
+        return {
+          ...item,
+          datedReferencePrice: Number((selectedPrice * getShoppingListQuantity(item)).toFixed(2)),
+          datedReferenceAt: selectedAt,
+          datedReferenceRetailer: item.selected_price_retailer || "",
+        }
+      }
+      if (isSelectedRecent) {
+        const linePrice = Number((selectedPrice * getShoppingListQuantity(item)).toFixed(2))
+        return {
+          ...item,
+          estimatedUnitPrice: selectedPrice,
+          estimatedLineCost: linePrice,
+          estimatedPrice: linePrice,
+          retailObservedUnitPrice: selectedPrice,
+          retailObservedPrice: linePrice,
+          retailObservedAt: selectedAt,
+          retailObservedRetailerName: item.selected_price_retailer || "",
+          priceSource: "retail_observed",
+          estimatedPriceSource: "retail_observed",
+          priceLabel: `Prix relevé le ${new Date(selectedAt).toLocaleDateString("fr-FR")}`,
+          priceUnitLabel: "",
+        }
+      }
       // Existing drafts may hold an obsolete or unrelated product ID.
       // Resolve the exact package name first; do not let stale IDs hide a valid price.
       const exactNameId = byName.get(key(item.name))
@@ -1150,13 +1182,16 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
           const listQuantity = getShoppingListQuantity(item)
           const priceLearning = item.historicalPrice === null && item.estimatedPriceSource === "promotion"
           const retailObservedPrice = item.estimatedPriceSource === "retail_observed"
+          const datedReferencePrice = Number(item.datedReferencePrice || 0)
           return <div key={item.id} style={{ display: "grid", gridTemplateColumns: "auto minmax(0, 1fr) auto", gap: 10, alignItems: "start", color: COLORS.text, borderBottom: `1px solid ${COLORS.borderSubtle}`, padding: "12px 0" }}>
             <input aria-label={item.name} type="checkbox" checked={item.checked} onChange={e => setItems(prev => prev.map(row => row.id === item.id ? { ...row, checked: e.target.checked } : row))} style={{ marginTop: 4 }} />
             <div style={{ minWidth: 0 }}>
               <span style={{ textDecoration: item.checked ? "line-through" : "none" }}>
                 {item.name}
                 <span style={{ display: "block", color: COLORS.muted, fontSize: 12, marginTop: 2 }}>
-                  {priceLearning
+                  {datedReferencePrice > 0 && !displayedPrice
+                    ? `${item.datedReferenceRetailer ? item.datedReferenceRetailer + " · " : ""}Prix relevé le ${new Date(item.datedReferenceAt).toLocaleDateString("fr-FR")} · Ancien relevé`
+                    : priceLearning
                     ? txt.usualPriceLearning
                     : retailObservedPrice
                       ? `${item.retailObservedRetailerName || "Magasin"} · ${item.retailObservedAt ? `Prix relevé le ${new Date(item.retailObservedAt).toLocaleDateString("fr-FR")}` : "Prix relevé"}`
@@ -1184,12 +1219,12 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
               )}
             </div>
             <div style={{ display: "grid", justifyItems: "end", gap: 7 }}>
-              <strong style={{ color: displayedPrice ? COLORS.green : COLORS.muted, whiteSpace: "nowrap" }}>
+              <strong style={{ color: displayedPrice ? COLORS.green : datedReferencePrice ? COLORS.text : COLORS.muted, whiteSpace: "nowrap" }}>
                 {displayedPrice
                   ? listQuantity > 1
                     ? formatMontant(displayedPrice)
                     : formatSmartPrice(displayedPrice, item.priceUnitLabel)
-                  : txt.priceMissing}
+                  : datedReferencePrice > 0 ? formatMontant(datedReferencePrice) : txt.priceMissing}
               </strong>
               <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
                 <IconButton
