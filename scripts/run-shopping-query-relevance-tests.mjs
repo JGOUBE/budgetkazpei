@@ -20,3 +20,25 @@ assert.deepEqual(filterShoppingIntentSuggestions(items,"lait").map(x=>x.label),[
 ]);
 assert.equal(filterShoppingIntentSuggestions(items,"lait corps").length,4);
 console.log("OK: searches require 3 characters and avoid cosmetic milk.");
+
+const oilResults = [
+  {label: "Huile Cœur de tournesol Lesieur 1 L"},
+  {label: "Huile d'olive vierge extra 75 cl"},
+  {display_name: "Lesieur Huile de colza 1 L"},
+  {label: "Sardines à l'huile de tournesol Bouj'd'Or 125 g"},
+  {label: "Lentilles à l'huile Notre Jardin"},
+  {label: "Miettes de thon huile 104 g"},
+  {productName: "Gel WC aux huiles essentielles Harpic 75 cl"},
+  {label: "Huile essentielle de lavande 10 ml"},
+  {label: "Huile moteur 5W30 1 L"},
+  {label: "Huile pour cheveux 100 ml"},
+]
+assert.deepEqual(
+  filterShoppingIntentSuggestions(oilResults, "huile").map(row => row.label || row.display_name || row.productName),
+  ["Huile Cœur de tournesol Lesieur 1 L", "Huile d'olive vierge extra 75 cl", "Lesieur Huile de colza 1 L"],
+)
+assert.equal(filterShoppingIntentSuggestions(oilResults, "huil").length, 3)
+assert.equal(filterShoppingIntentSuggestions(oilResults, "huile de tournesol").length, 3)
+assert.equal(filterShoppingIntentSuggestions(oilResults, "huile essentielle").length, oilResults.length)
+assert.equal(filterShoppingIntentSuggestions(oilResults, "huile moteur").length, oilResults.length)
+console.log("OK: cooking oil suggestions exclude incidental ingredients and other product families.");
