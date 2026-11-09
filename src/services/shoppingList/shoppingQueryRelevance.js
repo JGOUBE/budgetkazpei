@@ -27,7 +27,7 @@ export function isCookingOilQuery(query = "") {
   const text = normalizeShoppingQuery(query)
   if (!/^(?:hui|huil|huile|huiles)(?: |$)/.test(text)) return false
   // A deliberately specialised search must not be silently forced into food.
-  if (/\\b(essentiell?e?s?|moteur|massage|corps|cheveux|visage|douche|bain|solaire|parfum|cosmetique|cuticule)\\b/.test(text)) return false
+  if (/\b(essentiell?e?s?|moteur|massage|corps|cheveux|visage|douche|bain|solaire|parfum|cosmetique|cuticule)\b/.test(text)) return false
   return true
 }
 
@@ -37,11 +37,11 @@ export function isCookingOilProduct(row = {}) {
     : row.label || row.productName || row.product_name || row.display_name || row.name)
   if (!label) return false
   // Exclude non-edible uses even if the wording starts with 'Huile'.
-  if (/\\b(wc|menager|nettoyant|gel|lessive|savon|shampooing|shampoing|douche|bain|massage|moteur|essentiell?e?s?|corps|cheveux|visage|parfum|solaire|cosmetique|lampes?|lubrifiant|entretien)\\b/.test(label)) return false
+  if (/\b(wc|menager|nettoyant|gel|lessive|savon|shampooing|shampoing|douche|bain|massage|moteur|essentiell?e?s?|corps|cheveux|visage|parfum|solaire|cosmetique|lampes?|lubrifiant|entretien)\b/.test(label)) return false
   // The noun should be oil. A brand may prefix it (e.g. 'Lesieur huile ...').
   // Products 'à l'huile' have another primary noun and are not cooking oil.
-  return /^(?:huile|huiles)\\b/.test(label) ||
-    /^[a-z0-9-]+ (?:huile|huiles)\\b/.test(label)
+  return /^(?:huile|huiles)\b/.test(label) ||
+    /^[a-z0-9-]+ (?:huile|huiles)\b/.test(label)
 }
 
 export function filterShoppingIntentSuggestions(rows = [], query = "") {
