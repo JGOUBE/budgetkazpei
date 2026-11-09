@@ -424,7 +424,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
     const result = estimateShoppingList(items, shoppingItems, retailObservedPrices)
     // The shopping-list budget uses the actual package price, never the €/kg or €/L
     // comparison price. Match the full package identity (not a generic "lait").
-    const key = value => String(value || "").normalize("NFD")
+    const key = value => String(value || "").replace(/œ/g, "oe").replace(/Œ/g, "Oe").normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "")
     const latest = new Map()
     for (const price of sharedUnitPrices) {
@@ -488,7 +488,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
     const result = hasUsefulShoppingQuery(query)
       ? getShoppingAutocompleteSuggestions(query, shoppingItems, retailPromotions, retailObservedPrices)
       : { historical: [], observed: [], retail: [] }
-    const normalize = value => String(value || "").normalize("NFD").replace(/[^\x00-\x7F]/g, char => ({ "é":"e", "è":"e", "ê":"e", "à":"a", "ù":"u", "ç":"c", "ô":"o", "î":"i" }[char] || char)).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()
+    const normalize = value => String(value || "").replace(/œ/g, "oe").replace(/Œ/g, "Oe").normalize("NFD").replace(/[^\x00-\x7F]/g, char => ({ "é":"e", "è":"e", "ê":"e", "à":"a", "ù":"u", "ç":"c", "ô":"o", "î":"i" }[char] || char)).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()
     const prices = new Map()
     for (const price of sharedUnitPrices) {
       if (price.product_id && !prices.has(price.product_id)) prices.set(price.product_id, price)
@@ -515,7 +515,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
     }
   }, [query, shoppingItems, retailPromotions, retailObservedPrices, sharedCatalog, sharedUnitPrices])
   const catalogSuggestions = useMemo(() => {
-    const normalize = value => String(value || "").normalize("NFD").replace(/[^\x00-\x7F]/g, char => ({ "é":"e", "è":"e", "ê":"e", "à":"a", "ù":"u", "ç":"c", "ô":"o", "î":"i" }[char] || char)).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()
+    const normalize = value => String(value || "").replace(/œ/g, "oe").replace(/Œ/g, "Oe").normalize("NFD").replace(/[^\x00-\x7F]/g, char => ({ "é":"e", "è":"e", "ê":"e", "à":"a", "ù":"u", "ç":"c", "ô":"o", "î":"i" }[char] || char)).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()
     const terms = normalize(query).split(" ").filter(Boolean)
     if (!hasUsefulShoppingQuery(query) || !terms.length) return []
     const history = new Set(allSuggestions.historical.map(row => normalize(row.label)))
@@ -553,7 +553,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
   // Keep the first (priority: personal history, observed prices, promotions, catalogue)
   // without combining distinct brands, formats or product names.
   const uniqueSuggestions = useMemo(() => {
-    const normalize = value => String(value || "").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()
+    const normalize = value => String(value || "").replace(/œ/g, "oe").replace(/Œ/g, "Oe").normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()
     const seen = new Set()
     const output = {}
     for (const [group, rows] of Object.entries({ historical: allSuggestions.historical, observed: allSuggestions.observed, retail: allSuggestions.retail, catalog: catalogSuggestions })) {
