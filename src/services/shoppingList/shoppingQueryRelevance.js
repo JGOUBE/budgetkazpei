@@ -1,5 +1,5 @@
 export function normalizeShoppingQuery(value = "") {
-  return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+  return String(value || "").replace(/œ/g, "oe").replace(/Œ/g, "Oe").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
     .toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()
 }
 
