@@ -502,13 +502,15 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
       historical: filterShoppingIntentSuggestions(result.historical, query).map(suggestion => {
         const catalogProduct = catalogByName.get(normalize(suggestion.label))
         const price = catalogProduct && prices.get(catalogProduct.id)
-        if (!price) return suggestion
+        if (!price || !(Number(price.price) > 0)) return suggestion
+        // Keep personal history first, but enrich a matching product with the
+        // published pack price instead of hiding that price in the catalog.
         return {
           ...suggestion,
           shoppingProductId: catalogProduct.id,
-          observedPrice: price.unit_price,
-          observedPriceUnitLabel: price.unit_label,
           packPrice: price.price,
+          observedPrice: price.unit_label === "€/kg" || price.unit_label === "€/l" ? price.unit_price : null,
+          observedPriceUnitLabel: price.unit_label === "€/kg" || price.unit_label === "€/l" ? price.unit_label : "",
           observedAt: price.observed_at,
           retailerName: formatSharedPriceRetailer(price),
         }
@@ -540,8 +542,8 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
         const sharedPrice = latestPrices.get(row.id)
         return { key: "catalog:" + row.id, source: "catalog", label, normalizedName: row.normalized_name,
           shoppingProductId: row.id, brand: row.brand, packageFormat: row.size_label,
-          observedPrice: sharedPrice?.unit_price ?? null,
-          observedPriceUnitLabel: sharedPrice?.unit_label || "",
+          observedPrice: ["€/kg", "€/l"].includes(sharedPrice?.unit_label) ? sharedPrice?.unit_price : null,
+          observedPriceUnitLabel: ["€/kg", "€/l"].includes(sharedPrice?.unit_label) ? sharedPrice?.unit_label : "",
           packPrice: sharedPrice?.price ?? null,
           observedAt: sharedPrice?.observed_at || null,
           retailerName: sharedPrice ? formatSharedPriceRetailer(sharedPrice) : "",

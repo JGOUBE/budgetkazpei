@@ -27,3 +27,18 @@ assert.equal(weighted.historical[0].priceUnitLabel, "€/kg");
 const page = readFileSync(new URL("../src/pages/ShoppingListPage.jsx", import.meta.url), "utf8");
 assert.match(page, /Number\(sharedPrice\?\.price\) > 0 \? 25 : 0/);
 console.log("OK: U3X20CL displays €2.59/package, kg prices unaffected, priced catalog ranks first.");
+
+const eggBox = getShoppingAutocompleteSuggestions("oeuf", [], [], [{
+  id: "egg-10", productName: "Oeufs frais bio de plein air - 10 oeufs",
+  normalizedProductName: "oeufs frais bio de plein air 10 oeufs",
+  marketProductId: "test-egg-box", packageFormat: "10 oeufs",
+  packCount: 10, price: 7.17, unitPrice: 0.717, unitPriceUnit: "unit",
+  retailerName: "Leader Price Réunion", storeName: "LP Ermitage",
+  observedAt: "2026-07-29T16:27:48Z", isFresh: false,
+}]);
+assert.equal(eggBox.observed.length, 1, "The dated, older egg box price should appear as a suggestion");
+assert.equal(eggBox.observed[0].observedPrice, 7.17, "Egg box price must not be mistaken for one egg");
+assert.equal(eggBox.observed[0].observedPriceUnitLabel, "");
+assert.equal(eggBox.observed[0].observedPriceIsFresh, false, "Old price must never become a fresh estimate");
+assert.match(page, /packPrice: sharedPrice\?\.price/, "Published catalogue box price must be displayed");
+console.log("OK: published egg box prices use pack totals, with old prices kept dated.");
