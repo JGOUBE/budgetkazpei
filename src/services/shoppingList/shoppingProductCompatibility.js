@@ -23,7 +23,7 @@ const GENERIC_CATEGORIES = new Set([
 
 export function normalizeShoppingProductText(value = "") {
   return String(value || "")
-    .normalize("NFD")
+    .replace(/œ/g, "oe").replace(/Œ/g, "Oe").normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, " ")
