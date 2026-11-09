@@ -322,7 +322,7 @@ export function getAutocompleteSuggestions(query = "", shoppingItems: any[] = []
 
 function normalizeRetailObservedSearchText(value = "") {
   return String(value || "")
-    .normalize("NFD")
+    .replace(/œ/g, "oe").replace(/Œ/g, "Oe").normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, " ")

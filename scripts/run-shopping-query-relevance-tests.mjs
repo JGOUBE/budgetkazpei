@@ -42,3 +42,19 @@ assert.equal(filterShoppingIntentSuggestions(oilResults, "huile de tournesol").l
 assert.equal(filterShoppingIntentSuggestions(oilResults, "huile essentielle").length, oilResults.length)
 assert.equal(filterShoppingIntentSuggestions(oilResults, "huile moteur").length, oilResults.length)
 console.log("OK: cooking oil suggestions exclude incidental ingredients and other product families.");
+
+const eggs = [
+  {label:"Œufs plein air Kokot x12"},
+  {display_name:"Oeufs Kokot plein air x6"},
+  {productName:"Oeufs frais bio plein air - 10 oeufs"},
+  {label:"Bœuf assaisonné 405 g"},
+  {label:"Œufs de lompe rouges 100 g"},
+];
+for (const query of ["œuf","œufs","oeuf","oeufs"]) {
+  assert.deepEqual(
+    filterShoppingIntentSuggestions(eggs, query).map(item => item.label || item.display_name || item.productName),
+    ["Œufs plein air Kokot x12","Oeufs Kokot plein air x6","Oeufs frais bio plein air - 10 oeufs"],
+  );
+}
+assert.equal(filterShoppingIntentSuggestions(eggs, "oeufs de lompe").length, eggs.length);
+console.log("OK: œuf/oeuf matching and unrelated-product exclusions.");

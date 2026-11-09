@@ -1,6 +1,6 @@
 export function normalizeProductName(value = "") {
   return String(value || "")
-    .normalize("NFD")
+    .replace(/œ/g, "oe").replace(/Œ/g, "Oe").normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[-_/]/g, " ")
     .replace(/\b\d+(?:[,.]\d+)?\s?(?:kg|kgs|kilogrammes?|g|gr|grammes?|l|litres?|cl|ml)\b/gi, " ")

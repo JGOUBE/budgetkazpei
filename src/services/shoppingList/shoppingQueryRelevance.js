@@ -1,5 +1,5 @@
 export function normalizeShoppingQuery(value = "") {
-  return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+  return String(value || "").replace(/œ/g, "oe").replace(/Œ/g, "Oe").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
     .toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()
 }
 
@@ -44,11 +44,25 @@ export function isCookingOilProduct(row = {}) {
     /^[a-z0-9-]+ (?:huile|huiles)\b/.test(label)
 }
 
+// The user looking for eggs must not receive beef (boeuf) or fish roe.
+export function isTableEggQuery(query = "") {
+  const text = normalizeShoppingQuery(query)
+  return /^(?:oeuf|oeufs)(?: |$)/.test(text) &&
+    !/\b(lompe|poisson|caviar)\b/.test(text)
+}
+export function isTableEggProduct(row = {}) {
+  const label = normalizeShoppingQuery(typeof row === "string" ? row :
+    row.label || row.productName || row.product_name || row.display_name || row.name)
+  if (!label || /\b(lompe|poisson|caviar|boeuf)\b/.test(label)) return false
+  return /(?:^|\s)oeufs?(?:\s|$)/.test(label)
+}
+
 export function filterShoppingIntentSuggestions(rows = [], query = "") {
   if (!hasUsefulShoppingQuery(query)) return []
   return rows.filter(row => {
     if (isFoodMilkQuery(query) && isMilkCosmeticLabel(row.label || row.productName || row.display_name)) return false
     if (isCookingOilQuery(query) && !isCookingOilProduct(row)) return false
+    if (isTableEggQuery(query) && !isTableEggProduct(row)) return false
     return true
   })
 }
