@@ -30,7 +30,7 @@ class RunSummary:
     expired_count: int = 0
     errors_count: int = 0
     error_summary: list[dict[str, str]] = field(default_factory=list)
-    metrics: dict[str, int | bool] = field(default_factory=dict)
+    metrics: dict[str, object] = field(default_factory=dict)
 
 
 @dataclass

@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from app.models.candidate import Candidate
+from app.services.catalog_period import publication_period
 
 
 def score_candidate(candidate: Candidate) -> tuple[int, list[str], list[str], str]:
@@ -61,8 +62,11 @@ def score_candidate(candidate: Candidate) -> tuple[int, list[str], list[str], st
         reasons.append("cle_doublon_calculee")
 
     now = datetime.now(timezone.utc)
-    if candidate.ends_at and candidate.ends_at.replace(tzinfo=timezone.utc) < now:
-        errors.append("contenu_deja_expire")
+    _, validity_ends_at = publication_period(candidate)
+    if validity_ends_at:
+        end_utc = validity_ends_at.replace(tzinfo=timezone.utc) if validity_ends_at.tzinfo is None else validity_ends_at.astimezone(timezone.utc)
+        if end_utc < now:
+            errors.append("contenu_deja_expire")
 
     if candidate.content_kind == "promotion" and not is_catalog and not candidate.normalized_product_name:
         errors.append("produit_non_identifie")

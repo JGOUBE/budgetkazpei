@@ -32,11 +32,14 @@ def get_default_sources() -> list[SourceDefinition]:
             name="Run Market Reunion",
             content_family="shopping",
             source_type="html",
-            source_url="https://www.run-market.re/",
+            source_url="https://www.run-market.re/accueil-2/",
             official_domain="run-market.re",
             parser_key="run_market_reunion",
             scope_type="island",
             retailer_slug="run-market-reunion",
+            # High failure rate in production: keep automated collection off
+            # until the revised extraction is validated against live HTML.
+            is_active=False,
         ),
         SourceDefinition(
             slug="auchan-saint-louis-catalogues",

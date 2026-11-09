@@ -5,7 +5,8 @@ param(
   [string]$ImageName = "budgetkazpei-good-deals-collector",
   [string]$JobName = "budgetkazpei-good-deals-collector",
   [bool]$DryRun = $true,
-  [int]$MaxSources = 10,
+  [int]$MaxSources = 7,
+  [int]$TaskTimeoutSeconds = 600,
   [bool]$OcrEnabled = $false,
   [string]$SupabaseUrlSecret = "SUPABASE_URL",
   [string]$SupabaseServiceRoleKeySecret = "SUPABASE_SERVICE_ROLE_KEY"
@@ -57,6 +58,10 @@ if ($MaxSources -lt 1) {
   throw "MaxSources doit etre superieur ou egal a 1."
 }
 
+if ($TaskTimeoutSeconds -lt 60 -or $TaskTimeoutSeconds -gt 1800) {
+  throw "TaskTimeoutSeconds doit etre compris entre 60 et 1800."
+}
+
 $activeProject = (& gcloud.cmd config get-value project 2>$null).Trim()
 
 if ($activeProject -ne $ProjectId) {
@@ -78,6 +83,7 @@ Write-Host "  JobName    : $JobName"
 Write-Host "  Image URI  : $imageUri"
 Write-Host "  DryRun     : $dryRunValue"
 Write-Host "  MaxSources : $MaxSources"
+Write-Host "  Timeout    : ${TaskTimeoutSeconds}s"
 Write-Host "  OcrEnabled : $ocrEnabledValue"
 Write-Host ""
 
@@ -188,7 +194,7 @@ Invoke-GCloud -Arguments @(
   "--memory",
   "1Gi",
   "--task-timeout",
-  "1800s",
+  "${TaskTimeoutSeconds}s",
   "--set-env-vars",
   "COLLECTOR_MODE=full,COLLECTOR_DRY_RUN=$dryRunValue,COLLECTOR_MAX_SOURCES=$MaxSources,COLLECTOR_TIMEZONE=Indian/Reunion,COLLECTOR_LOG_LEVEL=INFO,COLLECTOR_REQUEST_TIMEOUT_SECONDS=30,COLLECTOR_OCR_ENABLED=$ocrEnabledValue,COLLECTOR_OCR_MAX_PAGES=20",
   "--set-secrets",

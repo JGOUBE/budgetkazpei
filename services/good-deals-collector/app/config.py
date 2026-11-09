@@ -8,9 +8,15 @@ from pathlib import Path
 
 def _env_bool(name: str, default: bool) -> bool:
     raw = os.getenv(name)
-    if raw is None:
+    if raw is None or not raw.strip():
         return default
-    return raw.strip().lower() in {"1", "true", "yes", "on"}
+    value = raw.strip().lower()
+    if value in {"1", "true", "yes", "on"}:
+        return True
+    if value in {"0", "false", "no", "off"}:
+        return False
+    # A misspelled environment variable must not silently enable publication.
+    raise ValueError(f"Invalid boolean value for {name}: {raw!r}")
 
 
 def _env_int(name: str, default: int) -> int:
@@ -47,7 +53,7 @@ class Settings:
             supabase_url=os.getenv("SUPABASE_URL"),
             supabase_service_role_key=os.getenv("SUPABASE_SERVICE_ROLE_KEY"),
             collector_mode=os.getenv("COLLECTOR_MODE", "full").strip().lower(),
-            collector_dry_run=_env_bool("COLLECTOR_DRY_RUN", False),
+            collector_dry_run=_env_bool("COLLECTOR_DRY_RUN", True),
             collector_source_slug=(os.getenv("COLLECTOR_SOURCE_SLUG") or "").strip() or None,
             collector_max_sources=_env_int("COLLECTOR_MAX_SOURCES", 25),
             collector_max_documents=_env_int("COLLECTOR_MAX_DOCUMENTS", 40),

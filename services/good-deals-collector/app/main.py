@@ -41,11 +41,16 @@ def build_argument_parser() -> argparse.ArgumentParser:
     parser.add_argument("--dry-run", action="store_true", help="Run the collector without publishing")
     parser.add_argument("--max-sources", type=int, default=None, help="Limit the number of active sources")
     parser.add_argument("--source-slug", default=None, help="Collect a single source slug, including inactive sources")
+    parser.add_argument("--trigger-type", choices=("manual", "scheduler", "unknown"), default="unknown")
     return parser
 
 
 def get_repository(settings: Settings) -> RepositoryProtocol:
     if not settings.supabase_url or not settings.supabase_service_role_key:
+        if not settings.collector_dry_run:
+            # A billed Cloud Run execution must never report success after
+            # silently replacing the production database with in-memory data.
+            raise RuntimeError("collector_supabase_credentials_required_for_publication")
         return InMemoryRepositories()
     technical_repository = SupabaseRepositories(
         SupabaseAdminClient(settings.supabase_url, settings.supabase_service_role_key),
@@ -108,11 +113,16 @@ def select_sources(settings: Settings, parsers, *, requested_max_sources: int | 
             for source in all_sources
             if source.is_active and source_allowed_in_mode(source.content_family, settings.collector_mode) and _source_is_supported(source, parsers)
         ]
-        effective_max_sources = settings.collector_max_sources
-        if effective_max_sources >= 0:
-            selected_sources = available_sources[:effective_max_sources]
-        else:
-            selected_sources = available_sources
+        # A caller-provided cap must constrain the actual number of HTTP
+        # sources, not only the log message. Negative values are rejected
+        # rather than silently disabling this cost safeguard.
+        effective_max_sources = (
+            settings.collector_max_sources if requested_max_sources is None
+            else requested_max_sources
+        )
+        if effective_max_sources < 0:
+            raise ValueError("collector_max_sources_must_be_non_negative")
+        selected_sources = available_sources[:effective_max_sources]
 
     LOGGER.info(
         "Selected collector sources",
@@ -129,14 +139,16 @@ def select_sources(settings: Settings, parsers, *, requested_max_sources: int | 
     return selected_sources
 
 
-def run(settings: Settings, *, requested_max_sources: int | None = None) -> RunSummary:
+def run(settings: Settings, *, requested_max_sources: int | None = None, trigger_type: str = "unknown") -> RunSummary:
     collectors = get_collectors()
     parsers = get_parsers()
     sources = select_sources(settings, parsers, requested_max_sources=requested_max_sources)
     run_key = f"{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}-{uuid4().hex[:8]}"
     repositories = get_repository(settings)
     publisher = PublisherService(repositories)
-    repositories.start_run(run_key, "manual", settings.collector_mode)
+    # Cloud Run invocations cannot be identified from the job process alone.
+    # Default to "unknown" until a trusted launcher explicitly sets the type.
+    repositories.start_run(run_key, trigger_type, settings.collector_mode)
 
     summary = RunSummary(run_key=run_key, status="running", sources_total=len(sources))
     expiration_result = repositories.expire_stale_records(dry_run=settings.collector_dry_run)
@@ -149,8 +161,21 @@ def run(settings: Settings, *, requested_max_sources: int | None = None) -> RunS
             **expiration_result.as_metrics(),
         },
     )
+    source_results = {}
     for source in sources:
         result = process_source(source, settings, repositories, collectors, parsers, publisher)
+        source_results[source.slug] = {
+            "status": "failed" if result.error_message else (result.skipped_reason or "processed"),
+            "changed": bool(result.changed),
+            "detected": len(result.candidates),
+            "published": sum(item.status == "published" for item in result.candidates),
+            "duplicates": sum(item.status == "duplicate" for item in result.candidates),
+            "review": sum(item.status == "needs_review" for item in result.candidates),
+            "error": result.error_message or "",
+        }
+        if result.skipped_reason == "disabled":
+            summary.metrics["sources_skipped_disabled"] = summary.metrics.get("sources_skipped_disabled", 0) + 1
+            continue
         summary.sources_checked += 1
         if result.changed:
             summary.sources_changed += 1
@@ -158,7 +183,7 @@ def run(settings: Settings, *, requested_max_sources: int | None = None) -> RunS
             summary.errors_count += 1
             summary.error_summary.append({"source_slug": source.slug, "error": result.error_message})
             continue
-        if result.skipped_reason == "unchanged":
+        if result.skipped_reason:
             continue
         summary.documents_processed += 1
         for candidate in result.candidates:
@@ -173,6 +198,9 @@ def run(settings: Settings, *, requested_max_sources: int | None = None) -> RunS
                 summary.rejected_count += 1
             elif candidate.status == "expired":
                 summary.expired_count += 1
+    # This compact per-source scorecard is persisted in the existing JSONB
+    # metrics column; it requires no additional schema, scraper, or Cloud Run job.
+    summary.metrics["source_results"] = source_results
     approved_publication = process_pending_approved_candidates(settings, repositories, publisher, summary)
     summary.metrics.update(approved_publication.as_metrics())
     LOGGER.info(
@@ -195,8 +223,16 @@ def process_source(source, settings, repositories, collectors, parsers, publishe
         parser = parsers["generic_catalog" if source.content_family == "shopping" else "generic_event"]
     if source.parser_key == "pending":
         return SourceProcessingResult(source_slug=source.slug, changed=False, skipped_reason="pending_parser")
-    source_id = repositories.ensure_source(source)
+    if not repositories.is_source_enabled(source.slug):
+        LOGGER.info(
+            "Inactive source skipped without fetching",
+            extra={"source_slug": source.slug, "action": "source_guard", "result": "disabled"},
+        )
+        return SourceProcessingResult(source_slug=source.slug, changed=False, skipped_reason="disabled")
+    # One missing or broken source must not abort collection of other retailers.
+    source_id = None
     try:
+        source_id = repositories.ensure_source(source)
         document = collector.collect(source, settings)
         fingerprint = build_source_fingerprint(source, document)
         document.sha256 = fingerprint.sha256
@@ -224,8 +260,10 @@ def process_source(source, settings, repositories, collectors, parsers, publishe
         snapshot_id = repositories.record_snapshot(source.slug, source_id, document, changed, "parsed")
         for candidate in candidates:
             candidate.duplicate_key = build_duplicate_key(candidate)
-            duplicate_id = repositories.find_duplicate_candidate_id(candidate.duplicate_key)
-            if duplicate_id and duplicate_id != candidate.external_key:
+            duplicate_id = repositories.find_duplicate_candidate_id(
+                candidate.duplicate_key, external_key=candidate.external_key
+            )
+            if duplicate_id:
                 candidate.possible_duplicate_id = duplicate_id
                 candidate.status = "duplicate"
             score, reasons, errors, status = score_candidate(candidate)
@@ -244,14 +282,21 @@ def process_source(source, settings, repositories, collectors, parsers, publishe
                     candidate.published_good_deal_id = published_id
         return SourceProcessingResult(source_slug=source.slug, changed=True, candidates=candidates)
     except Exception as exc:  # pragma: no cover - defensive logging path
-        repositories.record_snapshot(
-            source.slug,
-            source_id,
-            document if "document" in locals() else _build_error_document(source),
-            changed=False,
-            status="failed",
-            error_message=str(exc),
-        )
+        if source_id is not None:
+            try:
+                repositories.record_snapshot(
+                    source.slug,
+                    source_id,
+                    document if "document" in locals() else _build_error_document(source),
+                    changed=False,
+                    status="failed",
+                    error_message=str(exc),
+                )
+            except Exception:
+                LOGGER.exception(
+                    "Failed to record source error snapshot",
+                    extra={"source_slug": source.slug, "action": "snapshot", "result": "failed"},
+                )
         LOGGER.exception("Source processing failed", extra={"source_slug": source.slug, "action": "process_source", "result": "failed", "error_type": exc.__class__.__name__})
         return SourceProcessingResult(source_slug=source.slug, changed=False, error_message=str(exc))
 
@@ -275,6 +320,11 @@ def process_pending_approved_candidates(settings, repositories, publisher, summa
                 summary.candidates_published += 1
             else:
                 result.failed += 1
+                summary.errors_count += 1
+                summary.error_summary.append({
+                    "source_slug": candidate.source_slug,
+                    "error": "approved_candidate_publisher_returned_no_id",
+                })
         except Exception as exc:  # pragma: no cover - defensive logging path
             result.failed += 1
             summary.errors_count += 1
@@ -316,7 +366,7 @@ def main() -> int:
         collector_max_sources=args.max_sources,
     )
     configure_logging(settings.collector_log_level)
-    summary = run(settings, requested_max_sources=args.max_sources)
+    summary = run(settings, requested_max_sources=args.max_sources, trigger_type=args.trigger_type)
     print(
         f"sources_checked={summary.sources_checked} "
         f"changes={summary.sources_changed} "
@@ -326,6 +376,11 @@ def main() -> int:
         f"duplicates={summary.duplicates_detected} "
         f"errors={summary.errors_count}"
     )
+    # If every consulted source failed, do not report a successful Cloud Run
+    # job just because the error rows were recorded. The deployment disables
+    # retries, so this signal adds no automatic extra billable execution.
+    if summary.sources_checked > 0 and summary.errors_count >= summary.sources_checked:
+        return 1
     return 0 if summary.status in {"completed", "completed_with_errors"} else 1
 
 

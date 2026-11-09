@@ -6,7 +6,7 @@ from unittest.mock import patch
 from app.collectors.registry import get_default_sources
 from app.config import Settings
 from app.db.repositories import DryRunRepositories, InMemoryRepositories
-from app.main import run
+from app.main import get_repository, run
 from app.models.candidate import Candidate
 from app.models.document import SourceDocument
 from app.services.hashing import sha256_text
@@ -175,6 +175,39 @@ class PipelineTests(unittest.TestCase):
         self.assertEqual(summary.sources_checked, 1)
         self.assertEqual(summary.errors_count, 1)
 
+    def test_no_supabase_credentials_blocks_billable_publication(self):
+        with patch.dict("os.environ", {"SUPABASE_URL": "", "SUPABASE_SERVICE_ROLE_KEY": ""}, clear=False):
+            settings = Settings.from_env().with_overrides(collector_dry_run=False)
+            with self.assertRaisesRegex(RuntimeError, "collector_supabase_credentials_required"):
+                get_repository(settings)
+
+    def test_disabling_source_in_repository_skips_all_network_requests(self):
+        source = SourceDefinition(
+            slug="source", name="Source administratively disabled",
+            content_family="shopping", source_type="html",
+            source_url="https://example.com", official_domain="example.com",
+            parser_key="static", scope_type="island",
+        )
+        repository = InMemoryRepositories()
+        repository.sources["source"] = {"is_active": False, "source": source}
+
+        class MustNotFetch:
+            def collect(self, source, settings):
+                raise AssertionError("A disabled source must never be fetched")
+
+        with patch("app.main.get_default_sources", return_value=[source]), patch(
+            "app.main.get_collectors", return_value={"html": MustNotFetch()}
+        ), patch("app.main.get_parsers", return_value={"static": _StaticParser()}), patch(
+            "app.main.get_repository", return_value=repository
+        ):
+            summary = run(self.settings)
+
+        self.assertEqual(summary.sources_total, 1)
+        self.assertEqual(summary.sources_checked, 0)
+        self.assertEqual(summary.errors_count, 0)
+        self.assertEqual(summary.metrics.get("sources_skipped_disabled"), 1)
+        self.assertEqual(len(repository.snapshots), 0)
+
     def test_zero_source_dry_run_is_valid_smoke(self):
         summary = run(self.settings.with_overrides(collector_max_sources=0))
         self.assertEqual(summary.status, "completed")
@@ -242,6 +275,30 @@ class PipelineTests(unittest.TestCase):
             summary = run(settings, requested_max_sources=5)
 
         self.assertEqual(summary.sources_checked, 5)
+
+    def test_explicit_run_cap_limits_actual_http_sources_even_if_env_is_higher(self):
+        sources = self._supported_shopping_sources()
+        parser = _StaticParser()
+        settings = self.settings.with_overrides(collector_mode="shopping", collector_max_sources=5)
+        with patch("app.main.get_default_sources", return_value=sources), patch(
+            "app.main.get_collectors", return_value={"html": _StaticCollector()}
+        ), patch("app.main.get_parsers", return_value={
+            source.parser_key: parser for source in sources
+        }), patch("app.main.get_repository", return_value=InMemoryRepositories()), patch(
+            "app.main.build_source_fingerprint", side_effect=lambda source, document: self._fingerprint_for(source)
+        ):
+            summary = run(settings, requested_max_sources=2)
+        self.assertEqual(summary.sources_checked, 2)
+
+    def test_negative_source_cap_is_rejected_before_any_network_io(self):
+        sources = self._supported_shopping_sources()
+        with patch("app.main.get_default_sources", return_value=sources), patch(
+            "app.main.get_collectors", return_value={"html": _StaticCollector()}
+        ), patch("app.main.get_parsers", return_value={
+            source.parser_key: _StaticParser() for source in sources
+        }):
+            with self.assertRaisesRegex(ValueError, "collector_max_sources_must_be_non_negative"):
+                run(self.settings.with_overrides(collector_mode="shopping"), requested_max_sources=-1)
 
     def test_env_max_sources_is_used_when_cli_is_absent(self):
         sources = self._supported_shopping_sources()
