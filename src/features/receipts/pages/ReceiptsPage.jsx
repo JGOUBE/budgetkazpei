@@ -979,6 +979,44 @@ function loadImageFromFile(file) {
   })
 }
 
+// Android camera/gallery apps may return a landscape bitmap for the third
+// segment even when the user photographed a vertical receipt. Normalize the
+// bitmap itself before preview and OCR, and allow a manual 90° correction.
+async function rotateLongTicketPhoto(file) {
+  const image = await loadImageFromFile(file)
+  const sourceWidth = image.naturalWidth || image.width
+  const sourceHeight = image.naturalHeight || image.height
+  if (!sourceWidth || !sourceHeight) throw new Error("Image illisible.")
+  const scale = Math.min(1, 2400 / Math.max(sourceWidth, sourceHeight))
+  const canvas = document.createElement("canvas")
+  canvas.width = Math.round(sourceHeight * scale)
+  canvas.height = Math.round(sourceWidth * scale)
+  const ctx = canvas.getContext("2d")
+  if (!ctx) throw new Error("Rotation impossible.")
+  ctx.fillStyle = "#FFFFFF"
+  ctx.fillRect(0, 0, canvas.width, canvas.height)
+  ctx.translate(canvas.width, 0)
+  ctx.rotate(Math.PI / 2)
+  ctx.drawImage(image, 0, 0, canvas.height, canvas.width)
+  const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", 0.93))
+  if (!blob) throw new Error("Rotation impossible.")
+  return new File([blob], "ticket-portrait-" + Date.now() + ".jpg", {
+    type: "image/jpeg",
+    lastModified: Date.now(),
+  })
+}
+
+async function normalizeLongTicketPortrait(file) {
+  if (!file) return null
+  const image = await loadImageFromFile(file)
+  const width = image.naturalWidth || image.width
+  const height = image.naturalHeight || image.height
+  // A receipt segment should be portrait; a landscape photo is almost
+  // certainly Android orientation metadata or an accidental phone rotation.
+  if (width > height * 1.06) return rotateLongTicketPhoto(file)
+  return file
+}
+
 async function mergeReceiptImagesVertically(files = []) {
   const validFiles = files.filter(Boolean)
 
@@ -1206,28 +1244,46 @@ export default function ReceiptsPage({
     longSegmentCameraRefs.current[nextIndex]?.click()
   }
 
-  function handleLongTicketPart(index, file) {
+  async function handleLongTicketPart(index, file) {
     if (!file) return
-
-    setLongTicketFiles(previous => previous.map((current, currentIndex) => (
-      currentIndex === index ? file : current
-    )))
-
-    // Retourner sur la page après chaque prise permet de voir clairement
-    // Haut / Milieu / Bas et de choisir la photo suivante ou d'en reprendre une.
-    setMessage("")
+    try {
+      const portraitFile = await normalizeLongTicketPortrait(file)
+      setLongTicketFiles(previous => previous.map((current, currentIndex) => (
+        currentIndex === index ? portraitFile : current
+      )))
+      setMessage("")
+    } catch {
+      setMessage("Photo illisible. Reprenez-la ou choisissez-la depuis la galerie.")
+    }
   }
 
-  function handleLongTicketGallery(files) {
-    const images = Array.from(files || []).filter(file => file?.type?.startsWith("image/"))
+  async function rotateLongTicketPart(index) {
+    const file = longTicketFiles[index]
+    if (!file || automatedScanDisabled) return
+    try {
+      const rotated = await rotateLongTicketPhoto(file)
+      setLongTicketFiles(previous => previous.map((current, currentIndex) => (
+        currentIndex === index ? rotated : current
+      )))
+      setMessage("")
+    } catch {
+      setMessage("Impossible de pivoter cette photo. Vous pouvez la reprendre.")
+    }
+  }
 
+  async function handleLongTicketGallery(files) {
+    const images = Array.from(files || []).filter(file => file?.type?.startsWith("image/"))
     if (!longTicketPhotoCount || images.length !== longTicketPhotoCount) {
       setMessage(txt.longTicketNeedCount(longTicketPhotoCount || 2))
       return
     }
-
-    setLongTicketFiles(previous => previous.map((_, index) => images[index] || null))
-    setMessage("")
+    try {
+      const portraits = await Promise.all(images.map(normalizeLongTicketPortrait))
+      setLongTicketFiles(previous => previous.map((_, index) => portraits[index] || null))
+      setMessage("")
+    } catch {
+      setMessage("Une des photos est illisible. Réessayez avec des images JPEG.")
+    }
   }
 
   async function processCompletedScan(scan, sourceFile) {
@@ -2413,16 +2469,36 @@ export default function ReceiptsPage({
                 maxWidth: isMobile ? 440 : 760,
               }}>
                 {Array.from({ length: longTicketPhotoCount }, (_, index) => (
-                  <LongTicketPhotoSlot
-                    key={index}
-                    label={txt.longTicketPart(index, longTicketPhotoCount)}
-                    file={longTicketFiles[index]}
-                    disabled={automatedScanDisabled}
-                    takeLabel={txt.longTicketTakePart}
-                    retakeLabel={txt.longTicketRetakePart}
-                    readyLabel={txt.longTicketPartReady(index)}
-                    onClick={() => longSegmentCameraRefs.current[index]?.click()}
-                  />
+                  <div key={index} style={{ display: "grid", gap: 7, minWidth: 0 }}>
+                    <LongTicketPhotoSlot
+                      label={txt.longTicketPart(index, longTicketPhotoCount)}
+                      file={longTicketFiles[index]}
+                      disabled={automatedScanDisabled}
+                      takeLabel={txt.longTicketTakePart}
+                      retakeLabel={txt.longTicketRetakePart}
+                      readyLabel={txt.longTicketPartReady(index)}
+                      onClick={() => longSegmentCameraRefs.current[index]?.click()}
+                    />
+                    {longTicketFiles[index] && (
+                      <button
+                        type="button"
+                        disabled={automatedScanDisabled}
+                        onClick={() => rotateLongTicketPart(index)}
+                        aria-label={`Pivoter la photo ${index + 1} de 90 degrés`}
+                        style={{
+                          minHeight: 44,
+                          border: `1px solid ${COLORS.border}`,
+                          borderRadius: 12,
+                          background: COLORS.cardLight,
+                          color: COLORS.text,
+                          fontWeight: 850,
+                          cursor: "pointer",
+                        }}
+                      >
+                        ↻ Pivoter la photo
+                      </button>
+                    )}
+                  </div>
                 ))}
               </div>
 
@@ -2841,6 +2917,17 @@ function ValidationForm({
     return sum + (Number.isFinite(amount) && amount > 0 ? Math.round(amount * 100) : 0)
   }, 0)
   const visibleItemsSum = visibleItemsSumCents / 100
+  // A correct receipt total does not prove every product was recognized.
+  // Show a short discrepancy warning, without forcing line-by-line editing.
+  const ticketTotalCents = Math.round(Number(draft.total_amount || 0) * 100)
+  const linesGapCents = ticketTotalCents > 0 && visibleItemsSumCents > 0
+    ? ticketTotalCents - visibleItemsSumCents : 0
+  const hasLinesGap = Math.abs(linesGapCents) > 1
+  const linesGapNotice = hasLinesGap
+    ? (txt === TEXT.kr
+      ? `In lékar dé ${formatMontant(Math.abs(linesGapCents) / 100)} ant total tiké é bann lartik trouvé. Vérifié si nana in lartik mankan ou in rémiz.`
+      : `Écart de ${formatMontant(Math.abs(linesGapCents) / 100)} entre le total et les articles détectés. Un article ou une remise peut manquer.`)
+    : ""
   const editableDraftItems = (draft.items || [])
     .map((item, index) => ({ item, index }))
     .filter(row => {
@@ -2910,6 +2997,11 @@ function ValidationForm({
             }))}
           />
         </label>
+        {hasLinesGap && (
+          <div role="status" style={{ color: COLORS.yellow, background: COLORS.cardLight, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: "10px 12px", fontSize: 13, lineHeight: 1.45, fontWeight: 800 }}>
+            {linesGapNotice}
+          </div>
+        )}
         {trustedPriceCount > 0 && (
           <div style={{ color: COLORS.green, fontSize: 13, fontWeight: 800, textAlign: "center" }}>
             {trustedPriceCount} {txt === TEXT.kr ? "pri pou Courses intelligentes" : "prix proposés à Courses intelligentes"}
@@ -2965,6 +3057,11 @@ function ValidationForm({
           </Field>
         </div>
 
+        {hasLinesGap && (
+          <div role="status" style={{ marginTop: 14, color: COLORS.yellow, background: COLORS.cardLight, padding: "10px 12px", borderRadius: 12, fontSize: 13, fontWeight: 850 }}>
+            {linesGapNotice}
+          </div>
+        )}
         <div style={{ marginTop: 16, color: COLORS.text, fontWeight: 950 }}>
           {txt.reviewItemsCount(reviewItemsCount)}
         </div>
