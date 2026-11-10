@@ -2917,6 +2917,17 @@ function ValidationForm({
     return sum + (Number.isFinite(amount) && amount > 0 ? Math.round(amount * 100) : 0)
   }, 0)
   const visibleItemsSum = visibleItemsSumCents / 100
+  // A correct receipt total does not prove every product was recognized.
+  // Show a short discrepancy warning, without forcing line-by-line editing.
+  const ticketTotalCents = Math.round(Number(draft.total_amount || 0) * 100)
+  const linesGapCents = ticketTotalCents > 0 && visibleItemsSumCents > 0
+    ? ticketTotalCents - visibleItemsSumCents : 0
+  const hasLinesGap = Math.abs(linesGapCents) > 1
+  const linesGapNotice = hasLinesGap
+    ? (txt === TEXT.kr
+      ? `In lékar dé ${formatMontant(Math.abs(linesGapCents) / 100)} ant total tiké é bann lartik trouvé. Vérifié si nana in lartik mankan ou in rémiz.`
+      : `Écart de ${formatMontant(Math.abs(linesGapCents) / 100)} entre le total et les articles détectés. Un article ou une remise peut manquer.`)
+    : ""
   const editableDraftItems = (draft.items || [])
     .map((item, index) => ({ item, index }))
     .filter(row => {
@@ -2986,6 +2997,11 @@ function ValidationForm({
             }))}
           />
         </label>
+        {hasLinesGap && (
+          <div role="status" style={{ color: COLORS.yellow, background: COLORS.cardLight, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: "10px 12px", fontSize: 13, lineHeight: 1.45, fontWeight: 800 }}>
+            {linesGapNotice}
+          </div>
+        )}
         {trustedPriceCount > 0 && (
           <div style={{ color: COLORS.green, fontSize: 13, fontWeight: 800, textAlign: "center" }}>
             {trustedPriceCount} {txt === TEXT.kr ? "pri pou Courses intelligentes" : "prix proposés à Courses intelligentes"}
@@ -3041,6 +3057,11 @@ function ValidationForm({
           </Field>
         </div>
 
+        {hasLinesGap && (
+          <div role="status" style={{ marginTop: 14, color: COLORS.yellow, background: COLORS.cardLight, padding: "10px 12px", borderRadius: 12, fontSize: 13, fontWeight: 850 }}>
+            {linesGapNotice}
+          </div>
+        )}
         <div style={{ marginTop: 16, color: COLORS.text, fontWeight: 950 }}>
           {txt.reviewItemsCount(reviewItemsCount)}
         </div>
