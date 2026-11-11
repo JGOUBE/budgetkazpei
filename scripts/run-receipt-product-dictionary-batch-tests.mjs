@@ -6,9 +6,9 @@ try {
   const { buildProductDictionaryBatch } = await server.ssrLoadModule("/src/services/scan/productKnowledgeService.ts")
   const now = "2026-11-11T12:00:00.000Z"
   const candidates = [
-    { name: "Riz long 1kg", total_price: 2, confidence_score: 0.7, item_status: "detected" },
-    { name: "Riz long 1kg", total_price: 4, confidence_score: 0.9, item_status: "detected" },
-    { name: "Lait demi écrémé 1 L", total_price: 1.5, confidence_score: 0.8, item_status: "detected" },
+    { name: "Riz long 1kg", total_price: 2, confidence_score: 0.7, item_status: "trusted" },
+    { name: "Riz long 1kg", total_price: 4, confidence_score: 0.9, item_status: "trusted" },
+    { name: "Lait demi écrémé 1 L", total_price: 1.5, confidence_score: 0.8, item_status: "trusted" },
   ]
   const one = buildProductDictionaryBatch({
     userId: "user-1", merchantName: "Leclerc", items: candidates, now,
@@ -37,8 +37,8 @@ try {
 
   const duplicateNew = buildProductDictionaryBatch({
     userId: "user-1", items: [
-      {name:"Jus ananas",total_price:2.99,item_status:"detected"},
-      {name:"Jus ananas",total_price:3.99,item_status:"detected"},
+      {name:"Jus ananas",total_price:2.99,item_status:"trusted"},
+      {name:"Jus ananas",total_price:3.99,item_status:"trusted"},
     ],now,
   })
   assert.equal(duplicateNew.rows.length,1)
