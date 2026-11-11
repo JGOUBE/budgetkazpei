@@ -131,7 +131,7 @@ const TEXT = {
     analysisPleaseWait: "Patientez quelques instants pendant l’analyse de votre ticket.",
     savingPleaseWait: "Votre ticket est en cours d’enregistrement…",
     savingSmartShoppingInfo: "BudgetKazPei enregistre vos achats et prépare les prix pour Courses intelligentes.",
-    savingWaitReminder: "Merci de patienter quelques instants."
+    savingWaitReminder: "Merci de patienter quelques instants.",
     manualReady: "OCR indisponible : vous pouvez remplir le ticket manuellement.",
     store: "Magasin",
     date: "Date",
@@ -245,7 +245,7 @@ const TEXT = {
     analysisPleaseWait: "Atann in ti moman, nou lé an trin analiz out tiké.",
     savingPleaseWait: "Nou lé an trin anrezistré out tiké…",
     savingSmartShoppingInfo: "BudgetKazPei i anrezistr out bann zasha é i prépar bann pri pou Courses intelligentes.",
-    savingWaitReminder: "Mersi atann ankor in ti moman."
+    savingWaitReminder: "Mersi atann ankor in ti moman.",
     manualReady: "OCR lé pa disponib : ou pé ranpli tiké-la amain.",
     store: "Magazin",
     date: "Dat",
