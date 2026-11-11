@@ -129,7 +129,9 @@ const TEXT = {
     progressFinalizing: "Finalisation du ticket",
     analysisFootnote: "Optimisation, OCR, magasin, produits, total et vérification.",
     analysisPleaseWait: "Patientez quelques instants pendant l’analyse de votre ticket.",
-    savingPleaseWait: "Patientez quelques instants pendant l’enregistrement de votre ticket.",
+    savingPleaseWait: "Votre ticket est en cours d’enregistrement…",
+    savingSmartShoppingInfo: "BudgetKazPei enregistre vos achats et prépare les prix pour Courses intelligentes.",
+    savingWaitReminder: "Merci de patienter quelques instants.",
     manualReady: "OCR indisponible : vous pouvez remplir le ticket manuellement.",
     store: "Magasin",
     date: "Date",
@@ -241,7 +243,9 @@ const TEXT = {
     progressFinalizing: "Finalizasyon tiké-la",
     analysisFootnote: "Optimización, OCR, magazin, bann lartik, total ek vérifikasyon.",
     analysisPleaseWait: "Atann in ti moman, nou lé an trin analiz out tiké.",
-    savingPleaseWait: "Atann in ti moman, nou lé an trin anrezistré out tiké.",
+    savingPleaseWait: "Nou lé an trin anrezistré out tiké…",
+    savingSmartShoppingInfo: "BudgetKazPei i anrezistr out bann zasha é i prépar bann pri pou Courses intelligentes.",
+    savingWaitReminder: "Mersi atann ankor in ti moman.",
     manualReady: "OCR lé pa disponib : ou pé ranpli tiké-la amain.",
     store: "Magazin",
     date: "Dat",
@@ -3369,8 +3373,11 @@ function SavingReceiptNotice({ txt }) {
       }}
     >
       <strong style={{ display: "block", fontSize: 16, fontWeight: 950 }}>{txt.savingPleaseWait}</strong>
-      <div style={{ color: COLORS.muted, fontSize: 13, marginTop: 5 }}>
-        {txt.savingTicket}
+      <div style={{ color: COLORS.text, fontSize: 14, marginTop: 7, lineHeight: 1.5 }}>
+        {txt.savingSmartShoppingInfo}
+      </div>
+      <div style={{ color: COLORS.muted, fontSize: 13, marginTop: 7 }}>
+        {txt.savingWaitReminder}
       </div>
     </div>
   )
