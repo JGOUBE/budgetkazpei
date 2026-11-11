@@ -128,6 +128,8 @@ const TEXT = {
     progressTotal: "Vérification du total",
     progressFinalizing: "Finalisation du ticket",
     analysisFootnote: "Optimisation, OCR, magasin, produits, total et vérification.",
+    analysisPleaseWait: "Patientez quelques instants pendant l’analyse de votre ticket.",
+    savingPleaseWait: "Patientez quelques instants pendant l’enregistrement de votre ticket.",
     manualReady: "OCR indisponible : vous pouvez remplir le ticket manuellement.",
     store: "Magasin",
     date: "Date",
@@ -238,6 +240,8 @@ const TEXT = {
     progressTotal: "Vérifikasyon total-la",
     progressFinalizing: "Finalizasyon tiké-la",
     analysisFootnote: "Optimización, OCR, magazin, bann lartik, total ek vérifikasyon.",
+    analysisPleaseWait: "Atann in ti moman, nou lé an trin analiz out tiké.",
+    savingPleaseWait: "Atann in ti moman, nou lé an trin anrezistré out tiké.",
     manualReady: "OCR lé pa disponib : ou pé ranpli tiké-la amain.",
     store: "Magazin",
     date: "Dat",
@@ -2383,11 +2387,11 @@ export default function ReceiptsPage({
 
       {message && (
         <div style={{
-          background: "rgba(35,211,214,.10)",
+          background: "rgba(35,211,214,.13)",
           border: "1px solid rgba(35,211,214,.25)",
           color: COLORS.text,
           borderRadius: 16,
-          padding: "12px 14px",
+          padding: "16px 16px",
           fontSize: 13,
           fontWeight: 800,
         }}>
@@ -2850,9 +2854,12 @@ function AnalysisScreen({ progress, txt }) {
         <div style={{ color: COLORS.cyan, fontSize: 13, fontWeight: 950, marginBottom: 10 }}>
           {txt.scanTitle}
         </div>
-        <h2 style={{ color: COLORS.text, margin: "0 0 18px", fontSize: 28 }}>
-          Analyse du ticket
+        <h2 style={{ color: COLORS.text, margin: "0 0 12px", fontSize: 28 }}>
+          {txt === TEXT.kr ? "Analiz tiké-la" : "Analyse du ticket"}
         </h2>
+        <div role="status" aria-live="polite" style={{ marginBottom: 18, padding: "12px 14px", borderRadius: 14, background: COLORS.cardLight, border: `1px solid ${COLORS.border}`, fontSize: 15, lineHeight: 1.5, fontWeight: 850, color: COLORS.text }}>
+          {txt.analysisPleaseWait}
+        </div>
         <div style={{ height: 12, borderRadius: 999, background: COLORS.cardLight, overflow: "hidden", border: `1px solid ${COLORS.border}` }}>
           <div style={{
             width: `${value}%`,
@@ -3002,6 +3009,7 @@ function ValidationForm({
             {linesGapNotice}
           </div>
         )}
+        {busy && <SavingReceiptNotice txt={txt} />}
         {trustedPriceCount > 0 && (
           <div style={{ color: COLORS.green, fontSize: 13, fontWeight: 800, textAlign: "center" }}>
             {trustedPriceCount} {txt === TEXT.kr ? "pri pou Courses intelligentes" : "prix proposés à Courses intelligentes"}
@@ -3021,7 +3029,6 @@ function ValidationForm({
           <ActionButton label={txt.cancel} onClick={onCancel} disabled={busy} variant="neutral" />
           <ActionButton label={busy ? txt.savingTicketShort : txt.saveTicket} onClick={onSave} disabled={busy || Boolean(validationError) || (duplicateReceipt && !allowDuplicateImport)} />
         </div>
-        {busy && <SavingReceiptNotice txt={txt} />}
       </div>
     )
   }
@@ -3365,9 +3372,9 @@ function SavingReceiptNotice({ txt }) {
         lineHeight: 1.45,
       }}
     >
-      <strong>{txt.savingTicket}</strong>
-      <div style={{ color: COLORS.muted, fontSize: 13, marginTop: 4 }}>
-        {txt.savingTicketHint}
+      <strong style={{ display: "block", fontSize: 16, fontWeight: 950 }}>{txt.savingPleaseWait}</strong>
+      <div style={{ color: COLORS.muted, fontSize: 13, marginTop: 5 }}>
+        {txt.savingTicket}
       </div>
     </div>
   )
