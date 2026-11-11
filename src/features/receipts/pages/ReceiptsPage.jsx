@@ -3004,11 +3004,7 @@ function ValidationForm({
             }))}
           />
         </label>
-        {hasLinesGap && (
-          <div role="status" style={{ color: COLORS.yellow, background: COLORS.cardLight, border: `1px solid ${COLORS.border}`, borderRadius: 12, padding: "10px 12px", fontSize: 13, lineHeight: 1.45, fontWeight: 800 }}>
-            {linesGapNotice}
-          </div>
-        )}
+        {/* Keep technical line-balance diagnostics for administrators only. */}
         {busy && <SavingReceiptNotice txt={txt} />}
         {trustedPriceCount > 0 && (
           <div style={{ color: COLORS.green, fontSize: 13, fontWeight: 800, textAlign: "center" }}>
