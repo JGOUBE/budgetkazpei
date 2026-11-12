@@ -247,6 +247,10 @@ export function buildRegionalHabitPriceSuggestions({
     const quantity = Number(reference.quantity || 1)
     const unit = normalize(reference.unit)
     if (quantity > 1 && ["piece", "pieces", "unite", "unites"].includes(unit)) continue
+    const unitFactor = { kg: 1, g: 0.001, l: 1, cl: 0.01, ml: 0.001 }[unit]
+    const referenceFormat = purchaseFormat(reference)
+    if (unitFactor && referenceFormat.family !== "count" &&
+        quantity * unitFactor > referenceFormat.baseAmount + 0.0001) continue
 
     // Compare only the newest known price at each retailer/outlet, never the
     // cheapest price from an arbitrary year-old observation.
