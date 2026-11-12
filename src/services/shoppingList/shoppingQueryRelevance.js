@@ -57,12 +57,50 @@ export function isTableEggProduct(row = {}) {
   return /(?:^|\s)oeufs?(?:\s|$)/.test(label)
 }
 
+// Variantes de saisie équivalentes : "coton tige", "cotons-tiges", "cotontige".
+ // Keep the normalization specific: a generic search for "coton" must still
+ // match cotton pads, while a search for cotton swabs must not match perfumes.
+export function normalizeShoppingSearchText(value = "") {
+  return normalizeShoppingQuery(value)
+    .replace(/\b(?:cotons?\s+tiges?|cotontiges?)\b/g, "cotontige")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
+export function isCottonSwabQuery(query = "") {
+  const text = normalizeShoppingQuery(query)
+  return /^(?:cotons?\s+t(?:i(?:g(?:e(?:s)?)?)?)?|cotontiges?)(?:\s|$)/.test(text)
+}
+
+export function isCottonSwabProduct(row = {}) {
+  const label = normalizeShoppingQuery(typeof row === "string" ? row :
+    row.label || row.productName || row.product_name || row.display_name || row.name)
+  return /\bcotons?\s+tiges?\b/.test(label) ||
+    /\bcotontiges?\b/.test(label) ||
+    /\bbatonnets?\s+(?:ouates?|de\s+coton)\b/.test(label)
+}
+
+// Used by the catalog and by the other suggestion sources to rank the actual
+// product family ahead of incidental keyword matches.
+export function getShoppingCatalogSuggestionScore(label = "", query = "") {
+  const name = normalizeShoppingSearchText(label)
+  const searched = normalizeShoppingSearchText(query)
+  if (!name || !searched) return -1
+  const terms = searched.split(" ").filter(Boolean)
+  if (!terms.every(term => name.includes(term))) return -1
+  if (name === searched) return 120
+  if (name.startsWith(searched)) return 100
+  if (name.split(" ").some(word => word.startsWith(searched))) return 70
+  return 30
+}
+
 export function filterShoppingIntentSuggestions(rows = [], query = "") {
   if (!hasUsefulShoppingQuery(query)) return []
   return rows.filter(row => {
     if (isFoodMilkQuery(query) && isMilkCosmeticLabel(row.label || row.productName || row.display_name)) return false
     if (isCookingOilQuery(query) && !isCookingOilProduct(row)) return false
     if (isTableEggQuery(query) && !isTableEggProduct(row)) return false
+    if (isCottonSwabQuery(query) && !isCottonSwabProduct(row)) return false
     return true
   })
 }

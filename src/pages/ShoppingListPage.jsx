@@ -34,7 +34,7 @@ import { buildMultiRetailBasketOptimization } from "../services/shoppingList/sho
 import { formatSharedPriceRetailer } from "../services/shoppingList/sharedPricePresentation"
 import { loadSharedShoppingCatalog, loadSharedShoppingPrices } from "../services/shoppingList/sharedCatalogLoader"
 import { getDatedShoppingListPrice } from "../services/shoppingList/shoppingDatedPriceDisplay"
-import { filterShoppingIntentSuggestions, hasUsefulShoppingQuery } from "../services/shoppingList/shoppingQueryRelevance"
+import { filterShoppingIntentSuggestions, getShoppingCatalogSuggestionScore, hasUsefulShoppingQuery, normalizeShoppingSearchText } from "../services/shoppingList/shoppingQueryRelevance"
 import { loadShoppingListDraft, saveShoppingListDraft } from "../services/shoppingList/shoppingListDraft"
 import {
   findExactShoppingListDuplicate,
@@ -575,7 +575,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
   }, [query, shoppingItems, retailPromotions, retailObservedPrices, sharedCatalog, sharedUnitPrices])
   const catalogSuggestions = useMemo(() => {
     const normalize = value => String(value || "").replace(/œ/g, "oe").replace(/Œ/g, "Oe").normalize("NFD").replace(/[^\x00-\x7F]/g, char => ({ "é":"e", "è":"e", "ê":"e", "à":"a", "ù":"u", "ç":"c", "ô":"o", "î":"i" }[char] || char)).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()
-    const terms = normalize(query).split(" ").filter(Boolean)
+    const terms = normalizeShoppingSearchText(query).split(" ").filter(Boolean)
     if (!hasUsefulShoppingQuery(query) || !terms.length) return []
     const history = new Set(allSuggestions.historical.map(row => normalize(row.label)))
     const priorLists = [...items, ...snapshots.flatMap(snapshot => Array.isArray(snapshot.items) ? snapshot.items : [])]
@@ -587,7 +587,8 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
     return filterShoppingIntentSuggestions(sharedCatalog, query)
       .filter(row => {
         const name = normalize(row.display_name)
-        return !history.has(name) && terms.every(term => name.includes(term))
+        const searchableName = normalizeShoppingSearchText(row.display_name)
+        return !history.has(name) && terms.every(term => searchableName.includes(term))
       })
       .map(row => {
         const label = row.display_name
@@ -602,7 +603,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
           observedAt: sharedPrice?.observed_at || null,
           retailerName: sharedPrice ? formatSharedPriceRetailer(sharedPrice) : "",
           category: row.category, subcategory: row.subcategory,
-          rank: (used ? 100 : 0) + (norm === normalize(query) ? 50 : norm.startsWith(normalize(query)) ? 20 : 0) + (Number(sharedPrice?.price) > 0 ? 25 : 0) }
+          rank: (used ? 100 : 0) + getShoppingCatalogSuggestionScore(label, query) + (Number(sharedPrice?.price) > 0 ? 25 : 0) }
       })
       .sort((left, right) => right.rank - left.rank || left.label.localeCompare(right.label, "fr"))
       .filter((row, index, rows) => rows.findIndex(other => normalize(other.label) === normalize(row.label)) === index)
