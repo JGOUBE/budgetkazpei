@@ -53,7 +53,31 @@ export default function HabitAdviceCard({ suggestions = [], isKreol = false }) {
             padding: "12px 13px",
             color: COLORS.text,
           }}>
-            {suggestion.type === "habit" ? (
+            {suggestion.type === "regionalPrice" ? (
+              <>
+                <strong style={{ display: "block", fontSize: 14, lineHeight: 1.35 }}>
+                  {isKreol ? "In prix pli ba relevé pou mem produit" : "Un prix plus bas relevé pour le même produit"}
+                </strong>
+                <p style={{ margin: "5px 0 0", fontSize: 13, fontWeight: 750, overflowWrap: "anywhere" }}>
+                  {suggestion.product}
+                </p>
+                <p style={{ margin: "6px 0 0", color: COLORS.muted, fontSize: 12, lineHeight: 1.45 }}>
+                  {isKreol ? "Out dernier achat" : "Votre dernier achat"} : {formatMontant(suggestion.referencePrice)}
+                  {" · "}{suggestion.referenceStore} ({formatShortDate(suggestion.referenceDate)})
+                </p>
+                <p style={{ margin: "4px 0 0", fontSize: 13, lineHeight: 1.45 }}>
+                  {isKreol ? "Prix relevé koté" : "Prix relevé chez"}{" "}
+                  <strong>{suggestion.alternativeStore}</strong> :{" "}
+                  <strong style={{ color: COLORS.cyan }}>{formatMontant(suggestion.alternativePrice)}</strong>
+                  {" · "}{formatShortDate(suggestion.observedAt)}
+                </p>
+                <p style={{ margin: "5px 0 0", color: COLORS.muted, fontSize: 12, lineHeight: 1.45 }}>
+                  {isKreol ? "Différence relevée par paquet" : "Écart observé par article"} :{" "}
+                  <strong>{formatMontant(suggestion.saving)}</strong>.{" "}
+                  {isKreol ? "Disponibilité pou vérifier dan magasin." : "Disponibilité et prix actuel à vérifier en magasin."}
+                </p>
+              </>
+            ) : suggestion.type === "habit" ? (
               <>
                 <strong style={{ display: "block", fontSize: 14, lineHeight: 1.35 }}>
                   {isKreol ? "Et si ou fé in gâteau maison de temps en temps ?" : "Et si vous faisiez un gâteau maison de temps en temps ?"}
