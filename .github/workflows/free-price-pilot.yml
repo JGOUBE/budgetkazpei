@@ -53,5 +53,25 @@ jobs:
       - uses: actions/checkout@v4
       - name: First real public-offer access check (Hyper U vs Super U)
         run: python3 scripts/free_price_pilot/collector.py --url "https://lapub.re/offres/saucisses-de-porc-mak-yuen-hyper-u" --limit 1
+      - name: Diagnose HTML field positions of the first allowed offer (read-only)
+        run: |
+          python3 - <<'PY'
+          import sys
+          sys.path.insert(0, 'scripts/free_price_pilot')
+          from collector import fetch, permitted, Page, DATES_RE, found_prices
+          url = 'https://lapub.re/offres/saucisses-de-porc-mak-yuen-hyper-u'
+          if permitted(url):
+              page = Page()
+              source = fetch(url)
+              page.feed(source)
+              start = page.text.lower().find('saucisses')
+              print('source_characters=', len(source))
+              print('h1_titles=', page.titles[:3])
+              print('snippet=', page.text[max(0, start-100):start+300] if start >= 0 else page.text[:200])
+              print('dates_matched=', bool(DATES_RE.search(page.text)))
+              print('price_count=', len(found_prices(page.text)))
+          else:
+              print('robots_disallowed')
+          PY
       - name: Confirm U Express offer is never mapped to Super U
         run: python3 scripts/free_price_pilot/collector.py --url "https://lapub.re/offres/cereales-nestle-u-express-2" --limit 1
