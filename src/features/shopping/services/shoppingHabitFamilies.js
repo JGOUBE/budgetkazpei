@@ -28,7 +28,7 @@ const TOKEN_ALIASES = Object.freeze({
   saucisses: "saucisse", sauces: "sauce", sacs: "sac",
   boissons: "boisson", cereales: "cereale",
   petits: "petit", desserts: "dessert",
-  mouchoirs: "mouchoir", mouchoir: "mouchoir",
+  mouchoirs: "mouchoir", mouchoir: "mouchoir", frites: "frite",
   concombres: "concombre", carottes: "carotte",
   brocolis: "brocoli", salades: "salade",
   fromages: "fromage", chips: "chips",
@@ -76,7 +76,7 @@ const PRODUCT_ANCHORS = new Set([
   "haricot", "pois", "mais", "tomate", "puree", "confiture",
   "compote", "yaourt", "oeuf", "fromage", "gouda", "emmental",
   "mimolette", "camembert", "mozzarella", "cheddar", "maasdam",
-  "pain", "croissant", "brioche", "wrap", "tortilla", "galette",
+  "pain", "croissant", "brioche", "wrap", "tortilla", "galette", "frite",
   "biscuit", "gouter", "madeleine", "gaufrette", "chips",
   "cracker", "chocolat", "barre", "cereale", "muesli",
   "lait", "boisson", "jus", "nectar", "the", "cafe",
@@ -104,7 +104,8 @@ const UNQUALIFIED = new Set([
   "saucisson", "rosette", "carotte", "concombre", "brocoli",
   "epinard", "salade", "champignon", "olive", "mouchoir",
   "lessive", "dentifrice", "cafe", "the", "huile",
-  "ravioli", "feuillete", "burger", "pizza",
+  "ravioli", "feuillete", "burger", "pizza", "mayonnaise",
+  "oignon", "saumon", "crevette", "frite", "mais",
 ])
 
 const DEPARTMENTS = new Set([
@@ -173,6 +174,8 @@ function classifiedFamily(item = {}) {
 
   const tokens = productTokens(name)
   if (!tokens.length) return null
+  // « Pains wrap » et « wraps » désignent la même famille de galettes.
+  if (tokens[0] === "pain" && tokens[1] === "wrap") tokens.shift()
 
   const special = CUSTOM_FAMILIES.find(rule => rule.matches(tokens, original))
   if (special) return { key: special.key, label: special.label }
