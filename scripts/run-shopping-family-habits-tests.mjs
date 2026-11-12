@@ -208,4 +208,22 @@ assert.match(uiPage, /Voir tous les/)
 assert.match(uiFamilyCard, /const visible = showAll \? families : families.slice\(0, 3\)/)
 assert.match(uiFamilyCard, /Les prix restent suivis séparément par article/)
 
+
+assert.equal(
+  identifyShoppingHabitFamily({ product_name: "MAYONNAISE 470G" }),
+  identifyShoppingHabitFamily({ product_name: "Mayonnaise bocal 470g Rustica" }),
+)
+assert.equal(
+  identifyShoppingHabitFamily({ product_name: "FRITE INCURVEE SURG POM'LISSE" }),
+  identifyShoppingHabitFamily({ product_name: "Frites au four 600 g" }),
+)
+assert.equal(
+  identifyShoppingHabitFamily({ product_name: "PAINS WRAP X6 EPIDOR" }),
+  identifyShoppingHabitFamily({ product_name: "6 Wraps de blé complet 370g" }),
+)
+assert.equal(
+  identifyShoppingHabitFamily({ product_name: "Maïs croquant Notre Jardin" }),
+  identifyShoppingHabitFamily({ product_name: "MAIS DX 1/2 285G" }),
+)
+
 console.log("Shopping recurring family tests passed")
