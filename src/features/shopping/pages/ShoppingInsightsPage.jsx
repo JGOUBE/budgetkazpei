@@ -267,6 +267,13 @@ function Metric({ label, value, color }) {
   )
 }
 
+function formatAdvicePrice(value, suggestion) {
+  const formatted = formatMontant(value)
+  return suggestion.normalizedComparison && suggestion.unitLabel
+    ? `${formatted.replace("€", "").trim()} ${suggestion.unitLabel}`
+    : formatted
+}
+
 function HabitAdviceCard({ suggestions, isKreol }) {
   return (
     <section style={cardStyle({ padding: 16 })} aria-label={isKreol ? "Bann conseil lékonomi" : "Mes pistes d'économies"}>
@@ -303,12 +310,15 @@ function HabitAdviceCard({ suggestions, isKreol }) {
                   {suggestion.product}
                 </strong>
                 <p style={{ margin: "5px 0 0", fontSize: 13, lineHeight: 1.45 }}>
-                  {isKreol ? "Pri pli ba observé koté" : "Prix plus bas observé chez"}{" "}
+                  {isKreol ? "Pri out achat koté" : "Votre achat chez"}{" "}
+                  <strong>{suggestion.referenceStore}</strong> :{" "}
+                  {formatAdvicePrice(suggestion.referencePrice, suggestion)}
+                </p>
+                <p style={{ margin: "5px 0 0", fontSize: 13, lineHeight: 1.45 }}>
+                  {isKreol ? "Pri pli ba relevé koté" : "Prix plus bas relevé chez"}{" "}
                   <strong>{suggestion.store}</strong> :{" "}
                   <strong style={{ color: COLORS.cyan }}>
-                    {suggestion.normalizedComparison && suggestion.unitLabel
-                      ? `${formatMontant(suggestion.alternativePrice).replace("€", "").trim()} ${suggestion.unitLabel}`
-                      : formatMontant(suggestion.alternativePrice)}
+                    {formatAdvicePrice(suggestion.alternativePrice, suggestion)}
                   </strong>
                 </p>
                 <p style={{ margin: "5px 0 0", fontSize: 12, lineHeight: 1.4, color: COLORS.muted }}>
