@@ -41,6 +41,10 @@ assert.equal(priceAdvice?.saving, 0.5)
 assert.equal(priceAdvice?.observedAt.slice(0, 10), "2026-10-10")
 assert.equal(priceAdvice?.product, "Farine T55 1 kg")
 
+const mixedAdvice = buildHabitSuggestions([...snacks, ...farine])
+assert.deepEqual(mixedAdvice.map(suggestion => suggestion.type), ["price", "habit"])
+assert.equal(mixedAdvice.length, 2)
+
 const sameStore = farine.map(row => ({ ...row, store: "Leclerc" }))
 assert.equal(buildHabitSuggestions(sameStore).some(suggestion => suggestion.type === "price"), false)
 
