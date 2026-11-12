@@ -172,7 +172,7 @@ export default function SpendingCategoryCard({ summary, isKreol = false }) {
     a.label.localeCompare(b.label, "fr"),
   )
   const visible = showAll ? sorted : sorted.slice(0, 4)
-  const top = sorted.find(row => row.key !== "other")
+  const top = [...groups].filter(row => row.key !== "other").sort((a, b) => b.spent - a.spent)[0]
   const hasUnknown = groups.some(row => row.key === "other")
 
   return (
