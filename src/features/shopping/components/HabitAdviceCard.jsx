@@ -10,6 +10,12 @@ const cardStyle = extra => ({
   ...extra,
 })
 
+function formatShortDate(value) {
+  if (!value) return "—"
+  const date = new Date(value)
+  return Number.isFinite(date.getTime()) ? date.toLocaleDateString("fr-FR") : "—"
+}
+
 function formatAdvicePrice(value, suggestion) {
   const formatted = formatMontant(value)
   return suggestion.normalizedComparison && suggestion.unitLabel
@@ -54,7 +60,42 @@ export default function HabitAdviceCard({ suggestions = [], isKreol = false }) {
                     : "Les biscuits et goûters reviennent régulièrement dans vos tickets. Une préparation maison peut être une alternative : comparez le coût des ingrédients."}
                 </p>
               </>
-            ) : (
+            ) : suggestion.type === "spending" ? (
+              <>
+                <strong style={{ display: "block", fontSize: 14, lineHeight: 1.35 }}>
+                  {isKreol ? "In achat ki revient souvent" : "Un achat qui revient souvent"}
+                </strong>
+                <p style={{ margin: "5px 0 0", fontSize: 13, lineHeight: 1.45, overflowWrap: "anywhere" }}>
+                  <strong>{suggestion.product}</strong> : {isKreol ? "relevé su" : "relevé sur"}{" "}
+                  <strong>{suggestion.receiptCount} tickets</strong> ·{" "}
+                  <strong>{formatMontant(suggestion.totalSpent)}</strong>{" "}
+                  {isKreol ? "au total su bann lignes d'achat" : "cumulés sur les lignes d'achat"}.
+                </p>
+                <p style={{ margin: "5px 0 0", fontSize: 12, lineHeight: 1.45, color: COLORS.muted }}>
+                  {isKreol ? "In ti réflexe : compare le pri par unité ou le format avan rachète."
+                    : "Au prochain achat, comparer le prix à l'unité ou les formats pourrait être utile."}
+                </p>
+              </>
+            ) : suggestion.type === "priceRise" ? (
+              <>
+                <strong style={{ display: "block", fontSize: 14, lineHeight: 1.35 }}>
+                  {isKreol ? "Pri plus haut su out tickets" : "Un prix en hausse sur vos tickets"}
+                </strong>
+                <p style={{ margin: "5px 0 0", fontSize: 13, lineHeight: 1.45, overflowWrap: "anywhere" }}>
+                  <strong>{suggestion.product}</strong> · {suggestion.store}
+                </p>
+                <p style={{ margin: "5px 0 0", fontSize: 13, lineHeight: 1.45 }}>
+                  {formatMontant(suggestion.previousPrice)} ({formatShortDate(suggestion.previousDate)}){" "}
+                  → <strong style={{ color: COLORS.cyan }}>{formatMontant(suggestion.latestPrice)}</strong>{" "}
+                  ({formatShortDate(suggestion.latestDate)})
+                </p>
+                <p style={{ margin: "5px 0 0", fontSize: 12, lineHeight: 1.45, color: COLORS.muted }}>
+                  {isKreol
+                    ? "In promo avant pé explique la différence. Vérifie le pri avan le prochain achat."
+                    : "Une promotion précédente peut expliquer l'écart. Vérifiez le prix avant votre prochain achat."}
+                </p>
+              </>
+            ) : suggestion.type === "price" ? (
               <>
                 <strong style={{ display: "block", fontSize: 14, lineHeight: 1.35, overflowWrap: "anywhere" }}>
                   {suggestion.product}
@@ -74,10 +115,10 @@ export default function HabitAdviceCard({ suggestions = [], isKreol = false }) {
                 <p style={{ margin: "5px 0 0", fontSize: 12, lineHeight: 1.4, color: COLORS.muted }}>
                   {isKreol ? "Écart relevé" : "Écart observé"} : {formatMontant(suggestion.saving)} ·{" "}
                   {isKreol ? "Pri relevé le" : "Prix relevé le"}{" "}
-                  {new Date(suggestion.observedAt).toLocaleDateString("fr-FR")}
+                  {formatShortDate(suggestion.observedAt)}
                 </p>
               </>
-            )}
+            ) : null}
           </article>
         ))}
       </div>
