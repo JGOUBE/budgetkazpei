@@ -306,8 +306,9 @@ function HabitAdviceCard({ suggestions, isKreol }) {
                   {isKreol ? "Pri pli ba observé koté" : "Prix plus bas observé chez"}{" "}
                   <strong>{suggestion.store}</strong> :{" "}
                   <strong style={{ color: COLORS.cyan }}>
-                    {formatMontant(suggestion.alternativePrice)}
-                    {suggestion.normalizedComparison && suggestion.unitLabel ? ` ${suggestion.unitLabel}` : ""}
+                    {suggestion.normalizedComparison && suggestion.unitLabel
+                      ? `${formatMontant(suggestion.alternativePrice).replace("€", "").trim()} ${suggestion.unitLabel}`
+                      : formatMontant(suggestion.alternativePrice)}
                   </strong>
                 </p>
                 <p style={{ margin: "5px 0 0", fontSize: 12, lineHeight: 1.4, color: COLORS.muted }}>
