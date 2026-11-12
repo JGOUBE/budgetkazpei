@@ -1,0 +1,46 @@
+name: Free Super U price quality pilot
+on:
+  pull_request:
+    paths:
+      - 'scripts/free_price_pilot/**'
+      - '.github/workflows/free-price-pilot.yml'
+  workflow_dispatch:
+    inputs:
+      offer_url:
+        description: 'Public LAPUB offer or listing URL'
+        required: true
+        type: string
+      max_pages:
+        description: 'Maximum offers checked (1 to 10)'
+        required: true
+        default: '3'
+        type: choice
+        options:
+          - '3'
+          - '5'
+          - '10'
+permissions:
+  contents: read
+concurrency:
+  group: free-superu-price-pilot-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  quality-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unit tests (Python stdlib only, no external requests)
+        run: python3 -m unittest discover -v -s scripts/free_price_pilot -p 'test_*.py'
+  collect-readonly:
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    needs: quality-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - name: Read-only limited crawl (never publishes)
+        env:
+          OFFER_URL: ${{ inputs.offer_url }}
+          MAX_PAGES: ${{ inputs.max_pages }}
+        run: python3 scripts/free_price_pilot/collector.py --url "$OFFER_URL" --limit "$MAX_PAGES"
