@@ -47,11 +47,15 @@ function categoryKey(text) {
 
   // Produits transformés : ne pas assimiler compote, tomates en conserve,
   // fritures, pains aux fruits ou jus aux fruits/légumes frais.
-  if (contains(text, /\b(?:compote(?:s)?|gouter(?:s)?|madeleine(?:s)?|biscuit(?:s)?|cookie(?:s)?|gateaux?|gaufrettes?|sables?|palets?|bonbons?|confiserie|oursons?|guimauve|chabrior goutak|chocolat(?:s)?|choco(?:lat)?|milka|kinder|snickers|croissants?|chaussons? pomme|pains? (?:au |aux )?chocolat|chips|cacahuetes? grillees?|pop corn|caramel|sucettes?|nougats?|barres? cereales?|barres? choco)\b/) &&
+  if (contains(text, /\b(?:compote(?:s)?|gouter(?:s)?|madeleine(?:s)?|biscuit(?:s)?|cookie(?:s)?|gateaux?|gaufrettes?|sables?|palets?|bonbons?|confiserie|oursons?|guimauve|chabrior goutak|pate a tartiner|pate tartiner|chocolat(?:s)?|choco(?:lat)?|milka|kinder|snickers|croissants?|chaussons? pomme|pains? (?:au |aux )?chocolat|chips|cacahuetes? grillees?|pop corn|caramel|sucettes?|nougats?|barres? cereales?|barres? choco)\b/) &&
       !contains(text, /\b(?:chocolat en poudre|choco poudre|lait chocolat|boisson choco|cereales? petit dej|cereales? petit dejeuner)\b/)) return "treats"
 
   if (contains(text, /\b(?:jus|nectar|boisson(?:s)?|cola|coca|orangina|fanta|soda|eau (?:minerale|gazeuse)|vichy celestin|the glace|sirop|ginger shot|joker tetra|rean jus|rea jus|diego (?:ananas|mangue)|poulain|nesquik|chocolat en poudre)\b/) &&
       !contains(text, /\b(?:lait de chevre|lait demi|lait 1 2|lait uht|lait ecreme)\b/)) return "drinks"
+
+  // Plats préparés au fromage ou à la viande : la catégorie décrit le plat,
+  // pas un ingrédient isolé.
+  if (contains(text, /\b(?:feuilletes?|feuillete|pizza|tourte|ravioli|part de pizza|coeur de burger)\b/)) return "pantry"
 
   if (contains(text, /\b(?:lait|yaourts?|yogourts?|yoplait|fromage|emmental|gouda|mimolette|camembert|cheddar|maasdam|mozzarella|beurre|oeufs?|oeuf|creme anglaise|creme fraiche|tomme|petit benare|toastinette|ferme nature sucre)\b/) &&
       !contains(text, /\b(?:pains? au lait|pains? de lait|pain lait|lait de coco|lait de noisette|lait amande|pate a tartiner)\b/)) return "dairy"
