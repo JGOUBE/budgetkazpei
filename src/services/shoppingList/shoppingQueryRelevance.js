@@ -61,10 +61,12 @@ export function isTableEggProduct(row = {}) {
  // Keep the normalization specific: a generic search for "coton" must still
  // match cotton pads, while a search for cotton swabs must not match perfumes.
 export function normalizeShoppingSearchText(value = "") {
-  return normalizeShoppingQuery(value)
+  const normalized = normalizeShoppingQuery(value)
     .replace(/\b(?:cotons?\s+tiges?|cotontiges?)\b/g, "cotontige")
     .replace(/\s+/g, " ")
     .trim()
+  // Both "coton" and "cotons" should retrieve "cotons-tiges".
+  return normalized === "cotons" ? "coton" : normalized
 }
 
 export function isCottonSwabQuery(query = "") {
