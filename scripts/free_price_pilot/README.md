@@ -1,5 +1,9 @@
 # BudgetKazPei — pilote gratuit de collecte des prix Super U
 
+## Périmètre des enseignes
+
+**Hyper U, Super U et U Express font partie de la même Coopérative U.** Les candidats sont regroupés sous le groupe « Magasins U Réunion », en conservant le type et le magasin exact lorsqu'il est vérifiable. Un prospectus peut couvrir plusieurs formats simultanément ; seule la source officielle et les conditions de l'offre permettent de l'établir. **Un prix relevé dans une fiche Hyper U ne devient pas automatiquement un prix valable dans tous les Super U.**
+
 ## Ce qui est en place
 
 - Collecteur Python autonome avec bibliothèque standard uniquement (zéro abonnement, zéro API payante, zéro OCR).
@@ -43,3 +47,12 @@ Les exécutants **standard** de GitHub Actions sont gratuits sur ce dépôt publ
 ## État
 
 Pilote en revue. Aucune exécution réelle, aucun prix importé, aucune automatisation récurrente. La création du code et les tests ne prouvent pas la disponibilité des pages publiques ou la validité des annonces.
+
+## Premier essai réel — 13 novembre 2026
+
+- Accès public autorisé à la fiche LAPUB « Saucisses de porc Mak-Yuen » marquée Hyper U.
+- Un candidat extrait : **4,79 €/kg**, validité **03/11/2026 au 15/11/2026**, poids de vente variable.
+- Groupe : Magasins U Réunion. Type : Hyper U. Magasin précis et applicabilité à Super U : **non vérifiés**.
+- Candidat en attente de vérification manuelle ; **0 publication dans Supabase**.
+- Une seconde URL U Express est indisponible (erreur HTTP), signalée sans échec du workflow.
+- Suite de tests et essai en ligne GitHub Actions réussis ; collecte non planifiée et non automatique.
