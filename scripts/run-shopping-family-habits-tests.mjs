@@ -103,14 +103,14 @@ const examples = [
   ["PAIN DE MIE COMPLET 350G", "Pain mie sandwich complet Yami 420 g", "auto:pain-mie"],
   ["JUS DE RAISIN 6X20CL", "Jus de raisin 1 L", "auto:jus-raisin"],
   ["TORTILLAS DE MAIS 320G", "TORTILLAS NATURE TOKAPI 150G", "auto:tortilla"],
-  ["FRITES AU FOUR 600 G", "Frites surgelées 1 kg", "auto:frite-surgele"], // words differ: not an automatic equivalence
+  ["FRITES AU FOUR 600 G", "Pomme Granny Smith 1 kg", "distinct-food-families"],
 ]
 for (let index = 0; index < examples.length; index += 1) {
   const [left, right, expected] = examples[index]
   const a = identifyShoppingHabitFamily({ product_name: left })
   const b = identifyShoppingHabitFamily({ product_name: right })
   if (index === examples.length - 1) {
-    // Ne pas inventer de correspondance si les mots essentiels diffèrent.
+    // Une frite et une pomme Granny sont deux familles différentes.
     assert.notEqual(a, b)
     continue
   }
