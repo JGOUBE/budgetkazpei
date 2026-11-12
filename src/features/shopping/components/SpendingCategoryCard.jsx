@@ -89,7 +89,7 @@ function FamilyRow({ group, shareTotal, expanded, onToggle, sortMode }) {
             <strong style={{ fontSize: 14, color: COLORS.text, whiteSpace: "nowrap" }}>
               {sortMode === "spend"
                 ? formatMontant(group.spent)
-                : group.purchaseCount + " achats"}
+                : group.purchaseCount + " lignes"}
             </strong>
             <span style={{ color: COLORS.muted, fontSize: 11, whiteSpace: "nowrap" }}>
               {sortMode === "spend" ? group.sharePercent + " % du total" : formatMontant(group.spent)}
@@ -173,6 +173,7 @@ export default function SpendingCategoryCard({ summary, isKreol = false }) {
   )
   const visible = showAll ? sorted : sorted.slice(0, 4)
   const top = [...groups].filter(row => row.key !== "other").sort((a, b) => b.spent - a.spent)[0]
+  const priority = [...groups].filter(row => row.suggestedAction).sort((a, b) => b.spent - a.spent)[0]
   const hasUnknown = groups.some(row => row.key === "other")
 
   return (
@@ -287,8 +288,24 @@ export default function SpendingCategoryCard({ summary, isKreol = false }) {
       )}
       {top && (
         <p style={{ margin: "11px 1px 0", color: COLORS.muted, fontSize: 11, lineHeight: 1.5 }}>
-          Premier poste reconnu : <strong style={{ color: COLORS.text }}>{top.label}</strong>.
-          Les économies proposées nécessitent une comparaison fiable des mêmes articles et formats.
+          Premier poste reconnu : <strong style={{ color: COLORS.text }}>{top.label}</strong>
+          {" · "}{formatMontant(top.spent)} sur vos tickets.
+        </p>
+      )}
+      {priority && (
+        <p style={{
+          display: "flex",
+          alignItems: "flex-start",
+          gap: 7,
+          margin: "9px 1px 0",
+          color: COLORS.muted,
+          fontSize: 11,
+          lineHeight: 1.5,
+        }}>
+          <Lightbulb size={14} color={COLORS.cyan} style={{ flexShrink: 0, marginTop: 2 }}/>
+          <span><strong style={{ color: COLORS.text }}>Piste pour {priority.label.toLowerCase()} :</strong>{" "}
+            {priority.suggestedAction}
+          </span>
         </p>
       )}
     </section>
