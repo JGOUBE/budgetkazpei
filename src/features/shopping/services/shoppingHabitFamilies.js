@@ -20,7 +20,7 @@ const TOKEN_ALIASES = Object.freeze({
   cornichons: "cornichon", lentilles: "lentille",
   tomates: "tomate", tomats: "tomate",
   yaourts: "yaourt", yogourts: "yaourt", yogourt: "yaourt",
-  oeufs: "oeuf", oeuf: "oeuf", oeufs: "oeuf",
+  oeufs: "oeuf", oeuf: "oeuf",
   wraps: "wrap", tortillas: "tortilla",
   feuilletes: "feuillete", feuilletee: "feuillete",
   rape: "rape", rap: "rape", rapes: "rape",
@@ -42,7 +42,7 @@ const TOKEN_ALIASES = Object.freeze({
   choc: "chocolat", choco: "chocolat",
   fraiches: "fraiche", naturelles: "nature",
   compotes: "compote", tablettes: "tablette",
-  barres: "barre", pains: "pain",
+  barres: "barre", pelees: "pelee",
 })
 
 const EMPTY_WORDS = new Set([
