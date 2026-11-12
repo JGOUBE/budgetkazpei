@@ -10,6 +10,7 @@ import {
   normalizeShoppingProductText,
 } from "./shoppingProductCompatibility.js"
 import { getShoppingListQuantity } from "./shoppingListItemModel.js"
+import { normalizeShoppingSearchText } from "./shoppingQueryRelevance.js"
 
 const UNIT_WORDS = new Set(["g", "gr", "kg", "kgs", "ml", "cl", "l", "litre", "litres", "x", "xkg"])
 
@@ -276,8 +277,8 @@ export function isRetailPromotionUsableForSmartShopping(promotion: any = {}) {
 }
 
 export function getProductSuggestionScore(productName = "", query = "") {
-  const cleanName = normalizeProductName(productName)
-  const cleanQuery = normalizeProductName(query)
+  const cleanName = normalizeShoppingSearchText(normalizeProductName(productName))
+  const cleanQuery = normalizeShoppingSearchText(normalizeProductName(query))
   if (!cleanName || !cleanQuery) return -1
 
   const queryWords = words(cleanQuery)
@@ -331,12 +332,12 @@ function normalizeRetailObservedSearchText(value = "") {
 }
 
 function getRetailObservedSuggestionScore(observed: any = {}, query = "") {
-  const cleanQuery = normalizeRetailObservedSearchText(query)
-  const cleanText = normalizeRetailObservedSearchText([
+  const cleanQuery = normalizeShoppingSearchText(normalizeRetailObservedSearchText(query))
+  const cleanText = normalizeShoppingSearchText(normalizeRetailObservedSearchText([
     observed.productName,
     observed.brand,
     observed.packageFormat,
-  ].filter(Boolean).join(" "))
+  ].filter(Boolean).join(" ")))
 
   if (!cleanQuery || !cleanText) return -1
   if (!isShoppingSearchCandidateCompatible(query, observed)) return -1
