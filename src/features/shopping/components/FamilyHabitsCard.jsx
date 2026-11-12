@@ -14,7 +14,7 @@ export default function FamilyHabitsCard({ families = [], isKreol = false }) {
   const [showAll, setShowAll] = useState(false)
   if (!families.length) return null
 
-  const visible = families.slice(0, showAll ? 8 : 3)
+  const visible = showAll ? families : families.slice(0, 3)
   return (
     <section style={{
       background: COLORS.card,
@@ -29,7 +29,7 @@ export default function FamilyHabitsCard({ families = [], isKreol = false }) {
       <p style={{ color: COLORS.muted, fontSize: 12, lineHeight: 1.5, margin: "5px 0 12px" }}>
         {isKreol
           ? "Des formats différents, in mem famille. Pa de comparaison de pri entre bann formats."
-          : "Des formats différents, une même habitude. Les prix restent suivis séparément par article."}
+          : "Les produits proches sont regroupés pour vos habitudes. Les prix restent suivis séparément par article."}
       </p>
       <div style={{ display: "grid", gap: 8 }}>
         {visible.map(family => {
@@ -140,7 +140,7 @@ export default function FamilyHabitsCard({ families = [], isKreol = false }) {
             fontSize: 12,
           }}
         >
-          {showAll ? "Afficher moins" : "Voir les autres familles"}
+          {showAll ? "Afficher moins" : "Voir les " + families.length + " familles"}
         </button>
       )}
     </section>
