@@ -263,7 +263,7 @@ function AutocompleteSuggestion({ suggestion, txt, onSelect }) {
     : null
   const details = [
     retailer,
-    observedDate ? `Prix observé le ${observedDate}` : "",
+    observedDate ? `Prix relevé le ${observedDate}` : "",
   ].filter(Boolean).join(" · ")
 
   return (
@@ -473,7 +473,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
           retailObservedRetailerName: item.selected_price_retailer || "",
           priceSource: "retail_observed",
           estimatedPriceSource: "retail_observed",
-          priceLabel: `Prix observé le ${new Date(selectedAt).toLocaleDateString("fr-FR")}`,
+          priceLabel: `Prix relevé le ${new Date(selectedAt).toLocaleDateString("fr-FR")}`,
           priceUnitLabel: "",
         }
       }
@@ -510,7 +510,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
         retailObservedRetailerName: formatSharedPriceRetailer(price),
         priceSource: "retail_observed",
         estimatedPriceSource: "retail_observed",
-        priceLabel: price.observed_at ? `Prix observé le ${new Date(price.observed_at).toLocaleDateString("fr-FR")}` : "Prix observé",
+        priceLabel: price.observed_at ? `Prix relevé le ${new Date(price.observed_at).toLocaleDateString("fr-FR")}` : "Prix observé",
         priceUnitLabel: "",
         comparisonUnitPrice: Number(price.unit_price) || null,
         comparisonUnitLabel: price.unit_label || "",
@@ -1216,11 +1216,11 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
                 {item.name}
                 <span style={{ display: "block", color: COLORS.muted, fontSize: 12, marginTop: 2 }}>
                   {datedReferencePrice > 0 && !displayedPrice
-                    ? `${datedReferenceRetailer ? datedReferenceRetailer + " · " : ""}Prix observé le ${new Date(datedReferenceAt).toLocaleDateString("fr-FR")}`
+                    ? `${datedReferenceRetailer ? datedReferenceRetailer + " · " : ""}Prix relevé le ${new Date(datedReferenceAt).toLocaleDateString("fr-FR")}`
                     : priceLearning
                     ? txt.usualPriceLearning
                     : retailObservedPrice
-                      ? `${item.retailObservedRetailerName || "Magasin"} · ${item.retailObservedAt ? `Prix observé le ${new Date(item.retailObservedAt).toLocaleDateString("fr-FR")}` : "Prix observé"}`
+                      ? `${item.retailObservedRetailerName || "Magasin"} · ${item.retailObservedAt ? `Prix relevé le ${new Date(item.retailObservedAt).toLocaleDateString("fr-FR")}` : "Prix observé"}`
                       : item.historicalPrice !== null
                         ? item.priceLabel
                         : txt.priceMissing}
