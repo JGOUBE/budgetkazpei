@@ -6,7 +6,7 @@ import {
 } from "../../../services/savings/savingsEngine.ts"
 import { normalizeMerchantName } from "./priceHistory.ts"
 
-const SNACK_PATTERN = /\b(?:biscuits?|cookies?|gateaux?|gouters?|madeleines?|barquettes?|sables?|palets?|brownies?|quatre\s+quarts)\b/
+const SNACK_PATTERN = /\b(?:biscuits?|cookies?|gateaux?|gouters?|madeleines?|sables?|palets?|brownies?|quatre\s+quarts)\b/
 
 function normalize(value = "") {
   return String(value || "")
