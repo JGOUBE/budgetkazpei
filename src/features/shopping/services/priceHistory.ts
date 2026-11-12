@@ -65,11 +65,24 @@ export function normalizeMerchantName(name = "") {
     .join(" ")
 }
 
+// Corrige uniquement la typographie des formats (et certains O/0 OCR dans
+// un poids). Ne supprime ni marque ni variante ni quantité commerciale : le
+// regroupement précis reste distinct de la famille de consommation.
+function normalizeExactProductLabel(value = "") {
+  return normalizeText(value)
+    .replace(/(\d)o(?=\d)/g, (_, digit) => digit + "0")
+    .replace(/\b(\d+)\s*x\s*(\d+)\s*(kg|g|gr|l|cl|ml)\b/g, "$1x$2$3")
+    .replace(/\b(\d+)\s*(?:gr|grammes?)\b/g, "$1g")
+    .replace(/\b(\d+)\s*(kg|g|l|cl|ml)\b/g, "$1$2")
+    .replace(/\s+/g, " ")
+    .trim()
+}
+
 // La désignation complète (format inclus) fait foi pour le classement des
 // produits précis. Le normalized_name hérité peut varier d'un ticket à l'autre
 // même lorsque product_name est strictement identique.
 export function shoppingProductGroupingKey(item: ShoppingItem = {}) {
-  const exactLabel = normalizeText(item.product_name || "")
+  const exactLabel = normalizeExactProductLabel(item.product_name || "")
   if (exactLabel) return "product:" + exactLabel
   const fallback = normalizeText(item.normalized_name || "")
   return fallback ? "normalized:" + fallback : ""
