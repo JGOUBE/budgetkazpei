@@ -1,4 +1,5 @@
 import assert from "node:assert/strict"
+import { readFile } from "node:fs/promises"
 import { buildHabitSuggestions } from "../src/features/shopping/services/habitAdvice.js"
 
 const item = (name, receiptId, createdAt, overrides = {}) => ({
@@ -18,6 +19,21 @@ const snacks = [
   item("Cookies 200 g", "r3", "2026-10-20T12:00:00Z"),
 ]
 assert.ok(buildHabitSuggestions(snacks).some(suggestion => suggestion.type === "habit"))
+
+// Reproduction de libellés réels abrégés et corrigés d'anciens tickets.
+// Les conseils doivent fonctionner même sans EAN, mais sans fabriquer de prix.
+const fromReceipts = [
+  item("Goûters fourrés au chocolat 225 g", "historical-r1", "2026-08-13T12:00:00Z", {
+    original_name: "225G GOUTER FOURRES CHOCO", confidence_score: 98, store: "Leader Price",
+  }),
+  item("MADELEINE PP X15 340G", "historical-r2", "2026-10-01T12:00:00Z", {
+    original_name: "MADELEINE PP X15 340G", confidence_score: 100, store: "E.Leclerc",
+  }),
+  item("GOUTERS FOURRES CACAO X12 225G", "historical-r3", "2026-09-20T12:00:00Z", {
+    original_name: "GOUTERS FOURRES CACAO X12 225G", confidence_score: 99, store: "E.Leclerc",
+  }),
+]
+assert.equal(buildHabitSuggestions(fromReceipts).some(advice => advice.type === "habit"), true)
 
 const sameReceipt = snacks.map((row, index) => ({
   ...row,
@@ -55,3 +71,10 @@ const empty = buildHabitSuggestions([])
 assert.deepEqual(empty, [])
 
 console.log("Shopping habit advice tests passed")
+
+const overview = await readFile(new URL("../src/features/shopping/pages/ShoppingInsightsPage.jsx", import.meta.url), "utf8")
+const savings = await readFile(new URL("../src/pages/SavingsPage.jsx", import.meta.url), "utf8")
+const card = await readFile(new URL("../src/features/shopping/components/HabitAdviceCard.jsx", import.meta.url), "utf8")
+assert.match(overview, /<HabitAdviceCard suggestions=\\{habitSuggestions\\}/)
+assert.match(savings, /<HabitAdviceCard suggestions=\\{habitSuggestions\\}/)
+assert.match(card, /suggestions\\.length === 0/)
