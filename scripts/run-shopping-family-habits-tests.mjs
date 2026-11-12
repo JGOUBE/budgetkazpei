@@ -55,12 +55,14 @@ assert.equal(tablets.receiptCount, 7)
 assert.equal(tablets.totalSpent, 25.14)
 assert.equal(tablets.variants.length, 4)
 assert.equal(tablets.variants[0].purchaseCount, 5)
-assert.equal(identifyShoppingHabitFamily(unrelated[0]), null)
-assert.equal(identifyShoppingHabitFamily(unrelated[1]), null)
-assert.equal(identifyShoppingHabitFamily(unrelated[2]), null)
-assert.equal(identifyShoppingHabitFamily(unrelated[3]), null)
-assert.equal(identifyShoppingHabitFamily(unrelated[4]), null)
-assert.equal(identifyShoppingHabitFamily(unrelated[5]), null)
+// Les articles hors lait de chèvre et tablettes sont maintenant classés eux
+// aussi, mais sans jamais rejoindre par erreur ces deux familles spéciales.
+for (const row of unrelated) {
+  const key = identifyShoppingHabitFamily(row)
+  assert.notEqual(key, "goat-milk")
+  assert.notEqual(key, "chocolate-tablets")
+}
+assert.notEqual(identifyShoppingHabitFamily(unrelated[0]), identifyShoppingHabitFamily(unrelated[2]))
 assert.equal(buildShoppingHabitFamilies(goatMilk.map(row => ({ ...row, needs_review: true }))).length, 0)
 assert.equal(buildShoppingHabitFamilies([]).length, 0)
 
@@ -85,4 +87,80 @@ assert.match(page, /<FamilyHabitsCard families=\{familyHabits\}/)
 assert.match(page, /buildShoppingHabitFamilies\(items\)/)
 assert.match(card, /Les prix restent suivis séparément par article/)
 assert.doesNotMatch(card, /averagePrice|Prix moyen|prix moyen affiché/)
+
+// Le regroupement vaut pour TOUS les articles, y compris des désignations
+// anciennes, des marques et des formats différents, sans fixer leur catégorie.
+const examples = [
+  ["CORNICHONS 72 CL,360G", "Cornichons en bocal 72 cl / 360 g", "auto:cornichon"],
+  ["TRANCHETTES DE GOUDA 300G ECO+", "Gouda 8 tranches 200 g", "auto:gouda"],
+  ["EMMENTAL RAP 45MG 200G", "Emmental râpé Eco+ 500 g", "auto:emmental"],
+  ["TOMATES PELEES NOTR JARDIN 240", "Tomates pelées Notre Jardin 240gr", "auto:tomate-pelee"],
+  ["MOUCHOIR ETUI STD 15X9 CO", "Mouchoirs blanc 15 x 10 étuis", "auto:mouchoir"],
+  ["OEUFS X12 KOKOT SOL", "KOKOT X6 OEUFS PLEIN AIR", "auto:oeuf"],
+  ["SAUCE MEXICAINE FAJITA 430G", "Sauce mexicaine médium 315g", "auto:sauce-mexicaine"],
+  ["Pate à tartiner 400G", "Ivoria pâte à tartiner duo", "auto:pate-tartiner"],
+  ["20 SACS POUBELLE 20L EK", "Sacs poubelle 30 L", "auto:sac-poubelle"],
+  ["PAIN DE MIE COMPLET 350G", "Pain mie sandwich complet Yami 420 g", "auto:pain-mie"],
+  ["JUS DE RAISIN 6X20CL", "Jus de raisin 1 L", "auto:jus-raisin"],
+  ["TORTILLAS DE MAIS 320G", "TORTILLAS NATURE TOKAPI 150G", "auto:tortilla"],
+  ["FRITES AU FOUR 600 G", "Frites surgelées 1 kg", "auto:frite-surgele"], // words differ: not an automatic equivalence
+]
+for (let index = 0; index < examples.length; index += 1) {
+  const [left, right, expected] = examples[index]
+  const a = identifyShoppingHabitFamily({ product_name: left })
+  const b = identifyShoppingHabitFamily({ product_name: right })
+  if (index === examples.length - 1) {
+    // Ne pas inventer de correspondance si les mots essentiels diffèrent.
+    assert.notEqual(a, b)
+    continue
+  }
+  assert.equal(a, expected, left)
+  assert.equal(b, expected, right)
+}
+
+const generalItems = examples.slice(0, -1).flatMap(([left, right], index) => [
+  item(left, left.toLowerCase(), 1.29 + index, "2026-10-03", "generic-a-" + index),
+  item(right, right.toLowerCase(), 2.19 + index, "2026-11-09", "generic-b-" + index),
+])
+const genericFamilies = buildShoppingHabitFamilies(generalItems)
+assert.equal(genericFamilies.length, examples.length - 1)
+assert.ok(genericFamilies.every(family => family.purchaseCount === 2 && family.receiptCount === 2))
+assert.ok(genericFamilies.every(family => family.variants.length === 2))
+assert.equal(genericFamilies.reduce((sum, family) => sum + family.purchaseCount, 0), generalItems.length)
+assert.equal(
+  identifyShoppingHabitFamily({ product_name: "Pomme de terre Réunion" }) ===
+    identifyShoppingHabitFamily({ product_name: "Pomme Granny Smith" }),
+  false,
+)
+assert.notEqual(
+  identifyShoppingHabitFamily({ product_name: "PAINS AU CHOCOLAT X10" }),
+  identifyShoppingHabitFamily({ product_name: "PAINS AU LAIT X10" }),
+)
+assert.notEqual(
+  identifyShoppingHabitFamily({ product_name: "PATE A TARTINER" }),
+  identifyShoppingHabitFamily({ product_name: "PATE AU POISSON" }),
+)
+assert.notEqual(
+  identifyShoppingHabitFamily({ product_name: "GEL DOUCHE" }),
+  identifyShoppingHabitFamily({ product_name: "GEL LESSIVE" }),
+)
+assert.notEqual(
+  identifyShoppingHabitFamily({ product_name: "CHOCOLAT EN POUDRE POULAIN" }),
+  identifyShoppingHabitFamily({ product_name: "Chocolat noir 3 x 100 g" }),
+)
+assert.equal(identifyShoppingHabitFamily({ product_name: "Boucherie coupe" }), null)
+assert.equal(buildShoppingHabitFamilies([
+  item("Boucherie coupe", "boucherie coupe", 12, "2026-10-01", "dept-1"),
+  item("BOUCHERIE COUPE", "boucherie coupe", 8, "2026-10-09", "dept-2"),
+]).length, 0)
+assert.equal(buildShoppingHabitFamilies(generalItems.map(row => ({ ...row, needs_review: true }))).length, 0)
+
+// Une famille peut réunir plusieurs formats pour la fréquence, mais le
+// classement précis conserve deux articles et deux prix séparés.
+const cornichonLines = generalItems.slice(0, 2)
+assert.equal(buildTopProducts(cornichonLines, 10).length, 2)
+const cornichonGroup = genericFamilies.find(entry => entry.key === "auto:cornichon")
+assert.equal(cornichonGroup.purchaseCount, 2)
+assert.equal(cornichonGroup.variants.length, 2)
+
 console.log("Shopping recurring family tests passed")
