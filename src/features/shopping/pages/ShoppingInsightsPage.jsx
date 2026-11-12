@@ -3,6 +3,8 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts"
 import { formatMontant } from "../../../utils/format"
 import { buildProductStats, buildStoreHabits, buildTopProducts } from "../services/priceHistory"
 import { buildHabitSuggestions } from "../services/habitAdvice"
+import { buildRegionalHabitPriceSuggestions } from "../services/catalogHabitPriceAdvice"
+import { loadRegionalHabitReferences } from "../services/loadRegionalHabitReferences"
 import HabitAdviceCard from "../components/HabitAdviceCard"
 import { listShoppingItems } from "../services/shoppingEngine"
 import { createColorAliases } from "../../../styles/designSystem"
@@ -98,6 +100,7 @@ function shouldShowAnnualProjection(stats = {}) {
 export default function ShoppingInsightsPage({ user, t, isMobile = false }) {
   const isKreol = getIsKreol(t)
   const [items, setItems] = useState([])
+  const [regionalSavings, setRegionalSavings] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedProduct, setSelectedProduct] = useState("")
 
@@ -106,16 +109,33 @@ export default function ShoppingInsightsPage({ user, t, isMobile = false }) {
 
     async function load() {
       if (!user?.id) {
+        setRegionalSavings([])
         setItems([])
         setLoading(false)
         return
       }
 
       setLoading(true)
+      setRegionalSavings([])
 
       try {
-        const rows = await listShoppingItems({ userId: user?.id })
+        const rows = await listShoppingItems({ userId: user?.id, includeProductIdentity: true })
         if (!ignore) setItems(rows)
+        if (rows.length > 1) {
+          // Charge les références publiques après l'historique personnel :
+          // aucun blocage de l'écran en attendant le catalogue.
+          loadRegionalHabitReferences()
+            .then(references => {
+              if (ignore) return
+              setRegionalSavings(buildRegionalHabitPriceSuggestions({
+                shoppingItems: rows,
+                ...references,
+              }))
+            })
+            .catch(error => {
+              if (import.meta.env.DEV) console.warn("Références courses indisponibles", error)
+            })
+        }
       } catch (error) {
         console.error("Erreur habitudes courses:", error)
         if (!ignore) setItems([])
@@ -134,7 +154,10 @@ export default function ShoppingInsightsPage({ user, t, isMobile = false }) {
   const storeHabits = useMemo(() => buildStoreHabits(items).slice(0, 6), [items])
   const topProducts = useMemo(() => buildTopProducts(items, 30), [items])
   const productRows = useMemo(() => splitProductRows(topProducts), [topProducts])
-  const habitSuggestions = useMemo(() => buildHabitSuggestions(items), [items])
+  const habitSuggestions = useMemo(
+    () => buildHabitSuggestions(items, { regionalSavings }),
+    [items, regionalSavings],
+  )
   const currentSelectedProduct = selectedProduct
     || productRows.products[0]?.normalizedName
     || ""
