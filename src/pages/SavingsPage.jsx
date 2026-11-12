@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react"
 import { CalendarClock, PiggyBank, ScanLine, Store } from "lucide-react"
 import { listShoppingItems } from "../features/shopping/services/shoppingEngine"
 import { buildSavingsInsights } from "../services/savings/savingsEngine"
+import { buildHabitSuggestions } from "../features/shopping/services/habitAdvice"
+import HabitAdviceCard from "../features/shopping/components/HabitAdviceCard"
 import { formatMontant } from "../utils/format"
 import "../features/shopping/pages/shoppingHub.css"
 
@@ -93,6 +95,7 @@ export default function SavingsPage({ user, language = "fr" }) {
     () => buildSavingsInsights({ shoppingItems }),
     [shoppingItems],
   )
+  const habitSuggestions = useMemo(() => buildHabitSuggestions(shoppingItems), [shoppingItems])
 
   return (
     <section className="bkp-savings-panel" aria-labelledby="shopping-savings-title">
@@ -101,6 +104,10 @@ export default function SavingsPage({ user, language = "fr" }) {
         <h2 id="shopping-savings-title">{txt.title}</h2>
         <p>{txt.intro}</p>
       </header>
+
+      {!loading && !error && shoppingItems.length > 0 && (
+        <HabitAdviceCard suggestions={habitSuggestions} isKreol={isKreolLanguage(language)} />
+      )}
 
       {loading ? (
         <div className="bkp-shopping-empty" role="status">
