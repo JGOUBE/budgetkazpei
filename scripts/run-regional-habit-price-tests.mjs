@@ -59,6 +59,7 @@ assert.equal(compare({ sharedProducts: [{ ...product, display_name: "Farine de b
 assert.equal(compare({ sharedProducts: [{ ...product, size_label: "500 g" }] }).length, 0, "Conflicting size evidence must block a false price")
 assert.equal(compare({ sharedPrices: [sharedPrice("e-leclerc", 1.1)] }).length, 0, "A lower price in the same retail chain is not another store")
 assert.equal(compare({ sharedPrices: [sharedPrice("leader-price", 1.39, "2026-01-05T12:00:00Z")] }).length, 0, "Old price must not be shown as a relevant regional opportunity")
+assert.equal(compare({ shoppingItems: items.map(x => ({ ...x, created_at: "2025-10-10T12:00:00Z" })) }).length, 0, "Dormant purchase histories must not look like current habits")
 assert.equal(compare({ sharedPrices: [sharedPrice("leader-price", 1.39, "2026-11-13T12:00:00Z")] }).length, 0, "Future price is invalid")
 assert.equal(compare({ sharedPrices: [sharedPrice("leader-price", 1.87)] }).length, 0, "Very small differences are not actionable")
 assert.equal(compare({ sharedPrices: [sharedPrice("leader-price", 1.49), sharedPrice("leader-price", 1.20)] }).length, 0, "Contradictory same-day outlet prices must not create a false deal")
@@ -88,6 +89,7 @@ const viaPublishedRetail = buildRegionalHabitPriceSuggestions({
 assert.equal(viaPublishedRetail.length, 1)
 assert.equal(viaPublishedRetail[0].saving, 0.60)
 assert.equal(viaPublishedRetail[0].source, "regional_retail")
+assert.equal(buildRegionalHabitPriceSuggestions({ shoppingItems: linkedItems, retailPrices: [{ productName: "Farine T65 1 kg", marketProductId: "market-farine", packageFormat: "1 kg", retailerName: "Leader Price Réunion", price: 0.90, currency: "USD", observedAt: "2026-11-01" }], now }).length, 0, "Non-EUR observations must never be compared as EUR")
 
 const pastries = [
   purchase("r1", "Pains au chocolat x10", { price: 4.90, unit: "piece" }),
