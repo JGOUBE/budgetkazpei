@@ -2,9 +2,11 @@ import {
   buildComparableProductIdentity,
   buildReliableSavingsSuggestions,
   evaluateSavingsProductEligibility,
+  extractComparablePackage,
 } from "../../../services/savings/savingsEngine.ts"
+import { normalizeMerchantName } from "./priceHistory.ts"
 
-const SNACK_PATTERN = /\b(?:biscuits?|cookies?|gateaux?|gouters?|madeleines?|barquettes?|sables?|palets?|brownies?|quatre\s+quarts)\b/
+const SNACK_PATTERN = /\b(?:biscuits?|cookies?|gateaux?|gouters?|madeleines?|sables?|palets?|brownies?|quatre\s+quarts)\b/
 
 function normalize(value = "") {
   return String(value || "")
@@ -33,7 +35,122 @@ function getDistinctPurchaseVisits(items = []) {
  * Les propositions de magasins ne proviennent que du moteur de comparaisons
  * fiables de tickets déjà enregistrés, avec date de la dernière observation.
  */
-export function buildHabitSuggestions(items = []) {
+
+function getProductLabel(item = {}) {
+  return String(item.product_name || item.corrected_name || item.normalized_name || "").trim()
+}
+
+function money(value) {
+  const parsed = Number(String(value ?? 0).replace(",", "."))
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0
+}
+
+function roundAmount(value) {
+  return Math.round((value + Number.EPSILON) * 100) / 100
+}
+
+function validDate(item = {}) {
+  const value = item.purchase_date || item.created_at || ""
+  const parsed = value ? new Date(value) : null
+  return parsed && Number.isFinite(parsed.getTime()) ? parsed.toISOString() : ""
+}
+
+/**
+ * Repère une dépense cumulée importante, sans l'extrapoler sur une année
+ * ni présenter une économie fictive.
+ */
+function buildRecurringSpendAdvice(items) {
+  const groups = new Map()
+  for (const item of items) {
+    const label = getProductLabel(item)
+    const normalized = normalize(label)
+    if (!normalized || !validDate(item)) continue
+    const key = normalized
+    if (!groups.has(key)) groups.set(key, [])
+    groups.get(key).push(item)
+  }
+
+  return [...groups.values()]
+    .map(rows => {
+      const visits = getDistinctPurchaseVisits(rows)
+      const totalSpent = roundAmount(rows.reduce((sum, row) => sum + money(row.price), 0))
+      const latest = [...rows].sort((a, b) => validDate(b).localeCompare(validDate(a)))[0]
+      return {
+        type: "spending",
+        key: "spending:" + normalize(getProductLabel(latest)),
+        product: getProductLabel(latest),
+        totalSpent,
+        purchaseCount: rows.length,
+        receiptCount: visits,
+      }
+    })
+    .filter(entry => entry.purchaseCount >= 3 && entry.receiptCount >= 3 && entry.totalSpent >= 12)
+    .sort((a, b) => b.totalSpent - a.totalSpent || b.receiptCount - a.receiptCount)[0] || null
+}
+
+/**
+ * Compare seulement deux lignes de tickets du même magasin, avec
+ * désignation ET format identiques connus. Un changement de quantité,
+ * de format ou un nom vague ne doit pas être appelé hausse de prix.
+ */
+function buildObservedPriceIncrease(items) {
+  const groups = new Map()
+  for (const item of items) {
+    const label = getProductLabel(item)
+    const date = validDate(item)
+    const store = normalizeMerchantName(item.store || "")
+    const packageInfo = extractComparablePackage(item)
+    const price = money(item.price)
+    if (!label || !date || !price || store === "Magasin non renseigne") continue
+    if (packageInfo.family === "unknown") continue
+
+    const key = [store, normalize(label), packageInfo.signature].join("|")
+    if (!groups.has(key)) groups.set(key, [])
+    groups.get(key).push({ item, label, store, date, price })
+  }
+
+  const increases = []
+  for (const rows of groups.values()) {
+    const distinct = new Set()
+    const ordered = rows
+      .sort((a, b) => b.date.localeCompare(a.date))
+      .filter(row => {
+        const receipt = row.item.receipt_id || row.item.transaction_id || row.date.slice(0, 10)
+        if (distinct.has(receipt)) return false
+        distinct.add(receipt)
+        return true
+      })
+    if (ordered.length < 2) continue
+
+    const latest = ordered[0]
+    const previous = ordered[1]
+    const latestQty = Number(latest.item.quantity || 0)
+    const priorQty = Number(previous.item.quantity || 0)
+    if (latestQty !== priorQty || normalize(latest.item.unit || "") !== normalize(previous.item.unit || "")) continue
+    const daysApart = (new Date(latest.date).getTime() - new Date(previous.date).getTime()) / 86400000
+    if (daysApart < 1) continue
+    const increase = roundAmount(latest.price - previous.price)
+    const percent = Math.round(100 * increase / previous.price)
+    if (increase < 0.15 || percent < 8) continue
+
+    increases.push({
+      type: "priceRise",
+      key: "price-rise:" + normalize(latest.label) + ":" + normalize(latest.store),
+      product: latest.label,
+      store: latest.store,
+      previousPrice: previous.price,
+      latestPrice: latest.price,
+      previousDate: previous.date,
+      latestDate: latest.date,
+      increase,
+      percent,
+    })
+  }
+
+  return increases.sort((a, b) => b.increase - a.increase || b.percent - a.percent)[0] || null
+}
+
+export function buildHabitSuggestions(items = [], { regionalSavings = [] } = {}) {
   const eligible = (Array.isArray(items) ? items : []).filter(item =>
     evaluateSavingsProductEligibility(item).eligible && Number(item.price) > 0,
   )
@@ -84,9 +201,22 @@ export function buildHabitSuggestions(items = []) {
     })
   }
 
-  // Panacher les conseils pratiques et les comparaisons quand les deux existent.
-  const habit = suggestions.find(suggestion => suggestion.type === "habit")
-  return habit && reliablePrices.length > 0
-    ? [suggestions[0], habit]
-    : suggestions.slice(0, 2)
+  const priceRise = buildObservedPriceIncrease(eligible)
+  const repeatSpend = buildRecurringSpendAdvice(eligible)
+  // Jusqu'à trois pistes différentes : comparaison historique, évolution,
+  // suggestion pratique ou constat budgétaire. Pas de « gain » inventé.
+  const fromRegion = (Array.isArray(regionalSavings) ? regionalSavings : [])
+    .filter(suggestion => suggestion.type === "regionalPrice" && Number(suggestion.saving) > 0)
+  const homemadeTip = suggestions.find(suggestion => suggestion.type === "habit")
+  const personalPrice = suggestions.find(suggestion =>
+    suggestion.type === "price" &&
+    !fromRegion.some(regional => normalize(regional.product) === normalize(suggestion.product)),
+  )
+  // Une piste régionale vérifiée passe en tête. Panacher ensuite les astuces
+  // et les autres constats plutôt que répéter deux fois le même produit.
+  const choices = fromRegion.length > 0
+    ? [fromRegion[0], homemadeTip, personalPrice, priceRise, repeatSpend]
+    : [personalPrice, priceRise, homemadeTip, repeatSpend]
+
+  return choices.filter(Boolean).slice(0, 3)
 }

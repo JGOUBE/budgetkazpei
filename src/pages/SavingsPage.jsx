@@ -3,6 +3,8 @@ import { CalendarClock, PiggyBank, ScanLine, Store } from "lucide-react"
 import { listShoppingItems } from "../features/shopping/services/shoppingEngine"
 import { buildSavingsInsights } from "../services/savings/savingsEngine"
 import { buildHabitSuggestions } from "../features/shopping/services/habitAdvice"
+import { buildRegionalHabitPriceSuggestions } from "../features/shopping/services/catalogHabitPriceAdvice"
+import { loadRegionalHabitReferences } from "../features/shopping/services/loadRegionalHabitReferences"
 import HabitAdviceCard from "../features/shopping/components/HabitAdviceCard"
 import { formatMontant } from "../utils/format"
 import "../features/shopping/pages/shoppingHub.css"
@@ -67,15 +69,31 @@ function formatDate(value) {
 export default function SavingsPage({ user, language = "fr" }) {
   const txt = isKreolLanguage(language) ? COPY.kreol : COPY.fr
   const [shoppingItems, setShoppingItems] = useState([])
+  const [regionalSavings, setRegionalSavings] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
   useEffect(() => {
     let ignore = false
+    setRegionalSavings([])
 
-    listShoppingItems({ userId: user?.id })
+    listShoppingItems({ userId: user?.id, includeProductIdentity: true })
       .then(rows => {
-        if (!ignore) setShoppingItems(rows || [])
+        if (ignore) return
+        const items = rows || []
+        setShoppingItems(items)
+        if (items.length > 1) {
+          loadRegionalHabitReferences()
+            .then(references => {
+              if (!ignore) setRegionalSavings(buildRegionalHabitPriceSuggestions({
+                shoppingItems: items,
+                ...references,
+              }))
+            })
+            .catch(loadError => {
+              if (import.meta.env.DEV) console.warn("Références régionales indisponibles", loadError)
+            })
+        }
       })
       .catch(loadError => {
         console.error("Erreur chargement économies:", loadError)
@@ -95,7 +113,10 @@ export default function SavingsPage({ user, language = "fr" }) {
     () => buildSavingsInsights({ shoppingItems }),
     [shoppingItems],
   )
-  const habitSuggestions = useMemo(() => buildHabitSuggestions(shoppingItems), [shoppingItems])
+  const habitSuggestions = useMemo(
+    () => buildHabitSuggestions(shoppingItems, { regionalSavings }),
+    [shoppingItems, regionalSavings],
+  )
 
   return (
     <section className="bkp-savings-panel" aria-labelledby="shopping-savings-title">
