@@ -41,7 +41,8 @@
     "test:shopping-query-relevance": "node scripts/run-shopping-query-relevance-tests.mjs",
     "test:shopping-compact-rows": "node scripts/run-shopping-compact-rows-tests.mjs",
     "test:shopping-multipack-prices": "node scripts/run-shopping-multipack-prices-tests.mjs",
-    "test:shopping-dated-prices": "node scripts/run-shopping-dated-price-display-tests.mjs"
+    "test:shopping-dated-prices": "node scripts/run-shopping-dated-price-display-tests.mjs",
+    "test:shopping-habit-advice": "node scripts/run-shopping-habit-advice-tests.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.0",
