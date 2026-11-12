@@ -93,6 +93,24 @@ class QualityTests(unittest.TestCase):
         candidate = parse_offer(html(name="Saucisses de porc 1 kg"), self.URL)
         self.assertIsNotNone(candidate)
 
+    def test_live_like_lapub_duplicate_seo_title_uses_actual_offer_heading(self):
+        sample = ('<html><title>LAPUB.RE — Saucisses de porc Mak-Yuen chez HYPER U à La Réunion</title>'
+                  '<nav>Accueil HYPER U Saucisses de porc Mak-Yuen</nav>'
+                  '<p>Agrandir HYPER U Mak-Yuen</p><h1>Saucisses de porc Mak-Yuen</h1>'
+                  '<p>4,79 € LE KG</p><p>Validité de l’offre Du 03/11/2026 au 15/11/2026</p>'
+                  '<p>Description du produit Saucisses de porc Mak-Yuen. Le kg.</p></html>')
+        item = parse_offer(sample, self.URL)
+        self.assertIsNotNone(item)
+        self.assertEqual(item["retailer_group"], "Magasins U Réunion")
+        self.assertEqual(item["store_format"], "hyperu")
+        self.assertEqual(item["product_name"], "Saucisses de porc Mak-Yuen")
+        self.assertEqual(item["price_basis"], "variable_weight_per_unit")
+        self.assertEqual(item["price_per_unit_eur"], "4.79")
+        self.assertIsNone(item["advertised_price_eur"])
+        self.assertFalse(item["can_apply_price_to_other_format"])
+        self.assertFalse(item["can_auto_publish"])
+
+
     def test_unit_math_rounding(self):
         check = quality_checks("Riz U 1 kg", "sachet 1 kg", Decimal("2.49"), Decimal("2.49"), "kg", [], False, __import__("datetime").date(2026, 11, 15))
         self.assertEqual(check["blocking_issues"], [])
