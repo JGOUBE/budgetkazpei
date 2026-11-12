@@ -24,7 +24,7 @@ DATES_RE = re.compile(r"\bDu\s+(\d{2}/\d{2}/20\d{2})\s+au\s+(\d{2}/\d{2}/20\d{2}
 UNIT_PRICE_RE = re.compile(r"\b(?:Le|Au)\s+(kg|L|litre)\s*:\s*(\d{1,4},\d{2})\s*€", re.I)
 QTY_RE = re.compile(r"(?<!\d)(\d+(?:[.,]\d+)?)\s*(kg|g|ml|cl|l)\b", re.I)
 PACK_RE = re.compile(r"\b(\d{1,3})\s*(?:x|×|bouteilles?\s+de|pots?\s+de|briques?\s+de|sachets?\s+de)\s*(\d+(?:[.,]\d+)?)\s*(kg|g|ml|cl|l)\b", re.I)
-FOOD_RE = re.compile(r"riz|pâtes|pates|lait|yaourt|huile|farine|sucre|café|cafe|beurre|fromage|chocolat|oeuf|œuf|thon|lentille|haricot|biscuit|jus|sauce|céréale|cereale|poulet|poisson|épicerie|epicerie", re.I)
+FOOD_RE = re.compile(r"riz|pâtes|pates|lait|yaourt|huile|farine|sucre|café|cafe|beurre|fromage|chocolat|oeuf|œuf|thon|lentille|haricot|biscuit|jus|sauce|céréale|cereale|poulet|poisson|épicerie|epicerie|saucisse|porc|charcuterie|jambon|steak|viande|bœuf|boeuf|boisson|fruits|légumes|legumes|surgelé|surgele", re.I)
 SIZES = {"kg": ("kg", Decimal(1)), "g": ("kg", Decimal(".001")), "l": ("l", Decimal(1)), "cl": ("l", Decimal(".01")), "ml": ("l", Decimal(".001"))}
 
 
@@ -177,7 +177,10 @@ def parse_offer(html, url):
     if idx < 0:
         return None
     retailer_near_title = re.search(r"\b(Super\s*U|Hyper\s*U|U\s*Express|Carrefour(?:\s*Market)?|E[. ]?Leclerc)\b", body[max(0, idx-250):idx], re.I)
-    if not retailer_near_title or retailer_near_title.group(1).casefold().replace(" ", "") != "superu":
+    if not retailer_near_title:
+        return None
+    retail_format = retailer_near_title.group(1).casefold().replace(" ", "")
+    if retail_format not in {"superu", "hyperu", "uexpress"}:
         return None
     after_title = body[idx+len(title):idx+len(title)+380]
     prices = found_prices(after_title)
@@ -195,7 +198,10 @@ def parse_offer(html, url):
     conditional = bool(re.search(r"\b(?:les\s+[234]\s+pour|lot\s+de|avec\s+la\s+carte|carte\s+u|à\s+partir\s+de|au\s+choix)\b", after_title, re.I))
     checks = quality_checks(title, packaging, prices[0], unit_amount, unit, prices[1:], conditional, dates[1])
     return {"status": "needs_review", "source_type": "third_party_public_offer",
-            "source_url": url, "retailer": "Super U", "store": "unverified",
+            "source_url": url, "retailer_group": "Magasins U Réunion",
+            "retailer": {"hyperu": "Hyper U", "superu": "Super U", "uexpress": "U Express"}[retail_format],
+            "store_format": retail_format, "store": "unverified",
+            "catalog_scope": "not_verified", "can_group_same_brand": True, "can_apply_price_to_other_format": False,
             "product_name": title, "packaging": packaging, "advertised_price_eur": str(prices[0]),
             "price_per_unit_eur": str(unit_amount) if unit_amount is not None else None,
             "unit": unit, "valid_from": dates[0].isoformat(), "valid_until": dates[1].isoformat(),
@@ -227,7 +233,11 @@ def run(url, max_pages=3):
         raise ValueError("invalid_page_limit")
     if not permitted(url):
         return {"status": "robots_block_or_unavailable", "inspected": 0, "candidates": []}
-    index = fetch(url)
+    try:
+        index = fetch(url)
+    except Exception as ex:
+        return {"status": "source_unavailable", "inspected": 0, "candidates": [],
+                "published": 0, "errors": [{"source": url, "reason": type(ex).__name__}]}
     urls = [url] if urlparse(url).path.startswith("/offres/") else links_from_index(index, url, max_pages)
     candidates, errors = [], []
     for number, target in enumerate(urls):
