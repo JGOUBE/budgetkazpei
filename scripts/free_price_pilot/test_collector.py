@@ -2,7 +2,7 @@ import unittest
 from decimal import Decimal
 from collector import (
     parse_offer, links_from_index, validate_url, package_quantity,
-    quality_checks, RestrictedRedirect,
+    quality_checks, RestrictedRedirect, run,
 )
 
 
@@ -25,9 +25,16 @@ class QualityTests(unittest.TestCase):
         self.assertEqual(c["advertised_price_eur"], "2.49")
         self.assertEqual(c["valid_from"], "2026-11-03")
 
-    def test_wrong_retailer_rejected(self):
+    def test_related_u_formats_grouped_but_not_assumed_same_offer(self):
         self.assertIsNone(parse_offer(html(retailer="Carrefour"), self.URL))
-        self.assertIsNone(parse_offer(html(retailer="Hyper U"), self.URL))
+        for label, expected in [("Super U", "superu"), ("Hyper U", "hyperu"), ("U Express", "uexpress")]:
+            with self.subTest(label=label):
+                candidate = parse_offer(html(retailer=label), self.URL)
+                self.assertIsNotNone(candidate)
+                self.assertEqual(candidate["retailer_group"], "Magasins U Réunion")
+                self.assertEqual(candidate["store_format"], expected)
+                self.assertFalse(candidate["can_apply_price_to_other_format"])
+                self.assertFalse(candidate["can_auto_publish"])
 
     def test_missing_pack_blocks_review(self):
         c = parse_offer(html(package="inconnu"), self.URL)
@@ -71,9 +78,20 @@ class QualityTests(unittest.TestCase):
             with self.subTest(url=url), self.assertRaises(ValueError):
                 validate_url(url)
 
+    def test_unavailable_source_gracefully_reported(self):
+        from unittest.mock import patch
+        with patch("collector.permitted", return_value=True), patch("collector.fetch", side_effect=Exception("bad_http")):
+            result = run(self.URL, max_pages=1)
+        self.assertEqual(result["status"], "source_unavailable")
+        self.assertEqual(result["published"], 0)
+
     def test_non_food_offer_ignored(self):
         c = parse_offer(html(name="Réfrigérateur 200 L"), self.URL)
         self.assertIsNone(c)
+
+    def test_sausages_are_food(self):
+        candidate = parse_offer(html(name="Saucisses de porc 1 kg"), self.URL)
+        self.assertIsNotNone(candidate)
 
     def test_unit_math_rounding(self):
         check = quality_checks("Riz U 1 kg", "sachet 1 kg", Decimal("2.49"), Decimal("2.49"), "kg", [], False, __import__("datetime").date(2026, 11, 15))
