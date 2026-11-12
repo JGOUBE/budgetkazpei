@@ -61,10 +61,12 @@ export function isTableEggProduct(row = {}) {
  // Keep the normalization specific: a generic search for "coton" must still
  // match cotton pads, while a search for cotton swabs must not match perfumes.
 export function normalizeShoppingSearchText(value = "") {
-  return normalizeShoppingQuery(value)
+  const normalized = normalizeShoppingQuery(value)
     .replace(/\b(?:cotons?\s+tiges?|cotontiges?)\b/g, "cotontige")
     .replace(/\s+/g, " ")
     .trim()
+  // Both "coton" and "cotons" should retrieve "cotons-tiges".
+  return normalized === "cotons" ? "coton" : normalized
 }
 
 export function isCottonSwabQuery(query = "") {
@@ -103,4 +105,47 @@ export function filterShoppingIntentSuggestions(rows = [], query = "") {
     if (isCottonSwabQuery(query) && !isCottonSwabProduct(row)) return false
     return true
   })
+}
+
+// Rank across ALL suggestion sources before limiting the results. Group priority
+// is only a tie-breaker: a relevant catalogue product must not be buried below
+// an unrelated scented product just because its price was observed elsewhere.
+export function rankShoppingSuggestionGroups(groups = {}, query = "", { showAll = false, limit = 4 } = {}) {
+  const sources = ["historical", "observed", "retail", "catalog"]
+  const normalizedQuery = normalizeShoppingQuery(query)
+  const genericCotton = /^(?:coton|cotons)$/.test(normalizedQuery)
+
+  const ranked = sources.flatMap((group, sourceIndex) =>
+    (Array.isArray(groups[group]) ? groups[group] : []).map((suggestion, itemIndex) => {
+      const label = String(suggestion?.label || suggestion?.display_name || suggestion?.productName || "")
+      const matchScore = Math.max(0, getShoppingCatalogSuggestionScore(label, query))
+      const normalizedLabel = normalizeShoppingQuery(label)
+      // "Coton" describes a product family, not a fragrance. Give physical
+      // cotton items priority; preserve all matches for an explicit fragrance
+      // search ("déodorant fleur de coton").
+      const isCottonMaterial = /^(?:cotons?|disques?|carres?|compresses?|boules?)\b/.test(normalizedLabel)
+        && /\bcotons?\b/.test(normalizedLabel)
+      const cottonPriority = genericCotton
+        ? isCottonSwabProduct(suggestion) ? 200
+          : isCottonMaterial ? 140
+          : /^(?:coton|cotons)(?: |$)/.test(normalizedLabel) ? 100
+          : /\b(?:fleur de coton|parfum(?:e)?(?:e)?(?: au| de)? coton)\b/.test(normalizedLabel) ? -120
+          : 0
+        : 0
+      return { group, suggestion, sourceIndex, itemIndex, relevance: matchScore * 10 + cottonPriority }
+    }),
+  )
+
+  ranked.sort((a, b) =>
+    b.relevance - a.relevance ||
+    a.sourceIndex - b.sourceIndex ||
+    a.itemIndex - b.itemIndex,
+  )
+  const visible = showAll ? ranked : ranked.slice(0, Math.max(0, limit))
+  const result = { historical: [], observed: [], retail: [], catalog: [], groupOrder: [] }
+  for (const entry of visible) {
+    result[entry.group].push(entry.suggestion)
+    if (!result.groupOrder.includes(entry.group)) result.groupOrder.push(entry.group)
+  }
+  return result
 }

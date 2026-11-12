@@ -34,7 +34,7 @@ import { buildMultiRetailBasketOptimization } from "../services/shoppingList/sho
 import { formatSharedPriceRetailer } from "../services/shoppingList/sharedPricePresentation"
 import { loadSharedShoppingCatalog, loadSharedShoppingPrices } from "../services/shoppingList/sharedCatalogLoader"
 import { getDatedShoppingListPrice } from "../services/shoppingList/shoppingDatedPriceDisplay"
-import { filterShoppingIntentSuggestions, getShoppingCatalogSuggestionScore, hasUsefulShoppingQuery, normalizeShoppingSearchText } from "../services/shoppingList/shoppingQueryRelevance"
+import { filterShoppingIntentSuggestions, getShoppingCatalogSuggestionScore, hasUsefulShoppingQuery, normalizeShoppingSearchText, rankShoppingSuggestionGroups } from "../services/shoppingList/shoppingQueryRelevance"
 import { loadShoppingListDraft, saveShoppingListDraft } from "../services/shoppingList/shoppingListDraft"
 import {
   findExactShoppingListDuplicate,
@@ -627,21 +627,12 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
     return output
   }, [allSuggestions, catalogSuggestions])
   const suggestionCount = Object.values(uniqueSuggestions).reduce((total, rows) => total + rows.length, 0)
-  const suggestions = useMemo(() => {
-    if (showAllSuggestions) return uniqueSuggestions
-    let remaining = 4
-    const take = rows => {
-      const visible = rows.slice(0, remaining)
-      remaining -= visible.length
-      return visible
-    }
-    return {
-      historical: take(uniqueSuggestions.historical),
-      observed: take(uniqueSuggestions.observed),
-      retail: take(uniqueSuggestions.retail),
-      catalog: take(uniqueSuggestions.catalog),
-    }
-  }, [uniqueSuggestions, showAllSuggestions])
+  // Select the four most relevant products across all sources; the origin
+  // (history, observed prices or shared catalogue) is only a tie-breaker.
+  const suggestions = useMemo(
+    () => rankShoppingSuggestionGroups(uniqueSuggestions, query, { showAll: showAllSuggestions, limit: 4 }),
+    [uniqueSuggestions, query, showAllSuggestions],
+  )
   const pairing = useMemo(() => getPairingSuggestion(items, shoppingItems), [items, shoppingItems])
   const foodReceiptCount = useMemo(() => new Set((shoppingItems || []).map(item => item.receipt_id).filter(Boolean)).size, [shoppingItems])
   const learningReady = foodReceiptCount >= 3
@@ -1002,6 +993,45 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
     })
   }
 
+  // Keep visual order, DOM order and keyboard focus order identical when
+  // sections change priority with the query.
+  const suggestionGroupNodes = {
+    historical: suggestions.historical.length > 0 && (
+          <div key="history" data-shopping-suggestion-group="history" style={{ marginTop: 12 }}>
+            <div style={{ color: COLORS.muted, fontSize: 11, fontWeight: 950, letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 6 }}>{txt.habitualSuggestions}</div>
+            <div className="bkp-shopping-suggestion-list" style={{ display: "grid", gap: 0, border: `1px solid ${COLORS.borderSubtle}`, borderRadius: 10, overflow: "hidden", background: COLORS.card }}>
+              {suggestions.historical.map(suggestion => <AutocompleteSuggestion key={suggestion.key} suggestion={suggestion} txt={txt} onSelect={() => addItem(suggestion)} />)}
+            </div>
+          </div>
+    ),
+    observed: suggestions.observed.length > 0 && (
+          <div key="observed" data-shopping-suggestion-group="observed" style={{ marginTop: 12 }}>
+            <div style={{ color: COLORS.muted, fontSize: 11, fontWeight: 950, letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 6 }}>{txt.observedPriceSuggestions}</div>
+            <div className="bkp-shopping-suggestion-list" style={{ display: "grid", gap: 0, border: `1px solid ${COLORS.borderSubtle}`, borderRadius: 10, overflow: "hidden", background: COLORS.card }}>
+              {suggestions.observed.map(suggestion => <AutocompleteSuggestion key={suggestion.key} suggestion={suggestion} txt={txt} onSelect={() => addItem(suggestion)} />)}
+            </div>
+          </div>
+    ),
+    retail: suggestions.retail.length > 0 && (
+          <div key="retail" data-shopping-suggestion-group="retail" style={{ marginTop: 12 }}>
+            <div style={{ color: COLORS.muted, fontSize: 11, fontWeight: 950, letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 6 }}>{txt.currentPromotionSuggestions}</div>
+            <div className="bkp-shopping-suggestion-list" style={{ display: "grid", gap: 0, border: `1px solid ${COLORS.borderSubtle}`, borderRadius: 10, overflow: "hidden", background: COLORS.card }}>
+              {suggestions.retail.map(suggestion => <AutocompleteSuggestion key={suggestion.key} suggestion={suggestion} txt={txt} onSelect={() => addItem(suggestion)} />)}
+            </div>
+          </div>
+    ),
+    catalog: suggestions.catalog.length > 0 && (
+          <div key="catalog" data-shopping-suggestion-group="catalog" style={{ marginTop: 12 }}>
+            <div style={{ color: COLORS.muted, fontSize: 11, fontWeight: 950, letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 6 }}>
+              {locale === "cr" ? "Produits catalogue" : "Catalogue partagé"}
+            </div>
+            <div className="bkp-shopping-suggestion-list" style={{ display: "grid", gap: 0, border: `1px solid ${COLORS.borderSubtle}`, borderRadius: 10, overflow: "hidden", background: COLORS.card }}>
+              {suggestions.catalog.map(suggestion => <AutocompleteSuggestion key={suggestion.key} suggestion={suggestion} txt={txt} onSelect={() => addItem(suggestion)} />)}
+            </div>
+          </div>
+    ),
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
       <div style={card({ padding: isMobile ? 18 : 24, order: 3 })}>
@@ -1133,40 +1163,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
           </div>
         )}
         <div data-shopping-autocomplete style={{ maxHeight: isMobile && searchFocused ? "min(42dvh, 280px)" : "none", overflowY: isMobile && searchFocused ? "auto" : "visible", overscrollBehavior: "contain" }}>
-        {suggestions.historical.length > 0 && (
-          <div data-shopping-suggestion-group="history" style={{ marginTop: 12 }}>
-            <div style={{ color: COLORS.muted, fontSize: 11, fontWeight: 950, letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 6 }}>{txt.habitualSuggestions}</div>
-            <div className="bkp-shopping-suggestion-list" style={{ display: "grid", gap: 0, border: `1px solid ${COLORS.borderSubtle}`, borderRadius: 10, overflow: "hidden", background: COLORS.card }}>
-              {suggestions.historical.map(suggestion => <AutocompleteSuggestion key={suggestion.key} suggestion={suggestion} txt={txt} onSelect={() => addItem(suggestion)} />)}
-            </div>
-          </div>
-        )}
-        {suggestions.observed.length > 0 && (
-          <div data-shopping-suggestion-group="observed" style={{ marginTop: 12 }}>
-            <div style={{ color: COLORS.muted, fontSize: 11, fontWeight: 950, letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 6 }}>{txt.observedPriceSuggestions}</div>
-            <div className="bkp-shopping-suggestion-list" style={{ display: "grid", gap: 0, border: `1px solid ${COLORS.borderSubtle}`, borderRadius: 10, overflow: "hidden", background: COLORS.card }}>
-              {suggestions.observed.map(suggestion => <AutocompleteSuggestion key={suggestion.key} suggestion={suggestion} txt={txt} onSelect={() => addItem(suggestion)} />)}
-            </div>
-          </div>
-        )}
-        {suggestions.retail.length > 0 && (
-          <div data-shopping-suggestion-group="retail" style={{ marginTop: 12 }}>
-            <div style={{ color: COLORS.muted, fontSize: 11, fontWeight: 950, letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 6 }}>{txt.currentPromotionSuggestions}</div>
-            <div className="bkp-shopping-suggestion-list" style={{ display: "grid", gap: 0, border: `1px solid ${COLORS.borderSubtle}`, borderRadius: 10, overflow: "hidden", background: COLORS.card }}>
-              {suggestions.retail.map(suggestion => <AutocompleteSuggestion key={suggestion.key} suggestion={suggestion} txt={txt} onSelect={() => addItem(suggestion)} />)}
-            </div>
-          </div>
-        )}
-        {suggestions.catalog.length > 0 && (
-          <div data-shopping-suggestion-group="catalog" style={{ marginTop: 12 }}>
-            <div style={{ color: COLORS.muted, fontSize: 11, fontWeight: 950, letterSpacing: ".08em", textTransform: "uppercase", marginBottom: 6 }}>
-              {locale === "cr" ? "Produits catalogue" : "Catalogue partagé"}
-            </div>
-            <div className="bkp-shopping-suggestion-list" style={{ display: "grid", gap: 0, border: `1px solid ${COLORS.borderSubtle}`, borderRadius: 10, overflow: "hidden", background: COLORS.card }}>
-              {suggestions.catalog.map(suggestion => <AutocompleteSuggestion key={suggestion.key} suggestion={suggestion} txt={txt} onSelect={() => addItem(suggestion)} />)}
-            </div>
-          </div>
-        )}
+        {suggestions.groupOrder.map(group => suggestionGroupNodes[group])}
         {suggestionCount > 4 && (
           <button
             type="button"
