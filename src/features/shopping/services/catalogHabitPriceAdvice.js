@@ -54,16 +54,30 @@ function receiptVisit(item) {
   return clean(item.receipt_id || item.transaction_id || item.created_at?.slice(0, 10))
 }
 
+function knownPackage(item = {}) {
+  const base = extractComparablePackage(item)
+  if (base.family !== "unknown") return base
+  // The usual parser recognises "lot de 10", while many receipts simply
+  // identify the pack as "x10". Treat it as a count only, never as mass.
+  const name = clean(item.product_name || item.corrected_name || item.name)
+  const xPack = name.match(/(?:^|\s)[x×]\s*(\d{1,2})(?=\s|$)/i)
+  const count = Number(xPack?.[1] || 0)
+  if (count >= 2 && count <= 48) {
+    return { family: "count", baseAmount: count, signature: "count:" + count, unitLabel: "€/unité" }
+  }
+  return base
+}
+
 function purchaseFormat(item) {
-  return extractComparablePackage(item)
+  return knownPackage(item)
 }
 
 function safelyParseFormat(productName, formatLabel = "", fallback = {}) {
-  const fromName = extractComparablePackage({ product_name: productName })
+  const fromName = knownPackage({ product_name: productName })
   // Existing catalogue size labels can contain "1. kg". Normalize this
   // typography, without altering the product's source description.
   const cleanedSize = clean(formatLabel).replace(/(\d)\.\s*(kg|g|l|cl|ml)\b/gi, "$1 $2")
-  const fromFormat = extractComparablePackage({
+  const fromFormat = knownPackage({
     product_name: cleanedSize,
     ...fallback,
   })
