@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { hasUsefulShoppingQuery, filterShoppingIntentSuggestions } from "../src/services/shoppingList/shoppingQueryRelevance.js";
+import { hasUsefulShoppingQuery, filterShoppingIntentSuggestions, getShoppingCatalogSuggestionScore, isCottonSwabQuery, normalizeShoppingSearchText } from "../src/services/shoppingList/shoppingQueryRelevance.js";
 assert.equal(hasUsefulShoppingQuery("la"),false);
 assert.equal(hasUsefulShoppingQuery("lait"),true);
 assert.equal(hasUsefulShoppingQuery("lai"),true);
@@ -58,3 +58,31 @@ for (const query of ["œuf","œufs","oeuf","oeufs"]) {
 }
 assert.equal(filterShoppingIntentSuggestions(eggs, "oeufs de lompe").length, eggs.length);
 console.log("OK: œuf/oeuf matching and unrelated-product exclusions.");
+
+const cottonResults = [
+  { display_name: "Cotons-tiges Eco+, 200 bâtonnets" },
+  { display_name: "Cotons-tiges Inell, 160 bâtonnets papier" },
+  { label: "Coton-tige, boîte de 100" },
+  { label: "Bâtonnets ouatés, 200 pièces" },
+  { label: "Cotons carrés bio x80" },
+  { label: "Déodorant Monsavon fleur de coton 200 ml" },
+  { label: "Lessive en feuilles nuage de coton 20 doses" },
+  { label: "Carrés coton bébé Mots d'Enfants, 50 carrés" },
+]
+const swabNames = cottonResults.slice(0, 4)
+for (const query of ["coton tige", "cotons tiges", "cotons-tiges", "coton-tige", "cotontige", "cotontiges", "COTON TIGE"]) {
+  assert.equal(isCottonSwabQuery(query), true, query)
+  assert.deepEqual(filterShoppingIntentSuggestions(cottonResults, query), swabNames, query)
+  const ranked = filterShoppingIntentSuggestions(cottonResults, query)
+    .filter(row => getShoppingCatalogSuggestionScore(row.display_name || row.label, query) >= 0)
+    .sort((a, b) => getShoppingCatalogSuggestionScore(b.display_name || b.label, query)
+      - getShoppingCatalogSuggestionScore(a.display_name || a.label, query))
+  assert.deepEqual(ranked.slice(0, 2), swabNames.slice(0, 2), query)
+}
+assert.equal(normalizeShoppingSearchText("cotons-tiges"), normalizeShoppingSearchText("coton tige"))
+assert.equal(normalizeShoppingSearchText("cotontiges"), normalizeShoppingSearchText("coton-tige"))
+assert.equal(isCottonSwabQuery("coton"), false)
+assert.equal(isCottonSwabQuery("coton bio"), false)
+assert.equal(filterShoppingIntentSuggestions(cottonResults, "coton").length, cottonResults.length)
+assert.equal(filterShoppingIntentSuggestions(cottonResults, "coton ti").length, 4)
+console.log("OK: cotton-swab searches only suggest cotton swabs, with correct variants and priority.")
