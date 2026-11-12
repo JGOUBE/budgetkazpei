@@ -163,4 +163,49 @@ const cornichonGroup = genericFamilies.find(entry => entry.key === "auto:cornich
 assert.equal(cornichonGroup.purchaseCount, 2)
 assert.equal(cornichonGroup.variants.length, 2)
 
+
+// Les produits n'ont pas besoin d'être connus d'avance dans une liste :
+// deux nouveaux libellés proches restent détectables par leurs mots utiles.
+assert.equal(
+  identifyShoppingHabitFamily({ product_name: "Colles bâton 20 g" }),
+  identifyShoppingHabitFamily({ product_name: "Colles bâton 35 g" }),
+)
+assert.ok(
+  buildShoppingHabitFamilies([
+    item("Colles bâton 20 g", "colles baton", 2.5, "2026-10-01", "new-1"),
+    item("Colles bâton 35 g", "colles baton", 3.1, "2026-10-28", "new-2"),
+  ]).some(group => group.purchaseCount === 2 && group.variants.length === 2),
+)
+
+// Un SKU dont seul le format d'écriture OCR varie doit être compté une
+// seule fois dans le top, sans mélanger les vrais formats 200 g et 300 g.
+const skuOCR = [
+  item("Tranchettes de Gouda 3O0G Eco+", "gouda 300 g", 2.89, "2026-10-01", "sku-1"),
+  item("Tranchettes de Gouda 300 g Eco+", "gouda 300 g", 2.79, "2026-10-28", "sku-2"),
+]
+const skuTop = buildTopProducts(skuOCR, 10)
+assert.equal(skuTop.length, 1)
+assert.equal(skuTop[0].purchaseCount, 2)
+assert.equal(skuTop[0].totalSpent, 5.68)
+assert.equal(
+  buildTopProducts([
+    ...skuOCR,
+    item("Tranchettes de Gouda 200 g Eco+", "gouda 200 g", 2.09, "2026-11-02", "sku-3"),
+  ], 10).length,
+  2,
+)
+assert.equal(
+  buildTopProducts([
+    item("Chocolat noir 47 % 3x100g", "choc noir", 3.29, "2026-09-01", "sku-4"),
+    item("Chocolat noir 47% 3 x 100 g", "choc noir", 3.39, "2026-10-01", "sku-5"),
+  ], 10).length,
+  1,
+)
+const uiPage = readFileSync(new URL("../src/features/shopping/pages/ShoppingInsightsPage.jsx", import.meta.url), "utf8")
+const uiFamilyCard = readFileSync(new URL("../src/features/shopping/components/FamilyHabitsCard.jsx", import.meta.url), "utf8")
+assert.match(uiPage, /buildTopProducts\(items, items.length\)/)
+assert.match(uiPage, /Voir tous les/)
+assert.match(uiFamilyCard, /const visible = showAll \? families : families.slice\(0, 3\)/)
+assert.match(uiFamilyCard, /Les prix restent suivis séparément par article/)
+
 console.log("Shopping recurring family tests passed")
