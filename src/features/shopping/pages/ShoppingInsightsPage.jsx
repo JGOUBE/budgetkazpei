@@ -134,7 +134,6 @@ export default function ShoppingInsightsPage({ user, t, isMobile = false }) {
   const productRows = useMemo(() => splitProductRows(topProducts), [topProducts])
   const currentSelectedProduct = selectedProduct
     || productRows.products[0]?.normalizedName
-    || productRows.departments[0]?.normalizedName
     || ""
   const selectedStats = useMemo(() => {
     return currentSelectedProduct ? buildProductStats(items, currentSelectedProduct) : null
@@ -176,7 +175,6 @@ export default function ShoppingInsightsPage({ user, t, isMobile = false }) {
 
           <TopProductsCard
             products={productRows.products}
-            departments={productRows.departments}
             selectedProduct={currentSelectedProduct}
             setSelectedProduct={setSelectedProduct}
             isKreol={isKreol}
@@ -265,72 +263,99 @@ function Metric({ label, value, color }) {
   )
 }
 
-function TopProductsCard({ products, departments = [], selectedProduct, setSelectedProduct, isKreol }) {
+function TopProductsCard({ products, selectedProduct, setSelectedProduct, isKreol }) {
+  const [expanded, setExpanded] = useState(false)
+  const total = Math.min(products.length, 20)
+  const visibleProducts = products.slice(0, expanded ? 20 : 5)
+
+  if (total === 0) return null
+
   return (
-    <div style={cardStyle()}>
-      <div style={{ color: COLORS.text, fontSize: 18, fontWeight: 950, marginBottom: 12 }}>
-        {isKreol ? "Top 20 produits" : "Top 20 produits"}
-      </div>
-      <div style={{ display: "grid", gap: 9 }}>
-        {products.slice(0, 20).map(product => {
+    <section style={cardStyle({ padding: 16 })}>
+      <h3 style={{ color: COLORS.text, fontSize: 18, fontWeight: 950, margin: 0 }}>
+        {isKreol ? "Bann produits ou achète le plis" : "Mes produits les plus achetés"}
+      </h3>
+      <p style={{ color: COLORS.muted, fontSize: 12, lineHeight: 1.45, margin: "5px 0 12px" }}>
+        {isKreol ? "Dapré out tickets · Pri moyen afiché"
+          : "Selon vos tickets · Prix moyen affiché"}
+      </p>
+
+      <div style={{ display: "grid", gap: 0 }}>
+        {visibleProducts.map((product, index) => {
           const active = selectedProduct === product.normalizedName
           return (
-            <button key={product.normalizedName} type="button" onClick={() => setSelectedProduct(product.normalizedName)} style={{
-              display: "grid",
-              gridTemplateColumns: "1fr auto",
-              gap: 12,
-              minHeight: 56,
-              border: active ? `1px solid ${COLORS.accent}` : `1px solid ${COLORS.border}`,
-              borderRadius: 14,
-              background: active ? COLORS.selected : COLORS.row,
-              color: COLORS.text,
-              padding: "10px 12px",
-              textAlign: "left",
-              cursor: "pointer",
-              fontFamily: "inherit",
-            }}>
-              <span>
-                <strong>{product.label}</strong>
-                <span style={{ display: "block", color: COLORS.muted, fontSize: 12, marginTop: 3 }}>
+            <button
+              key={product.normalizedName}
+              type="button"
+              aria-pressed={active}
+              onClick={() => setSelectedProduct(product.normalizedName)}
+              style={{
+                display: "grid",
+                gridTemplateColumns: "minmax(0, 1fr) auto",
+                alignItems: "center",
+                gap: 10,
+                minHeight: 48,
+                border: "none",
+                borderTop: index > 0 ? `1px solid ${COLORS.border}` : "none",
+                borderRadius: 8,
+                background: active ? COLORS.selected : "transparent",
+                color: COLORS.text,
+                boxShadow: "none",
+                padding: "8px 9px",
+                textAlign: "left",
+                cursor: "pointer",
+                fontFamily: "inherit",
+                width: "100%",
+              }}
+            >
+              <span style={{ minWidth: 0 }}>
+                <strong style={{
+                  display: "block",
+                  fontSize: 14,
+                  lineHeight: 1.35,
+                  fontWeight: 850,
+                  overflowWrap: "anywhere",
+                }}>
+                  {product.label}
+                </strong>
+                <span style={{ display: "block", color: COLORS.muted, fontSize: 12, marginTop: 2 }}>
                   {formatPurchaseCount(product.purchaseCount, isKreol)}
                 </span>
               </span>
-              <strong style={{ color: COLORS.cyan }}>{formatMontant(product.averagePrice)}</strong>
+              <strong style={{ color: COLORS.cyan, fontSize: 14, whiteSpace: "nowrap", alignSelf: "center" }}>
+                {formatMontant(product.averagePrice)}
+              </strong>
             </button>
           )
         })}
       </div>
 
-      {departments.length > 0 && (
-        <div style={{ marginTop: 18 }}>
-          <div style={{ color: COLORS.yellow, fontSize: 14, fontWeight: 950, marginBottom: 10 }}>
-            {isKreol ? "Rayons i revient souvent" : "Rayons fréquents"}
-          </div>
-          <div style={{ display: "grid", gap: 8 }}>
-            {departments.slice(0, 8).map(product => (
-              <div key={product.normalizedName} style={{
-                display: "grid",
-                gridTemplateColumns: "1fr auto",
-                gap: 12,
-                border: "1px solid rgba(252,211,77,.18)",
-                borderRadius: 14,
-                background: "rgba(252,211,77,.06)",
-                color: COLORS.text,
-                padding: "10px 12px",
-              }}>
-                <span>
-                  <strong>{product.label}</strong>
-                  <span style={{ display: "block", color: COLORS.muted, fontSize: 12, marginTop: 3 }}>
-                    {isKreol ? "Labitid rayon" : "Habitude de rayon"}
-                  </span>
-                </span>
-                <strong style={{ color: COLORS.yellow }}>{formatPurchaseCount(product.purchaseCount, isKreol)}</strong>
-              </div>
-            ))}
-          </div>
-        </div>
+      {total > 5 && (
+        <button
+          type="button"
+          aria-expanded={expanded}
+          onClick={() => setExpanded(value => !value)}
+          style={{
+            display: "block",
+            margin: "10px auto 0",
+            padding: "9px 14px",
+            border: `1px solid ${COLORS.border}`,
+            borderRadius: 12,
+            background: COLORS.surface,
+            color: COLORS.cyan,
+            boxShadow: "none",
+            fontFamily: "inherit",
+            fontSize: 13,
+            fontWeight: 900,
+            cursor: "pointer",
+          }}
+        >
+          {expanded
+            ? (isKreol ? "Réduire la liste" : "Réduire la liste")
+            : (isKreol ? `War lé ${total} produits` : `Voir les ${total} produits`)}
+        </button>
       )}
-    </div>
+    </section>
   )
 }
 
