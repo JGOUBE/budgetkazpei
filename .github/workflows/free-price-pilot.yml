@@ -44,3 +44,14 @@ jobs:
           OFFER_URL: ${{ inputs.offer_url }}
           MAX_PAGES: ${{ inputs.max_pages }}
         run: python3 scripts/free_price_pilot/collector.py --url "$OFFER_URL" --limit "$MAX_PAGES"
+  read-only-live-sample:
+    if: ${{ github.event_name == 'pull_request' }}
+    needs: quality-tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - name: First real public-offer access check (Hyper U vs Super U)
+        run: python3 scripts/free_price_pilot/collector.py --url "https://lapub.re/offres/saucisses-de-porc-mak-yuen-hyper-u" --limit 1
+      - name: Confirm U Express offer is never mapped to Super U
+        run: python3 scripts/free_price_pilot/collector.py --url "https://lapub.re/offres/cereales-nestle-u-express-2" --limit 1
