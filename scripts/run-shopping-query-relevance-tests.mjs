@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { hasUsefulShoppingQuery, filterShoppingIntentSuggestions, getShoppingCatalogSuggestionScore, isCottonSwabQuery, normalizeShoppingSearchText } from "../src/services/shoppingList/shoppingQueryRelevance.js";
+import { hasUsefulShoppingQuery, filterShoppingIntentSuggestions, getShoppingCatalogSuggestionScore, isCottonSwabQuery, normalizeShoppingSearchText, rankShoppingSuggestionGroups } from "../src/services/shoppingList/shoppingQueryRelevance.js";
 assert.equal(hasUsefulShoppingQuery("la"),false);
 assert.equal(hasUsefulShoppingQuery("lait"),true);
 assert.equal(hasUsefulShoppingQuery("lai"),true);
@@ -86,3 +86,47 @@ assert.equal(isCottonSwabQuery("coton bio"), false)
 assert.equal(filterShoppingIntentSuggestions(cottonResults, "coton").length, cottonResults.length)
 assert.equal(filterShoppingIntentSuggestions(cottonResults, "coton ti").length, 4)
 console.log("OK: cotton-swab searches only suggest cotton swabs, with correct variants and priority.")
+
+
+const mixedSourceSuggestions = {
+  historical: [],
+  observed: [
+    { key: "observed:1", source: "observed", label: "Déodorant spray 0% alcool parfum fleur de coton toute légère MONSAVON AU LAIT 20 cl" },
+    { key: "observed:2", source: "observed", label: "Déodorant spray compressé 0% alcool parfum fleur de coton MONSAVON 10 cl" },
+  ],
+  retail: [],
+  catalog: [
+    { key: "catalog:eco", source: "catalog", label: "Cotons-tiges Eco+, 200 bâtonnets", packPrice: 0.86 },
+    { key: "catalog:inell", source: "catalog", label: "Cotons-tiges Inell, 160 bâtonnets papier", packPrice: 1.01 },
+    { key: "catalog:discs", source: "catalog", label: "Disques coton Eco+, 100 disques" },
+    { key: "catalog:pads", source: "catalog", label: "Cotons carrés bébé x50" },
+  ],
+};
+const shortCotton = rankShoppingSuggestionGroups(mixedSourceSuggestions, "Coton", { limit: 4 });
+assert.deepEqual(shortCotton.groupOrder, ["catalog"]);
+assert.deepEqual(shortCotton.catalog.slice(0, 2).map(row => row.label), [
+  "Cotons-tiges Eco+, 200 bâtonnets",
+  "Cotons-tiges Inell, 160 bâtonnets papier",
+]);
+assert.deepEqual(shortCotton.observed, []);
+assert.equal(shortCotton.catalog.length, 4);
+const expandedCotton = rankShoppingSuggestionGroups(mixedSourceSuggestions, "Coton", { showAll: true });
+assert.deepEqual(expandedCotton.groupOrder, ["catalog", "observed"]);
+assert.equal(expandedCotton.observed.length, 2);
+const exactCotton = Object.fromEntries(Object.entries(mixedSourceSuggestions).map(([key, rows]) =>
+  [key, filterShoppingIntentSuggestions(rows, "coton tige")]));
+assert.deepEqual(rankShoppingSuggestionGroups(exactCotton, "coton tige", { limit: 4 }).catalog.map(row => row.label), [
+  "Cotons-tiges Eco+, 200 bâtonnets",
+  "Cotons-tiges Inell, 160 bâtonnets papier",
+]);
+const perfumeSearch = rankShoppingSuggestionGroups(mixedSourceSuggestions, "fleur de coton", { limit: 4 });
+assert.equal(perfumeSearch.groupOrder[0], "observed");
+assert.equal(perfumeSearch.observed.length, 2);
+const milkAcrossGroups = rankShoppingSuggestionGroups({
+  historical: [{label: "Lait demi-écrémé 1 L"}],
+  observed: [{label: "Déodorant au lait pour le corps"}],
+  retail: [],
+  catalog: [{label: "Lait entier 1 L"}],
+}, "lait");
+assert.deepEqual(milkAcrossGroups.groupOrder, ["historical", "catalog", "observed"]);
+console.log("OK: shopping autocomplete ranks real product matches ahead of incidental fragrance matches across sources.");
