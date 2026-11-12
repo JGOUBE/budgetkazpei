@@ -83,6 +83,9 @@ export function buildHabitSuggestions(items = []) {
     })
   }
 
-  // Une ou deux pistes par écran, pour éviter un nouveau bloc défilant.
-  return suggestions.slice(0, 2)
+  // Panacher les conseils pratiques et les comparaisons quand les deux existent.
+  const habit = suggestions.find(suggestion => suggestion.type === "habit")
+  return habit && reliablePrices.length > 0
+    ? [suggestions[0], habit]
+    : suggestions.slice(0, 2)
 }
