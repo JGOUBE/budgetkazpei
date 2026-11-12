@@ -156,7 +156,7 @@ export default function ShoppingInsightsPage({ user, t, isMobile = false }) {
   }, [user?.id])
 
   const storeHabits = useMemo(() => buildStoreHabits(items).slice(0, 6), [items])
-  const topProducts = useMemo(() => buildTopProducts(items, 30), [items])
+  const topProducts = useMemo(() => buildTopProducts(items, items.length), [items])
   const familyHabits = useMemo(() => buildShoppingHabitFamilies(items), [items])
   const productRows = useMemo(() => splitProductRows(topProducts), [topProducts])
   const habitSuggestions = useMemo(
@@ -300,8 +300,12 @@ function Metric({ label, value, color }) {
 
 function TopProductsCard({ products, selectedProduct, setSelectedProduct, isKreol }) {
   const [expanded, setExpanded] = useState(false)
-  const total = Math.min(products.length, 20)
-  const visibleProducts = products.slice(0, expanded ? 20 : 5)
+  const [showAll, setShowAll] = useState(false)
+  const total = products.length
+  const visibleProducts = products.slice(
+    0,
+    expanded ? (showAll ? total : Math.min(20, total)) : 5,
+  )
 
   if (total === 0) return null
 
@@ -369,7 +373,10 @@ function TopProductsCard({ products, selectedProduct, setSelectedProduct, isKreo
         <button
           type="button"
           aria-expanded={expanded}
-          onClick={() => setExpanded(value => !value)}
+          onClick={() => {
+            setExpanded(value => !value)
+            setShowAll(false)
+          }}
           style={{
             display: "block",
             margin: "10px auto 0",
@@ -387,7 +394,34 @@ function TopProductsCard({ products, selectedProduct, setSelectedProduct, isKreo
         >
           {expanded
             ? (isKreol ? "Réduire la liste" : "Réduire la liste")
-            : (isKreol ? `War lé ${total} produits` : `Voir les ${total} produits`)}
+            : (isKreol
+              ? `War lé ${Math.min(20, total)} premiers produits`
+              : `Voir les ${Math.min(20, total)} premiers produits`)}
+        </button>
+      )}
+      {expanded && total > 20 && (
+        <button
+          type="button"
+          aria-expanded={showAll}
+          onClick={() => setShowAll(value => !value)}
+          style={{
+            display: "block",
+            margin: "8px auto 0",
+            padding: "8px 13px",
+            border: `1px solid ${COLORS.border}`,
+            borderRadius: 11,
+            color: COLORS.cyan,
+            background: COLORS.surface,
+            boxShadow: "none",
+            fontFamily: "inherit",
+            fontSize: 12,
+            fontWeight: 800,
+            cursor: "pointer",
+          }}
+        >
+          {showAll
+            ? (isKreol ? "Revenir aux 20 premiers" : "Revenir aux 20 premiers")
+            : (isKreol ? `War tou lé ${total} produits` : `Voir tous les ${total} produits`)}
         </button>
       )}
     </section>
