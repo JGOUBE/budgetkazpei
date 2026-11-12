@@ -62,6 +62,7 @@ export function buildHabitSuggestions(items = []) {
       key: "price:" + entry.productKey,
       product: entry.product,
       store: entry.bestStore,
+      referenceStore: entry.referenceStore,
       alternativePrice: entry.alternativePrice,
       referencePrice: entry.referencePrice,
       unitLabel: entry.unitLabel,
