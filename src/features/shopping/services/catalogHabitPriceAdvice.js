@@ -58,10 +58,25 @@ function purchaseFormat(item) {
   return extractComparablePackage(item)
 }
 
-function publishedFormat(product) {
-  return extractComparablePackage({
-    product_name: [product.display_name, product.size_label].filter(Boolean).join(" "),
+function safelyParseFormat(productName, formatLabel = "", fallback = {}) {
+  const fromName = extractComparablePackage({ product_name: productName })
+  // Existing catalogue size labels can contain "1. kg". Normalize this
+  // typography, without altering the product's source description.
+  const cleanedSize = clean(formatLabel).replace(/(\d)\.\s*(kg|g|l|cl|ml)\b/gi, "$1 $2")
+  const fromFormat = extractComparablePackage({
+    product_name: cleanedSize,
+    ...fallback,
   })
+  const knownName = fromName.family !== "unknown"
+  const knownFormat = fromFormat.family !== "unknown"
+  if (knownName && knownFormat && fromName.signature !== fromFormat.signature) {
+    return { family: "unknown", signature: "conflicting_format", baseAmount: 0, unitLabel: "" }
+  }
+  return knownName ? fromName : fromFormat
+}
+
+function publishedFormat(product) {
+  return safelyParseFormat(product.display_name, product.size_label)
 }
 
 function retailerName(value) {
@@ -144,8 +159,7 @@ function retailOffer(row) {
     barcode: row.barcode,
     marketProductId: row.marketProductId,
     shoppingProductId: row.productId,
-    packageInfo: extractComparablePackage({
-      product_name: [row.productName, row.packageFormat].filter(Boolean).join(" "),
+    packageInfo: safelyParseFormat(row.productName, row.packageFormat, {
       package_quantity: row.totalQuantityValue ?? row.quantityValue,
       unit: row.totalQuantityUnit ?? row.quantityUnit,
     }),
