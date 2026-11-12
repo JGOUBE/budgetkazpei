@@ -6,6 +6,8 @@ import { buildHabitSuggestions } from "../services/habitAdvice"
 import { buildRegionalHabitPriceSuggestions } from "../services/catalogHabitPriceAdvice"
 import { loadRegionalHabitReferences } from "../services/loadRegionalHabitReferences"
 import HabitAdviceCard from "../components/HabitAdviceCard"
+import FamilyHabitsCard from "../components/FamilyHabitsCard"
+import { buildShoppingHabitFamilies } from "../services/shoppingHabitFamilies"
 import { listShoppingItems } from "../services/shoppingEngine"
 import { createColorAliases } from "../../../styles/designSystem"
 
@@ -155,6 +157,7 @@ export default function ShoppingInsightsPage({ user, t, isMobile = false }) {
 
   const storeHabits = useMemo(() => buildStoreHabits(items).slice(0, 6), [items])
   const topProducts = useMemo(() => buildTopProducts(items, 30), [items])
+  const familyHabits = useMemo(() => buildShoppingHabitFamilies(items), [items])
   const productRows = useMemo(() => splitProductRows(topProducts), [topProducts])
   const habitSuggestions = useMemo(
     () => buildHabitSuggestions(items, { regionalSavings }),
@@ -202,6 +205,8 @@ export default function ShoppingInsightsPage({ user, t, isMobile = false }) {
             <StoreHabitsCard data={storeHabits} isKreol={isKreol} />
             <ProductStatsCard stats={selectedStats} isKreol={isKreol} />
           </div>
+
+          <FamilyHabitsCard families={familyHabits} isKreol={isKreol} />
 
           <TopProductsCard
             products={productRows.products}
