@@ -90,7 +90,7 @@ export function buildProductStats(items: ShoppingItem[] = [], normalizedName = "
     .sort((a, b) => String(b.created_at || "").localeCompare(String(a.created_at || "")))
 
   const prices = rows.map(item => item.priceValue)
-  const total = prices.reduce((sum, value) => sum + value, 0)
+  const total = Math.round((prices.reduce((sum, value) => sum + value, 0) + Number.EPSILON) * 100) / 100
   const yearlySpend = rows.length > 0 ? total * (365 / Math.max(1, getObservedDays(rows))) : 0
 
   return {
