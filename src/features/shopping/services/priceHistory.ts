@@ -65,9 +65,22 @@ export function normalizeMerchantName(name = "") {
     .join(" ")
 }
 
+// La désignation complète (format inclus) fait foi pour le classement des
+// produits précis. Le normalized_name hérité peut varier d'un ticket à l'autre
+// même lorsque product_name est strictement identique.
+export function shoppingProductGroupingKey(item: ShoppingItem = {}) {
+  const exactLabel = normalizeText(item.product_name || "")
+  if (exactLabel) return "product:" + exactLabel
+  const fallback = normalizeText(item.normalized_name || "")
+  return fallback ? "normalized:" + fallback : ""
+}
+
 export function buildProductStats(items: ShoppingItem[] = [], normalizedName = "") {
+  const byExactProduct = normalizedName.startsWith("product:") || normalizedName.startsWith("normalized:")
   const rows = items
-    .filter(item => item.normalized_name === normalizedName)
+    .filter(item => byExactProduct
+      ? shoppingProductGroupingKey(item) === normalizedName
+      : item.normalized_name === normalizedName)
     .map(item => ({
       ...item,
       priceValue: money(item.price),
@@ -100,10 +113,11 @@ export function buildTopProducts(items: ShoppingItem[] = [], limit = 20) {
   const groups = new Map<string, ShoppingItem[]>()
 
   items.forEach(item => {
-    if (!item.normalized_name) return
-    const group = groups.get(item.normalized_name) || []
+    const key = shoppingProductGroupingKey(item)
+    if (!key) return
+    const group = groups.get(key) || []
     group.push(item)
-    groups.set(item.normalized_name, group)
+    groups.set(key, group)
   })
 
   return Array.from(groups.entries())
