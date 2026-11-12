@@ -171,7 +171,7 @@ function retailOffer(row) {
   const city = clean(row.storeCity)
   const name = clean(row.storeName || row.retailerName || row.retailerSlug)
   return {
-    price: positive(row.price),
+    price: !row.currency || row.currency === "EUR" ? positive(row.price) : 0,
     observedAt: row.observedAt,
     retailer,
     retailerLabel: [name, city].filter(Boolean).join(" · ") || retailer,
@@ -239,6 +239,7 @@ export function buildRegionalHabitPriceSuggestions({
     if (new Set(rows.map(receiptVisit)).size < 2) continue
     const reference = safeReferencePurchase(rows, referenceNow)
     if (!reference || !positive(reference.price)) continue
+    if (dateTime(reference.purchase_date || reference.created_at, referenceNow) < cutoff) continue
     const sourceStore = retailerName(reference.store)
     if (!sourceStore) continue
     // A multi-pack purchase line is sometimes the sum of several packages.
