@@ -88,6 +88,8 @@ export function buildProductStats(items: ShoppingItem[] = [], normalizedName = "
     lowestPrice: prices.length ? Math.min(...prices) : 0,
     highestPrice: prices.length ? Math.max(...prices) : 0,
     purchaseCount: rows.length,
+    totalSpent: total,
+    monthlySpendEstimate: yearlySpend / 12,
     yearlyFrequency: rows.length > 0 ? Math.round(rows.length * (365 / Math.max(30, getObservedDays(rows)))) : 0,
     yearlySpend,
     history: rows,
