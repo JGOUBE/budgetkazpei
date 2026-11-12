@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { formatMontant } from "../../../utils/format"
 import { createColorAliases } from "../../../styles/designSystem"
 
@@ -24,6 +25,9 @@ function formatAdvicePrice(value, suggestion) {
 }
 
 export default function HabitAdviceCard({ suggestions = [], isKreol = false }) {
+  const [expanded, setExpanded] = useState(false)
+  const visibleSuggestions = expanded ? suggestions : suggestions.slice(0, 2)
+
   return (
     <section style={cardStyle({ padding: 16 })} aria-label={isKreol ? "Bann conseil lékonomi" : "Mes pistes d'économies"}>
       <h3 style={{ color: COLORS.text, fontSize: 18, fontWeight: 950, margin: "0 0 5px" }}>
@@ -41,7 +45,7 @@ export default function HabitAdviceCard({ suggestions = [], isKreol = false }) {
         </p>
       ) : (
       <div style={{ display: "grid", gap: 10 }}>
-        {suggestions.map(suggestion => (
+        {visibleSuggestions.map(suggestion => (
           <article key={suggestion.key} style={{
             border: `1px solid ${COLORS.border}`,
             background: COLORS.surface,
@@ -121,6 +125,29 @@ export default function HabitAdviceCard({ suggestions = [], isKreol = false }) {
             ) : null}
           </article>
         ))}
+        {suggestions.length > 2 && (
+          <button
+            type="button"
+            aria-expanded={expanded}
+            onClick={() => setExpanded(current => !current)}
+            style={{
+              margin: "0 auto",
+              padding: "8px 13px",
+              border: `1px solid ${COLORS.border}`,
+              borderRadius: 11,
+              background: COLORS.surface,
+              color: COLORS.cyan,
+              fontSize: 12,
+              fontWeight: 800,
+              boxShadow: "none",
+              cursor: "pointer",
+            }}
+          >
+            {expanded
+              ? (isKreol ? "Réduire" : "Afficher moins")
+              : (isKreol ? "War in nout conseil" : "Voir une autre idée")}
+          </button>
+        )}
       </div>
       )}
     </section>
