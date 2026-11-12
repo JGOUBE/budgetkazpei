@@ -89,10 +89,12 @@ function getHistoryDaysSpan(history = []) {
   return Math.ceil((max - min) / 86400000)
 }
 
-function shouldShowAnnualProjection(stats = {}) {
-  const purchaseCount = Number(stats.purchaseCount || stats.history?.length || 0)
+function shouldShowMonthlyProjection(stats = {}) {
+  const purchaseCount = Number(stats.purchaseCount || 0)
   const daysSpan = getHistoryDaysSpan(stats.history || [])
-  return purchaseCount >= 5 && daysSpan >= 30
+  const estimate = Number(stats.monthlySpendEstimate || 0)
+  // A few purchases across a short period do not establish a monthly habit.
+  return purchaseCount >= 5 && daysSpan >= 60 && estimate >= 1
 }
 
 export default function ShoppingInsightsPage({ user, t, isMobile = false }) {
@@ -233,26 +235,26 @@ function ProductStatsCard({ stats, isKreol }) {
         <Metric label={isKreol ? "Plus bas" : "Plus bas"} value={formatMontant(stats.lowestPrice)} color={COLORS.yellow} />
         <Metric label={isKreol ? "Plus haut" : "Plus haut"} value={formatMontant(stats.highestPrice)} color={COLORS.accent} />
       </div>
-      <div style={{ marginTop: 14, color: COLORS.text, fontWeight: 950, lineHeight: 1.45 }}>
-        {shouldShowAnnualProjection(stats) ? (
+      <div style={{ marginTop: 14, color: COLORS.text, lineHeight: 1.5 }}>
+        <div style={{ fontSize: 14, fontWeight: 750 }}>
+          {isKreol ? "Su out tickets" : "Sur vos tickets"} :{" "}
+          {stats.purchaseCount} {isKreol ? "achats relevés" : "achats relevés"} ·{" "}
+          <strong style={{ color: COLORS.accent }}>{formatMontant(stats.totalSpent)} {isKreol ? "au total" : "au total"}</strong>
+        </div>
+        {shouldShowMonthlyProjection(stats) ? (
           <>
-            {isKreol ? `Ou achète produit-la ${stats.yearlyFrequency} fois par an.`
-              : `Vous achetez ce produit ${stats.yearlyFrequency} fois par an.`}
-            <br />
-            <span style={{ color: COLORS.accent }}>
-              {isKreol ? "Dépans estimée" : "Dépense estimée"} : {formatMontant(stats.yearlySpend)}/an
-            </span>
+            <p style={{ margin: "7px 0 0", fontSize: 13, fontWeight: 550, color: COLORS.text }}>
+              {isKreol ? "À ce rythme, sa produit-la pourrait coûter environ" : "À ce rythme, ce produit pourrait représenter environ"}{" "}
+              <strong style={{ color: COLORS.accent }}>{formatMontant(Math.round(stats.monthlySpendEstimate))}/mois</strong>.
+            </p>
+            <p style={{ margin: "3px 0 0", fontSize: 11, fontWeight: 450, color: COLORS.muted }}>
+              {isKreol ? "Estimasyon indicative selon out tickets, pa in dépense garantie." : "Estimation indicative à partir de vos tickets, pas une dépense certaine."}
+            </p>
           </>
         ) : (
-          <>
-            {isKreol ? "Produit-la i revient souvent dann out premiers tickets."
-              : "Ce produit revient souvent dans vos premiers tickets."}
-            <br />
-            <span style={{ color: COLORS.muted }}>
-              {isKreol ? "Tendance à confirmer avec plus de tickets."
-                : "Tendance à confirmer avec plus de tickets."}
-            </span>
-          </>
+          <p style={{ margin: "5px 0 0", fontSize: 12, fontWeight: 450, color: COLORS.muted }}>
+            {isKreol ? "Plus de tickets va aider à estimer in rythme par mois." : "Avec davantage de tickets, une estimation mensuelle pourra être proposée."}
+          </p>
         )}
       </div>
     </div>

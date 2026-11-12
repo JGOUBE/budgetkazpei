@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { readFile } from "node:fs/promises"
 import { buildHabitSuggestions } from "../src/features/shopping/services/habitAdvice.js"
+import { buildProductStats } from "../src/features/shopping/services/priceHistory.ts"
 
 const item = (name, receiptId, createdAt, overrides = {}) => ({
   id: receiptId + ":" + name,
@@ -78,3 +79,24 @@ const card = await readFile(new URL("../src/features/shopping/components/HabitAd
 assert.match(overview, /<HabitAdviceCard suggestions=\{habitSuggestions\}/)
 assert.match(savings, /<HabitAdviceCard suggestions=\{habitSuggestions\}/)
 assert.match(card, /suggestions\.length === 0/)
+
+const repeatPurchases = [
+  "2026-07-02", "2026-07-18", "2026-08-02",
+  "2026-08-18", "2026-09-04", "2026-09-26",
+].map((date, index) => ({
+  id: "repeat:" + index,
+  receipt_id: "receipt:" + index,
+  product_name: "Pains au chocolat x10",
+  normalized_name: "pains au chocolat x10",
+  price: 4.9,
+  created_at: date + "T12:00:00Z",
+}))
+const repeatStats = buildProductStats(repeatPurchases, "pains au chocolat x10")
+assert.equal(repeatStats.totalSpent, 29.4)
+assert.ok(repeatStats.monthlySpendEstimate > 0)
+assert.match(overview, /shouldShowMonthlyProjection/)
+assert.match(overview, /purchaseCount >= 5 && daysSpan >= 60/)
+assert.match(overview, /stats\.totalSpent/)
+assert.match(overview, /ce produit pourrait représenter environ/)
+assert.doesNotMatch(overview, /stats\.yearlySpend|stats\.yearlyFrequency|Vous achetez ce produit.*fois par an/)
+console.log("Shopping observed spend and monthly copy tests passed")
