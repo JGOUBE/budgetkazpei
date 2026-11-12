@@ -200,7 +200,7 @@ def parse_offer(html, url):
     pkg_match = re.search(r"Conditionnement\s+(.{2,90}?)\s+(?:Validité de l.offre|Description du produit|Conditions de l.offre)", body, re.I)
     packaging = pkg_match.group(1).strip() if pkg_match else None
     unit_match = UNIT_PRICE_RE.search(after_title)
-    variable_weight_match = re.search(r"(\d{1,4},\d{2})\s*€\s*(?:LE|AU)\s*(KG|LITRE|L)\b", after_title[:110], re.I)
+    variable_weight_match = re.search(r"(\d{1,4},\d{2})\s*€\s*(?:LE|AU)\s*(KG|LITRE|L)\b(?!\s*:)", after_title[:110], re.I)
     unit_amount = money(unit_match.group(2)) if unit_match else None
     unit = ("kg" if unit_match.group(1).lower() == "kg" else "l") if unit_match else None
     if variable_weight_match:
