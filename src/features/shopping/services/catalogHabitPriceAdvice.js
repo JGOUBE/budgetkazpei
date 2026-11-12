@@ -255,12 +255,19 @@ export function buildRegionalHabitPriceSuggestions({
       if (!identityMatches(reference, offer) || !sameVerifiedFormat(reference, offer)) continue
       const key = offer.retailer + "|" + normalize(offer.retailerLabel)
       const current = byOutlet.get(key)
-      if (!current || dateTime(offer.observedAt, referenceNow) > dateTime(current.observedAt, referenceNow)) {
+      const candidateTime = dateTime(offer.observedAt, referenceNow)
+      const previousTime = dateTime(current?.observedAt, referenceNow)
+      if (!current || candidateTime > previousTime) {
         byOutlet.set(key, offer)
+      } else if (candidateTime === previousTime && Math.abs(offer.price - current.price) > 0.01) {
+        // A single outlet with contradictory prices for the same date is not
+        // dependable enough to advertise as a cheaper alternative.
+        byOutlet.set(key, { ...current, ambiguousPrice: true })
       }
     }
 
     const options = [...byOutlet.values()]
+      .filter(offer => !offer.ambiguousPrice)
       .filter(offer => positive(reference.price) - offer.price >= MIN_SAVING)
       .sort((a, b) => a.price - b.price || dateTime(b.observedAt, referenceNow) - dateTime(a.observedAt, referenceNow))
     const best = options[0]
