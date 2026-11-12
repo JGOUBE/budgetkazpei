@@ -150,7 +150,7 @@ function buildObservedPriceIncrease(items) {
   return increases.sort((a, b) => b.increase - a.increase || b.percent - a.percent)[0] || null
 }
 
-export function buildHabitSuggestions(items = []) {
+export function buildHabitSuggestions(items = [], { regionalSavings = [] } = {}) {
   const eligible = (Array.isArray(items) ? items : []).filter(item =>
     evaluateSavingsProductEligibility(item).eligible && Number(item.price) > 0,
   )
@@ -205,12 +205,18 @@ export function buildHabitSuggestions(items = []) {
   const repeatSpend = buildRecurringSpendAdvice(eligible)
   // Jusqu'à trois pistes différentes : comparaison historique, évolution,
   // suggestion pratique ou constat budgétaire. Pas de « gain » inventé.
-  const choices = [
-    suggestions.find(suggestion => suggestion.type === "price"),
-    priceRise,
-    suggestions.find(suggestion => suggestion.type === "habit"),
-    repeatSpend,
-  ].filter(Boolean)
+  const fromRegion = (Array.isArray(regionalSavings) ? regionalSavings : [])
+    .filter(suggestion => suggestion.type === "regionalPrice" && Number(suggestion.saving) > 0)
+  const homemadeTip = suggestions.find(suggestion => suggestion.type === "habit")
+  const personalPrice = suggestions.find(suggestion =>
+    suggestion.type === "price" &&
+    !fromRegion.some(regional => normalize(regional.product) === normalize(suggestion.product)),
+  )
+  // Une piste régionale vérifiée passe en tête. Panacher ensuite les astuces
+  // et les autres constats plutôt que répéter deux fois le même produit.
+  const choices = fromRegion.length > 0
+    ? [fromRegion[0], homemadeTip, personalPrice, priceRise, repeatSpend]
+    : [personalPrice, priceRise, homemadeTip, repeatSpend]
 
-  return choices.slice(0, 3)
+  return choices.filter(Boolean).slice(0, 3)
 }
