@@ -7,7 +7,7 @@ export async function loadSharedShoppingCatalog({ client, pageSize = PAGE_SIZE }
   const rows = [];
   for (let offset = 0; ; offset += pageSize) {
     const { data, error } = await client.from("shopping_products")
-      .select("id,display_name,normalized_name,brand,size_label,category,subcategory")
+      .select("id,barcode,display_name,normalized_name,brand,size_label,category,subcategory")
       .eq("is_active", true)
       .order("id", { ascending: true })
       .range(offset, offset + pageSize - 1);
