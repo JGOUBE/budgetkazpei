@@ -66,6 +66,7 @@ assert.equal(compare({ sharedPrices: [sharedPrice("leader-price", 1.49), sharedP
 assert.equal(compare({ shoppingItems: items.map(x => ({ ...x, brand: "Mon Moulin" })), sharedProducts: [{ ...product, brand: "Autre moulin" }] }).length, 0, "Brand mismatch blocks comparison")
 assert.equal(compare({ shoppingItems: items.map(x => ({ ...x, product_name: "Farine de blé T65 500 g" })) }).length, 0, "Different pack size must not be matched")
 assert.equal(compare({ shoppingItems: items.map(x => ({ ...x, quantity: 2, unit: "piece", price: 3.78 })) }).length, 0, "A multiple-pack receipt total is not a package price")
+assert.equal(compare({ shoppingItems: items.map(x => ({ ...x, quantity: 2, unit: "kg", price: 3.78 })) }).length, 0, "A 2 kg receipt total cannot be compared to a single 1 kg package")
 assert.equal(compare({ sharedPrices: [sharedPrice("leader-price", -1)] }).length, 0, "Missing prices are not opportunities")
 
 const linkedItems = items.map(x => ({
