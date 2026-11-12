@@ -72,6 +72,15 @@ function purchaseFormat(item) {
   return knownPackage(item)
 }
 
+function equivalentFormat(a, b) {
+  return a?.family !== "unknown" &&
+    b?.family !== "unknown" &&
+    a.family === b.family &&
+    Number.isFinite(a.baseAmount) &&
+    Number.isFinite(b.baseAmount) &&
+    Math.abs(a.baseAmount - b.baseAmount) < 0.0001
+}
+
 function safelyParseFormat(productName, formatLabel = "", fallback = {}) {
   const fromName = knownPackage({ product_name: productName })
   // Existing catalogue size labels can contain "1. kg". Normalize this
@@ -83,7 +92,7 @@ function safelyParseFormat(productName, formatLabel = "", fallback = {}) {
   })
   const knownName = fromName.family !== "unknown"
   const knownFormat = fromFormat.family !== "unknown"
-  if (knownName && knownFormat && fromName.signature !== fromFormat.signature) {
+  if (knownName && knownFormat && !equivalentFormat(fromName, fromFormat)) {
     return { family: "unknown", signature: "conflicting_format", baseAmount: 0, unitLabel: "" }
   }
   return knownName ? fromName : fromFormat
@@ -130,9 +139,7 @@ function identityMatches(purchase, candidate) {
 }
 
 function sameVerifiedFormat(purchase, candidate) {
-  const a = purchaseFormat(purchase)
-  const b = candidate.packageInfo
-  return a.family !== "unknown" && b?.family !== "unknown" && a.signature === b.signature
+  return equivalentFormat(purchaseFormat(purchase), candidate.packageInfo)
 }
 
 function safeReferencePurchase(rows, now) {
