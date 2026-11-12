@@ -5,6 +5,8 @@ import { buildProductStats, buildStoreHabits, buildTopProducts } from "../servic
 import { buildHabitSuggestions } from "../services/habitAdvice"
 import HabitAdviceCard from "../components/HabitAdviceCard"
 import FamilyHabitsCard from "../components/FamilyHabitsCard"
+import SpendingCategoryCard from "../components/SpendingCategoryCard"
+import { buildShoppingSpendingSummary } from "../services/shoppingSpendingCategories"
 import { buildShoppingHabitFamilies } from "../services/shoppingHabitFamilies"
 import { listShoppingItems } from "../services/shoppingEngine"
 import { createColorAliases } from "../../../styles/designSystem"
@@ -138,6 +140,7 @@ export default function ShoppingInsightsPage({ user, t, isMobile = false }) {
   const storeHabits = useMemo(() => buildStoreHabits(items).slice(0, 6), [items])
   const topProducts = useMemo(() => buildTopProducts(items, items.length), [items])
   const familyHabits = useMemo(() => buildShoppingHabitFamilies(items), [items])
+  const spendingSummary = useMemo(() => buildShoppingSpendingSummary(items), [items])
   const productRows = useMemo(() => splitProductRows(topProducts), [topProducts])
   const habitSuggestions = useMemo(() => buildHabitSuggestions(items), [items])
   const currentSelectedProduct = selectedProduct
@@ -158,7 +161,7 @@ export default function ShoppingInsightsPage({ user, t, isMobile = false }) {
         </h2>
         <p style={{ color: COLORS.muted, margin: "10px 0 0", lineHeight: 1.55 }}>
           {isKreol ? "BudgetKazPéi i analiz bann tiké validé pou montre out magazin ek bann produits ou achète souvent."
-            : "BudgetKazPéi analyse les tickets validés pour suivre vos magasins et produits récurrents."}
+            : "BudgetKazPéi analyse vos tickets pour mieux comprendre vos dépenses et retrouver vos habitudes d'achat."}
         </p>
       </div>
 
@@ -176,6 +179,8 @@ export default function ShoppingInsightsPage({ user, t, isMobile = false }) {
         </div>
       ) : (
         <>
+          <SpendingCategoryCard summary={spendingSummary} isKreol={isKreol} />
+
           <HabitAdviceCard suggestions={habitSuggestions} isKreol={isKreol} />
 
           <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
