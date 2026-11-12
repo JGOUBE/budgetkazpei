@@ -110,6 +110,13 @@ assert.deepEqual(shortCotton.catalog.slice(0, 2).map(row => row.label), [
 ]);
 assert.deepEqual(shortCotton.observed, []);
 assert.equal(shortCotton.catalog.length, 4);
+const pluralCotton = rankShoppingSuggestionGroups(mixedSourceSuggestions, "Cotons", { limit: 4 });
+assert.deepEqual(pluralCotton.groupOrder, ["catalog"]);
+assert.deepEqual(pluralCotton.catalog.slice(0, 2).map(row => row.label), [
+  "Cotons-tiges Eco+, 200 bâtonnets",
+  "Cotons-tiges Inell, 160 bâtonnets papier",
+]);
+assert.equal(normalizeShoppingSearchText("cotons"), "coton");
 const expandedCotton = rankShoppingSuggestionGroups(mixedSourceSuggestions, "Coton", { showAll: true });
 assert.deepEqual(expandedCotton.groupOrder, ["catalog", "observed"]);
 assert.equal(expandedCotton.observed.length, 2);
