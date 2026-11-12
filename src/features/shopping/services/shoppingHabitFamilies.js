@@ -24,7 +24,7 @@ const FAMILY_RULES = Object.freeze([
     key: "chocolate-tablets",
     label: "Chocolat en tablette",
     matches: text =>
-      /^(?:tab(?:lette)? (?:de )?(?:choc|chocolat|milka)\b|chocolat (?:noir|au lait|blanc|dessert)\b)/.test(text) &&
+      /^(?:tab(?:lette)? (?:de )?(?:chocolat|choco|choc|milka)\b|chocolat (?:noir|au lait|blanc|dessert)\b)/.test(text) &&
       !/\b(?:biscuit|cereale|poudre|boisson|barres?|cacao soluble|glace|cones?)\b/.test(text),
   },
 ])
