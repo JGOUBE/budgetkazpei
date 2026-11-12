@@ -173,15 +173,22 @@ def parse_offer(html, url):
     title, body = " ".join(page.titles).strip(), page.text
     if len(title) < 5 or not FOOD_RE.search(title):
         return None
-    idx = body.find(title)
-    if idx < 0:
+    # The product name may occur in the SEO title, breadcrumbs and H1.
+    # Choose the occurrence whose following text contains the closest product price.
+    # Never read a price far away from its product heading.
+    positions = []
+    for hit in re.finditer(re.escape(title), body, re.I):
+        idx = hit.start()
+        preceding = body[max(0, idx-170):idx]
+        groups = list(re.finditer(r"\b(Super\s*U|Hyper\s*U|U\s*Express)\b", preceding, re.I))
+        following = body[idx+len(title):idx+len(title)+180]
+        price_match = PRICE_RE.search(following)
+        if groups and price_match and price_match.start() <= 100:
+            positions.append((price_match.start(), idx, groups[-1].group(1)))
+    if not positions:
         return None
-    retailer_near_title = re.search(r"\b(Super\s*U|Hyper\s*U|U\s*Express|Carrefour(?:\s*Market)?|E[. ]?Leclerc)\b", body[max(0, idx-250):idx], re.I)
-    if not retailer_near_title:
-        return None
-    retail_format = retailer_near_title.group(1).casefold().replace(" ", "")
-    if retail_format not in {"superu", "hyperu", "uexpress"}:
-        return None
+    _, idx, group_label = min(positions, key=lambda row: row[0])
+    retail_format = group_label.casefold().replace(" ", "")
     after_title = body[idx+len(title):idx+len(title)+380]
     prices = found_prices(after_title)
     interval = DATES_RE.search(body)
@@ -193,16 +200,27 @@ def parse_offer(html, url):
     pkg_match = re.search(r"Conditionnement\s+(.{2,90}?)\s+(?:Validité de l.offre|Description du produit|Conditions de l.offre)", body, re.I)
     packaging = pkg_match.group(1).strip() if pkg_match else None
     unit_match = UNIT_PRICE_RE.search(after_title)
+    variable_weight_match = re.search(r"(\d{1,4},\d{2})\s*€\s*(?:LE|AU)\s*(KG|LITRE|L)\b", after_title[:110], re.I)
     unit_amount = money(unit_match.group(2)) if unit_match else None
     unit = ("kg" if unit_match.group(1).lower() == "kg" else "l") if unit_match else None
+    if variable_weight_match:
+        unit_amount = money(variable_weight_match.group(1))
+        unit = "kg" if variable_weight_match.group(2).lower() == "kg" else "l"
     conditional = bool(re.search(r"\b(?:les\s+[234]\s+pour|lot\s+de|avec\s+la\s+carte|carte\s+u|à\s+partir\s+de|au\s+choix)\b", after_title, re.I))
     checks = quality_checks(title, packaging, prices[0], unit_amount, unit, prices[1:], conditional, dates[1])
+    if variable_weight_match and not packaging:
+        # A variable-weight product priced per kg has no fixed package size.
+        # Keep the unit price, but never invent a package price or weight.
+        checks["blocking_issues"] = [x for x in checks["blocking_issues"] if x != "missing_or_ambiguous_package_size"]
+        checks["warnings"].append("variable_weight_unit_price_only")
     return {"status": "needs_review", "source_type": "third_party_public_offer",
             "source_url": url, "retailer_group": "Magasins U Réunion",
             "retailer": {"hyperu": "Hyper U", "superu": "Super U", "uexpress": "U Express"}[retail_format],
             "store_format": retail_format, "store": "unverified",
             "catalog_scope": "not_verified", "can_group_same_brand": True, "can_apply_price_to_other_format": False,
-            "product_name": title, "packaging": packaging, "advertised_price_eur": str(prices[0]),
+            "product_name": title, "packaging": packaging,
+            "price_basis": "variable_weight_per_unit" if variable_weight_match else "package_price",
+            "advertised_price_eur": None if variable_weight_match else str(prices[0]),
             "price_per_unit_eur": str(unit_amount) if unit_amount is not None else None,
             "unit": unit, "valid_from": dates[0].isoformat(), "valid_until": dates[1].isoformat(),
             "conditional": conditional, "all_detected_prices_eur": [str(p) for p in prices],
