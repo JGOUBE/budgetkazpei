@@ -121,8 +121,14 @@ export function rankShoppingSuggestionGroups(groups = {}, query = "", { showAll 
       // "Coton" describes a product family, not a fragrance. Give physical
       // cotton items priority; preserve all matches for an explicit fragrance
       // search ("déodorant fleur de coton").
+      const isCottonMaterial = /^(?:cotons?|disques?|carres?|compresses?|boules?)\\b/.test(normalizedLabel)
+        && /\\bcotons?\\b/.test(normalizedLabel)
       const cottonPriority = genericCotton
-        ? isCottonSwabProduct(suggestion) ? 40 : /^(?:coton|cotons)(?: |$)/.test(normalizedLabel) ? 20 : 0
+        ? isCottonSwabProduct(suggestion) ? 200
+          : isCottonMaterial ? 140
+          : /^(?:coton|cotons)(?: |$)/.test(normalizedLabel) ? 100
+          : /\\b(?:fleur de coton|parfum(?:e)?(?:e)?(?: au| de)? coton)\\b/.test(normalizedLabel) ? -120
+          : 0
         : 0
       return { group, suggestion, sourceIndex, itemIndex, relevance: matchScore * 10 + cottonPriority }
     }),
