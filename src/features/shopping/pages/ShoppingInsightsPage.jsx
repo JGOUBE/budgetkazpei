@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react"
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts"
 import { formatMontant } from "../../../utils/format"
 import { buildProductStats, buildStoreHabits, buildTopProducts } from "../services/priceHistory"
+import { buildHabitSuggestions } from "../services/habitAdvice"
 import { listShoppingItems } from "../services/shoppingEngine"
 import { createColorAliases } from "../../../styles/designSystem"
 
@@ -132,6 +133,7 @@ export default function ShoppingInsightsPage({ user, t, isMobile = false }) {
   const storeHabits = useMemo(() => buildStoreHabits(items).slice(0, 6), [items])
   const topProducts = useMemo(() => buildTopProducts(items, 30), [items])
   const productRows = useMemo(() => splitProductRows(topProducts), [topProducts])
+  const habitSuggestions = useMemo(() => buildHabitSuggestions(items), [items])
   const currentSelectedProduct = selectedProduct
     || productRows.products[0]?.normalizedName
     || ""
@@ -172,6 +174,8 @@ export default function ShoppingInsightsPage({ user, t, isMobile = false }) {
             <StoreHabitsCard data={storeHabits} isKreol={isKreol} />
             <ProductStatsCard stats={selectedStats} isKreol={isKreol} />
           </div>
+
+          {habitSuggestions.length > 0 && <HabitAdviceCard suggestions={habitSuggestions} isKreol={isKreol} />}
 
           <TopProductsCard
             products={productRows.products}
@@ -260,6 +264,63 @@ function Metric({ label, value, color }) {
       <div style={{ color: COLORS.muted, fontSize: 12, fontWeight: 900 }}>{label}</div>
       <div style={{ color, fontSize: 20, fontWeight: 950, marginTop: 5 }}>{value}</div>
     </div>
+  )
+}
+
+function HabitAdviceCard({ suggestions, isKreol }) {
+  return (
+    <section style={cardStyle({ padding: 16 })} aria-label={isKreol ? "Bann conseil lékonomi" : "Mes pistes d'économies"}>
+      <h3 style={{ color: COLORS.text, fontSize: 18, fontWeight: 950, margin: "0 0 5px" }}>
+        {isKreol ? "Bann ti conseil pou économizé" : "Des idées pour économiser"}
+      </h3>
+      <p style={{ color: COLORS.muted, fontSize: 12, margin: "0 0 12px", lineHeight: 1.45 }}>
+        {isKreol ? "Bann propositions dapré out achats, sans jugement."
+          : "Quelques pistes selon vos achats, sans jugement."}
+      </p>
+      <div style={{ display: "grid", gap: 10 }}>
+        {suggestions.map(suggestion => (
+          <article key={suggestion.key} style={{
+            border: `1px solid ${COLORS.border}`,
+            background: COLORS.surface,
+            borderRadius: 12,
+            padding: "12px 13px",
+            color: COLORS.text,
+          }}>
+            {suggestion.type === "habit" ? (
+              <>
+                <strong style={{ display: "block", fontSize: 14, lineHeight: 1.35 }}>
+                  {isKreol ? "Et si ou fé in gâteau maison de temps en temps ?" : "Et si vous faisiez un gâteau maison de temps en temps ?"}
+                </strong>
+                <p style={{ margin: "5px 0 0", fontSize: 13, lineHeight: 1.45, color: COLORS.muted }}>
+                  {isKreol
+                    ? "Biscuit ek goûter i revient dann out tickets. Préparer un gâteau de temps en temps peut être intéressant : compare le coût bann ingrédients."
+                    : "Les biscuits et goûters reviennent régulièrement dans vos tickets. Une préparation maison peut être une alternative : comparez le coût des ingrédients."}
+                </p>
+              </>
+            ) : (
+              <>
+                <strong style={{ display: "block", fontSize: 14, lineHeight: 1.35, overflowWrap: "anywhere" }}>
+                  {suggestion.product}
+                </strong>
+                <p style={{ margin: "5px 0 0", fontSize: 13, lineHeight: 1.45 }}>
+                  {isKreol ? "Pri pli ba observé koté" : "Prix plus bas observé chez"}{" "}
+                  <strong>{suggestion.store}</strong> :{" "}
+                  <strong style={{ color: COLORS.cyan }}>
+                    {formatMontant(suggestion.alternativePrice)}
+                    {suggestion.normalizedComparison && suggestion.unitLabel ? ` ${suggestion.unitLabel}` : ""}
+                  </strong>
+                </p>
+                <p style={{ margin: "5px 0 0", fontSize: 12, lineHeight: 1.4, color: COLORS.muted }}>
+                  {isKreol ? "Écart relevé" : "Écart observé"} : {formatMontant(suggestion.saving)} ·{" "}
+                  {isKreol ? "Pri relevé le" : "Prix relevé le"}{" "}
+                  {new Date(suggestion.observedAt).toLocaleDateString("fr-FR")}
+                </p>
+              </>
+            )}
+          </article>
+        ))}
+      </div>
+    </section>
   )
 }
 
