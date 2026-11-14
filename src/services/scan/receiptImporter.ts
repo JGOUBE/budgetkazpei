@@ -3,7 +3,6 @@ import { syncShoppingItemsFromReceipt } from "../../features/shopping/services/s
 import { learnManualMarketAliasFromReceiptItem } from "./marketManualAliasService"
 import { classifyReceipt } from "./receiptClassifier"
 import { syncAnonymizedMarketReceipt } from "./marketObservationService"
-import { learnSharedShoppingCatalogFromReceipt } from "./receiptCatalogLearningService"
 import { enrichProductDictionary } from "./productKnowledgeService"
 import { isItemEligibleForSmartShopping } from "./receiptRules"
 
@@ -225,24 +224,7 @@ export async function importValidatedReceipt({
     })
   }
 
-  // The shared list catalog is separate from shopping_items (personal receipt history).
-  // Run only after the trusted lines have been persisted, and never block scan completion.
-  if (canFeedShopping && shoppingRows.length > 0) {
-    try {
-      scannerLog("Apprentissage catalogue partagé", "START", { receiptId: receipt.id })
-      const result = await learnSharedShoppingCatalogFromReceipt(receipt.id)
-      scannerLog("Apprentissage catalogue partagé", "OK", result)
-    } catch (error) {
-      console.warn("[scanner] Apprentissage catalogue partagé indisponible", {
-        code: (error as any)?.code || "",
-        message: error instanceof Error ? error.message : "unknown",
-      })
-    }
-  }
-
-  try {
-    const trustedItems = smartShoppingEligibleItems
-    scannerLog("Knowledge Engine", "START", { count: trustedItems.length })
+  // The shared list catalog is separate from shopping_items (personal receipt history).gine", "START", { count: trustedItems.length })
     await enrichProductDictionary({
       userId,
       merchantName: draft.store_name || draft.merchant_name,
