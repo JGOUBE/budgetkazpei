@@ -101,12 +101,24 @@ async function knownShop(admin: Client, title: string, raw: string, slug: string
   }
   // Exact full name is safe. A generic fuzzy match is NEVER used to publish a price.
   for (const label of [...new Set([title, raw].map(normOne).filter(Boolean))]) {
-    const direct = await onlyUnique(admin.from("shopping_products").select("id").eq("normalized_name", label).eq("is_active", true).limit(3));
-    if (direct) return { productId: direct, marketId: resolvedMarketId || null };
+    const directRows = await admin.from("shopping_products")
+      .select("id,display_name,brand").eq("normalized_name",label).eq("is_active",true).limit(3);
+    if (directRows.error) throw directRows.error;
+    if (directRows.data?.length === 1) {
+      const row = directRows.data[0];
+      return { productId:row.id,marketId:resolvedMarketId || null,
+        marketName:row.display_name,marketBrand:row.brand };
+    }
     const alias = await admin.from("shopping_product_aliases").select("product_id,retailer_slug").eq("normalized_alias", label).limit(8);
     if (alias.error) throw alias.error;
     const ids = uniqueIds((alias.data || []).filter((a: any) => !a.retailer_slug || a.retailer_slug === slug), "product_id");
-    if (ids.length === 1) return { productId: ids[0], marketId: resolvedMarketId || null };
+    if (ids.length === 1) {
+      const product=await admin.from("shopping_products")
+        .select("display_name,brand").eq("id",ids[0]).maybeSingle();
+      if(product.error) throw product.error;
+      return { productId:ids[0],marketId:resolvedMarketId || null,
+        marketName:product.data?.display_name,marketBrand:product.data?.brand };
+    }
   }
   if (!resolvedMarketId) {
     const knownAliases = await admin.from("market_product_aliases").select("product_id,scope,store_chain_key").eq("normalized_raw_label",normOne(raw)).eq("status","active").limit(10);
@@ -140,6 +152,31 @@ function categoryFor(name: string, category?: string) {
   if (/\b(biscuit|gateaux|gaufrette|chocolat|cereales)\b/.test(n)) return ["Épicerie", "Biscuits et goûters"];
   if (/\b(jus|soda|eau|nectar|boisson)\b/.test(n)) return ["Boissons", null];
   return [String(category || "").toLowerCase() === "alimentaire" ? "Alimentation" : String(category || "Alimentation"), null];
+}
+function tokenOverlap(a: string,b: string) {
+  const drop = new Set(["le","la","les","de","des","du","au","aux","en","et","avec","pour","sans","nature","saveur"]);
+  const left = new Set(normOne(a).split(" ").filter(w=>w.length>=3 && !drop.has(w)));
+  const right = new Set(normOne(b).split(" ").filter(w=>w.length>=3 && !drop.has(w)));
+  if(left.size<2 || right.size<2)return 0;
+  const shared=[...left].filter(w=>right.has(w)).length;
+  return shared / Math.max(left.size,right.size);
+}
+async function possibleNearDuplicate(admin:Client,title:string) {
+  const size=inferredSize(title);
+  const words=normOne(title).split(" ").filter(w=>w.length>=5 && !/^(?:natures|paquet|pieces|sachet|paquet|produit|biscuit|fromage)$/.test(w));
+  const focus=words.sort((a,b)=>b.length-a.length)[0];
+  if(!size || !focus)return false;
+  const found=await admin.from("shopping_products").select("display_name")
+    .eq("is_active",true).ilike("display_name","%"+focus+"%").limit(70);
+  if(found.error)throw found.error;
+  for(const row of found.data || []){
+    const other=inferredSize(String(row.display_name || ""));
+    if(!other || normOne(row.display_name)===normOne(title))continue;
+    if(other.count!==size.count || other.unit!==size.unit)continue;
+    if(other.value!=null && size.value!=null && Math.abs(other.value-size.value)>Math.max(1,size.value*.03))continue;
+    if(tokenOverlap(title,row.display_name)>=.75)return true;
+  }
+  return false;
 }
 async function createProduct(admin: Client, title: string, line: Line) {
   const norm = normOne(title), size = inferredSize(title), [category, sub] = categoryFor(title,line.category);
@@ -333,6 +370,10 @@ export async function syncVerifiedReceiptCatalog(admin: Client, receipt: Receipt
           continue;
         }
         const title=displayName(label);
+        if (await possibleNearDuplicate(admin,title)) {
+          report.review_candidates+=Number(await queueCandidate(admin,line,receipt,store.key,"possible_duplicate_product"));
+          continue;
+        }
         const existing=await admin.from("shopping_products").select("id").eq("normalized_name",normOne(title)).limit(2);
         if(existing.error) throw existing.error;
         const product=await createProduct(admin,title,line);
