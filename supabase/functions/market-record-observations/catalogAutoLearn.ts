@@ -86,7 +86,8 @@ async function onlyUnique(query: PromiseLike<any>, field = "id") {
   const ids = uniqueIds(data || [], field);
   return ids.length === 1 ? ids[0] : null;
 }
-async function knownShop(admin: Client, title: string, raw: string, slug: string, chain: string, resolvedMarketId?: string | null) {
+type KnownShop = { productId:string;marketId:string|null;marketName?:string;marketBrand?:string|null };
+async function knownShop(admin: Client, title: string, raw: string, slug: string, chain: string, resolvedMarketId?: string | null): Promise<KnownShop | null> {
   if (resolvedMarketId) {
     const linkedId = await onlyUnique(admin.from("shopping_market_product_links").select("shopping_product_id").eq("market_product_id", resolvedMarketId).limit(3), "shopping_product_id");
     if (linkedId) return { productId: linkedId, marketId: resolvedMarketId };
@@ -214,6 +215,20 @@ async function addAlias(admin: Client, productId: string | null, raw: string, ch
   if (error && error.code !== "23505") throw error;
   return !error;
 }
+async function addShoppingAlias(admin: Client, shopId: string, raw: string, slug: string) {
+  if (!goodLabel(raw)) return false;
+  const normalized = normOne(raw);
+  const { data: found, error } = await admin.from("shopping_product_aliases")
+    .select("id").eq("product_id",shopId).eq("normalized_alias",normalized).eq("retailer_slug",slug).limit(1);
+  if(error) throw error;
+  if(found?.length) return false;
+  const inserted = await admin.from("shopping_product_aliases").insert({
+    product_id:shopId,alias_text:raw,normalized_alias:normalized,
+    retailer_slug:slug,source_kind:"receipt",confidence_score:.85,
+  });
+  if(inserted.error && inserted.error.code!=="23505") throw inserted.error;
+  return !inserted.error;
+}
 async function addPrice(admin: Client, productId: string, line: Line, receipt: Receipt, slug: string, store: any) {
   if (!store || !receipt.purchase_date || receipt.date_status !== "detected") return false;
   const date = String(receipt.purchase_date).slice(0,10);
@@ -334,6 +349,7 @@ export async function syncVerifiedReceiptCatalog(admin: Client, receipt: Receipt
         continue;
       }
       report.aliases_added+=Number(await addAlias(admin,marketId,raw,store.key));
+      await addShoppingAlias(admin,productId,raw,store.slug);
       // Shared prices are pack prices (never accidentally €/kg).
       if (location && productId) report.prices_published+=Number(await addPrice(admin,productId,line,receipt,store.slug,location));
     } catch(error) {
