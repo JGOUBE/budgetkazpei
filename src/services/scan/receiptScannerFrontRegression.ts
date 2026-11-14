@@ -7,6 +7,7 @@ import {
 import {
   buildAnalysisSteps,
   buildScanPreviewSummary,
+  canEditScannedReceiptDetails,
   countItemsNeedingReview,
   getReceiptScanValidationView,
   resolveAnalysisProgressContent,
@@ -600,6 +601,14 @@ export async function runReceiptScannerFrontRegressionFixtures(): Promise<Regres
     mapPythonScanToDraft(noDeclaredCountResponse).expected_items_count,
     null,
   ))
+  results.push(assertTrue("only-owner-admin-scanner-edits",
+    canEditScannedReceiptDetails({ isAdmin: true, userEmail: "Jacques.Goube@GMAIL.COM" })))
+  results.push(assertFalse("second-admin-no-scanner-edits",
+    canEditScannedReceiptDetails({ isAdmin: true, userEmail: "other@example.test" })))
+  results.push(assertFalse("ordinary-user-no-scanner-edits",
+    canEditScannedReceiptDetails({ isAdmin: false, userEmail: "jacques.goube@gmail.com" })))
+  results.push(assertFalse("anonymous-user-no-scanner-edits",
+    canEditScannedReceiptDetails({ isAdmin: true, userEmail: "" })))
   results.push(assertEqual("trusted-preview-view", getReceiptScanValidationView({
     isPendingSave: Boolean(trusted.python_scan_pending_save),
     reviewItemsCount: countItemsNeedingReview(trusted.items),
