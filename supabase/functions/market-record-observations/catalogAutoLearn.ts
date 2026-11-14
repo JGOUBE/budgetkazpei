@@ -241,10 +241,12 @@ async function addPrice(admin: Client, productId: string, line: Line, receipt: R
   if (!Number.isFinite(price) || price <=0 || price >500) return false;
   const perUnit = money(line.unit_price);
   if (perUnit && Math.abs(perUnit-price) > Math.max(.02,price*.08)) return false;
+  const nextDay = new Date(Date.parse(date + "T00:00:00.000Z") + 86400000).toISOString();
   const {data: existing,error} = await admin.from("shopping_price_observations")
     .select("id").eq("product_id",productId).eq("retailer_slug",slug)
     .eq("commune",store.commune).eq("locality",store.locality)
-    .eq("observed_at",at.toISOString()).eq("price",price).limit(1);
+    .gte("observed_at",date+"T00:00:00.000Z").lt("observed_at",nextDay)
+    .eq("price",price).limit(1);
   if(error) throw error;
   if(existing?.length) return false;
   const reference = await hmacTag("catalog-price:"+line.id);
