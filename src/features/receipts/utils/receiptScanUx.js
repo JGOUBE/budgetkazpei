@@ -1,3 +1,10 @@
+// Only the designated scanner administrator can inspect and correct OCR product
+// lines. Other users retain the simple scan flow (and optional total correction).
+// This is a presentation rule; database permissions remain enforced separately.
+export function canEditScannedReceiptDetails({ isAdmin = false, userEmail = "" } = {}) {
+  return isAdmin === true && String(userEmail || "").trim().toLowerCase() === "jacques.goube@gmail.com"
+}
+
 export function countItemsNeedingReview(items = []) {
   return (Array.isArray(items) ? items : []).filter(item => (
     item?.needs_review === true

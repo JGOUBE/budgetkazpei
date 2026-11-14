@@ -24,6 +24,7 @@ import {
 import {
   buildAnalysisSteps,
   buildScanPreviewSummary,
+  canEditScannedReceiptDetails,
   countItemsNeedingReview,
   getReceiptScanValidationView,
   resolveAnalysisProgressContent,
@@ -1115,6 +1116,7 @@ export default function ReceiptsPage({
   onOpenReceipts,
   onOpenShoppingList,
 }) {
+  const canEditScanDetails = canEditScannedReceiptDetails({ isAdmin, userEmail: user?.email })
   const isKreol = getIsKreol(t)
   const txt = isKreol ? TEXT.kr : TEXT.fr
   const quota = useReceiptQuota({
@@ -1358,7 +1360,7 @@ export default function ReceiptsPage({
       const splitRetryUsed = Boolean(scan.metrics?.splitRetryUsed)
       const splitStillNeedsReview = splitRetryUsed && (String(parsed.scan_status || "").includes("manual_review_required") || String(parsed.scan_status || "").includes("long_manual_review"))
       const longUsableReview = String(parsed.scan_status || "").includes("long_usable_review")
-      setMessage(!isAdmin ? "" : isKreol
+      setMessage(!canEditScanDetails ? "" : isKreol
         ? splitStillNeedsReview
           ? "Tike-la ankor difisil pou lir. Korize bann zinformasyon avan anrezistre."
           : splitRetryUsed
@@ -1420,7 +1422,7 @@ export default function ReceiptsPage({
     setDuplicateReceipt(null)
     setAllowDuplicateImport(false)
     setMode("validate")
-    setMessage(isAdmin ? buildScanPreviewSummary({
+    setMessage(canEditScanDetails ? buildScanPreviewSummary({
       detectedItemsCount,
       reviewItemsCount,
       txt,
@@ -1927,7 +1929,7 @@ export default function ReceiptsPage({
         console.warn("[scanner] scan_usage ou scan_metrics ERREUR exacte:", usageError)
       }
 
-      setMessage(!isAdmin && draft.ocr_status !== "manual" && Number(importResult.shoppingItemsCreated || 0) > 0
+      setMessage(!canEditScanDetails && draft.ocr_status !== "manual" && Number(importResult.shoppingItemsCreated || 0) > 0
         ? `${txt.saved} · ${importResult.shoppingItemsCreated} prix transmis à Courses intelligentes`
         : txt.saved)
       setDraft(null)
@@ -2585,7 +2587,7 @@ export default function ReceiptsPage({
       {mode === "validate" && draft && (
         <ValidationForm
           txt={txt}
-          isAdmin={isAdmin}
+          isAdmin={canEditScanDetails}
           draft={draft}
           busy={busy}
           validationView={validationView}
@@ -2618,7 +2620,7 @@ export default function ReceiptsPage({
       {mode === "history" && (
         <HistoryList
           txt={txt}
-          isAdmin={isAdmin}
+          isAdmin={canEditScanDetails}
           rows={receiptRows}
           busy={busy}
           onOpen={openDetail}
@@ -2629,7 +2631,7 @@ export default function ReceiptsPage({
       {mode === "detail" && detail && (
         <ReceiptDetail
           txt={txt}
-          isAdmin={isAdmin}
+          isAdmin={canEditScanDetails}
           receipt={detail}
           imageUrl={detailImageUrl}
           busy={busy}
