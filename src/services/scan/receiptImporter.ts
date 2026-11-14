@@ -3,6 +3,7 @@ import { syncShoppingItemsFromReceipt } from "../../features/shopping/services/s
 import { learnManualMarketAliasFromReceiptItem } from "./marketManualAliasService"
 import { classifyReceipt } from "./receiptClassifier"
 import { syncAnonymizedMarketReceipt } from "./marketObservationService"
+import { learnSharedShoppingCatalogFromReceipt } from "./receiptCatalogLearningService"
 import { enrichProductDictionary } from "./productKnowledgeService"
 import { isItemEligibleForSmartShopping } from "./receiptRules"
 
@@ -179,14 +180,6 @@ export async function importValidatedReceipt({
     throw stageError("Creation receipt_items", error)
   }
 
-  try {
-    scannerLog("Synchronisation market anonymisee", "START", { receiptId: receipt.id })
-    const marketResult = await syncAnonymizedMarketReceipt(receipt.id)
-    scannerLog("Synchronisation market anonymisee", "OK", marketResult)
-  } catch (error) {
-    console.warn("[scanner] Synchronisation market anonymisee indisponible", error)
-  }
-
   let shoppingRows: any[] = []
   const smartShoppingEligibleItems = cleanItems.filter(item => isTrustedItemForLearning(item, draft))
   const canFeedShopping = Boolean(draft.is_food_ticket) && canFeedShoppingIntelligence(draft, smartShoppingEligibleItems.length)
@@ -224,12 +217,37 @@ export async function importValidatedReceipt({
     })
   }
 
-  // The shared list catalog is separate from shopping_items (personal receipt history).gine", "START", { count: trustedItems.length })
-    await enrichProductDictionary({
-      userId,
-      merchantName: draft.store_name || draft.merchant_name,
-      items: trustedItems,
-    })
+  // Enrich only after trusted shopping_items have been persisted.
+  // The RPC checks receipt ownership, status, product identity and confidence.
+  // A catalog failure must never invalidate the saved receipt.
+  if (canFeedShopping) {
+    try {
+      scannerLog("Apprentissage catalogue partage", "START", { receiptId: receipt.id })
+      const catalogResult = await learnSharedShoppingCatalogFromReceipt(receipt.id)
+      scannerLog("Apprentissage catalogue partage", "OK", catalogResult)
+    } catch (error) {
+      console.warn("[scanner] Apprentissage catalogue partage indisponible", error)
+    }
+  }
+
+  // Keep anonymized market sync after the shopping receipt has been saved.
+  try {
+    scannerLog("Synchronisation market anonymisee", "START", { receiptId: receipt.id })
+    const marketResult = await syncAnonymizedMarketReceipt(receipt.id)
+    scannerLog("Synchronisation market anonymisee", "OK", marketResult)
+  } catch (error) {
+    console.warn("[scanner] Synchronisation market anonymisee indisponible", error)
+  }
+
+  try {
+    scannerLog("Knowledge Engine", "START", { count: smartShoppingEligibleItems.length })
+    if (smartShoppingEligibleItems.length) {
+      await enrichProductDictionary({
+        userId,
+        merchantName: draft.store_name || draft.merchant_name,
+        items: smartShoppingEligibleItems,
+      })
+    }
     scannerLog("Knowledge Engine", "OK")
   } catch (error) {
     console.warn("[scanner] Knowledge Engine indisponible", error)
