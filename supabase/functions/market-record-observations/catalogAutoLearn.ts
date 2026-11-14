@@ -4,18 +4,10 @@ type Client = any;
 type Receipt = Record<string, any>;
 type Line = Record<string, any>;
 
-const CATEGORY = "Pain et boulangerie";
 const UNSAFE_WORDS = /\b(total|sous total|tva|ttc|reduction|remise|paiement|reglement|rendu monnaie|carte bancaire|caisse|fidelite|consigne|coupon|avoir|retrait|securite sociale)\b/i;
 const PRICE_ON_LABEL = /(?:\bEUR\b|[€]|\b[0-9]{1,3}[,.][0-9]{2}\s*$)/i;
 const SOURCE_NAME = "BudgetKazPei verified receipt";
 const MAX_LINES = 100;
-const chains: Record<string, string> = {
-  "e leclerc": "e-leclerc",
-  "leader price": "leader-price",
-  "super u": "super-u",
-  carrefour: "carrefour",
-  "carrefour market": "carrefour",
-};
 
 function retailer(store: string) {
   const value = normalizeText(store);
@@ -96,8 +88,15 @@ async function onlyUnique(query: PromiseLike<any>, field = "id") {
 }
 async function knownShop(admin: Client, title: string, raw: string, slug: string, chain: string, resolvedMarketId?: string | null) {
   if (resolvedMarketId) {
-    const marketId = await onlyUnique(admin.from("shopping_market_product_links").select("shopping_product_id").eq("market_product_id", resolvedMarketId).limit(3), "shopping_product_id");
-    if (marketId) return { productId: marketId, marketId: resolvedMarketId };
+    const linkedId = await onlyUnique(admin.from("shopping_market_product_links").select("shopping_product_id").eq("market_product_id", resolvedMarketId).limit(3), "shopping_product_id");
+    if (linkedId) return { productId: linkedId, marketId: resolvedMarketId };
+    const { data: m, error: marketError } = await admin.from("market_products")
+      .select("canonical_name,brand,normalized_name,category").eq("id",resolvedMarketId).maybeSingle();
+    if (marketError) throw marketError;
+    if (m && normOne(m.canonical_name).length >= 7) {
+      const shared = await createProduct(admin,m.canonical_name,{brand:m.brand,category:m.category});
+      if (shared) return { productId: shared,marketId: resolvedMarketId,marketName:m.canonical_name,marketBrand:m.brand };
+    }
   }
   // Exact full name is safe. A generic fuzzy match is NEVER used to publish a price.
   for (const label of [...new Set([title, raw].map(normOne).filter(Boolean))]) {
@@ -159,15 +158,15 @@ async function createProduct(admin: Client, title: string, line: Line) {
   if (reread) throw reread;
   return (data || []).length === 1 ? data[0].id : null;
 }
-async function ensureMarket(admin: Client, name: string, brand: string | null, shopId: string) {
+async function ensureMarket(admin: Client, name: string, brand: string | null, shopId: string, preferredMarketId: string | null = null) {
   const norm = normOne(name);
   const { data: linked, error: linkErr } = await admin.from("shopping_market_product_links").select("market_product_id").eq("shopping_product_id",shopId).limit(3);
   if (linkErr) throw linkErr;
   if ((linked || []).length === 1) return linked[0].market_product_id;
   const { data: known, error: checkErr } = await admin.from("market_products").select("id").eq("normalized_name",norm).limit(3);
   if (checkErr) throw checkErr;
-  if ((known || []).length > 1) return null;
-  let marketId = (known || [])[0]?.id || null;
+  if (!preferredMarketId && (known || []).length > 1) return null;
+  let marketId = preferredMarketId || (known || [])[0]?.id || null;
   if (!marketId) {
     const size = inferredSize(name);
     const b = normOne(brand);
@@ -188,8 +187,12 @@ async function ensureMarket(admin: Client, name: string, brand: string | null, s
   if (marketId) {
     const { error: linkError } = await admin.from("shopping_market_product_links").upsert({
       market_product_id:marketId,shopping_product_id:shopId,match_method:"manual_verified"
-    },{onConflict:"market_product_id,shopping_product_id",ignoreDuplicates:true});
-    if (linkError) throw linkError;
+    },{onConflict:"market_product_id",ignoreDuplicates:true});
+    if (linkError && linkError.code!=="23505") throw linkError;
+    const {data: actual,error: verifyError}=await admin.from("shopping_market_product_links")
+      .select("shopping_product_id").eq("market_product_id",marketId).limit(2);
+    if (verifyError) throw verifyError;
+    if (actual?.length!==1 || actual[0].shopping_product_id!==shopId) return null;
   }
   return marketId;
 }
@@ -225,8 +228,8 @@ async function addPrice(admin: Client, productId: string, line: Line, receipt: R
   if (perUnit && Math.abs(perUnit-price) > Math.max(.02,price*.08)) return false;
   const {data: existing,error} = await admin.from("shopping_price_observations")
     .select("id").eq("product_id",productId).eq("retailer_slug",slug)
-    .eq("store_location_id",store.id).eq("observed_at",at.toISOString())
-    .eq("price",price).limit(1);
+    .eq("commune",store.commune).eq("locality",store.locality)
+    .eq("observed_at",at.toISOString()).eq("price",price).limit(1);
   if(error) throw error;
   if(existing?.length) return false;
   const reference = await hmacTag("catalog-price:"+line.id);
@@ -324,8 +327,13 @@ export async function syncVerifiedReceiptCatalog(admin: Client, receipt: Receipt
         created=(existing.data || []).length===0;
         if(created)report.products_created++;
       } else report.matched++;
-      if(!marketId)marketId=await ensureMarket(admin,productId? (created?displayName(label):label):label, String(line.brand || "").trim()||null,productId);
-      if(marketId)report.aliases_added+=Number(await addAlias(admin,marketId,raw,store.key));
+      marketId=await ensureMarket(admin,known?.marketName || (created?displayName(label):label),
+        known?.marketBrand || String(line.brand || "").trim() || null,productId,marketId);
+      if (!marketId) {
+        report.review_candidates+=Number(await queueCandidate(admin,line,receipt,store.key,"market_link_unresolved"));
+        continue;
+      }
+      report.aliases_added+=Number(await addAlias(admin,marketId,raw,store.key));
       // Shared prices are pack prices (never accidentally €/kg).
       if (location && productId) report.prices_published+=Number(await addPrice(admin,productId,line,receipt,store.slug,location));
     } catch(error) {
