@@ -272,14 +272,18 @@ Deno.serve(async (req) => {
       return jsonResponse({ ok: true, ...deleted });
     }
 
-    // Independent, best-effort catalog sync: failures never invalidate a saved receipt
-    // or interrupt the existing anonymised price-observation pipeline.
-    try {
-      const catalog = await syncVerifiedReceiptCatalog(supabaseAdmin, receipt);
-      console.info("[catalog-sync] summary", catalog);
-    } catch (catalogError) {
-      console.warn("[catalog-sync] nonblocking failure", catalogError instanceof Error ? catalogError.message : "unknown");
-    }
+    // Do not delay the existing scan synchronization (the mobile client has a
+    // short request timeout). Supabase keeps this independently managed task
+    // alive after the HTTP response with EdgeRuntime.waitUntil.
+    const catalogJob = syncVerifiedReceiptCatalog(supabaseAdmin, receipt)
+      .then(catalog => console.info("[catalog-sync] summary", catalog))
+      .catch(catalogError => {
+        console.warn("[catalog-sync] nonblocking failure",
+          catalogError instanceof Error ? catalogError.message : "unknown");
+      });
+    const edgeRuntime = (globalThis as any).EdgeRuntime;
+    if (typeof edgeRuntime?.waitUntil === "function") edgeRuntime.waitUntil(catalogJob);
+    else await catalogJob; // Local Deno fallback without the hosted Edge runtime.
 
     const storeResolution = await resolveStore(supabaseAdmin, receipt);
     const storeId = storeResolution.storeId;
