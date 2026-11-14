@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { aliasLabelLooksSafe, isEligibleMarketReceiptItem, isResolvedMarketProduct, money, normalizeText } from "./marketRules.ts";
+import { syncVerifiedReceiptCatalog } from "./catalogAutoLearn.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -129,6 +130,9 @@ async function readOwnedReceipt(
       store_location,
       purchase_date,
       date_status,
+      validation_status,
+      is_food_ticket,
+      duplicate_confirmed,
       receipt_items (
         id,
         name,
@@ -141,7 +145,14 @@ async function readOwnedReceipt(
         total_price,
         item_status,
         line_type,
-        confidence_score
+        confidence_score,
+        brand,
+        category,
+        subcategory,
+        market_product_id,
+        market_matched,
+        market_match_type,
+        market_match_confidence
       )
     `)
     .eq("id", receiptId)
@@ -259,6 +270,15 @@ Deno.serve(async (req) => {
       const deleted = await deleteBatch(supabaseAdmin, batchKey);
       console.info("[market-delete] batch_deleted=%s", Boolean((deleted as Record<string, unknown>)?.batch_deleted));
       return jsonResponse({ ok: true, ...deleted });
+    }
+
+    // Independent, best-effort catalog sync: failures never invalidate a saved receipt
+    // or interrupt the existing anonymised price-observation pipeline.
+    try {
+      const catalog = await syncVerifiedReceiptCatalog(supabaseAdmin, receipt);
+      console.info("[catalog-sync] summary", catalog);
+    } catch (catalogError) {
+      console.warn("[catalog-sync] nonblocking failure", catalogError instanceof Error ? catalogError.message : "unknown");
     }
 
     const storeResolution = await resolveStore(supabaseAdmin, receipt);
