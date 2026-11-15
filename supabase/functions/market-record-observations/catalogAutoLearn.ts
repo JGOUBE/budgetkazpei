@@ -13,7 +13,7 @@ function retailer(store: string) {
   const value = normalizeText(store);
   if (/\b(leclerc|e leclerc)\b/.test(value)) return { key: "e leclerc", slug: "e-leclerc" };
   if (/\bleader price\b/.test(value)) return { key: "leader price", slug: "leader-price" };
-  if (/\b(super u|hyper u)\b/.test(value)) return { key: "super u", slug: "super-u" };
+  if (/\b(super u|hyper u)\b/.test(value)) return { key: "u", slug: "super-u" };
   if (/\bcarrefour\b/.test(value)) return { key: "carrefour", slug: "carrefour" };
   return null;
 }
