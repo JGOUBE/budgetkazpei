@@ -1582,6 +1582,13 @@ export default function ReceiptsPage({
   }
 
   function startManual(options = {}) {
+    if (!canEditScanDetails) {
+      // Never open a manual editor for a non-administrator, even on scan failure.
+      setDraft(null)
+      setPendingImagePath(null)
+      setMode("history")
+      return
+    }
     setReceipt(null)
     setDraft({ ...createManualReceiptDraft(), items: [emptyItem()] })
     setValidationView("editor")
@@ -2453,13 +2460,15 @@ export default function ReceiptsPage({
           variant="special"
           active={longTicketMode}
         />
-        <ActionButton
-          label={txt.manual}
-          Icon={BkIcons.add}
-          disabled={busy}
-          onClick={startManual}
-          variant="neutral"
-        />
+        {canEditScanDetails && (
+          <ActionButton
+            label={txt.manual}
+            Icon={BkIcons.add}
+            disabled={busy}
+            onClick={startManual}
+            variant="neutral"
+          />
+        )}
       </div>
 
       {showMethodActions && longTicketMode && (
@@ -2965,7 +2974,7 @@ function ValidationForm({
     txt,
   })
 
-  const simpleScan = !isAdmin && draft.ocr_status !== "manual"
+  const simpleScan = !isAdmin
   const trustedPriceCount = draft.is_food_ticket && !draft.total_needs_review && !String(draft.scan_status || "").includes("manual_review_required")
     ? getValidDraftItems(draft).filter(item => isItemEligibleForSmartShopping(item)).length
     : 0
@@ -2989,27 +2998,16 @@ function ValidationForm({
             </div>
           )}
         </div>
-        <label style={{ color: COLORS.muted, fontSize: 13, display: "grid", gap: 7 }}>
-          {totalValue > 0 && !draft.total_needs_review
-            ? (txt === TEXT.kr ? "Korize montan si i fo" : "Corriger le total si nécessaire")
-            : (txt.totalReview || txt.total)}
-          <input
-            aria-label={txt.total}
-            type="number"
-            inputMode="decimal"
-            min="0.01"
-            step="0.01"
-            style={inputStyle()}
-            value={draft.total_amount ?? ""}
-            onChange={event => setDraft(prev => ({
-              ...prev,
-              total_amount: event.target.value,
-              total_needs_review: Number(event.target.value || 0) <= 0,
-              total_source: Number(event.target.value || 0) > 0 ? "user_confirmed" : "missing_or_unreliable",
-              total_confidence: Number(event.target.value || 0) > 0 ? 1 : 0,
-            }))}
-          />
-        </label>
+        {(totalValue <= 0 || draft.total_needs_review) && (
+          <div role="status" style={{ color: COLORS.muted, fontSize: 13 }}>
+            {txt.totalReview || txt.total} — {txt === TEXT.kr
+              ? "Repran in foto pli net pou lir total-la."
+              : "Reprenez une photo plus lisible pour détecter le total."}
+          </div>
+        )}
+        <div style={{ color: COLORS.muted, fontSize: 13, textAlign: "center" }}>
+          {getValidDraftItems(draft).length} {txt === TEXT.kr ? "linn itilizab" : "lignes exploitables"}
+        </div>
         {/* Keep technical line-balance diagnostics for administrators only. */}
         {busy && <SavingReceiptNotice txt={txt} />}
         {trustedPriceCount > 0 && (
@@ -3560,7 +3558,7 @@ function ReceiptDetail({
     }))
   }
 
-  if (!isAdmin && receipt.ocr_status !== "manual") {
+  if (!isAdmin) {
     const contributed = receipt.is_food_ticket ? (receipt.receipt_items || []).filter(item => isItemEligibleForSmartShopping(item)).length : 0
     return (
       <div style={cardStyle({ display: "grid", gap: 12, maxWidth: 520, margin: "0 auto", width: "100%", boxSizing: "border-box" })}>
