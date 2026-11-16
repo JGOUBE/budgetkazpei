@@ -365,3 +365,21 @@
   #root .bkp-app-2026 .bkp-profile-page > div:first-child {gap:12px !important; padding:18px !important;}
   #root .bkp-app-2026 .bkp-contact-page > div > div:first-child {padding:18px !important;}
 }
+
+/* Le bloc logo du panneau latéral n'est pas une carte : aucun cadre, même au survol. */
+#root .bkp-app-2026 aside button.bkp-sidebar-brand,
+#root .bkp-app-2026 aside button.bkp-sidebar-brand:hover,
+#root .bkp-app-2026 aside button.bkp-sidebar-brand:active {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  filter: none !important;
+  transform: none !important;
+}
+#root .bkp-app-2026 aside button.bkp-sidebar-brand:focus-visible {
+  outline: 2px solid #435F2A !important;
+  outline-offset: 3px;
+  border-radius: 8px !important;
+}

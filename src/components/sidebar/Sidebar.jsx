@@ -136,6 +136,7 @@ export default function Sidebar({
       >
         <button
           type="button"
+          className="bkp-sidebar-brand"
           onClick={() => onNavChange("dashboard")}
           aria-label={isKreol ? "Retour akèy" : "Retour à l’accueil"}
           style={{
