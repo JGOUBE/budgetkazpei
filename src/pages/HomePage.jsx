@@ -3,12 +3,12 @@ import { BkIcons } from "../components/icons-budgetkazpei"
 
 // Identité 2026 : couleurs en petites touches, surfaces neutres et aucune décoration de fond.
 const ACTIONS = [
-  { id: "shoppingList", fr: "Ma liste de courses", kr: "Ma liste courses", subtitle: "Préparer mes achats", icon: "shopping", accent: "#247987", soft: "#E6F3F4" },
-  { id: "receipts", fr: "Scanner mon ticket", kr: "Scanner mon tiké", subtitle: "Suivre mes achats", icon: "scan", accent: "#426AA6", soft: "#E9EFF8" },
-  { id: "expense", fr: "Ajouter une dépense", kr: "Azout in dépans", subtitle: "Garder le cap", icon: "depenses", accent: "#397C65", soft: "#E7F2EB" },
-  { id: "aides", fr: "Mes aides et mes droits", kr: "Mon bann èd ek mon bann drwa", subtitle: "Connaître mes droits", icon: "aides", accent: "#795F8A", soft: "#F1EDF5" },
-  { id: "conseiller", fr: "Mon conseiller", kr: "Mon konseye", subtitle: "Trouver des réponses", icon: "assistant", accent: "#4B789D", soft: "#EAF1F7" },
-  { id: "goodDeals", fr: "Mes bons plans", kr: "Mon bann bon plan", subtitle: "Acheter plus malin", icon: "deals", accent: "#9A617B", soft: "#F7EDF1" },
+  { id: "shoppingList", fr: "Ma liste de courses", kr: "Ma liste courses", subtitle: "Préparer mes achats", icon: "shopping", accent: "#247987", soft: "#E6F3F4", card: "#F0F9F9", edge: "#DCECED" },
+  { id: "receipts", fr: "Scanner mon ticket", kr: "Scanner mon tiké", subtitle: "Suivre mes achats", icon: "scan", accent: "#426AA6", soft: "#E9EFF8", card: "#F1F5FC", edge: "#DBE6F4" },
+  { id: "expense", fr: "Ajouter une dépense", kr: "Azout in dépans", subtitle: "Garder le cap", icon: "depenses", accent: "#397C65", soft: "#E7F2EB", card: "#F1F8F3", edge: "#DCEBE2" },
+  { id: "aides", fr: "Mes aides et mes droits", kr: "Mon bann èd ek mon bann drwa", subtitle: "Connaître mes droits", icon: "aides", accent: "#795F8A", soft: "#F1EDF5", card: "#F7F3FA", edge: "#E9E0F0" },
+  { id: "conseiller", fr: "Mon conseiller", kr: "Mon konseye", subtitle: "Trouver des réponses", icon: "assistant", accent: "#4B789D", soft: "#EAF1F7", card: "#F1F6FA", edge: "#DBE8F1" },
+  { id: "goodDeals", fr: "Mes bons plans", kr: "Mon bann bon plan", subtitle: "Acheter plus malin", icon: "deals", accent: "#9A617B", soft: "#F7EDF1", card: "#FAF2F6", edge: "#EDDFE6" },
 ]
 
 function firstName(profile, user) {
@@ -52,10 +52,12 @@ export default function HomePage({ language = "fr", isMobile = false, profile, u
                 minHeight: isMobile ? 145 : 160,
                 padding: isMobile ? "17px 15px" : "20px 22px",
                 borderRadius: 18,
-                border: "1px solid #DEE7E5",
-                background: "#FFFFFF",
+                border: `1px solid ${item.edge}`,
+                background: item.card,
                 "--bkp-home-accent": item.accent,
                 "--bkp-home-soft": item.soft,
+                "--bkp-home-card": item.card,
+                "--bkp-home-edge": item.edge,
                 color: "#263B42",
                 display: "flex",
                 flexDirection: "column",

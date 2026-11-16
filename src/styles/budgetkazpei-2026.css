@@ -360,3 +360,22 @@
 #root .bkp-app-2026 button.bkp-contact-send-button:not(:disabled) {
   background-color: #e6f3f4 !important; color: #247987 !important; border-color: #cde4e6 !important;
 }
+
+/* Fonds pastel personnalises par action — novembre 2026.
+   Six teintes discrètes, sans dégradé, ombre ni relief. */
+#root .bkp-app-2026 button.bkp-home-action,
+#root .bkp-app-2026 .bkp-home-action {
+  background: var(--bkp-home-card, #F3F8F8) !important;
+  background-image: none !important;
+  border-color: var(--bkp-home-edge, #DFEBE9) !important;
+  box-shadow: none !important;
+}
+#root .bkp-app-2026 button.bkp-home-action:not(:disabled):hover,
+#root .bkp-app-2026 button.bkp-home-action:not(:disabled):focus-visible {
+  background-color: color-mix(in srgb, var(--bkp-home-card, #F3F8F8) 76%, var(--bkp-home-soft, #E6F3F4)) !important;
+  border-color: color-mix(in srgb, var(--bkp-home-edge, #DFEBE9) 78%, var(--bkp-home-accent, #247987)) !important;
+}
+#root .bkp-app-2026 button.bkp-home-action:not(:disabled):active {
+  background-color: var(--bkp-home-soft, #E6F3F4) !important;
+  transform: none !important;
+}
