@@ -243,8 +243,8 @@ export default function StatisticsPage({
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-      <div style={card(colors, {
+    <div className="bkp-stats-page" style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+      <div className="bkp-stats-hero" style={card(colors, {
         padding: isMobile ? 18 : 24,
         background: themeName === "dark"
           ? `linear-gradient(135deg, ${colors.bg} 0%, ${colors.card} 68%, ${colors.surface} 100%)`
@@ -285,10 +285,10 @@ export default function StatisticsPage({
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(4, 1fr)", gap: 14 }}>
-        <Metric colors={colors} title={txt.expenses} value={formatMontant(insights.monthly.totalExpenses)} color="#9A617B" background="#F7EDF1" />
-        <Metric colors={colors} title={txt.income} value={formatMontant(insights.monthly.revenus)} color="#397C65" background="#E7F2EB" />
-        <Metric colors={colors} title={txt.remaining} value={formatMontant(insights.monthly.remaining)} color="#426AA6" background="#E9EFF8" />
-        <Metric colors={colors} title={txt.budgetUse} value={`${insights.monthly.budgetUse} %`} color="#795F8A" background="#F1EDF5" />
+        <Metric colors={colors} title={txt.expenses} value={formatMontant(insights.monthly.totalExpenses)} color="#79474C" background="#F2DFDA" />
+        <Metric colors={colors} title={txt.income} value={formatMontant(insights.monthly.revenus)} color="#385F3B" background="#DFEBD6" />
+        <Metric colors={colors} title={txt.remaining} value={formatMontant(insights.monthly.remaining)} color="#64523F" background="#EBE1D4" />
+        <Metric colors={colors} title={txt.budgetUse} value={`${insights.monthly.budgetUse} %`} color="#6B5C3C" background="#E9E8CC" />
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>
@@ -309,7 +309,7 @@ export default function StatisticsPage({
 
 function Metric({ colors, title, value, color, background }) {
   return (
-    <div style={card(colors, { background: background || colors.card, borderColor: `${color}33` })}>
+    <div className="bkp-stats-metric" style={card(colors, { background: background || colors.card, borderColor: `${color}55` })}>
       <div style={{ color: colors.muted, fontSize: 12, fontWeight: 900 }}>{title}</div>
       <div style={{ color, fontSize: 24, fontWeight: 950, marginTop: 7, fontFamily: "'DM Serif Display', serif" }}>{value}</div>
     </div>

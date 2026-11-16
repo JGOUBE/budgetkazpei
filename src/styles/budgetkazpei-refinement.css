@@ -1,0 +1,266 @@
+/* 2026 premium visual system: deliberately limited to authenticated app.
+   WCAG-friendly ink, stronger pastels, no orange, gradients, texture or raised controls. */
+:root {
+  --bkp-2026-ink:#332B26;
+  --bkp-2026-muted:#55483E;
+  --bkp-2026-bg:#EEE9E3;
+  --bkp-2026-border:#D6C8BA;
+  --bkp-ref-matcha:#435F2A;
+  --bkp-ref-cocoa:#704B37;
+  --bkp-ref-taupe:#665144;
+  --bkp-ref-plum:#765263;
+  --bkp-ref-forest:#3F684B;
+  --bkp-ref-rose:#7A513F;
+}
+/* The browser must not reintroduce decorative effects. Ticket photos remain untouched. */
+#root .bkp-app-2026,
+#root .bkp-app-2026.bkp-dashboard-shell {
+  background:#EEE9E3 !important; color:#332B26 !important;
+  font-size:16px;
+}
+#root .bkp-app-2026 :is(h1,h2,h3,strong) { text-wrap:pretty; }
+#root .bkp-app-2026 :is(h1,h2,h3) { color:#332B26 !important; line-height:1.22; }
+#root .bkp-app-2026 :is(p,label) { line-height:1.55; }
+#root .bkp-app-2026 :is(button,[role="button"],input,textarea,select) { font-family:"DM Sans",sans-serif; }
+#root .bkp-app-2026 :is(button,[role="button"]) {
+  box-shadow:none !important; text-shadow:none !important;
+  transform:none !important;
+}
+#root .bkp-app-2026 button:not(:disabled):active { transform:none !important; }
+#root .bkp-app-2026 :is(button,input,select,textarea,a):focus-visible {
+  outline:2px solid #4D6D36 !important; outline-offset:2px;
+}
+#root .bkp-app-2026 input:not([type="checkbox"]):not([type="radio"]),
+#root .bkp-app-2026 select,
+#root .bkp-app-2026 textarea {
+  font-size:16px !important;
+  background:#FFF !important; color:#332B26 !important;
+  border-color:#C9BBAE !important;
+}
+#root .bkp-app-2026 :is(input,textarea)::placeholder { color:#786A5D !important; opacity:1; }
+/* Type hierarchy: +1 to +2 px on everyday reading text, never force text into icons. */
+#root .bkp-app-2026 :is(.bkp-aide-description,.bkp-aide-next,.bkp-panel-heading p,.bkp-shopping-section-heading p,
+.bkp-shopping-hero div > span,.bkp-savings-total p,.bkp-savings-card p,
+.bkp-advisor-bubble,.bkp-advisor-locked-lead,.bkp-advisor-locked-examples div,
+.bkp-shopping-empty p,.bkp-aides-empty p) { font-size:14.5px !important; line-height:1.55; }
+#root .bkp-app-2026 :is(.bkp-aide-category,.bkp-panel-heading > span,.bkp-shopping-section-heading > span,
+.bkp-aides-hero p,.bkp-shopping-hero p) { font-size:12.5px !important; letter-spacing:.055em; }
+#root .bkp-app-2026 :is(.bkp-aide-card h3,.bkp-demarche-card h3,.bkp-savings-card h3,.bkp-shopping-empty h3,
+.bkp-aides-empty h3,.bkp-advisor-identity h2) { font-size:18px !important; line-height:1.3; }
+#root .bkp-app-2026 :is(.bkp-aide-next strong,.bkp-savings-meta,.bkp-demarche-meta,
+.bkp-aide-amount,.bkp-result-count) { font-size:12px !important; }
+#root .bkp-app-2026 :is(.bkp-aides-tabs button,.bkp-shopping-tabs button,.bkp-stats-period,
+.bkp-aide-actions button,.bkp-aide-actions a,.bkp-category-filters button,
+.bkp-advisor-suggestions button,.bkp-advisor-budget-quick button,.bkp-advisor-advanced button) {
+  font-size:13.5px !important;
+  line-height:1.32; align-items:center; justify-content:center; text-align:center;
+}
+#root .bkp-app-2026 :is(.bkp-button-primary,.bkp-button-secondary,.bkp-delete-button,
+.bkp-shopping-add-button,.bkp-shopping-save-button,.bkp-shopping-share-button) {
+  font-size:14.5px !important; line-height:1.32;
+}
+#root .bkp-app-2026 :is(.bkp-aides-hero h1,.bkp-shopping-hero h1,.bkp-panel-heading h2,
+.bkp-shopping-section-heading h2) {
+  font-size:clamp(25px,4.3vw,34px) !important;
+  font-weight:730 !important;
+  letter-spacing:-.025em;
+}
+#root .bkp-app-2026 aside nav button { font-size:15px !important; }
+#root .bkp-app-2026 aside nav button span { font-weight:750; }
+#root .bkp-app-2026 .bkp-header-lang { background:#EBDDD0 !important; border-color:#D5BFAD !important; color:#674832 !important; }
+#root .bkp-app-2026 .bkp-header-profile { background:#DFEBCD !important; border-color:#BDCEA9 !important; color:#405D2A !important; }
+/* Cards are separate from the overall taupe canvas; never stack new decorative cards. */
+#root .bkp-app-2026 :is(.bkp-shopping-hero,.bkp-aides-hero,.bkp-advisor-planbar,
+.bkp-advisor-chat,.bkp-aide-card,.bkp-demarche-card,.bkp-savings-total,.bkp-savings-card) {
+  border-color:#D4C5B6 !important; background-color:#FFFFFF !important;
+  box-shadow:none !important; background-image:none !important;
+}
+/* Home: six distinct pastel fields that remain recognisably one family. */
+#root .bkp-app-2026 button.bkp-home-matcha-action {
+  min-height:94px;
+  border-color:var(--bkp-home-edge) !important;
+  background-color:var(--bkp-home-card) !important;
+  padding:14px 12px;
+}
+#root .bkp-app-2026 button.bkp-home-matcha-action .bkp-home-action-title {
+  font-size:clamp(13.5px,2.5vw,15.5px) !important;
+  color:#332B26 !important; line-height:1.3;
+}
+#root .bkp-app-2026 button.bkp-home-matcha-action .bkp-home-action-icon,
+#root .bkp-app-2026 button.bkp-home-matcha-action .bkp-home-action-arrow { color:var(--bkp-home-accent) !important; }
+#root .bkp-app-2026 button.bkp-home-matcha-action .bkp-home-action-divider {
+  background:color-mix(in srgb,var(--bkp-home-accent) 52%,transparent);
+}
+#root .bkp-app-2026 .bkp-home-intro h1 { font-size:clamp(29px,5vw,40px) !important; }
+#root .bkp-app-2026 .bkp-home-intro p { font-size:15.5px !important; color:#55483E !important; }
+#root .bkp-app-2026 .bkp-home-overline { font-size:12.5px !important; color:#425F2B !important; }
+#root .bkp-app-2026 .bkp-home-month {
+  background:#FFFFFF !important; border-color:#CBBBA9 !important;
+}
+#root .bkp-app-2026 .bkp-home-month-remaining > span,
+#root .bkp-app-2026 .bkp-home-month-progress p { font-size:13px !important; color:#55483E !important; }
+#root .bkp-app-2026 .bkp-home-month-remaining strong { color:#3E5B28 !important; }
+#root .bkp-app-2026 .bkp-home-progress-track { background:#DEE4D1 !important; height:8px; }
+#root .bkp-app-2026 .bkp-home-progress-track > span { background:#55743C !important; height:100%; }
+#root .bkp-app-2026 button.bkp-home-course-link { min-height:80px; border-color:var(--bkp-home-edge) !important; background:var(--bkp-home-card) !important; }
+#root .bkp-app-2026 .bkp-home-course-copy strong { font-size:16px !important; color:#342A24 !important; }
+#root .bkp-app-2026 .bkp-home-course-copy > span { font-size:13px !important; color:#55483E !important; }
+#root .bkp-app-2026 button.bkp-home-month-details { color:#415D2E !important; font-size:13px !important; }
+/* Shopping: colored buttons, tabs, recommendations. No dark or solid saturated surface. */
+#root .bkp-app-2026 .bkp-shopping-tabs { background:#E8E0D6 !important; border-color:#CEBFB0 !important; }
+#root .bkp-app-2026 .bkp-shopping-tabs button:nth-child(1) {
+  color:#674B36 !important; background:#EFDCCB !important; border-color:#D9BBA6 !important;
+}
+#root .bkp-app-2026 .bkp-shopping-tabs button:nth-child(2) {
+  color:#425F2A !important; background:#E1EBCE !important; border-color:#BFD1A9 !important;
+}
+#root .bkp-app-2026 .bkp-shopping-tabs button:nth-child(3) {
+  color:#765263 !important; background:#F0DFE7 !important; border-color:#DAC2CF !important;
+}
+#root .bkp-app-2026 .bkp-shopping-tabs button.is-active {
+  border-color:currentColor !important; text-decoration:none;
+}
+#root .bkp-app-2026 .bkp-shopping-tabs button svg { color:currentColor !important; }
+#root .bkp-app-2026 .bkp-shopping-info {
+  background:#E5EBCF !important; color:#3E5B2B !important; border-color:#C3D3AC !important;
+}
+#root .bkp-app-2026 .bkp-shopping-add-button {
+  background:#E0EBCB !important; color:#3E5C28 !important; border-color:#B7CFA2 !important;
+}
+#root .bkp-app-2026 .bkp-shopping-save-button {
+  background:#F0DDD1 !important; color:#704A37 !important; border-color:#D8BBA9 !important;
+}
+#root .bkp-app-2026 .bkp-shopping-share-button {
+  background:#E2ECE7 !important; color:#3B6757 !important; border-color:#BCD4C6 !important;
+}
+/* Aides: distinct bands for categories; no orange or violet and no relief. */
+#root .bkp-app-2026 .bkp-aides-tabs { background:#E9E2D9 !important; border-color:#CEBFAF !important; }
+#root .bkp-app-2026 .bkp-aides-tabs button:nth-child(1) {
+  background:#E2EBD5 !important; color:#415F2C !important; border-color:#C2D4B2 !important;
+}
+#root .bkp-app-2026 .bkp-aides-tabs button:nth-child(2) {
+  background:#EFDCD0 !important; color:#684936 !important; border-color:#D9BAA5 !important;
+}
+#root .bkp-app-2026 .bkp-aides-tabs button:nth-child(3) {
+  background:#EDDEE6 !important; color:#745166 !important; border-color:#DCC2CF !important;
+}
+#root .bkp-app-2026 .bkp-aides-tabs button.is-active { border-color:currentColor !important; }
+#root .bkp-app-2026 .bkp-aides-tabs button svg { color:currentColor !important; }
+#root .bkp-app-2026 .bkp-aides-tabs em {
+  background:#F8F7F2 !important; color:#445D2F !important;
+  min-width:22px; min-height:22px; font-size:12px !important;
+}
+#root .bkp-app-2026 .bkp-aide-card { background:#FFF !important; border-left:3px solid var(--aide-accent,#61774a) !important; }
+#root .bkp-app-2026 .bkp-aide-card--logement { --aide-accent:#78533F; }
+#root .bkp-app-2026 .bkp-aide-card--famille,#root .bkp-app-2026 .bkp-aide-card--scolarite { --aide-accent:#496A3A; }
+#root .bkp-app-2026 .bkp-aide-card--emploi,#root .bkp-app-2026 .bkp-aide-card--formation { --aide-accent:#765363; }
+#root .bkp-app-2026 .bkp-aide-card--sante,#root .bkp-app-2026 .bkp-aide-card--handicap { --aide-accent:#3D715F; }
+#root .bkp-app-2026 .bkp-aide-card .bkp-aide-next {
+  background:#F2EEE8 !important; border-left-color:var(--aide-accent,#61774a) !important;
+}
+#root .bkp-app-2026 .bkp-aide-card .bkp-button-primary {
+  background:#DFEACF !important; color:#3A5826 !important; border-color:#B9CFA7 !important;
+}
+#root .bkp-app-2026 .bkp-aide-card .bkp-button-secondary {
+  background:#F4E8DE !important; color:#6B4A38 !important; border-color:#DEC8B6 !important;
+}
+/* Advisor: subtle persona colors, more readable suggestions and distinct form. */
+#root .bkp-app-2026 .bkp-advisor-chat { border-color:#C8B9A9 !important; }
+#root .bkp-app-2026 .bkp-advisor-header { background:#E5EDDD !important; border-color:#CAD7BB !important; }
+#root .bkp-app-2026 :is(.bkp-advisor-planbar-icon,.bkp-advisor-avatar,.bkp-advisor-message-avatar) {
+  background:#DFEEDC !important; color:#366C52 !important; border-color:#BBD7C1 !important;
+}
+#root .bkp-app-2026 .bkp-advisor-usage-label {
+  color:#704D3D !important; background:#F0E2D7 !important; border-color:#D8BDAB !important;
+}
+#root .bkp-app-2026 .bkp-advisor-bubble--assistant { background:#F7F4EC !important; border:1px solid #DED4C6 !important; color:#392F29 !important; }
+#root .bkp-app-2026 .bkp-advisor-bubble--user { background:#E5EEDB !important; color:#354B2C !important; border:1px solid #C6D8B6 !important; }
+#root .bkp-app-2026 :is(.bkp-advisor-suggestions button,.bkp-advisor-budget-quick button) {
+  background:#ECDCD0 !important; border-color:#D5B9A5 !important; color:#674B37 !important;
+}
+#root .bkp-app-2026 .bkp-advisor-suggestions button:nth-child(2n) { background:#E1EBCF !important; color:#415C2D !important; border-color:#C3D2AF !important; }
+#root .bkp-app-2026 .bkp-advisor-composer { background:#F0EAE1 !important; border-color:#CCBCAA !important; }
+#root .bkp-app-2026 .bkp-advisor-send:not(:disabled) { background:#E0EBCF !important; color:#3F5D2D !important; border-color:#B9D0A6 !important; }
+/* Scanner: clear visual hierarchy, true pastel actions, photos and data preserved. */
+#root .bkp-app-2026 .bkp-receipts-hero {
+  background:#FFF !important; border:1px solid #CFBFAE !important;
+}
+#root .bkp-app-2026 .bkp-receipts-hero > div:first-of-type {
+  color:#435F2A !important; font-size:14px !important;
+}
+#root .bkp-app-2026 .bkp-receipts-hero h1 { font-size:clamp(30px,4.6vw,40px) !important; }
+#root .bkp-app-2026 button.bkp-receipt-method {
+  display:inline-flex; align-items:center; justify-content:center; text-align:center;
+  gap:7px; padding:11px 9px; font-size:15px !important; line-height:1.34;
+  box-shadow:none !important; background-image:none !important; transform:none !important;
+}
+#root .bkp-app-2026 button.bkp-receipt-method--primary { background:#DFEBCF !important; color:#3C592B !important; border-color:#BDCFAB !important; }
+#root .bkp-app-2026 button.bkp-receipt-method--secondary { background:#EAD9CA !important; color:#674B38 !important; border-color:#D3B8A3 !important; }
+#root .bkp-app-2026 button.bkp-receipt-method--special { background:#EEDFE5 !important; color:#704B5D !important; border-color:#D9C1CC !important; }
+#root .bkp-app-2026 button.bkp-receipt-method--neutral { background:#ECE5DC !important; color:#665344 !important; border-color:#D3C4B6 !important; }
+#root .bkp-app-2026 .bkp-receipts-history { background:#FFF !important; border-color:#D1C1B0 !important; }
+#root .bkp-app-2026 .bkp-receipt-history-item {
+  background:#F8F3ED !important; border-color:#D9CABB !important;
+  border-left:3px solid #9B7459 !important; gap:11px !important;
+}
+#root .bkp-app-2026 .bkp-receipt-history-item:nth-child(even) {
+  background:#F0F4E9 !important; border-left-color:#708656 !important;
+}
+#root .bkp-app-2026 .bkp-receipt-history-item strong {
+  font-size:16px !important; color:#382C25 !important; line-height:1.4; font-weight:760;
+}
+#root .bkp-app-2026 button.bkp-receipt-history-view {
+  background:#E1ECD1 !important; color:#415F2D !important; border-color:#BECEA9 !important;
+  font-size:14px !important; min-height:44px;
+}
+#root .bkp-app-2026 button.bkp-receipt-history-remove {
+  background:#F1E2DD !important; color:#86544D !important; border-color:#DEC1B8 !important;
+  font-size:14px !important; min-height:44px;
+}
+/* Stats: true four-color financial scorecard, no solid dark blocks. */
+#root .bkp-app-2026 .bkp-stats-hero {
+  background:#FFF !important; border:1px solid #D0BFAF !important;
+}
+#root .bkp-app-2026 .bkp-stats-hero h1 { font-size:clamp(30px,4.6vw,40px) !important; }
+#root .bkp-app-2026 .bkp-stats-metric { padding:18px 20px !important; border-width:1px !important; }
+#root .bkp-app-2026 .bkp-stats-metric > div:first-child {
+  color:#54483C !important; font-size:13px !important;
+}
+#root .bkp-app-2026 .bkp-stats-metric > div:nth-child(2) { font-size:clamp(26px,4vw,34px) !important; letter-spacing:-.025em; }
+#root .bkp-app-2026 button.bkp-stats-period { font-size:14px !important; }
+/* Promos: stronger category chips, but stay flat and light. */
+#root .bkp-app-2026 button.bkp-category-filter:not(:disabled) {
+  font-size:13px !important; font-weight:760; min-height:43px;
+  background:var(--bkp-tag-bg,#F0E6DC) !important;
+  border-color:var(--bkp-tag-border,#D7C3B1) !important;
+  color:var(--bkp-tag-fg,#674D3E) !important;
+}
+/* Profile and legal links: clear hierarchy, colored form actions. */
+#root .bkp-app-2026 .bkp-profile-legal-link {
+  background:#F1E6DD !important; color:#694D3C !important; border-color:#D9C4B3 !important;
+  font-size:14.5px !important;
+}
+#root .bkp-app-2026 button.bkp-profile-save-button:not(:disabled) {
+  background:#E2ECCF !important; color:#405B2B !important; border-color:#BFD0AB !important;
+}
+#root .bkp-app-2026 button.bkp-profile-send-button:not(:disabled),
+#root .bkp-app-2026 button.bkp-contact-send-button:not(:disabled) {
+  background:#E7DED3 !important; color:#6A4F3A !important; border-color:#D0BCAB !important;
+}
+@media(max-width:600px) {
+  #root .bkp-app-2026 { font-size:15.5px; }
+  #root .bkp-app-2026 :is(.bkp-aides-tabs button,.bkp-shopping-tabs button) { min-height:64px; font-size:12.7px !important; }
+  #root .bkp-app-2026 button.bkp-home-matcha-action { padding:12px 9px; gap:7px; }
+  #root .bkp-app-2026 button.bkp-home-matcha-action .bkp-home-action-title { font-size:13.5px !important; }
+  #root .bkp-app-2026 .bkp-home-month-progress p { font-size:12px !important; }
+  #root .bkp-app-2026 .bkp-receipt-history-item strong { font-size:15.5px !important; }
+  #root .bkp-app-2026 button.bkp-receipt-history-view,
+  #root .bkp-app-2026 button.bkp-receipt-history-remove { font-size:12.5px !important; padding:7px 5px !important; }
+}
+@media (max-width:370px) {
+  #root .bkp-app-2026 .bkp-home-action-grid { gap:9px; }
+  #root .bkp-app-2026 button.bkp-home-matcha-action .bkp-home-action-title { font-size:12.8px !important; }
+}
+@media(prefers-reduced-motion:reduce) {
+  #root .bkp-app-2026 button { transition:none !important; }
+}

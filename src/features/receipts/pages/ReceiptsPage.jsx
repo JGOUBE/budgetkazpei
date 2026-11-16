@@ -2340,8 +2340,8 @@ export default function ReceiptsPage({
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 18, paddingBottom: isMobile ? 24 : 0 }}>
-      <div style={cardStyle({ padding: isMobile ? 18 : 24, position: "relative" })}>
+    <div className="bkp-receipts-page" style={{ display: "flex", flexDirection: "column", gap: 18, paddingBottom: isMobile ? 24 : 0 }}>
+      <div className="bkp-receipts-hero" style={cardStyle({ padding: isMobile ? 18 : 24, position: "relative" })}>
         <button
           type="button"
           onClick={() => setShowScanInfo(true)}
@@ -2793,34 +2793,10 @@ function ActionButton({
   const resolvedVariant = muted && variant === "primary" ? "neutral" : variant
 
   const palettes = {
-    primary: {
-      background: "linear-gradient(145deg, #20C997, #07956F)",
-      border: "#42DDB0",
-      color: "#FFFFFF",
-      shadow: "inset 2px 2px 0 rgba(255,255,255,.26), inset -4px -5px 9px rgba(0,88,65,.18), 0 6px 0 #087A5C, 0 12px 22px rgba(7,149,111,.24)",
-    },
-    secondary: {
-      background: "linear-gradient(145deg, #66B4E6, #347FAF)",
-      border: "#7CC4EF",
-      color: "#FFFFFF",
-      shadow: "inset 2px 2px 0 rgba(255,255,255,.28), inset -4px -5px 9px rgba(17,73,110,.17), 0 6px 0 #28678F, 0 12px 22px rgba(52,127,175,.22)",
-    },
-    special: {
-      background: active
-        ? "linear-gradient(145deg, #B46BC8, #8D4AA3)"
-        : "linear-gradient(145deg, #C887D7, #9F5CB4)",
-      border: "#D49AE0",
-      color: "#FFFFFF",
-      shadow: active
-        ? "inset 2px 2px 0 rgba(255,255,255,.25), 0 6px 0 #713582, 0 12px 22px rgba(141,74,163,.23)"
-        : "inset 2px 2px 0 rgba(255,255,255,.27), inset -4px -5px 9px rgba(83,35,96,.15), 0 6px 0 #814394, 0 12px 22px rgba(159,92,180,.20)",
-    },
-    neutral: {
-      background: "linear-gradient(145deg, #F5D08B, #DDAE5D)",
-      border: "#F1D39C",
-      color: "#4D350A",
-      shadow: "inset 2px 2px 0 rgba(255,255,255,.35), inset -4px -5px 9px rgba(104,68,9,.14), 0 6px 0 #B98B42, 0 12px 22px rgba(185,139,66,.20)",
-    },
+    primary: { background: "#DFEBCF", border: "#BDCFAB", color: "#3C592B", shadow: "none" },
+    secondary: { background: "#E7DACD", border: "#D1BBA8", color: "#624732", shadow: "none" },
+    special: { background: active ? "#EAD6DF" : "#F0DFE6", border: "#D8BFCB", color: "#724F61", shadow: "none" },
+    neutral: { background: "#F0E8DF", border: "#D7C8B9", color: "#6B5342", shadow: "none" },
   }
 
   const palette = palettes[resolvedVariant] || palettes.primary
@@ -2830,6 +2806,7 @@ function ActionButton({
       type="button"
       onClick={onClick}
       disabled={disabled}
+      className={`bkp-receipt-method bkp-receipt-method--${resolvedVariant}`}
       aria-pressed={resolvedVariant === "special" ? active : undefined}
       style={{
         minHeight: compact ? 46 : 58,
@@ -2841,7 +2818,7 @@ function ActionButton({
         fontWeight: 950,
         cursor: disabled ? "wait" : "pointer",
         fontFamily: "inherit",
-        fontSize: compact ? 14 : 15,
+        fontSize: compact ? 15 : 16,
         opacity: disabled ? 0.58 : 1,
         transition: "transform .18s ease, box-shadow .18s ease, background .18s ease, border-color .18s ease",
       }}
@@ -3428,13 +3405,13 @@ function HistoryList({ txt, rows, busy, isAdmin = false, onOpen, onDelete }) {
   const safeRows = Array.isArray(rows) ? rows : []
 
   return (
-    <div style={cardStyle()}>
+    <div className="bkp-receipts-history" style={cardStyle()}>
       {safeRows.length === 0 ? (
         <div style={{ color: COLORS.muted, fontSize: 14 }}>{txt.empty}</div>
       ) : (
         <div style={{ display: "grid", gap: 10 }}>
           {safeRows.map(row => (
-            <div key={row.id} style={{
+            <div className="bkp-receipt-history-item" key={row.id} style={{
               minHeight: 74,
               border: `1px solid ${COLORS.border}`,
               borderRadius: 16,
@@ -3446,14 +3423,14 @@ function HistoryList({ txt, rows, busy, isAdmin = false, onOpen, onDelete }) {
             }}>
               <strong>{buildReceiptHistorySummary(row, formatMontant)}</strong>
               <span style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, width: "100%" }}>
-                <button type="button" disabled={busy} onClick={() => onOpen(row)} style={{ minHeight: 40, borderRadius: 12, background: "linear-gradient(145deg, #70E5C5, #39C9A2)", color: "#083D32", border: "1px solid #91ECD3", boxShadow: "inset 2px 2px 0 rgba(255,255,255,.38), 0 4px 0 #27A985, 0 8px 14px rgba(32,184,142,.15)", fontWeight: 950, padding: "0 7px", fontSize: 12 }}>
+                <button className="bkp-receipt-history-view" type="button" disabled={busy} onClick={() => onOpen(row)} style={{ minHeight: 40, borderRadius: 12, background: "linear-gradient(145deg, #70E5C5, #39C9A2)", color: "#083D32", border: "1px solid #91ECD3", boxShadow: "inset 2px 2px 0 rgba(255,255,255,.38), 0 4px 0 #27A985, 0 8px 14px rgba(32,184,142,.15)", fontWeight: 950, padding: "0 7px", fontSize: 12 }}>
                   {!isAdmin ? txt.viewDetails : isBudgetOkArticlesPartial(row) || (hasReliableBudgetForReceipt(row) && !isLockedScannedReceipt(row))
                     ? txt.correctArticles
                     : isLockedScannedReceipt(row) || receiptHasUnreliableArticleCount(row)
                       ? txt.viewDetails
                       : "Modifier"}
                 </button>
-                <button type="button" disabled={busy} onClick={() => onDelete(row)} style={{ minHeight: 40, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "linear-gradient(145deg, #ffffff, #edf3f9)", color: COLORS.muted, fontWeight: 950, padding: "0 7px", fontSize: 12 }}>
+                <button className="bkp-receipt-history-remove" type="button" disabled={busy} onClick={() => onDelete(row)} style={{ minHeight: 40, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "linear-gradient(145deg, #ffffff, #edf3f9)", color: COLORS.muted, fontWeight: 950, padding: "0 7px", fontSize: 12 }}>
                   {txt.deleteTicket}
                 </button>
               </span>
