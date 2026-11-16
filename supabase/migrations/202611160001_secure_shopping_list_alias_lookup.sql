@@ -56,7 +56,7 @@ begin
       )
     )
   group by a.product_id
-  order by match_score desc, a.product_id
+  order by 2 desc, a.product_id
   limit v_limit;
 end
 $function$;
