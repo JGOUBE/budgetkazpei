@@ -99,7 +99,7 @@ function shouldShowMonthlyProjection(stats = {}) {
   return purchaseCount >= 5 && daysSpan >= 60 && estimate >= 1
 }
 
-export default function ShoppingInsightsPage({ user, t, isMobile = false }) {
+export default function ShoppingInsightsPage({ user, t, isMobile = false, standalone = false }) {
   const isKreol = getIsKreol(t)
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
@@ -153,9 +153,15 @@ export default function ShoppingInsightsPage({ user, t, isMobile = false }) {
         <div style={{ color: COLORS.cyan, fontSize: 13, fontWeight: 950, marginBottom: 8 }}>
           {isKreol ? "Mes labitid courses" : "Mes habitudes"}
         </div>
-        <h2 style={{ margin: 0, color: COLORS.text, fontFamily: "'DM Serif Display', serif", fontSize: isMobile ? 30 : 38, fontWeight: 400 }}>
-          {isKreol ? "Courses intelligentes" : "Courses intelligentes"}
-        </h2>
+        {standalone ? (
+          <h1 style={{ margin: 0, color: COLORS.text, fontSize: isMobile ? 29 : 36, fontWeight: 780, lineHeight: 1.22, letterSpacing: "-.025em" }}>
+            {isKreol ? "Koudzyé su mon bann courses" : "Aperçu de mes achats"}
+          </h1>
+        ) : (
+          <h2 style={{ margin: 0, color: COLORS.text, fontFamily: "'DM Serif Display', serif", fontSize: isMobile ? 30 : 38, fontWeight: 400 }}>
+            Courses intelligentes
+          </h2>
+        )}
         <p style={{ color: COLORS.muted, margin: "10px 0 0", lineHeight: 1.55 }}>
           {isKreol ? "BudgetKazPéi i analiz bann tiké validé pou montre out magazin ek bann produits ou achète souvent."
             : "BudgetKazPéi analyse les tickets validés pour suivre vos magasins et produits récurrents."}

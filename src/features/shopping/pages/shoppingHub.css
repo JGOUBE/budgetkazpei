@@ -175,3 +175,16 @@
   min-height:42px;padding:0 16px;color:#3C5827;font-weight:800;
   background:#E0ECCD;border:1px solid #BFD3A7;border-radius:12px;box-shadow:none;
 }
+
+
+/* Pages dédiées depuis l'accueil — aucun onglet ni en-tête Mes courses supplémentaire. */
+.bkp-shopping-standalone { width: min(100%, 1180px); margin-inline: auto; }
+.bkp-shopping-standalone .bkp-shopping-section-heading h1 {
+  margin: 4px 0 3px;
+  color: var(--bkp-text);
+  font-family: var(--bkp-font-body, "DM Sans", sans-serif);
+  font-size: clamp(27px, 4vw, 35px);
+  font-weight: 790;
+  line-height: 1.2;
+  letter-spacing: -.03em;
+}

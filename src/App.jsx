@@ -35,6 +35,8 @@ import ContactPage from "./components/contact/ContactPage"
 import ConseillerPage from "./components/conseiller/ConseillerPage"
 import ReceiptsPage from "./features/receipts/pages/ReceiptsPage"
 import ShoppingHubPage from "./features/shopping/pages/ShoppingHubPage"
+import ShoppingInsightsPage from "./features/shopping/pages/ShoppingInsightsPage"
+import SavingsPage from "./pages/SavingsPage"
 import ShoppingListPage from "./pages/ShoppingListPage"
 import StatisticsPage from "./pages/StatisticsPage"
 import RewardsPage from "./pages/RewardsPage"
@@ -869,6 +871,19 @@ function BudgetKazPeiApp({
             onOpenReceipts={() => setActiveNav("receipts")}
             onNavigate={handleNavChange}
           />
+        )}
+
+        {/* Raccourcis indépendants de l'accueil : une fonction = un écran, sans onglets Courses. */}
+        {activeNav === "shoppingOverviewOnly" && (
+          <main className="bkp-shopping-hub bkp-shopping-standalone" aria-label={lang === "fr" ? "Aperçu de mes achats" : "Koudzyé su mon bann courses"}>
+            <ShoppingInsightsPage user={user} t={t} isMobile={isMobile} standalone />
+          </main>
+        )}
+
+        {activeNav === "shoppingSavingsOnly" && (
+          <main className="bkp-shopping-hub bkp-shopping-standalone" aria-label={lang === "fr" ? "Mes économies" : "Mon bann lékonomi"}>
+            <SavingsPage user={user} language={lang} standalone />
+          </main>
         )}
 
         {activeNav === "shopping" && (

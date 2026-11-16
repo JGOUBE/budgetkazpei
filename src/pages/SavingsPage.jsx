@@ -64,7 +64,7 @@ function formatDate(value) {
   return date.toLocaleDateString("fr-FR", { day: "numeric", month: "short", year: "numeric" })
 }
 
-export default function SavingsPage({ user, language = "fr" }) {
+export default function SavingsPage({ user, language = "fr", standalone = false }) {
   const txt = isKreolLanguage(language) ? COPY.kreol : COPY.fr
   const [shoppingItems, setShoppingItems] = useState([])
   const [loading, setLoading] = useState(true)
@@ -101,7 +101,7 @@ export default function SavingsPage({ user, language = "fr" }) {
     <section className="bkp-savings-panel" aria-labelledby="shopping-savings-title">
       <header className="bkp-shopping-section-heading">
         <span><PiggyBank size={15} />{txt.eyebrow}</span>
-        <h2 id="shopping-savings-title">{txt.title}</h2>
+        {standalone ? <h1 id="shopping-savings-title">{txt.title}</h1> : <h2 id="shopping-savings-title">{txt.title}</h2>}
         <p>{txt.intro}</p>
       </header>
 

@@ -41,7 +41,7 @@ export default function HomePage({
   const remaining = Number.isFinite(balance) ? balance : income - spent
   const usage = income > 0 ? Math.round(spent / income * 100) : null
   const progress = usage === null ? 0 : Math.min(100, Math.max(0, usage))
-  const openCourses = tab => onNavigate({ section: "shopping", shoppingTab: tab })
+  const openCourses = tab => onNavigate(tab === "savings" ? "shoppingSavingsOnly" : "shoppingOverviewOnly")
 
   return (
     <main className="bkp-home-2026 bkp-home-matcha" style={{ width: "100%", maxWidth: 1020, margin: "0 auto", padding: isMobile ? "22px 16px 40px" : "30px 20px 50px" }}>
