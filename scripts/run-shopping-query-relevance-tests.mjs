@@ -137,3 +137,13 @@ const milkAcrossGroups = rankShoppingSuggestionGroups({
 }, "lait");
 assert.deepEqual(milkAcrossGroups.groupOrder, ["historical", "catalog", "observed"]);
 console.log("OK: shopping autocomplete ranks real product matches ahead of incidental fragrance matches across sources.");
+
+const privateAliasResult = rankShoppingSuggestionGroups({
+  historical: [], observed: [], retail: [],
+  catalog: [
+    { key: "catalog:milk", label: "Lait frais 1 L" },
+    { key: "catalog:mikif", label: "Pains au lait au curcuma Mi'Kif x8", aliasMatchScore: 120 },
+  ],
+}, "pain au lait curcuma MiKif x8", { limit: 1 });
+assert.deepEqual(privateAliasResult.catalog.map(row => row.key), ["catalog:mikif"]);
+console.log("OK: alias-backed products can rank as exact catalog matches without leaking raw OCR labels.");
