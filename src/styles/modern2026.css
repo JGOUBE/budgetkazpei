@@ -1,0 +1,344 @@
+/* BudgetKazPeï • interface 2026
+   Neutral surfaces, Reunion identity carried by the original logo only.
+   Intentionally global: applies to every authenticated screen, modal and admin space.
+   No photos/watermarks, no orange, no dark buttons, no shadows or raised surfaces. */
+
+:root {
+  --bkp-2026-page: #F7F9F8;
+  --bkp-2026-white: #FFFFFF;
+  --bkp-2026-ink: #23363D;
+  --bkp-2026-muted: #60737A;
+  --bkp-2026-line: #E0E9E6;
+  --bkp-2026-lagoon: #196F71;
+  --bkp-2026-ocean: #346F9B;
+  --bkp-2026-sage: #397D63;
+  --bkp-2026-lavender: #806F9E;
+  --bkp-2026-sky: #278A95;
+}
+
+html, body, #root {
+  background: var(--bkp-2026-page) !important;
+  color: var(--bkp-2026-ink);
+}
+
+#root {
+  font-family: "DM Sans", "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Remove legacy flag, sea image, overlays, lifted backgrounds. */
+#root .bkp-dashboard-shell,
+#root .bkp-home-reunion-watermark {
+  background: var(--bkp-2026-page) !important;
+  background-image: none !important;
+  isolation: auto;
+}
+#root .bkp-dashboard-shell::before,
+#root .bkp-dashboard-shell::after,
+#root .bkp-home-reunion-watermark::before,
+#root .bkp-home-reunion-watermark::after {
+  content: none !important;
+  display: none !important;
+  background: none !important;
+}
+#root .bkp-home-reunion-watermark {
+  border-radius: 0 !important;
+}
+
+/* Make the whole application genuinely flat, including inline legacy styles. */
+#root *,
+#root *::before,
+#root *::after {
+  box-shadow: none !important;
+  text-shadow: none !important;
+}
+#root :is(div, section, article, aside, header, footer, main, button, a, input, [role="button"])[style*="gradient"] {
+  background-image: none !important;
+}
+#root :is(div, section, article, aside, header, footer, main, button, a, input, [role="button"])[style*="backdrop"] {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* Reusable controls: NEVER a dark filled button, regardless of page/inline style.
+   Explicit overrides are deliberately stronger than the old premium button rules. */
+#root button:not(.bkp-2026-action),
+#root [role="button"],
+#root input[type="button"],
+#root input[type="submit"],
+#root input[type="reset"],
+#root .bkp-premium-zone button,
+#root .bkp-modal-premium button {
+  background: #F0F6F4 !important;
+  background-image: none !important;
+  color: #196F71 !important;
+  border: 1px solid #D5E4E0 !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+  transform: none !important;
+  letter-spacing: -.012em;
+  font-weight: 650;
+  transition: background-color .15s ease, border-color .15s ease, color .15s ease !important;
+}
+#root button::after,
+#root [role="button"]::after {
+  content: none !important;
+  display: none !important;
+}
+#root button:not(:disabled):hover,
+#root [role="button"]:not([aria-disabled="true"]):hover,
+#root input[type="submit"]:not(:disabled):hover {
+  background-color: #E7F2EF !important;
+  border-color: #AFCFC7 !important;
+  box-shadow: none !important;
+  filter: none !important;
+  transform: none !important;
+}
+#root button:not(:disabled):active,
+#root [role="button"]:not([aria-disabled="true"]):active {
+  background-color: #DBEBE7 !important;
+  box-shadow: none !important;
+  filter: none !important;
+  transform: none !important;
+}
+#root button:focus-visible,
+#root [role="button"]:focus-visible,
+#root input:focus-visible,
+#root textarea:focus-visible,
+#root select:focus-visible {
+  outline: 2px solid #278A95 !important;
+  outline-offset: 2px;
+}
+#root button:disabled,
+#root [aria-disabled="true"] {
+  background-color: #F1F3F3 !important;
+  color: #75858A !important;
+  border-color: #E0E7E6 !important;
+  opacity: .7 !important;
+  transform: none !important;
+}
+#root button :is(svg,span),
+#root [role="button"] svg {
+  text-shadow: none !important;
+}
+
+/* Semantic accent colors for meaningful controls, not randomly tinted backgrounds. */
+#root button:is([aria-label*="Supprimer"],[aria-label*="Effacer"],[title*="Supprimer"]),
+#root button[class*="danger"],
+#root button[class*="delete"] {
+  color: #A84055 !important;
+  background: #FBF1F3 !important;
+  border-color: #EFD7DE !important;
+}
+#root button:is([aria-label*="Supprimer"],[aria-label*="Effacer"],[title*="Supprimer"]):hover,
+#root button[class*="danger"]:hover,
+#root button[class*="delete"]:hover {
+  background: #F9E9EE !important;
+}
+#root .bkp-shopping-suggestion-list > button.bkp-shopping-suggestion-row {
+  border: 0 !important;
+  border-bottom: 1px solid var(--bkp-2026-line) !important;
+  border-radius: 0 !important;
+  background: #FFFFFF !important;
+  color: var(--bkp-2026-ink) !important;
+}
+#root .bkp-shopping-suggestion-list > button.bkp-shopping-suggestion-row:last-child { border-bottom: 0 !important; }
+
+/* Mobile header and desktop navigation — simple, quiet, readable. */
+#root .bkp-dashboard-shell > div:first-child[style*="position: fixed"] {
+  background: #FFFFFF !important;
+  border-bottom: 1px solid var(--bkp-2026-line) !important;
+  backdrop-filter: none !important;
+}
+#root .bkp-header-lang,
+#root .bkp-header-theme,
+#root .bkp-header-profile {
+  background: #F3F7F6 !important;
+  color: #196F71 !important;
+  border: 1px solid #DEE7E5 !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+}
+#root .bkp-header-profile {
+  color: #346F9B !important;
+  background: #EEF4F9 !important;
+}
+#root .bkp-header-lang {
+  color: #806F9E !important;
+  background: #F5F1F8 !important;
+}
+#root button[aria-label*="Retour à l’accueil"],
+#root button[aria-label*="Retour à l’accueil"]:hover {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: var(--bkp-2026-ink) !important;
+}
+
+/* Cards and forms: no double-stacked outlines or glossy treatments. */
+#root .bkp-modal-premium,
+#root .bkp-premium-zone input,
+#root .bkp-modal-premium input,
+#root .bkp-premium-zone textarea,
+#root .bkp-premium-zone select,
+#root .bkp-modal-premium select,
+#root input,
+#root textarea,
+#root select {
+  box-shadow: none !important;
+  background-image: none !important;
+}
+#root :is(input:not([type="checkbox"]):not([type="radio"]),textarea,select) {
+  border-radius: 12px !important;
+  border: 1px solid #CEDBD9 !important;
+  background-color: #FFFFFF !important;
+  color: #23363D !important;
+  font-weight: 450;
+}
+#root input::placeholder,
+#root textarea::placeholder { color: #83939A !important; }
+#root input[type="checkbox"],
+#root input[type="radio"] { accent-color: #196F71; }
+
+/* The old cards still use inline gradients. Replacing them with white gives a
+   stable neutral surface without touching their data, actions or chart logic. */
+#root :is(div, section, article)[style*="linear-gradient"] {
+  background-color: #FFFFFF !important;
+  background-image: none !important;
+}
+#root :is(div, section, article)[style*="radial-gradient"] {
+  background-image: none !important;
+}
+#root [style*="background-image"][style*="url("] {
+  background-image: none !important;
+}
+
+/* Compact contemporary headings, no decorative display serif font. */
+#root h1, #root h2, #root h3 {
+  font-family: "DM Sans", "Helvetica Neue", Arial, sans-serif !important;
+  letter-spacing: -.035em;
+  line-height: 1.16;
+}
+#root h1 { font-weight: 750 !important; }
+#root h2 { font-weight: 700 !important; }
+#root h3 { font-weight: 680 !important; }
+
+/* Prevent decorative motion from making things look raised. */
+#root .bkp-premium-zone button,
+#root .bkp-modal-premium button,
+#root .bkp-home-reunion-watermark button {
+  transform: none !important;
+}
+@media (prefers-reduced-motion: reduce) {
+  #root *, #root *::before, #root *::after { transition: none !important; animation: none !important; }
+}
+
+/* Fresh home page — intentionally no image, watermark, shade or gradient. */
+#root .bkp-2026-home {
+  max-width: 940px;
+  margin: 0 auto;
+  padding: clamp(28px, 4vw, 58px) clamp(20px, 4vw, 40px) 60px;
+  background: transparent !important;
+  color: #23363D;
+}
+#root .bkp-2026-home-intro { margin-bottom: 42px; }
+#root .bkp-2026-eyebrow {
+  color: #196F71;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .125em;
+  text-transform: uppercase;
+  margin: 0 0 12px;
+}
+#root .bkp-2026-home-intro h1 {
+  font-size: clamp(30px, 5vw, 48px);
+  font-weight: 750;
+  margin: 0 0 12px;
+  letter-spacing: -.055em;
+}
+#root .bkp-2026-punctuation { color: #278A95; }
+#root .bkp-2026-home-intro > p:last-child {
+  color: #60737A;
+  font-size: clamp(14px, 2vw, 17px);
+  line-height: 1.55;
+  margin: 0;
+  max-width: 510px;
+}
+#root .bkp-2026-section-heading { margin-bottom: 20px; }
+#root .bkp-2026-section-heading .bkp-2026-eyebrow { margin-bottom: 6px; }
+#root .bkp-2026-section-heading h2 {
+  font-size: clamp(19px, 3vw, 24px);
+  margin: 0;
+  font-weight: 700;
+}
+#root .bkp-2026-action-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 13px;
+}
+#root button.bkp-2026-action {
+  --action-ink: #196F71;
+  --action-wash: #EAF5F1;
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  align-items: flex-start;
+  min-width: 0;
+  min-height: 164px;
+  gap: 0;
+  text-align: left;
+  padding: 21px 20px;
+  border-radius: 17px !important;
+  border: 1px solid #E0E9E6 !important;
+  background: #FFFFFF !important;
+  color: #23363D !important;
+  box-shadow: none !important;
+  transform: none !important;
+  filter: none !important;
+}
+#root button.bkp-2026-action:hover {
+  background: #FDFEFE !important;
+  border-color: #BFD3D0 !important;
+  transform: none !important;
+}
+#root .bkp-2026-tone-lagoon { --action-ink:#196F71 !important; --action-wash:#E7F3EF !important; }
+#root .bkp-2026-tone-ocean { --action-ink:#346F9B !important; --action-wash:#E8F1F8 !important; }
+#root .bkp-2026-tone-sage { --action-ink:#397D63 !important; --action-wash:#E9F3ED !important; }
+#root .bkp-2026-tone-lavender { --action-ink:#806F9E !important; --action-wash:#F2EFF8 !important; }
+#root .bkp-2026-tone-sky { --action-ink:#278A95 !important; --action-wash:#E7F5F6 !important; }
+#root .bkp-2026-tone-teal { --action-ink:#367B80 !important; --action-wash:#E8F4F2 !important; }
+#root .bkp-2026-action-icon {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 17px;
+  border-radius: 12px;
+  background: var(--action-wash) !important;
+  color: var(--action-ink) !important;
+}
+#root .bkp-2026-action-copy { display: flex; flex-direction: column; min-width: 0; gap: 5px; padding-right: 16px; }
+#root .bkp-2026-action-copy strong {
+  color: #23363D !important;
+  font-size: 16px;
+  line-height: 1.25;
+  letter-spacing: -.02em;
+  font-weight: 750;
+}
+#root .bkp-2026-action-copy small { color: #60737A !important; font-size: 12px; line-height: 1.4; }
+#root .bkp-2026-action-arrow { color: var(--action-ink) !important; position: absolute; right: 18px; bottom: 18px; }
+@media (min-width: 920px) {
+  #root .bkp-2026-action-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+  #root button.bkp-2026-action { min-height: 185px; }
+}
+@media (max-width: 480px) {
+  #root .bkp-2026-home { padding: 26px 16px 42px; }
+  #root .bkp-2026-home-intro { margin-bottom: 37px; }
+  #root .bkp-2026-action-grid { gap: 10px; }
+  #root button.bkp-2026-action { min-height: 163px; padding: 17px 14px; border-radius: 15px !important; }
+  #root .bkp-2026-action-icon { width: 40px; height: 40px; margin-bottom: 16px; }
+  #root .bkp-2026-action-copy strong { font-size: 14px; }
+  #root .bkp-2026-action-copy small { font-size: 11px; }
+  #root .bkp-2026-action-arrow { right: 12px; bottom: 12px; width: 16px; }
+}
