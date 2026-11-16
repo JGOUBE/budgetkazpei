@@ -82,7 +82,7 @@ export default function HistoriquePage({
     return (
       <div
         style={{
-          background: `linear-gradient(135deg, ${COLORS.card} 0%, ${COLORS.cardLight} 100%)`,
+          background: "#F8F3EB",
           border: `1px solid ${COLORS.yellow}55`,
           borderRadius: 22,
           padding: 28,
@@ -108,8 +108,8 @@ export default function HistoriquePage({
           onClick={onGoPremium}
           style={{
             marginTop: 14,
-            background: `linear-gradient(135deg, ${COLORS.yellow}, #F59E0B)`,
-            color: "#1E293B",
+            background: "#DFEBCF",
+            color: "#3C592B",
             border: "none",
             borderRadius: 14,
             padding: "13px 18px",
@@ -136,7 +136,7 @@ export default function HistoriquePage({
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <div
         style={{
-          background: `linear-gradient(135deg, ${COLORS.card} 0%, ${COLORS.cardLight} 100%)`,
+          background: "#FFFFFF",
           border: `1px solid ${COLORS.border}`,
           borderRadius: 22,
           padding: 22,
@@ -216,7 +216,7 @@ export default function HistoriquePage({
                   padding: 18,
                 }}
               >
-                <h3 style={{ margin: 0, color: COLORS.yellow }}>
+                <h3 style={{ margin: 0, color: "#485F33", fontSize: 20 }}>
                   {formatMonth(item.mois, item.annee)}
                 </h3>
 
@@ -238,8 +238,8 @@ export default function HistoriquePage({
                     alignItems: "center",
                     justifyContent: "center",
                     gap: 8,
-                    background: isGenerating ? COLORS.muted : COLORS.accent,
-                    color: "#fff",
+                    background: isGenerating ? "#EFECE6" : "#E0EBCF",
+                    color: isGenerating ? "#73685D" : "#3D5A2C",
                     border: "none",
                     borderRadius: 12,
                     padding: "11px 14px",

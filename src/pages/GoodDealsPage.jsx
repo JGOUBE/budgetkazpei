@@ -41,13 +41,13 @@ const GOOD_DEALS_INTERACTION_STYLES = `
 `
 
 const CATEGORY_OPTIONS = [
-  { id: "all", fr: "Tous", kr: "Tout", icon: BkIcons.deals, bg: "#EFF3E7", fg: "#536D3E", edge: "#DBE5D0" },
-  { id: "shopping", fr: "Promos & bons prix", kr: "Promo ek bon pri", icon: BkIcons.shopping, bg: "#F4EFE8", fg: "#765943", edge: "#E8DED2" },
-  { id: "food", fr: "Restaurants", kr: "Manzé", icon: BkIcons.food, bg: "#F3EFEB", fg: "#746052", edge: "#E5DDD4" },
-  { id: "home", fr: "Maison & services", kr: "Kaz & servis", icon: BkIcons.homeServices, bg: "#F1EFEA", fg: "#76665A", edge: "#E3DDD3" },
-  { id: "transport", fr: "Transport", kr: "Transport", icon: BkIcons.transport, bg: "#EDF1E7", fg: "#5B7048", edge: "#DDE5D2" },
-  { id: "leisure", fr: "Loisirs & famille", kr: "Sorti & famiy", icon: BkIcons.leisure, bg: "#F2F1E8", fg: "#6B6B49", edge: "#E5E3D5" },
-  { id: "local", fr: "Commerces locaux", kr: "Komers lokal", icon: BkIcons.store, bg: "#F5F0E8", fg: "#765B45", edge: "#E7DBCE" },
+  { id: "all", fr: "Tous", kr: "Tout", icon: BkIcons.deals, bg: "#E0EACB", fg: "#405C2B", edge: "#B9CBA3" },
+  { id: "shopping", fr: "Promos & bons prix", kr: "Promo ek bon pri", icon: BkIcons.shopping, bg: "#EED8C7", fg: "#6E4B38", edge: "#D8B9A5" },
+  { id: "food", fr: "Restaurants", kr: "Manzé", icon: BkIcons.food, bg: "#F0DFE5", fg: "#775260", edge: "#DBC1CC" },
+  { id: "home", fr: "Maison & services", kr: "Kaz & servis", icon: BkIcons.homeServices, bg: "#E8DCCC", fg: "#695345", edge: "#D0BDAA" },
+  { id: "transport", fr: "Transport", kr: "Transport", icon: BkIcons.transport, bg: "#DDEADF", fg: "#3C6653", edge: "#BBD3C5" },
+  { id: "leisure", fr: "Loisirs & famille", kr: "Sorti & famiy", icon: BkIcons.leisure, bg: "#E8EACF", fg: "#596538", edge: "#CFD3AB" },
+  { id: "local", fr: "Commerces locaux", kr: "Komers lokal", icon: BkIcons.store, bg: "#F0DFD7", fg: "#765144", edge: "#D9BDB3" },
 ]
 
 const LEISURE_VIEW_OPTIONS = [

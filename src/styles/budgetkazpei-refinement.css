@@ -264,3 +264,36 @@
 @media(prefers-reduced-motion:reduce) {
   #root .bkp-app-2026 button { transition:none !important; }
 }
+
+/* Harmonisation des pages moins fréquentes : dépenses, charges fixes, historique et administration. */
+#root .bkp-app-2026[data-bkp-section="abonnements"] .bkp-premium-zone > button:first-child,
+#root .bkp-app-2026[data-bkp-section="historique"] .bkp-premium-zone > button:first-child {
+  background:#EBDCCE !important; border-color:#D3B9A4 !important; color:#6A4934 !important;
+}
+#root .bkp-app-2026[data-bkp-section="statistics"] .bkp-premium-zone > button:first-child,
+#root .bkp-app-2026[data-bkp-section="aides"] .bkp-premium-zone > button:first-child {
+  background:#E1EACE !important; border-color:#BBCDA8 !important; color:#415C2D !important;
+}
+#root .bkp-app-2026[data-bkp-section="conseiller"] .bkp-premium-zone > button:first-child,
+#root .bkp-app-2026[data-bkp-section="receipts"] .bkp-premium-zone > button:first-child {
+  background:#E1ECE2 !important; border-color:#B7D1BF !important; color:#3D6550 !important;
+}
+#root .bkp-app-2026[data-bkp-section="goodDeals"] .bkp-premium-zone > button:first-child,
+#root .bkp-app-2026[data-bkp-section="profil"] .bkp-premium-zone > button:first-child {
+  background:#F0DFE5 !important; border-color:#D9C0CB !important; color:#745364 !important;
+}
+#root .bkp-app-2026[data-bkp-section="historique"] .bkp-premium-zone :is(h2,h3),
+#root .bkp-app-2026[data-bkp-section="abonnements"] .bkp-premium-zone :is(h2,h3) { font-size:clamp(19px,3vw,24px); }
+#root .bkp-app-2026[data-bkp-section="historique"] .bkp-premium-zone > div { border-color:#D4C3B2; }
+#root .bkp-app-2026[data-bkp-section="goodDeals"] .good-deals-card {
+  background-color:#FFFFFF !important; border-color:#D5C5B5 !important;
+  transform:none !important; box-shadow:none !important;
+}
+#root .bkp-app-2026[data-bkp-section="goodDeals"] .good-deals-card:hover {
+  background-color:#FCFAF6 !important; transform:none !important;
+}
+#root .bkp-app-2026[data-bkp-section="goodDeals"] .good-deals-primary:not(:disabled),
+#root .bkp-app-2026[data-bkp-section="goodDeals"] .good-deals-detail:not(:disabled) {
+  font-size:14px !important; font-weight:740;
+}
+#root .bkp-app-2026 .bkp-sidebar-close { background:#EADBCF !important; color:#644733 !important; border-color:#D7C1AE !important; }
