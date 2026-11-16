@@ -529,6 +529,7 @@ function BudgetKazPeiApp({
           <button
             type="button"
             onClick={() => handleNavChange("dashboard")}
+            className="bkp-brand-link"
             aria-label={lang === "fr" ? "Retour à l’accueil" : "Retour akèy"}
             style={{
               position: "absolute",

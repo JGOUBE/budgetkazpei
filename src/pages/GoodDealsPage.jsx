@@ -41,13 +41,13 @@ const GOOD_DEALS_INTERACTION_STYLES = `
 `
 
 const CATEGORY_OPTIONS = [
-  { id: "all", fr: "Tous", kr: "Tout", icon: BkIcons.deals, bg: "#FFD8C8", fg: "#C94A1B", edge: "#E9A98E" },
-  { id: "shopping", fr: "Promos & bons prix", kr: "Promo ek bon pri", icon: BkIcons.shopping, bg: "#FFE9A6", fg: "#8A6200", edge: "#D7BD69" },
-  { id: "food", fr: "Restaurants", kr: "Manzé", icon: BkIcons.food, bg: "#FFD4D8", fg: "#A93646", edge: "#E5A4AB" },
-  { id: "home", fr: "Maison & services", kr: "Kaz & servis", icon: BkIcons.homeServices, bg: "#E5D7FF", fg: "#6435A5", edge: "#BDA7E0" },
-  { id: "transport", fr: "Transport", kr: "Transport", icon: BkIcons.transport, bg: "#D5EBFF", fg: "#17669A", edge: "#9EC9E7" },
-  { id: "leisure", fr: "Loisirs & famille", kr: "Sorti & famiy", icon: BkIcons.leisure, bg: "#D5F4DF", fg: "#247447", edge: "#A3D4B3" },
-  { id: "local", fr: "Commerces locaux", kr: "Komers lokal", icon: BkIcons.store, bg: "#D1F1EE", fg: "#176C67", edge: "#9ACFC9" },
+  { id: "all", fr: "Tous", kr: "Tout", icon: BkIcons.deals, bg: "#EBF3F0", fg: "#34736E", edge: "#D4E4DF" },
+  { id: "shopping", fr: "Promos & bons prix", kr: "Promo ek bon pri", icon: BkIcons.shopping, bg: "#EBF0F8", fg: "#456F96", edge: "#D8E5F0" },
+  { id: "food", fr: "Restaurants", kr: "Manzé", icon: BkIcons.food, bg: "#F5EDF1", fg: "#94667D", edge: "#E8D9E1" },
+  { id: "home", fr: "Maison & services", kr: "Kaz & servis", icon: BkIcons.homeServices, bg: "#F0EDF7", fg: "#786A99", edge: "#E2DCEA" },
+  { id: "transport", fr: "Transport", kr: "Transport", icon: BkIcons.transport, bg: "#E8F1F8", fg: "#477CA5", edge: "#D6E5EF" },
+  { id: "leisure", fr: "Loisirs & famille", kr: "Sorti & famiy", icon: BkIcons.leisure, bg: "#EAF4EC", fg: "#447C63", edge: "#D7E9DC" },
+  { id: "local", fr: "Commerces locaux", kr: "Komers lokal", icon: BkIcons.store, bg: "#E5F3F0", fg: "#327D7B", edge: "#D0E7E1" },
 ]
 
 const LEISURE_VIEW_OPTIONS = [
@@ -1246,9 +1246,13 @@ function CategoryButton({ option, active, isKreol, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className="good-deals-hoverable"
+      className="good-deals-hoverable bkp-category-filter"
+      aria-pressed={active}
       style={{
         ...pageTheme.hoverVars,
+        "--bkp-tag-bg": option.bg,
+        "--bkp-tag-fg": option.fg,
+        "--bkp-tag-border": option.edge,
         minHeight: 44,
         display: "inline-flex",
         alignItems: "center",
@@ -2101,18 +2105,6 @@ export default function GoodDealsPage({
           boxShadow: pageTheme.elevatedShadow,
         }}
       >
-        <div
-          style={{
-            position: "absolute",
-            width: 140,
-            height: 140,
-            borderRadius: 999,
-            background: `${COLORS.accent}12`,
-            right: -48,
-            top: -58,
-          }}
-        />
-
         <div style={{ position: "relative", maxWidth: 760 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, color: COLORS.accent, fontSize: 12, fontWeight: 950, textTransform: "uppercase", letterSpacing: ".08em" }}>
             <BkIcons.deals size={18} />

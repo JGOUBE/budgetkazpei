@@ -47,8 +47,8 @@
 #root .bkp-app-2026 [role="button"],
 #root .bkp-app-2026 input[type="button"],
 #root .bkp-app-2026 input[type="submit"] {
-  background-color: #edf4f2 !important;
-  color: #2d6466 !important;
+  background-color: #FFFFFF !important;
+  color: #37656B !important;
   border: 1px solid #d5e5e1 !important;
   border-radius: 12px !important;
   font-weight: 720;
@@ -65,7 +65,7 @@
 }
 #root .bkp-app-2026 button:not(:disabled):hover,
 #root .bkp-app-2026 [role="button"]:hover {
-  background-color: #e2eeeb !important;
+  background-color: #F2F8F6 !important;
   border-color: #bcd4ce !important;
   transform: none !important;
   filter: none !important;
@@ -90,7 +90,7 @@
   opacity: .66;
 }
 #root .bkp-app-2026 button svg {
-  color: #467e83;
+  color: currentColor;
 }
 #root .bkp-app-2026 button[aria-label*="Supprimer"],
 #root .bkp-app-2026 button[title*="Supprimer"] {
@@ -210,3 +210,67 @@
   #root .bkp-app-2026 button,
   #root .bkp-app-2026 [role="button"] { transition: none !important; }
 }
+
+/* Ajustements audit mobile : couleurs de catégories subtiles, sans fonds sombres. */
+#root .bkp-app-2026 button.bkp-category-filter {
+  background-color: var(--bkp-tag-bg, #eef5f3) !important;
+  color: var(--bkp-tag-fg, #34736e) !important;
+  border-color: var(--bkp-tag-border, #d4e4df) !important;
+  border-radius: 11px !important;
+  font-size: 12px;
+  font-weight: 730;
+}
+#root .bkp-app-2026 button.bkp-category-filter svg { color: inherit !important; }
+#root .bkp-app-2026 button.bkp-category-filter[aria-pressed="true"] {
+  border-color: var(--bkp-tag-fg, #34736e) !important;
+}
+#root .bkp-app-2026 button.bkp-category-filter:hover {
+  background-color: var(--bkp-tag-bg, #eef5f3) !important;
+  border-color: var(--bkp-tag-fg, #34736e) !important;
+}
+/* Identité et logo sans cadre artificiel dans l'en-tête. */
+#root .bkp-app-2026 button.bkp-brand-link {
+  background: transparent !important;
+  border: 0 !important;
+  color: #263b42 !important;
+  border-radius: 0 !important;
+  padding-inline: 4px !important;
+}
+#root .bkp-app-2026 button.bkp-brand-link:hover {
+  background: transparent !important;
+}
+/* Liens légaux : éléments de navigation et non boutons gris massifs. */
+#root .bkp-app-2026 .bkp-profile-legal-link {
+  background-color: #f7f9f8 !important;
+  color: #263b42 !important;
+  border: 1px solid #e3ebe8 !important;
+  border-radius: 11px;
+  text-decoration: none;
+  font-weight: 650 !important;
+}
+#root .bkp-app-2026 .bkp-profile-legal-link[href="/suppression-compte"] {
+  background-color: #fcf5f6 !important;
+  color: #945865 !important;
+  border-color: #f0e0e4 !important;
+}
+#root .bkp-app-2026 .bkp-profile-legal-link:hover {
+  background-color: #eef5f2 !important;
+  border-color: #cdded8 !important;
+}
+#root .bkp-app-2026 .bkp-profile-legal-link:focus-visible {
+  outline: 2px solid #4b9294;
+  outline-offset: 2px;
+}
+/* Toujours clair, mais boutons de confirmation mieux discernables. */
+#root .bkp-app-2026 button[type="submit"]:not(:disabled) {
+  background-color: #e4f2ec !important;
+  border-color: #c7e1d5 !important;
+  color: #296b5e !important;
+}
+#root .bkp-app-2026 button[type="submit"]:not(:disabled):hover {
+  background-color: #d8ebe3 !important;
+}
+/* Ajustement de la navigation du profil : le contenu prime sur les cadres. */
+#root .bkp-app-2026 .bkp-shopping-tabs button:nth-child(1) svg { color: #3c877e !important; }
+#root .bkp-app-2026 .bkp-shopping-tabs button:nth-child(2) svg { color: #8173a2 !important; }
+#root .bkp-app-2026 .bkp-shopping-tabs button:nth-child(3) svg { color: #4b7da5 !important; }

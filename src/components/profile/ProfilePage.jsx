@@ -387,7 +387,7 @@ export default function ProfilePage({ user, t }) {
     <div style={{ display: "flex", flexDirection: "column", gap: 20, maxWidth: 600 }}>
       <div
         style={{
-          background: `linear-gradient(135deg, ${COLORS.card} 0%, ${COLORS.cardLight} 100%)`,
+          background: COLORS.card,
           border: `1px solid ${COLORS.border}`,
           borderRadius: 20,
           padding: 28,
@@ -551,8 +551,8 @@ export default function ProfilePage({ user, t }) {
           <div
             style={{
               marginTop: 10,
-              background: "rgba(35,211,214,.08)",
-              border: "1px solid rgba(35,211,214,.28)",
+              background: "#F7FAF9",
+              border: "1px solid #DCE9E5",
               borderRadius: 16,
               padding: 18,
             }}
@@ -602,8 +602,8 @@ export default function ProfilePage({ user, t }) {
                 <div
                   style={{
                     marginTop: 8,
-                    background: "rgba(35,211,214,.08)",
-                    border: "1px solid rgba(35,211,214,.22)",
+                    background: "#F7FAF9",
+                    border: "1px solid #DCE9E5",
                     borderRadius: 12,
                     padding: "10px 12px",
                     color: COLORS.muted,
@@ -632,7 +632,7 @@ export default function ProfilePage({ user, t }) {
                 </select>
               </Field>
 
-              <div style={{ display: "grid", gap: 10, marginTop: 4 }}>
+              <div style={{ display: "grid", gap: 8, marginTop: 4 }}>
                 <Checkbox label={tr(isKreol, "Étudiant", "Étudiant")} checked={form.etudiant} onChange={value => updateField("etudiant", value)} />
                 <Checkbox label={tr(isKreol, "Retraité", "Retraité")} checked={form.retraite} onChange={value => updateField("retraite", value)} />
                 <Checkbox label={tr(isKreol, "Situation de handicap", "Situation handicap")} checked={form.handicap} onChange={value => updateField("handicap", value)} />
@@ -670,14 +670,14 @@ export default function ProfilePage({ user, t }) {
               cursor: saving ? "not-allowed" : "pointer",
             }}
           >
-            {saving ? t("profil", "saving") : t("profil", "save")}
+            {saving ? tr(isKreol, "Enregistrement...", "Anrezistreman...") : tr(isKreol, "Enregistrer mes modifications", "Anrezistr mon bann modifikasyon")}
           </button>
         </form>
       </div>
 
       <div
         style={{
-          background: `linear-gradient(135deg, ${COLORS.cyan}12, ${COLORS.card})`,
+          background: COLORS.card,
           border: `1px solid ${COLORS.cyan}33`,
           borderRadius: 20,
           padding: 24,
@@ -696,7 +696,7 @@ export default function ProfilePage({ user, t }) {
           <div
             style={{
               marginTop: 10,
-              background: "rgba(10,22,40,.45)",
+              background: "#F0F5F3",
               border: `1px solid ${COLORS.border}`,
               borderRadius: 12,
               padding: "10px 12px",
@@ -780,7 +780,7 @@ export default function ProfilePage({ user, t }) {
           </button>
 
           <p style={{ margin: 0, color: COLORS.muted, fontSize: 11.5, lineHeight: 1.45 }}>
-            {tr(isKreol, "Le message sera enregistré dans Supabase, dans la table support_messages. Support :", "Lo message lé enregistré dann Supabase, dann table support_messages. Support :")} {CONTACT_EMAIL}.
+            {tr(isKreol, "Votre message sera transmis à l’équipe BudgetKazPéi.", "Out message va être transmis à l’équipe BudgetKazPéi.")}
           </p>
         </form>
       </div>
@@ -788,7 +788,7 @@ export default function ProfilePage({ user, t }) {
       <section
         aria-labelledby="profile-legal-title"
         style={{
-          background: `linear-gradient(135deg, ${COLORS.cardLight}, ${COLORS.card})`,
+          background: COLORS.card,
           border: `1px solid ${COLORS.border}`,
           borderRadius: 20,
           padding: 24,
@@ -808,7 +808,7 @@ export default function ProfilePage({ user, t }) {
 
         <nav
           aria-label={tr(isKreol, "Informations légales du compte", "Zinformasion légal kont-la")}
-          style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 10 }}
+          style={{ display: "grid", gridTemplateColumns: "1fr", gap: 8 }}
         >
           {[
             ["/privacy", tr(isKreol, "Politique de confidentialité", "Politik konfidansyalité")],
@@ -819,6 +819,7 @@ export default function ProfilePage({ user, t }) {
             <a
               key={href}
               href={href}
+              className="bkp-profile-legal-link"
               style={{
                 minWidth: 0,
                 minHeight: 46,
@@ -829,7 +830,8 @@ export default function ProfilePage({ user, t }) {
                 padding: "11px 13px",
                 border: `1px solid ${COLORS.border}`,
                 borderRadius: 12,
-                background: "rgba(10,22,40,.35)",
+                background: href === "/suppression-compte" ? "#FBF4F5" : "#F7F9F8",
+                 color: href === "/suppression-compte" ? "#975864" : COLORS.text,
                 color: COLORS.text,
                 fontSize: 12.5,
                 fontWeight: 800,
@@ -839,7 +841,7 @@ export default function ProfilePage({ user, t }) {
               }}
             >
               <span>{label}</span>
-              <span aria-hidden="true" style={{ color: COLORS.cyan }}>→</span>
+              <span aria-hidden="true" style={{ color: href === "/suppression-compte" ? "#A65B69" : COLORS.info }}>→</span>
             </a>
           ))}
           <a
@@ -972,7 +974,7 @@ function Checkbox({ label, checked, onChange }) {
         color: COLORS.text,
         fontSize: 13,
         fontWeight: 700,
-        background: "rgba(255,255,255,.04)",
+        background: "#FFFFFF",
         border: `1px solid ${COLORS.border}`,
         borderRadius: 12,
         padding: "10px 12px",
