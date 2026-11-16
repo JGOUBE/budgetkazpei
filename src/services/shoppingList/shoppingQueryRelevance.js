@@ -118,7 +118,7 @@ export function rankShoppingSuggestionGroups(groups = {}, query = "", { showAll 
   const ranked = sources.flatMap((group, sourceIndex) =>
     (Array.isArray(groups[group]) ? groups[group] : []).map((suggestion, itemIndex) => {
       const label = String(suggestion?.label || suggestion?.display_name || suggestion?.productName || "")
-      const matchScore = Math.max(0, getShoppingCatalogSuggestionScore(label, query))
+      const matchScore = Math.max(0, getShoppingCatalogSuggestionScore(label, query), Number(suggestion?.aliasMatchScore || 0))
       const normalizedLabel = normalizeShoppingQuery(label)
       // "Coton" describes a product family, not a fragrance. Give physical
       // cotton items priority; preserve all matches for an explicit fragrance
