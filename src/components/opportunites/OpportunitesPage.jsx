@@ -296,7 +296,7 @@ export default function OpportunitesPage({ isPremium, t, user }) {
   }
 
   return (
-    <div>
+    <div className="bkp-opportunities-screen">
       <h1
         style={{
           marginBottom: 12,
@@ -403,7 +403,7 @@ export default function OpportunitesPage({ isPremium, t, user }) {
                     if (!locked) setSelectedOpportunity(item)
                   }}
                   style={{
-                    background: "rgba(10,22,40,.55)",
+                    background: COLORS.sageSoft,
                     border: `1px solid ${locked ? COLORS.yellow : COLORS.border}`,
                     borderRadius: 16,
                     padding: 14,
@@ -501,7 +501,7 @@ export default function OpportunitesPage({ isPremium, t, user }) {
               <div
                 key={item.id}
                 style={{
-                  background: `linear-gradient(135deg, ${COLORS.cardLight}, ${COLORS.card})`,
+                  background: COLORS.card,
                   border: `1px solid ${locked ? COLORS.yellow : COLORS.border}`,
                   borderRadius: 18,
                   padding: 20,
@@ -515,7 +515,7 @@ export default function OpportunitesPage({ isPremium, t, user }) {
                       position: "absolute",
                       top: 14,
                       right: 14,
-                      background: "rgba(252,211,77,.15)",
+                      background: COLORS.warningSoft,
                       border: `1px solid ${COLORS.yellow}55`,
                       color: COLORS.yellow,
                       borderRadius: 999,
@@ -552,7 +552,7 @@ export default function OpportunitesPage({ isPremium, t, user }) {
                 <div
                   style={{
                     display: "inline-flex",
-                    background: "rgba(249,115,22,.12)",
+                    background: COLORS.creamSoft,
                     color: COLORS.accent,
                     border: `1px solid ${COLORS.accent}44`,
                     borderRadius: 999,
