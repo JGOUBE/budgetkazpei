@@ -18,15 +18,15 @@ const inputStyle = () => ({
 })
 
 const CATEGORY_META = {
-  alimentaire: { emoji: "🛒", color: "#F97316" },
-  logement: { emoji: "🏠", color: "#38BDF8" },
-  transport: { emoji: "🚗", color: "#A78BFA" },
-  energie: { emoji: "⚡", color: "#FCD34D" },
-  telecom: { emoji: "📱", color: "#22C55E" },
-  sante: { emoji: "💊", color: "#F472B6" },
-  loisirs: { emoji: "🌴", color: "#34D399" },
-  divers: { emoji: "📦", color: "#94A3B8" },
-  assurances: { emoji: "🛡️", color: "#60A5FA" },
+  alimentaire: { emoji: "🛒", color: "#5B722B" },
+  logement: { emoji: "🏠", color: "#72533B" },
+  transport: { emoji: "🚗", color: "#705A6D" },
+  energie: { emoji: "⚡", color: "#797146" },
+  telecom: { emoji: "📱", color: "#426333" },
+  sante: { emoji: "💊", color: "#83585E" },
+  loisirs: { emoji: "🌴", color: "#446C59" },
+  divers: { emoji: "📦", color: "#72655B" },
+  assurances: { emoji: "🛡️", color: "#52665E" },
 }
 
 const EMPTY_FORM = {
@@ -192,8 +192,8 @@ export default function AbonnementsPage({
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      <div
+    <div className="bkp-fixed-charges" style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <div className="bkp-fixed-charges-hero"
         style={{
           background: COLORS.card,
           border: `1px solid ${COLORS.border}`,

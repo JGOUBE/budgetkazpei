@@ -28,10 +28,10 @@ function textOrNull(value) {
 
 function Badge({ children, tone = "neutral" }) {
   const tones = {
-    neutral: { bg: "rgba(148,163,184,.14)", color: ds.textSecondary, border: `${ds.border}` },
-    warning: { bg: "rgba(245,158,11,.14)", color: ds.warning, border: `${ds.warning}44` },
-    success: { bg: "rgba(34,197,94,.14)", color: ds.success, border: `${ds.success}44` },
-    danger: { bg: "rgba(239,68,68,.14)", color: ds.danger, border: `${ds.danger}44` },
+    neutral: { bg: "rgba(133,117,101,.14)", color: ds.textSecondary, border: `${ds.border}` },
+    warning: { bg: "rgba(135,111,77,.18)", color: ds.warning, border: `${ds.warning}44` },
+    success: { bg: "rgba(85,123,67,.16)", color: ds.success, border: `${ds.success}44` },
+    danger: { bg: "rgba(159,77,85,.14)", color: ds.danger, border: `${ds.danger}44` },
   }
   const toneStyle = tones[tone] || tones.neutral
 
@@ -381,13 +381,13 @@ export default function GoodDealsReviewPage({
       </div>
 
       {error && (
-        <div style={{ border: `1px solid ${ds.danger}44`, background: "rgba(239,68,68,.12)", color: ds.danger, padding: "12px 14px", borderRadius: 16, fontWeight: 700 }}>
+        <div style={{ border: `1px solid ${ds.danger}44`, background: "rgba(159,77,85,.12)", color: ds.danger, padding: "12px 14px", borderRadius: 16, fontWeight: 700 }}>
           {error}
         </div>
       )}
 
       {successMessage && (
-        <div style={{ border: `1px solid ${ds.success}44`, background: "rgba(34,197,94,.12)", color: ds.success, padding: "12px 14px", borderRadius: 16, fontWeight: 700 }}>
+        <div style={{ border: `1px solid ${ds.success}44`, background: "rgba(85,123,67,.12)", color: ds.success, padding: "12px 14px", borderRadius: 16, fontWeight: 700 }}>
           {successMessage}
         </div>
       )}
@@ -596,7 +596,7 @@ export default function GoodDealsReviewPage({
                     padding: "12px 16px",
                     borderRadius: 14,
                     border: `1px solid ${ds.danger}55`,
-                    background: "rgba(239,68,68,.14)",
+                    background: "rgba(159,77,85,.14)",
                     color: ds.danger,
                     cursor: busy ? "wait" : "pointer",
                     fontWeight: 900,

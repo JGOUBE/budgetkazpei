@@ -6,7 +6,7 @@ import { useTheme } from "../../styles/ThemeProvider"
 
 const COLORS = createColorAliases()
 
-const CHART_COLORS = ["#22C55E", "#38BDF8", "#FCD34D", "#A78BFA", "#FB7185", "#23D3D6", "#4E839A"]
+const CHART_COLORS = ["#49632D", "#72513C", "#776F46", "#815762", "#426A56", "#98705C", "#5A655B"]
 
 const CATEGORY_LABELS = {
   fr: {
