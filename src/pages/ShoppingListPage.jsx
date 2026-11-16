@@ -306,7 +306,7 @@ function AutocompleteSuggestion({ suggestion, txt, onSelect }) {
   )
 }
 
-export default function ShoppingListPage({ user, isMobile = false, onOpenReceipts, onNavigate, language = "fr" }) {
+export default function ShoppingListPage({ user, isMobile = false, onOpenReceipts, onNavigate, language = "fr", standalone = false }) {
   const locale = isKreolLanguage(language) ? "cr" : "fr"
   const txt = useMemo(
     () => ({ ...(locale === "cr" ? COPY.kreol : COPY.fr), ...languages[locale].shoppingList }),
@@ -1054,10 +1054,23 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-      <div style={card({ padding: isMobile ? 18 : 24, order: 3 })}>
-        <div style={{ color: COLORS.cyan, fontSize: 13, fontWeight: 950 }}>{txt.smartLabel}</div>
-        <h2 style={{ color: COLORS.text, margin: "8px 0", fontFamily: "'DM Serif Display', serif", fontSize: isMobile ? 34 : 42, fontWeight: 400 }}>{txt.title}</h2>
+    <div className={standalone ? "bkp-shopping-list-standalone" : undefined} style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+      {standalone && (
+        <header className="bkp-shopping-list-standalone-head" style={{ order: -1, padding: isMobile ? "0 3px" : "0 4px" }}>
+          <p style={{ color: "#4A642F", fontSize: 13, fontWeight: 800, letterSpacing: ".07em", margin: "0 0 6px", textTransform: "uppercase" }}>
+            {locale === "cr" ? "Mon liste courses" : "Ma liste de courses"}
+          </p>
+          <h1 style={{ color: COLORS.text, fontSize: isMobile ? 29 : 34, fontWeight: 800, lineHeight: 1.22, letterSpacing: "-.025em", margin: "0 0 6px" }}>
+            {locale === "cr" ? "Fé mon liste courses" : "Faire ma liste de courses"}
+          </h1>
+          <p style={{ color: COLORS.muted, fontSize: 15, lineHeight: 1.5, margin: 0 }}>
+            {locale === "cr" ? "Azout out produits, anrezistr ou partaz out liste." : "Ajoutez vos produits, puis sauvegardez ou partagez votre liste."}
+          </p>
+        </header>
+      )}
+      <div style={card({ padding: isMobile ? 18 : 24, order: 3, display: standalone && estimate.items.length === 0 ? "none" : undefined })}>
+        <div style={{ color: COLORS.cyan, fontSize: 13, fontWeight: 950 }}>{standalone ? (locale === "cr" ? "Estimasion mon panier" : "Estimation de mon panier") : txt.smartLabel}</div>
+        {!standalone && <h2 style={{ color: COLORS.text, margin: "8px 0", fontFamily: "'DM Serif Display', serif", fontSize: isMobile ? 34 : 42, fontWeight: 400 }}>{txt.title}</h2>}
         {estimate.items.length > 0 ? (
           <>
             <div style={{ color: COLORS.green, fontSize: 28, fontWeight: 950 }}>
@@ -1211,7 +1224,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
         {pairing && <div style={{ color: COLORS.yellow, marginTop: 12, fontWeight: 900 }}>{pairing}</div>}
       </div>
 
-      <div style={card({ order: 2 })}>
+      <div style={card({ order: 2, display: standalone && estimate.items.length === 0 ? "none" : undefined })}>
         {estimate.items.length === 0 ? <div style={{ color: COLORS.muted }}>{txt.empty}</div> : estimate.items.map(item => {
           const displayedPrice = Number(item.estimatedLineCost || 0)
           const listQuantity = getShoppingListQuantity(item)
@@ -1295,7 +1308,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
         })}
       </div>
 
-      <div ref={savedListsRef} data-shopping-saved-lists style={card({ order: 5, scrollMarginTop: 88 })}>
+      <div ref={savedListsRef} data-shopping-saved-lists style={card({ order: 5, scrollMarginTop: 88, display: standalone && visibleSnapshots.length === 0 ? "none" : undefined })}>
         <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
           <div>
             <h2 style={{ color: COLORS.text, margin: 0, fontSize: 22 }}>{txt.savedLists}</h2>

@@ -862,6 +862,7 @@ function BudgetKazPeiApp({
         {/* Création de liste depuis l'accueil : écran dédié, sans onglets ni tableau de bord Courses. */}
         {activeNav === "shoppingListOnly" && (
           <ShoppingListPage
+            standalone
             user={user}
             isMobile={isMobile}
             language={lang}
