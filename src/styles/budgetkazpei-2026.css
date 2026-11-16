@@ -1,0 +1,208 @@
+/* BudgetKazPéi 2026 — Système visuel de l'application, distinct de la vitrine publique. */
+:root {
+  --bkp-2026-ink: #263b42;
+  --bkp-2026-muted: #61777b;
+  --bkp-2026-bg: #f7f9f8;
+  --bkp-2026-border: #dee7e5;
+  --bkp-2026-teal: #377c7d;
+  --bkp-2026-blue: #467ea7;
+  --bkp-2026-sage: #4c8974;
+  --bkp-2026-lavender: #80749a;
+}
+
+/* Fin des textures, ombres et arrière-plans illustrés dans l'application connectée. */
+#root .bkp-app-2026,
+#root .bkp-app-2026.bkp-dashboard-shell {
+  background: var(--bkp-2026-bg) !important;
+  color: var(--bkp-2026-ink);
+}
+#root .bkp-app-2026 *,
+#root .bkp-app-2026 *::before,
+#root .bkp-app-2026 *::after {
+  box-shadow: none !important;
+  text-shadow: none !important;
+  background-image: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+#root .bkp-app-2026.bkp-dashboard-shell::before,
+#root .bkp-app-2026 .bkp-home-reunion-watermark::before,
+#root .bkp-app-2026 .bkp-home-reunion-watermark::after {
+  content: none !important;
+  display: none !important;
+}
+#root .bkp-app-2026 h1,
+#root .bkp-app-2026 h2,
+#root .bkp-app-2026 h3 {
+  font-family: "DM Sans", "Helvetica Neue", sans-serif !important;
+  letter-spacing: -.02em;
+}
+
+/* Les boutons sont tous clairs, sans effet 3D ni animation de pression. */
+#root .bkp-app-2026 button,
+#root .bkp-app-2026 [role="button"],
+#root .bkp-app-2026 input[type="button"],
+#root .bkp-app-2026 input[type="submit"] {
+  background-color: #edf4f2 !important;
+  color: #2d6466 !important;
+  border: 1px solid #d5e5e1 !important;
+  border-radius: 12px !important;
+  font-weight: 720;
+  box-shadow: none !important;
+  text-shadow: none !important;
+  filter: none !important;
+  transform: none !important;
+  transition: background-color .16s ease, border-color .16s ease !important;
+}
+#root .bkp-app-2026 button::after,
+#root .bkp-app-2026 [role="button"]::after {
+  content: none !important;
+  display: none !important;
+}
+#root .bkp-app-2026 button:not(:disabled):hover,
+#root .bkp-app-2026 [role="button"]:hover {
+  background-color: #e2eeeb !important;
+  border-color: #bcd4ce !important;
+  transform: none !important;
+  filter: none !important;
+}
+#root .bkp-app-2026 button:not(:disabled):active,
+#root .bkp-app-2026 [role="button"]:active {
+  background-color: #d9e9e5 !important;
+  box-shadow: none !important;
+  transform: none !important;
+  filter: none !important;
+}
+#root .bkp-app-2026 button:is(.is-active,[aria-selected="true"],[aria-pressed="true"]) {
+  background-color: #dcece9 !important;
+  border-color: #a9cbc3 !important;
+  color: #2d6f6e !important;
+}
+#root .bkp-app-2026 button:disabled,
+#root .bkp-app-2026 input:disabled {
+  background-color: #f2f4f3 !important;
+  color: #718381 !important;
+  border-color: #e4eae7 !important;
+  opacity: .66;
+}
+#root .bkp-app-2026 button svg {
+  color: #467e83;
+}
+#root .bkp-app-2026 button[aria-label*="Supprimer"],
+#root .bkp-app-2026 button[title*="Supprimer"] {
+  background-color: #f9eeee !important;
+  color: #a44e59 !important;
+  border-color: #f0dadd !important;
+}
+
+/* Champs et listes : une seule épaisseur de bordure, aucune ombre intérieure. */
+#root .bkp-app-2026 input:not([type="checkbox"]):not([type="radio"]),
+#root .bkp-app-2026 select,
+#root .bkp-app-2026 textarea {
+  background-color: #ffffff !important;
+  background-image: none !important;
+  border-color: #cfddda !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+  color: #263b42 !important;
+}
+#root .bkp-app-2026 input:focus-visible,
+#root .bkp-app-2026 button:focus-visible,
+#root .bkp-app-2026 select:focus-visible,
+#root .bkp-app-2026 textarea:focus-visible {
+  outline: 2px solid #4b9294 !important;
+  outline-offset: 2px;
+}
+
+/* Nav et en-tête unifiés. */
+#root .bkp-app-2026 aside {
+  background: #ffffff !important;
+  border-color: #e3eae8 !important;
+}
+#root .bkp-app-2026 aside nav button {
+  background: transparent !important;
+  border-color: transparent !important;
+  color: #51686a !important;
+}
+#root .bkp-app-2026 aside nav button[style*="rgba(55, 124, 125"] {
+  background: #e6f0ed !important;
+  color: #2a7574 !important;
+}
+#root .bkp-app-2026 .bkp-header-lang {
+  background: #e9f1f6 !important;
+  color: #467ea7 !important;
+  border-color: #d9e5ed !important;
+}
+#root .bkp-app-2026 .bkp-header-profile {
+  background: #e6f1ec !important;
+  color: #367c73 !important;
+  border-color: #d8e9e1 !important;
+}
+
+/* Les cartes ne sont plus des objets surélevés. */
+#root .bkp-app-2026 .bkp-shopping-hero,
+#root .bkp-app-2026 .bkp-savings-card,
+#root .bkp-app-2026 .bkp-savings-total,
+#root .bkp-app-2026 .bkp-shopping-info-modal {
+  background: #fff !important;
+  border: 1px solid var(--bkp-2026-border) !important;
+  border-radius: 16px !important;
+  box-shadow: none !important;
+}
+#root .bkp-app-2026 .bkp-shopping-tabs {
+  background: #f0f5f3 !important;
+  border: 1px solid #e2eae7 !important;
+  border-radius: 13px !important;
+}
+#root .bkp-app-2026 .bkp-shopping-tabs button {
+  background-color: transparent !important;
+  border-color: transparent !important;
+  color: #63787b !important;
+}
+#root .bkp-app-2026 .bkp-shopping-tabs button.is-active {
+  background-color: #ffffff !important;
+  border-color: #d5e5e1 !important;
+  color: #337a7b !important;
+}
+#root .bkp-app-2026 .bkp-shopping-tabs button:nth-child(2) svg { color: #80749a !important; }
+#root .bkp-app-2026 .bkp-shopping-tabs button:nth-child(3) svg { color: #467ea7 !important; }
+
+/* Accueil : boutons-cartes blancs et icônes accentuées, sans fond décoratif. */
+#root .bkp-app-2026 .bkp-home-2026 {
+  background: transparent !important;
+}
+#root .bkp-app-2026 .bkp-home-action {
+  background: #ffffff !important;
+  border: 1px solid #dfe8e5 !important;
+  color: #263b42 !important;
+  border-radius: 18px !important;
+}
+#root .bkp-app-2026 .bkp-home-action:hover {
+  background: #f5f9f7 !important;
+  border-color: #c1d9d3 !important;
+}
+#root .bkp-app-2026 .bkp-home-action-icon {
+  border-radius: 11px !important;
+}
+#root .bkp-app-2026 .bkp-home-action-icon svg {
+  color: inherit !important;
+}
+#root .bkp-app-2026 .bkp-home-action-arrow {
+  color: inherit !important;
+}
+#root .bkp-app-2026 .bkp-shopping-suggestion-list > button.bkp-shopping-suggestion-row {
+  background: transparent !important;
+  border: 0 !important;
+  border-bottom: 1px solid #e2eae7 !important;
+  border-radius: 0 !important;
+  color: #263b42 !important;
+}
+
+@media (max-width: 600px) {
+  #root .bkp-app-2026 h1 { letter-spacing: -.03em; }
+  #root .bkp-app-2026 .bkp-home-action { border-radius: 16px !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #root .bkp-app-2026 button,
+  #root .bkp-app-2026 [role="button"] { transition: none !important; }
+}

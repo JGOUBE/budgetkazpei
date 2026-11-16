@@ -1,14 +1,14 @@
-import { ArrowRight } from "lucide-react"
+import { ArrowUpRight } from "lucide-react"
 import { BkIcons } from "../components/icons-budgetkazpei"
-import { useTheme } from "../styles/ThemeProvider"
 
+// Identité 2026 : couleurs en petites touches, surfaces neutres et aucune décoration de fond.
 const ACTIONS = [
-  { id: "shoppingList", fr: "Ma liste de courses", kr: "Ma liste courses", icon: "shopping", light: ["#fff6ed", "#ffd9b6"], dark: ["#4b2918", "#1c2538"], accent: "#ff6a16" },
-  { id: "receipts", fr: "Scanner mon ticket", kr: "Scanner mon tiké", icon: "scan", light: ["#eef7ff", "#bcdcff"], dark: ["#082c62", "#101f3d"], accent: "#1479ff" },
-  { id: "expense", fr: "Ajouter une dépense", kr: "Azout in dépans", icon: "depenses", light: ["#effff3", "#bcefc9"], dark: ["#073c2c", "#10293a"], accent: "#18a84c" },
-  { id: "aides", fr: "Mes aides et mes droits", kr: "Mon bann èd ek mon bann drwa", icon: "aides", light: ["#f7f0ff", "#dbc7ff"], dark: ["#35107b", "#171d3c"], accent: "#7128ff" },
-  { id: "conseiller", fr: "Mon conseiller", kr: "Mon konseye", icon: "assistant", light: ["#f8efff", "#d9f4ff"], dark: ["#251d59", "#083a55"], accent: "#00a8d6" },
-  { id: "goodDeals", fr: "Les bons plans !", kr: "Bann bon plan !", icon: "deals", light: ["#fff9e8", "#ffe7a8"], dark: ["#4a3510", "#24283b"], accent: "#e5a100" },
+  { id: "shoppingList", fr: "Ma liste de courses", kr: "Ma liste courses", subtitle: "Préparer mes achats", icon: "shopping", accent: "#367C73", soft: "#E6F2ED" },
+  { id: "receipts", fr: "Scanner mon ticket", kr: "Scanner mon tiké", subtitle: "Suivre mes achats", icon: "scan", accent: "#467EA7", soft: "#E8F0F8" },
+  { id: "expense", fr: "Ajouter une dépense", kr: "Azout in dépans", subtitle: "Garder le cap", icon: "depenses", accent: "#568372", soft: "#EBF3ED" },
+  { id: "aides", fr: "Mes aides et mes droits", kr: "Mon bann èd ek mon bann drwa", subtitle: "Connaître mes droits", icon: "aides", accent: "#82759A", soft: "#F0EDF5" },
+  { id: "conseiller", fr: "Mon conseiller", kr: "Mon konseye", subtitle: "Trouver des réponses", icon: "assistant", accent: "#3B8994", soft: "#E6F3F4" },
+  { id: "goodDeals", fr: "Mes bons plans", kr: "Mon bann bon plan", subtitle: "Acheter plus malin", icon: "deals", accent: "#557F9B", soft: "#EAF1F7" },
 ]
 
 function firstName(profile, user) {
@@ -17,77 +17,68 @@ function firstName(profile, user) {
 }
 
 export default function HomePage({ language = "fr", isMobile = false, profile, user, onNavigate, onAddExpense }) {
-  const { themeName } = useTheme()
-  const dark = themeName === "dark"
   const isKreol = language === "cr" || language === "kreol"
   const name = firstName(profile, user)
-
   return (
-    <main className="bkp-home-reunion-watermark" style={{ width: "100%", maxWidth: 940, boxSizing: "border-box", margin: "0 auto", padding: isMobile ? "34px 16px 22px" : "22px 0 48px" }}>
-      <h1 style={{
-        margin: isMobile ? "-14px 2px 50px" : "0 2px 38px",
-        color: dark ? "#f8fbff" : "#101f4f",
-        fontFamily: "'DM Serif Display', serif",
-        fontSize: isMobile ? 31 : 38,
-        lineHeight: 1.05,
-        fontWeight: 400,
-      }}>
-        {isKreol ? "Byenvini" : "Bienvenue"}{name ? ` ${name} !` : " !"}
-      </h1>
+    <main className="bkp-home-2026" style={{ width: "100%", maxWidth: 1020, margin: "0 auto", padding: isMobile ? "17px 16px 32px" : "24px 0 46px" }}>
+      <header style={{ marginBottom: isMobile ? 26 : 36 }}>
+        <p style={{ margin: "0 0 11px", color: "#497D7D", fontSize: 11, fontWeight: 800, letterSpacing: ".11em", textTransform: "uppercase" }}>
+          {isKreol ? "Out lespas" : "Votre espace"}
+        </p>
+        <h1 style={{ margin: 0, color: "#263B42", fontFamily: "'DM Sans', sans-serif", fontSize: isMobile ? 30 : 39, fontWeight: 750, lineHeight: 1.16, letterSpacing: "-.035em" }}>
+          {isKreol ? "Byenvini" : "Bonjour"}{name ? " " + name : ""}.
+        </h1>
+        <p style={{ margin: "10px 0 0", color: "#65797B", fontSize: isMobile ? 14 : 15, lineHeight: 1.55 }}>
+          {isKreol ? "Out bidzé, tout simplement." : "Votre budget, tout simplement."}
+        </p>
+      </header>
 
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-        gap: isMobile ? 12 : 20,
-      }}>
-        {ACTIONS.map((item, index) => {
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 15, gap: 12 }}>
+        <h2 style={{ margin: 0, fontSize: isMobile ? 17 : 20, fontWeight: 750, letterSpacing: "-.015em", color: "#263B42" }}>
+          {isKreol ? "Accès rapides" : "Que souhaitez-vous faire ?"}
+        </h2>
+      </div>
+      <div className="bkp-home-action-grid" style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: isMobile ? 11 : 15 }}>
+        {ACTIONS.map(item => {
           const Icon = BkIcons[item.icon]
-          const full = index >= ACTIONS.length - 2
-          const gradient = dark ? item.dark : item.light
           return (
             <button
+              className="bkp-home-action"
               key={item.id}
               type="button"
               onClick={item.id === "expense" ? onAddExpense : () => onNavigate(item.id)}
               style={{
-                gridColumn: full ? "1 / -1" : "auto",
-                minHeight: full ? (isMobile ? 94 : 112) : (isMobile ? 158 : 176),
-                padding: full ? (isMobile ? "14px 16px" : "18px 20px") : (isMobile ? "18px 12px" : "24px 20px"),
-                borderRadius: 24,
-                border: `1px solid ${dark ? item.accent + "88" : item.accent + "66"}`,
-                background: `linear-gradient(145deg, ${gradient[0]}, ${gradient[1]})`,
-                color: dark ? "#fff" : "#10204f",
-                boxShadow: dark
-                  ? `inset 2px 2px 0 rgba(255,255,255,.16), inset -5px -7px 14px rgba(0,0,0,.25), 0 10px 18px rgba(0,0,0,.34), 0 0 18px ${item.accent}28`
-                  : `inset 2px 2px 0 rgba(255,255,255,.95), inset -5px -7px 14px rgba(45,62,96,.10), 0 9px 0 rgba(35,49,78,.06), 0 14px 25px rgba(35,49,78,.16)`,
-                cursor: "pointer",
-                fontFamily: "inherit",
+                minWidth: 0,
+                minHeight: isMobile ? 145 : 160,
+                padding: isMobile ? "17px 15px" : "20px 22px",
+                borderRadius: 18,
+                border: "1px solid #DEE7E5",
+                background: "#FFFFFF",
+                color: "#263B42",
                 display: "flex",
-                flexDirection: full ? "row" : "column",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: full ? 18 : 12,
-                textAlign: "center",
-                transition: "transform .16s ease, filter .16s ease",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+                gap: 10,
+                textAlign: "left",
+                fontFamily: "inherit",
+                cursor: "pointer",
+                boxShadow: "none",
+                transition: "background-color .18s ease,border-color .18s ease",
               }}
-              onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-3px)" }}
-              onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)" }}
             >
-              <span style={{
-                width: full ? 48 : 62, height: full ? 48 : 62, borderRadius: "50%",
-                display: "inline-flex", alignItems: "center", justifyContent: "center",
-                background: `linear-gradient(145deg, ${item.accent}, ${item.accent}cc)`,
-                color: "#fff", border: "1px solid rgba(255,255,255,.52)",
-                boxShadow: dark ? `0 7px 16px ${item.accent}55, inset 0 2px 2px rgba(255,255,255,.25)` : `0 7px 14px ${item.accent}45, inset 0 2px 2px rgba(255,255,255,.55)`,
-                flexShrink: 0,
-              }}><Icon size={full ? 24 : 29} strokeWidth={2.2} /></span>
-              <span style={{ fontSize: isMobile ? 16 : 18, fontWeight: 900, lineHeight: 1.15, maxWidth: 180 }}>
-                {isKreol ? item.kr : item.fr}
+              <span className="bkp-home-action-icon" style={{ width: 38, height: 38, borderRadius: 11, display: "grid", placeItems: "center", background: item.soft, color: item.accent }}>
+                <Icon size={21} strokeWidth={1.9} />
               </span>
-              <span style={{
-                width: 35, height: 35, borderRadius: "50%", display: "inline-flex", alignItems: "center", justifyContent: "center",
-                background: item.accent, color: "#fff", boxShadow: `0 5px 12px ${item.accent}55`,
-              }}><ArrowRight size={19} /></span>
+              <span style={{ display: "flex", width: "100%", gap: 6, justifyContent: "space-between", alignItems: "flex-end" }}>
+                <span style={{ display: "grid", gap: 5, minWidth: 0 }}>
+                  <span className="bkp-home-action-title" style={{ color: "#263B42", fontSize: isMobile ? 14 : 16, fontWeight: 750, lineHeight: 1.27 }}>
+                    {isKreol ? item.kr : item.fr}
+                  </span>
+                  {!isMobile && <span style={{ color: "#65797B", fontSize: 12 }}>{item.subtitle}</span>}
+                </span>
+                <ArrowUpRight className="bkp-home-action-arrow" size={18} color={item.accent} style={{ flexShrink: 0 }} />
+              </span>
             </button>
           )
         })}

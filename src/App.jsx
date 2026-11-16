@@ -483,10 +483,10 @@ function BudgetKazPeiApp({
 
   return (
     <div
-      className={activeNav === "dashboard" ? "bkp-dashboard-shell" : undefined}
+      className={activeNav === "dashboard" ? "bkp-app-2026 bkp-dashboard-shell" : "bkp-app-2026"}
       style={{
         minHeight: "100vh",
-        background: activeNav === "dashboard" ? "transparent" : ds.appBackground,
+        background: ds.appBackground,
         color: COLORS.text,
         fontFamily: "'DM Sans', 'Helvetica Neue', sans-serif",
         opacity: 1,
@@ -502,8 +502,8 @@ function BudgetKazPeiApp({
             left: 0,
             right: 0,
             zIndex: 50,
-            background: activeNav === "dashboard" ? "transparent" : COLORS.card,
-            borderBottom: activeNav === "dashboard" ? "1px solid transparent" : `1px solid ${COLORS.border}`,
+            background: COLORS.card,
+            borderBottom: `1px solid ${COLORS.border}`,
             backdropFilter: activeNav === "dashboard" ? "none" : undefined,
             display: "flex",
             alignItems: "center",
