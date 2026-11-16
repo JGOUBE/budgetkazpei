@@ -60,7 +60,7 @@ export default function HomePage({
           const handleClick = action.id === "expense"
             ? onAddExpense
             : action.id === "shoppingList"
-              ? () => openCourses("list")
+              ? () => onNavigate("shoppingListOnly")
               : () => onNavigate(action.id)
           return (
             <button

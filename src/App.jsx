@@ -35,6 +35,7 @@ import ContactPage from "./components/contact/ContactPage"
 import ConseillerPage from "./components/conseiller/ConseillerPage"
 import ReceiptsPage from "./features/receipts/pages/ReceiptsPage"
 import ShoppingHubPage from "./features/shopping/pages/ShoppingHubPage"
+import ShoppingListPage from "./pages/ShoppingListPage"
 import StatisticsPage from "./pages/StatisticsPage"
 import RewardsPage from "./pages/RewardsPage"
 import GoodDealsPage from "./pages/GoodDealsPage"
@@ -855,6 +856,17 @@ function BudgetKazPeiApp({
             onAddTransaction={addTransaction}
             onOpenReceipts={() => setActiveNav("receipts")}
             onOpenShoppingList={() => handleNavChange("shoppingList")}
+          />
+        )}
+
+        {/* Création de liste depuis l'accueil : écran dédié, sans onglets ni tableau de bord Courses. */}
+        {activeNav === "shoppingListOnly" && (
+          <ShoppingListPage
+            user={user}
+            isMobile={isMobile}
+            language={lang}
+            onOpenReceipts={() => setActiveNav("receipts")}
+            onNavigate={handleNavChange}
           />
         )}
 
