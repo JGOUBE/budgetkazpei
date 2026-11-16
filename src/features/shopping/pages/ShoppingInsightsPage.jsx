@@ -11,7 +11,7 @@ import { createColorAliases } from "../../../styles/designSystem"
 
 const COLORS = createColorAliases()
 
-const CHART_COLORS = ["#F97316", "#22C55E", "#38BDF8", "#FCD34D", "#A78BFA", "#FB7185"]
+const CHART_COLORS = ["#4E839A", "#22C55E", "#38BDF8", "#FCD34D", "#A78BFA", "#FB7185"]
 
 function getIsKreol(t) {
   const lang = String(t?.lang || "").toLowerCase()

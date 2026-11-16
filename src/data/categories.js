@@ -1,5 +1,5 @@
 export const CATEGORIES = [
-  { id: "alimentaire", emoji: "🛒", color: "#F97316", budget: 600 },
+  { id: "alimentaire", emoji: "🛒", color: "#4E839A", budget: 600 },
   { id: "logement", emoji: "🏠", color: "#38BDF8", budget: 800 },
   { id: "transport", emoji: "🚗", color: "#A78BFA", budget: 250 },
   { id: "energie", emoji: "⚡", color: "#FCD34D", budget: 120 },
@@ -150,7 +150,7 @@ export const AIDES = [
     label_kr: "Fon sosyal kolèz",
     montant: "Selon situation",
     statutKey: "statutEligible",
-    color: "#FB923C",
+    color: "#4A9394",
     category: "scolarite",
     target_profiles: ["famille", "enfants", "college", "faibles_revenus"],
     officialUrl:
@@ -168,7 +168,7 @@ export const AIDES = [
     label_kr: "Fon sosyal lycée",
     montant: "Selon situation",
     statutKey: "statutEligible",
-    color: "#FB923C",
+    color: "#4A9394",
     category: "scolarite",
     target_profiles: ["famille", "enfants", "lycee", "faibles_revenus"],
     officialUrl:
@@ -186,7 +186,7 @@ export const AIDES = [
     label_kr: "Fon sosyal pou cantine",
     montant: "Selon établissement",
     statutKey: "statutEligible",
-    color: "#F97316",
+    color: "#4E839A",
     category: "scolarite",
     target_profiles: ["famille", "enfants", "cantine", "college", "lycee"],
     officialUrl:
@@ -222,7 +222,7 @@ export const AIDES = [
     label_kr: "Éd cantine / manzé lékol komin",
     montant: "À vérifier en mairie",
     statutKey: "statutEligible",
-    color: "#F97316",
+    color: "#4E839A",
     category: "ccas",
     target_profiles: ["famille", "enfants", "commune", "faibles_revenus"],
     officialUrl: "https://www.service-public.fr/particuliers/vosdroits/N67",

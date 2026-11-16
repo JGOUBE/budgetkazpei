@@ -21,7 +21,6 @@
 #root .bkp-app-2026 *::after {
   box-shadow: none !important;
   text-shadow: none !important;
-  background-image: none !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
 }
@@ -38,6 +37,11 @@
   letter-spacing: -.02em;
 }
 
+/* Neutraliser les décors sans masquer les photos numérisées des tickets. */
+#root .bkp-app-2026 [style*="gradient("] {
+  background-image: none !important;
+  background-color: #ffffff !important;
+}
 /* Les boutons sont tous clairs, sans effet 3D ni animation de pression. */
 #root .bkp-app-2026 button,
 #root .bkp-app-2026 [role="button"],
@@ -188,7 +192,7 @@
   color: inherit !important;
 }
 #root .bkp-app-2026 .bkp-home-action-arrow {
-  color: inherit !important;
+  color: var(--bkp-home-accent, #467e83) !important;
 }
 #root .bkp-app-2026 .bkp-shopping-suggestion-list > button.bkp-shopping-suggestion-row {
   background: transparent !important;

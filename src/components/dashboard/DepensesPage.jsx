@@ -6,7 +6,7 @@ import { useTheme } from "../../styles/ThemeProvider"
 
 const COLORS = createColorAliases()
 
-const CHART_COLORS = ["#22C55E", "#38BDF8", "#FCD34D", "#A78BFA", "#FB7185", "#23D3D6", "#F97316"]
+const CHART_COLORS = ["#22C55E", "#38BDF8", "#FCD34D", "#A78BFA", "#FB7185", "#23D3D6", "#4E839A"]
 
 const CATEGORY_LABELS = {
   fr: {
@@ -120,7 +120,7 @@ export default function DepensesPage({
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
       <div
         style={{
-          background: `linear-gradient(135deg, rgba(249,115,22,.10) 0%, rgba(249,115,22,.03) 42%, transparent 72%), ${COLORS.card}`,
+          background: `linear-gradient(135deg, rgba(55,124,125,.10) 0%, rgba(55,124,125,.03) 42%, transparent 72%), ${COLORS.card}`,
           border: `1px solid ${COLORS.accent}33`,
           borderRadius: 22,
           padding: 24,

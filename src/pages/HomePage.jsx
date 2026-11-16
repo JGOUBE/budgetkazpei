@@ -54,6 +54,7 @@ export default function HomePage({ language = "fr", isMobile = false, profile, u
                 borderRadius: 18,
                 border: "1px solid #DEE7E5",
                 background: "#FFFFFF",
+                "--bkp-home-accent": item.accent,
                 color: "#263B42",
                 display: "flex",
                 flexDirection: "column",
