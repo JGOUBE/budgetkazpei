@@ -1,14 +1,14 @@
 /* BudgetKazPéi 2026 — Système visuel de l'application, distinct de la vitrine publique. */
 :root {
-  --bkp-2026-ink: #263445;
-  --bkp-2026-muted: #627481;
-  --bkp-2026-bg: #F7F8FA;
-  --bkp-2026-border: #E0E7EA;
-  --bkp-2026-teal: #247987;
-  --bkp-2026-blue: #426AA6;
-  --bkp-2026-sage: #397C65;
-  --bkp-2026-lavender: #795F8A;
-  --bkp-2026-berry: #9A617B;
+  --bkp-2026-ink: #45372F;
+  --bkp-2026-muted: #756B61;
+  --bkp-2026-bg: #FFFFFF;
+  --bkp-2026-border: #E8E2D8;
+  --bkp-2026-teal: #5A7040;
+  --bkp-2026-blue: #795D48;
+  --bkp-2026-sage: #577146;
+  --bkp-2026-lavender: #766359;
+  --bkp-2026-berry: #7B6458;
 }
 
 /* Fin des textures, ombres et arrière-plans illustrés dans l'application connectée. */
@@ -49,7 +49,7 @@
 #root .bkp-app-2026 input[type="button"],
 #root .bkp-app-2026 input[type="submit"] {
   background-color: #FFFFFF !important;
-  color: #37656B !important;
+  color: #695344 !important;
   border: 1px solid #d5e5e1 !important;
   border-radius: 12px !important;
   font-weight: 720;
@@ -115,7 +115,7 @@
 #root .bkp-app-2026 button:focus-visible,
 #root .bkp-app-2026 select:focus-visible,
 #root .bkp-app-2026 textarea:focus-visible {
-  outline: 2px solid #4b9294 !important;
+  outline: 2px solid #71865B !important;
   outline-offset: 2px;
 }
 
@@ -135,7 +135,7 @@
 }
 #root .bkp-app-2026 .bkp-header-lang {
   background: #e9f1f6 !important;
-  color: #467ea7 !important;
+  color: #795D48 !important;
   border-color: #d9e5ed !important;
 }
 #root .bkp-app-2026 .bkp-header-profile {
@@ -167,10 +167,10 @@
 #root .bkp-app-2026 .bkp-shopping-tabs button.is-active {
   background-color: #ffffff !important;
   border-color: #d5e5e1 !important;
-  color: #337a7b !important;
+  color: #5A7040 !important;
 }
-#root .bkp-app-2026 .bkp-shopping-tabs button:nth-child(2) svg { color: #80749a !important; }
-#root .bkp-app-2026 .bkp-shopping-tabs button:nth-child(3) svg { color: #467ea7 !important; }
+#root .bkp-app-2026 .bkp-shopping-tabs button:nth-child(2) svg { color: #8A7765 !important; }
+#root .bkp-app-2026 .bkp-shopping-tabs button:nth-child(3) svg { color: #795D48 !important; }
 
 /* Accueil : boutons-cartes blancs et icônes accentuées, sans fond décoratif. */
 #root .bkp-app-2026 .bkp-home-2026 {
@@ -259,7 +259,7 @@
   border-color: #cdded8 !important;
 }
 #root .bkp-app-2026 .bkp-profile-legal-link:focus-visible {
-  outline: 2px solid #4b9294;
+  outline: 2px solid #71865B;
   outline-offset: 2px;
 }
 /* Toujours clair, mais boutons de confirmation mieux discernables. */
@@ -272,9 +272,9 @@
   background-color: #d8ebe3 !important;
 }
 /* Ajustement de la navigation du profil : le contenu prime sur les cadres. */
-#root .bkp-app-2026 .bkp-shopping-tabs button:nth-child(1) svg { color: #3c877e !important; }
+#root .bkp-app-2026 .bkp-shopping-tabs button:nth-child(1) svg { color: #5A7040 !important; }
 #root .bkp-app-2026 .bkp-shopping-tabs button:nth-child(2) svg { color: #8173a2 !important; }
-#root .bkp-app-2026 .bkp-shopping-tabs button:nth-child(3) svg { color: #4b7da5 !important; }
+#root .bkp-app-2026 .bkp-shopping-tabs button:nth-child(3) svg { color: #806B58 !important; }
 
 /* Nouvelle identité BudgetKazPéi 2026 : bleu denim, turquoise minéral,
    eucalyptus, prune minérale et figue. Aucune ressemblance imposée avec LisAmi. */
@@ -301,25 +301,25 @@
 #root .bkp-app-2026 aside button[data-bkp-nav][aria-current="page"] {
   background-color: #f1f5f8 !important;
   border-color: #e0e7ea !important;
-  color: #263445 !important;
+  color: #45372F !important;
 }
 #root .bkp-app-2026 aside button[data-bkp-nav="premium"] {
   background-color: #f1edf5 !important; color: #795f8a !important;
   border-color: #e8e1ed !important;
 }
 #root .bkp-app-2026 aside button[data-bkp-nav="contact"] {
-  background-color: #e6f3f4 !important; color: #247987 !important;
+  background-color: #e6f3f4 !important; color: #5A7040 !important;
   border-color: #d5e9ea !important;
 }
 #root .bkp-app-2026 aside button[data-bkp-nav="signout"] {
-  background-color: #f7eff1 !important; color: #975b6a !important;
+  background-color: #f7eff1 !important; color: #995C60 !important;
   border-color: #eddee3 !important;
 }
 #root .bkp-app-2026 aside button:is([data-bkp-nav="premium"],[data-bkp-nav="contact"],[data-bkp-nav="signout"]) svg {
   color: currentColor !important;
 }
 #root .bkp-app-2026 .bkp-shopping-add-button {
-  background-color: #e5f2f3 !important; color: #247987 !important;
+  background-color: #e5f2f3 !important; color: #5A7040 !important;
   border-color: #cde4e6 !important;
 }
 #root .bkp-app-2026 .bkp-shopping-save-button {
@@ -331,18 +331,18 @@
   border-color: #d7e2f1 !important;
 }
 #root .bkp-app-2026 .bkp-snapshot-actions button:nth-child(1) { color: #426aa6 !important; }
-#root .bkp-app-2026 .bkp-snapshot-actions button:nth-child(2) { color: #247987 !important; }
+#root .bkp-app-2026 .bkp-snapshot-actions button:nth-child(2) { color: #5A7040 !important; }
 #root .bkp-app-2026 .bkp-snapshot-actions button:nth-child(3) { color: #795f8a !important; }
 #root .bkp-app-2026 .bkp-snapshot-actions button:nth-child(4) {
-  background-color: #f7eff1 !important; color: #975b6a !important; border-color: #eddee3 !important;
+  background-color: #f7eff1 !important; color: #995C60 !important; border-color: #eddee3 !important;
 }
-#root .bkp-app-2026 .bkp-shopping-tabs button:nth-child(1) { color: #247987 !important; }
+#root .bkp-app-2026 .bkp-shopping-tabs button:nth-child(1) { color: #5A7040 !important; }
 #root .bkp-app-2026 .bkp-shopping-tabs button:nth-child(2) { color: #795f8a !important; }
 #root .bkp-app-2026 .bkp-shopping-tabs button:nth-child(3) { color: #426aa6 !important; }
 #root .bkp-app-2026 .bkp-shopping-tabs button[aria-selected="true"] {
   background-color: #fff !important; border-color: #d4dfe5 !important;
 }
-#root .bkp-app-2026 .bkp-shopping-tabs button:nth-child(1) svg { color: #247987 !important; }
+#root .bkp-app-2026 .bkp-shopping-tabs button:nth-child(1) svg { color: #5A7040 !important; }
 #root .bkp-app-2026 .bkp-shopping-tabs button:nth-child(2) svg { color: #795f8a !important; }
 #root .bkp-app-2026 .bkp-shopping-tabs button:nth-child(3) svg { color: #426aa6 !important; }
 #root .bkp-app-2026 button.bkp-stats-period {
@@ -358,24 +358,343 @@
   background-color: #e9eff8 !important; color: #426aa6 !important; border-color: #d6e2f1 !important;
 }
 #root .bkp-app-2026 button.bkp-contact-send-button:not(:disabled) {
-  background-color: #e6f3f4 !important; color: #247987 !important; border-color: #cde4e6 !important;
+  background-color: #e6f3f4 !important; color: #5A7040 !important; border-color: #cde4e6 !important;
 }
 
 /* Fonds pastel personnalises par action — novembre 2026.
    Six teintes discrètes, sans dégradé, ombre ni relief. */
 #root .bkp-app-2026 button.bkp-home-action,
 #root .bkp-app-2026 .bkp-home-action {
-  background: var(--bkp-home-card, #F3F8F8) !important;
+  background: var(--bkp-home-card, #F4F2E9) !important;
   background-image: none !important;
   border-color: var(--bkp-home-edge, #DFEBE9) !important;
   box-shadow: none !important;
 }
 #root .bkp-app-2026 button.bkp-home-action:not(:disabled):hover,
 #root .bkp-app-2026 button.bkp-home-action:not(:disabled):focus-visible {
-  background-color: color-mix(in srgb, var(--bkp-home-card, #F3F8F8) 76%, var(--bkp-home-soft, #E6F3F4)) !important;
-  border-color: color-mix(in srgb, var(--bkp-home-edge, #DFEBE9) 78%, var(--bkp-home-accent, #247987)) !important;
+  background-color: color-mix(in srgb, var(--bkp-home-card, #F4F2E9) 76%, var(--bkp-home-soft, #EEF2E6)) !important;
+  border-color: color-mix(in srgb, var(--bkp-home-edge, #DFEBE9) 78%, var(--bkp-home-accent, #5A7040)) !important;
 }
 #root .bkp-app-2026 button.bkp-home-action:not(:disabled):active {
-  background-color: var(--bkp-home-soft, #E6F3F4) !important;
+  background-color: var(--bkp-home-soft, #EEF2E6) !important;
   transform: none !important;
+}
+
+
+/* MATCHA & TAUPE — habillage final approuvé, fond blanc sans aucune image. */
+#root .bkp-app-2026,
+#root .bkp-app-2026.bkp-dashboard-shell {
+  background: #fff !important;
+  color: #45372f !important;
+}
+#root .bkp-app-2026 h1,
+#root .bkp-app-2026 h2,
+#root .bkp-app-2026 h3 {
+  color: #45372f;
+}
+/* Commandes légères dans le reste de l'application. */
+#root .bkp-app-2026 button:not(.bkp-home-action):not(.bkp-home-course-link):not(.bkp-home-month-details):not(:disabled) {
+  border-color: #e4ddcf;
+}
+#root .bkp-app-2026 .bkp-header-lang {
+  background: #f2eee7 !important;
+  border-color: #e7ded3 !important;
+  color: #795d48 !important;
+}
+#root .bkp-app-2026 .bkp-header-profile {
+  background: #edf2e5 !important;
+  border-color: #dde6d0 !important;
+  color: #567040 !important;
+}
+#root .bkp-app-2026 aside button[data-bkp-nav][aria-current="page"] {
+  background-color: #edf2e5 !important;
+  border-color: #dce5cf !important;
+  color: #4d6438 !important;
+}
+#root .bkp-app-2026 .bkp-shopping-tabs {
+  background: #f9f7f3 !important;
+  border-color: #e9e3d9 !important;
+}
+#root .bkp-app-2026 .bkp-shopping-tabs button[aria-selected="true"] {
+  background: #edf2e5 !important;
+  border-color: #dce5d0 !important;
+}
+#root .bkp-app-2026 .bkp-shopping-tabs button:nth-child(1),
+#root .bkp-app-2026 .bkp-shopping-tabs button:nth-child(1) svg {
+  color: #745943 !important;
+}
+#root .bkp-app-2026 .bkp-shopping-tabs button:nth-child(2),
+#root .bkp-app-2026 .bkp-shopping-tabs button:nth-child(2) svg {
+  color: #587042 !important;
+}
+#root .bkp-app-2026 .bkp-shopping-tabs button:nth-child(3),
+#root .bkp-app-2026 .bkp-shopping-tabs button:nth-child(3) svg {
+  color: #7d6856 !important;
+}
+
+#root .bkp-app-2026 .bkp-home-matcha {
+  background: #fff !important;
+  color: #45372f !important;
+}
+#root .bkp-app-2026 .bkp-home-intro { margin-bottom: 25px; }
+#root .bkp-app-2026 .bkp-home-overline {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  color: #596f42;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .12em;
+}
+#root .bkp-app-2026 .bkp-home-rule {
+  flex: 1;
+  min-width: 25px;
+  height: 1px;
+  background: #d7ddcc;
+}
+#root .bkp-app-2026 .bkp-home-intro h1 {
+  margin: 13px 0 6px;
+  font-size: clamp(27px, 5vw, 37px);
+  font-weight: 780;
+  line-height: 1.2;
+  letter-spacing: -.035em;
+  color: #45372f !important;
+}
+#root .bkp-app-2026 .bkp-home-intro p {
+  margin: 0;
+  color: #82766c;
+  font-size: clamp(13px, 2.5vw, 15px);
+  line-height: 1.55;
+}
+
+#root .bkp-app-2026 .bkp-home-action-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 11px;
+}
+#root .bkp-app-2026 button.bkp-home-matcha-action,
+#root .bkp-app-2026 button.bkp-home-matcha-action:not(:disabled) {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+  min-height: 87px;
+  gap: 10px;
+  padding: 13px 12px;
+  border: 1px solid var(--bkp-home-edge, #e8e2d8) !important;
+  border-radius: 15px !important;
+  background: var(--bkp-home-card, #f4f2e9) !important;
+  color: var(--bkp-home-accent, #5a7040) !important;
+  box-shadow: none !important;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color .16s ease, border-color .16s ease !important;
+}
+#root .bkp-app-2026 button.bkp-home-matcha-action:not(:disabled):hover {
+  background: var(--bkp-home-card, #f4f2e9) !important;
+  border-color: var(--bkp-home-accent, #5a7040) !important;
+}
+#root .bkp-app-2026 button.bkp-home-matcha-action .bkp-home-action-icon {
+  flex: 0 0 auto;
+  color: var(--bkp-home-accent) !important;
+  background: transparent !important;
+  width: 25px;
+  height: 25px;
+  border-radius: 0 !important;
+}
+#root .bkp-app-2026 .bkp-home-action-divider {
+  align-self: stretch;
+  width: 1px;
+  min-height: 35px;
+  background: color-mix(in srgb, var(--bkp-home-accent) 29%, transparent);
+  flex: 0 0 1px;
+}
+#root .bkp-app-2026 button.bkp-home-matcha-action .bkp-home-action-title {
+  flex: 1;
+  min-width: 0;
+  color: #4f3a2f !important;
+  font-size: clamp(12px, 1.8vw, 15px);
+  font-weight: 760;
+  line-height: 1.28;
+  text-wrap: pretty;
+}
+#root .bkp-app-2026 button.bkp-home-matcha-action .bkp-home-action-arrow {
+  flex: 0 0 auto;
+  color: var(--bkp-home-accent) !important;
+}
+
+#root .bkp-app-2026 .bkp-home-month {
+  margin-top: 25px;
+  padding: 18px 20px;
+  border: 1px solid #dedacd;
+  border-radius: 18px;
+  background: #fafaf6;
+}
+#root .bkp-app-2026 .bkp-home-section-heading,
+#root .bkp-app-2026 .bkp-home-heading-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+#root .bkp-app-2026 .bkp-home-section-heading {
+  justify-content: space-between;
+  margin-bottom: 18px;
+  gap: 6px;
+}
+#root .bkp-app-2026 .bkp-home-heading-label {
+  color: #566d3c;
+  min-width: 0;
+}
+#root .bkp-app-2026 .bkp-home-heading-label h2 {
+  margin: 0;
+  font-size: clamp(16px, 2.9vw, 20px);
+  line-height: 1.25;
+  font-weight: 780;
+  color: #45372f !important;
+}
+#root .bkp-app-2026 button.bkp-home-month-details {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 5px 7px;
+  border: none !important;
+  border-radius: 7px !important;
+  background: transparent !important;
+  color: #655b4d !important;
+  font-size: 11px;
+  font-weight: 680;
+  white-space: nowrap;
+}
+#root .bkp-app-2026 button.bkp-home-month-details:hover { background: #f0f1e7 !important; }
+#root .bkp-app-2026 button.bkp-home-month-details svg { color: #586f40 !important; }
+#root .bkp-app-2026 .bkp-home-month-data {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, .95fr);
+  align-items: center;
+  gap: 15px;
+}
+#root .bkp-app-2026 .bkp-home-month-remaining {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+#root .bkp-app-2026 .bkp-home-month-remaining > span {
+  color: #756b61;
+  font-size: 12px;
+}
+#root .bkp-app-2026 .bkp-home-month-remaining strong {
+  color: #566e3b;
+  font-size: clamp(22px, 3.5vw, 34px);
+  font-weight: 790;
+  line-height: 1.16;
+  letter-spacing: -.035em;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+#root .bkp-app-2026 .bkp-home-month-remaining strong.bkp-home-negative { color: #a0444d; }
+#root .bkp-app-2026 .bkp-home-month-progress {
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  padding-left: 14px;
+  border-left: 1px solid #dad4c8;
+  min-width: 0;
+}
+#root .bkp-app-2026 .bkp-home-month-progress p {
+  font-size: 11px;
+  color: #6f655a;
+  margin: 0;
+  line-height: 1.3;
+}
+#root .bkp-app-2026 .bkp-home-month-progress strong {
+  font-size: 16px;
+  color: #546d3c;
+  font-variant-numeric: tabular-nums;
+}
+#root .bkp-app-2026 .bkp-home-progress-track {
+  background: #e5e7db;
+  border-radius: 99px;
+  height: 7px;
+  width: 100%;
+  overflow: hidden;
+}
+#root .bkp-app-2026 .bkp-home-progress-track > span {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: #819866;
+  transition: width .2s ease;
+}
+#root .bkp-app-2026 .bkp-home-courses { margin-top: 24px; }
+#root .bkp-app-2026 .bkp-home-courses-heading { margin-bottom: 12px; }
+#root .bkp-app-2026 .bkp-home-courses-heading .bkp-home-heading-label h2 {
+  font-size: clamp(18px, 3vw, 22px);
+}
+#root .bkp-app-2026 .bkp-home-course-grid {
+  display: grid;
+  gap: 10px;
+}
+#root .bkp-app-2026 button.bkp-home-course-link,
+#root .bkp-app-2026 button.bkp-home-course-link:not(:disabled) {
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  text-align: left;
+  gap: 13px;
+  padding: 13px 16px;
+  min-height: 73px;
+  border-radius: 15px !important;
+  border: 1px solid var(--bkp-home-edge, #e8e2d8) !important;
+  background: var(--bkp-home-card, #f4f2e9) !important;
+  color: #4f3a2f !important;
+  box-shadow: none !important;
+  cursor: pointer;
+  transition: border-color .16s ease !important;
+}
+#root .bkp-app-2026 button.bkp-home-course-link:not(:disabled):hover {
+  background: var(--bkp-home-card, #f4f2e9) !important;
+  border-color: var(--bkp-home-accent, #566e3b) !important;
+}
+#root .bkp-app-2026 button.bkp-home-course-link svg {
+  color: var(--bkp-home-accent) !important;
+  flex: 0 0 auto;
+}
+#root .bkp-app-2026 .bkp-home-course-copy {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 3px;
+}
+#root .bkp-app-2026 .bkp-home-course-copy strong {
+  color: #49392e;
+  font-size: clamp(14px, 2.2vw, 16px);
+  font-weight: 760;
+  line-height: 1.25;
+}
+#root .bkp-app-2026 .bkp-home-course-copy > span {
+  color: #796e63;
+  font-size: 12px;
+  line-height: 1.28;
+}
+@media (min-width: 920px) {
+  #root .bkp-app-2026 .bkp-home-month { padding: 22px 27px; }
+  #root .bkp-app-2026 .bkp-home-course-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 390px) {
+  #root .bkp-app-2026 button.bkp-home-matcha-action { padding: 12px 9px; gap: 7px; }
+  #root .bkp-app-2026 button.bkp-home-matcha-action .bkp-home-action-title { font-size: 11.6px; }
+  #root .bkp-app-2026 button.bkp-home-matcha-action .bkp-home-action-arrow { width: 14px; }
+  #root .bkp-app-2026 button.bkp-home-matcha-action .bkp-home-action-icon { width: 22px; height: 22px; }
+  #root .bkp-app-2026 .bkp-home-month { padding: 15px 12px; }
+  #root .bkp-app-2026 .bkp-home-month-data { gap: 7px; }
+  #root .bkp-app-2026 .bkp-home-month-progress { padding-left: 8px; }
+  #root .bkp-app-2026 .bkp-home-month-remaining strong { font-size: 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  #root .bkp-app-2026 .bkp-home-progress-track > span { transition: none; }
 }

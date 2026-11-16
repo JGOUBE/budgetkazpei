@@ -223,6 +223,7 @@ function BudgetKazPeiApp({
     transactions,
     allTransactions,
     fetchTransactions,
+    loading: transactionsLoading,
     addTransaction,
     updateTransaction,
   } = useTransactions(user?.id)
@@ -710,6 +711,8 @@ function BudgetKazPeiApp({
             user={user}
             onNavigate={handleNavChange}
             onAddExpense={() => setShowModal(true)}
+            budgetStats={{ revenus, depenses, solde }}
+            budgetLoading={transactionsLoading || abonnementsLoading}
           />
         )}
 

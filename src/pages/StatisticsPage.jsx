@@ -5,16 +5,16 @@ import { formatMontant } from "../utils/format"
 import { useTheme } from "../styles/ThemeProvider"
 
 const CATEGORY_COLORS = {
-  logement: "#5C87A0",
-  alimentaire: "#468675",
-  energie: "#5087AA",
-  loisirs: "#9C8CA8",
-  transport: "#80769B",
-  divers: "#A67D91",
-  sante: "#3F999B",
+  logement: "#826957",
+  alimentaire: "#607C4C",
+  energie: "#8A8066",
+  loisirs: "#8A7869",
+  transport: "#6B7A58",
+  divers: "#9A7768",
+  sante: "#56725D",
 }
 
-const CHART_COLORS = ["#468675", "#5C87A0", "#5087AA", "#9C8CA8", "#80769B", "#A67D91"]
+const CHART_COLORS = ["#607C4C", "#826957", "#8A8066", "#8A7869", "#6B7A58", "#9A7768"]
 
 const TEXT = {
   fr: {

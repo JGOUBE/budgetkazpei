@@ -5,9 +5,9 @@ import AppLogo from "../AppLogo"
 
 // Signature colorée BudgetKazPéi : distincte de LisAmi.
 const NAV_ACCENTS = {
- dashboard: "#426AA6", statistics: "#795F8A", abonnements: "#9A617B",
- historique: "#397C65", goodDealsAdminReview: "#9A617B",
- retailPriceAdminReview: "#247987", goodDealsEventsAdminReview: "#795F8A",
+ dashboard: "#5A7040", statistics: "#765943", abonnements: "#7A6858",
+ historique: "#5B7147", goodDealsAdminReview: "#795F48",
+ retailPriceAdminReview: "#5A7040", goodDealsEventsAdminReview: "#816B60",
 }
 const NAV_ITEMS = [
   { id: "dashboard", icon: BkIcons.dashboard, section: "nav", key: "dashboard" },
