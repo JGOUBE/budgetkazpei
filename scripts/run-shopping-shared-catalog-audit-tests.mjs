@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { formatSharedPriceRetailer, isSharedPriceHistorical, getSharedPriceStatusLabel } from "../src/services/shoppingList/sharedPricePresentation.js";
-import { loadSharedShoppingCatalog, loadSharedShoppingPrices } from "../src/services/shoppingList/sharedCatalogLoader.js";
+import { loadSharedShoppingCatalog, loadSharedShoppingPrices, searchSharedShoppingAliases } from "../src/services/shoppingList/sharedCatalogLoader.js";
 
 assert.equal(formatSharedPriceRetailer({ retailer_slug: "leader-price", commune: "Saint-Paul", locality: "Ermitage" }), "Leader Price · Ermitage · Saint-Paul");
 assert.equal(formatSharedPriceRetailer({ retailer_slug: "super-u", commune: "Saint-Leu" }), "Super U · Saint-Leu");
@@ -32,3 +32,18 @@ assert.equal(gotPrices.length,2051);
 assert.equal(new Set(gotProducts.map(p=>p.id)).size,1507);
 assert.equal(new Set(gotPrices.map(p=>p.id)).size,2051);
 console.log("OK: shared price attribution, freshness, and paginated catalog coverage.");
+
+const aliasCalls = [];
+const lookupClient = {
+  rpc(name, args) {
+    aliasCalls.push({ name, args });
+    return Promise.resolve({ data: [{ product_id: "product-mikif", match_score: 120 }], error: null });
+  },
+};
+assert.deepEqual(await searchSharedShoppingAliases({ client: lookupClient, query: "pain au lait curcuma MiKif x8" }), [
+  { product_id: "product-mikif", match_score: 120 },
+]);
+assert.deepEqual(aliasCalls, [{ name: "shopping_find_product_ids_by_alias", args: { p_query: "pain au lait curcuma MiKif x8", p_limit: 24 } }]);
+assert.deepEqual(await searchSharedShoppingAliases({ client: lookupClient, query: "la" }), []);
+assert.equal(aliasCalls.length, 1, "Too-short searches must not call the private alias RPC");
+console.log("OK: alias lookup returns only public product IDs/scores; no raw OCR data is fetched.");
