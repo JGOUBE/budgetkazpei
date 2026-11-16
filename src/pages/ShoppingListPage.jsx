@@ -32,7 +32,7 @@ import {
 import { MANUAL_SAVE_METHOD } from "../services/shoppingList/shoppingListSnapshotModel"
 import { buildMultiRetailBasketOptimization } from "../services/shoppingList/shoppingBasketOptimizer"
 import { formatSharedPriceRetailer } from "../services/shoppingList/sharedPricePresentation"
-import { loadSharedShoppingCatalog, loadSharedShoppingPrices } from "../services/shoppingList/sharedCatalogLoader"
+import { loadSharedShoppingCatalog, loadSharedShoppingPrices, searchSharedShoppingAliases } from "../services/shoppingList/sharedCatalogLoader"
 import { getDatedShoppingListPrice } from "../services/shoppingList/shoppingDatedPriceDisplay"
 import { filterShoppingIntentSuggestions, getShoppingCatalogSuggestionScore, hasUsefulShoppingQuery, normalizeShoppingSearchText, rankShoppingSuggestionGroups } from "../services/shoppingList/shoppingQueryRelevance"
 import { loadShoppingListDraft, saveShoppingListDraft } from "../services/shoppingList/shoppingListDraft"
@@ -314,6 +314,7 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
   )
   const [shoppingItems, setShoppingItems] = useState([])
   const [sharedCatalog, setSharedCatalog] = useState([])
+  const [aliasLookup, setAliasLookup] = useState({ query: "", rows: [] })
   const [sharedUnitPrices, setSharedUnitPrices] = useState([])
   const [retailPromotions, setRetailPromotions] = useState([])
   const [retailObservedPrices, setRetailObservedPrices] = useState([])
@@ -363,6 +364,22 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
       .catch(() => { if (!ignore) setSharedCatalog([]) })
     return () => { ignore = true }
   }, [])
+
+
+  // Look up searchable catalog synonyms without downloading private OCR labels.
+  useEffect(() => {
+    let cancelled = false
+    if (!hasUsefulShoppingQuery(query)) {
+      setAliasLookup({ query: "", rows: [] })
+      return () => { cancelled = true }
+    }
+    const timer = setTimeout(() => {
+      searchSharedShoppingAliases({ client: supabase, query })
+        .then(rows => { if (!cancelled) setAliasLookup({ query, rows }) })
+        .catch(() => { if (!cancelled) setAliasLookup({ query, rows: [] }) })
+    }, 180)
+    return () => { cancelled = true; clearTimeout(timer) }
+  }, [query])
 
   useEffect(() => {
     let ignore = false
@@ -577,6 +594,9 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
     const normalize = value => String(value || "").replace(/œ/g, "oe").replace(/Œ/g, "Oe").normalize("NFD").replace(/[^\x00-\x7F]/g, char => ({ "é":"e", "è":"e", "ê":"e", "à":"a", "ù":"u", "ç":"c", "ô":"o", "î":"i" }[char] || char)).toLowerCase().replace(/[^a-z0-9]+/g, " ").trim()
     const terms = normalizeShoppingSearchText(query).split(" ").filter(Boolean)
     if (!hasUsefulShoppingQuery(query) || !terms.length) return []
+    const aliasScores = new Map(aliasLookup.query === query
+      ? (aliasLookup.rows || []).map(row => [row.product_id, Number(row.match_score) || 0])
+      : [])
     const history = new Set(allSuggestions.historical.map(row => normalize(row.label)))
     const priorLists = [...items, ...snapshots.flatMap(snapshot => Array.isArray(snapshot.items) ? snapshot.items : [])]
     const listed = new Set(priorLists.map(row => normalize(row.name || row.product_name || row.label)))
@@ -588,13 +608,14 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
       .filter(row => {
         const name = normalize(row.display_name)
         const searchableName = normalizeShoppingSearchText(row.display_name)
-        return !history.has(name) && terms.every(term => searchableName.includes(term))
+        return !history.has(name) && (terms.every(term => searchableName.includes(term)) || aliasScores.has(row.id))
       })
       .map(row => {
         const label = row.display_name
         const norm = normalize(label)
         const used = listed.has(norm)
         const sharedPrice = latestPrices.get(row.id)
+        const aliasMatchScore = aliasScores.get(row.id) || 0
         return { key: "catalog:" + row.id, source: "catalog", label, normalizedName: row.normalized_name,
           shoppingProductId: row.id, brand: row.brand, packageFormat: row.size_label,
           observedPrice: ["€/kg", "€/l"].includes(sharedPrice?.unit_label) ? sharedPrice?.unit_price : null,
@@ -602,13 +623,13 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
           packPrice: sharedPrice?.price ?? null,
           observedAt: sharedPrice?.observed_at || null,
           retailerName: sharedPrice ? formatSharedPriceRetailer(sharedPrice) : "",
-          category: row.category, subcategory: row.subcategory,
-          rank: (used ? 100 : 0) + getShoppingCatalogSuggestionScore(label, query) + (Number(sharedPrice?.price) > 0 ? 25 : 0) }
+          category: row.category, subcategory: row.subcategory, aliasMatchScore,
+          rank: (used ? 100 : 0) + Math.max(getShoppingCatalogSuggestionScore(label, query), aliasMatchScore) + (Number(sharedPrice?.price) > 0 ? 25 : 0) }
       })
       .sort((left, right) => right.rank - left.rank || left.label.localeCompare(right.label, "fr"))
       .filter((row, index, rows) => rows.findIndex(other => normalize(other.label) === normalize(row.label)) === index)
       .slice(0, 12)
-  }, [query, sharedCatalog, sharedUnitPrices, allSuggestions.historical, items, snapshots])
+  }, [query, sharedCatalog, sharedUnitPrices, allSuggestions.historical, items, snapshots, aliasLookup])
   // Suggestions from tickets, catalogue and retail may describe the same article.
   // Keep the first (priority: personal history, observed prices, promotions, catalogue)
   // without combining distinct brands, formats or product names.
