@@ -600,20 +600,23 @@ function BudgetKazPeiApp({
           style={{
             position: "fixed",
             inset: 0,
-            background: "rgba(0,0,0,0.6)",
-            zIndex: 40,
+            background: "rgba(42, 34, 28, 0.38)",
+            zIndex: 60,
           }}
         />
       )}
 
       {isMobile ? (
         <div
+          role="dialog"
+          aria-modal={showSidebar ? "true" : undefined}
+          aria-label={lang === "fr" ? "Menu principal" : "Menu prinsipal"}
           style={{
             position: "fixed",
             top: 0,
             left: 0,
-            zIndex: 45,
-            height: "100vh",
+            zIndex: 70,
+            height: "100dvh",
             transform: showSidebar ? "translateX(0)" : "translateX(-100%)",
             transition: "transform 0.3s ease",
           }}
@@ -622,6 +625,7 @@ function BudgetKazPeiApp({
             activeNav={activeNav}
             onNavChange={handleNavChange}
             onSignOut={signOut}
+            onClose={() => setShowSidebar(false)}
             user={user}
             isPremium={isPremium}
             isPremiumPlus={isPremiumPlus}

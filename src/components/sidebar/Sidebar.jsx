@@ -1,3 +1,4 @@
+import { X } from "lucide-react"
 import { BkIcons } from "../icons-budgetkazpei"
 import { ds } from "../../styles/designSystem"
 import { useTheme } from "../../styles/ThemeProvider"
@@ -38,6 +39,7 @@ export default function Sidebar({
   activeNav,
   onNavChange,
   onSignOut,
+  onClose,
   user,
   isPremium,
   isPremiumPlus = false,
@@ -93,8 +95,8 @@ export default function Sidebar({
   }
 
   function getNavBackground({ active, locked }) {
-    if (active) return "rgba(55,124,125,.12)"
-    if (locked) return "rgba(252,211,77,.08)"
+    if (active) return "#EBF0E3"
+    if (locked) return "#F5F0E7"
     return "transparent"
   }
 
@@ -103,6 +105,7 @@ export default function Sidebar({
       style={{
         width: 248,
         height: "100dvh",
+        position: "relative",
         background: ds.sidebar,
         borderRight: `1px solid ${ds.border}`,
         display: "flex",
@@ -111,6 +114,17 @@ export default function Sidebar({
         overflow: "hidden",
       }}
     >
+      {onClose && (
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label={isKreol ? "Fèrmé menu" : "Fermer le menu"}
+          className="bkp-sidebar-close"
+          style={{ position: "absolute", top: 16, right: 13, zIndex: 3, width: 33, height: 33, padding: 6, display: "grid", placeItems: "center", cursor: "pointer" }}
+        >
+          <X size={20} aria-hidden="true" />
+        </button>
+      )}
       <div
         style={{
           flex: 1,
@@ -131,7 +145,7 @@ export default function Sidebar({
             alignItems: "center",
             justifyContent: "center",
             gap: 8,
-            margin: "12px 0 18px",
+            margin: "17px 0 20px",
             padding: 0,
             color: "inherit",
             background: "transparent",
@@ -155,7 +169,7 @@ export default function Sidebar({
 
         <div
           style={{
-            background: "rgba(55,124,125,.08)",
+            background: "#F0F2E8",
             border: `1px solid ${ds.primary}55`,
             borderRadius: ds.radius,
             padding: "11px 13px",
@@ -226,7 +240,7 @@ export default function Sidebar({
                   event.currentTarget.style.boxShadow = "none"
                 }}
                 style={{
-                  "--bkp-nav-color": NAV_ACCENTS[item.id] || "#426AA6",
+                  "--bkp-nav-color": NAV_ACCENTS[item.id] || "#66533F",
                   display: "flex",
                   alignItems: "center",
                   gap: 11,
@@ -297,7 +311,7 @@ export default function Sidebar({
                     aria-current={active ? "page" : undefined}
                     onClick={() => onNavChange(item.id)}
                     style={{
-                      "--bkp-nav-color": NAV_ACCENTS[item.id] || "#426AA6",
+                      "--bkp-nav-color": NAV_ACCENTS[item.id] || "#66533F",
                       display: "flex",
                       alignItems: "center",
                       gap: 11,
