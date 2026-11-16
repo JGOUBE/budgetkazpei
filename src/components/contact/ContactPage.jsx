@@ -168,7 +168,7 @@ export default function ContactPage({ user, t }) {
   }
 
   return (
-    <div style={{ width: "100%" }}>
+    <div className="bkp-contact-page" style={{ width: "100%" }}>
       <div
         style={{
           width: "100%",

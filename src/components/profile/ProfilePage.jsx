@@ -384,7 +384,7 @@ export default function ProfilePage({ user, t }) {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 20, maxWidth: 600 }}>
+    <div className="bkp-profile-page" style={{ display: "flex", flexDirection: "column", gap: 20, maxWidth: 600 }}>
       <div
         style={{
           background: COLORS.card,

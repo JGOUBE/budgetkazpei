@@ -297,3 +297,71 @@
   font-size:14px !important; font-weight:740;
 }
 #root .bkp-app-2026 .bkp-sidebar-close { background:#EADBCF !important; color:#644733 !important; border-color:#D7C1AE !important; }
+
+
+/* Polissage des pages personnelles — mêmes codes de lecture que l'accueil.
+   Les superficies restent claires; la distinction vient de la bordure et du texte. */
+#root .bkp-app-2026 .bkp-profile-page { max-width:700px !important; }
+#root .bkp-app-2026 .bkp-profile-page > div:first-child {
+  background-color:#FFFEFA !important;
+  border:1px solid #D7C5B2 !important;
+  border-left:3px solid #9C7C5E !important;
+  box-shadow:none !important;
+}
+#root .bkp-app-2026 .bkp-profile-page > div:not(:first-child) {
+  border-color:#D4C5B5 !important;
+  box-shadow:none !important;
+}
+#root .bkp-app-2026 .bkp-profile-page :is(label,select,input,textarea),
+#root .bkp-app-2026 .bkp-contact-page :is(label,select,input,textarea) {
+  font-size:15px !important;
+}
+#root .bkp-app-2026 .bkp-profile-page :is(input,select,textarea),
+#root .bkp-app-2026 .bkp-contact-page :is(input,select,textarea) {
+  background:#FFF !important;
+  border-color:#CDBDAD !important;
+  color:#3B2E25 !important;
+}
+#root .bkp-app-2026 .bkp-profile-page h2,
+#root .bkp-app-2026 .bkp-contact-page h2 { color:#3E3329 !important; }
+#root .bkp-app-2026 .bkp-profile-page .bkp-profile-legal-link {
+  background:#ECDCCE !important;
+  color:#6B4834 !important;
+  border-color:#D4BCA7 !important;
+  font-size:15px !important;
+  min-height:47px;
+}
+#root .bkp-app-2026 .bkp-profile-page .bkp-profile-legal-link[href="/suppression-compte"] {
+  background:#F3E2DF !important;
+  color:#894B4C !important;
+  border-color:#DDBDB9 !important;
+}
+#root .bkp-app-2026 .bkp-contact-page > div > div:first-child {
+  background-color:#FFFEFA !important;
+  border:1px solid #D7C5B2 !important;
+  border-left:3px solid #9EB889 !important;
+  box-shadow:none !important;
+}
+#root .bkp-app-2026 button.bkp-contact-send-button:not(:disabled) {
+  background:#E2ECCD !important;
+  color:#3D5C28 !important;
+  border-color:#B9CFA3 !important;
+}
+#root .bkp-app-2026[data-bkp-section="premium"] .bkp-premium-zone button:not(:disabled),
+#root .bkp-app-2026[data-bkp-section="abonnements"] .bkp-premium-zone button:not(:disabled) {
+  font-size:14px !important;
+}
+#root .bkp-app-2026[data-bkp-section="goodDealsAdminReview"] .bkp-premium-zone button:not(:disabled),
+#root .bkp-app-2026[data-bkp-section="goodDealsEventsAdminReview"] .bkp-premium-zone button:not(:disabled),
+#root .bkp-app-2026[data-bkp-section="retailPriceAdminReview"] .bkp-premium-zone button:not(:disabled) {
+  font-size:14px !important;
+  line-height:1.4;
+  min-height:41px;
+}
+#root .bkp-app-2026 .bkp-premium-zone :is(p,label)[style*="font-size: 11px"] {font-size:13px !important;}
+#root .bkp-app-2026 .bkp-premium-zone :is(p,label)[style*="font-size: 12px"] {font-size:14px !important;}
+#root .bkp-app-2026 .bkp-premium-zone :is(p,label)[style*="font-size: 13px"] {font-size:14.5px !important;}
+@media(max-width:400px) {
+  #root .bkp-app-2026 .bkp-profile-page > div:first-child {gap:12px !important; padding:18px !important;}
+  #root .bkp-app-2026 .bkp-contact-page > div > div:first-child {padding:18px !important;}
+}
