@@ -128,7 +128,7 @@ export default function RevenusPage({
 
 function HeaderCard({ title, subtitle, total, color, onEdit, isKreol = false }) {
   return (
-    <div style={{ background: `linear-gradient(135deg, ${COLORS.card}, ${COLORS.cardLight})`, border: `1px solid ${COLORS.border}`, borderRadius: 22, padding: 24 }}>
+    <div style={{ background: COLORS.card, border: `1px solid ${COLORS.border}`, borderRadius: 22, padding: 24 }}>
       <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "flex-start", flexWrap: "wrap" }}>
         <div>
           <div style={{ color: COLORS.text, fontSize: 30, fontWeight: 900, fontFamily: "'DM Serif Display', serif" }}>

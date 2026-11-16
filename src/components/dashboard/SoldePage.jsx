@@ -37,7 +37,7 @@ export default function SoldePage({
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
       <div
         style={{
-          background: `linear-gradient(135deg, ${COLORS.card}, ${COLORS.cardLight})`,
+          background: COLORS.card,
           border: `1px solid ${COLORS.border}`,
           borderRadius: 22,
           padding: 24,

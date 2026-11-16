@@ -63,10 +63,10 @@ function createDraftFromItem(item) {
 
 function Badge({ children, tone = "neutral" }) {
   const tones = {
-    neutral: { bg: "rgba(148,163,184,.14)", color: ds.textSecondary, border: ds.border },
-    warning: { bg: "rgba(245,158,11,.14)", color: ds.warning, border: `${ds.warning}44` },
-    success: { bg: "rgba(34,197,94,.14)", color: ds.success, border: `${ds.success}44` },
-    danger: { bg: "rgba(239,68,68,.14)", color: ds.danger, border: `${ds.danger}44` },
+    neutral: { bg: "rgba(130,115,99,.14)", color: ds.textSecondary, border: ds.border },
+    warning: { bg: "rgba(117,93,71,.18)", color: ds.warning, border: `${ds.warning}44` },
+    success: { bg: "rgba(79,109,54,.16)", color: ds.success, border: `${ds.success}44` },
+    danger: { bg: "rgba(155,81,88,.15)", color: ds.danger, border: `${ds.danger}44` },
   }
   const toneStyle = tones[tone] || tones.neutral
 
@@ -699,7 +699,7 @@ export default function RetailPriceValidationPage({
     <div style={{ display: "grid", gap: 14, minWidth: 0, width: "100%", maxWidth: "100%" }}>
       <div
         style={{
-          background: `linear-gradient(135deg, ${ds.surface}, ${ds.elevated})`,
+          background: ds.card,
           border: `1px solid ${ds.border}`,
           borderRadius: 18,
           padding: "clamp(12px, 3vw, 20px)",
@@ -792,7 +792,7 @@ export default function RetailPriceValidationPage({
       )}
 
       {successMessage && (
-        <div style={{ border: `1px solid ${ds.success}44`, background: "rgba(34,197,94,.12)", color: ds.success, padding: "12px 14px", borderRadius: 16, fontWeight: 700, whiteSpace: "pre-line" }}>
+        <div style={{ border: `1px solid ${ds.success}44`, background: "rgba(79,109,54,.14)", color: ds.success, padding: "12px 14px", borderRadius: 16, fontWeight: 700, whiteSpace: "pre-line" }}>
           {successMessage}
         </div>
       )}
@@ -933,7 +933,7 @@ export default function RetailPriceValidationPage({
                     padding: "12px 14px",
                     borderRadius: 14,
                     border: `1px solid ${ds.warning}55`,
-                    background: "rgba(245,158,11,.10)",
+                    background: "rgba(117,93,71,.12)",
                     color: ds.warning,
                     fontWeight: 800,
                     lineHeight: 1.45,
@@ -1000,7 +1000,7 @@ export default function RetailPriceValidationPage({
               </div>
 
               {quantityValidationErrors.length > 0 && (
-                <div style={{ border: `1px solid ${ds.warning}55`, background: "rgba(245,158,11,.12)", color: ds.warning, padding: "12px 14px", borderRadius: 16, fontWeight: 700, whiteSpace: "pre-line" }}>
+                <div style={{ border: `1px solid ${ds.warning}55`, background: "rgba(117,93,71,.15)", color: ds.warning, padding: "12px 14px", borderRadius: 16, fontWeight: 700, whiteSpace: "pre-line" }}>
                   {`Verification quantite requise.\n- ${quantityValidationErrors.join("\n- ")}`}
                 </div>
               )}

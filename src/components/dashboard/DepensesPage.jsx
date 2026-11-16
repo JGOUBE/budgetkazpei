@@ -120,7 +120,7 @@ export default function DepensesPage({
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
       <div
         style={{
-          background: `linear-gradient(135deg, rgba(55,124,125,.10) 0%, rgba(55,124,125,.03) 42%, transparent 72%), ${COLORS.card}`,
+          background: COLORS.card,
           border: `1px solid ${COLORS.accent}33`,
           borderRadius: 22,
           padding: 24,
