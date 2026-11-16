@@ -1498,9 +1498,18 @@ function ShoppingProductFilters({
         }}
       />
 
+      {isMobile && (
+        <label className="bkp-category-select-wrap bkp-shopping-product-select-wrap">
+          <span>{isKreol ? "Kategori produi" : "Catégorie de produits"}</span>
+          <select className="bkp-category-select" value={activeProductCategory} onChange={event => onCategoryChange(event.target.value)}>
+            {categories.map(option => <option key={option.id} value={option.id}>{isKreol ? option.kr : option.fr} ({option.count})</option>)}
+          </select>
+          {hasActiveFilters && <button type="button" onClick={onReset} className="bkp-clear-shopping-filters">{isKreol ? "Efase bann filtre" : "Effacer les filtres"}</button>}
+        </label>
+      )}
       <div
         style={{
-          display: "flex",
+          display: isMobile ? "none" : "flex",
           gap: 8,
           flexWrap: isMobile ? "nowrap" : "wrap",
           overflowX: isMobile ? "auto" : "visible",
@@ -2214,27 +2223,41 @@ export default function GoodDealsPage({
           {isKreol ? "Filtre par kategori" : "Filtrer par catégorie"}
         </div>
 
-        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {CATEGORY_OPTIONS.map(option => (
-            <CategoryButton
-              key={option.id}
-              option={option}
-              active={activeCategory === option.id}
-              isKreol={isKreol}
-              onClick={() => {
-                setActiveCategory(option.id)
-
-                if (option.id !== "leisure") {
-                  setLeisureView("event")
-                }
-
-                if (option.id !== "shopping") {
-                  setShoppingView("product_promotion")
-                }
+        {isMobile ? (
+          <label className="bkp-category-select-wrap">
+            <span className="sr-only">{isKreol ? "Swazi in kategori" : "Choisir une catégorie"}</span>
+            <select
+              className="bkp-category-select"
+              value={activeCategory}
+              onChange={event => {
+                const id = event.target.value
+                setActiveCategory(id)
+                if (id !== "leisure") setLeisureView("event")
+                if (id !== "shopping") setShoppingView("product_promotion")
               }}
-            />
-          ))}
-        </div>
+            >
+              {CATEGORY_OPTIONS.map(option => (
+                <option key={option.id} value={option.id}>{isKreol ? option.kr : option.fr}</option>
+              ))}
+            </select>
+          </label>
+        ) : (
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {CATEGORY_OPTIONS.map(option => (
+              <CategoryButton
+                key={option.id}
+                option={option}
+                active={activeCategory === option.id}
+                isKreol={isKreol}
+                onClick={() => {
+                  setActiveCategory(option.id)
+                  if (option.id !== "leisure") setLeisureView("event")
+                  if (option.id !== "shopping") setShoppingView("product_promotion")
+                }}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       {activeCategory === "leisure" && (

@@ -517,6 +517,8 @@ function BudgetKazPeiApp({
           <button
             type="button"
             onClick={() => setShowSidebar(prev => !prev)}
+            aria-label={lang === "fr" ? "Ouvrir le menu" : "Ouver lo menu"}
+            className="bkp-hamburger"
             style={{
               background: "transparent",
               border: "none",

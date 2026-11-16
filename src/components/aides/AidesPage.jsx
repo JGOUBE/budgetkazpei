@@ -525,6 +525,13 @@ export default function AidesPage({ t, isPremiumPlus = false, user, onDiscover, 
             <section id="aides-panel-rechercher" role="tabpanel" aria-labelledby="aides-tab-rechercher" className="bkp-aides-panel">
               <div className="bkp-panel-heading"><div><span><Search size={15} />{isKreol ? "Tout lo katalog" : "Tout le catalogue"}</span><h2>{isKreol ? "Rod in aide" : "Rechercher une aide"}</h2><p>{isKreol ? "Ékri an fransé ou an kréol, kèl lang lapli lé aktuel." : "Saisissez un terme en français ou en créole, quelle que soit la langue de l’application."}</p></div></div>
               <div className="bkp-aides-searchbox"><Search size={19} aria-hidden="true" /><input type="search" value={query} onChange={event => setQuery(event.target.value)} placeholder={isKreol ? "Kaz, marmay, kouran, RSA…" : "Logement, enfant, énergie, RSA…"} aria-label={isKreol ? "Rod dann katalog aides" : "Rechercher dans le catalogue des aides"} />{query && <button type="button" onClick={() => setQuery("")} aria-label={isKreol ? "Efase recherche" : "Effacer la recherche"}><X size={17} /></button>}</div>
+              <label className="bkp-aides-category-mobile">
+                <span>{isKreol ? "Kategori" : "Catégorie"}</span>
+                <select value={category} onChange={event => setCategory(event.target.value)} aria-label={isKreol ? "Filtre kategori" : "Filtrer les aides par catégorie"}>
+                  <option value="all">{isKreol ? "Tout" : "Toutes les catégories"}</option>
+                  {categories.map(item => <option key={item} value={item}>{categoryLabel(item, isKreol)}</option>)}
+                </select>
+              </label>
               <div className="bkp-category-filters" aria-label={isKreol ? "Filtre kategori" : "Filtres par catégorie"}>
                 <button type="button" className={category === "all" ? "is-active" : ""} aria-pressed={category === "all"} onClick={() => setCategory("all")}>{isKreol ? "Tout" : "Toutes"}</button>
                 {categories.map(item => <button type="button" data-category={item} className={category === item ? "is-active" : ""} aria-pressed={category === item} onClick={() => setCategory(item)} key={item}>{categoryLabel(item, isKreol)}</button>)}

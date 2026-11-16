@@ -383,3 +383,118 @@
   outline-offset: 3px;
   border-radius: 8px !important;
 }
+
+
+/* Ajustements ergonomiques de novembre 2026 : navigation épurée, onglets séparés,
+   listes longues en sélecteurs natifs sur mobile. */
+#root .bkp-app-2026 button.bkp-hamburger,
+#root .bkp-app-2026 button.bkp-hamburger:is(:hover,:active) {
+  flex:0 0 40px;
+  width:40px;
+  height:44px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  color:#51463D !important;
+  box-shadow:none !important;
+}
+#root .bkp-app-2026 button.bkp-hamburger svg {
+  width:25px;
+  height:25px;
+  stroke-width:2.1;
+}
+#root .bkp-app-2026 .bkp-home-intro .bkp-home-overline {
+  font-size:16px !important;
+  font-weight:800;
+  letter-spacing:.09em;
+}
+#root .bkp-app-2026 aside button.bkp-sidebar-brand {
+  overflow:visible !important;
+  min-height:126px;
+  line-height:1.35 !important;
+  flex-shrink:0;
+}
+#root .bkp-app-2026 aside button.bkp-sidebar-brand > div {
+  line-height:1.35 !important;
+  padding-bottom:3px;
+  overflow:visible !important;
+}
+#root .bkp-app-2026 .bkp-aides-tabs {
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:9px;
+  padding:0 !important;
+  border:0 !important;
+  border-radius:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+}
+#root .bkp-app-2026 .bkp-aides-tabs button {
+  box-sizing:border-box;
+  border-radius:13px !important;
+  min-width:0;
+  min-height:58px;
+  padding:8px 6px !important;
+  line-height:1.25 !important;
+  border-width:1px !important;
+  display:flex !important;
+  justify-content:center;
+  align-items:center;
+  gap:5px;
+}
+#root .bkp-app-2026 .bkp-aides-tabs button span {
+  min-width:0;
+  overflow-wrap:break-word;
+}
+#root .bkp-app-2026 .bkp-aides-tabs button.is-active {
+  border-color:#697E52 !important;
+}
+#root .bkp-app-2026 .bkp-aides-category-mobile { display:none; }
+#root .bkp-app-2026 .bkp-category-select-wrap {
+  display:flex;
+  flex-direction:column;
+  gap:7px;
+  width:100%;
+  color:#45382D;
+  font-size:14px;
+  font-weight:760;
+}
+#root .bkp-app-2026 select.bkp-category-select,
+#root .bkp-app-2026 .bkp-aides-category-mobile select {
+  width:100%;
+  min-height:50px;
+  padding:10px 38px 10px 14px;
+  background-color:#F0E9E0 !important;
+  border:1px solid #CBB7A5 !important;
+  color:#4E392B !important;
+  border-radius:12px !important;
+  font-size:16px !important;
+  font-weight:730;
+  line-height:1.4;
+  appearance:auto;
+}
+#root .bkp-app-2026 .bkp-shopping-product-select-wrap {
+  padding:6px 0 5px;
+}
+#root .bkp-app-2026 button.bkp-clear-shopping-filters {
+  min-height:42px;
+  padding:8px 12px;
+  background:#E0EBCF !important;
+  border-color:#BCD0A9 !important;
+  color:#415E2C !important;
+  align-self:flex-start;
+}
+@media(max-width:680px) {
+  #root .bkp-app-2026 .bkp-category-filters { display:none !important; }
+  #root .bkp-app-2026 .bkp-aides-category-mobile {
+    display:flex; flex-direction:column; gap:7px;
+    font-size:14px; font-weight:760; color:#564639;
+  }
+  #root .bkp-app-2026 .bkp-aides-tabs { gap:8px; }
+  #root .bkp-app-2026 .bkp-aides-tabs button { min-height:60px; font-size:12.5px !important; }
+  #root .bkp-app-2026 .bkp-aides-tabs button svg { width:16px; height:16px; flex-shrink:0; }
+}

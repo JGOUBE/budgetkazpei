@@ -57,12 +57,6 @@ export default function Sidebar({
   const premiumActive = activeNav === "premium"
   const contactActive = activeNav === "contact"
 
-  const prenom =
-    user?.user_metadata?.name ||
-    user?.user_metadata?.full_name ||
-    user?.email?.split("@")[0] ||
-    "Utilisateur"
-
   const premiumButtonLabel = isPremiumPlus
     ? "Gérer Premium+"
     : isPremium
@@ -145,8 +139,8 @@ export default function Sidebar({
             flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
-            gap: 8,
-            margin: "17px 0 20px",
+            gap: 10,
+            margin: "17px 0 28px",
             padding: 0,
             color: "inherit",
             background: "transparent",
@@ -161,49 +155,14 @@ export default function Sidebar({
               fontWeight: 950,
               fontSize: 19,
               letterSpacing: 0,
-              lineHeight: 1,
+              lineHeight: 1.35,
+              paddingBottom: 3,
+              overflow: "visible",
             }}
           >
             BudgetKazPéi
           </div>
         </button>
-
-        <div
-          style={{
-            background: "#F0F2E8",
-            border: `1px solid ${ds.primary}55`,
-            borderRadius: ds.radius,
-            padding: "11px 13px",
-            marginBottom: 12,
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 7,
-              fontSize: 12,
-              color: ds.primary,
-              fontWeight: 900,
-            }}
-          >
-            <PremiumIcon size={14} />
-            {isKreol ? "Bienvenu," : "Bienvenue,"}
-          </div>
-
-          <div
-            style={{
-              marginTop: 3,
-              fontSize: 15,
-              color: ds.textPrimary,
-              fontWeight: 900,
-              lineHeight: 1.15,
-              wordBreak: "break-word",
-            }}
-          >
-            {prenom}
-          </div>
-        </div>
 
         <nav style={{ display: "flex", flexDirection: "column", gap: 5 }}>
           {NAV_ITEMS.map(item => {
