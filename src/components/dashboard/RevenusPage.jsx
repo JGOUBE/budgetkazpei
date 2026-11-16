@@ -50,7 +50,7 @@ export default function RevenusPage({
   const revenusPonctuels = revenusItems.filter(item => !isProfileIncome(item))
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+    <div className="bkp-income-screen" style={{ display: "flex", flexDirection: "column", gap: 18 }}>
       <HeaderCard
         title={isKreol ? "Larzan i rantre mwa-la" : "Revenus du mois"}
         subtitle={
@@ -189,8 +189,8 @@ function IncomeEditorModal({ profile = {}, isKreol = false, saving = false, onCl
   }
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(2,6,23,.72)", display: "flex", alignItems: "center", justifyContent: "center", padding: 18 }}>
-      <div style={{ width: "min(720px, 100%)", maxHeight: "92vh", overflow: "auto", background: COLORS.cardLight, border: `1px solid ${COLORS.border}`, borderRadius: 20, padding: 20, boxShadow: "0 24px 80px rgba(0,0,0,.35)" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(49,39,32,.48)", display: "flex", alignItems: "center", justifyContent: "center", padding: 18 }}>
+      <div style={{ width: "min(720px, 100%)", maxHeight: "92vh", overflow: "auto", background: COLORS.card, border: `1px solid ${COLORS.borderStrong}`, borderRadius: 20, padding: 20, boxShadow: "none" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
           <div>
             <h2 style={{ color: COLORS.text, margin: 0, fontSize: 24 }}>{isKreol ? "Larzan i rant mwa-la" : "Revenus du mois"}</h2>
@@ -199,7 +199,7 @@ function IncomeEditorModal({ profile = {}, isKreol = false, saving = false, onCl
                 : "Ces lignes alimentent le mois en cours et seront reprises automatiquement le mois prochain. Les aides ajoutees ici sont aussi conservees dans le profil pour le conseiller."}
             </p>
           </div>
-          <button type="button" onClick={onClose} style={{ minHeight: 38, minWidth: 82, flexShrink: 0, whiteSpace: "nowrap", borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "rgba(255,255,255,.06)", color: COLORS.text, fontWeight: 900, padding: "0 12px" }}>{isKreol ? "Ferme" : "Fermer"}</button>
+          <button type="button" onClick={onClose} style={{ minHeight: 38, minWidth: 82, flexShrink: 0, whiteSpace: "nowrap", borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "#F2EAE1", color: COLORS.text, fontWeight: 900, padding: "0 12px" }}>{isKreol ? "Ferme" : "Fermer"}</button>
         </div>
 
         <div style={{ display: "grid", gap: 12, marginTop: 18 }}>
@@ -208,14 +208,14 @@ function IncomeEditorModal({ profile = {}, isKreol = false, saving = false, onCl
           <MoneyField label={isKreol ? "France Travail / chomaz" : "France Travail / chomage"} value={form.france_travail} onChange={value => updateField("france_travail", value)} />
           <MoneyField label={isKreol ? "Autres revenus ki revient" : "Revenus recurrents"} value={form.autres_revenus} onChange={value => updateField("autres_revenus", value)} />
 
-          <div style={{ border: `1px solid ${COLORS.border}`, borderRadius: 16, padding: 14, background: "rgba(10,22,40,.35)" }}>
+          <div style={{ border: `1px solid ${COLORS.border}`, borderRadius: 16, padding: 14, background: "#F5F0E8" }}>
             <div style={{ color: COLORS.text, fontWeight: 950, marginBottom: 10 }}>{isKreol ? "Aides an plis" : "Aides supplementaires"}</div>
             <div style={{ display: "grid", gap: 10 }}>
               {form.aides.map((aide, index) => (
                 <div key={aide.id || index} style={{ display: "grid", gridTemplateColumns: "1fr 150px auto", gap: 8, alignItems: "center" }}>
                   <input value={aide.label || ""} onChange={e => updateAide(index, "label", e.target.value)} placeholder={isKreol ? "Nom aide (CAF, RSA, pension...)" : "Designation (CAF, RSA, pension...)"} style={inputStyle} />
                   <input value={aide.amount || ""} onChange={e => updateAide(index, "amount", e.target.value)} type="number" min="0" step="0.01" placeholder={isKreol ? "Montan" : "Montant"} style={inputStyle} />
-                  <button type="button" onClick={() => removeAide(index)} style={{ minHeight: 42, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "rgba(255,255,255,.04)", color: COLORS.muted, fontWeight: 900, padding: "0 10px" }}>{isKreol ? "Tire" : "Retirer"}</button>
+                  <button type="button" onClick={() => removeAide(index)} style={{ minHeight: 42, borderRadius: 12, border: `1px solid ${COLORS.border}`, background: "#F1E7DD", color: COLORS.muted, fontWeight: 900, padding: "0 10px" }}>{isKreol ? "Tire" : "Retirer"}</button>
                 </div>
               ))}
             </div>
@@ -284,7 +284,7 @@ function SectionCard({ title, emptyText, items, color, onEdit, isKreol = false }
       ) : (
         <div style={{ display: "grid", gap: 10 }}>
           {safeItems.map((item, index) => (
-            <div key={item.id || `${item.label}-${index}`} style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", background: "rgba(10,22,40,.45)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 14, padding: "12px 13px" }}>
+            <div key={item.id || `${item.label}-${index}`} style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", background: "#F7F2EB", border: `1px solid ${COLORS.border}`, borderRadius: 14, padding: "12px 13px" }}>
               <div style={{ minWidth: 0 }}>
                 <div style={{ color: COLORS.text, fontWeight: 900, fontSize: 14 }}>
                   {item.icon} {displayIncomeLabel(item, isKreol)}
@@ -296,7 +296,7 @@ function SectionCard({ title, emptyText, items, color, onEdit, isKreol = false }
               <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
                 <strong style={{ color }}>{formatMontant(item.amount)}</strong>
                 {onEdit && (
-                  <button type="button" onClick={() => onEdit(item.raw)} style={{ minHeight: 34, borderRadius: 10, border: `1px solid ${COLORS.border}`, background: "rgba(255,255,255,.05)", color: COLORS.text, cursor: "pointer", fontWeight: 850, fontSize: 12, padding: "0 10px" }}>
+                  <button type="button" onClick={() => onEdit(item.raw)} style={{ minHeight: 34, borderRadius: 10, border: `1px solid ${COLORS.border}`, background: "#E7EDDC", color: COLORS.text, cursor: "pointer", fontWeight: 850, fontSize: 12, padding: "0 10px" }}>
                     {isKreol ? "Modifie" : "Modifier"}
                   </button>
                 )}
@@ -316,15 +316,15 @@ function SectionCard({ title, emptyText, items, color, onEdit, isKreol = false }
 
 function LockedPremiumPlusCard({ isUnlocked, title, text, onGoPremium, isKreol = false }) {
   return (
-    <div style={{ background: "rgba(167,139,250,.08)", border: "1px solid rgba(167,139,250,.28)", borderRadius: 20, padding: 20 }}>
-      <div style={{ color: "#DDD6FE", fontSize: 17, fontWeight: 900 }}>
+    <div style={{ background: COLORS.lavenderSoft, border: `1px solid ${COLORS.purple}44`, borderRadius: 20, padding: 20 }}>
+      <div style={{ color: COLORS.purple, fontSize: 17, fontWeight: 900 }}>
         {title}
       </div>
       <p style={{ color: COLORS.muted, fontSize: 13, lineHeight: 1.55, marginBottom: 0 }}>
         {text}
       </p>
       {!isUnlocked && onGoPremium && (
-        <button type="button" onClick={onGoPremium} style={{ marginTop: 14, background: "rgba(167,139,250,.18)", border: "1px solid rgba(167,139,250,.35)", color: "#DDD6FE", borderRadius: 12, padding: "10px 13px", cursor: "pointer", fontWeight: 900, fontFamily: "inherit" }}>
+        <button type="button" onClick={onGoPremium} style={{ marginTop: 14, background: "#F0E1E9", border: `1px solid ${COLORS.purple}55`, color: COLORS.purple, borderRadius: 12, padding: "10px 13px", cursor: "pointer", fontWeight: 900, fontFamily: "inherit" }}>
           {isKreol ? "Dekouvrir Premium+" : "Decouvrir Premium+"}
         </button>
       )}
