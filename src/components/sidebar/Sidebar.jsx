@@ -3,6 +3,12 @@ import { ds } from "../../styles/designSystem"
 import { useTheme } from "../../styles/ThemeProvider"
 import AppLogo from "../AppLogo"
 
+// Signature colorée BudgetKazPéi : distincte de LisAmi.
+const NAV_ACCENTS = {
+ dashboard: "#426AA6", statistics: "#795F8A", abonnements: "#9A617B",
+ historique: "#397C65", goodDealsAdminReview: "#9A617B",
+ retailPriceAdminReview: "#247987", goodDealsEventsAdminReview: "#795F8A",
+}
 const NAV_ITEMS = [
   { id: "dashboard", icon: BkIcons.dashboard, section: "nav", key: "dashboard" },
   { id: "statistics", icon: BkIcons.stats, section: "nav", key: "statistics" },
@@ -196,6 +202,8 @@ export default function Sidebar({
               <button
                 key={item.id}
                 type="button"
+                data-bkp-nav={item.id}
+                aria-current={active ? "page" : undefined}
                 onClick={() => onNavChange(locked ? "premium" : item.id)}
                 onMouseEnter={event => {
                   if (active) return
@@ -218,6 +226,7 @@ export default function Sidebar({
                   event.currentTarget.style.boxShadow = "none"
                 }}
                 style={{
+                  "--bkp-nav-color": NAV_ACCENTS[item.id] || "#426AA6",
                   display: "flex",
                   alignItems: "center",
                   gap: 11,
@@ -284,8 +293,11 @@ export default function Sidebar({
                   <button
                     key={item.id}
                     type="button"
+                    data-bkp-nav={item.id}
+                    aria-current={active ? "page" : undefined}
                     onClick={() => onNavChange(item.id)}
                     style={{
+                      "--bkp-nav-color": NAV_ACCENTS[item.id] || "#426AA6",
                       display: "flex",
                       alignItems: "center",
                       gap: 11,
@@ -319,6 +331,7 @@ export default function Sidebar({
         <button
           type="button"
           onClick={() => onNavChange("premium")}
+          data-bkp-nav="premium"
           style={{
             display: "flex",
             alignItems: "center",
@@ -344,6 +357,7 @@ export default function Sidebar({
         <button
           type="button"
           onClick={() => onNavChange("contact")}
+          data-bkp-nav="contact"
           style={{
             width: "100%",
             display: "flex",
@@ -369,6 +383,7 @@ export default function Sidebar({
         <button
           type="button"
           onClick={onSignOut}
+          data-bkp-nav="signout"
           style={{
             width: "100%",
             display: "flex",

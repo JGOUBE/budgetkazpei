@@ -3,12 +3,12 @@ import { BkIcons } from "../components/icons-budgetkazpei"
 
 // Identité 2026 : couleurs en petites touches, surfaces neutres et aucune décoration de fond.
 const ACTIONS = [
-  { id: "shoppingList", fr: "Ma liste de courses", kr: "Ma liste courses", subtitle: "Préparer mes achats", icon: "shopping", accent: "#367C73", soft: "#E6F2ED" },
-  { id: "receipts", fr: "Scanner mon ticket", kr: "Scanner mon tiké", subtitle: "Suivre mes achats", icon: "scan", accent: "#467EA7", soft: "#E8F0F8" },
-  { id: "expense", fr: "Ajouter une dépense", kr: "Azout in dépans", subtitle: "Garder le cap", icon: "depenses", accent: "#568372", soft: "#EBF3ED" },
-  { id: "aides", fr: "Mes aides et mes droits", kr: "Mon bann èd ek mon bann drwa", subtitle: "Connaître mes droits", icon: "aides", accent: "#82759A", soft: "#F0EDF5" },
-  { id: "conseiller", fr: "Mon conseiller", kr: "Mon konseye", subtitle: "Trouver des réponses", icon: "assistant", accent: "#3B8994", soft: "#E6F3F4" },
-  { id: "goodDeals", fr: "Mes bons plans", kr: "Mon bann bon plan", subtitle: "Acheter plus malin", icon: "deals", accent: "#557F9B", soft: "#EAF1F7" },
+  { id: "shoppingList", fr: "Ma liste de courses", kr: "Ma liste courses", subtitle: "Préparer mes achats", icon: "shopping", accent: "#247987", soft: "#E6F3F4" },
+  { id: "receipts", fr: "Scanner mon ticket", kr: "Scanner mon tiké", subtitle: "Suivre mes achats", icon: "scan", accent: "#426AA6", soft: "#E9EFF8" },
+  { id: "expense", fr: "Ajouter une dépense", kr: "Azout in dépans", subtitle: "Garder le cap", icon: "depenses", accent: "#397C65", soft: "#E7F2EB" },
+  { id: "aides", fr: "Mes aides et mes droits", kr: "Mon bann èd ek mon bann drwa", subtitle: "Connaître mes droits", icon: "aides", accent: "#795F8A", soft: "#F1EDF5" },
+  { id: "conseiller", fr: "Mon conseiller", kr: "Mon konseye", subtitle: "Trouver des réponses", icon: "assistant", accent: "#4B789D", soft: "#EAF1F7" },
+  { id: "goodDeals", fr: "Mes bons plans", kr: "Mon bann bon plan", subtitle: "Acheter plus malin", icon: "deals", accent: "#9A617B", soft: "#F7EDF1" },
 ]
 
 function firstName(profile, user) {
@@ -22,7 +22,7 @@ export default function HomePage({ language = "fr", isMobile = false, profile, u
   return (
     <main className="bkp-home-2026" style={{ width: "100%", maxWidth: 1020, margin: "0 auto", padding: isMobile ? "17px 16px 32px" : "24px 0 46px" }}>
       <header style={{ marginBottom: isMobile ? 26 : 36 }}>
-        <p style={{ margin: "0 0 11px", color: "#497D7D", fontSize: 11, fontWeight: 800, letterSpacing: ".11em", textTransform: "uppercase" }}>
+        <p style={{ margin: "0 0 11px", color: "#426AA6", fontSize: 11, fontWeight: 800, letterSpacing: ".11em", textTransform: "uppercase" }}>
           {isKreol ? "Out lespas" : "Votre espace"}
         </p>
         <h1 style={{ margin: 0, color: "#263B42", fontFamily: "'DM Sans', sans-serif", fontSize: isMobile ? 30 : 39, fontWeight: 750, lineHeight: 1.16, letterSpacing: "-.035em" }}>
@@ -55,6 +55,7 @@ export default function HomePage({ language = "fr", isMobile = false, profile, u
                 border: "1px solid #DEE7E5",
                 background: "#FFFFFF",
                 "--bkp-home-accent": item.accent,
+                "--bkp-home-soft": item.soft,
                 color: "#263B42",
                 display: "flex",
                 flexDirection: "column",
@@ -73,7 +74,7 @@ export default function HomePage({ language = "fr", isMobile = false, profile, u
               </span>
               <span style={{ display: "flex", width: "100%", gap: 6, justifyContent: "space-between", alignItems: "flex-end" }}>
                 <span style={{ display: "grid", gap: 5, minWidth: 0 }}>
-                  <span className="bkp-home-action-title" style={{ color: "#263B42", fontSize: isMobile ? 14 : 16, fontWeight: 750, lineHeight: 1.27 }}>
+                  <span className="bkp-home-action-title" style={{ color: item.accent, fontSize: isMobile ? 14 : 16, fontWeight: 750, lineHeight: 1.27 }}>
                     {isKreol ? item.kr : item.fr}
                   </span>
                   {!isMobile && <span style={{ color: "#65797B", fontSize: 12 }}>{item.subtitle}</span>}

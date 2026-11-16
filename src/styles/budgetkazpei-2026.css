@@ -1,13 +1,14 @@
 /* BudgetKazPéi 2026 — Système visuel de l'application, distinct de la vitrine publique. */
 :root {
-  --bkp-2026-ink: #263b42;
-  --bkp-2026-muted: #61777b;
-  --bkp-2026-bg: #f7f9f8;
-  --bkp-2026-border: #dee7e5;
-  --bkp-2026-teal: #377c7d;
-  --bkp-2026-blue: #467ea7;
-  --bkp-2026-sage: #4c8974;
-  --bkp-2026-lavender: #80749a;
+  --bkp-2026-ink: #263445;
+  --bkp-2026-muted: #627481;
+  --bkp-2026-bg: #F7F8FA;
+  --bkp-2026-border: #E0E7EA;
+  --bkp-2026-teal: #247987;
+  --bkp-2026-blue: #426AA6;
+  --bkp-2026-sage: #397C65;
+  --bkp-2026-lavender: #795F8A;
+  --bkp-2026-berry: #9A617B;
 }
 
 /* Fin des textures, ombres et arrière-plans illustrés dans l'application connectée. */
@@ -274,3 +275,88 @@
 #root .bkp-app-2026 .bkp-shopping-tabs button:nth-child(1) svg { color: #3c877e !important; }
 #root .bkp-app-2026 .bkp-shopping-tabs button:nth-child(2) svg { color: #8173a2 !important; }
 #root .bkp-app-2026 .bkp-shopping-tabs button:nth-child(3) svg { color: #4b7da5 !important; }
+
+/* Nouvelle identité BudgetKazPéi 2026 : bleu denim, turquoise minéral,
+   eucalyptus, prune minérale et figue. Aucune ressemblance imposée avec LisAmi. */
+#root .bkp-app-2026 .bkp-home-action {
+  background-color: #fff !important; border-color: #e0e7ea !important;
+}
+#root .bkp-app-2026 .bkp-home-action .bkp-home-action-icon {
+  background-color: var(--bkp-home-soft, #e9eff8) !important;
+  color: var(--bkp-home-accent, #426aa6) !important;
+}
+#root .bkp-app-2026 .bkp-home-action .bkp-home-action-title,
+#root .bkp-app-2026 .bkp-home-action .bkp-home-action-arrow,
+#root .bkp-app-2026 .bkp-home-action .bkp-home-action-icon svg {
+  color: var(--bkp-home-accent, #426aa6) !important;
+}
+#root .bkp-app-2026 aside button[data-bkp-nav] {
+  background-color: transparent !important;
+  color: #41535f !important;
+  border-color: transparent !important;
+}
+#root .bkp-app-2026 aside button[data-bkp-nav] svg {
+  color: var(--bkp-nav-color, #426aa6) !important;
+}
+#root .bkp-app-2026 aside button[data-bkp-nav][aria-current="page"] {
+  background-color: #f1f5f8 !important;
+  border-color: #e0e7ea !important;
+  color: #263445 !important;
+}
+#root .bkp-app-2026 aside button[data-bkp-nav="premium"] {
+  background-color: #f1edf5 !important; color: #795f8a !important;
+  border-color: #e8e1ed !important;
+}
+#root .bkp-app-2026 aside button[data-bkp-nav="contact"] {
+  background-color: #e6f3f4 !important; color: #247987 !important;
+  border-color: #d5e9ea !important;
+}
+#root .bkp-app-2026 aside button[data-bkp-nav="signout"] {
+  background-color: #f7eff1 !important; color: #975b6a !important;
+  border-color: #eddee3 !important;
+}
+#root .bkp-app-2026 aside button:is([data-bkp-nav="premium"],[data-bkp-nav="contact"],[data-bkp-nav="signout"]) svg {
+  color: currentColor !important;
+}
+#root .bkp-app-2026 .bkp-shopping-add-button {
+  background-color: #e5f2f3 !important; color: #247987 !important;
+  border-color: #cde4e6 !important;
+}
+#root .bkp-app-2026 .bkp-shopping-save-button {
+  background-color: #f1edf5 !important; color: #795f8a !important;
+  border-color: #e3d9eb !important;
+}
+#root .bkp-app-2026 .bkp-shopping-share-button {
+  background-color: #e9eff8 !important; color: #426aa6 !important;
+  border-color: #d7e2f1 !important;
+}
+#root .bkp-app-2026 .bkp-snapshot-actions button:nth-child(1) { color: #426aa6 !important; }
+#root .bkp-app-2026 .bkp-snapshot-actions button:nth-child(2) { color: #247987 !important; }
+#root .bkp-app-2026 .bkp-snapshot-actions button:nth-child(3) { color: #795f8a !important; }
+#root .bkp-app-2026 .bkp-snapshot-actions button:nth-child(4) {
+  background-color: #f7eff1 !important; color: #975b6a !important; border-color: #eddee3 !important;
+}
+#root .bkp-app-2026 .bkp-shopping-tabs button:nth-child(1) { color: #247987 !important; }
+#root .bkp-app-2026 .bkp-shopping-tabs button:nth-child(2) { color: #795f8a !important; }
+#root .bkp-app-2026 .bkp-shopping-tabs button:nth-child(3) { color: #426aa6 !important; }
+#root .bkp-app-2026 .bkp-shopping-tabs button[aria-selected="true"] {
+  background-color: #fff !important; border-color: #d4dfe5 !important;
+}
+#root .bkp-app-2026 .bkp-shopping-tabs button:nth-child(1) svg { color: #247987 !important; }
+#root .bkp-app-2026 .bkp-shopping-tabs button:nth-child(2) svg { color: #795f8a !important; }
+#root .bkp-app-2026 .bkp-shopping-tabs button:nth-child(3) svg { color: #426aa6 !important; }
+#root .bkp-app-2026 button.bkp-stats-period {
+  background-color: #fff !important; color: #54677b !important; border-color: #dce5ea !important;
+}
+#root .bkp-app-2026 button.bkp-stats-period[aria-pressed="true"] {
+  background-color: #e9eff8 !important; color: #426aa6 !important; border-color: #bdcee4 !important;
+}
+#root .bkp-app-2026 button.bkp-profile-save-button:not(:disabled) {
+  background-color: #e7f2eb !important; color: #397c65 !important; border-color: #cae1d2 !important;
+}
+#root .bkp-app-2026 button.bkp-profile-send-button:not(:disabled) {
+  background-color: #e9eff8 !important; color: #426aa6 !important; border-color: #d6e2f1 !important;
+}
+#root .bkp-app-2026 button.bkp-contact-send-button:not(:disabled) {
+  background-color: #e6f3f4 !important; color: #247987 !important; border-color: #cde4e6 !important;
+}

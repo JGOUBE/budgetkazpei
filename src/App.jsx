@@ -493,6 +493,7 @@ function BudgetKazPeiApp({
         display: isMobile ? "block" : "flex",
       }}
       data-theme={themeName}
+      data-bkp-section={activeNav}
     >
       {isMobile && (
         <div
