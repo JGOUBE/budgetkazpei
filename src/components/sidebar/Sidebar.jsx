@@ -87,8 +87,8 @@ export default function Sidebar({
   }
 
   function getNavBackground({ active, locked }) {
-    if (active) return "rgba(249,115,22,.15)"
-    if (locked) return "rgba(252,211,77,.08)"
+    if (active) return "#E6F2EF"
+    if (locked) return "#F2F1F7"
     return "transparent"
   }
 
@@ -149,7 +149,7 @@ export default function Sidebar({
 
         <div
           style={{
-            background: "rgba(249,115,22,.10)",
+            background: "#F2F7F5",
             border: `1px solid ${ds.primary}55`,
             borderRadius: ds.radius,
             padding: "11px 13px",
@@ -205,7 +205,7 @@ export default function Sidebar({
                     : `1px solid ${ds.primary}66`
 
                   event.currentTarget.style.background = locked
-                    ? "rgba(252,211,77,.13)"
+                    ? "#F2F1F7"
                     : "rgba(249,115,22,.08)"
 
                   event.currentTarget.style.boxShadow = locked
