@@ -264,6 +264,8 @@ export default function StatisticsPage({
         {Object.entries(txt.periods).map(([id, label]) => (
           <button
             key={id}
+            className="bkp-stats-period"
+            aria-pressed={period === id}
             type="button"
             onClick={() => setPeriod(id)}
             style={{
@@ -283,10 +285,10 @@ export default function StatisticsPage({
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(4, 1fr)", gap: 14 }}>
-        <Metric colors={colors} title={txt.expenses} value={formatMontant(insights.monthly.totalExpenses)} color={colors.accent} background={colors.peachSoft} />
-        <Metric colors={colors} title={txt.income} value={formatMontant(insights.monthly.revenus)} color={colors.green} background={colors.sageSoft} />
-        <Metric colors={colors} title={txt.remaining} value={formatMontant(insights.monthly.remaining)} color={colors.cyan} background={colors.pastelBlue} />
-        <Metric colors={colors} title={txt.budgetUse} value={`${insights.monthly.budgetUse} %`} color={colors.yellow} background={colors.creamSoft} />
+        <Metric colors={colors} title={txt.expenses} value={formatMontant(insights.monthly.totalExpenses)} color="#9A617B" background="#F7EDF1" />
+        <Metric colors={colors} title={txt.income} value={formatMontant(insights.monthly.revenus)} color="#397C65" background="#E7F2EB" />
+        <Metric colors={colors} title={txt.remaining} value={formatMontant(insights.monthly.remaining)} color="#426AA6" background="#E9EFF8" />
+        <Metric colors={colors} title={txt.budgetUse} value={`${insights.monthly.budgetUse} %`} color="#795F8A" background="#F1EDF5" />
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr", gap: 16 }}>

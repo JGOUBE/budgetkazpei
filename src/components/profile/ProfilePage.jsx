@@ -656,6 +656,7 @@ export default function ProfilePage({ user, t }) {
           )}
 
           <button
+            className="bkp-profile-save-button"
             type="submit"
             disabled={saving}
             style={{
@@ -762,6 +763,7 @@ export default function ProfilePage({ user, t }) {
           )}
 
           <button
+            className="bkp-profile-send-button"
             type="submit"
             disabled={supportSending}
             style={{

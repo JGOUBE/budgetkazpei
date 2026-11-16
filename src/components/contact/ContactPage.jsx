@@ -366,6 +366,7 @@ export default function ContactPage({ user, t }) {
             )}
 
             <button
+              className="bkp-contact-send-button"
               type="submit"
               disabled={sending}
               style={{
