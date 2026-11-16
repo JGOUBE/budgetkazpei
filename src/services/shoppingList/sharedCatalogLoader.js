@@ -32,3 +32,17 @@ export async function loadSharedShoppingPrices({ client, pageSize = PAGE_SIZE } 
     if (!data || data.length < pageSize) return rows;
   }
 }
+
+// Search private retailer/OCR aliases through a narrow, authenticated RPC.
+// Only public product IDs/scores return to the device; raw aliases stay private.
+export async function searchSharedShoppingAliases({ client, query, limit = 24 } = {}) {
+  if (!client) throw new Error("missing_supabase_client");
+  const searched = String(query || "").trim();
+  if (searched.replace(/\s+/g, "").length < 3) return [];
+  const { data, error } = await client.rpc("shopping_find_product_ids_by_alias", {
+    p_query: searched,
+    p_limit: Math.min(Math.max(Number(limit) || 24, 1), 30),
+  });
+  if (error) throw error;
+  return (Array.isArray(data) ? data : []).filter(row => typeof row?.product_id === "string" && row.product_id);
+}
