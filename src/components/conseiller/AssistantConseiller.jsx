@@ -705,9 +705,18 @@ export default function AssistantConseiller({
   function resizeComposer() {
     const textarea = textareaRef.current
     if (!textarea) return
+    // Keep a genuine multi-line writing area even for a short question.
+    // Grow with longer messages without allowing the keyboard/composer to
+    // take over the entire conversation on a small phone.
+    const minimumHeight = window.matchMedia("(max-width: 700px)").matches ? 112 : 88
     textarea.style.height = "auto"
-    textarea.style.height = `${Math.min(textarea.scrollHeight, 132)}px`
+    textarea.style.height = `${Math.min(Math.max(textarea.scrollHeight, minimumHeight), 200)}px`
   }
+
+  useEffect(() => {
+    // Resize after React applies typed, prefilled or cleared text.
+    resizeComposer()
+  }, [question])
 
   function selectSuggestion(mode) {
     setShowTopicPicker(false)
@@ -923,11 +932,11 @@ export default function AssistantConseiller({
               <textarea
                 ref={textareaRef}
                 value={question}
-                onChange={event => { setQuestion(event.target.value); setQuickQuestionSelected(false); resizeComposer() }}
+                onChange={event => { setQuestion(event.target.value); setQuickQuestionSelected(false) }}
                 onKeyDown={handleComposerKeyDown}
                 placeholder={isKreol ? "Écris out question isi…" : "Écrivez votre question ici…"}
                 aria-label={isKreol ? "Out question pou le conseiller" : "Votre question pour le conseiller"}
-                rows={1}
+                rows={4}
                 disabled={loadingAssistant || loadingInsights}
               />
             </div>
