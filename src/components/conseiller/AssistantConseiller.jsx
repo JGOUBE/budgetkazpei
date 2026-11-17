@@ -32,6 +32,10 @@ import { resolveAdvisorLanguage } from "../../services/advisorLanguage"
 import { selectAidCandidatesForAdvisor } from "../../services/aidesRanking"
 import { prepareAdvisorAideContext } from "../../services/advisorAideContext"
 import {
+  shouldLookupAdvisorAids,
+  shouldUseLocalBudgetAnswer,
+} from "../../services/advisorQuestionRouter"
+import {
   ADVISOR_TURN_TYPES,
   buildAdvisorConversationContext,
   getAdvisorRankingOptions,
@@ -571,11 +575,16 @@ export default function AssistantConseiller({
     const responseLanguage = resolveAdvisorLanguage({ message: sentQuestion, interfaceLanguage })
     const detectedIntent = detectAssistantIntent(sentQuestion)
     const questionInsights = buildForQuestion(sentQuestion, responseLanguage)
-    const shouldAnswerLocally = detectedIntent !== "unknown" && (
-      currentMode === "budget_depenses" ||
-      currentMode === "general" && (
-        isBudgetAssistantIntent(detectedIntent) || detectedIntent === "cheapest_stores"
-      )
+    // The budget engine is for the user's recorded finances, not for every
+    // occurrence of "réduire", "course" or "abonnement" in an unusual question.
+    const shouldAnswerLocally = (
+      (currentMode === "budget_depenses" || currentMode === "general") &&
+      (isBudgetAssistantIntent(detectedIntent) || detectedIntent === "cheapest_stores") &&
+      shouldUseLocalBudgetAnswer({
+        question: sentQuestion,
+        mode: currentMode,
+        intent: detectedIntent,
+      })
     )
 
     setLoadingAssistant(true)
@@ -612,7 +621,21 @@ export default function AssistantConseiller({
     let result
 
     try {
-      const aides = currentMode === "budget_depenses" ? [] : await fetchAides()
+      // Avoid injecting a catalogue of 74 social aids into questions about
+      // science, cooking, fiction or jokes. Keep aid follow-ups and handoffs.
+      const preliminaryContext = buildAdvisorConversationContext({
+        question: sentQuestion,
+        recentHistory: history,
+        aides: [],
+      })
+      const needAidFacts = shouldLookupAdvisorAids({
+        question: sentQuestion,
+        mode: currentMode,
+        conversationContext: preliminaryContext,
+        recentHistory: history,
+        handoffContext: advisorHandoffContext,
+      })
+      const aides = needAidFacts ? await fetchAides() : []
 
       result = await callAssistantAi({
         sentQuestion,
