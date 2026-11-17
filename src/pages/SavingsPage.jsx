@@ -73,7 +73,7 @@ export default function SavingsPage({ user, language = "fr", standalone = false 
   useEffect(() => {
     let ignore = false
 
-    listShoppingItems({ userId: user?.id })
+    listShoppingItems({ userId: user?.id, includeProductIdentity: true })
       .then(rows => {
         if (!ignore) setShoppingItems(rows || [])
       })
