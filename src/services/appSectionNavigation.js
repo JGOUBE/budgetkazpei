@@ -10,8 +10,8 @@ const SECTION_ALIASES = Object.freeze({
   savings: { section: "shopping", shoppingTab: "savings" },
   shoppingList: { section: "shopping", shoppingTab: "list" },
   shopping_list: { section: "shopping", shoppingTab: "list" },
-  promotions: { section: "goodDeals", goodDealsView: "product_promotion" },
-  "promotions-pertinentes": { section: "goodDeals", goodDealsView: "product_promotion" },
+  promotions: { section: "shopping", shoppingTab: "savings" },
+  "promotions-pertinentes": { section: "shopping", shoppingTab: "savings" },
 })
 
 export function resolveAppSectionTarget(value) {
