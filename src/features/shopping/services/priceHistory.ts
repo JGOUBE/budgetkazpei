@@ -93,7 +93,7 @@ export function shoppingProductGroupingKey(item: ShoppingItem = {}) {
 }
 
 export function buildProductStats(items: ShoppingItem[] = [], normalizedName = "") {
-  const byExactProduct = normalizedName.startsWith("product:") || normalizedName.startsWith("normalized:")
+  const byExactProduct = normalizedName.startsWith("product:") || normalizedName.startsWith("normalized:") || normalizedName.startsWith("market:")
   const rows = items
     .filter(item => byExactProduct
       ? shoppingProductGroupingKey(item) === normalizedName
