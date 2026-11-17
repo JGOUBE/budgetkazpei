@@ -31,7 +31,15 @@ export function enrichShoppingItemsWithReceiptIdentities(shoppingItems = [], rec
 
     if (productIds.size !== 1) return shoppingItem
 
-    const identity = candidates[0]
+    const identity = candidates.find(item =>
+      Math.abs(Number(item.total_price || 0) - Number(shoppingItem.price || 0)) <= 0.02,
+    ) || candidates[0]
+    const receiptUnit = Number(identity.unit_price || 0)
+    const receiptQty = Number(identity.quantity || 0)
+    const receiptLine = Number(identity.total_price || 0)
+    const reliableReceiptUnit = receiptUnit > 0 && receiptQty > 0
+      && Math.abs(receiptUnit * receiptQty - receiptLine) <= 0.02
+      && Math.abs(receiptLine - Number(shoppingItem.price || 0)) <= 0.02
     return {
       ...shoppingItem,
       market_product_id: identity.market_product_id,
@@ -40,6 +48,8 @@ export function enrichShoppingItemsWithReceiptIdentities(shoppingItems = [], rec
       market_package_format: identity.market_package_format || null,
       market_match_type: identity.market_match_type || null,
       controlled_normalization: true,
+      receipt_pack_unit_price: reliableReceiptUnit ? receiptUnit : null,
+      receipt_pack_count: reliableReceiptUnit ? receiptQty : null,
     }
   })
 }
