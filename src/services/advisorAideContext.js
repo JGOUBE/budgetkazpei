@@ -1,3 +1,5 @@
+import { aidSourceStatus } from "./aidesRecommendationQuality.js"
+
 export function formatAdvisorAideAmount(aide = {}) {
   const min = Number(aide.montant_min)
   const max = Number(aide.montant_max)
@@ -13,7 +15,12 @@ export function formatAdvisorAideAmount(aide = {}) {
 }
 
 export function prepareAdvisorAideContext(aides = [], isKreol = false) {
-  return aides.slice(0, 8).map(aide => ({
+  return aides.filter(aide => aide && aide.actif !== false).slice(0, 8).map(aide => ({
+    // Source presence is NOT an eligibility guarantee: the user must confirm
+    // current rules and amounts with the authority before any application.
+    source_status: aidSourceStatus(aide).label,
+    eligibilite_confirmee: false,
+    regles_et_montants_a_confirmer: true,
     id: aide.id ?? null,
     nom: aide.nom || aide.aide_nom || "Aide",
     nom_kreol: aide.nom_kreol || aide.nom || "Aide",
@@ -33,7 +40,7 @@ export function prepareAdvisorAideContext(aides = [], isKreol = false) {
       aide.condition_profession,
       aide.condition_famille,
     ].filter(Boolean),
-    lien: aide.lien || "",
-    lien_officiel: aide.lien_officiel || aide.lien || "",
+    lien: aidSourceStatus(aide).url,
+    lien_officiel: aidSourceStatus({ lien_officiel: aide.lien_officiel }).url,
   }))
 }
