@@ -690,14 +690,9 @@ export default function ShoppingListPage({ user, isMobile = false, onOpenReceipt
       return
     }
     if (!onNavigate) return
-    onNavigate(createAppSectionTarget("goodDeals", {
-      goodDealsView: "product_promotion",
-      context: destination.kind === "internal_promotion" ? {
-        source: "shopping-list",
-        promotionId: destination.promotionId,
-        productId: promotion.productId,
-      } : undefined,
-    }))
+    // Mes bons plans is reserved for local venues and services. A price
+    // without an official external link stays in Courses intelligentes.
+    onNavigate(createAppSectionTarget("shopping", { shoppingTab: "savings" }))
   }
 
   function addItem(value) {
