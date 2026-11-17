@@ -18,7 +18,7 @@ export function safeAidSourceUrl(value = "") {
 }
 
 export function aidSourceStatus(aide = {}) {
-  const url = safeAidSourceUrl(aide.lien_officiel || aide.lien || aide.url)
+  const url = safeAidSourceUrl(aide.lien_officiel || aide.lien || aide.officialUrl || aide.url)
   return { available: Boolean(url), url,
     label: url ? "reference_disponible" : "reference_a_confirmer" }
 }
