@@ -104,6 +104,17 @@ export function evaluateSavingsProductEligibility(item: Record<string, any> = {}
   const confidence = confidenceRaw == null || confidenceRaw === "" ? null : numberValue(confidenceRaw)
 
   if (!label) return { eligible: false, reason: "missing_product_name" }
+  if (item.receipt_variable_weight === true) {
+    return { eligible: false, reason: "variable_weight_without_verified_mass" }
+  }
+  // Loose produce may be sold by weight; a line total is not the price
+  // per kilogram. Without a measured quantity or format, do not compare.
+  const normalizedLabel = normalizedText(label)
+  const noMeasuredFormat = !/\b\d+(?:[,.]\d+)?\s*(kg|g|gr|l|cl|ml)\b/i.test(label)
+  if (noMeasuredFormat && !["kg","g"].includes(String(item.unit || "").toLowerCase())
+    && /^(?:pommes?|poires?|bananes?|raisins?|mangues?|aubergines?|avocats?|fruits? de la passion|tomates?|concombres?|carottes?|oignons?)\b/.test(normalizedLabel)) {
+    return { eligible: false, reason: "loose_produce_without_verified_weight" }
+  }
   if (item.eligible_for_courses === false) return { eligible: false, reason: "not_eligible_for_courses" }
   if (explicitTypes.some(type => NON_PRODUCT_TYPES.has(type))) return { eligible: false, reason: "non_product_type" }
   if (item.needs_review === true) return { eligible: false, reason: "needs_review" }
