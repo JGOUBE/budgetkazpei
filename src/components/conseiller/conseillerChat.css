@@ -931,3 +931,51 @@
   .bkp-advisor-composer-hint { display: none; }
   .bkp-advisor-chat { height: calc(100dvh - 198px); min-height: 385px; }
 }
+
+.bkp-advisor-topic-picker { display: grid; gap: 7px; justify-items: start; }
+.bkp-advisor-topic-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 31px;
+  padding: 4px 0;
+  border: 0;
+  background: transparent;
+  color: #466B59;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.bkp-advisor-topic-toggle[aria-expanded="true"] svg { transform: rotate(90deg); }
+.bkp-advisor-topic-choices {
+  width: 100%;
+  max-height: 140px;
+  overflow-y: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  padding: 3px 0;
+}
+.bkp-advisor-topic-choices button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 7px 10px;
+  border: 1px solid #D1DFD6;
+  border-radius: 10px;
+  background: #EFF6F0;
+  color: #375D4B;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  text-align: left;
+  box-shadow: none;
+  cursor: pointer;
+}
+.bkp-advisor-topic-choices button:focus-visible,
+.bkp-advisor-topic-toggle:focus-visible {
+  outline: 3px solid #7FAEAF;
+  outline-offset: 2px;
+}
