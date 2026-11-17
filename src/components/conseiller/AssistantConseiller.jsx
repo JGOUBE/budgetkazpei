@@ -34,6 +34,7 @@ import { prepareAdvisorAideContext } from "../../services/advisorAideContext"
 import {
   shouldLookupAdvisorAids,
   shouldUseLocalBudgetAnswer,
+  resolveAdvisorModeForQuestion,
 } from "../../services/advisorQuestionRouter"
 import {
   ADVISOR_TURN_TYPES,
@@ -566,7 +567,7 @@ export default function AssistantConseiller({
     const sentQuestion = String(messageOverride?.question ?? question).trim()
     if (!sentQuestion) return
 
-    const currentMode = messageOverride?.mode || assistantMode || "general"
+    const requestedMode = messageOverride?.mode || assistantMode || "general"
     const requestedQuickPreset = Boolean(
       messageOverride?.quickQuestionSelected ?? quickQuestionSelected
     )
@@ -574,6 +575,11 @@ export default function AssistantConseiller({
     const interfaceLanguage = isKreol ? "kreol" : "fr"
     const responseLanguage = resolveAdvisorLanguage({ message: sentQuestion, interfaceLanguage })
     const detectedIntent = detectAssistantIntent(sentQuestion)
+    const currentMode = resolveAdvisorModeForQuestion({
+      mode: requestedMode,
+      question: sentQuestion,
+      intent: detectedIntent,
+    })
     const questionInsights = buildForQuestion(sentQuestion, responseLanguage)
     // The budget engine is for the user's recorded finances, not for every
     // occurrence of "réduire", "course" or "abonnement" in an unusual question.
