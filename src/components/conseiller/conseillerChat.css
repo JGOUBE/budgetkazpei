@@ -608,18 +608,20 @@
 }
 
 .bkp-advisor-composer textarea {
+  display: block;
   width: 100%;
-  min-height: 27px;
-  max-height: 132px;
+  min-height: 88px;
+  max-height: 200px;
+  box-sizing: border-box;
   resize: none;
   overflow-y: auto;
-  padding: 3px 0;
+  padding: 8px 2px;
   color: var(--bkp-text);
   background: transparent;
   border: 0;
   outline: 0;
   font: inherit;
-  font-size: 14px;
+  font-size: 15px;
   line-height: 1.5;
 }
 
@@ -782,8 +784,18 @@
 
   .bkp-advisor-suggestions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
-  .bkp-advisor-composer { padding-left: 11px; }
-  .bkp-advisor-send { width: 40px; height: 40px; }
+  .bkp-advisor-composer {
+    padding: 9px 9px 9px 13px;
+    align-items: flex-end;
+  }
+  .bkp-advisor-composer textarea {
+    min-height: 112px;
+    max-height: 200px;
+    font-size: 16px;
+    line-height: 1.5;
+    padding: 8px 2px;
+  }
+  .bkp-advisor-send { width: 44px; height: 44px; }
 }
 
 @media (max-width: 350px) {
