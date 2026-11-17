@@ -5,9 +5,9 @@ import { findPrimaryAidTopicIds, normalizeAidTopicText } from "./aidTopics.js"
 // A general question should remain general, even during an aid conversation.
 const SELF_CONTAINED_STARTS = /^(?:pourquoi|comment|combien|quel(?:le|les|s)?|qu(?:e| est ce qu| est ce que)|est ce que|peux tu|pourrais tu|explique|raconte|imagine|invente|ecris|ecrit|donne moi|sais tu|qui |ou |quand )\b/
 const REFERENTIAL = /\b(?:ca|cela|cette aide|cet organisme|ce dossier|ce courrier|la meme aide|celui ci|celle ci|en beneficier|en profiter|l obtenir|la demander|le demander|ce montant|ses conditions|cette demarche|ce sujet|c est quoi|et ensuite|et pour|et alors)\b/
-const CREATIVE = /\b(?:imagine|invente|raconte|fiction|fictif|farfelu|farfelue|extraterrestre|dragon|licorne|magique|super heros|voyage dans le temps|sur la lune|lune en fromage|si les chats|si mon chat|chat president|hypothese absurde)\b/
+const CREATIVE = /\b(?:imagine|invente|raconte|fiction|fictif|farfelu|farfelue|extraterrestre|dragon|licorne|magique|super heros|voyage dans le temps|sur la lune|lune en fromage|si les chats|si mon chat|chat president|lune.*fromage|si (?:la |le |les |mon |ma |un |une )?(?:lune|licorne|extraterrestre)|hypothese absurde)\b/
 const AID_REQUEST = /\b(?:aides? financieres?|aides? sociales?|aides? pour|allocations?|subventions?|droit aux aides|droits sociaux|prestations? sociales?|caf|rsa|apl|fsl|ccas|mdph|prime d activite|cheque energie|pass sport|aide au logement|demande d aide|demander une aide|eligible a une aide)\b/
-const PERSONAL_BUDGET = /\b(?:mon budget|mes budgets|mes depenses|ma depense|mon loyer|mes revenus|mon revenu|mes charges|mes abonnements|mes economies|mes achats|ma liste de courses|mon panier|mes courses|mon argent|ma marge|combien j ai depense|combien je depense|ce mois ci|mois dernier|ma facture|mes factures|reste t il|me reste|j ai paye|je paie|je depense|je gagne|euros? par mois|depenses alimentaires)\b/
+const PERSONAL_BUDGET = /\b(?:mon budget|mes budgets|mes depenses|ma depense|mon loyer|mon abonnement|mes revenus|mon revenu|mes charges|mes abonnements|mes economies|mes achats|ma liste de courses|mon panier|mes courses|mon argent|ma marge|combien j ai depense|combien je depense|ce mois ci|mois dernier|ma facture|mes factures|reste t il|me reste|j ai paye|je paie|je depense|me coute|ai je depense|j ai depense|je gagne|euros? par mois|depenses alimentaires)\b/
 const NON_FINANCIAL = /\b(?:pollution|soleil|etoiles?|jupiter|saturne|planetes?|galaxie|animaux?|chats?|chiens?|football|course a pied|courses de chevaux|course de velo|basket ball|panier de basket|cuisson|cuisine|recette|plantes?|volcans?|vagues?|marees?|fantomes?|super pouvoirs?|licornes?|dinosaures?|conjugaison|poemes?|rime|humour|blague)\b/
 
 export function looksPlayfulOrFictionalQuestion(question = "") {
@@ -42,7 +42,7 @@ export function shouldUseLocalBudgetAnswer({question = "",mode = "general",inten
   // because it contains generic words like réduire, cours(es) or abonnement.
   if (NON_FINANCIAL.test(text) && !personal) return false
   if (personal) return true
-  const specificallyFinancial = /\b(?:argent|budget|cout|prix|depens|economis|factur|achats?|ch[eè]r|paye|payer|abonnement|loyer|credit|revenu|salaire)\b/.test(text)
+  const specificallyFinancial = /\b(?:argent|budget|cout|prix|depens|economis|factur|achats?|cher|paye|payer|abonnement|loyer|credit|revenu|salaire)\b/.test(text)
   return mode === "budget_depenses" && specificallyFinancial
 }
 
@@ -52,7 +52,8 @@ export function shouldLookupAdvisorAids({
   if (looksPlayfulOrFictionalQuestion(question)) return false
   const text = normalizeAidTopicText(question)
   const explicitAid = AID_REQUEST.test(text)
-  if (["trouver_aide","scan_profil"].includes(mode)) return true
+  if (mode === "scan_profil") return true
+  if (mode === "trouver_aide" && (!isSelfContainedNewQuestion(question) || explicitAid)) return true
   if (explicitAid) return true
   if (handoffContext && Object.keys(handoffContext).length > 0) return true
   const previousRecommended = (Array.isArray(recentHistory)?recentHistory:[]).some(item =>
@@ -70,4 +71,16 @@ export function advisorQuestionKind(question = "",conversationContext = {}) {
   if (conversationContext.turnType === "FOLLOW_UP" && !isSelfContainedNewQuestion(question)) return "follow_up"
   if (shouldLookupAdvisorAids({question,conversationContext})) return "aids"
   return "general"
+}
+
+export function resolveAdvisorModeForQuestion({
+  mode = "general",question = "",intent = "unknown",
+} = {}) {
+  // A user is allowed to change subjects without pressing a "general" tab.
+  // This never changes advanced premium mode authorization.
+  if (!isSelfContainedNewQuestion(question)) return mode
+  if (mode === "budget_depenses" &&
+      !shouldUseLocalBudgetAnswer({ question,mode,intent })) return "general"
+  if (mode === "trouver_aide" && !AID_REQUEST.test(normalizeAidTopicText(question))) return "general"
+  return mode
 }
