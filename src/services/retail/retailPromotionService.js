@@ -334,7 +334,7 @@ export async function loadActiveRetailPromotions({ client } = {}) {
     .filter(promotion => promotion.isActive))
 }
 
-export async function loadPublishedGoodDeals({ client } = {}) {
+export async function loadPublishedGoodDeals({ client, includeRetailPromotions = true } = {}) {
   if (!client) throw new Error("retail_promotion_client_required")
   const { data: legacyDeals, error: dealsError } = await client
     .from("published_good_deals")
@@ -344,15 +344,19 @@ export async function loadPublishedGoodDeals({ client } = {}) {
 
   if (dealsError) throw dealsError
 
-  const retailResult = await client
-    .from("published_retail_promotions")
-    .select("*")
-    .order("is_featured", { ascending: false })
-    .order("starts_at", { ascending: true, nullsFirst: false })
+  // Local deals no longer need the supermarket promotion projection.
+  // The default remains unchanged for Courses intelligentes and legacy tests.
+  const retailResult = includeRetailPromotions
+    ? await client
+      .from("published_retail_promotions")
+      .select("*")
+      .order("is_featured", { ascending: false })
+      .order("starts_at", { ascending: true, nullsFirst: false })
+    : { data: [], error: null }
 
   if (retailResult.error && !isMissingViewError(retailResult.error)) throw retailResult.error
 
-  const hasRetailProjection = !retailResult.error
+  const hasRetailProjection = includeRetailPromotions && !retailResult.error
   const baseDeals = hasRetailProjection
     ? (legacyDeals || []).filter(deal => !isRetailPromotionDeal(deal))
     : (legacyDeals || [])

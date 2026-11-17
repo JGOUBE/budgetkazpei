@@ -213,7 +213,8 @@ assert.deepEqual(createAppSectionTarget("shopping", { shoppingTab: "list", conte
   context: { source: "promotions" },
   legacy: false,
 })
-assert.equal(resolveAppSectionTarget("promotions").section, "goodDeals")
+assert.equal(resolveAppSectionTarget("promotions").section, "shopping")
+assert.equal(resolveAppSectionTarget("promotions").shoppingTab, "savings")
 
 // Contrat SQL : fraîcheur publique, sérialisation et unicité active.
 const migration = readFileSync(join(
