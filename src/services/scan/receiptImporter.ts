@@ -3,7 +3,7 @@ import { syncShoppingItemsFromReceipt } from "../../features/shopping/services/s
 import { learnManualMarketAliasFromReceiptItem } from "./marketManualAliasService"
 import { classifyReceipt } from "./receiptClassifier"
 import { syncAnonymizedMarketReceipt } from "./marketObservationService"
-import { learnSharedShoppingCatalogFromReceipt } from "./receiptCatalogLearningService"
+import { learnSharedShoppingCatalogFromReceipt, linkVerifiedReceiptProducts } from "./receiptCatalogLearningService"
 import { enrichProductDictionary } from "./productKnowledgeService"
 import { isItemEligibleForSmartShopping } from "./receiptRules"
 
@@ -227,6 +227,17 @@ export async function importValidatedReceipt({
       scannerLog("Apprentissage catalogue partage", "OK", catalogResult)
     } catch (error) {
       console.warn("[scanner] Apprentissage catalogue partage indisponible", error)
+    }
+  }
+
+  // Always attempt exact, owner-scoped product linking, including for
+  // auto-trusted lines. This is NOT a price-publishing or correction action.
+  if (canFeedShopping) {
+    try {
+      const links = await linkVerifiedReceiptProducts(receipt.id)
+      scannerLog("Correspondances produits verifiees", "OK", links)
+    } catch (error) {
+      console.warn("[scanner] Correspondances produits indisponibles", error)
     }
   }
 

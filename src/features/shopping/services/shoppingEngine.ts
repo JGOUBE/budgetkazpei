@@ -40,6 +40,13 @@ function isReviewItem(item: Record<string, any> = {}) {
     || status.includes("rejected")
 }
 
+function refineShoppingCategory(label = "", existingCategory = "") {
+  const name = normalizeForGuard(label);
+  if (/\b(mouchoirs?|batonnets? ouates?|cotons? tiges?|dentifrice|dent soin complet)\b/.test(name)) return "hygiene";
+  if (/\balim(?:ent)? comp(?:let)? rich(?:e)? (?:en )?volail(?:le)?\b/.test(name)) return "animalerie";
+  return existingCategory || "alimentaire";
+}
+
 function isParasiteProductName(value = "") {
   const raw = String(value || "")
   const clean = normalizeForGuard(value)
@@ -99,7 +106,8 @@ function buildShoppingRows({ userId, transactionId, receipt, items }: { userId: 
       const quantity = explicitIsMeasured && explicitQuantity > 0
         ? explicitQuantity
         : inferredIsMeasured
-          ? inferred.quantity
+          // A receipt line can contain multiple packs of a stated format.
+          ? inferred.quantity * (explicitQuantity > 0 ? explicitQuantity : 1)
           : explicitQuantity || inferred.quantity || 1
       const unit = explicitIsMeasured
         ? explicitUnit
@@ -119,7 +127,7 @@ function buildShoppingRows({ userId, transactionId, receipt, items }: { userId: 
         corrected_name: correctedName || productName,
         normalized_name: normalizedName || productName.toLowerCase(),
         brand: item.brand || guessBrand(productName) || null,
-        category: item.category || "alimentaire",
+        category: refineShoppingCategory(productName, item.category),
         subcategory: item.subcategory || null,
         department: item.department || item.ticket_section || null,
         promotion: Boolean(item.promotion),
@@ -160,7 +168,7 @@ export async function listShoppingItems({
 
   const identityResult = await supabase
     .from("receipt_items")
-    .select("receipt_id,name,corrected_name,normalized_name,market_product_id,market_matched,market_match_type,market_canonical_name,market_brand,market_package_format")
+    .select("receipt_id,name,corrected_name,normalized_name,quantity,unit_price,total_price,market_product_id,market_matched,market_match_type,market_canonical_name,market_brand,market_package_format")
     .eq("user_id", userId)
     .eq("market_matched", true)
     .in("receipt_id", receiptIds)

@@ -118,7 +118,7 @@ export default function ShoppingInsightsPage({ user, t, isMobile = false, standa
       setLoading(true)
 
       try {
-        const rows = await listShoppingItems({ userId: user?.id })
+        const rows = await listShoppingItems({ userId: user?.id, includeProductIdentity: true })
         if (!ignore) setItems(rows)
       } catch (error) {
         console.error("Erreur habitudes courses:", error)

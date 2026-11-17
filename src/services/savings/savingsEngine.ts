@@ -104,6 +104,17 @@ export function evaluateSavingsProductEligibility(item: Record<string, any> = {}
   const confidence = confidenceRaw == null || confidenceRaw === "" ? null : numberValue(confidenceRaw)
 
   if (!label) return { eligible: false, reason: "missing_product_name" }
+  if (item.receipt_variable_weight === true) {
+    return { eligible: false, reason: "variable_weight_without_verified_mass" }
+  }
+  // Loose produce may be sold by weight; a line total is not the price
+  // per kilogram. Without a measured quantity or format, do not compare.
+  const normalizedLabel = normalizedText(label)
+  const noMeasuredFormat = !/\b\d+(?:[,.]\d+)?\s*(kg|g|gr|l|cl|ml)\b/i.test(label)
+  if (noMeasuredFormat && !["kg","g"].includes(String(item.unit || "").toLowerCase())
+    && /^(?:pommes?|poires?|bananes?|raisins?|mangues?|aubergines?|avocats?|fruits? de la passion|tomates?|concombres?|carottes?|oignons?)\b/.test(normalizedLabel)) {
+    return { eligible: false, reason: "loose_produce_without_verified_weight" }
+  }
   if (item.eligible_for_courses === false) return { eligible: false, reason: "not_eligible_for_courses" }
   if (explicitTypes.some(type => NON_PRODUCT_TYPES.has(type))) return { eligible: false, reason: "non_product_type" }
   if (item.needs_review === true) return { eligible: false, reason: "needs_review" }
@@ -140,7 +151,10 @@ function normalizeUnit(unit = "") {
 
 export function extractComparablePackage(item: Record<string, any> = {}): PackageInfo {
   const rawLabel = String(item.product_name || item.corrected_name || item.canonical_name || item.name || "")
-  const formatMatch = rawLabel.match(/\b(\d+(?:[,.]\d+)?)\s*(kg|kgs|kilogrammes?|g|gr|grammes?|l|litres?|cl|ml)\b/i)
+  const multi = rawLabel.match(/\b(?:u)?(\d{1,3})\s*[x×]\s*(\d+(?:[,.]\d+)?)\s*(kg|kgs|g|gr|l|cl|ml)\b/i)
+  const formatMatch = multi
+    ? [multi[0], String(numberValue(multi[1]) * numberValue(multi[2])), multi[3]]
+    : rawLabel.match(/\b(\d+(?:[,.]\d+)?)\s*(kg|kgs|kilogrammes?|g|gr|grammes?|l|litres?|cl|ml)\b/i)
   const lotMatch = rawLabel.match(/\b(?:lot|pack)\s*(?:de\s*)?(\d+)\b|\b(\d+)\s*(?:x|pcs?|pieces?|unit[eé]s?)\b/i)
 
   if (formatMatch) {
@@ -198,7 +212,10 @@ export function buildComparableProductIdentity(item: Record<string, any> = {}) {
     return { key: `barcode:${barcode}`, kind: "structured", label: itemLabel(item), packageInfo }
   }
 
-  const structuredId = normalizedText(item.product_id || item.product_key || item.known_product_id || "")
+  const structuredId = normalizedText(
+    item.product_id || item.product_key || item.known_product_id
+    || (item.controlled_normalization ? item.market_product_id : "") || "",
+  )
   if (structuredId) {
     return { key: `product:${structuredId}`, kind: "structured", label: itemLabel(item), packageInfo }
   }
@@ -224,8 +241,14 @@ function observationDate(item: Record<string, any> = {}) {
 }
 
 function comparablePrice(item: Record<string, any>, packageInfo: PackageInfo) {
-  const rawPrice = numberValue(item.price ?? item.total_price ?? item.unit_price)
-  const unitPrice = numberValue(item.price_per_unit ?? item.price_per_kg ?? item.price_per_liter)
+  const receiptPackPrice = numberValue(item.receipt_pack_unit_price)
+  // A line with two 500g packs is not a single pack priced twice as high.
+  // Use only the unit pack price verified against the original receipt line.
+  const rawPrice = receiptPackPrice > 0
+    ? receiptPackPrice : numberValue(item.price ?? item.total_price ?? item.unit_price)
+  const unitPrice = packageInfo.baseAmount > 0
+    ? rawPrice / packageInfo.baseAmount
+    : numberValue(item.price_per_unit ?? item.price_per_kg ?? item.price_per_liter)
   return { rawPrice, unitPrice, packageInfo }
 }
 
@@ -334,12 +357,49 @@ export function buildReliableSavingsSuggestions(shoppingItems: any[] = []) {
 
 export function buildSavingsInsights({
   shoppingItems = [],
+  catalogComparisons = [],
 }: {
   shoppingItems?: any[]
+  catalogComparisons?: any[]
   transactions?: any[]
   language?: string
 } = {}) {
-  const suggestions = buildReliableSavingsSuggestions(shoppingItems)
+  const personal = buildReliableSavingsSuggestions(shoppingItems)
+  const verifiedCatalog = (Array.isArray(catalogComparisons) ? catalogComparisons : [])
+    .filter(row => Number(row.reference_price) > Number(row.alternative_price)
+      && Number(row.alternative_price) > 0 && Number(row.saving_per_pack) >= MIN_SAVING
+      && row.shopping_product_id && row.product_name
+      && row.reference_store && row.alternative_retailer_slug
+      && row.reference_date && row.alternative_date)
+    .map(row => ({
+      productKey: "catalog:" + row.shopping_product_id,
+      product: row.product_name,
+      identityKind: "verified_catalog",
+      referenceStore: row.reference_store,
+      bestStore: row.alternative_store_name || row.alternative_retailer_slug,
+      referencePrice: roundMoney(Number(row.reference_price)),
+      alternativePrice: roundMoney(Number(row.alternative_price)),
+      potentialSaving: roundMoney(Number(row.saving_per_pack)),
+      normalizedComparison: false,
+      unitLabel: "",
+      referenceDate: row.reference_date,
+      lastObservedAt: row.alternative_date,
+      observationsCount: 2,
+      comparedStoresCount: 2,
+      wording: "dated_verified_catalog_observation",
+    }))
+  // Do not claim two separate savings for a product when the personal
+  // history and the verified shared catalog happen to describe the same SKU.
+  const byExactLabel = new Map<string, any>()
+  for (const candidate of [...personal, ...verifiedCatalog]) {
+    const key = normalizedText(candidate.product)
+    const previous = byExactLabel.get(key)
+    if (!previous || candidate.potentialSaving > previous.potentialSaving) {
+      byExactLabel.set(key, candidate)
+    }
+  }
+  const suggestions = [...byExactLabel.values()]
+    .sort((left, right) => right.potentialSaving - left.potentialSaving)
   const totalPotential = roundMoney(suggestions.reduce((sum, item) => sum + item.potentialSaving, 0))
 
   return {

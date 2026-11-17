@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react"
 import { CalendarClock, PiggyBank, ScanLine, Store } from "lucide-react"
 import { listShoppingItems } from "../features/shopping/services/shoppingEngine"
 import { buildSavingsInsights } from "../services/savings/savingsEngine"
+import { supabase } from "../services/supabase"
+import { formatSharedPriceRetailer } from "../services/shoppingList/sharedPricePresentation"
 import { buildHabitSuggestions } from "../features/shopping/services/habitAdvice"
 import HabitAdviceCard from "../features/shopping/components/HabitAdviceCard"
 import { formatMontant } from "../utils/format"
@@ -11,7 +13,7 @@ const COPY = {
   fr: {
     eyebrow: "Comparaisons fiables",
     title: "Mes économies",
-    intro: "Des pistes prudentes, calculées uniquement à partir de produits comparables dans vos achats enregistrés.",
+    intro: "Comparaisons prudentes de vos achats et de prix relevés, uniquement pour des produits précisément identifiés.",
     potential: "Économie potentielle repérée",
     potentialHint: "Somme des écarts fiables pour le dernier achat comparable de chaque produit.",
     suggestions: "Comparaisons disponibles",
@@ -22,7 +24,7 @@ const COPY = {
     lastSeen: "Dernière observation",
     observations: count => `${count} observation${count > 1 ? "s" : ""}`,
     emptyTitle: "Pas encore assez de données comparables",
-    empty: "Continuez à scanner vos tickets pour enrichir vos comparaisons. BudgetKazPéi préfère ne rien afficher plutôt que proposer une économie incertaine.",
+    empty: "Aucun prix inférieur suffisamment fiable pour le même produit dans une autre enseigne. Les observations datées de vos prochains achats permettront d'améliorer ces comparaisons.",
     error: "Les comparaisons ne peuvent pas être chargées pour le moment.",
     loading: "Vérification des produits comparables…",
   },
@@ -67,15 +69,64 @@ function formatDate(value) {
 export default function SavingsPage({ user, language = "fr", standalone = false }) {
   const txt = isKreolLanguage(language) ? COPY.kreol : COPY.fr
   const [shoppingItems, setShoppingItems] = useState([])
+  const [catalogComparisons, setCatalogComparisons] = useState([])
+  const [unreconciledReceiptIds, setUnreconciledReceiptIds] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
   useEffect(() => {
     let ignore = false
 
-    listShoppingItems({ userId: user?.id })
-      .then(rows => {
-        if (!ignore) setShoppingItems(rows || [])
+    if (!user?.id) {
+      setShoppingItems([])
+      setCatalogComparisons([])
+      setUnreconciledReceiptIds([])
+      setLoading(false)
+      return () => { ignore = true }
+    }
+
+    // The server checks ownership and only returns lower, dated prices for
+    // the SAME verified commercial SKU at a different retailer.
+    supabase.rpc("shopping_verified_catalog_savings", { p_max_age_days: 180 })
+      .then(({ data, error }) => {
+        if (error) throw error
+        if (!ignore) setCatalogComparisons((data || []).map(entry => ({
+          ...entry,
+          alternative_store_name: formatSharedPriceRetailer({
+            retailer_slug: entry.alternative_retailer_slug,
+            commune: entry.alternative_commune,
+            locality: entry.alternative_locality,
+          }),
+        })))
+      })
+      .catch(() => { if (!ignore) setCatalogComparisons([]) })
+
+    Promise.all([
+      listShoppingItems({ userId: user?.id, includeProductIdentity: true }),
+      supabase.from("receipts")
+        .select("id,total_amount")
+        .eq("user_id",user.id)
+        .eq("validation_status","validated")
+        .is("removed_from_history_at",null)
+        .is("duplicate_of_receipt_id",null),
+    ])
+      .then(([rows, receiptsResult]) => {
+        if (receiptsResult.error) throw receiptsResult.error
+        if (ignore) return
+        const receiptTotals = new Map((receiptsResult.data || []).map(receipt =>
+          [receipt.id, Number(receipt.total_amount) || 0]))
+        const lineTotals = new Map()
+        for (const row of rows || []) {
+          if (!row.receipt_id) continue
+          lineTotals.set(row.receipt_id, (lineTotals.get(row.receipt_id) || 0) + (Number(row.price) || 0))
+        }
+        // Discounts that cannot be attributed to a product must never be
+        // turned into claimed per-product savings. Purchases stay in habits.
+        const unreconciled = [...lineTotals.entries()].filter(([id, amount]) =>
+          receiptTotals.has(id) && Math.abs(amount - receiptTotals.get(id)) > 0.05,
+        ).map(([id]) => id)
+        setUnreconciledReceiptIds(unreconciled)
+        setShoppingItems(rows || [])
       })
       .catch(loadError => {
         console.error("Erreur chargement économies:", loadError)
@@ -91,11 +142,15 @@ export default function SavingsPage({ user, language = "fr", standalone = false 
     return () => { ignore = true }
   }, [user?.id])
 
+  const comparableItems = useMemo(() => {
+    const excluded = new Set(unreconciledReceiptIds)
+    return shoppingItems.filter(row => !excluded.has(row.receipt_id))
+  }, [shoppingItems, unreconciledReceiptIds])
   const insights = useMemo(
-    () => buildSavingsInsights({ shoppingItems }),
-    [shoppingItems],
+    () => buildSavingsInsights({ shoppingItems: comparableItems, catalogComparisons }),
+    [comparableItems, catalogComparisons],
   )
-  const habitSuggestions = useMemo(() => buildHabitSuggestions(shoppingItems), [shoppingItems])
+  const habitSuggestions = useMemo(() => buildHabitSuggestions(comparableItems), [comparableItems])
 
   return (
     <section className="bkp-savings-panel" aria-labelledby="shopping-savings-title">

@@ -4,6 +4,18 @@ import { supabase } from "../supabase"
 // An error must never prevent a receipt from being saved.
 const LEARNING_TIMEOUT_MS = 7000
 
+// Link high-confidence exact product identities to receipt lines in the
+// user's own history, without publishing or modifying price observations.
+export async function linkVerifiedReceiptProducts(receiptId: string) {
+  const id = String(receiptId || "").trim();
+  if (!id) return { ok: false, skipped: true, reason: "missing_receipt_id" };
+  const { data, error } = await supabase.rpc("shopping_link_verified_receipt_items", {
+    p_receipt_id: id,
+  });
+  if (error) throw error;
+  return data || { ok: false, skipped: true, reason: "missing_result" };
+}
+
 export async function learnSharedShoppingCatalogFromReceipt(receiptId: string) {
   const id = String(receiptId || "").trim()
   if (!id) return { ok: false, skipped: true, reason: "missing_receipt_id" }

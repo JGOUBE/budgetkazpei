@@ -38,7 +38,7 @@ export function useStatisticsInsights({
 
       try {
         const [shoppingRows, receiptsResult] = await Promise.all([
-          listShoppingItems({ userId }),
+          listShoppingItems({ userId, includeProductIdentity: true }),
           supabase
             .from("receipts")
             .select("id, store_name, purchase_date, total_amount, created_at, duplicate_of_receipt_id")
