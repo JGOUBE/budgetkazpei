@@ -357,7 +357,7 @@ function buildSavingsAnswer(insights) {
       kr: `BudgetKazPéi la trouve ${formatMontant(grocery.reliableSavingsTotal)} lékonomi pèsonèl suffisamment fiable su out liste. Panier i passe in estimasyon historique ${formatMontant(grocery.historicalBasketEstimate)} à environ ${formatMontant(grocery.optimizedBasketEstimate)}.`,
       intent: ASSISTANT_INTENTS.BUDGET_SAVINGS,
       insights,
-      actions: [action("savings", "Voir mes économies", "War mon bann lékonomi"), action("promotions", "Voir mes bons plans", "War mon bann bon plan")],
+      actions: [action("savings", "Voir mes économies", "War mon bann lékonomi")],
     })
   }
   const promoNote = Number(grocery.reliablePromotionCount || 0) > 0
@@ -371,7 +371,7 @@ function buildSavingsAnswer(insights) {
     kr: `Lékonomi fiable kalkilé su out liste : ${formatMontant(0)}.${promoNoteKr}`,
     intent: ASSISTANT_INTENTS.BUDGET_SAVINGS,
     insights,
-    actions: [action("promotions", "Voir mes bons plans", "War mon bann bon plan")],
+    actions: [action("savings", "Voir mes économies", "War mon bann lékonomi")],
   })
 }
 
