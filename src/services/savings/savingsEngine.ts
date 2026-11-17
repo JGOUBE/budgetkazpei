@@ -346,12 +346,49 @@ export function buildReliableSavingsSuggestions(shoppingItems: any[] = []) {
 
 export function buildSavingsInsights({
   shoppingItems = [],
+  catalogComparisons = [],
 }: {
   shoppingItems?: any[]
+  catalogComparisons?: any[]
   transactions?: any[]
   language?: string
 } = {}) {
-  const suggestions = buildReliableSavingsSuggestions(shoppingItems)
+  const personal = buildReliableSavingsSuggestions(shoppingItems)
+  const verifiedCatalog = (Array.isArray(catalogComparisons) ? catalogComparisons : [])
+    .filter(row => Number(row.reference_price) > Number(row.alternative_price)
+      && Number(row.alternative_price) > 0 && Number(row.saving_per_pack) >= MIN_SAVING
+      && row.shopping_product_id && row.product_name
+      && row.reference_store && row.alternative_retailer_slug
+      && row.reference_date && row.alternative_date)
+    .map(row => ({
+      productKey: "catalog:" + row.shopping_product_id,
+      product: row.product_name,
+      identityKind: "verified_catalog",
+      referenceStore: row.reference_store,
+      bestStore: row.alternative_store_name || row.alternative_retailer_slug,
+      referencePrice: roundMoney(Number(row.reference_price)),
+      alternativePrice: roundMoney(Number(row.alternative_price)),
+      potentialSaving: roundMoney(Number(row.saving_per_pack)),
+      normalizedComparison: false,
+      unitLabel: "",
+      referenceDate: row.reference_date,
+      lastObservedAt: row.alternative_date,
+      observationsCount: 2,
+      comparedStoresCount: 2,
+      wording: "dated_verified_catalog_observation",
+    }))
+  // Do not claim two separate savings for a product when the personal
+  // history and the verified shared catalog happen to describe the same SKU.
+  const byExactLabel = new Map<string, any>()
+  for (const candidate of [...personal, ...verifiedCatalog]) {
+    const key = normalizedText(candidate.product)
+    const previous = byExactLabel.get(key)
+    if (!previous || candidate.potentialSaving > previous.potentialSaving) {
+      byExactLabel.set(key, candidate)
+    }
+  }
+  const suggestions = [...byExactLabel.values()]
+    .sort((left, right) => right.potentialSaving - left.potentialSaving)
   const totalPotential = roundMoney(suggestions.reduce((sum, item) => sum + item.potentialSaving, 0))
 
   return {
