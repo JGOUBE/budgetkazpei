@@ -182,7 +182,7 @@ export function classifyAdvisorTurn(question = "", previousActiveTopic = null) {
       : ADVISOR_TURN_TYPES.FOLLOW_UP
   }
 
-  if (currentDomains.length === 0 || /^(et|mais|alors|aussi|pour)\\b/.test(text) ||
+  if (currentDomains.length === 0 || /^(et|mais|alors|aussi|pour)\b/.test(text) ||
       sameTopics(currentDomains,previousDomains)) {
     return ADVISOR_TURN_TYPES.FOLLOW_UP
   }
