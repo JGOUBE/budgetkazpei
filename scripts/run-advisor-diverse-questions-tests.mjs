@@ -162,7 +162,7 @@ assert.match(frontend,/shouldLookupAdvisorAids/)
 assert.match(frontend,/const aides = needAidFacts \? await fetchAides\(\) : \[\]/)
 
 assert.match(frontend,/assistant-aisupabase-review/)
-assert.match(frontend,/get\\("conseillerBeta"\\) === "1"/)
-assert.match(frontend,/hostname\\.endsWith\\("\\.budgetkazpei\\.pages\\.dev"\\)/)
+assert.ok(frontend.includes('get("conseillerBeta") === "1"'))
+assert.ok(frontend.includes('hostname.endsWith(".budgetkazpei.pages.dev")'))
 
 console.log("OK: 40+ diverse/farfelues, context-switch, aid, fiction, and budget routes tested; general answers bypass CAF reviews.")
