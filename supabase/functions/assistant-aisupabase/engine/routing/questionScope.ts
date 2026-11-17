@@ -9,8 +9,8 @@ function normalize(value = "") {
     .toLowerCase().replace(/[^a-z0-9]+/g," ").trim().replace(/\s+/g," ")
 }
 
-const FICTIONAL = /\b(?:fiction|fictif|imagine|invente|raconte|licorne|extraterrestre|magique|dragon|si les chats|si mon chat|lune.*fromage|chat president|sur la lune)\b/
-const BENEFITS = /\b(?:aides? financieres?|aides? sociales?|aides? pour|aides\b|une aide\b|allocations?|prestations? sociales?|caf|rsa|apl|fsl|ccas|mdph|aah|are|prime d activite|cheque energie|pass sport|allocation logement|allocataire|eligibilite|eligible aux|droit aux aides)\b/
+const FICTIONAL = /\b(?:fiction|fictif|imagine|invente|raconte une histoire|raconte moi une histoire|licorne|extraterrestre|magique|dragon|si les chats|si mon chat|lune.*fromage|chat president|sur la lune)\b/
+const BENEFITS = /\b(?:aides? financieres?|aides? sociales?|aides? pour|aides\b|une aide|montant de l aide|droit a l aide\b|allocations?|prestations? sociales?|caf|rsa|apl|fsl|ccas|mdph|aah|are|prime d activite|cheque energie|pass sport|allocation logement|allocataire|eligibilite|eligible aux|droit aux aides)\b/
 const PERSONAL_BUDGET = /\b(?:mon budget|mes budgets|ma depense|mes depenses|mes charges|mon loyer|mes revenus|mon revenu|ma marge|mes factures|mes abonnements|mon abonnement|mes achats|mes courses|ma liste de courses|ma liste de courses|mon panier|mes economies|mes dettes|mon credit|mes paiements|mon salaire|combien me reste|combien j ai depense|combien ai je depense|je depense|je paie|je touche comme revenu|je gagne par mois)\b/
 const ADMIN = /\b(?:mon dossier|ma demande|mon courrier|mon refus|mon recours|ma declaration|mon contrat|mes justificatifs|mes demarches|rendez vous caf|courrier administratif|lettre administrative|recours administratif)\b/
 const GUARDED_MODES = new Set<AssistantMode>([
