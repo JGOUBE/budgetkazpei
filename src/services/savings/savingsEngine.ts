@@ -151,7 +151,7 @@ function normalizeUnit(unit = "") {
 
 export function extractComparablePackage(item: Record<string, any> = {}): PackageInfo {
   const rawLabel = String(item.product_name || item.corrected_name || item.canonical_name || item.name || "")
-  const multi = rawLabel.match(/\b(\d{1,3})\s*[x×]\s*(\d+(?:[,.]\d+)?)\s*(kg|kgs|g|gr|l|cl|ml)\b/i)
+  const multi = rawLabel.match(/\b(?:u)?(\d{1,3})\s*[x×]\s*(\d+(?:[,.]\d+)?)\s*(kg|kgs|g|gr|l|cl|ml)\b/i)
   const formatMatch = multi
     ? [multi[0], String(numberValue(multi[1]) * numberValue(multi[2])), multi[3]]
     : rawLabel.match(/\b(\d+(?:[,.]\d+)?)\s*(kg|kgs|kilogrammes?|g|gr|grammes?|l|litres?|cl|ml)\b/i)
