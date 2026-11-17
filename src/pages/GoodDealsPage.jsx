@@ -1928,7 +1928,12 @@ export default function GoodDealsPage({
       .filter(deal => deal?.is_active !== false)
       // Separate local good deals from supermarket catalogs and product
       // promotions. The price/receipt collection remains unchanged.
-      .filter(deal => normalizeCategory(deal.category) !== "shopping")
+      .filter(deal => {
+        if (normalizeCategory(deal.category) === "shopping") return false
+        if (getDealContentKind(deal) === "observed_price") return false
+        const tags = getDealTags(deal)
+        return !tags.some(tag => ["product-promo", "promo-product", "observed-price", "catalog", "catalogue"].includes(tag))
+      })
       .map(deal => {
         const match = getDealMatch(deal, {
           ...activeArea,
