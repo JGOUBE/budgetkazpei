@@ -140,7 +140,10 @@ function normalizeUnit(unit = "") {
 
 export function extractComparablePackage(item: Record<string, any> = {}): PackageInfo {
   const rawLabel = String(item.product_name || item.corrected_name || item.canonical_name || item.name || "")
-  const formatMatch = rawLabel.match(/\b(\d+(?:[,.]\d+)?)\s*(kg|kgs|kilogrammes?|g|gr|grammes?|l|litres?|cl|ml)\b/i)
+  const multi = rawLabel.match(/\b(\d{1,3})\s*[x×]\s*(\d+(?:[,.]\d+)?)\s*(kg|kgs|g|gr|l|cl|ml)\b/i)
+  const formatMatch = multi
+    ? [multi[0], String(numberValue(multi[1]) * numberValue(multi[2])), multi[3]]
+    : rawLabel.match(/\b(\d+(?:[,.]\d+)?)\s*(kg|kgs|kilogrammes?|g|gr|grammes?|l|litres?|cl|ml)\b/i)
   const lotMatch = rawLabel.match(/\b(?:lot|pack)\s*(?:de\s*)?(\d+)\b|\b(\d+)\s*(?:x|pcs?|pieces?|unit[eé]s?)\b/i)
 
   if (formatMatch) {
@@ -198,7 +201,10 @@ export function buildComparableProductIdentity(item: Record<string, any> = {}) {
     return { key: `barcode:${barcode}`, kind: "structured", label: itemLabel(item), packageInfo }
   }
 
-  const structuredId = normalizedText(item.product_id || item.product_key || item.known_product_id || "")
+  const structuredId = normalizedText(
+    item.product_id || item.product_key || item.known_product_id
+    || (item.controlled_normalization ? item.market_product_id : "") || "",
+  )
   if (structuredId) {
     return { key: `product:${structuredId}`, kind: "structured", label: itemLabel(item), packageInfo }
   }
@@ -224,8 +230,14 @@ function observationDate(item: Record<string, any> = {}) {
 }
 
 function comparablePrice(item: Record<string, any>, packageInfo: PackageInfo) {
-  const rawPrice = numberValue(item.price ?? item.total_price ?? item.unit_price)
-  const unitPrice = numberValue(item.price_per_unit ?? item.price_per_kg ?? item.price_per_liter)
+  const receiptPackPrice = numberValue(item.receipt_pack_unit_price)
+  // A line with two 500g packs is not a single pack priced twice as high.
+  // Use only the unit pack price verified against the original receipt line.
+  const rawPrice = receiptPackPrice > 0
+    ? receiptPackPrice : numberValue(item.price ?? item.total_price ?? item.unit_price)
+  const unitPrice = packageInfo.baseAmount > 0
+    ? rawPrice / packageInfo.baseAmount
+    : numberValue(item.price_per_unit ?? item.price_per_kg ?? item.price_per_liter)
   return { rawPrice, unitPrice, packageInfo }
 }
 
