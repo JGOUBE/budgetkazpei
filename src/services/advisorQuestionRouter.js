@@ -81,6 +81,7 @@ export function resolveAdvisorModeForQuestion({
   if (!isSelfContainedNewQuestion(question)) return mode
   if (mode === "budget_depenses" &&
       !shouldUseLocalBudgetAnswer({ question,mode,intent })) return "general"
-  if (mode === "trouver_aide" && !AID_REQUEST.test(normalizeAidTopicText(question))) return "general"
+  if (mode === "trouver_aide" &&
+      (looksPlayfulOrFictionalQuestion(question) || !AID_REQUEST.test(normalizeAidTopicText(question)))) return "general"
   return mode
 }
