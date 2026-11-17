@@ -12,7 +12,7 @@ function numberValue(value: number | string | null | undefined) {
 // number of packages bought. For "3 x 100 g", the pack contains 300 g.
 export function inferUnitFromName(productName = "") {
   const name = String(productName || "");
-  const multi = name.match(/\b(\d{1,3})\s*[x×]\s*(\d+(?:[,.]\d+)?)\s*(kg|kgs|g|gr|l|cl|ml)\b/i);
+  const multi = name.match(/\b(?:u)?(\d{1,3})\s*[x×]\s*(\d+(?:[,.]\d+)?)\s*(kg|kgs|g|gr|l|cl|ml)\b/i);
   if (multi) {
     const packs = numberValue(multi[1]);
     const size = numberValue(multi[2]);
