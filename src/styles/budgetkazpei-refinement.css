@@ -579,3 +579,15 @@
   font-size: 11px !important;
   text-transform: none !important;
 }
+
+#root .bkp-app-2026 .bkp-advisor-topic-choices button,
+#root .bkp-app-2026 .bkp-advisor-topic-toggle {
+  background: #EFF6F0 !important;
+  border-color: #D1DFD6 !important;
+  color: #375D4B !important;
+  box-shadow: none !important;
+}
+#root .bkp-app-2026 .bkp-advisor-topic-toggle {
+  background: transparent !important;
+  border: 0 !important;
+}
