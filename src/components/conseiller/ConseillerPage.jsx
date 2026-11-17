@@ -206,8 +206,8 @@ export default function ConseillerPage({
         <div>
           <span className="bkp-advisor-planbar-icon" aria-hidden="true"><Bot size={18} /></span>
           <div>
-            <strong>{access.canUseAdvancedAdvisorTools ? "Conseiller BudgetKazPéi+" : "Conseiller BudgetKazPéi"}</strong>
-            <span>{isKreol ? "Konseye pèrsone pou out situation" : "Un conseiller personnalisé pour votre situation"}</span>
+            <strong>{isKreol ? "In espace pou out kestyon" : "Un espace pour vos questions"}</strong>
+            <span>{isKreol ? "Le konseye i servi bann informations disponib pou aide aou." : "Le conseiller s’appuie sur les informations disponibles dans BudgetKazPéi."}</span>
           </div>
         </div>
         <span className="bkp-advisor-usage-label">
