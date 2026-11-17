@@ -498,3 +498,84 @@
   #root .bkp-app-2026 .bkp-aides-tabs button { min-height:60px; font-size:12.5px !important; }
   #root .bkp-app-2026 .bkp-aides-tabs button svg { width:16px; height:16px; flex-shrink:0; }
 }
+
+
+/* UX Conseiller 2026 : neutral backgrounds, deliberate pastel choices,
+   no dark actions, orange, raised cards or stacked controls. */
+#root .bkp-app-2026 .bkp-advisor-chat,
+#root .bkp-app-2026 .bkp-advisor-planbar {
+  background: #FFFEFC !important;
+  border-color: #D8E0D7 !important;
+  box-shadow: none !important;
+}
+#root .bkp-app-2026 .bkp-advisor-header {
+  background: #F7FAF6 !important;
+  border-color: #DBE5DA !important;
+}
+#root .bkp-app-2026 .bkp-advisor-thread { background: #FCFDFB !important; }
+#root .bkp-app-2026 .bkp-advisor-bubble--assistant {
+  background: #FFFFFF !important;
+  border-color: #DDE5DC !important;
+  color: #34463B !important;
+  box-shadow: none !important;
+}
+#root .bkp-app-2026 .bkp-advisor-bubble--user {
+  background: #E9F4F0 !important;
+  color: #31584A !important;
+  border-color: #C6E1D5 !important;
+  box-shadow: none !important;
+}
+#root .bkp-app-2026 .bkp-advisor-usage-label {
+  background: #F0F2F8 !important;
+  color: #5F587A !important;
+  border-color: #D9DDEA !important;
+}
+#root .bkp-app-2026 .bkp-advisor-starters .bkp-advisor-starter--budget_depenses {
+  background: #EFF7F0 !important;
+  color: #345E4B !important;
+  border-color: #CDDFD2 !important;
+}
+#root .bkp-app-2026 .bkp-advisor-starters .bkp-advisor-starter--trouver_aide {
+  background: #EDF6FA !important;
+  color: #345D77 !important;
+  border-color: #CEDFE9 !important;
+}
+#root .bkp-app-2026 .bkp-advisor-starters .bkp-advisor-starter--comprendre_courrier {
+  background: #F4F1F9 !important;
+  color: #66547A !important;
+  border-color: #DCD2E8 !important;
+}
+#root .bkp-app-2026 .bkp-advisor-starter,
+#root .bkp-app-2026 .bkp-advisor-starter:hover,
+#root .bkp-app-2026 .bkp-advisor-reset,
+#root .bkp-app-2026 .bkp-advisor-answer-actions button,
+#root .bkp-app-2026 .bkp-advisor-advanced button,
+#root .bkp-app-2026 .bkp-advisor-quick-details button {
+  box-shadow: none !important;
+  transform: none !important;
+}
+#root .bkp-app-2026 .bkp-advisor-budget-quick button,
+#root .bkp-app-2026 .bkp-advisor-quick-details button,
+#root .bkp-app-2026 .bkp-advisor-advanced button {
+  background: #F0F7F2 !important;
+  color: #345B49 !important;
+  border-color: #CEE0D1 !important;
+}
+#root .bkp-app-2026 .bkp-advisor-composer {
+  background: #F6F8F4 !important;
+  border-color: #CDE1D4 !important;
+  box-shadow: none !important;
+}
+#root .bkp-app-2026 .bkp-advisor-send:not(:disabled),
+#root .bkp-app-2026 .bkp-advisor-discover,
+#root .bkp-app-2026 .bkp-advisor-error button {
+  background: #E4F0E9 !important;
+  color: #315B49 !important;
+  border-color: #C4DECE !important;
+  box-shadow: none !important;
+}
+#root .bkp-app-2026 .bkp-advisor-composer-copy .bkp-advisor-prompt-ready {
+  color: #39715B !important;
+  font-size: 11px !important;
+  text-transform: none !important;
+}
