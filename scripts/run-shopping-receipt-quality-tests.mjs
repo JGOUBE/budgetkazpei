@@ -6,6 +6,7 @@ import { buildSavingsInsights } from "../src/services/savings/savingsEngine.ts";
 
 assert.deepEqual(inferUnitFromName("Chocolat noir extra 47 % 3 x 100 g"), {quantity:300,unit:"g"});
 assert.deepEqual(inferUnitFromName("LAIT DE CHEVRE PACK 6X1L"), {quantity:6,unit:"l"});
+assert.deepEqual(inferUnitFromName("LAIT FLUIDE UHT U3X20CL"), {quantity:60,unit:"cl"});
 assert.deepEqual(inferUnitFromName("Cornichons en bocal 72 cl / 360 g"), {quantity:360,unit:"g"});
 assert.deepEqual(inferUnitFromName("Wraps de blé complet x6 370 g"), {quantity:370,unit:"g"});
 assert.equal(computeUnitPrice({price:3.46,quantity:300,unit:"g"}).value,11.53);
@@ -65,6 +66,22 @@ assert.equal(merged.totalPotential,0.3);
 assert.equal(buildSavingsInsights({shoppingItems:[],catalogComparisons:[{
  ...catalogRow,alternative_price:4.5,saving_per_pack:-1.21,
 }]}).suggestions.length,0);
+const apples=enrichShoppingItemsWithReceiptIdentities([
+  {receipt_id:"fruit-1",product_name:"Pomme Granny Smith",corrected_name:"Pomme Granny Smith",
+    normalized_name:"pomme granny smith",price:1.36,unit:"piece",store:"E.Leclerc",
+    created_at:"2026-09-20T12:00:00Z",confidence_score:99},
+],[
+  {receipt_id:"fruit-1",corrected_name:"Pomme Granny Smith",normalized_name:"pomme granny smith",
+    market_matched:true,market_product_id:"apple-market",unit_price:2.99,
+    quantity:1,total_price:1.36},
+]);
+assert.equal(apples[0].receipt_variable_weight,true);
+assert.equal(buildSavingsInsights({shoppingItems:[
+  ...apples,
+  {...apples[0],receipt_id:"fruit-2",store:"Leader Price",price:1.01,
+    created_at:"2026-08-18T12:00:00Z"},
+]}).suggestions.length,0,"Different produce weights must not create fake savings");
+
 assert.equal(buildSavingsInsights({shoppingItems:[],catalogComparisons:[
  catalogRow,{...catalogRow,shopping_product_id:"duplicate-id",saving_per_pack:0.2},
 ]}).suggestions.length,1);
