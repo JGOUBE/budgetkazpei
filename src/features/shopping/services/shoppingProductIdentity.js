@@ -57,8 +57,9 @@ export function enrichShoppingItemsWithReceiptIdentities(shoppingItems = [], rec
     const unitPrice = Number(identity.unit_price || 0)
     const quantity = Number(identity.quantity || 0)
     const lineTotal = Number(identity.total_price || 0)
-    const safeUnit = unitPrice > 0 && quantity > 0
+    const reconciledLine = unitPrice > 0 && quantity > 0
       && Math.abs(unitPrice * quantity - lineTotal) <= 0.02
+    const safeUnit = reconciledLine
       && Math.abs(lineTotal - Number(shoppingItem.price || 0)) <= 0.02
 
     return {
@@ -71,6 +72,7 @@ export function enrichShoppingItemsWithReceiptIdentities(shoppingItems = [], rec
       controlled_normalization: true,
       receipt_pack_unit_price: safeUnit ? unitPrice : null,
       receipt_pack_count: safeUnit ? quantity : null,
+      receipt_variable_weight: unitPrice > 0 && lineTotal > 0 && !reconciledLine,
     }
   })
 }
