@@ -515,7 +515,17 @@ export default function AssistantConseiller({
       ],
     }
 
-    const { data, error } = await supabase.functions.invoke("assistant-aisupabase", {
+    // Opt-in QA only: a separate server-side admin-restricted function.
+    // The live budgetkazpei.re always keeps the production assistant.
+    const reviewEnabled = (
+      typeof window !== "undefined" &&
+      window.location.hostname.endsWith(".budgetkazpei.pages.dev") &&
+      new URLSearchParams(window.location.search).get("conseillerBeta") === "1"
+    )
+    const assistantEndpoint = reviewEnabled
+      ? "assistant-aisupabase-review"
+      : "assistant-aisupabase"
+    const { data, error } = await supabase.functions.invoke(assistantEndpoint, {
       body: {
         question: buildQuestionForAi(sentQuestion, mode, assistantIsKreol, currentProfile),
         originalQuestion: sentQuestion,
