@@ -184,6 +184,39 @@ async function resolveStore(supabaseAdmin: ReturnType<typeof createClient>, rece
     if (Array.isArray(data) && data.length > 1) return { storeId: null, reason: "skipped_store_ambiguous" };
   }
 
+  // A receipt often prints a branch's locality ("LE PORTAIL") instead of
+  // its commune ("Saint-Leu"). Resolve ONLY through a unique active,
+  // independently catalogued location and the exact matching market store.
+  // Never guess a branch from the chain name alone.
+  if (normalizedCity && normalizedCity.length >= 4 && normalizedStoreName.length >= 4) {
+    const { data: locations, error: locationError } = await supabaseAdmin
+      .from("shopping_store_locations")
+      .select("store_name,commune,locality")
+      .eq("is_active", true)
+      .ilike("locality", String(receipt.store_location || "").trim())
+      .limit(30);
+    if (locationError) throw locationError;
+
+    const exactLocations = (locations || []).filter((location) =>
+      normalizeText(location.locality) === normalizedCity
+      && normalizeText(location.store_name).startsWith(normalizedStoreName + " ")
+      && normalizeText(location.commune).length >= 4,
+    );
+    if (exactLocations.length === 1) {
+      const location = exactLocations[0];
+      const { data: actualStores, error: marketError } = await supabaseAdmin
+        .from("market_stores")
+        .select("id")
+        .eq("normalized_store_name", normalizeText(location.store_name))
+        .eq("normalized_city", normalizeText(location.commune))
+        .limit(2);
+      if (marketError) throw marketError;
+      if (Array.isArray(actualStores) && actualStores.length === 1) {
+        return { storeId: actualStores[0].id, reason: "" };
+      }
+    }
+  }
+
   const { data, error } = await supabaseAdmin
     .from("market_stores")
     .select("id")
