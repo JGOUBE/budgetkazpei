@@ -394,6 +394,9 @@ export default function AssistantConseiller({
   }, [history, user?.id])
 
   useEffect(() => {
+    // Leave the introduction and its three choices visible on first open.
+    // Auto-scroll only when there is an actual conversation to follow.
+    if (history.length === 0 && !pendingMessage && !errorMessage) return
     messagesEndRef.current?.scrollIntoView({
       behavior: "auto",
       block: "end",
@@ -733,8 +736,8 @@ export default function AssistantConseiller({
           <div className="bkp-advisor-identity">
             <span className="bkp-advisor-avatar" aria-hidden="true"><Bot size={22} /></span>
             <div>
-              <h2>{isKreol ? "Mon konseye BudgetKazPéi" : "Mon conseiller BudgetKazPéi"}</h2>
-              <p><span className="bkp-advisor-online-dot" />{isKreol ? "Disponib pou gid aou" : "Disponible pour vous guider"}</p>
+              <h2>{isKreol ? "Mon Konseyé" : "Mon Conseiller"}</h2>
+              <p><span className="bkp-advisor-online-dot" />{isKreol ? "Bidzé, aides ek démarches" : "Budget, aides et démarches"}</p>
             </div>
           </div>
 
@@ -754,14 +757,61 @@ export default function AssistantConseiller({
 
         <div className="bkp-advisor-thread" aria-live="polite" aria-busy={loadingAssistant}>
           {chronologicalHistory.length === 0 && !pendingMessage && (
-            <div className="bkp-advisor-welcome">
-              <span className="bkp-advisor-message-avatar" aria-hidden="true"><Bot size={18} /></span>
-              <div className="bkp-advisor-bubble bkp-advisor-bubble--assistant">
-                <strong>{isKreol ? "Bonzour !" : "Bonjour !"}</strong>
+            <div className="bkp-advisor-onboarding">
+              <div className="bkp-advisor-intro">
+                <h3>{isKreol ? "Koman mi pé aide aou ?" : "Comment puis-je vous aider ?"}</h3>
                 <p>{isKreol
-                  ? "Mi lé la pou aide aou ek out bidzé, courses, aides ek démarches. Choisis in suggestion ou écris out question."
-                  : "Je suis là pour vous aider avec votre budget, vos courses, vos aides et démarches. Choisissez une suggestion ou écrivez votre question."}</p>
+                  ? "Poz out kestyon directement, ou choisis in sujet pou démar."
+                  : "Posez votre question directement, ou choisissez un sujet pour commencer."}</p>
               </div>
+
+              <div className="bkp-advisor-starters" aria-label={isKreol ? "Sujets pou commencer" : "Sujets pour commencer"}>
+                {modes.map(mode => {
+                  const Icon = mode.icon
+                  return (
+                    <button
+                      type="button"
+                      key={mode.mode}
+                      className={`bkp-advisor-starter bkp-advisor-starter--${mode.mode}`}
+                      onClick={() => selectSuggestion(mode)}
+                    >
+                      <Icon size={20} aria-hidden="true" />
+                      <span>{mode.title}</span>
+                      <ChevronRight size={17} className="bkp-advisor-starter-chevron" aria-hidden="true" />
+                    </button>
+                  )
+                })}
+              </div>
+
+              {quickQuestions.length > 0 && (
+                <details className="bkp-advisor-quick-details">
+                  <summary>{isKreol ? "Kestions rapides su mon bidzé" : "Questions rapides sur mon budget"}</summary>
+                  <div className="bkp-advisor-budget-quick" aria-label={isKreol ? "Kestions bidzé" : "Questions budget"}>
+                    {quickQuestions.map(mode => (
+                      <button type="button" key={mode.prompt} onClick={() => selectSuggestion(mode)}>
+                        {mode.title}
+                      </button>
+                    ))}
+                  </div>
+                </details>
+              )}
+
+              {advancedModes.length > 0 && (
+                <details className="bkp-advisor-advanced">
+                  <summary>{isKreol ? "Ot zouti pou bann démarches" : "Autres outils pour vos démarches"}</summary>
+                  <div>
+                    {advancedModes.map(mode => {
+                      const Icon = mode.icon
+                      return (
+                        <button type="button" key={mode.mode} onClick={() => selectSuggestion(mode)}>
+                          <Icon size={15} aria-hidden="true" />
+                          <span>{mode.title}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </details>
+              )}
             </div>
           )}
 
@@ -833,54 +883,21 @@ export default function AssistantConseiller({
         </div>
 
         <footer className="bkp-advisor-composer-zone">
-          {chronologicalHistory.length === 0 && !pendingMessage && (
-            <>
-              {quickQuestions.length > 0 && (
-                <div className="bkp-advisor-budget-quick" aria-label={isKreol ? "Kestions bidzé rapides" : "Questions budget rapides"}>
-                  {quickQuestions.map(mode => (
-                    <button type="button" key={mode.prompt} onClick={() => selectSuggestion(mode)}>{mode.title}</button>
-                  ))}
-                </div>
-              )}
-              <div className="bkp-advisor-suggestions" aria-label={isKreol ? "Suggestions" : "Suggestions rapides"}>
-                {modes.map(mode => {
-                  const Icon = mode.icon
-                  return (
-                    <button type="button" key={mode.mode} onClick={() => selectSuggestion(mode)}>
-                      <Icon size={16} style={{ color: mode.color }} />
-                      <span>{mode.title}</span>
-                    </button>
-                  )
-                })}
-              </div>
-              {advancedModes.length > 0 && (
-                <details className="bkp-advisor-advanced">
-                  <summary>{isKreol ? "Bann zouti démarches Premium+" : "Outils démarches Premium+"}</summary>
-                  <div>
-                    {advancedModes.map(mode => {
-                      const Icon = mode.icon
-                      return (
-                        <button type="button" key={mode.mode} onClick={() => selectSuggestion(mode)}>
-                          <Icon size={15} aria-hidden="true" />
-                          <span>{mode.title}</span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </details>
-              )}
-            </>
-          )}
-
           <div className="bkp-advisor-composer">
             <div className="bkp-advisor-composer-copy">
               {assistantMode !== "general" && <span>{activeModeLabel}</span>}
+              {quickQuestionSelected && question.trim() && (
+                <span className="bkp-advisor-prompt-ready" role="status">
+                  {isKreol ? "Kestion prête : modifie ou anvoy." : "Question prête : modifiez-la ou envoyez-la."}
+                </span>
+              )}
               <textarea
                 ref={textareaRef}
                 value={question}
                 onChange={event => { setQuestion(event.target.value); setQuickQuestionSelected(false); resizeComposer() }}
                 onKeyDown={handleComposerKeyDown}
                 placeholder={isKreol ? "Écris out question isi…" : "Écrivez votre question ici…"}
+                aria-label={isKreol ? "Out question pou le conseiller" : "Votre question pour le conseiller"}
                 rows={1}
                 disabled={loadingAssistant || loadingInsights}
               />
