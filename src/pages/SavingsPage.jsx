@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react"
 import { CalendarClock, PiggyBank, ScanLine, Store } from "lucide-react"
 import { listShoppingItems } from "../features/shopping/services/shoppingEngine"
 import { buildSavingsInsights } from "../services/savings/savingsEngine"
+import { supabase } from "../services/supabase"
+import { formatSharedPriceRetailer } from "../services/shoppingList/sharedPricePresentation"
 import { buildHabitSuggestions } from "../features/shopping/services/habitAdvice"
 import HabitAdviceCard from "../features/shopping/components/HabitAdviceCard"
 import { formatMontant } from "../utils/format"
@@ -11,7 +13,7 @@ const COPY = {
   fr: {
     eyebrow: "Comparaisons fiables",
     title: "Mes économies",
-    intro: "Des pistes prudentes, calculées uniquement à partir de produits comparables dans vos achats enregistrés.",
+    intro: "Comparaisons prudentes de vos achats et de prix relevés, uniquement pour des produits précisément identifiés.",
     potential: "Économie potentielle repérée",
     potentialHint: "Somme des écarts fiables pour le dernier achat comparable de chaque produit.",
     suggestions: "Comparaisons disponibles",
@@ -22,7 +24,7 @@ const COPY = {
     lastSeen: "Dernière observation",
     observations: count => `${count} observation${count > 1 ? "s" : ""}`,
     emptyTitle: "Pas encore assez de données comparables",
-    empty: "Continuez à scanner vos tickets pour enrichir vos comparaisons. BudgetKazPéi préfère ne rien afficher plutôt que proposer une économie incertaine.",
+    empty: "Aucun prix inférieur suffisamment fiable pour le même produit dans une autre enseigne. Les observations datées de vos prochains achats permettront d'améliorer ces comparaisons.",
     error: "Les comparaisons ne peuvent pas être chargées pour le moment.",
     loading: "Vérification des produits comparables…",
   },
@@ -67,11 +69,35 @@ function formatDate(value) {
 export default function SavingsPage({ user, language = "fr", standalone = false }) {
   const txt = isKreolLanguage(language) ? COPY.kreol : COPY.fr
   const [shoppingItems, setShoppingItems] = useState([])
+  const [catalogComparisons, setCatalogComparisons] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
   useEffect(() => {
     let ignore = false
+
+    if (!user?.id) {
+      setShoppingItems([])
+      setCatalogComparisons([])
+      setLoading(false)
+      return () => { ignore = true }
+    }
+
+    // The server checks ownership and only returns lower, dated prices for
+    // the SAME verified commercial SKU at a different retailer.
+    supabase.rpc("shopping_verified_catalog_savings", { p_max_age_days: 180 })
+      .then(({ data, error }) => {
+        if (error) throw error
+        if (!ignore) setCatalogComparisons((data || []).map(entry => ({
+          ...entry,
+          alternative_store_name: formatSharedPriceRetailer({
+            retailer_slug: entry.alternative_retailer_slug,
+            commune: entry.alternative_commune,
+            locality: entry.alternative_locality,
+          }),
+        })))
+      })
+      .catch(() => { if (!ignore) setCatalogComparisons([]) })
 
     listShoppingItems({ userId: user?.id, includeProductIdentity: true })
       .then(rows => {
@@ -92,8 +118,8 @@ export default function SavingsPage({ user, language = "fr", standalone = false 
   }, [user?.id])
 
   const insights = useMemo(
-    () => buildSavingsInsights({ shoppingItems }),
-    [shoppingItems],
+    () => buildSavingsInsights({ shoppingItems, catalogComparisons }),
+    [shoppingItems, catalogComparisons],
   )
   const habitSuggestions = useMemo(() => buildHabitSuggestions(shoppingItems), [shoppingItems])
 
