@@ -352,6 +352,7 @@ export default function AssistantConseiller({
   const [question, setQuestion] = useState("")
   const [assistantMode, setAssistantMode] = useState("general")
   const [quickQuestionSelected, setQuickQuestionSelected] = useState(false)
+  const [showTopicPicker, setShowTopicPicker] = useState(false)
   const [loadingAssistant, setLoadingAssistant] = useState(false)
   const [history, setHistory] = useState(() =>
     user?.id ? advisorSessionByUser.get(user.id)?.history || [] : []
@@ -709,6 +710,7 @@ export default function AssistantConseiller({
   }
 
   function selectSuggestion(mode) {
+    setShowTopicPicker(false)
     setAssistantMode(mode.mode)
     setQuestion(mode.prompt)
     setAdvisorHandoffContext(null)
@@ -883,6 +885,33 @@ export default function AssistantConseiller({
         </div>
 
         <footer className="bkp-advisor-composer-zone">
+          {chronologicalHistory.length > 0 && !pendingMessage && (
+            <div className="bkp-advisor-topic-picker">
+              <button
+                type="button"
+                className="bkp-advisor-topic-toggle"
+                aria-expanded={showTopicPicker}
+                aria-controls="bkp-advisor-topic-choices"
+                onClick={() => setShowTopicPicker(open => !open)}
+              >
+                {isKreol ? "Koz su in ot sujet" : "Aborder un autre sujet"}
+                <ChevronRight size={15} aria-hidden="true" />
+              </button>
+              {showTopicPicker && (
+                <div className="bkp-advisor-topic-choices" id="bkp-advisor-topic-choices">
+                  {[...modes, ...advancedModes].map(mode => {
+                    const Icon = mode.icon
+                    return (
+                      <button type="button" key={mode.mode} onClick={() => selectSuggestion(mode)}>
+                        <Icon size={15} aria-hidden="true" />{mode.title}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="bkp-advisor-composer">
             <div className="bkp-advisor-composer-copy">
               {assistantMode !== "general" && <span>{activeModeLabel}</span>}
