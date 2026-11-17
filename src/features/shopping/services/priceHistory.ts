@@ -82,6 +82,10 @@ function normalizeExactProductLabel(value = "") {
 // produits précis. Le normalized_name hérité peut varier d'un ticket à l'autre
 // même lorsque product_name est strictement identique.
 export function shoppingProductGroupingKey(item: ShoppingItem = {}) {
+  // Link spelling/retailer OCR variants only after verified market identity.
+  const verifiedId = (item as ShoppingItem & { controlled_normalization?: boolean; market_product_id?: string }).controlled_normalization
+    ? (item as ShoppingItem & { market_product_id?: string }).market_product_id : null
+  if (verifiedId) return "market:" + verifiedId
   const exactLabel = normalizeExactProductLabel(item.product_name || "")
   if (exactLabel) return "product:" + exactLabel
   const fallback = normalizeText(item.normalized_name || "")
