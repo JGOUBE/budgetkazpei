@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { BkIcons } from "../components/icons-budgetkazpei"
 import { loadPublishedGoodDeals } from "../services/retail/retailPromotionService"
-import { resolveGoodDealsPromotionFocus } from "../services/appSectionNavigation"
 import { supabase } from "../services/supabase"
 import { createColorAliases } from "../styles/designSystem"
 import { useTheme } from "../styles/ThemeProvider"
@@ -42,7 +41,6 @@ const GOOD_DEALS_INTERACTION_STYLES = `
 
 const CATEGORY_OPTIONS = [
   { id: "all", fr: "Tous", kr: "Tout", icon: BkIcons.deals, bg: "#E0EACB", fg: "#405C2B", edge: "#B9CBA3" },
-  { id: "shopping", fr: "Promos & bons prix", kr: "Promo ek bon pri", icon: BkIcons.shopping, bg: "#EED8C7", fg: "#6E4B38", edge: "#D8B9A5" },
   { id: "food", fr: "Restaurants", kr: "Manzé", icon: BkIcons.food, bg: "#F0DFE5", fg: "#775260", edge: "#DBC1CC" },
   { id: "home", fr: "Maison & services", kr: "Kaz & servis", icon: BkIcons.homeServices, bg: "#E8DCCC", fg: "#695345", edge: "#D0BDAA" },
   { id: "transport", fr: "Transport", kr: "Transport", icon: BkIcons.transport, bg: "#DDEADF", fg: "#3C6653", edge: "#BBD3C5" },
@@ -1841,10 +1839,9 @@ export default function GoodDealsPage({
   const [showAreaExplorer, setShowAreaExplorer] = useState(false)
   const [highlightedPromotionId, setHighlightedPromotionId] = useState("")
 
-  const promotionFocus = useMemo(
-    () => resolveGoodDealsPromotionFocus(deals, navigationTarget),
-    [deals, navigationTarget],
-  )
+  // Retail catalog and product-promotion links are no longer part of
+  // Mes bons plans. Keep the navigation prop compatible with old bookmarks.
+  const promotionFocus = { mode: "normal", promotionId: "", deal: null }
 
   const commune = String(profile?.commune || "").trim()
   const areaOptions = useMemo(() => buildAreaOptions(), [])
@@ -1886,7 +1883,7 @@ export default function GoodDealsPage({
       setError("")
 
       try {
-        const prepared = await loadPublishedGoodDeals({ client: supabase })
+        const prepared = await loadPublishedGoodDeals({ client: supabase, includeRetailPromotions: false })
 
         if (!ignore) setDeals(prepared)
       } catch (loadError) {
@@ -1929,6 +1926,9 @@ export default function GoodDealsPage({
   const geographicallyVisibleDeals = useMemo(() => {
     return (deals || [])
       .filter(deal => deal?.is_active !== false)
+      // Separate local good deals from supermarket catalogs and product
+      // promotions. The price/receipt collection remains unchanged.
+      .filter(deal => normalizeCategory(deal.category) !== "shopping")
       .map(deal => {
         const match = getDealMatch(deal, {
           ...activeArea,
