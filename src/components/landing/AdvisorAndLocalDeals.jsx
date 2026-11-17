@@ -74,7 +74,7 @@ function PromotionsSection({ content }) {
 
 function LocalOffersSection({ content }) {
   return (
-    <section className="landing-section landing-local-offers-section" id="offres-locales" aria-labelledby="local-offers-title">
+    <section className="landing-section landing-local-offers-section" id="bons-plans" aria-labelledby="local-offers-title">
       <div className="landing-shell local-offers-layout">
         <div className="native-marketing-heading">
           <p className="landing-eyebrow">{content.eyebrow}</p>
@@ -131,7 +131,6 @@ export default function AdvisorAndLocalDeals({ advisor, localDeals }) {
   return (
     <>
       <AdvisorShowcase advisor={advisor} />
-      <PromotionsSection content={localDeals.promotions} />
       <LocalOffersSection content={localDeals.localOffers} />
       <FamilySection content={localDeals.family} />
     </>
