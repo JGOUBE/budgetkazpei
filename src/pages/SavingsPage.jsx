@@ -70,6 +70,7 @@ export default function SavingsPage({ user, language = "fr", standalone = false 
   const txt = isKreolLanguage(language) ? COPY.kreol : COPY.fr
   const [shoppingItems, setShoppingItems] = useState([])
   const [catalogComparisons, setCatalogComparisons] = useState([])
+  const [unreconciledReceiptIds, setUnreconciledReceiptIds] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
 
@@ -79,6 +80,7 @@ export default function SavingsPage({ user, language = "fr", standalone = false 
     if (!user?.id) {
       setShoppingItems([])
       setCatalogComparisons([])
+      setUnreconciledReceiptIds([])
       setLoading(false)
       return () => { ignore = true }
     }
@@ -99,9 +101,32 @@ export default function SavingsPage({ user, language = "fr", standalone = false 
       })
       .catch(() => { if (!ignore) setCatalogComparisons([]) })
 
-    listShoppingItems({ userId: user?.id, includeProductIdentity: true })
-      .then(rows => {
-        if (!ignore) setShoppingItems(rows || [])
+    Promise.all([
+      listShoppingItems({ userId: user?.id, includeProductIdentity: true }),
+      supabase.from("receipts")
+        .select("id,total_amount")
+        .eq("user_id",user.id)
+        .eq("validation_status","validated")
+        .is("removed_from_history_at",null)
+        .is("duplicate_of_receipt_id",null),
+    ])
+      .then(([rows, receiptsResult]) => {
+        if (receiptsResult.error) throw receiptsResult.error
+        if (ignore) return
+        const receiptTotals = new Map((receiptsResult.data || []).map(receipt =>
+          [receipt.id, Number(receipt.total_amount) || 0]))
+        const lineTotals = new Map()
+        for (const row of rows || []) {
+          if (!row.receipt_id) continue
+          lineTotals.set(row.receipt_id, (lineTotals.get(row.receipt_id) || 0) + (Number(row.price) || 0))
+        }
+        // Discounts that cannot be attributed to a product must never be
+        // turned into claimed per-product savings. Purchases stay in habits.
+        const unreconciled = [...lineTotals.entries()].filter(([id, amount]) =>
+          receiptTotals.has(id) && Math.abs(amount - receiptTotals.get(id)) > 0.05,
+        ).map(([id]) => id)
+        setUnreconciledReceiptIds(unreconciled)
+        setShoppingItems(rows || [])
       })
       .catch(loadError => {
         console.error("Erreur chargement économies:", loadError)
@@ -117,11 +142,15 @@ export default function SavingsPage({ user, language = "fr", standalone = false 
     return () => { ignore = true }
   }, [user?.id])
 
+  const comparableItems = useMemo(() => {
+    const excluded = new Set(unreconciledReceiptIds)
+    return shoppingItems.filter(row => !excluded.has(row.receipt_id))
+  }, [shoppingItems, unreconciledReceiptIds])
   const insights = useMemo(
-    () => buildSavingsInsights({ shoppingItems, catalogComparisons }),
-    [shoppingItems, catalogComparisons],
+    () => buildSavingsInsights({ shoppingItems: comparableItems, catalogComparisons }),
+    [comparableItems, catalogComparisons],
   )
-  const habitSuggestions = useMemo(() => buildHabitSuggestions(shoppingItems), [shoppingItems])
+  const habitSuggestions = useMemo(() => buildHabitSuggestions(comparableItems), [comparableItems])
 
   return (
     <section className="bkp-savings-panel" aria-labelledby="shopping-savings-title">
