@@ -912,21 +912,30 @@ Deno.serve(async (req) => {
       }, 503)
     }
     if (requestReservation.allowed !== true) {
-      // Never disclose internal fair-use thresholds, reset schedules or
-      // technical policy identifiers in a user-facing message.
       const isFreeChat = String(requestReservation.code || "").startsWith("offtopic_")
+      // Show a friendly advisor answer instead of a technical error or a quota.
+      // The server stops here: no OpenAI call, no usage counter increment.
+      const guidance = isFreeChat
+        ? (context.isKreol
+            ? "Mi lé surtout la pou aide aou su out bidzé, out aides ek out démarches. Pou ke servis-la reste utile pou tout demoun, nou pé retourne su in kestyon pratique ? Par exemple : ou vé trouve in aide ou fé bann lekonomi ?"
+            : "Je suis surtout là pour vous aider à mieux gérer votre budget, trouver des aides et avancer dans vos démarches. Pour garder ce service utile à tous, je vous propose de revenir à ces sujets. Souhaitez-vous chercher des aides ou des pistes d’économies ?")
+        : (context.isKreol
+            ? "Ou la envoyé plizyèr kestyon a la suite. Pou garde le servis fluid, nou fait in ti poz su bann nouvelles demandes. Ou pé toujours consulte out bidzé ek bann aides, puis réessay in pe pli tar."
+            : "Vous avez envoyé plusieurs demandes rapprochées. Pour préserver la disponibilité du service, je vous propose de reprendre la discussion un peu plus tard. Votre budget et le catalogue des aides restent consultables.")
+      console.info("ADVISOR_API_METER", JSON.stringify({
+        type: "local_usage_guidance", calls: 0, scope: isFreeChat ? "offtopic" : "burst",
+      }))
       return jsonResponse({
-        success: false,
-        code: isFreeChat ? "advisor_offtopic_redirect" : "advisor_temporarily_paused",
-        offTopicLimitReached: isFreeChat,
-        error: isFreeChat
-          ? (context.isKreol
-              ? "Mon Konseyé lé surtout la pou out bidjé, bann èd ek démarches. Pou linstan, mi pé pa kontinié su sa sujet-la. Ou pé demann a moin in kestyon su out dépans ou bann èd."
-              : "Mon Conseiller est surtout là pour vous aider avec votre budget, vos aides et vos démarches. Je ne peux pas poursuivre cet échange sur ce sujet pour le moment, mais je peux vous accompagner sur une question liée à BudgetKazPeï.")
-          : (context.isKreol
-              ? "Bann kestyon i arrive in pé trop vit. Mon Konseyé i fé in ti poz. Ou pé retourn plus tar pou out bidjé ek démarches."
-              : "Plusieurs demandes ont été envoyées très rapidement. Mon Conseiller fait une courte pause par sécurité. Vous pourrez reprendre votre échange ultérieurement."),
-      }, 429)
+        success: true,
+        answer: guidance,
+        source: "local_usage_guidance",
+        language: context.language,
+        mode: context.mode,
+        consumed: false,
+        openAiCallCount: 0,
+        recommendedAidIds: [],
+        recommendedAidNames: [],
+      })
     }
 
     const openAiResult = await callOpenAi({
