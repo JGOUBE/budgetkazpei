@@ -19,7 +19,7 @@ import {
 } from "./engine/truth/trustedAidFacts.ts"
 import { reviewAssistantAnswer } from "./engine/review/reviewerEngine.ts"
 import { isProtectedAdvisorQuestion } from "./engine/routing/questionScope.ts"
-import { classifyAdvisorSpendScope, getLocalAdvisorSmallTalk, getLocalAdvisorOffTopicResponse, isPotentialAdvisorFollowUp, getLocalAdvisorAppGuide, getLocalAdvisorBudgetBasics } from "./engine/routing/offTopicPolicy.ts"
+import { classifyAdvisorSpendScope, getLocalAdvisorSmallTalk, getLocalAdvisorOffTopicResponse, isPotentialAdvisorFollowUp, getLocalAdvisorAppGuide, getLocalAdvisorBudgetBasics, getLocalAdvisorBudgetObservation, getLocalAdvisorDocumentIntake } from "./engine/routing/offTopicPolicy.ts"
 import {
   getAdvisorAccess,
   isAdvancedAdvisorMode,
@@ -852,6 +852,42 @@ Deno.serve(async (req) => {
         code: "advisor_question_too_long",
         error: "Votre message est trop long. Raccourcissez-le ou séparez-le en plusieurs questions.",
       }, 413)
+    }
+
+    // A preset saying "I will paste a refusal" is not the refusal itself.
+    // Invite the user to supply it without calling OpenAI.
+    if (context.action !== "analyze_refusal") {
+      const documentIntake = getLocalAdvisorDocumentIntake(
+        context.question, context.language, context.mode,
+      )
+      if (documentIntake) {
+        console.info("ADVISOR_API_METER", JSON.stringify({
+          type: "local_document_intake", calls: 0, scope: "administrative",
+        }))
+        return jsonResponse({
+          success: true, answer: documentIntake, source: "local_document_intake",
+          language: context.language, mode: context.mode,
+          consumed: false, openAiCallCount: 0,
+          recommendedAidIds: [], recommendedAidNames: [],
+        })
+      }
+
+      // A remark that costs are high is an in-scope budgeting conversation.
+      // Respond concretely without inventing a price or an account calculation.
+      const costObservation = getLocalAdvisorBudgetObservation(
+        context.question, context.language, context.mode,
+      )
+      if (costObservation) {
+        console.info("ADVISOR_API_METER", JSON.stringify({
+          type: "local_budget_observation", calls: 0, scope: "budget",
+        }))
+        return jsonResponse({
+          success: true, answer: costObservation, source: "local_budget_observation",
+          language: context.language, mode: context.mode,
+          consumed: false, openAiCallCount: 0,
+          recommendedAidIds: [], recommendedAidNames: [],
+        })
+      }
     }
 
     // Standard financial literacy: exact local answers, never a billable inference.
