@@ -2,20 +2,20 @@ import { ArrowRight, CalendarDays, ChevronRight } from "lucide-react"
 import { BkIcons } from "../components/icons-budgetkazpei"
 import { formatMontant } from "../utils/format"
 
-// Accueil BudgetKazPéi — identité Matcha & Taupe, sans décor ni relief.
+// Accueil BudgetKazPéi — palette minérale contrastée, sans décor ni relief.
 // Les routes Courses réutilisent les onglets existants, sans dupliquer les pages.
 const ACTIONS = [
-  { id: "shoppingList", fr: "Faire ma liste de courses", kr: "Fé mon liste courses", icon: "shopping", color: "#435F2A", pale: "#E0EACB", edge: "#BBCBA8" },
-  { id: "receipts", fr: "Scanner mon ticket", kr: "Scanner mon tiké", icon: "scan", color: "#704B37", pale: "#EFDCCB", edge: "#DCC2AF" },
-  { id: "expense", fr: "Ajouter une dépense", kr: "Azout in dépans", icon: "depenses", color: "#665144", pale: "#E9DDD0", edge: "#D3C1AE" },
-  { id: "aides", fr: "Mes aides et mes droits", kr: "Mon bann èd ek drwa", icon: "aides", color: "#765263", pale: "#F1E1E7", edge: "#DFC5D0" },
-  { id: "conseiller", fr: "Mon conseiller", kr: "Mon konseye", icon: "assistant", color: "#3F684B", pale: "#E0EDE0", edge: "#C1DAC6" },
-  { id: "goodDeals", fr: "Mes bons plans", kr: "Mon bann bon plan", icon: "deals", color: "#7A513F", pale: "#F1DDD6", edge: "#DBBFB4" },
+  { id: "shoppingList", fr: "Faire ma liste de courses", kr: "Fé mon liste courses", icon: "shopping", color: "#355B34", pale: "#C8E4AA", edge: "#9DC184" },
+  { id: "receipts", fr: "Scanner mon ticket", kr: "Scanner mon tiké", icon: "scan", color: "#235774", pale: "#A9DEED", edge: "#83BFCE" },
+  { id: "expense", fr: "Ajouter une dépense", kr: "Azout in dépans", icon: "depenses", color: "#344A56", pale: "#CFD6DD", edge: "#AAB9C3" },
+  { id: "aides", fr: "Mes aides et mes droits", kr: "Mon bann èd ek drwa", icon: "aides", color: "#395A87", pale: "#C9D9F0", edge: "#9EB8DC" },
+  { id: "conseiller", fr: "Mon conseiller", kr: "Mon konseye", icon: "assistant", color: "#286558", pale: "#CCE8E0", edge: "#9DCFC0" },
+  { id: "goodDeals", fr: "Mes bons plans", kr: "Mon bann bon plan", icon: "deals", color: "#3E5030", pale: "#C5CEB8", edge: "#9FAE94" },
 ]
 
 const COURSES = [
-  { tab: "overview", fr: "Aperçu de mes achats", kr: "Koudzyé su mon bann courses", hintFr: "Comprendre mes habitudes", hintKr: "Comprann mon bann labitid", icon: "stats", color: "#704D39", pale: "#F0DFD0", edge: "#DCC2B1" },
-  { tab: "savings", fr: "Mes économies", kr: "Mon bann lékonomi", hintFr: "Repérer les opportunités", hintKr: "Trouv bann lokazion", icon: "savings", color: "#4B632E", pale: "#E1EBCF", edge: "#C4D4AF" },
+  { tab: "overview", fr: "Aperçu de mes achats", kr: "Koudzyé su mon bann courses", hintFr: "Comprendre mes habitudes", hintKr: "Comprann mon bann labitid", icon: "stats", color: "#47594F", pale: "#DDD9D1", edge: "#C3BDB3" },
+  { tab: "savings", fr: "Mes économies", kr: "Mon bann lékonomi", hintFr: "Repérer les opportunités", hintKr: "Trouv bann lokazion", icon: "savings", color: "#4B6332", pale: "#E4E4CE", edge: "#C5C9A9" },
 ]
 
 function getFirstName(profile, user) {
