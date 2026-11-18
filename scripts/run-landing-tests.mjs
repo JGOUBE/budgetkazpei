@@ -57,4 +57,36 @@ assert.doesNotMatch(styles, /background:\s*#(?:142033|152a4d|1[0-9a-f]{5})\b/i, 
 assert.match(main, /isPublicLandingPath/, "public light-theme initialization must remain")
 assert.match(index, /BudgetKazPéi — Budget, courses, aides et bons plans à La Réunion/, "SEO fallback missing")
 
-console.log("Landing épurée sans smartphone — tests passed.")
+
+// Cohérence graphique et fonctionnelle des deux pages publiques.
+const offerPage = read("src/pages/PremiumLandingPage.jsx")
+const offerCss = read("src/styles/landing-offers.css")
+assert.match(offerPage, /landing-clean\.css/, "offer page must share the clean landing design")
+assert.match(offerPage, /landing-offers\.css/, "offer-specific styles missing")
+assert.match(offerPage, /bk-landing bk-offers-page/, "offer page must use shared visual root")
+assert.doesNotMatch(offerPage, /import "\.\.\/styles\/landing\.css"/, "old reflective offer theme must not be loaded")
+assert.match(offerPage, /premium-plan__billing-selector/, "monthly and yearly options must remain accessible")
+assert.match(offerPage, /aria-pressed=\{billingPeriod === term\.id\}/, "billing selection state missing")
+assert.match(offerPage, /4,99 €/, "monthly offer price must be preserved")
+assert.match(offerPage, /49,90 €/, "yearly offer price must be preserved")
+assert.match(offerPage, /STRIPE_LINKS\.premiumMonthly/, "monthly checkout link must be preserved")
+assert.match(offerPage, /STRIPE_LINKS\.premiumAnnual/, "yearly checkout link must be preserved")
+assert.match(offerPage, /href=\{href\}/, "free and premium CTAs must remain navigable")
+assert.match(offerPage, /content\.faq\.items\.map/, "offer FAQ must remain available")
+assert.match(offerPage, /const fr = language !== LANDING_LANGUAGES\.kr/, "offer translation must remain functional")
+assert.doesNotMatch(offerPage, /<img\b|ProductPhoneMockup|HeroProductDemo/, "offer page must not show a phone or screenshot")
+for (const cssSource of [styles, offerCss]) {
+  assert.doesNotMatch(cssSource, /#(?:ea580c|c2410c|ff7012|fb923c)\b/i, "no orange in the visual identity")
+  assert.doesNotMatch(cssSource, /linear-gradient\(|radial-gradient\(/, "no colored reflections or gradients")
+  assert.doesNotMatch(cssSource, /filter:\s*drop-shadow|box-shadow:\s*0\s+\d+px/i, "no ornamental shadows")
+  assert.match(cssSource, /@media \(max-width: 640px\)/, "mobile layout missing")
+  assert.match(cssSource, /@media \(max-width: 370px\)/, "narrow Android layout missing")
+}
+assert.match(offerCss, /grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/, "desktop offer columns missing")
+assert.match(offerCss, /grid-template-columns: 1fr/, "mobile offer stacking missing")
+assert.match(offerCss, /font-size: clamp\(3\.1rem, 6\.1vw, 5\.9rem\)/, "large editorial hero heading missing")
+assert.match(offerCss, /min-height:\s*45px/, "billing touch targets must be large enough")
+assert.match(offerCss, /min-height:\s*51px/, "offer CTA touch target must be large enough")
+assert.match(styles, /font-size: clamp\(2\.5rem, 4\.9vw, 4\.65rem\)/, "landing section headings must be increased")
+
+console.log("Landing et offres épurées — tests passed.")
