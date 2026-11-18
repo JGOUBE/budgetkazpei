@@ -199,6 +199,7 @@ export function getLocalAdvisorBudgetObservation(question = "", language = "fr",
       original.includes("?") || original.includes("\n")) return null
   if (!/^(?:je trouve (?:que )?|je constate que |j ai remarque que |j ai l impression que |c est |ca devient |l |le |la |les |mon |ma |mes )/.test(text)) return null
   if (!/\b(?:cher|chere|chers|cheres|hors de prix|coute cher|coutent cher|revient cher|reviennent cher|trop cher|trop chere|flambe)\b/.test(text)) return null
+  if (/\b(?:pas cher|pas chere|moins cher|moins chere|bon marche|plus abordable|raisonnable)\b/.test(text)) return null
   if (/\b(?:pourquoi|comment|combien|quel|quels|quelle|quelles|compare|comparer|comparaison|calcule|calculer|prevoir|estimer|montant|prix aujourd hui|prix actuel|prix du litre|aujourd hui|cette semaine|ou trouver|que faire)\b/.test(text)) return null
   const fr = language !== "kreol"
   if (/\b(?:carburant|essence|gazole|diesel|plein d essence)\b/.test(text)) {
