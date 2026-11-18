@@ -19,7 +19,7 @@ import {
 } from "./engine/truth/trustedAidFacts.ts"
 import { reviewAssistantAnswer } from "./engine/review/reviewerEngine.ts"
 import { isProtectedAdvisorQuestion } from "./engine/routing/questionScope.ts"
-import { classifyAdvisorSpendScope, getLocalAdvisorSmallTalk, getLocalAdvisorOffTopicResponse, isPotentialAdvisorFollowUp, getLocalAdvisorAppGuide } from "./engine/routing/offTopicPolicy.ts"
+import { classifyAdvisorSpendScope, getLocalAdvisorSmallTalk, getLocalAdvisorOffTopicResponse, isPotentialAdvisorFollowUp, getLocalAdvisorAppGuide, getLocalAdvisorBudgetBasics } from "./engine/routing/offTopicPolicy.ts"
 import {
   getAdvisorAccess,
   isAdvancedAdvisorMode,
@@ -252,6 +252,38 @@ function advisorProfileForModel(value: any) {
   )
 }
 
+// Only relevant local resources are supplied for this specific question.
+// The full orientation catalogue is unnecessary on every paid inference.
+function selectRelevantAdvisorOrientation(value: unknown, question = "") {
+  if (!Array.isArray(value)) return []
+  const cleanedQuestion = normalizeText(question)
+  if (!cleanedQuestion || cleanedQuestion.length < 6) return []
+  return value
+    .filter(item => item && typeof item === "object")
+    .map(item => {
+      const keywords = [
+        item.category, item.nom, item.organisme,
+        ...(Array.isArray(item.mots_cles) ? item.mots_cles : []),
+      ]
+      const matches = keywords
+        .map(k => normalizeText(String(k || "")))
+        .filter(k => k.length >= 5 && cleanedQuestion.includes(k))
+      return { item, score: matches.length }
+    })
+    .filter(row => row.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 4)
+    .map(({ item }) => ({
+      nom: String(item.nom || "").slice(0, 90),
+      organisme: String(item.organisme || "").slice(0, 90),
+      commune: String(item.commune || "").slice(0, 70),
+      category: String(item.category || "").slice(0, 70),
+      description: String(item.description || "").slice(0, 280),
+      lien_officiel: String(item.lien_officiel || "").slice(0, 240),
+      confidence: String(item.confidence || "").slice(0, 45),
+    }))
+}
+
 function buildUserPrompt(
   body: any,
   language: AssistantLanguage,
@@ -263,19 +295,18 @@ function buildUserPrompt(
 ) {
   const originalQuestion = String(body.originalQuestion || body.question || "").trim()
   const profile = body.profile || {}
-  const profileSummary = body.profile_summary || ""
   const localContext = body.localContext || body.local_context || {}
   const recommendedAides = body.recommendedAides || body.recommended_aides || []
   const conversationContext = body.conversationContext || {}
-  const reunionOrientation = body.reunionOrientation || body.reunion_orientation || {}
+  const reunionOrientation = selectRelevantAdvisorOrientation(body.reunionOrientation || body.reunion_orientation, originalQuestion)
   const recentHistory = Array.isArray(body.recentHistory) ? body.recentHistory.slice(0, 6) : []
   const localizedHandoffContext = selectAdvisorLocalizedContext(body.advisorHandoffContext || {}, language)
   const memoryPrompt = buildMemoryPrompt(memory)
   const recentConversationPrompt = recentHistory.length > 0
     ? recentHistory
         .map((item: any, index: number) => {
-          const userText = String(item?.question || "").slice(0, 600)
-          const answerText = String(item?.answer || "").slice(0, 900)
+          const userText = String(item?.question || "").slice(0, 350)
+          const answerText = String(item?.answer || "").slice(0, 550)
           return [`Échange récent ${index + 1} :`, `Utilisateur : ${userText}`, answerText ? `Conseiller : ${answerText}` : ""].filter(Boolean).join("\n")
         })
         .join("\n\n")
@@ -302,9 +333,6 @@ ${originalQuestion || body.question || ""}
 Mode demandé par l'interface :
 ${mode}
 
-Résumé du profil affiché par BudgetKazPei (source principale) :
-${profileSummary || "Non fourni"}
-
 Profil métier utile pour la personnalisation (sans coordonnées ni données de facturation) :
 ${safeJson(advisorProfileForModel(profile))}
 
@@ -323,8 +351,8 @@ ${safeJson(conversationContext, {})}
 Faits officiels vérifiés en base avant génération :
 ${safeJson(trustedAidFacts, [])}
 
-Repères locaux BudgetKazPei :
-${safeJson(reunionOrientation, {})}
+Repères locaux BudgetKazPeï correspondant à la question (non exhaustifs) :
+${safeJson(reunionOrientation, [])}
 
 Conversation récente visible dans cette session :
 ${recentConversationPrompt}
@@ -824,6 +852,24 @@ Deno.serve(async (req) => {
         code: "advisor_question_too_long",
         error: "Votre message est trop long. Raccourcissez-le ou séparez-le en plusieurs questions.",
       }, 413)
+    }
+
+    // Standard financial literacy: exact local answers, never a billable inference.
+    if (context.action !== "analyze_refusal") {
+      const basicAnswer = getLocalAdvisorBudgetBasics(
+        context.question, context.language, context.mode,
+      )
+      if (basicAnswer) {
+        console.info("ADVISOR_API_METER", JSON.stringify({
+          type: "local_budget_basics", calls: 0, scope: "budget_basics",
+        }))
+        return jsonResponse({
+          success: true, answer: basicAnswer, source: "local_budget_basics",
+          language: context.language, mode: context.mode,
+          consumed: false, openAiCallCount: 0,
+          recommendedAidIds: [], recommendedAidNames: [],
+        })
+      }
     }
 
     // Static navigation help is free, local and grounded in existing screens.
