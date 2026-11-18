@@ -84,8 +84,12 @@ export function resolveServerPlan(params: {
   const profile = params.profile || {}
   const subscriptionStatus = String(subscription.status || "").toLowerCase()
 
-  if (subscriptionStatus === "active") {
-    return normalizeAdvisorPlan(subscription.plan)
+  // A known canceled, unpaid or expired subscription overrides stale profile
+  // flags. Only legacy accounts without any subscription record use profile grants.
+  if (subscriptionStatus) {
+    return ["active", "trialing"].includes(subscriptionStatus)
+      ? normalizeAdvisorPlan(subscription.plan)
+      : "free"
   }
 
   const profilePlan = normalizeAdvisorPlan(profile.subscription_plan || profile.plan)
