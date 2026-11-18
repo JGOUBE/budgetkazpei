@@ -239,3 +239,97 @@ export function getAdvisorRankingOptions(conversationContext = {}) {
     preferredAidNames: conversationContext.targetAidNames || [],
   }
 }
+
+
+// A Premium advisor must honor its own yes/no invitations. This local
+// continuation intentionally uses recorded budget data rather than another AI
+// inference; it never labels transport totals as fuel-only purchases.
+const ADVISOR_YES = /^(?:oui|oui je veux bien|oui volontiers|oui pourquoi pas|oui fais le|oui regarde|oui allons y|d accord|ok|okay|vas y|allons y|je veux bien|volontiers|avec plaisir|wi)$/
+const ADVISOR_BUDGET_TOPICS = [
+  { category: "transport", pattern: /\b(?:carburant|essence|gazole|diesel|plein d essence)\b/ },
+  { category: "alimentaire", pattern: /\b(?:courses|alimentaire|alimentation)\b/ },
+  { category: "logement", pattern: /\b(?:loyer|logement)\b/ },
+  { category: "energie", pattern: /\b(?:electricite|energie|factures? d energie)\b/ },
+  { category: "assurances", pattern: /\b(?:assurances?|abonnements?|charges fixes)\b/ },
+]
+const ADVISOR_BUDGET_OFFER = /\b(?:souhaitez vous examiner vos depenses|voulez vous examiner votre budget|voulez vous faire le point|souhaitez vous faire le point|voulez vous examiner ces depenses)\b/
+
+function advisorEuro(amount) {
+  const value = Number(amount)
+  if (!Number.isFinite(value)) return null
+  return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(value)
+}
+
+function advisorOpenExpenses() {
+  return [{ type: "open_page", target: "depenses", label_fr: "Voir mes dépenses", label_kr: "War mon bann dépans" }]
+}
+
+export function resolveAdvisorBudgetConfirmation({
+  question = "", recentHistory = [], insights = {}, language = "fr", contextUnavailable = false,
+} = {}) {
+  const normalized = normalizeAidTopicText(question)
+  if (!ADVISOR_YES.test(normalized)) return null
+  const previous = Array.isArray(recentHistory) ? recentHistory[0] : null
+  if (!previous || !previous.answer || !previous.question) return null
+  const priorQuestion = normalizeAidTopicText(previous.question)
+  const priorAnswer = normalizeAidTopicText(previous.answer)
+  const authenticOffer = previous.source === "local_budget_observation" ||
+    (ADVISOR_BUDGET_OFFER.test(priorAnswer) &&
+      /\b(?:carburant|essence|gazole|diesel|courses|loyer|logement|factures?|electricite|energie|assurance|abonnement)\b/.test(priorQuestion))
+  if (!authenticOffer || !ADVISOR_BUDGET_OFFER.test(priorAnswer)) return null
+
+  const topic = ADVISOR_BUDGET_TOPICS.find(item => item.pattern.test(priorQuestion))
+  if (!topic) return null
+  const fr = language !== "kreol" && language !== "kr" && language !== "cr"
+  const budget = insights?.budgetAdvisorContext || {}
+  const entries = Array.isArray(budget.spendingByCategory) ? budget.spendingByCategory : []
+  const recorded = entries.find(entry => entry.category === topic.category)
+  const transactionsAvailable = !contextUnavailable && insights?.dataAvailability?.transactions !== false
+  const lastPeriod = String(budget.period?.label || "").trim()
+  const period = lastPeriod ? "sur la période « " + lastPeriod + " »" : "sur la période analysée"
+  const details = topic.category === "transport"
+    ? "Ce total regroupe les dépenses classées en transport : il ne permet pas d'isoler le carburant si celui-ci n'est pas identifié séparément."
+    : "Il s'agit uniquement des dépenses variables classées dans cette catégorie ; les charges fixes peuvent être suivies séparément."
+  const detailsKr = topic.category === "transport"
+    ? "Total-la i regroupe bann dépans transport. Mi pé pa sépare carburant si li lé pa identifié séparément."
+    : "Lé seulement bann dépans variables classées dann catégorie-la. Bann sarz fixes pé être suivies séparément."
+
+  let answer
+  if (!transactionsAvailable) {
+    answer = fr
+      ? "Je ne peux pas vérifier vos dépenses enregistrées pour le moment. Ouvrez « Mes dépenses » pour contrôler vos achats, puis réessayez."
+      : "Mi pé pa vérifier out dépenses anrezistré pou l'instant. Ouv « Mes dépenses » pou vérifier, apré réessay."
+  } else if (!recorded || !Number.isFinite(Number(recorded.amount)) || Number(recorded.amount) <= 0) {
+    answer = fr
+      ? "Je ne trouve pas encore de dépenses classées dans cette catégorie " + period + ". Pour pouvoir comparer vos frais, commencez par enregistrer ou classer les achats correspondants dans « Mes dépenses »."
+      : "Mi trouve pas ankor bann dépans classées dann catégorie-la " + period + ". Ajoute ou classe bann achats dann « Mes dépenses » pou compare."
+  } else {
+    const amount = advisorEuro(recorded.amount)
+    const prior = Number(recorded.previousAmount)
+    const hasPrior = recorded.previousAmount !== null && recorded.previousAmount !== undefined && Number.isFinite(prior)
+    const diff = hasPrior ? Number(recorded.amount) - prior : null
+    const comparison = diff === null
+      ? "Je n'ai pas de montant précédent fiable pour comparer."
+      : diff === 0
+        ? "Le montant est identique à la période précédente comparable."
+        : "Cela représente " + advisorEuro(Math.abs(diff)) + " de " + (diff > 0 ? "plus" : "moins") + " que sur la période précédente comparable."
+    const label = topic.category === "transport" ? "transport" :
+      topic.category === "alimentaire" ? "courses alimentaires" :
+      topic.category === "logement" ? "logement" :
+      topic.category === "energie" ? "énergie" : "assurances et abonnements"
+    answer = fr
+      ? "D'après vos dépenses enregistrées " + period + ", le poste « " + label + " » représente " +
+        amount + ". " + comparison + " " + details +
+        " Pour aller plus loin, vérifiez le classement des achats concernés dans « Mes dépenses »."
+      : "Dapré out dépans anrezistré " + period + ", poste « " + label + " » i représente " +
+        amount + ". " + detailsKr + " Pou continuer, vérifie classement out achats dann « Mes dépenses »."
+  }
+  return {
+    answer,
+    source: "local_budget_followup",
+    mode: "budget_depenses",
+    actions: advisorOpenExpenses(),
+    intent: "budget_followup",
+    language: fr ? "fr" : "kreol",
+  }
+}
