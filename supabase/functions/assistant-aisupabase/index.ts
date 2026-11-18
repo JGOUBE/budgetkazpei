@@ -925,7 +925,13 @@ Deno.serve(async (req) => {
       ? analyzeIntent(context.question, savedMemory || context.memory)
       : null
 
-    if (protectedTopic && intent?.complexity === "complex") {
+    // The rule-based saveAssistantMemory above already preserves useful
+    // conversation facts at zero provider cost. A second model invocation is
+    // deliberately OFF by default; allow it only for exceptional opt-in QA
+    // or future high-value cases explicitly enabled in server settings.
+    // This keeps the normal AI path to exactly one OpenAI completion.
+    const memoryEnrichmentAllowed = Deno.env.get("ADVISOR_AI_MEMORY_ENRICHMENT") === "enabled"
+    if (protectedTopic && memoryEnrichmentAllowed && intent?.complexity === "complex") {
       const aiMemoryPatch = await buildAiMemoryPatch({
         openAiKey,
         model,
