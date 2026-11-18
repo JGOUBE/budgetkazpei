@@ -396,7 +396,7 @@ export function resolveAdvisorBudgetNoDataAdvice({
   // observation or prior advice, with at most two intervening local fallbacks.
   // Don't resurrect an older budget topic after an actual subject change.
   const history = Array.isArray(recentHistory) ? recentHistory.slice(0, 5) : []
-  const noRecordedSpending = /\b(?:je ne trouve pas encore de depenses|pas encore de depenses classees|mi trouv(?:e)? pa ankor bann depans|aucune depense enregistree)\b/
+  const noRecordedSpending = /\b(?:je ne trouve pas encore de depenses|pas encore de depenses classees|mi trouv(?:e)? pa(?:s)? ankor bann depans|aucune depense enregistree)\b/
   // An actual verified spending analysis must not be replaced by a generic
   // "no data" script just because an older fuel observation is in the history.
   if (history.some(item => item?.source === "local_budget_followup" &&
