@@ -21,9 +21,9 @@ const normalize = (value: unknown): string => String(value || "")
   .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
   .toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ")
 
-const FUEL = /\b(?:carburant|karbiran|karburan|essence|lesans|sans plomb|gazole|gazoil|diesel|prix a la pompe|plein d essence)\b/
+const FUEL = /\b(?:carburant|carburan|karbiran|karburan|mazout|essence|essans|lesans|sans plomb|gazole|gazoil|diesel|prix a la pompe|plein d essence)\b/
 const OTHER_GEOGRAPHY = /\b(?:metropole|hexagone|paris|lyon|marseille|bordeaux|toulouse|europe|canada|belgique|suisse|afrique|madagascar|maurice|moris|mayotte|guadeloupe|martinique|guyane)\b/
-const HISTORIC_COMPARE = /\b(?:augmente|augmentes|augmentation|hausse|baisse|diminue|evolue|evolution|compare|comparaison|varie|variation|combien|komien|kombien|ogmant(?:e|asion|ation)?|monte|bese|pourcentage|diferans|difference)\b/
+const HISTORIC_COMPARE = /\b(?:augmente|augmentes|augmentation|hausse|baisse|diminue|evolue|evolution|compare|comparaison|varie|variation|combien|konbien|komien|kombien|kombyin|ogmant(?:e|asion|ation)?|monte|bese|pourcentage|diferans|difference)\b/
 const TWO_YEARS = /\b(?:depuis (?:les )?(?:deux|2) (?:derniere?s? )?ans|(?:en|sur|ces|les|depuis) (?:deux|2) ans|(?:deux|2) dernieres? annees?|(?:depi )?(?:deux|de|2) zan|(?:depi )?(?:deux|de|2) an|entre 2024 et 2026|novembre 2024 (?:et|a|versus|vs) novembre 2026|novanm 2024 (?:ek|et|a) novanm 2026)\b/
 const PRICE_HISTORY_REQUEST = /\b(?:depuis|depi|en (?:20\d{2}|deux|2) ans|sur (?:deux|2) ans|(?:deux|de|2) zan|entre 20\d{2} et 20\d{2}|evolution|augmente|ogmant(?:e|asion|ation)?|hausse|baisse|bese|variation|diminution|comparaison|novanm 20\d{2})\b/
 
@@ -91,8 +91,7 @@ export function reviewUnsupportedFuelPriceHistory({
 }: {question?: string; answer?: string; language?: string} = {}): string {
   const q = normalize(question)
   const a = String(answer || "")
-  if (!FUEL.test(q) || !PRICE_HISTORY_REQUEST.test(q) ||
-      OTHER_GEOGRAPHY.test(q) || !a) return a
+  if (!FUEL.test(q) || !PRICE_HISTORY_REQUEST.test(q) || !a) return a
 
   // For historical market prices a model's self-declared citation is not
   // independent evidence. Verified local monthly snapshots take precedence
@@ -105,6 +104,13 @@ export function reviewUnsupportedFuelPriceHistory({
     ? "Mi pé pa donne in pourcentage fiable sans bann prix maximum officiels pou deux dates comparables. Mi préfère pa invente in évolution."
     : "Je ne peux pas donner une hausse ou une baisse chiffrée fiable pour cette période sans deux relevés officiels comparables. Je préfère ne pas inventer une évolution."
   const isKreol = language === "kreol" || language === "kr" || language === "cr"
+  if (OTHER_GEOGRAPHY.test(q)) {
+    // No dated evidence for other territories: never switch to Reunion prices
+    // or repeat the model's fabricated statistics.
+    return prefix + (isKreol
+      ? "\n\nPou in lot pays ou in lot vil, fo dé relevés officiels pou dé dates comparables."
+      : "\n\nPour ce territoire, une comparaison fiable nécessite deux relevés officiels aux dates concernées.")
+  }
   return prefix + (isKreol
     ? "\n\nDann La Rényon, la Préfekti i publie bann pri maksimum chak mwa. Di a moin ki dé mwa ou vé comparer, ek si lé sans-plomb ou gazole. Mi va pas invente bann chiffres.\nBann sources ofisyèl : "
     : "\n\nÀ La Réunion, les prix maximums sont publiés chaque mois par la préfecture. Précisez les deux mois et le carburant (sans-plomb ou gazole) pour une comparaison fondée sur des relevés vérifiés.\nSource officielle : ") +
