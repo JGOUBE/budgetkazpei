@@ -38,27 +38,17 @@ const PLAN_COPY = {
       intro: "BudgetKazPéi me conseille au quotidien.",
       items: ["Tout le Gratuit", PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premium], "Historique et statistiques avancées", "Alertes budget et export PDF", "Conseiller BudgetKazPéi — budget, aides et conseils", "Dossiers, courriers, emails, relances, rendez-vous et recours"],
     },
-    [PLAN_IDS.premiumPlus]: {
-      name: PLAN_NAMES[PLAN_IDS.premiumPlus], cta: "Découvrir Premium+",
-      intro: "BudgetKazPéi m'accompagne dans mes actions concrètes.",
-      items: ["Tout le Premium", PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premiumPlus], "Conseiller BudgetKazPéi+ — accompagnement avancé", "Accompagnement avancé des démarches", "Dossiers, courriers, emails, relances et rendez-vous", "Compréhension des refus et préparation des recours"],
-    },
   },
   kr: {
     [PLAN_IDS.free]: {
       name: "Gratis", cta: "Kré mon kont",
       intro: "Pou dékouv BudgetKazPéi ek koumans swiv sak lé esansyèl.",
-      items: ["San piblisité", "Bidjé esansyèl", "Larzan i rantre ek dépans", "Statistik senp", "Èd esansyèl ek bann Bon Plan lokal", "Aksé pou dékouv scanner-la", "Konseyé BudgetKazPéi pou dékouv dann Premium"],
+      items: ["San piblisité", "Bidjé esansyèl", "Larzan i rantre ek dépans", "Statistik senp", "Èd esansyèl ek bann Bon Plan lokal", "3 scans ofèr dann bann 30 prémyé zour", "Konseyé BudgetKazPéi pou dékouv dann Premium"],
     },
     [PLAN_IDS.premium]: {
       name: "Premium", cta: "Dékouv Premium",
       intro: "BudgetKazPéi i konsey amwin dann mon kotidien.",
       items: ["Tout sak lé dann Gratis", "Scanner Premium avèk proteksyon", "Istorik ek statistik avansé", "Alèrt bidjé ek èksport PDF", "Konseyé BudgetKazPéi — bidjé, èd ek konsey", "Dosyé, kourrié, email, relans, randévou ek rekour"],
-    },
-    [PLAN_IDS.premiumPlus]: {
-      name: "Premium+", cta: "Dékouv Premium+",
-      intro: "BudgetKazPéi i akonpagn amwin dann mon bann aksion konkrè.",
-      items: ["Tout sak lé dann Premium", "Scans san limit", "Konseyé BudgetKazPéi+ — lakonpagnman avansé", "Lakonpagnman avansé pou bann demars", "Dosyé, kourrié, email, relans ek randévou", "Konprann bann refi ek prépar bann rekour"],
     },
   },
 }
