@@ -40,7 +40,7 @@ const PREMIUM_CONTENT = {
         "Commencez avec les outils gratuits et découvrez le Conseiller complet, le scanner et l'accompagnement avec Premium.",
       trust: [
         "Annulation du renouvellement possible",
-        "Paiement sécurisé par Stripe",
+        "Paiement sécurisé",
         "Disponible en français et en créole réunionnais",
       ],
     },
@@ -132,7 +132,7 @@ const PREMIUM_CONTENT = {
         "Koumans avèk bann zouti gratis. Premium i donn aou Konseyé complet, scanner ek lakonpagnman.",
       trust: [
         "Ou pé arèt renouvèlman",
-        "Payman sekirizé par Stripe",
+        "Payman sekirizé",
         "Disponib an fransé ek kréol rényoné",
       ],
     },
