@@ -51,11 +51,11 @@ for (const shade of ["#C8E4AA", "#C9D9F0", "#CFD6DD", "#CCE8E0"]) {
   assert.ok(homepage.includes(shade), `Missing home palette token ${shade}`)
   assert.ok(advisorColors.includes(shade), `Advisor should reuse home palette token ${shade}`)
 }
-assert.match(advisorColors, /bkp-advisor-bubble--assistant[\\s\\S]*#E9EDE3/)
-assert.match(advisorColors, /bkp-advisor-bubble--user[\\s\\S]*#CCE8E0/)
-assert.match(advisorColors, /bkp-advisor-composer[\\s\\S]*#E7F1E9/)
-assert.match(advisorColors, /bkp-advisor-starter--trouver_aide[\\s\\S]*#C9D9F0/)
-assert.match(advisorColors, /bkp-advisor-starter--comprendre_courrier[\\s\\S]*#CFD6DD/)
+assert.match(advisorColors, /bkp-advisor-bubble--assistant[\s\S]*#E9EDE3/)
+assert.match(advisorColors, /bkp-advisor-bubble--user[\s\S]*#CCE8E0/)
+assert.match(advisorColors, /bkp-advisor-composer[\s\S]*#E7F1E9/)
+assert.match(advisorColors, /bkp-advisor-starter--trouver_aide[\s\S]*#C9D9F0/)
+assert.match(advisorColors, /bkp-advisor-starter--comprendre_courrier[\s\S]*#CFD6DD/)
 assert.match(advisorColors, /box-shadow: none !important/)
 
 console.log("OK: Conseiller compact and accessible; price collectors stay separate from local bons plans.")
