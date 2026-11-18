@@ -5,7 +5,7 @@ const normalize = value => String(value || "")
   .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
   .toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ")
 
-const MONEY_AND_BENEFITS = /\b(?:budget|bidze|depens(?:e|es)?|depans|revenu(?:s)?|salaire|pay(?:er|e|e?s)?|factur(?:e|es)?|loyer|charges? fixes?|epargne|economis(?:er|e|es)?|economies|economi|dettes?|credit|debit|rembourser|mensualit(?:e|es)|impots?|taxes?|retraite|assurance|mutuelle|prix|tarif|moins cher|plus cher|magasin|enseigne|courses?|ticket de caisse|achat|panier|alimentation|energie|electricite|eau potable|allocation(?:s)?|prestation(?:s)?|aides? (?:financiere|sociale|au logement|de la caf|publique|pour mon|pour ma)|mes aides|mes droits|quelles aides|aides possibles|trouver une aide|demander une aide|rsa|apl|als|alf|aah|aeeh|ass\b|are\b|caf\b|mdph|ccas|france travail|fsl|bourse|pass sport|prime d activite|crous)\b/
+const MONEY_AND_BENEFITS = /\b(?:budget|bidze|depens(?:e|es)?|depans|revenu(?:s)?|salaire|pay(?:er|e|e?s)?|factur(?:e|es)?|loyer|charges? fixes?|epargne|economis(?:er|e|es)?|economies|economi|dettes?|credit|debit|rembourser|mensualit(?:e|es)|impots?|taxes?|retraite|assurance|mutuelle|prix|tarif|moins cher|plus cher|carburant|essence|gazole|diesel|plein d essence|transport|deplacements?|pouvoir d achat|vie chere|magasin|enseigne|courses?|ticket de caisse|achat|panier|alimentation|energie|electricite|eau potable|allocation(?:s)?|prestation(?:s)?|aides? (?:financiere|sociale|au logement|de la caf|publique|pour mon|pour ma)|mes aides|mes droits|quelles aides|aides possibles|trouver une aide|demander une aide|rsa|apl|als|alf|aah|aeeh|ass\b|are\b|caf\b|mdph|ccas|france travail|fsl|bourse|pass sport|prime d activite|crous)\b/
 const ADMIN_AND_FINANCIAL_ADVICE = /\b(?:demarch(?:e|es) administrativ(?:e|es)|dossier(?:s)? administratifs?|mon dossier|ma demande d aide|mes droits|mon courrier|ma lettre|ma declaration|mon refus|mon recours|mes justificatifs|mon contrat|mes prestations|mes allocations|ma retraite|mon travail|mon emploi|mon cv|ma formation|recherche d emploi|aide sociale|aides locales|allocataire|surendettement|aide au logement|droit social|consommation|mon fournisseur|mon abonnement)\b/
 const PERSONAL_MONEY = /\b(?:mon budget|mes depenses|mes revenus|mon salaire|mon argent|mon loyer|mes achats|mes courses|mes droits|mon credit|mes factures|mes economies|mes aides|ma caf|mes prestations)\b/
 const CLEAR_GENERAL_QUERY = /^(?:pourquoi (?:le ciel|la lune|les etoiles|les chats|les chiens|la terre|le soleil)|quelle est la capitale|quel est le president|combien de lunes|raconte(?: moi)? (?:une histoire|une blague)|fais(?: moi)? (?:une blague|une devinette)|invente(?: moi)?|ecris(?: moi)? (?:un poeme|une chanson)|comment(?: ca)? fonctionne (?:une fusee|un volcan)|qui a gagne (?:le match|la coupe))\b/
@@ -15,6 +15,9 @@ const PLAYFUL = /\b(?:licornes?|dragons?|extraterrestres?|magique|sorcier|devine
 // the exact wording differs from the usual budget or CAF keywords.
 const EXTRA_FINANCE_AND_ADMIN = /\b(?:une aide|des aides|mon aide|aide pour (?:mon |ma |mes |le |la |les )?(?:logement|loyer|enfant|famille|factur|energie|travail|emploi|formation|retraite|sante)|aide a payer|obtenir (?:une|des) aides?|beneficier (?:d une|des) aides?|droit a (?:une|des) aides?|subventions?|fin de mois|reste a vivre|decouvert bancaire|besoin d argent|pas assez d argent|chomage|sans emploi|demandeur d emploi|indemnisation|allocation chomage|mes charges|mon solde|faire des economies|mettre de cote|echelonner (?:un paiement|une dette)|courrier administratif|lettre administrative|email administratif|relance administrative|rendez vous administratif|demarches administratives|trouver un emploi|recherche d emploi|financer une formation|formation professionnelle)\b/
 const BUDGET_SHORTCUT = /^(?:que puis je reduire|ou puis je economiser|comment reduire|comment economiser|comment ameliorer mon budget|combien me reste(?: t il)?|ou va mon argent)\b/
+
+const ADVISOR_DOCUMENT_TOPICS = /\b(?:refus|refuse|refusee|rejet|rejete|rejetee|recours|notification|courrier|decision administrative)\b/
+const ADVISOR_DOCUMENT_MODES = new Set(["comprendre_refus", "comprendre_courrier", "preparer_recours"])
 
 const SHORT_CONTINUATION = /^(?:et ensuite|et maintenant|et pour moi|comment faire|comment je fais|combien|pourquoi|c est possible|quelles conditions|pour mon cas|et si|je peux faire quoi|qu est ce que je fais|comment proceder|merci pour ces aides)\b/
 const GUARDED_MODES = new Set([
@@ -40,6 +43,7 @@ export function classifyAdvisorSpendScope({question = "", mode = "general", acti
   if (MONEY_AND_BENEFITS.test(text) || ADMIN_AND_FINANCIAL_ADVICE.test(text) || EXTRA_FINANCE_AND_ADMIN.test(text)) return "useful"
   // A short follow-up to a selected financial/administrative tool remains
   // useful. Longer self-contained unrelated queries cannot spoof this mode.
+  if (ADVISOR_DOCUMENT_MODES.has(mode) && ADVISOR_DOCUMENT_TOPICS.test(text)) return "useful"
   if (mode === "budget_depenses" && BUDGET_SHORTCUT.test(text)) return "useful"
   if (GUARDED_MODES.has(mode) && text.split(" ").length <= 7 && SHORT_CONTINUATION.test(text))
     return "useful"
@@ -182,4 +186,65 @@ export function getLocalAdvisorBudgetBasics(question = "", language = "fr", mode
   ]
   const found = definitions.find(item => item.questions.includes(text))
   return found ? (language === "kreol" ? found.kr : found.fr) : null
+}
+
+
+// This is only a short observation about living costs, not a numerical
+// analysis: the response must not imply that user spending was inspected.
+export function getLocalAdvisorBudgetObservation(question = "", language = "fr", mode = "general") {
+  if (!["general", "budget_depenses"].includes(mode)) return null
+  const original = String(question || "")
+  const text = normalize(original)
+  if (!text || text.length > 165 || text.split(" ").length > 25 ||
+      original.includes("?") || original.includes("\n")) return null
+  if (!/^(?:je trouve (?:que )?|je constate que |j ai remarque que |j ai l impression que |c est |ca devient |l |le |la |les |mon |ma |mes )/.test(text)) return null
+  if (!/\b(?:cher|chere|chers|cheres|hors de prix|coute cher|coutent cher|revient cher|reviennent cher|trop cher|trop chere|flambe)\b/.test(text)) return null
+  if (/\b(?:pourquoi|comment|combien|quel|quels|quelle|quelles|compare|comparer|comparaison|calcule|calculer|prevoir|estimer|montant|prix aujourd hui|prix actuel|prix du litre|aujourd hui|cette semaine|ou trouver|que faire)\b/.test(text)) return null
+  const fr = language !== "kreol"
+  if (/\b(?:carburant|essence|gazole|diesel|plein d essence)\b/.test(text)) {
+    return fr
+      ? "Le carburant peut peser sur le budget. Nous pouvons comparer vos dépenses de transport enregistrées sur plusieurs périodes, puis regarder des pistes adaptées : regrouper les trajets ou comparer les prix affichés. Souhaitez-vous examiner vos dépenses de carburant ?"
+      : "Carburant i pé peser dan bidzé. Nou pé comparer out dépans transport anrezistré su plizyèr périodes ek regarder bann pistes pou économiser. Ou vé regarde out dépans carburant ?"
+  }
+  if (/\b(?:courses|alimentation|alimentaire|produits alimentaires|manger)\b/.test(text)) {
+    return fr
+      ? "Les courses peuvent peser sur le budget. Nous pouvons examiner vos achats enregistrés et comparer les prix de produits réellement équivalents, en tenant compte de la date des relevés. Voulez-vous examiner votre budget courses ?"
+      : "Bann courses i pé peser dan bidzé. Nou pé regarder out achats anrezistré ek compare prix des minm produits. Ou vé regarde out bidzé courses ?"
+  }
+  if (/\b(?:loyer|logement)\b/.test(text)) {
+    return fr
+      ? "Le loyer représente souvent une charge importante. Nous pouvons examiner son poids dans votre budget et les aides au logement possibles, sans supposer que vous y avez droit. Voulez-vous faire le point ?"
+      : "Loyer lé souvent in gro sarz. Nou pé regarde out bidzé ek bann aides logement possibles, sans promettre in droit. Ou vé faire le point ?"
+  }
+  if (/\b(?:electricite|energie|eau|facture|factures)\b/.test(text)) {
+    return fr
+      ? "Les factures peuvent varier d'une période à l'autre. Nous pouvons comparer celles que vous avez enregistrées et chercher des pistes adaptées, sans inventer de montant. Voulez-vous examiner ces dépenses ?"
+      : "Bann factures i pé varier. Nou pé comparer out montants anrezistré ek regarde bann pistes adaptées. Ou vé faire le point ?"
+  }
+  if (/\b(?:assurance|abonnement|charges fixes)\b/.test(text)) {
+    return fr
+      ? "Les charges régulières méritent d'être examinées. Nous pouvons comparer vos montants enregistrés et repérer les contrats à vérifier, sans supposer qu'ils sont supprimables. Voulez-vous faire le point ?"
+      : "Bann sarz régulières i mérite d'être vérifié. Nou pé comparer out montants anrezistré ek regarde bann contrats. Ou vé faire le point ?"
+  }
+  return null
+}
+
+// Only exact, unaccompanied introduction prompts. Do not mistake a real pasted
+// decision for an introduction, and never hallucinate refusal reasons.
+export function getLocalAdvisorDocumentIntake(question = "", language = "fr", mode = "general") {
+  if (!["comprendre_refus", "comprendre_courrier"].includes(mode)) return null
+  const raw = String(question || "")
+  const text = normalize(raw)
+  if (!text || text.length > 180 || raw.includes("\n")) return null
+  const presetRefusal = text === "je vais coller un refus explique uniquement ce qui est ecrit et ce que je dois verifier"
+  const presetLetter = text === "je vais coller un courrier administratif aide moi a comprendre ce qui est ecrit et la prochaine action"
+  const introduction = /^(?:je vais|je veux|je souhaite|je voudrais) (?:coller|envoyer|transmettre|partager|copier|joindre) (?:un|une|le|la|mon|ma) (?:refus|courrier|lettre|notification|decision)(?: (?:de refus|administratif|administrative))?$/.test(text)
+  if (!presetRefusal && !presetLetter && !introduction) return null
+  const refusal = mode === "comprendre_refus"
+  if (language === "kreol") return refusal
+    ? "Ou pé coller texte out refus isi, sans nom, numéro dossier ni coordonnées. Mi va distinguer motif écrit, délais ou recours mentionnés ek bann points à vérifier."
+    : "Ou pé coller out courrier isi, sans bann données personnelles. Mi va expliquer sak lé écrit ek prochaine étape utile, sans inventer."
+  return refusal
+    ? "Collez ici le texte du refus, en masquant si possible votre nom, votre numéro de dossier et vos coordonnées. Je distinguerai les motifs réellement indiqués, les éventuels délais ou recours mentionnés et les points à vérifier."
+    : "Collez ici votre courrier administratif, en masquant si possible vos données personnelles. Je vous expliquerai ce qui est écrit, les points à vérifier et la prochaine étape utile, sans inventer d'informations."
 }
