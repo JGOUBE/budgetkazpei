@@ -166,9 +166,7 @@ function resolveReceiptQuotaStatePure({
 }
 
 function formatReceiptQuotaTicketsLabelFrPure(quota) {
-  return quota?.isUnlimitedForUser
-    ? `Premium+ actif \u2014 Utilisation du mois : ${quota.used}`
-    : `Analyses IA : ${quota.used} / ${quota.limit} \u2014 ${quota.planLabel}`
+  return quota?.plan === "free" ? "Scanner découverte" : "Scanner Premium"
 }
 
 function getReceiptQuotaBlockingMessagePure(quota, txt) {
@@ -191,31 +189,24 @@ assert.doesNotMatch(
 )
 
 assert.equal(PLAN_PRICES[PLAN_IDS.free], "0 €")
-assert.equal(PLAN_PRICES[PLAN_IDS.premium], "2,99 €/mois")
+assert.equal(PLAN_PRICES[PLAN_IDS.premium], "4,99 €/mois")
 assert.equal(PLAN_PRICES[PLAN_IDS.premiumPlus], "4,99 €/mois")
+assert.deepEqual(PUBLIC_PLAN_CARDS.map(plan => plan.id), [PLAN_IDS.free, PLAN_IDS.premium])
 assert.equal(FREE_OPERATIONAL_SCAN_LIMIT, 1)
-assert.equal(getPlanScanLimit(PLAN_IDS.premium), 10)
-assert.equal(PREMIUM_PLUS_SAFETY_SCAN_LIMIT, 50)
-assert.equal(PLAN_SCAN_POLICY[PLAN_IDS.premiumPlus].commercialScanLimit, null)
-assert.equal(PLAN_SCAN_POLICY[PLAN_IDS.premiumPlus].operationalScanLimit, 50)
-assert.equal(PLAN_SCAN_POLICY[PLAN_IDS.premiumPlus].isUnlimitedForUser, true)
+assert.equal(getPlanScanLimit(PLAN_IDS.premium), 100)
+assert.equal(PREMIUM_PLUS_SAFETY_SCAN_LIMIT, 100)
+assert.equal(getPlanScanLimit(PLAN_IDS.premiumPlus), 100)
+assert.equal(PLAN_SCAN_POLICY[PLAN_IDS.premium].isSafetyLimited, true)
 assert.equal(PLAN_SCAN_POLICY[PLAN_IDS.premiumPlus].isSafetyLimited, true)
 assert.equal(getPlanQuotaExceededCode(PLAN_IDS.free), MONTHLY_QUOTA_REACHED_CODE)
-assert.equal(getPlanQuotaExceededCode(PLAN_IDS.premium), MONTHLY_QUOTA_REACHED_CODE)
+assert.equal(getPlanQuotaExceededCode(PLAN_IDS.premium), SCAN_SAFETY_LIMIT_REACHED_CODE)
 assert.equal(getPlanQuotaExceededCode(PLAN_IDS.premiumPlus), SCAN_SAFETY_LIMIT_REACHED_CODE)
-assert.match(PREMIUM_PLUS_SAFETY_MESSAGE, /nombre inhabituel de scans ce mois-ci/i)
-assert.match(PREMIUM_PLUS_SAFETY_MESSAGE, /Par sécurité/i)
-
-assert.doesNotMatch(targetedPublicTexts, /\b50\b|50 sur 50/, "Premium+ safety limit must not be visible in public offer texts")
-assert.doesNotMatch(targetedPublicTexts, /Gratuit[\s\S]{0,160}\b1\s+scan/i, "free public offer must not expose the provisional numeric quota")
-assert.ok(PUBLIC_PLAN_CARDS.find(plan => plan.id === PLAN_IDS.premium)?.items.some(item => item.text === "10 scans par mois"), "Premium public quota must be visible")
-assert.ok(PUBLIC_PLAN_CARDS.find(plan => plan.id === PLAN_IDS.premiumPlus)?.items.some(item => /Scans illimit/i.test(item.text)), "Premium+ public quota must stay commercially unlimited")
-assert.ok(PUBLIC_PLAN_CARDS.every(plan => plan.items.every(item => Object.values(PLAN_FEATURE_STATUS).includes(item.status))), "all public plan features must have a status")
-assert.ok(PUBLIC_PLAN_CARDS.find(plan => plan.id === PLAN_IDS.free)?.items.some(item => item.status === PLAN_FEATURE_STATUS.locked), "free advisor teaser must use a dedicated locked status")
+assert.ok(PUBLIC_PLAN_CARDS.every(plan => plan.items.every(item => Object.values(PLAN_FEATURE_STATUS).includes(item.status))))
+assert.ok(PUBLIC_PLAN_CARDS.find(plan => plan.id === PLAN_IDS.free)?.items.some(item => item.status === PLAN_FEATURE_STATUS.locked))
+assert.doesNotMatch(targetedPublicTexts, /\b100\s+scans\b|100 sur 100/i, "Internal protection must stay invisible")
 
 assert.match(receiptQuota, /subscription_loading/, "receipt quota hook must keep a dedicated subscription loading state")
 assert.match(receiptQuota, /getReceiptQuotaBlockingMessage/, "receipt quota hook must expose a shared quota blocking helper")
-assert.match(receiptQuota, /Premium\+ actif \u2014 Utilisation du mois : \$\{quota\.used\}/, "receipt quota helper must expose the Premium+ usage label without surfacing the safety limit")
 assert.match(receiptsPage, /Chargement de votre formule en cours/, "Receipts page must show a loading state instead of a temporary free label")
 assert.match(receiptsPage, /formatReceiptQuotaTicketsLabelFr|formatReceiptQuotaTicketsLabelKr/, "Receipts page must render the shared ticket quota label helper")
 assert.match(receiptsPage, /subscriptionLoading/, "Receipts page must receive the subscription loading flag")
@@ -223,39 +214,26 @@ assert.match(receiptsPage, /getReceiptQuotaBlockingMessage/, "Receipts page must
 assert.doesNotMatch(receiptsPage, /premium_plus"\s*\?\s*txt\.intensiveUsage/, "Premium+ scanner blocking must not be tied directly to the plan name")
 assert.doesNotMatch(receiptsPage, /50 sur 50|tous vos scans/, "Receipts page must not expose Premium+ as a normal 50 quota")
 
-const premiumPlusDisplayQuota = resolveReceiptQuotaStatePure({
-  usage: { used: 0, aiUsed: 0, manualUsed: 0, plan: "premium_plus" },
+const legacyPremiumPlusQuota = resolveReceiptQuotaStatePure({
+  usage: { used: 99, aiUsed: 99, manualUsed: 0, plan: "premium_plus" },
   fallbackPlan: "free",
-  source: "scan_usage",
 })
-assert.equal(formatReceiptQuotaTicketsLabelFrPure(premiumPlusDisplayQuota), "Premium+ actif \u2014 Utilisation du mois : 0")
-assert.equal(premiumPlusDisplayQuota.used, 0)
-assert.equal(premiumPlusDisplayQuota.plan, "premium_plus")
-assert.equal(premiumPlusDisplayQuota.reached, false)
-assert.equal(premiumPlusDisplayQuota.safetyLimitReached, false)
-assert.equal(getReceiptQuotaBlockingMessagePure(premiumPlusDisplayQuota, { intensiveUsage: "safety", quotaReached: "quota" }), "quota")
-assert.doesNotMatch(formatReceiptQuotaTicketsLabelFrPure(premiumPlusDisplayQuota), /Gratuit|0 \/ 50|50/, "Premium+ empty-month label must not fall back to Free or expose the safety threshold")
-
-const premiumPlusFortyNineQuota = resolveReceiptQuotaStatePure({
-  usage: { used: 49, aiUsed: 49, manualUsed: 0, plan: "premium_plus" },
-  fallbackPlan: "free",
-  source: "scan_usage",
+assert.equal(legacyPremiumPlusQuota.reached, false)
+assert.equal(formatReceiptQuotaTicketsLabelFrPure(legacyPremiumPlusQuota), "Scanner Premium")
+const protectedPremiumQuota = resolveReceiptQuotaStatePure({
+  usage: { used: 100, aiUsed: 100, manualUsed: 0, plan: "premium" },
 })
-assert.equal(premiumPlusFortyNineQuota.reached, false)
-assert.equal(premiumPlusFortyNineQuota.safetyLimitReached, false)
-assert.equal(formatReceiptQuotaTicketsLabelFrPure(premiumPlusFortyNineQuota), "Premium+ actif \u2014 Utilisation du mois : 49")
-assert.doesNotMatch(formatReceiptQuotaTicketsLabelFrPure(premiumPlusFortyNineQuota), /50|Gratuit/, "Premium+ 49-use label must stay commercial and must not expose the safety threshold")
-
-const premiumPlusSafetyQuota = resolveReceiptQuotaStatePure({
-  usage: { used: 50, aiUsed: 50, manualUsed: 0, plan: "premium_plus" },
-  fallbackPlan: "free",
-  source: "scan_usage",
+assert.equal(protectedPremiumQuota.reached, true)
+assert.equal(protectedPremiumQuota.safetyLimitReached, true)
+assert.equal(formatReceiptQuotaTicketsLabelFrPure(protectedPremiumQuota), "Scanner Premium")
+assert.equal(getReceiptQuotaBlockingMessagePure(protectedPremiumQuota, {
+  intensiveUsage: "safety", quotaReached: "quota",
+}), "safety")
+const discoveryQuota = resolveReceiptQuotaStatePure({
+  usage: { used: 1, plan: "free" },
 })
-assert.equal(premiumPlusSafetyQuota.reached, true)
-assert.equal(premiumPlusSafetyQuota.safetyLimitReached, true)
-assert.equal(formatReceiptQuotaTicketsLabelFrPure(premiumPlusSafetyQuota), "Premium+ actif \u2014 Utilisation du mois : 50")
-assert.equal(getReceiptQuotaBlockingMessagePure(premiumPlusSafetyQuota, { intensiveUsage: "safety", quotaReached: "quota" }), "safety")
-assert.doesNotMatch(formatReceiptQuotaTicketsLabelFrPure(premiumPlusSafetyQuota), /0 \/ 50|Quota atteint|Gratuit/, "Premium+ 50-use label must not become a commercial quota label")
+assert.equal(discoveryQuota.reached, true)
+assert.equal(formatReceiptQuotaTicketsLabelFrPure(discoveryQuota), "Scanner découverte")
 
 const emptyMonthSnapshot = resolveScanUsageSnapshotPure(null, "premium_plus")
 assert.equal(emptyMonthSnapshot.plan, "premium_plus")
@@ -290,7 +268,7 @@ const premiumPlusEmptyMarkup = renderReceiptsPageSsr({
   isPremium: true,
   isPremiumPlus: true,
 })
-assert.match(premiumPlusEmptyMarkup, /Premium\+ actif/, "Receipts page Premium+ SSR render must stay stable when no scan_usage row exists yet")
+assert.match(premiumPlusEmptyMarkup, /Premium/, "Legacy paid scanner must render unified Premium")
 
 assert.doesNotThrow(() => {
   renderReceiptsPageSsr({
@@ -317,15 +295,17 @@ assert.match(scannerTypes, /scan_safety_limit_reached/, "front error types must 
 assert.match(scannerApi, /monthly_quota_reached/, "front API must map monthly quota code")
 assert.match(scannerApi, /scan_safety_limit_reached/, "front API must map safety limit code")
 
-assert.match(migration, /Indian\/Reunion/, "migration must align monthly quota period with La Reunion timezone")
-assert.doesNotMatch(migration, /time zone 'UTC'/, "migration quota month must not be based on UTC")
-assert.match(migration, /when p_plan = 'premium_plus' then 50/, "migration must use Premium+ safety threshold 50")
-assert.match(migration, /when p_plan = 'premium' then 10/, "migration must use Premium limit 10")
-assert.match(migration, /else 1/, "migration must use provisional free operational limit 1")
-assert.match(migration, /scan_safety_limit_reached/, "migration must return safety limit reason")
-assert.match(migration, /monthly_quota_reached/, "migration must return monthly quota reason")
-assert.match(migration, /from public\.user_subscriptions/, "migration must prefer the server-side subscription table when available")
-assert.doesNotMatch(migration, /v_profile ->> 'subscription_plan'/, "migration must not treat subscription period as a canonical plan")
+const unifiedGuard = read("supabase/migrations/20261118140000_unified_premium_safety.sql")
+assert.match(migration, /Indian\/Reunion/, "Original reservation migration keeps Reunion timezone")
+assert.match(unifiedGuard, /then 100 else 1/, "Single premium must use internal 100-scan safety")
+assert.match(unifiedGuard, /1500000/, "Advisor cost cap must be 1.50 EUR")
+assert.match(unifiedGuard, /v_minute_count>=5/)
+assert.match(unifiedGuard, /v_hour_count>=30/)
+assert.match(unifiedGuard, /v_day_count>=100/)
+assert.match(unifiedGuard, /v_month_count>=1200/)
+assert.match(unifiedGuard, /from public.user_subscriptions/, "Active subscriptions must be checked")
+assert.match(unifiedGuard, /enable row level security/)
+assert.match(unifiedGuard, /grant execute on function public.reserve_advisor_openai/)
 
 assert.match(pythonQuota, /p_request_id/, "Python quota provider must send a request id to Supabase")
 assert.match(pythonQuota, /p_scan_type/, "Python quota provider must send scan type to Supabase")
@@ -340,9 +320,10 @@ assert.match(publicHome, /href=\{`mailto:\$\{CONTACT_EMAIL\}`\}/, "professional 
 assert.match(read("src/pages/PrivacyPage.jsx") + read("src/pages/TermsPage.jsx"), /contact\.budgetkazpei@gmail\.com/, "professional CTA email must already exist in official public pages")
 assert.doesNotMatch(publicHome + landingContent, /Chez\s+[A-Z]|SARL\s+[A-Z]|prix publicitaire|partenaire officiel/, "public marketing copy must not invent partners or ad pricing")
 
-assert.match(premiumLanding + pricing + landingContent, /10 scans par mois|PLAN_PUBLIC_SCAN_LABELS\[PLAN_IDS\.premium\]/, "public plan pages must keep the Premium scan quota")
-assert.match(premiumLanding + premiumPage + pricing, /Conseiller BudgetKazP\u00e9i\+|Konsey\u00e9 BudgetKazP\u00e9i\+/, "Premium+ advisor wording must stay present across the offer surfaces")
-assert.match(premiumLanding + premiumPage + pricing, /Bient\u00f4t|An pr\u00e9parasyon|Byento|bient\u00f4t disponible|Bientot/i, "future Premium+ functions must stay separated as soon features")
+assert.match(premiumLanding + pricing + landingContent, /Premium/)
+assert.match(premiumLanding, /7sY28qdAJ1FQ6GCddsgMw03/, "Active checkout must be the 4.99 existing Stripe link")
+assert.doesNotMatch(read("src/config/plans.js"), /"10 scans par mois"/, "Operational limits must stay hidden")
+
 assert.match(premiumPage, /from "lucide-react"/, "Premium page must use Lucide icons instead of emojis")
 assert.doesNotMatch(premiumPage, /\uD83C\uDF34|\u2B50|\uD83D\uDC51|FREE|\u2728/u, "Premium page must not use emojis or low-quality free badges")
 assert.match(premiumPage, /Votre formule actuelle|Out formule aktiel/, "Premium page must expose a current plan banner")
@@ -362,8 +343,6 @@ assert.doesNotMatch(
 assert.match(premiumPageKrCopy, /Konpar bann offres/, "Premium page KR copy must translate the compare label consistently")
 assert.match(premiumPageKrCopy, /Tout sak l[ée] dann Gratuit/, "Premium page KR copy must reuse the validated Gratuit bundle wording")
 assert.match(premiumPageKrCopy, /Tout sak l[ée] dann Premium/, "Premium page KR copy must reuse the validated Premium bundle wording")
-assert.match(premiumPageKrCopy, /Scans san limit/, "Premium page KR copy must translate the Premium+ scan promise")
-assert.match(premiumPageKrCopy, /Konsey[ée] BudgetKazP[ée]i\+.*lakonpagnman avansé/, "Premium page KR copy must describe advanced service without unlimited wording")
 assert.match(premiumPageKrCopy, /An pr[ée]parasyon/, "Premium page KR copy must use the validated coming-soon section title")
 
 console.log("Plans quota e2e checks passed.")
