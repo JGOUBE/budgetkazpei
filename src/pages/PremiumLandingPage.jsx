@@ -23,9 +23,9 @@ const STRIPE_LINKS = {
 const PREMIUM_CONTENT = {
   fr: {
     seo: {
-      title: "Offres BudgetKazPéi — Gratuit, Premium et Premium+",
+      title: "Offres BudgetKazPéi — Gratuit, Premium et Premium",
       description:
-        "Comparez les offres Gratuit, Premium et Premium+ de BudgetKazPéi et choisissez le niveau d'accompagnement adapté à votre quotidien.",
+        "Comparez les offres Gratuit, Premium et Premium de BudgetKazPéi et choisissez le niveau d'accompagnement adapté à votre quotidien.",
     },
     navItems: [
       { label: "Offres", href: "#offres" },
@@ -36,18 +36,18 @@ const PREMIUM_CONTENT = {
       eyebrow: "Découvrir BudgetKazPéi",
       title: "Découvrez, soyez conseillé, puis accompagné.",
       text:
-        "Gratuit pose les bases. Premium ajoute le Conseiller pour la gestion quotidienne. Premium+ vous accompagne dans des démarches concrètes.",
+        "Gratuit pose les bases. Premium ajoute le Conseiller pour la gestion quotidienne. Premium vous accompagne dans des démarches concrètes.",
       trust: [
-        "Sans engagement",
+        "Annulation du renouvellement possible",
         "Paiement sécurisé par Stripe",
         "Disponible en français et en créole réunionnais",
       ],
     },
     offers: {
       eyebrow: "Les offres",
-      title: "Trois niveaux, faciles à comparer.",
+      title: "Gratuit et Premium : deux possibilités.",
       intro:
-        "Chaque formule reprend les outils de la précédente et ajoute un accompagnement plus complet.",
+        "Commencez gratuitement ou choisissez Premium, en paiement mensuel ou annuel.",
       recommended: "Recommandé",
       complete: "Accompagnement complet",
       monthly: "Mensuel",
@@ -55,9 +55,7 @@ const PREMIUM_CONTENT = {
       freeCta: "Commencer gratuitement",
       dashboardCta: "Accéder à mon tableau de bord",
       premiumCta: "Choisir Premium",
-      premiumPlusCta: "Choisir Premium+",
       premiumGuestCta: "Créer mon compte pour Premium",
-      premiumPlusGuestCta: "Créer mon compte pour Premium+",
       comingSoonTitle: "En préparation",
       comingSoonText:
         "Les comparaisons intelligentes et les Bons plans personnalisés seront ajoutés progressivement, à mesure que la base locale s'enrichit.",
@@ -78,11 +76,6 @@ const PREMIUM_CONTENT = {
           plan: "Premium",
           text: "Le Conseiller aide à comprendre votre budget, vos dépenses, vos courses et les aides disponibles.",
         },
-        {
-          label: "Je veux agir avec un accompagnement avancé",
-          plan: "Premium+",
-          text: "Pour préparer dossiers, courriers, emails, relances, rendez-vous et recours.",
-        },
       ],
     },
     faq: {
@@ -90,8 +83,8 @@ const PREMIUM_CONTENT = {
       title: "Questions fréquentes",
       items: [
         [
-          "Quelle est la différence entre Premium et Premium+ ?",
-          "Premium donne accès au Conseiller pour le budget, les aides et les conseils au quotidien. Premium+ ajoute la préparation de dossiers, courriers, emails, relances et recours.",
+          "Que comprend Premium ?",
+          "Le Conseiller complet, le scanner et les analyses avancées sont inclus en formule mensuelle ou annuelle.",
         ],
         [
           "Que se passe-t-il lorsque j'atteins ma limite de scans ?",
@@ -122,9 +115,9 @@ const PREMIUM_CONTENT = {
   },
   kr: {
     seo: {
-      title: "Bann offres BudgetKazPéi — Gratis, Premium ek Premium+",
+      title: "Bann offres BudgetKazPéi — Gratis, Premium ek Premium",
       description:
-        "Konpar bann offres Gratis, Premium ek Premium+ BudgetKazPéi é swazi lakonpagnman ki korespond ek out kotidien.",
+        "Konpar bann offres Gratis, Premium ek Premium BudgetKazPéi é swazi lakonpagnman ki korespond ek out kotidien.",
     },
     navItems: [
       { label: "Bann offres", href: "#offres" },
@@ -135,18 +128,18 @@ const PREMIUM_CONTENT = {
       eyebrow: "Dékouv BudgetKazPéi",
       title: "Dékouv, gagn konsey, épi gagn lakonpagnman.",
       text:
-        "Gratis i poz bann baz. Premium i azout Konseyé-la pou lo kotidien. Premium+ i akonpagn aou dann bann demars konkrè.",
+        "Gratis i poz bann baz. Premium i azout Konseyé-la pou lo kotidien. Premium i akonpagn aou dann bann demars konkrè.",
       trust: [
-        "San langazman",
+        "Ou pé arèt renouvèlman",
         "Payman sekirizé par Stripe",
         "Disponib an fransé ek kréol rényoné",
       ],
     },
     offers: {
       eyebrow: "Bann offres",
-      title: "Trois nivo, fasil pou konparé.",
+      title: "Gratis ek Premium : dé posibilités.",
       intro:
-        "Sak formule i repran bann zouti formule avan é i azout in lakonpagnman pli konplé.",
+        "Koumans gratis ou swazi Premium chak mwa ou chak ané.",
       recommended: "Nou konsey",
       complete: "Lakonpagnman konplé",
       monthly: "Chak mwa",
@@ -154,9 +147,7 @@ const PREMIUM_CONTENT = {
       freeCta: "Koumans gratis",
       dashboardCta: "Alé su mon tablo débor",
       premiumCta: "Swazi Premium",
-      premiumPlusCta: "Swazi Premium+",
       premiumGuestCta: "Kré mon kont pou Premium",
-      premiumPlusGuestCta: "Kré mon kont pou Premium+",
       comingSoonTitle: "An préparasyon",
       comingSoonText:
         "Konparézon entélizan ek Bon Plan pèsonalizé va ariv progressivement, amezir baz lokal-la i grandi.",
@@ -177,11 +168,6 @@ const PREMIUM_CONTENT = {
           plan: "Premium",
           text: "Konseyé-la i aide aou konprann out bidjé, dépans, courses ek bann èd.",
         },
-        {
-          label: "Mi vé azir avèk in lakonpagnman avansé",
-          plan: "Premium+",
-          text: "Pou prépar dosyé, kourrié, email, relans, randévou ek rekour.",
-        },
       ],
     },
     faq: {
@@ -189,8 +175,8 @@ const PREMIUM_CONTENT = {
       title: "Kestion souvan pozé",
       items: [
         [
-          "Kosa lé diferans ant Premium ek Premium+ ?",
-          "Premium i donn aksé Konseyé BudgetKazPéi pou out bidjé, èd ek bann konsey. Premium+ i azout lakonpagnman avansé pou bann dosyé, kourrié ek rekour.",
+          "Kosa lé dann Premium ?",
+          "Konseyé complet, scanner ek bann analiz avansé lé dann Premium chak mwa ou chak ané.",
         ],
         [
           "Kosa i ariv kan mi ariv mon limit scans ?",
@@ -371,7 +357,7 @@ export default function PremiumLandingPage({ isAuthenticated = false }) {
       intro: fr
         ? "Choisissez l'essentiel gratuit ou l'accompagnement complet avec Premium."
         : "Choisi Gratis pou l'esansyèl ou Premium pou lakonpagnman complet.",
-      choices: rawContent.comparison.choices.filter(choice => choice.plan !== "Premium+"),
+      choices: rawContent.comparison.choices,
     },
     faq: {
       ...rawContent.faq,
