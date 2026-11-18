@@ -136,3 +136,50 @@ export function getLocalAdvisorAppGuide(question = "", language = "fr", mode = "
   }
   return null
 }
+
+
+// Static, general financial literacy explanations. Never infer the person's
+// eligibility, account balance or future savings from a definition.
+export function getLocalAdvisorBudgetBasics(question = "", language = "fr", mode = "general") {
+  const text = normalize(question).replace(/ (?:svp|s il vous plait|s il te plait)$/, "")
+  if (mode !== "general" || !text || text.length > 105) return null
+  const definitions = [
+    {
+      questions: ["c est quoi un budget", "c est quoi le budget", "qu est ce qu un budget", "qu est ce que le budget", "definition du budget"],
+      fr: "Un budget sert à comparer vos revenus aux dépenses prévues et déjà réalisées sur une période, souvent le mois. Commencez par les charges fixes, puis les dépenses variables, sans oublier une marge pour les imprévus.",
+      kr: "In bidzé i aide aou compare out revenus ek out dépans su in période. Commence par bann sarz fixes, apré bann dépans variables, ek garde in marge pou imprévu.",
+    },
+    {
+      questions: ["c est quoi une charge fixe", "qu est ce qu une charge fixe", "qu est ce que les charges fixes", "definition des charges fixes"],
+      fr: "Une charge fixe est une dépense régulière et généralement prévisible : loyer, assurance ou abonnement, par exemple. Elle n'est pas forcément impossible à réduire, mais elle revient habituellement chaque mois.",
+      kr: "In sarz fix lé in dépans régulière ek souvent prévisible : loyer, assurance ou abonnement. Li revient souvent chaque mwa.",
+    },
+    {
+      questions: ["c est quoi une depense variable", "qu est ce qu une depense variable", "definition des depenses variables"],
+      fr: "Une dépense variable change selon les achats et les périodes, comme les courses, les sorties ou certains frais de transport. La suivre aide à voir quels postes évoluent.",
+      kr: "In dépans variable i change selon out achats, comme courses, sorties ou transport. Suivre ali i aide aou voir bann changements.",
+    },
+    {
+      questions: ["c est quoi le reste a vivre", "qu est ce que le reste a vivre", "definition du reste a vivre"],
+      fr: "Le reste à vivre est une estimation de l'argent disponible après certaines dépenses, selon la méthode de calcul utilisée. Dans BudgetKazPeï, la marge estimée dépend des revenus, des charges et des dépenses correctement enregistrés ; ce n'est pas nécessairement le solde bancaire réel.",
+      kr: "Reste à vivre lé in estimation de larzan disponible apré bann dépans, selon la façon kalkil. Dann BudgetKazPeï, li dépend bann données bien anrezistré, pa forcément solde bank réel.",
+    },
+    {
+      questions: ["c est quoi une economie potentielle", "qu est ce qu une economie potentielle", "definition d une economie potentielle"],
+      fr: "Une économie potentielle est une possibilité de dépenser moins, pas une économie déjà réalisée. Pour comparer deux prix, il faut vérifier qu'il s'agit du même produit et du même format ; un ancien prix observé peut avoir changé.",
+      kr: "In lékonomi potentielle lé in possibilité dépans moins, pa in lékonomi déjà réalisée. Fo compare minm produit ek minm format, ek bann prix anciens i pé changer.",
+    },
+    {
+      questions: ["que signifie prix observe", "c est quoi un prix observe", "qu est ce qu un prix observe"],
+      fr: "Un prix observé est un prix relevé à une date et dans une enseigne précises. Il sert de repère historique, mais ne garantit pas que le produit soit encore vendu à ce prix aujourd'hui.",
+      kr: "In prix observé lé in prix noté in jour dann in magasin précis. Lé in repère historique, pa in garantie pou prix zordi.",
+    },
+    {
+      questions: ["comment faire un budget", "comment preparer un budget", "comment construire un budget"],
+      fr: "Pour préparer un budget mensuel, notez vos revenus, puis vos charges fixes et vos dépenses variables. Comparez le total aux revenus et réservez, si possible, une marge pour les imprévus. Vous pouvez enregistrer ces montants dans BudgetKazPeï pour suivre leur évolution.",
+      kr: "Pou prépar out bidzé mensuel, note out revenus, bann sarz fixes ek bann dépans variables. Compare total-la ek out revenus, ek garde in marge si ou pé.",
+    },
+  ]
+  const found = definitions.find(item => item.questions.includes(text))
+  return found ? (language === "kreol" ? found.kr : found.fr) : null
+}
