@@ -90,3 +90,49 @@ export function isPotentialAdvisorFollowUp(question = "") {
   return text.length <= 80 && text.split(" ").length <= 8 &&
     /^(?:et pourquoi|et combien|et comment|et ensuite|et maintenant|et pour moi|comment faire|comment je fais|combien|pourquoi|c est possible|quelles conditions|pour mon cas|et si|je peux faire quoi|qu est ce que je fais|comment proceder|merci pour ces aides)\b/.test(text)
 }
+
+
+// Only app navigation and existing interface features; not eligibility decisions.
+const APP_NAV_INTENT = /\b(?:ou (?:est|sont|se trouve|trouver|retrouver|voir|consulter|ouvrir)|comment (?:acceder|ouvrir|consulter|retrouver|aller|scanner|numeriser|creer|faire|modifier)|je (?:ne )?(?:trouve|retrouve|vois) (?:pas|plus)|c est ou|dans quel(?:le)? (?:rubrique|page|menu))\b/
+const APP_NAV_EXCLUDE = /\b(?:calcul(?:e|er|es|ees)?|montant|eligible|eligibilite|conditions?|combien|pourquoi|estimer|simulation|pour mon cas|pour ma situation|dois je|ai je droit)\b/
+export function getLocalAdvisorAppGuide(question = "", language = "fr", mode = "general") {
+  const text = normalize(question)
+  if (mode !== "general" || !text || text.length > 220) return null
+  const nav = APP_NAV_INTENT.test(text)
+  const fr = language !== "kreol"
+  // Explicit ticket-scanning help, not interpreting ticket content or prices.
+  if (/\b(?:scan(?:ner)?|numeriser|photographier|prendre en photo)\b/.test(text) &&
+      /\b(?:ticket|recu|facture|achat)\b/.test(text) &&
+      !APP_NAV_EXCLUDE.test(text)) {
+    return fr
+      ? "Depuis l’accueil, ouvrez « Scanner mon ticket ». Ajoutez une photo nette du ticket, vérifiez les articles et les montants reconnus, puis validez. L’écran propose aussi plusieurs photos pour les tickets longs."
+      : "Depi l’accueil, ouv « Scanner mon tiké ». Mèt in foto bien lisib, vérifie bann produits ek bann montants, apré valide. Pou in tiké long, ou pé mèt plizyèr fotos."
+  }
+  if (!nav || APP_NAV_EXCLUDE.test(text)) return null
+  if (/\b(?:liste de courses|ma liste|liste courses)\b/.test(text)) {
+    return fr
+      ? "Depuis l’accueil, ouvrez « Faire ma liste de courses ». Vous pouvez y préparer vos achats et ajouter vos produits."
+      : "Depi l’accueil, ouv « Fé mon liste courses ». Ou pé prépar out courses ek azout out produits."
+  }
+  if (/\b(?:mes economies|economies possibles|comparaisons? de prix)\b/.test(text)) {
+    return fr
+      ? "Depuis l’accueil, ouvrez « Mes économies ». Vous y retrouverez les comparaisons disponibles pour les produits correctement identifiés, à partir de prix observés qui peuvent avoir changé."
+      : "Depi l’accueil, ouv « Mon bann lékonomi ». Ou va trouv bann comparaisons de produits bien rekoné, avèk bann prix observé ki pé avoir changé."
+  }
+  if (/\b(?:apercu de mes achats|mes achats|habitudes d achat|statistiques d achat)\b/.test(text)) {
+    return fr
+      ? "Depuis l’accueil, ouvrez « Aperçu de mes achats » pour consulter vos habitudes et les analyses de consommation disponibles."
+      : "Depi l’accueil, ouv « Koudzyé su mon bann courses » pou war out bann labitid ek analyses d’achat."
+  }
+  if (/\b(?:mes aides|aides et droits|mes droits|rubrique aides)\b/.test(text)) {
+    return fr
+      ? "Depuis l’accueil, ouvrez « Mes aides et mes droits » pour consulter les aides disponibles. Si vous cherchez une aide adaptée à votre situation, je peux examiner votre demande."
+      : "Depi l’accueil, ouv « Mon bann èd ek drwa » pou consulter bann aides. Si ou cherche in aide pou out situation, mi pé aide aou."
+  }
+  if (/\b(?:mon profil|mon compte|mes informations personnelles|modifier mon profil|mettre a jour mon profil)\b/.test(text)) {
+    return fr
+      ? "Touchez l’icône de profil en haut à droite pour consulter ou actualiser vos informations personnelles dans BudgetKazPeï."
+      : "Appuie su l’icône profil en haut à droite pou consulter ou modifier out bann informations dan BudgetKazPeï."
+  }
+  return null
+}
