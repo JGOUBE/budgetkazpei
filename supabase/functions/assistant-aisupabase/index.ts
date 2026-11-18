@@ -913,16 +913,29 @@ Deno.serve(async (req) => {
     }
     if (requestReservation.allowed !== true) {
       const isFreeChat = String(requestReservation.code || "").startsWith("offtopic_")
+      // Show a friendly advisor answer instead of a technical error or a quota.
+      // The server stops here: no OpenAI call, no usage counter increment.
+      const guidance = isFreeChat
+        ? (context.isKreol
+            ? "Mi lé surtout la pou aide aou su out bidzé, out aides ek out démarches. Pou ke servis-la reste utile pou tout demoun, nou pé retourne su in kestyon pratique ? Par exemple : ou vé trouve in aide ou fé bann lekonomi ?"
+            : "Je suis surtout là pour vous aider à mieux gérer votre budget, trouver des aides et avancer dans vos démarches. Pour garder ce service utile à tous, je vous propose de revenir à ces sujets. Souhaitez-vous chercher des aides ou des pistes d’économies ?")
+        : (context.isKreol
+            ? "Ou la envoyé plizyèr kestyon a la suite. Pou garde le servis fluid, nou fait in ti poz su bann nouvelles demandes. Ou pé toujours consulte out bidzé ek bann aides, puis réessay in pe pli tar."
+            : "Vous avez envoyé plusieurs demandes rapprochées. Pour préserver la disponibilité du service, je vous propose de reprendre la discussion un peu plus tard. Votre budget et le catalogue des aides restent consultables.")
+      console.info("ADVISOR_API_METER", JSON.stringify({
+        type: "local_usage_guidance", calls: 0, scope: isFreeChat ? "offtopic" : "burst",
+      }))
       return jsonResponse({
-        success: false,
-        code: String(requestReservation.code || "advisor_rate_limit"),
-        offTopicLimitReached: isFreeChat,
-        error: isFreeChat
-          ? (requestReservation.code === "offtopic_monthly_limit"
-              ? "La limite de questions libres de ce mois est atteinte. Vos questions sur le budget, les aides et les démarches restent disponibles."
-              : "La limite de 5 questions libres par jour est atteinte. Vos questions sur le budget, les aides et les démarches restent disponibles.")
-          : "Trop de questions ont été envoyées en peu de temps. Réessayez dans une heure.",
-      }, 429)
+        success: true,
+        answer: guidance,
+        source: "local_usage_guidance",
+        language: context.language,
+        mode: context.mode,
+        consumed: false,
+        openAiCallCount: 0,
+        recommendedAidIds: [],
+        recommendedAidNames: [],
+      })
     }
 
     const openAiResult = await callOpenAi({
