@@ -363,7 +363,7 @@ assert.match(premiumPageKrCopy, /Konpar bann offres/, "Premium page KR copy must
 assert.match(premiumPageKrCopy, /Tout sak l[ée] dann Gratuit/, "Premium page KR copy must reuse the validated Gratuit bundle wording")
 assert.match(premiumPageKrCopy, /Tout sak l[ée] dann Premium/, "Premium page KR copy must reuse the validated Premium bundle wording")
 assert.match(premiumPageKrCopy, /Scans san limit/, "Premium page KR copy must translate the Premium+ scan promise")
-assert.match(premiumPageKrCopy, /Konsey[ée] BudgetKazP[ée]i\+.*itilizasion san limit/, "Premium page KR copy must expose the final Premium+ advisor wording")
+assert.match(premiumPageKrCopy, /Konsey[ée] BudgetKazP[ée]i\+.*lakonpagnman avansé/, "Premium page KR copy must describe advanced service without unlimited wording")
 assert.match(premiumPageKrCopy, /An pr[ée]parasyon/, "Premium page KR copy must use the validated coming-soon section title")
 
 console.log("Plans quota e2e checks passed.")
