@@ -9,7 +9,8 @@ import {
   PLAN_FEATURE_STATUS,
   PLAN_IDS,
 } from "../config/plans"
-import "../styles/landing.css"
+import "../styles/landing-clean.css"
+import "../styles/landing-offers.css"
 
 const CONTACT_EMAIL = "contact.budgetkazpei@gmail.com"
 const LANDING_LANGUAGE_STORAGE_KEY = "budgetkazpei-public-language"
@@ -264,18 +265,22 @@ function PlanCard({ plan, content, isAuthenticated, billingPeriod, onBillingPeri
       <div className="premium-plan__heading">
         <p className="pricing-card__label">{plan.name}</p>
         {!isFree && (
-          <div role="group" aria-label={isFrench ? "Période de facturation Premium" : "Période peyman Premium"}
-            style={{ display:"flex",gap:8,marginTop:12,marginBottom:10,flexWrap:"wrap" }}>
+          <div
+            className="premium-plan__billing-selector"
+            role="group"
+            aria-label={isFrench ? "Période de facturation Premium" : "Période peyman Premium"}
+          >
             {[
-              { id:"monthly", label:isFrench ? "Mensuel" : "Chak mwa" },
-              { id:"annual", label:isFrench ? "Annuel" : "Chak ané" },
+              { id: "monthly", label: isFrench ? "Mensuel" : "Chak mwa" },
+              { id: "annual", label: isFrench ? "Annuel" : "Chak ané" },
             ].map(term => (
-              <button key={term.id} type="button" aria-pressed={billingPeriod===term.id}
+              <button
+                key={term.id}
+                type="button"
+                aria-pressed={billingPeriod === term.id}
+                className="premium-plan__billing-button"
                 onClick={() => onBillingPeriodChange(term.id)}
-                style={{padding:"9px 15px",borderRadius:12,cursor:"pointer",font:"inherit",
-                  color:billingPeriod===term.id?"#276C67":"#475569",
-                  background:billingPeriod===term.id?"#DDF4EF":"#F8FAFC",
-                  border:billingPeriod===term.id?"1.5px solid #439D90":"1px solid #D8E0E6"}}>
+              >
                 {term.label}
               </button>
             ))}
@@ -397,7 +402,7 @@ export default function PremiumLandingPage({ isAuthenticated = false }) {
 
   return (
     <main
-      className="landing-page premium-public-page"
+      className="landing-page bk-landing bk-offers-page premium-public-page"
       id="contenu"
       lang={language === LANDING_LANGUAGES.kr ? "rcf" : "fr"}
       data-language={language}
@@ -412,7 +417,7 @@ export default function PremiumLandingPage({ isAuthenticated = false }) {
 
       <section className="premium-page__hero" aria-labelledby="premium-title">
         <div className="landing-shell premium-page__hero-inner">
-          <p className="landing-eyebrow">{content.hero.eyebrow}</p>
+          <p className="bk-eyebrow">{content.hero.eyebrow}</p>
           <h1 id="premium-title">{content.hero.title}</h1>
           <p className="premium-page__hero-text">{content.hero.text}</p>
 
@@ -425,13 +430,13 @@ export default function PremiumLandingPage({ isAuthenticated = false }) {
       </section>
 
       <section
-        className="landing-section premium-page__offers"
+        className="bk-section premium-page__offers"
         id="offres"
         aria-labelledby="premium-offers-title"
       >
         <div className="landing-shell">
-          <div className="landing-section-heading">
-            <p className="landing-eyebrow">{content.offers.eyebrow}</p>
+          <div className="bk-section-heading">
+            <p className="bk-eyebrow">{content.offers.eyebrow}</p>
             <h2 id="premium-offers-title">{content.offers.title}</h2>
             <p>{content.offers.intro}</p>
           </div>
@@ -458,13 +463,13 @@ export default function PremiumLandingPage({ isAuthenticated = false }) {
       </section>
 
       <section
-        className="landing-section landing-section--soft"
+        className="bk-section landing-section--soft"
         id="comparatif"
         aria-labelledby="premium-comparison-title"
       >
         <div className="landing-shell">
-          <div className="landing-section-heading">
-            <p className="landing-eyebrow">{content.comparison.eyebrow}</p>
+          <div className="bk-section-heading">
+            <p className="bk-eyebrow">{content.comparison.eyebrow}</p>
             <h2 id="premium-comparison-title">{content.comparison.title}</h2>
             <p>{content.comparison.intro}</p>
           </div>
@@ -483,13 +488,13 @@ export default function PremiumLandingPage({ isAuthenticated = false }) {
       </section>
 
       <section
-        className="landing-section premium-page__faq-section"
+        className="bk-section premium-page__faq-section"
         id="faq"
         aria-labelledby="premium-faq-title"
       >
         <div className="landing-shell landing-shell--narrow">
-          <div className="landing-section-heading">
-            <p className="landing-eyebrow">{content.faq.eyebrow}</p>
+          <div className="bk-section-heading">
+            <p className="bk-eyebrow">{content.faq.eyebrow}</p>
             <h2 id="premium-faq-title">{content.faq.title}</h2>
           </div>
 
@@ -504,7 +509,7 @@ export default function PremiumLandingPage({ isAuthenticated = false }) {
         </div>
       </section>
 
-      <footer className="landing-footer">
+      <footer className="bk-footer">
         <div className="landing-shell landing-footer__inner">
           <span>© {new Date().getFullYear()} BudgetKazPéi</span>
 
