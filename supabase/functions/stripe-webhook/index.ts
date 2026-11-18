@@ -24,11 +24,11 @@ const PRICE_MAP: Record<
     period: "yearly",
   },
   "price_1TkkISBQ1hdaYjbCk7QaDdnu": {
-    plan: "premium_plus",
+    plan: "premium",
     period: "monthly",
   },
   "price_1TkkIUBQ1hdaYjbCJQwgfJOo": {
-    plan: "premium_plus",
+    plan: "premium",
     period: "yearly",
   },
   // Single Premium tier annual 49,90 EUR. Legacy IDs are retained for renewals.
@@ -38,109 +38,90 @@ const PRICE_MAP: Record<
   },
 }
 
+// Legacy Stripe prices continue renewing without converting or recharging customers.
+// Current purchases (4.99 monthly / 49.90 annual) are all the same Premium tier.
+const PAID_EVENTS = new Set([
+  "checkout.session.completed",
+  "customer.subscription.created",
+  "customer.subscription.updated",
+  "customer.subscription.deleted",
+])
+
 serve(async (req) => {
+  if (req.method !== "POST") return new Response("Method not allowed", { status: 405 })
   try {
     const event = await req.json()
-
-    let email: string | null = null
-    let customerId: string | null = null
-    let subscriptionId: string | null = null
-    let priceId: string | null = null
-    let status: string | null = null
-
-    if (event.type === "checkout.session.completed") {
-      const session = event.data.object
-
-      email = session.customer_details?.email || session.customer_email || null
-      customerId = typeof session.customer === "string" ? session.customer : null
-      subscriptionId =
-        typeof session.subscription === "string" ? session.subscription : null
-
-      if (subscriptionId) {
-        const sub = await stripe.subscriptions.retrieve(subscriptionId)
-        priceId = sub.items.data[0]?.price.id ?? null
-        status = sub.status
-      }
-    }
-
-    if (
-      event.type === "customer.subscription.created" ||
-      event.type === "customer.subscription.updated"
-    ) {
-      const sub = event.data.object
-
-      subscriptionId = sub.id
-      customerId = typeof sub.customer === "string" ? sub.customer : null
-      priceId = sub.items?.data?.[0]?.price?.id ?? null
-      status = sub.status
-
-      if (customerId) {
-        const customer = await stripe.customers.retrieve(customerId)
-
-        if (!customer.deleted) {
-          email = customer.email
-        }
-      }
-    }
-
-    if (event.type === "customer.subscription.deleted") {
-      const sub = event.data.object
-      customerId = typeof sub.customer === "string" ? sub.customer : null
-
-      if (customerId) {
-        const customer = await stripe.customers.retrieve(customerId)
-
-        if (!customer.deleted && customer.email) {
-          await supabase
-            .from("profiles")
-            .update({
-              premium: false,
-              premium_plus: false,
-              subscription_type: "free",
-              stripe_subscription_status: "canceled",
-              premium_cancel_at: new Date().toISOString(),
-            })
-            .eq("email", customer.email)
-        }
-      }
-
-      return new Response("subscription canceled", { status: 200 })
-    }
-
-    if (!email || !priceId || !PRICE_MAP[priceId]) {
-      console.log("Ignored event", { type: event.type, email, priceId })
+    if (!PAID_EVENTS.has(String(event?.type || ""))) {
       return new Response("ignored", { status: 200 })
     }
 
-    const { plan, period } = PRICE_MAP[priceId]
-    const active = status === "active" || status === "trialing"
+    const eventObject = event?.data?.object || {}
+    const subscriptionId = typeof eventObject.subscription === "string"
+      ? eventObject.subscription
+      : typeof eventObject.id === "string" && eventObject.id.startsWith("sub_")
+        ? eventObject.id : null
+    if (!subscriptionId) return new Response("subscription missing", { status: 200 })
 
-    await supabase
-      .from("profiles")
-      .update({
-        premium: active,
-        premium_plus: active && plan === "premium_plus",
-        subscription_type: active ? period : "free",
-        stripe_customer_id: customerId,
-        stripe_subscription_id: subscriptionId,
-        stripe_subscription_status: status,
-        premium_started_at: active ? new Date().toISOString() : null,
-      })
-      .eq("email", email)
+    // The live Stripe subscription and customer are the source of truth.
+    // Never trust the request's claimed customer email or payment status.
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId)
+    const priceId = subscription.items?.data?.[0]?.price?.id || ""
+    const config = PRICE_MAP[priceId]
+    if (!config) return new Response("unknown legacy price", { status: 200 })
+    const customerId = typeof subscription.customer === "string" ? subscription.customer : null
+    if (!customerId) return new Response("customer missing", { status: 200 })
+    const customer = await stripe.customers.retrieve(customerId)
+    if (customer.deleted || !customer.email) return new Response("email unavailable", { status: 200 })
+    const email = customer.email.trim().toLowerCase()
+    const active = subscription.status === "active" || subscription.status === "trialing"
+    const now = new Date().toISOString()
 
-    await supabase.from("user_subscriptions").insert({
+    const { data: matchingProfile, error: profileLookupError } = await supabase
+      .from("profiles").select("id").eq("email", email).maybeSingle()
+    if (profileLookupError) throw profileLookupError
+
+    const { error: subscriptionError } = await supabase.from("user_subscriptions").upsert({
       email,
-      plan: active ? plan : "free",
-      billing_period: period,
+      user_id: matchingProfile?.id || null,
+      plan: active ? "premium" : "free",
+      billing_period: config.period,
       stripe_customer_id: customerId,
       stripe_subscription_id: subscriptionId,
-      status,
-      updated_at: new Date().toISOString(),
-    })
+      status: subscription.status,
+      updated_at: now,
+    }, { onConflict: "stripe_subscription_id" })
+    if (subscriptionError) throw subscriptionError
 
+    // An older plan or another concurrent subscription may still be active.
+    // Never remove access when only one of multiple subscriptions was cancelled.
+    const { data: paidSubscriptions, error: activeError } = await supabase
+      .from("user_subscriptions")
+      .select("stripe_subscription_id")
+      .eq("email", email)
+      .in("status", ["active", "trialing"])
+      .limit(1)
+    if (activeError) throw activeError
+    const entitled = Boolean(paidSubscriptions?.length)
+
+    const update = {
+      plan: entitled ? "premium" : "free",
+      premium: entitled,
+      premium_plus: false,
+      subscription_type: entitled ? config.period : "free",
+      stripe_customer_id: customerId,
+      stripe_subscription_id: entitled ? subscriptionId : null,
+      stripe_subscription_status: entitled ? "active" : subscription.status,
+      ...(entitled ? { premium_started_at: now } : { premium_cancel_at: now }),
+    }
+    const { error: updateError } = await supabase.from("profiles").update(update).eq("email", email)
+    if (updateError) throw updateError
+
+    console.info("BKP_STRIPE_SUBSCRIPTION_SYNC", JSON.stringify({
+      eventType: event.type, entitled, knownPrice: true,
+    }))
     return new Response("OK", { status: 200 })
   } catch (error) {
-    console.error("STRIPE WEBHOOK ERROR:", error)
+    console.error("STRIPE WEBHOOK ERROR", String(error))
     return new Response("ERROR", { status: 500 })
   }
 })
