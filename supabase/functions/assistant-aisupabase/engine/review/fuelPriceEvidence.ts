@@ -21,11 +21,11 @@ const normalize = (value: unknown): string => String(value || "")
   .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
   .toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ")
 
-const FUEL = /\b(?:carburant|essence|sans plomb|gazole|diesel|prix a la pompe|plein d essence)\b/
-const OTHER_GEOGRAPHY = /\b(?:metropole|hexagone|paris|lyon|marseille|bordeaux|toulouse|europe|canada|belgique|suisse|afrique|madagascar|maurice|mayotte|guadeloupe|martinique|guyane)\b/
-const HISTORIC_COMPARE = /\b(?:augmente|augmentes|augmentation|hausse|baisse|baisse|diminue|evolue|evolution|compare|comparaison|varie|variation|combien|pourcentage|difference)\b/
-const TWO_YEARS = /\b(?:depuis (?:les )?(?:deux|2) (?:derniere?s? )?ans|(?:en|sur|ces|les|depuis) (?:deux|2) ans|(?:deux|2) dernieres? annees?|entre 2024 et 2026|novembre 2024 (?:et|a|versus|vs) novembre 2026)\b/
-const PRICE_HISTORY_REQUEST = /\b(?:depuis|en (?:20\d{2}|deux|2) ans|sur (?:deux|2) ans|entre 20\d{2} et 20\d{2}|evolution|augmente|hausse|baisse|variation|diminution|comparaison)\b/
+const FUEL = /\b(?:carburant|karbiran|karburan|essence|lesans|sans plomb|gazole|gazoil|diesel|prix a la pompe|plein d essence)\b/
+const OTHER_GEOGRAPHY = /\b(?:metropole|hexagone|paris|lyon|marseille|bordeaux|toulouse|europe|canada|belgique|suisse|afrique|madagascar|maurice|moris|mayotte|guadeloupe|martinique|guyane)\b/
+const HISTORIC_COMPARE = /\b(?:augmente|augmentes|augmentation|hausse|baisse|diminue|evolue|evolution|compare|comparaison|varie|variation|combien|komien|kombien|ogmant(?:e|asion|ation)?|monte|bese|pourcentage|diferans|difference)\b/
+const TWO_YEARS = /\b(?:depuis (?:les )?(?:deux|2) (?:derniere?s? )?ans|(?:en|sur|ces|les|depuis) (?:deux|2) ans|(?:deux|2) dernieres? annees?|(?:depi )?(?:deux|de|2) zan|(?:depi )?(?:deux|de|2) an|entre 2024 et 2026|novembre 2024 (?:et|a|versus|vs) novembre 2026|novanm 2024 (?:ek|et|a) novanm 2026)\b/
+const PRICE_HISTORY_REQUEST = /\b(?:depuis|depi|en (?:20\d{2}|deux|2) ans|sur (?:deux|2) ans|(?:deux|de|2) zan|entre 20\d{2} et 20\d{2}|evolution|augmente|ogmant(?:e|asion|ation)?|hausse|baisse|bese|variation|diminution|comparaison|novanm 20\d{2})\b/
 
 function formatEuro(value: number): string {
   return new Intl.NumberFormat("fr-FR", {
@@ -46,8 +46,13 @@ export function getVerifiedReunionFuelPriceComparison(
       !HISTORIC_COMPARE.test(text) || !TWO_YEARS.test(text)) return null
 
   const explicitDates = /\b2024\b/.test(text) && /\b2026\b/.test(text)
-  const explicitNovember = /\bnovembre\b/.test(text)
-  const thisMonth = currentDate.getUTCFullYear() === 2026 && currentDate.getUTCMonth() === 10
+  const explicitNovember = /\b(?:novembre|novanm)\b/.test(text)
+  const reunionDateParts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Indian/Reunion", year: "numeric", month: "numeric",
+  }).formatToParts(currentDate)
+  const reunionYear = Number(reunionDateParts.find(part => part.type === "year")?.value)
+  const reunionMonth = Number(reunionDateParts.find(part => part.type === "month")?.value)
+  const thisMonth = reunionYear === 2026 && reunionMonth === 11
   // Without an explicit two-month comparison, "the last two years" is only
   // meaningful against the validated November 2026 snapshot during that month.
   if (!thisMonth && !(explicitDates && explicitNovember)) return null
@@ -59,13 +64,13 @@ export function getVerifiedReunionFuelPriceComparison(
   const spPct = spDelta / old.sansPlomb * 100
   const dieselPct = dieselDelta / old.gazole * 100
   if (language === "kreol" || language === "kr" || language === "cr") {
-    return "À La Réunion, selon bann prix maximum Préfecture, entre novembre 2024 ek novembre 2026 : " +
-      "sans-plomb i passe de " + formatEuro(old.sansPlomb) + " € à " +
-      formatEuro(recent.sansPlomb) + " €/L (+" + formatPct(spPct) + " %) ; " +
-      "gazole de " + formatEuro(old.gazole) + " € à " + formatEuro(recent.gazole) +
-      " €/L (+" + formatPct(dieselPct) + " %). " +
-      "Lé deux relevés datés, pas in moyenne ni in prévision. Sources : " +
-      old.source + " ; " + recent.source
+    return "Dann La Rényon, si nou compare bann pri maksimum la Préfekti la fixé pou novanm 2024 ek novanm 2026 :\n\n" +
+      "• Sans-plomb : " + formatEuro(old.sansPlomb) + " € pou in lit → " +
+      formatEuro(recent.sansPlomb) + " € pou in lit, soit +" + formatPct(spPct) + " %.\n" +
+      "• Gazole : " + formatEuro(old.gazole) + " € pou in lit → " +
+      formatEuro(recent.gazole) + " € pou in lit, soit +" + formatPct(dieselPct) + " %.\n\n" +
+      "Bann pri-la lé bann maksimum ofisyèl pou dé dates précis. Lé pa in moyenne ni in prédiksion pou domin.\n\n" +
+      "Bann sources la Préfekti :\n" + old.source + "\n" + recent.source
   }
   return "À La Réunion, la comparaison des prix maximums officiels entre novembre 2024 et novembre 2026 donne :\n\n" +
     "• Sans-plomb : " + formatEuro(old.sansPlomb) + " € → " +
@@ -99,7 +104,9 @@ export function reviewUnsupportedFuelPriceHistory({
   const prefix = language === "kreol" || language === "kr" || language === "cr"
     ? "Mi pé pa donne in pourcentage fiable sans bann prix maximum officiels pou deux dates comparables. Mi préfère pa invente in évolution."
     : "Je ne peux pas donner une hausse ou une baisse chiffrée fiable pour cette période sans deux relevés officiels comparables. Je préfère ne pas inventer une évolution."
-  return prefix + "\n\nÀ La Réunion, les prix maximums sont publiés chaque mois par la préfecture. " +
-    "Précisez les deux mois et le carburant (sans-plomb ou gazole) pour une comparaison fondée sur des relevés vérifiés. " +
-    "Source officielle : https://www.reunion.gouv.fr/Actions-de-l-Etat/Economie-commerce-exterieur-et-fiscalite-locale/Prix-des-hydrocarbures-a-La-Reunion"
+  const isKreol = language === "kreol" || language === "kr" || language === "cr"
+  return prefix + (isKreol
+    ? "\n\nDann La Rényon, la Préfekti i publie bann pri maksimum chak mwa. Di a moin ki dé mwa ou vé comparer, ek si lé sans-plomb ou gazole. Mi va pas invente bann chiffres.\nBann sources ofisyèl : "
+    : "\n\nÀ La Réunion, les prix maximums sont publiés chaque mois par la préfecture. Précisez les deux mois et le carburant (sans-plomb ou gazole) pour une comparaison fondée sur des relevés vérifiés.\nSource officielle : ") +
+    "https://www.reunion.gouv.fr/Actions-de-l-Etat/Economie-commerce-exterieur-et-fiscalite-locale/Prix-des-hydrocarbures-a-La-Reunion"
 }
