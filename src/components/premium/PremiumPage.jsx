@@ -48,12 +48,12 @@ export const PREMIUM_PAGE_COPY = {
     currentActive: "Statut actif",
     currentManage: "Gérer mon offre",
     compareTitle: "Comparer les formules",
-    compareText: "Des cartes plus courtes, avec les bénéfices immédiats d'abord.",
+    compareText: "Gratuit pour découvrir, ou Premium avec le même accompagnement en paiement mensuel ou annuel.",
     soonTitle: "Bientôt disponibles",
     soonText: "Ces fonctions restent séparées des avantages déjà utilisables pour éviter toute confusion produit.",
     freeBadge: "Découverte",
     premiumBadge: "Populaire",
-    premiumPlusBadge: "Accompagnement complet",
+    premiumPlusBadge: "Premium",
     currentBadge: "Actuel",
     freeIntro: "Pour suivre l'essentiel de votre budget sans friction.",
     premiumIntro: "BudgetKazPéi vous conseille dans votre gestion quotidienne.",
@@ -72,12 +72,12 @@ export const PREMIUM_PAGE_COPY = {
       "Historique et statistiques avancées",
       "Export PDF et alertes budget",
       "Conseiller BudgetKazPéi — budget, aides et conseils",
+      "Dossiers, courriers, emails, relances, rendez-vous et recours",
     ],
     premiumPlusFeatures: [
       "Tout le Premium",
       PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premiumPlus],
-      "Conseiller BudgetKazPéi+ — accompagnement avancé",
-      "Dossiers, courriers, emails, relances, rendez-vous et recours",
+      "Accompagnement complet : dossiers, courriers, emails, relances et recours",
     ],
     soonFeatures: [
       "Comparaisons intelligentes de promotions",
@@ -101,7 +101,7 @@ export const PREMIUM_PAGE_COPY = {
     },
     scanInfoTitle: "Contrat scanner",
     scanInfoFree: "Gratuit affiche la vraie allocation gratuite.",
-    scanInfoPremium: "Premium suit son quota commercial en clair.",
+    scanInfoPremium: "Scanner Premium avec protection contre les utilisations inhabituelles.",
     scanInfoPremiumPlus: "Profitez de vos scans inclus, avec une protection contre les utilisations inhabituelles.",
   },
   kr: {
@@ -135,7 +135,7 @@ export const PREMIUM_PAGE_COPY = {
     ],
     premiumFeatures: [
       "Tout sak lé dann Gratuit",
-      "10 scans par mwa",
+      "Scanner Premium avèk proteksyon",
       "Istorik ek statistik avansé",
       "Èksport PDF ek alèrt bidjé",
       "Konseyé BudgetKazPéi — bidjé, èd ek konsey",
@@ -153,7 +153,7 @@ export const PREMIUM_PAGE_COPY = {
     ],
     scanCardTitles: {
       [PLAN_IDS.free]: "Aksé pou dékouv scanner-la",
-      [PLAN_IDS.premium]: "10 scans par mwa",
+      [PLAN_IDS.premium]: "Scanner Premium",
       [PLAN_IDS.premiumPlus]: "Scanner Premium",
     },
     statusCardTitles: {
@@ -168,7 +168,7 @@ export const PREMIUM_PAGE_COPY = {
     },
     scanInfoTitle: "Kontra scanner",
     scanInfoFree: "Gratuit i afis vré kantite gratuit an kler.",
-    scanInfoPremium: "Premium i gard so quota komersial an kler.",
+    scanInfoPremium: "Scanner Premium avèk proteksyon kont bann itilizasyon inhabituel.",
     scanInfoPremiumPlus: "Profit out scans, ek in protéksyon si lorizaz i devien pa normal.",
   },
 }
@@ -260,6 +260,7 @@ function PlanCard({ planId, currentPlanId, labels }) {
 
       <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
         <div style={{ color: COLORS.text, fontSize: 28, fontWeight: 950 }}>{PLAN_PRICES[planId]}</div>
+        {planId === PLAN_IDS.premium && <div style={{fontSize:14,color:COLORS.muted,marginTop:4}}>ou 49,90 €/an — mêmes fonctionnalités</div>}
       </div>
 
       <div style={{ display: "grid", gap: 10 }}>
