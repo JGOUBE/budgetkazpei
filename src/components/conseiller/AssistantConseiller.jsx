@@ -562,10 +562,24 @@ export default function AssistantConseiller({
     })
 
     if (error) {
+      // Preserve the helpful message from the server when the temporary
+      // anti-abuse guard responds with a non-2xx HTTP status. The UI must
+      // never expose Supabase transport internals or hidden thresholds.
+      let serverError = null
+      try {
+        if (typeof error.context?.clone === "function") {
+          serverError = await error.context.clone().json()
+        } else if (typeof error.context?.json === "function") {
+          serverError = await error.context.json()
+        }
+      } catch (_) {
+        // A connection error may not include a JSON response.
+      }
       console.error("Erreur Edge Function assistant-aisupabase:", error)
       return {
         success: false,
-        error: error.message || "Erreur assistant IA.",
+        code: serverError?.code || null,
+        error: serverError?.error || error.message || "Erreur assistant IA.",
       }
     }
 
