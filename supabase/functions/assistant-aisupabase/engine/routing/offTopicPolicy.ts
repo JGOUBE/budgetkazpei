@@ -10,6 +10,12 @@ const ADMIN_AND_FINANCIAL_ADVICE = /\b(?:demarch(?:e|es) administrativ(?:e|es)|d
 const PERSONAL_MONEY = /\b(?:mon budget|mes depenses|mes revenus|mon salaire|mon argent|mon loyer|mes achats|mes courses|mes droits|mon credit|mes factures|mes economies|mes aides|ma caf|mes prestations)\b/
 const CLEAR_GENERAL_QUERY = /^(?:pourquoi (?:le ciel|la lune|les etoiles|les chats|les chiens|la terre|le soleil)|quelle est la capitale|quel est le president|combien de lunes|raconte(?: moi)? (?:une histoire|une blague)|fais(?: moi)? (?:une blague|une devinette)|invente(?: moi)?|ecris(?: moi)? (?:un poeme|une chanson)|comment(?: ca)? fonctionne (?:une fusee|un volcan)|qui a gagne (?:le match|la coupe))\b/
 const PLAYFUL = /\b(?:licornes?|dragons?|extraterrestres?|magique|sorcier|devinettes?|blagues?|danser|on danse|histoires? droles?|poemes?|chansons?|jeu de role|jeux videos?|jeux de mots|fictif|fiction|imagine une planete|chats? presidents?)\b/
+
+// Detect real-life cost, eligibility and administrative questions even when
+// the exact wording differs from the usual budget or CAF keywords.
+const EXTRA_FINANCE_AND_ADMIN = /\b(?:une aide|des aides|mon aide|aide pour (?:mon |ma |mes |le |la |les )?(?:logement|loyer|enfant|famille|factur|energie|travail|emploi|formation|retraite|sante)|aide a payer|obtenir (?:une|des) aides?|beneficier (?:d une|des) aides?|droit a (?:une|des) aides?|subventions?|fin de mois|reste a vivre|decouvert bancaire|besoin d argent|pas assez d argent|chomage|sans emploi|demandeur d emploi|indemnisation|allocation chomage|mes charges|mon solde|faire des economies|mettre de cote|echelonner (?:un paiement|une dette)|courrier administratif|lettre administrative|email administratif|relance administrative|rendez vous administratif|demarches administratives|trouver un emploi|recherche d emploi|financer une formation|formation professionnelle)\b/
+const BUDGET_SHORTCUT = /^(?:que puis je reduire|ou puis je economiser|comment reduire|comment economiser|comment ameliorer mon budget|combien me reste(?: t il)?|ou va mon argent)\b/
+
 const SHORT_CONTINUATION = /^(?:et ensuite|et maintenant|et pour moi|comment faire|comment je fais|combien|pourquoi|c est possible|quelles conditions|pour mon cas|et si|je peux faire quoi|qu est ce que je fais|comment proceder|merci pour ces aides)\b/
 const GUARDED_MODES = new Set([
   "budget_depenses","trouver_aide","scan_profil","comprendre_courrier",
@@ -31,9 +37,10 @@ export function classifyAdvisorSpendScope({question = "", mode = "general", acti
   // form mode or an irrelevant financial keyword appended to the question.
   if (CLEAR_GENERAL_QUERY.test(text)) return "offtopic"
   if (PLAYFUL.test(text) && !PERSONAL_MONEY.test(text)) return "offtopic"
-  if (MONEY_AND_BENEFITS.test(text) || ADMIN_AND_FINANCIAL_ADVICE.test(text)) return "useful"
+  if (MONEY_AND_BENEFITS.test(text) || ADMIN_AND_FINANCIAL_ADVICE.test(text) || EXTRA_FINANCE_AND_ADMIN.test(text)) return "useful"
   // A short follow-up to a selected financial/administrative tool remains
   // useful. Longer self-contained unrelated queries cannot spoof this mode.
+  if (mode === "budget_depenses" && BUDGET_SHORTCUT.test(text)) return "useful"
   if (GUARDED_MODES.has(mode) && text.split(" ").length <= 7 && SHORT_CONTINUATION.test(text))
     return "useful"
   return "offtopic"
@@ -65,4 +72,21 @@ export function getLocalAdvisorSmallTalk(question = "", language = "fr") {
   if (!key || key.length > 40) return null
   if (!Object.prototype.hasOwnProperty.call(FR_LOCAL, key)) return null
   return language === "kreol" ? (KR_LOCAL[key] || FR_LOCAL[key]) : FR_LOCAL[key]
+}
+
+
+const LOCAL_OFFTOPIC_FR = "Je peux surtout vous aider sur votre budget, vos économies, les aides et les démarches. Si vous avez une question dans ces domaines, je suis là pour vous accompagner."
+const LOCAL_OFFTOPIC_KR = "Mi lé surtout la pou aide aou su out bidzé, bann lékonomi, bann aides ek bann demars. Si ou nana in kestyon la-désu, mi pé aide aou."
+
+// One neutral, reusable reply to unrelated or playful messages; no AI call.
+export function getLocalAdvisorOffTopicResponse(language = "fr") {
+  return language === "kreol" ? LOCAL_OFFTOPIC_KR : LOCAL_OFFTOPIC_FR
+}
+
+// Short, elliptical follow-ups can refer to a recent financial conversation.
+// The server checks the latest persisted exchange, not a client-provided label.
+export function isPotentialAdvisorFollowUp(question = "") {
+  const text = normalize(question)
+  return text.length <= 80 && text.split(" ").length <= 8 &&
+    /^(?:et pourquoi|et combien|et comment|et ensuite|et maintenant|et pour moi|comment faire|comment je fais|combien|pourquoi|c est possible|quelles conditions|pour mon cas|et si|je peux faire quoi|qu est ce que je fais|comment proceder|merci pour ces aides)\b/.test(text)
 }
