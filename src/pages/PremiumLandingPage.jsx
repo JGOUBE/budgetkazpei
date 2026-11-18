@@ -15,9 +15,9 @@ const CONTACT_EMAIL = "contact.budgetkazpei@gmail.com"
 const LANDING_LANGUAGE_STORAGE_KEY = "budgetkazpei-public-language"
 
 const STRIPE_LINKS = {
-  // Reuse the existing 4.99 EUR Stripe payment link until its product label is unified.
+  // Only active new-customer payment links. Old Stripe subscriptions keep running.
   premiumMonthly: "https://buy.stripe.com/7sY28qdAJ1FQ6GCddsgMw03",
-  premiumPlusMonthly: "https://buy.stripe.com/7sY28qdAJ1FQ6GCddsgMw03",
+  premiumAnnual: "https://buy.stripe.com/5kQ7sKgMVfwGe94b5kgMw04",
 }
 
 const PREMIUM_CONTENT = {
@@ -251,28 +251,22 @@ function usePremiumSeo(content, language) {
   }, [content, language])
 }
 
-function PlanCard({ plan, content, isAuthenticated }) {
+function PlanCard({ plan, content, isAuthenticated, billingPeriod, onBillingPeriodChange, isFrench }) {
   const isFree = plan.id === PLAN_IDS.free
-  const isPremium = plan.id === PLAN_IDS.premium
-  const isPremiumPlus = plan.id === PLAN_IDS.premiumPlus
-  const badge = isPremium ? content.recommended : isPremiumPlus ? content.complete : null
+  const annual = !isFree && billingPeriod === "annual"
+  const badge = isFree ? null : content.recommended
   const ctaLabel = isFree
-    ? isAuthenticated
-      ? content.dashboardCta
-      : content.freeCta
-    : isPremium
-      ? (isAuthenticated ? content.premiumCta : content.premiumGuestCta)
-      : (isAuthenticated ? content.premiumPlusCta : content.premiumPlusGuestCta)
-  const href = isFree
-    ? isAuthenticated
-      ? "/app"
-      : "/register"
+    ? (isAuthenticated ? content.dashboardCta : content.freeCta)
     : !isAuthenticated
-      ? "/register"
-      : isPremium
-        ? STRIPE_LINKS.premiumMonthly
-        : STRIPE_LINKS.premiumPlusMonthly
-  const displayPrice = plan.price.replace(/\/mois$/, "")
+      ? content.premiumGuestCta
+      : annual
+        ? (isFrench ? "Choisir Premium annuel" : "Swazi Premium ané")
+        : content.premiumCta
+  const href = isFree
+    ? (isAuthenticated ? "/app" : "/register")
+    : !isAuthenticated ? "/register"
+      : annual ? STRIPE_LINKS.premiumAnnual : STRIPE_LINKS.premiumMonthly
+  const displayPrice = isFree ? "0 €" : annual ? "49,90 €" : "4,99 €"
 
   return (
     <article
@@ -283,11 +277,31 @@ function PlanCard({ plan, content, isAuthenticated }) {
 
       <div className="premium-plan__heading">
         <p className="pricing-card__label">{plan.name}</p>
+        {!isFree && (
+          <div role="group" aria-label={isFrench ? "Période de facturation Premium" : "Période peyman Premium"}
+            style={{ display:"flex",gap:8,marginTop:12,marginBottom:10,flexWrap:"wrap" }}>
+            {[
+              { id:"monthly", label:isFrench ? "Mensuel" : "Chak mwa" },
+              { id:"annual", label:isFrench ? "Annuel" : "Chak ané" },
+            ].map(term => (
+              <button key={term.id} type="button" aria-pressed={billingPeriod===term.id}
+                onClick={() => onBillingPeriodChange(term.id)}
+                style={{padding:"9px 15px",borderRadius:12,cursor:"pointer",font:"inherit",
+                  color:billingPeriod===term.id?"#276C67":"#475569",
+                  background:billingPeriod===term.id?"#DDF4EF":"#F8FAFC",
+                  border:billingPeriod===term.id?"1.5px solid #439D90":"1px solid #D8E0E6"}}>
+                {term.label}
+              </button>
+            ))}
+          </div>
+        )}
         <div className="premium-plan__price-row">
           <strong className="premium-plan__price">{displayPrice}</strong>
-          {!isFree && <span>{content.perMonth}</span>}
+          {!isFree && <span>{annual ? (isFrench ? "/an" : "/ané") : content.perMonth}</span>}
         </div>
-        {!isFree && <p className="premium-plan__billing">{content.monthly}</p>}
+        {!isFree && <p className="premium-plan__billing">{annual
+          ? (isFrench ? "Économisez 9,98 € par an, mêmes fonctionnalités." : "Ekonomiz 9,98 € par ané, minm fonksyon.")
+          : (isFrench ? "Résiliable à tout moment ; tarif mensuel." : "Ou pé aret kan ou vé ; pri chak mwa.")}</p>}
         <p className="premium-plan__intro">{plan.intro}</p>
       </div>
 
@@ -328,6 +342,7 @@ function PlanCard({ plan, content, isAuthenticated }) {
 
 export default function PremiumLandingPage({ isAuthenticated = false }) {
   const [language, setLanguage] = useState(getInitialLanguage)
+  const [billingPeriod, setBillingPeriod] = useState("monthly")
   const sharedContent = getLandingContent(language)
   const rawContent = PREMIUM_CONTENT[language]
   const fr = language !== LANDING_LANGUAGES.kr
@@ -360,7 +375,17 @@ export default function PremiumLandingPage({ isAuthenticated = false }) {
     },
     faq: {
       ...rawContent.faq,
-      items: rawContent.faq.items.filter(([question]) => !question.includes("Premium+")),
+      items: fr ? [
+        ["Quelle différence entre Premium mensuel et annuel ?", "Aucune différence de fonctionnalités : le Conseiller complet, les démarches et le scanner Premium sont inclus dans les deux formules. Seule la fréquence de facturation change."],
+        ["Comment fonctionnent les scans gratuits ?", "Trois scans sont offerts au total durant les 30 premiers jours suivant l'inscription. Après cette période, le scanner reste accessible avec Premium."],
+        ["Que se passe-t-il en cas d'utilisation inhabituelle ?", "Une protection interne peut temporairement interrompre les nouveaux scans ou analyses IA et vous inviter à contacter l'équipe. Vos données restent accessibles."],
+        ["Puis-je résilier mon abonnement ?", "Oui, vous pouvez arrêter le renouvellement de Premium. L'abonnement annuel reste accessible jusqu'à la fin de sa période payée."],
+      ] : [
+        ["Kosa lé diferans Premium chak mwa ek chak ané ?", "Minm fonksyon dann dé formule : Konseyé complet, démarches ek scanner Premium. Sé fason peyman i sanze."],
+        ["Koman bann scans gratis i mars ?", "Troi scans ofèr dann bann 30 prémyé zour apré l'inskripsyon. Apré, scanner lé dann Premium."],
+        ["Kosa i ariv si i néna in utilisation inhabituel ?", "In protéksyon an aryer-plan pé aret bann nouvo scans ou analyses IA ek demand aou kontakte l'équipe. Out données i reste disponib."],
+        ["Mi pé aret mon abonnement ?", "Wi, ou pé aret renouvèlman Premium. L'abonnement ané i reste disponib ziska fin période peyé."],
+      ],
     },
   }
 
@@ -432,6 +457,9 @@ export default function PremiumLandingPage({ isAuthenticated = false }) {
                 plan={plan}
                 content={content.offers}
                 isAuthenticated={isAuthenticated}
+                billingPeriod={billingPeriod}
+                onBillingPeriodChange={setBillingPeriod}
+                isFrench={fr}
               />
             ))}
           </div>
