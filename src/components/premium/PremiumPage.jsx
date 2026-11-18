@@ -1,3 +1,5 @@
+import { useState } from "react"
+import { supabase } from "../../services/supabase"
 import {
   BadgeCheck,
   ChartNoAxesCombined,
@@ -310,9 +312,33 @@ export default function PremiumPage({
     : currentPlan
   const hasPremiumAccess = resolvedPlanId !== PLAN_IDS.free
   const CurrentIcon = PLAN_META[resolvedPlanId]?.icon || Star
+  const [billingLoading, setBillingLoading] = useState(false)
+  const [billingError, setBillingError] = useState("")
 
-  function openPremiumOptions() {
-    window.open(PREMIUM_URL, "_blank", "noopener,noreferrer")
+  async function openPremiumOptions() {
+    if (!hasPremiumAccess) {
+      window.open(PREMIUM_URL, "_blank", "noopener,noreferrer")
+      return
+    }
+    if (billingLoading || subscriptionLoading) return
+    setBillingLoading(true)
+    setBillingError("")
+    try {
+      const { data, error } = await supabase.functions.invoke("budgetkazpei-billing-portal", {
+        body: {},
+      })
+      if (error || !data?.success || typeof data.url !== "string" ||
+          !data.url.startsWith("https://billing.stripe.com/")) {
+        throw new Error(data?.code || "portal_unavailable")
+      }
+      window.location.assign(data.url)
+    } catch {
+      setBillingError(isKreol
+        ? "Nou pé pa ouv out espace abonnman pou l'instant. Kontakte nout lékip."
+        : "Impossible d'ouvrir votre espace de gestion pour le moment. Contactez notre équipe.")
+    } finally {
+      setBillingLoading(false)
+    }
   }
 
   return (
@@ -352,12 +378,13 @@ export default function PremiumPage({
           <button
             type="button"
             onClick={openPremiumOptions}
+            disabled={subscriptionLoading || billingLoading}
             style={{
               minHeight: 48,
               borderRadius: 16,
-              border: "none",
-              background: `linear-gradient(135deg, ${COLORS.yellow}, ${COLORS.accent})`,
-              color: "#07111F",
+              border: "1px solid #A6CFC2",
+              background: "#E5F4EE",
+              color: "#285D51",
               fontWeight: 950,
               padding: "0 18px",
               cursor: "pointer",
@@ -365,8 +392,17 @@ export default function PremiumPage({
               fontFamily: "inherit",
             }}
           >
-            {hasPremiumAccess ? labels.currentManage : labels.compareTitle}
+            {billingLoading
+              ? (isKreol ? "Ouverture..." : "Ouverture...")
+              : hasPremiumAccess ? labels.currentManage : labels.compareTitle}
           </button>
+          {billingError && (
+            <p role="alert" style={{ margin: 0, color: COLORS.muted, fontSize: 13 }}>
+              {billingError} <a href="mailto:contact.budgetkazpei@gmail.com" style={{ color: "#286A5D" }}>
+                {isKreol ? "Kontakt" : "Nous contacter"}
+              </a>
+            </p>
+          )}
         </div>
 
         <div
