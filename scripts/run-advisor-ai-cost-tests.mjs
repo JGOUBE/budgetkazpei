@@ -50,7 +50,7 @@ assert.equal(buildLocalAidSourceAnswer({ question: "Lien aide factice", aides })
 // call as default, fail the preview build before it can be released.
 const backend = await readFile(new URL("../supabase/functions/assistant-aisupabase/index.ts", import.meta.url), "utf8")
 const frontend = await readFile(new URL("../src/components/conseiller/AssistantConseiller.jsx", import.meta.url), "utf8")
-assert.match(backend, /const memoryEnrichmentAllowed = Deno\.env\.get\("ADVISOR_AI_MEMORY_ENRICHMENT"\) === "enabled"/)
+assert.match(backend, /const memoryEnrichmentAllowed = (?:false|Deno\.env\.get\("ADVISOR_AI_MEMORY_ENRICHMENT"\) === "enabled")/)
 assert.match(backend, /if \(protectedTopic && memoryEnrichmentAllowed && intent\?\.complexity === "complex"\)/)
 assert.ok(backend.indexOf("const savedMemory = protectedTopic") < backend.indexOf("const memoryEnrichmentAllowed"))
 assert.match(backend, /ADVISOR_API_METER/)
