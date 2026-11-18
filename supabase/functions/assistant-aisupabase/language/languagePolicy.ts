@@ -79,9 +79,15 @@ export function resolveAdvisorLanguage({
   interfaceLanguage?: unknown
   fallbackLanguage?: unknown
 } = {}): AssistantLanguage {
-  return detectExplicitAdvisorLanguage(message) ||
+  const explicit = detectExplicitAdvisorLanguage(message)
+  const selected = normalizeAdvisorLanguage(interfaceLanguage)
+  // KR is an intentional interface choice. Do not silently switch the answer
+  // back to French just because a question contains French/administrative terms.
+  // A direct "réponds en français" still overrides the selected language.
+  return explicit ||
+    (selected === "kreol" ? "kreol" : null) ||
     detectAdvisorMessageLanguage(message) ||
-    normalizeAdvisorLanguage(interfaceLanguage) ||
+    selected ||
     normalizeAdvisorLanguage(fallbackLanguage) ||
     "fr"
 }
