@@ -31,6 +31,11 @@ const PRICE_MAP: Record<
     plan: "premium_plus",
     period: "yearly",
   },
+  // Single Premium tier annual 49,90 EUR. Legacy IDs are retained for renewals.
+  "price_1Ud6LYBQ1hdaYjbC4exwaAwu": {
+    plan: "premium",
+    period: "yearly",
+  },
 }
 
 serve(async (req) => {
