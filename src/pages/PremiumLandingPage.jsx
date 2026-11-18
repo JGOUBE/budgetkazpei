@@ -90,7 +90,7 @@ const PREMIUM_CONTENT = {
       items: [
         [
           "Quelle est la différence entre Premium et Premium+ ?",
-          "Premium donne accès au Conseiller BudgetKazPéi en utilisation limitée pour la gestion quotidienne. Premium+ ajoute un usage étendu pour le budget, les aides et les démarches, avec une limite de 5 questions hors sujet par jour et 20 par mois, et l'accompagnement avancé.",
+          "Premium donne accès au Conseiller BudgetKazPéi pour comprendre ses dépenses, son budget et les aides disponibles. Premium+ ajoute l'accompagnement avancé pour les dossiers, courriers, relances, rendez-vous et recours.",
         ],
         [
           "Que se passe-t-il lorsque j'atteins ma limite de scans ?",
