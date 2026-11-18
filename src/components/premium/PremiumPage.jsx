@@ -92,7 +92,7 @@ export const PREMIUM_PAGE_COPY = {
     statusCardTitles: {
       [PLAN_IDS.free]: "BudgetKazPéi",
       [PLAN_IDS.premium]: "Premium actif",
-      [PLAN_IDS.premiumPlus]: "Premium+ actif",
+      [PLAN_IDS.premiumPlus]: "Premium actif",
     },
     statusCardTexts: {
       [PLAN_IDS.free]: "Découverte simple, sans engagement.",
@@ -142,7 +142,7 @@ export const PREMIUM_PAGE_COPY = {
     ],
     premiumPlusFeatures: [
       "Tout sak lé dann Premium",
-      "Scans san limit",
+      "Scanner Premium",
       "Konseyé BudgetKazPéi+ — lakonpagnman avansé",
       "Dosyé, kourrié, email, relans, randévou ek rekour",
     ],
@@ -154,7 +154,7 @@ export const PREMIUM_PAGE_COPY = {
     scanCardTitles: {
       [PLAN_IDS.free]: "Aksé pou dékouv scanner-la",
       [PLAN_IDS.premium]: "10 scans par mwa",
-      [PLAN_IDS.premiumPlus]: "Scans san limit",
+      [PLAN_IDS.premiumPlus]: "Scanner Premium",
     },
     statusCardTitles: {
       [PLAN_IDS.free]: "BudgetKazPéi",
@@ -188,7 +188,13 @@ function planSummary(planId, labels) {
 
 function planFeatures(planId, labels) {
   if (planId === PLAN_IDS.free) return labels.freeFeatures
-  if (planId === PLAN_IDS.premium) return labels.premiumFeatures
+  if (planId === PLAN_IDS.premium) return [
+    ...labels.premiumFeatures.filter(item => !/10 scans|quota/i.test(String(item))),
+    "Scanner Premium avec protection de sécurité",
+    "Accompagnement avancé des aides et démarches",
+    "Dossiers, courriers, emails, relances et rendez-vous",
+    "Compréhension des refus et préparation des recours",
+  ]
   return labels.premiumPlusFeatures
 }
 
@@ -298,11 +304,9 @@ export default function PremiumPage({
 }) {
   const isKreol = t("nav", "dashboard") === "Tablo débor"
   const labels = isKreol ? PREMIUM_PAGE_COPY.kr : PREMIUM_PAGE_COPY.fr
-  const resolvedPlanId = isPremiumPlus
-    ? PLAN_IDS.premiumPlus
-    : isPremium
-      ? PLAN_IDS.premium
-      : currentPlan
+  const resolvedPlanId = (isPremium || isPremiumPlus || currentPlan === PLAN_IDS.premiumPlus)
+    ? PLAN_IDS.premium
+    : currentPlan
   const hasPremiumAccess = resolvedPlanId !== PLAN_IDS.free
   const CurrentIcon = PLAN_META[resolvedPlanId]?.icon || Star
 
@@ -449,7 +453,6 @@ export default function PremiumPage({
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
           <PlanCard planId={PLAN_IDS.free} currentPlanId={resolvedPlanId} labels={labels} />
           <PlanCard planId={PLAN_IDS.premium} currentPlanId={resolvedPlanId} labels={labels} />
-          <PlanCard planId={PLAN_IDS.premiumPlus} currentPlanId={resolvedPlanId} labels={labels} />
         </div>
       </section>
 
