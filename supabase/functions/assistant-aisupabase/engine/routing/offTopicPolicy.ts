@@ -142,7 +142,7 @@ export function getLocalAdvisorAppGuide(question = "", language = "fr", mode = "
 // eligibility, account balance or future savings from a definition.
 export function getLocalAdvisorBudgetBasics(question = "", language = "fr", mode = "general") {
   const text = normalize(question).replace(/ (?:svp|s il vous plait|s il te plait)$/, "")
-  if (mode !== "general" || !text || text.length > 105) return null
+  if (!["general", "budget_depenses"].includes(mode) || !text || text.length > 105) return null
   const definitions = [
     {
       questions: ["c est quoi un budget", "c est quoi le budget", "qu est ce qu un budget", "qu est ce que le budget", "definition du budget"],
