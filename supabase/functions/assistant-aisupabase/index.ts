@@ -20,6 +20,12 @@ import {
 import { reviewAssistantAnswer } from "./engine/review/reviewerEngine.ts"
 import { isProtectedAdvisorQuestion } from "./engine/routing/questionScope.ts"
 import {
+  isOffTopicAdvisorQuestion,
+  getLocalCourtesyAnswer,
+  getOffTopicLimits,
+  getOffTopicLimitAnswer,
+} from "./engine/routing/offTopicCostGuard.mjs"
+import {
   getAdvisorAccess,
   isAdvancedAdvisorMode,
   parseAssistantMode,
@@ -798,6 +804,84 @@ Deno.serve(async (req) => {
     }
 
     const context = contextResult.context as AssistantContext
+
+    // Cheap, exact courtesy turns never call OpenAI and do not spend a
+    // subscription exchange. Do not send user personal data to a canned reply.
+    const courtesyAnswer = context.action !== "analyze_refusal"
+      ? getLocalCourtesyAnswer(context.question, context.language)
+      : null
+    if (courtesyAnswer) {
+      console.info("ADVISOR_API_METER", JSON.stringify({
+        type: "local_courtesy", calls: 0, status: "success",
+      }))
+      return jsonResponse({
+        success: true, answer: courtesyAnswer, consumed: false,
+        openAiCallCount: 0, source: "local_courtesy",
+        language: context.language, mode: context.mode,
+      })
+    }
+
+    // Enforcement is server-side. Never use a client-supplied "mode" or
+    // self-reported previous question to avoid the cost guard.
+    const { data: lastConversation, error: lastConversationError } = await supabaseAdmin
+      .from("assistant_conversations")
+      .select("question, created_at")
+      .eq("user_id", context.userId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (lastConversationError) {
+      console.warn("ADVISOR_OFFTOPIC_CONTEXT_UNAVAILABLE")
+    }
+    const offTopic = isOffTopicAdvisorQuestion({
+      question: context.question,
+      action: context.action,
+      previousQuestion: lastConversationError ? "" : (lastConversation?.question || ""),
+      previousAt: lastConversationError ? null : lastConversation?.created_at,
+    })
+    if (offTopic) {
+      const limits = getOffTopicLimits(context.plan)
+      // Postgres RPC performs an atomic per-user day/month reservation before
+      // the paid request. No user-facing table privileges; fail closed on error.
+      const { data: offTopicAllowance, error: offTopicError } = await supabaseAdmin
+        .rpc("advisor_reserve_offtopic", {
+          p_user_id: context.userId,
+          p_day_limit: limits.day,
+          p_month_limit: limits.month,
+        })
+      if (offTopicError || !offTopicAllowance) {
+        console.error("ADVISOR_OFFTOPIC_GUARD_UNAVAILABLE", offTopicError?.code || "empty")
+        return jsonResponse({
+          success: false,
+          consumed: false,
+          code: "advisor_offtopic_guard_unavailable",
+          error: context.isKreol
+            ? "Konseye la pa disponib pou bann kestyon libre pou linstan. Bann demandes su out budget ek aides i marche toujou."
+            : "Les questions libres sont momentanément indisponibles. Les demandes sur le budget, les aides et les démarches restent accessibles.",
+        }, 503)
+      }
+      if (offTopicAllowance.allowed !== true) {
+        console.info("ADVISOR_API_METER", JSON.stringify({
+          type: "offtopic_blocked", calls: 0, status: "quota_reached",
+        }))
+        return jsonResponse({
+          success: true,
+          answer: getOffTopicLimitAnswer(context.language),
+          consumed: false,
+          openAiCallCount: 0,
+          source: "offtopic_quota",
+          offTopicLimitReached: true,
+          offTopicRemainingToday: 0,
+          language: context.language,
+          mode: context.mode,
+        })
+      }
+      console.info("ADVISOR_OFFTOPIC_ALLOWANCE", JSON.stringify({
+        type: "offtopic_allowed", dayUsed: offTopicAllowance.dayUsed,
+        monthUsed: offTopicAllowance.monthUsed, dayLimit: limits.day,
+        monthLimit: limits.month,
+      }))
+    }
 
     // A strict official-amount review is correct for an actual CAF/finance
     // question, but it can badly corrupt an unrelated answer about astronomy,
