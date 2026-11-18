@@ -87,6 +87,47 @@ export function getLocalAdvisorOffTopicResponse(language = "fr") {
   return language === "kreol" ? LOCAL_OFFTOPIC_KR : LOCAL_OFFTOPIC_FR
 }
 
+// When a prior zero-cost budget answer reports missing data, a natural request
+// for saving ideas must not be routed to the unrelated-question fallback.
+// This is a conservative local response with no provider call and no invented
+// price, eligibility decision, or personal savings calculation.
+export function getLocalAdvisorBudgetNoDataAdvice(
+  question = "", recentHistory: unknown = [], language = "fr",
+) {
+  const text = normalize(question)
+  if (!text || text.length > 160 || text.split(" ").length > 31 ||
+    !/\b(?:solutions?|conseils?|astuces?|idees?|pistes?|proposes?|proposer|recommande(?:s|z|r)?|faire quoi|comment faire|par quoi commencer)\b/.test(text) ||
+    /\b(?:rsa|apl|caf|eligib|recours|chomage|salaire|contrat|recette|gateau|meteo|planete|licorne|dragon|poeme|blague)\b/.test(text)) return null
+
+  const history = Array.isArray(recentHistory) ? recentHistory.slice(0, 4) : []
+  const prior = history[0] as Record<string, unknown> | undefined
+  if (!prior || !prior.question || !prior.answer) return null
+  if (!/\b(?:je ne trouve pas encore de depenses|pas encore de depenses classees|mi trouve pas ankor bann depans|aucune depense enregistree)\b/.test(normalize(prior.answer))) return null
+  if (prior.source && !["local_budget_followup", "local"].includes(String(prior.source))) return null
+
+  const subject = history.slice(1)
+    .map(item => normalize((item as Record<string, unknown>)?.question || "")).join(" ")
+  const fr = language !== "kreol" && language !== "kr" && language !== "cr"
+  if (/\b(?:carburant|essence|gazole|diesel)\b/.test(subject)) {
+    return fr
+      ? "Même sans dépenses enregistrées, vous pouvez déjà réduire le coût du carburant : regroupez les déplacements pour éviter les allers-retours, comparez le prix au litre sans détour coûteux, et envisagez covoiturage ou transports en commun quand c'est possible. Avec votre kilométrage habituel et la consommation du véhicule, je pourrai ensuite estimer vos frais sans inventer de montant."
+      : "Minm san dépans anrezistré, groupe out bann trajé, compare bann prix carburant san grand détour, ek regarde si covoiturage ou transport en commun lé possible. Donne out kilométraz ek consommation loto pou estime out frais."
+  }
+  if (/\b(?:courses?|alimentaire|alimentation)\b/.test(subject)) {
+    return fr
+      ? "Même sans historique, préparez une liste selon vos repas, comparez les prix au kilo pour un même format, puis vérifiez vos placards avant de racheter. Avec quelques tickets enregistrés, nous pourrons ensuite chercher les économies adaptées à vos habitudes."
+      : "Minm san historique, prépare in liste selon out repas, compare prix au kilo, ek vérifie sak ou nana déjà. Avec bann tickets, nou pourra mieux cherche bann économies."
+  }
+  if (/\b(?:loyer|logement|energie|electricite|assurances?|abonnements?)\b/.test(subject)) {
+    return fr
+      ? "Sans historique, commencez par noter les factures et charges réellement payées, repérez les abonnements ou garanties en double, puis comparez les offres à conditions équivalentes. Vérifiez aussi les aides possibles sans présumer de vos droits. Nous pourrons ensuite chiffrer vos économies avec vos données."
+      : "San historique, note out bann factures ek charges, vérifie les abonnements en double, ek compare bann offres équivalentes. Apré nou pourra calculer avec out vrais montants."
+  }
+  return fr
+    ? "Même sans dépenses enregistrées, notez d'abord vos charges fixes, identifiez un achat régulier à comparer et regardez les prix à quantité équivalente. Avec quelques dépenses classées, nous pourrons ensuite personnaliser l'analyse sans inventer de montants."
+    : "Minm san dépans anrezistré, note out charges fixes, compare bann prix pou minm quantité, ek classe kèk dépans. Apré nou pourra faire in analyse pli personnelle."
+}
+
 // Short, elliptical follow-ups can refer to a recent financial conversation.
 // The server checks the latest persisted exchange, not a client-provided label.
 export function isPotentialAdvisorFollowUp(question = "") {
