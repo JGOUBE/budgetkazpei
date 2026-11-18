@@ -74,4 +74,25 @@ assert.match(migration,/v_daily_limit constant integer := 5/)
 assert.match(migration,/v_monthly_limit constant integer := 20/)
 assert.match(migration,/v_hourly_limit constant integer := 30/)
 assert.ok(!migration.includes("message_body"))
+
+// Product messaging presents advisor capabilities without exposing the
+// internal rate guard, even in hover titles or marketing FAQs.
+const publicPaths = [
+  "src/components/conseiller/ConseillerPage.jsx",
+  "src/config/plans.js",
+  "src/pages/PremiumLandingPage.jsx",
+  "src/components/premium/PremiumPage.jsx",
+  "src/components/landing/landingContent.js",
+]
+for (const file of publicPaths) {
+  const page = await readFile(new URL("../" + file, import.meta.url), "utf8")
+  assert.doesNotMatch(page, /(?:Conseiller|Konseyé)[^"\n]{0,150}(?:illimit|limité|hors sujet|quota|appels IA)/i, file)
+  assert.doesNotMatch(page, /(?:questions? hors sujet|kestion hors sujet)\s*:\s*\d|(?:appels? IA par heure|appels? IA par ler)/i, file)
+}
+const advisorPage = await readFile(new URL("../src/components/conseiller/ConseillerPage.jsx", import.meta.url), "utf8")
+assert.doesNotMatch(advisorPage, /bkp-advisor-usage-label|publicUsageLabel/, "No visible usage badge")
+assert.match(backend, /Pour garder ce service utile à tous/)
+assert.match(backend, /Je suis surtout là pour vous aider/)
+assert.match(backend, /success: true,[\s\S]{0,180}answer: guidance/)
+
 console.log("OK: paid calls are reserved atomically, off-topic limits are server-side, and simple greetings are free.")
