@@ -148,8 +148,10 @@ export function getLocalAdvisorBudgetNoDataAdvice(
 // The server checks the latest persisted exchange, not a client-provided label.
 export function isPotentialAdvisorFollowUp(question = "") {
   const text = normalize(question)
+  if (!text || CLEAR_GENERAL_QUERY.test(text) || PLAYFUL.test(text) ||
+    INDEPENDENT_NON_FINANCIAL_TOPIC.test(text)) return false
   return text.length <= 80 && text.split(" ").length <= 8 &&
-    /^(?:et pourquoi|et combien|et comment|et ensuite|et maintenant|et pour moi|comment faire|comment je fais|combien|pourquoi|c est possible|quelles conditions|pour mon cas|et si|je peux faire quoi|qu est ce que je fais|comment proceder|merci pour ces aides)\b/.test(text)
+    /^(?:et pourquoi|et combien|et comment|et ensuite|et maintenant|et pour moi|comment faire|comment je fais|combien|pourquoi|c est possible|quelles conditions|pour mon cas|je peux faire quoi|qu est ce que je fais|comment proceder|merci pour ces aides)\b/.test(text)
 }
 
 
