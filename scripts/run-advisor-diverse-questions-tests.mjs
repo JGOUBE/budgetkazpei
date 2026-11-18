@@ -234,6 +234,8 @@ for (const newQuestion of [
   "Propose-moi une recette de gâteau",
   "Quelles aides CAF ou RSA pourrais-je avoir ?",
   "Je voudrais une comparaison précise des prix du carburant aujourd'hui à Saint-Leu",
+  "Peux-tu me proposer une solution personnalisée pour ma situation ?",
+  "Je gagne 1800 euros par mois, quelle solution me proposes-tu ?",
 ]) {
   assert.equal(resolveAdvisorBudgetNoDataAdvice({
     question: newQuestion, recentHistory: missingFuelHistory,
