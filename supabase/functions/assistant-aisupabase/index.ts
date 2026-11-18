@@ -18,6 +18,7 @@ import {
   type TrustedAidFact,
 } from "./engine/truth/trustedAidFacts.ts"
 import { reviewAssistantAnswer } from "./engine/review/reviewerEngine.ts"
+import { getVerifiedReunionFuelPriceComparison, reviewUnsupportedFuelPriceHistory } from "./engine/review/fuelPriceEvidence.ts"
 import { isProtectedAdvisorQuestion } from "./engine/routing/questionScope.ts"
 import { classifyAdvisorSpendScope, getLocalAdvisorSmallTalk, getLocalAdvisorOffTopicResponse, isPotentialAdvisorFollowUp, getLocalAdvisorAppGuide, getLocalAdvisorBudgetBasics, getLocalAdvisorBudgetObservation, getLocalAdvisorBudgetNoDataAdvice, getLocalAdvisorDocumentIntake, isContextualAdvisorFollowUp, advisorTopicGroupForQuestion, advisorTrustedTopicLabel } from "./engine/routing/offTopicPolicy.ts"
 import {
@@ -928,6 +929,32 @@ Deno.serve(async (req) => {
       }, 413)
     }
 
+    // Trust dated, official Reunion fuel price snapshots instead of asking
+    // OpenAI to guess a two-year market change. Historical figures are always
+    // labeled by date; no snapshot is presented as a live price.
+    if (context.action !== "analyze_refusal") {
+      const verifiedFuelComparison = getVerifiedReunionFuelPriceComparison(
+        context.question, context.language,
+      )
+      if (verifiedFuelComparison) {
+        await rememberAdvisorTopic(supabaseAdmin, context.userId, context.question, "carburant")
+        console.info("ADVISOR_API_METER", JSON.stringify({
+          type: "local_verified_fuel_comparison", calls: 0, scope: "budget",
+        }))
+        return jsonResponse({
+          success: true,
+          answer: verifiedFuelComparison,
+          source: "local_verified_fuel_comparison",
+          language: context.language,
+          mode: context.mode,
+          consumed: false,
+          openAiCallCount: 0,
+          recommendedAidIds: [],
+          recommendedAidNames: [],
+        })
+      }
+    }
+
     // A preset saying "I will paste a refusal" is not the refusal itself.
     // Invite the user to supply it without calling OpenAI.
     if (context.action !== "analyze_refusal") {
@@ -1302,7 +1329,15 @@ Deno.serve(async (req) => {
               : [],
           )
 
-    const answer = reviewResult.revisedAnswer
+    // No second provider call: remove any unsupported historical pump-price
+    // figures or claimed direction from other, unverified date ranges.
+    const answer = context.action === "analyze_refusal"
+      ? reviewResult.revisedAnswer
+      : reviewUnsupportedFuelPriceHistory({
+          question: context.question,
+          answer: reviewResult.revisedAnswer,
+          language: context.language,
+        })
     const mentionedTrustedAids = findMentionedTrustedAids(answer, trustedAidFacts)
 
     if (context.consumesExchange && answer) {
