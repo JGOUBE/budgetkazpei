@@ -71,12 +71,12 @@ export const PREMIUM_PAGE_COPY = {
       PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premium],
       "Historique et statistiques avancées",
       "Export PDF et alertes budget",
-      "Conseiller BudgetKazPéi — utilisation limitée",
+      "Conseiller BudgetKazPéi — conseils budget et aides",
     ],
     premiumPlusFeatures: [
       "Tout le Premium",
       PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premiumPlus],
-      "Conseiller BudgetKazPéi+ — usage étendu, questions hors sujet limitées",
+      "Conseiller BudgetKazPéi+ — accompagnement personnalisé",
       "Dossiers, courriers, emails, relances, rendez-vous et recours",
     ],
     soonFeatures: [
@@ -138,12 +138,12 @@ export const PREMIUM_PAGE_COPY = {
       "10 scans par mwa",
       "Istorik ek statistik avansé",
       "Èksport PDF ek alèrt bidjé",
-      "Konseyé BudgetKazPéi — itilizasion limité",
+      "Konseyé BudgetKazPéi — konsey su bidjé ek aides",
     ],
     premiumPlusFeatures: [
       "Tout sak lé dann Premium",
       "Scans san limit",
-      "Konseyé BudgetKazPéi+ — itilizasion san limit",
+      "Konseyé BudgetKazPéi+ — lakonpagnman personnalisé",
       "Dosyé, kourrié, email, relans, randévou ek rekour",
     ],
     soonFeatures: [
