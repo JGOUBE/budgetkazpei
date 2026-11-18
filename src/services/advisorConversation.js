@@ -246,13 +246,13 @@ export function getAdvisorRankingOptions(conversationContext = {}) {
 // inference; it never labels transport totals as fuel-only purchases.
 const ADVISOR_YES = /^(?:oui|oui je veux bien|oui volontiers|oui pourquoi pas|oui fais le|oui regarde|oui allons y|d accord|ok|okay|vas y|allons y|je veux bien|volontiers|avec plaisir|wi)$/
 const ADVISOR_BUDGET_TOPICS = [
-  { category: "transport", pattern: /\b(?:carburant|essence|gazole|diesel|plein d essence)\b/ },
+  { category: "transport", pattern: /\b(?:carburant|carburan|mazout|essence|essans|gazole|diesel|plein d essence)\b/ },
   { category: "alimentaire", pattern: /\b(?:courses|alimentaire|alimentation)\b/ },
   { category: "logement", pattern: /\b(?:loyer|logement)\b/ },
   { category: "energie", pattern: /\b(?:electricite|energie|factures? d energie)\b/ },
   { category: "assurances", pattern: /\b(?:assurances?|abonnements?|charges fixes)\b/ },
 ]
-const ADVISOR_BUDGET_OFFER = /\b(?:souhaitez vous examiner vos depenses|voulez vous examiner votre budget|voulez vous faire le point|souhaitez vous faire le point|voulez vous examiner ces depenses)\b/
+const ADVISOR_BUDGET_OFFER = /\b(?:souhaitez vous examiner vos depenses|voulez vous examiner votre budget|voulez vous faire le point|souhaitez vous faire le point|voulez vous examiner ces depenses|ou ve regarde out depans|ou ve faire le point|ou ve regarde out bidze)\b/
 
 function advisorEuro(amount) {
   const value = Number(amount)
@@ -275,7 +275,7 @@ export function resolveAdvisorBudgetConfirmation({
   const priorAnswer = normalizeAidTopicText(previous.answer)
   const authenticOffer = previous.source === "local_budget_observation" ||
     (ADVISOR_BUDGET_OFFER.test(priorAnswer) &&
-      /\b(?:carburant|essence|gazole|diesel|courses|loyer|logement|factures?|electricite|energie|assurance|abonnement)\b/.test(priorQuestion))
+      /\b(?:carburant|carburan|mazout|essence|essans|gazole|diesel|courses|loyer|logement|factures?|electricite|energie|assurance|abonnement)\b/.test(priorQuestion))
   if (!authenticOffer || !ADVISOR_BUDGET_OFFER.test(priorAnswer)) return null
 
   const topic = ADVISOR_BUDGET_TOPICS.find(item => item.pattern.test(priorQuestion))
@@ -286,7 +286,7 @@ export function resolveAdvisorBudgetConfirmation({
   const recorded = entries.find(entry => entry.category === topic.category)
   const transactionsAvailable = !contextUnavailable && insights?.dataAvailability?.transactions !== false
   const lastPeriod = String(budget.period?.label || "").trim()
-  const period = lastPeriod ? "sur la période « " + lastPeriod + " »" : "sur la période analysée"
+  const period = lastPeriod ? (fr ? "sur la période « " : "su période « ") + lastPeriod + " »" : (fr ? "sur la période analysée" : "su période analysée")
   const details = topic.category === "transport"
     ? "Ce total regroupe les dépenses classées en transport : il ne permet pas d'isoler le carburant si celui-ci n'est pas identifié séparément."
     : "Il s'agit uniquement des dépenses variables classées dans cette catégorie ; les charges fixes peuvent être suivies séparément."
@@ -340,7 +340,7 @@ export function resolveAdvisorBudgetConfirmation({
 // fallback interrupted the conversation. Keep these replies deterministic and
 // free of OpenAI calls; genuinely personalized questions still use the model.
 const ADVISOR_BUDGET_ADVICE_REQUEST =
-  /\b(?:solutions?|conseils?|astuces?|idees?|pistes?|proposes?|proposer|recommande(?:s|z|r)?|faire quoi|faire comment|comment (?:je|on|nous|puis je|peux je) (?:faire|reduire|economiser)|par quoi commencer|autre chose|quoi d autre|et sinon|sinon quoi|alternatives?)\b/
+  /\b(?:solutions?|solisions?|conseils?|konseys?|astuces?|idees?|lidees?|lide|pistes?|proposes?|proposer|propoz|propoze|recommande(?:s|z|r)?|faire quoi|faire comment|comment (?:je|on|nous|puis je|peux je) (?:faire|reduire|economiser)|par quoi commencer|autre chose|quoi d autre|et sinon|sinon quoi|alternatives?)\b/
 const ADVISOR_BUDGET_ADVICE_EXCLUSIONS =
   /\b(?:personnalise|personnalisee|personnaliser|precis|precise|estimation|estimer|calculer|simulation|ma situation|mon cas|selon mes|selon mon|compte tenu|mon profil|mes contraintes|mes revenus|ma famille|rsa|apl|caf|eligib|recours|demande administrative|chomage|salaire|contrat|recette|gateau|cuisine|meteo|film|chanson|planete|licorne|dragon|poeme|blague)\b/
 
@@ -396,7 +396,7 @@ export function resolveAdvisorBudgetNoDataAdvice({
   // observation or prior advice, with at most two intervening local fallbacks.
   // Don't resurrect an older budget topic after an actual subject change.
   const history = Array.isArray(recentHistory) ? recentHistory.slice(0, 5) : []
-  const noRecordedSpending = /\b(?:je ne trouve pas encore de depenses|pas encore de depenses classees|mi trouve pas ankor bann depans|aucune depense enregistree)\b/
+  const noRecordedSpending = /\b(?:je ne trouve pas encore de depenses|pas encore de depenses classees|mi trouv(?:e)? pa ankor bann depans|aucune depense enregistree)\b/
   // An actual verified spending analysis must not be replaced by a generic
   // "no data" script just because an older fuel observation is in the history.
   if (history.some(item => item?.source === "local_budget_followup" &&
