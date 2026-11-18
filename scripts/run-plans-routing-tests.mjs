@@ -106,8 +106,8 @@ assert.equal(PLAN_SCAN_POLICY[PLAN_IDS.free].needsCommercialValidation, true)
 assert.equal(getPlanPublicScanLabel(PLAN_IDS.free), "Accès découverte au scanner")
 assert.equal(PLAN_SCAN_LIMITS[PLAN_IDS.free], FREE_OPERATIONAL_SCAN_LIMIT)
 
-assert.equal(PLAN_SCAN_POLICY[PLAN_IDS.premium].commercialScanLimit, 10)
-assert.equal(PLAN_SCAN_POLICY[PLAN_IDS.premium].operationalScanLimit, 10)
+assert.equal(PLAN_SCAN_POLICY[PLAN_IDS.premium].commercialScanLimit, null)
+assert.equal(PLAN_SCAN_POLICY[PLAN_IDS.premium].operationalScanLimit, 100)
 assert.equal(getPlanScanLimit(PLAN_IDS.premium), 100)
 assert.equal(getPlanPublicScanLabel(PLAN_IDS.premium), "Scanner Premium avec protection de sécurité")
 
@@ -116,7 +116,7 @@ assert.equal(PLAN_SCAN_POLICY[PLAN_IDS.premiumPlus].commercialScanLimit, null)
 assert.equal(PLAN_SCAN_POLICY[PLAN_IDS.premiumPlus].operationalScanLimit, 100)
 assert.equal(PLAN_SCAN_POLICY[PLAN_IDS.premiumPlus].isUnlimitedForUser, false)
 assert.equal(PLAN_SCAN_POLICY[PLAN_IDS.premiumPlus].isSafetyLimited, true)
-assert.equal(getPlanPublicScanLabel(PLAN_IDS.premiumPlus), "Scans illimités")
+assert.equal(getPlanPublicScanLabel(PLAN_IDS.premiumPlus), "Scanner Premium avec protection de sécurité")
 assert.match(PREMIUM_PLUS_SAFETY_MESSAGE, /nombre inhabituel de scans/, "Premium+ safety message missing")
 assert.notDeepEqual(
   [PLAN_SCAN_LIMITS[PLAN_IDS.free], PLAN_SCAN_LIMITS[PLAN_IDS.premium], PLAN_SCAN_LIMITS[PLAN_IDS.premiumPlus]],
@@ -140,7 +140,7 @@ assert.doesNotMatch(publicTexts, /(?:retirer|supprimer|enlever)\s+(?:les?\s+)?pu
 assert.doesNotMatch(read("src/config/plans.js"), /"10 scans par mois"/, "No visible Premium quota")
 assert.ok(PUBLIC_PLAN_CARDS.find(plan => plan.id === PLAN_IDS.premium)?.items.some(item => item.text.includes("Scanner Premium")), "Unified Premium scanner must be included")
 assert.deepEqual(PUBLIC_PLAN_CARDS.map(plan => plan.id), [PLAN_IDS.free, PLAN_IDS.premium], "Exactly two public plans: Free and Premium")
-assert.equal(PUBLIC_PLAN_CARDS.length, 3)
+assert.equal(PUBLIC_PLAN_CARDS.length, 2)
 assert.match(read("src/config/plans.js"), /PLAN_FEATURE_STATUS\.soon|soon/, "Future features must be labelled")
 
 const main = read("src/main.jsx")
