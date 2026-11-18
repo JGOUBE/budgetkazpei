@@ -97,6 +97,7 @@ export function getLocalAdvisorBudgetNoDataAdvice(
   const text = normalize(question)
   if (!text || text.length > 160 || text.split(" ").length > 31 ||
     !/\b(?:solutions?|conseils?|astuces?|idees?|pistes?|proposes?|proposer|recommande(?:s|z|r)?|faire quoi|comment faire|par quoi commencer)\b/.test(text) ||
+    /\d|\b(?:personnalise|personnalisee|personnaliser|precis|precise|estimation|estimer|calculer|simulation|ma situation|mon cas|selon mes|selon mon|compte tenu|mon profil|mes contraintes|mes revenus|ma famille)\b/.test(text) ||
     /\b(?:rsa|apl|caf|eligib|recours|chomage|salaire|contrat|recette|gateau|meteo|planete|licorne|dragon|poeme|blague)\b/.test(text)) return null
 
   const history = Array.isArray(recentHistory) ? recentHistory.slice(0, 4) : []
