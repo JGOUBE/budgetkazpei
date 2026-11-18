@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
+import { LockKeyhole } from "lucide-react"
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts"
 import { formatMontant } from "../../utils/format"
 import TropicalCard from "./TropicalCard"
@@ -869,8 +870,9 @@ function PremiumFeature({ locked, title, text }) {
         color: COLORS.text,
       }}
     >
-      <div style={{ fontWeight: 900, fontSize: 13, marginBottom: 5 }}>
-        {locked ? "Verrouillé - " : "Inclus - "}
+      <div style={{ fontWeight: 800, fontSize: 13, marginBottom: 5,
+        display: "flex", alignItems: "center", gap: 6 }}>
+        {locked && <LockKeyhole size={14} aria-label="Réservé Premium" />}
         {title}
       </div>
       <div style={{ color: COLORS.muted, fontSize: 12 }}>{text}</div>
