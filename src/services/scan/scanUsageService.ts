@@ -35,16 +35,20 @@ export async function getScanUsage({
   const localPlan = getScanPlan(isPremium, isPremiumPlus)
   if (!userId) return { used: 0, aiUsed: 0, manualUsed: 0, plan: localPlan }
 
-  const { data, error } = await supabase
-    .from("scan_usage")
-    .select("scan_count, ai_scan_count, manual_count, plan")
-    .eq("user_id", userId)
-    .eq("month_key", monthKey())
-    .maybeSingle()
-
+  // Server is authoritative: free discovery expires after thirty days,
+  // including scans performed across a calendar-month boundary.
+  const { data, error } = await supabase.rpc("get_receipt_scan_entitlement")
   if (error) throw error
-
-  return resolveScanUsageSnapshot(data, localPlan)
+  return {
+    used: Number(data?.used || 0),
+    aiUsed: Number(data?.used || 0),
+    manualUsed: 0,
+    plan: normalizePlan(data?.plan || "free") as ScanPlan,
+    limit: Number(data?.limit || 0),
+    remaining: Number(data?.remaining || 0),
+    reached: data?.reached === true,
+    contactRequired: data?.contact_required === true,
+  }
 }
 
 export async function incrementScanUsage({
