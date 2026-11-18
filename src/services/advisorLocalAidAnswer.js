@@ -4,7 +4,7 @@ import { normalizeAidName, safeAidSourceUrl } from "./aidesRecommendationQuality
 // Any question involving eligibility, amounts, deadlines or personal advice
 // continues to the AI and its evidence/uncertainty safeguards.
 const SOURCE_WORDS = /\b(?:lien|url|site officiel|site internet|site web|page officielle?|adresse web|ou (?:trouver|consulter) (?:le |la |l )?(?:site|page)|ou (?:faire|deposer|envoyer) (?:ma |une |la )?demande)\b/
-const NEEDS_ADVICE = /\b(?:combien|montant|plafond|conditions?|eligible|eligibilite|droit|delai|duree|refus|recours|simulation|est ce que|peux je|puis je|pourquoi|conseil|quel dossier)\b/
+const NEEDS_ADVICE = /\b(?:combien|montant|plafond|conditions?|eligible|eligibilite|droit|delai|duree|refus|recours|simulation|est ce que|peux je|puis je|pourquoi|conseil|quel dossier|et|ainsi que)\b/
 
 export function isLocalAidSourceRequest(question = "") {
   const text = normalizeAidName(question)
