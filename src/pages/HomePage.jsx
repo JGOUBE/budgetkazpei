@@ -1,4 +1,4 @@
-import { ArrowRight, CalendarDays, ChevronRight } from "lucide-react"
+import { ArrowRight, CalendarDays, ChevronRight, LockKeyhole } from "lucide-react"
 import { BkIcons } from "../components/icons-budgetkazpei"
 import { formatMontant } from "../utils/format"
 
@@ -28,6 +28,7 @@ export default function HomePage({
   isMobile = false,
   profile,
   user,
+  isPremium = false,
   budgetStats = {},
   budgetLoading = false,
   onNavigate,
@@ -57,6 +58,7 @@ export default function HomePage({
       <nav className="bkp-home-action-grid" aria-label={isKreol ? "Bann aksyon rapides" : "Accès rapides"}>
         {ACTIONS.map(action => {
           const Icon = BkIcons[action.icon]
+          const locked = action.id === "conseiller" && !isPremium
           const handleClick = action.id === "expense"
             ? onAddExpense
             : action.id === "shoppingList"
@@ -67,6 +69,7 @@ export default function HomePage({
               type="button"
               key={action.id}
               className="bkp-home-action bkp-home-matcha-action"
+              aria-label={locked ? (isKreol ? "Mon konseye : réservé Premium" : "Mon conseiller : réservé à Premium") : undefined}
               onClick={handleClick}
               style={{
                 "--bkp-home-card": action.pale,
@@ -78,6 +81,7 @@ export default function HomePage({
               <Icon className="bkp-home-action-icon" size={25} strokeWidth={1.8} aria-hidden="true" />
               <span className="bkp-home-action-divider" aria-hidden="true" />
               <span className="bkp-home-action-title">{isKreol ? action.kr : action.fr}</span>
+              {locked && <LockKeyhole size={16} strokeWidth={1.8} aria-label="Premium" />}
               <ChevronRight className="bkp-home-action-arrow" size={19} strokeWidth={1.9} aria-hidden="true" />
             </button>
           )
