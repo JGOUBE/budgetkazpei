@@ -107,7 +107,7 @@ export function getLocalAdvisorBudgetNoDataAdvice(
 
   const history = Array.isArray(recentHistory)
     ? (recentHistory as Record<string, unknown>[]).slice(0, 5) : []
-  const noRecordedSpending = /\b(?:je ne trouve pas encore de depenses|pas encore de depenses classees|mi trouve pas ankor bann depans|aucune depense enregistree)\b/
+  const noRecordedSpending = /\b(?:je ne trouve pas encore de depenses|pas encore de depenses classees|mi trouv(?:e)? pa(?:s)? ankor bann depans|aucune depense enregistree)\b/
   if (history.some(item => item?.source === "local_budget_followup" &&
       !noRecordedSpending.test(normalize(item?.answer || "")))) return null
   const validSource = new Set(["local_budget_observation", "local_budget_followup", "local_budget_advice"])
