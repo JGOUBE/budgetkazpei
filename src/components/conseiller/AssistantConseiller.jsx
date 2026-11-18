@@ -562,10 +562,25 @@ export default function AssistantConseiller({
     })
 
     if (error) {
+      // Supabase FunctionsHttpError carries the server's JSON in context.
+      // Preserve actionable quota messages instead of displaying a generic
+      // "Edge Function returned a non-2xx status code" to the user.
+      let serverError = null
+      try {
+        if (typeof error.context?.clone === "function") {
+          serverError = await error.context.clone().json()
+        } else if (typeof error.context?.json === "function") {
+          serverError = await error.context.json()
+        }
+      } catch (_) {
+        // Some network errors have no response body.
+      }
       console.error("Erreur Edge Function assistant-aisupabase:", error)
       return {
         success: false,
-        error: error.message || "Erreur assistant IA.",
+        code: serverError?.code || null,
+        offTopicLimitReached: serverError?.offTopicLimitReached === true,
+        error: serverError?.error || error.message || "Erreur assistant IA.",
       }
     }
 
