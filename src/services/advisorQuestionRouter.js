@@ -8,6 +8,8 @@ const REFERENTIAL = /\b(?:ca|cela|cette aide|cet organisme|ce dossier|ce courrie
 const CREATIVE = /\b(?:imagine|invente|raconte une histoire|raconte moi une histoire|fiction|fictif|farfelu|farfelue|extraterrestre|dragon|licorne|magique|super heros|voyage dans le temps|sur la lune|lune en fromage|si les chats|si mon chat|chat president|lune.*fromage|si (?:la |le |les |mon |ma |un |une )?(?:lune|licorne|extraterrestre)|hypothese absurde)\b/
 const AID_REQUEST = /\b(?:aides? financieres?|aides? sociales?|aides? pour|des aides|aides\b|une aide|montant de l aide|allocations?|subventions?|droit aux aides|droits sociaux|prestations? sociales?|caf|rsa|apl|fsl|ccas|mdph|prime d activite|cheque energie|pass sport|aide au logement|demande d aide|demander une aide|eligible a une aide)\b/
 const PERSONAL_BUDGET = /\b(?:mon budget|mes budgets|mes depenses|ma depense|mon loyer|mon abonnement|mes revenus|mon revenu|mes charges|mes abonnements|mes economies|mes achats|ma liste de courses|mon panier|mes courses|mon argent|ma marge|combien j ai depense|combien je depense|ce mois ci|mois dernier|ma facture|mes factures|reste t il|me reste|j ai paye|je paie|je depense|me coute|ai je depense|j ai depense|je gagne|euros? par mois|depenses alimentaires)\b/
+// Wording for explicit personal breakdowns, including statements without "dépenses".
+const PERSONAL_DISTRIBUTION = /\b(?:mes principales depenses|mes plus grosses depenses|mes (?:trois|3) (?:principaux|plus gros) postes|mes postes de depenses|repartition de mon budget|repartition de mes depenses|part de mes depenses|pourcentage de mes depenses)\b/
 const NON_FINANCIAL = /\b(?:pollution|soleil|etoiles?|jupiter|saturne|planetes?|galaxie|animaux?|chats?|chiens?|football|course a pied|courses de chevaux|course de velo|basket ball|panier de basket|cuisson|cuisine|recette|plantes?|volcans?|vagues?|marees?|fantomes?|super pouvoirs?|licornes?|dinosaures?|conjugaison|poemes?|rime|humour|blague)\b/
 
 export function looksPlayfulOrFictionalQuestion(question = "") {
@@ -37,7 +39,7 @@ export function shouldUseLocalBudgetAnswer({question = "",mode = "general",inten
   if (intent === "unknown") return false
   if (looksPlayfulOrFictionalQuestion(question)) return false
   const text = normalizeAidTopicText(question)
-  const personal = PERSONAL_BUDGET.test(text)
+  const personal = PERSONAL_BUDGET.test(text) || PERSONAL_DISTRIBUTION.test(text)
   // Strongly non-financial wording should never trigger a budget answer just
   // because it contains generic words like réduire, cours(es) or abonnement.
   if (NON_FINANCIAL.test(text) && !personal) return false
