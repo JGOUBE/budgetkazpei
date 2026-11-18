@@ -591,3 +591,149 @@
   background: transparent !important;
   border: 0 !important;
 }
+
+
+/* Conseiller — couleurs de l'accueil 2026.
+   Reprend les accents verts, bleu océan, ardoise et turquoise des cartes
+   d'accueil sans relief, dégradé, bouton sombre ou teinte orange. */
+#root .bkp-app-2026 .bkp-advisor-page {
+  --advisor-green-bg: #C8E4AA;
+  --advisor-green-fg: #355B34;
+  --advisor-green-edge: #9DC184;
+  --advisor-blue-bg: #A9DEED;
+  --advisor-blue-fg: #235774;
+  --advisor-blue-edge: #83BFCE;
+  --advisor-slate-bg: #CFD6DD;
+  --advisor-slate-fg: #344A56;
+  --advisor-slate-edge: #AAB9C3;
+  --advisor-teal-bg: #CCE8E0;
+  --advisor-teal-fg: #286558;
+  --advisor-teal-edge: #9DCFC0;
+}
+#root .bkp-app-2026 .bkp-advisor-planbar {
+  background: #F8FAF6 !important;
+  border: 1px solid #B5CBB7 !important;
+  border-left: 3px solid var(--advisor-teal-edge) !important;
+  box-shadow: none !important;
+}
+#root .bkp-app-2026 .bkp-advisor-planbar strong { color: #344B3D !important; }
+#root .bkp-app-2026 .bkp-advisor-usage-label {
+  background: #E0EBE5 !important;
+  color: #365E50 !important;
+  border: 1px solid #B1CCBE !important;
+}
+#root .bkp-app-2026 .bkp-advisor-chat {
+  background: #FFFEFC !important;
+  border: 1px solid #ADC5B8 !important;
+  box-shadow: none !important;
+}
+#root .bkp-app-2026 .bkp-advisor-header {
+  background: #E2F0E9 !important;
+  border-color: #B7D5C5 !important;
+}
+#root .bkp-app-2026 .bkp-advisor-avatar,
+#root .bkp-app-2026 .bkp-advisor-message-avatar {
+  background: var(--advisor-teal-bg) !important;
+  color: var(--advisor-teal-fg) !important;
+  border-color: var(--advisor-teal-edge) !important;
+}
+#root .bkp-app-2026 .bkp-advisor-identity p { color: #506759 !important; }
+#root .bkp-app-2026 .bkp-advisor-thread {
+  background: #F7FAF7 !important;
+}
+#root .bkp-app-2026 .bkp-advisor-bubble--assistant {
+  background: #FFFFFF !important;
+  border: 1px solid #B9CEC1 !important;
+  color: #304638 !important;
+  box-shadow: none !important;
+}
+#root .bkp-app-2026 .bkp-advisor-bubble--user {
+  background: #DDEFE7 !important;
+  border: 1px solid #A9D0BE !important;
+  color: #2E5849 !important;
+  box-shadow: none !important;
+}
+/* Les trois familles d'actions reprennent les trois couleurs distinctes
+   de l'accueil : vert courses, bleu aides, ardoise documents. */
+#root .bkp-app-2026 .bkp-advisor-starters button.bkp-advisor-starter--budget_depenses {
+  background: var(--advisor-green-bg) !important;
+  color: var(--advisor-green-fg) !important;
+  border: 1px solid var(--advisor-green-edge) !important;
+}
+#root .bkp-app-2026 .bkp-advisor-starters button.bkp-advisor-starter--trouver_aide {
+  background: var(--advisor-blue-bg) !important;
+  color: var(--advisor-blue-fg) !important;
+  border: 1px solid var(--advisor-blue-edge) !important;
+}
+#root .bkp-app-2026 .bkp-advisor-starters button.bkp-advisor-starter--comprendre_courrier {
+  background: var(--advisor-slate-bg) !important;
+  color: var(--advisor-slate-fg) !important;
+  border: 1px solid var(--advisor-slate-edge) !important;
+}
+#root .bkp-app-2026 .bkp-advisor-starter:hover:not(:disabled) {
+  filter: brightness(.975);
+  box-shadow: none !important;
+  transform: none !important;
+}
+#root .bkp-app-2026 .bkp-advisor-quick-details {
+  background: #EDF4E5 !important;
+  border: 1px solid #BACCAC !important;
+}
+#root .bkp-app-2026 .bkp-advisor-advanced {
+  background: #E8EEF1 !important;
+  border: 1px solid #BDCDD5 !important;
+}
+#root .bkp-app-2026 .bkp-advisor-quick-details summary { color: var(--advisor-green-fg) !important; }
+#root .bkp-app-2026 .bkp-advisor-advanced summary { color: var(--advisor-slate-fg) !important; }
+#root .bkp-app-2026 .bkp-advisor-quick-details button,
+#root .bkp-app-2026 .bkp-advisor-budget-quick button {
+  background: #E0EDD0 !important;
+  color: var(--advisor-green-fg) !important;
+  border-color: #AFC99E !important;
+}
+#root .bkp-app-2026 .bkp-advisor-advanced button {
+  background: #DBE9EF !important;
+  color: var(--advisor-blue-fg) !important;
+  border-color: #B1CFDD !important;
+}
+#root .bkp-app-2026 .bkp-advisor-composer-zone {
+  background: #FFFEFC !important;
+  border-color: #BBCDC1 !important;
+}
+#root .bkp-app-2026 .bkp-advisor-composer {
+  background: #EAF3EC !important;
+  border: 1px solid #B6D2C0 !important;
+  box-shadow: none !important;
+}
+#root .bkp-app-2026 .bkp-advisor-composer:focus-within {
+  border-color: #4E846E !important;
+}
+#root .bkp-app-2026 .bkp-advisor-topic-toggle {
+  color: #326551 !important;
+  background: transparent !important;
+  border: 0 !important;
+}
+#root .bkp-app-2026 .bkp-advisor-topic-choices button {
+  background: #DCEDE4 !important;
+  color: #2E5D4B !important;
+  border-color: #A9CDBA !important;
+}
+#root .bkp-app-2026 .bkp-advisor-send:not(:disabled) {
+  background: var(--advisor-green-bg) !important;
+  color: var(--advisor-green-fg) !important;
+  border-color: var(--advisor-green-edge) !important;
+}
+#root .bkp-app-2026 .bkp-advisor-reset {
+  background: #F5FAF5 !important;
+  color: #566B5B !important;
+  border: 1px solid #CADCCF !important;
+  box-shadow: none !important;
+}
+#root .bkp-app-2026 .bkp-advisor-starter:focus-visible,
+#root .bkp-app-2026 .bkp-advisor-send:focus-visible,
+#root .bkp-app-2026 .bkp-advisor-topic-toggle:focus-visible,
+#root .bkp-app-2026 .bkp-advisor-quick-details summary:focus-visible,
+#root .bkp-app-2026 .bkp-advisor-advanced summary:focus-visible {
+  outline: 2px solid #377363 !important;
+  outline-offset: 2px;
+}
