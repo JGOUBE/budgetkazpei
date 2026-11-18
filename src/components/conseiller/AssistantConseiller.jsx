@@ -31,6 +31,7 @@ import { requestAppSectionNavigation } from "../../services/appSectionNavigation
 import { resolveAdvisorLanguage } from "../../services/advisorLanguage"
 import { selectAidCandidatesForAdvisor } from "../../services/aidesRanking"
 import { prepareAdvisorAideContext } from "../../services/advisorAideContext"
+import { buildLocalAidSourceAnswer, isLocalAidSourceRequest } from "../../services/advisorLocalAidAnswer"
 import {
   shouldLookupAdvisorAids,
   shouldUseLocalBudgetAnswer,
@@ -650,8 +651,34 @@ export default function AssistantConseiller({
         conversationContext: preliminaryContext,
         recentHistory: history,
         handoffContext: advisorHandoffContext,
-      })
+      }) || isLocalAidSourceRequest(sentQuestion)
       const aides = needAidFacts ? await fetchAides() : []
+
+      // An exact request for an existing aid's reference URL is answered from
+      // the catalogue. No model, no backend Edge Function, and no fabricated
+      // eligibility or amount. Keep the exchange for natural follow-ups.
+      const localAid = ["general", "trouver_aide"].includes(currentMode)
+        ? buildLocalAidSourceAnswer({ question: sentQuestion, aides, language: responseLanguage })
+        : null
+      if (localAid) {
+        setHistory(prev => [{
+          id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          question: sentQuestion,
+          answer: localAid.answer,
+          language: responseLanguage,
+          mode: currentMode,
+          source: localAid.source,
+          conversationContext: preliminaryContext,
+          recommendedAidIds: localAid.recommendedAidIds,
+          recommendedAidNames: localAid.recommendedAidNames,
+          createdAt: new Date().toISOString(),
+        }, ...prev].slice(0, 6))
+        setLoadingAssistant(false)
+        setPendingMessage(null)
+        setAssistantMode("general")
+        setAdvisorHandoffContext(null)
+        return
+      }
 
       result = await callAssistantAi({
         sentQuestion,
