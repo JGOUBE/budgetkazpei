@@ -19,7 +19,7 @@ import {
 } from "./engine/truth/trustedAidFacts.ts"
 import { reviewAssistantAnswer } from "./engine/review/reviewerEngine.ts"
 import { isProtectedAdvisorQuestion } from "./engine/routing/questionScope.ts"
-import { classifyAdvisorSpendScope, getLocalAdvisorSmallTalk, getLocalAdvisorOffTopicResponse, isPotentialAdvisorFollowUp, getLocalAdvisorAppGuide, getLocalAdvisorBudgetBasics, getLocalAdvisorBudgetObservation, getLocalAdvisorDocumentIntake } from "./engine/routing/offTopicPolicy.ts"
+import { classifyAdvisorSpendScope, getLocalAdvisorSmallTalk, getLocalAdvisorOffTopicResponse, isPotentialAdvisorFollowUp, getLocalAdvisorAppGuide, getLocalAdvisorBudgetBasics, getLocalAdvisorBudgetObservation, getLocalAdvisorBudgetNoDataAdvice, getLocalAdvisorDocumentIntake } from "./engine/routing/offTopicPolicy.ts"
 import {
   getAdvisorAccess,
   isAdvancedAdvisorMode,
@@ -952,6 +952,25 @@ Deno.serve(async (req) => {
         return jsonResponse({
           success: true, answer: appGuide, source: "local_app_guide",
           language: context.language, mode: context.mode,
+          consumed: false, openAiCallCount: 0,
+          recommendedAidIds: [], recommendedAidNames: [],
+        })
+      }
+    }
+
+    // Recent no-data budget follow-ups deserve practical steps, not the
+    // unrelated-question fallback. This path is free and never calls OpenAI.
+    if (context.action !== "analyze_refusal") {
+      const budgetNoDataAdvice = getLocalAdvisorBudgetNoDataAdvice(
+        context.question, context.body?.recentHistory, context.language,
+      )
+      if (budgetNoDataAdvice) {
+        console.info("ADVISOR_API_METER", JSON.stringify({
+          type: "local_budget_advice", calls: 0, scope: "budget",
+        }))
+        return jsonResponse({
+          success: true, answer: budgetNoDataAdvice, source: "local_budget_advice",
+          language: context.language, mode: "budget_depenses",
           consumed: false, openAiCallCount: 0,
           recommendedAidIds: [], recommendedAidNames: [],
         })
