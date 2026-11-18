@@ -23,7 +23,7 @@ const SPECIFICALLY_UNRELATED =
   /\b(?:ciel|etoiles?|planetes?|jupiter|saturne|galaxie|dinosaures?|football|match de foot|recette|pates carbonara|capitales?|rois? de france|table de multiplication|conjugaison|theoreme|horoscope|astrologie|cinema|serie televisee|histoire d amour|meteo|temperature a|comete|soleil|animaux|chats?|chiens?)\b/
 
 const REFERENCE_FOLLOWUP =
-  /^(?:et |alors |sinon |mais |ensuite|apres|pourquoi |comment |combien |dans combien|quels? documents|quelles? conditions|et pour|et si|comment faire|c est quoi|ca marche|pour cela|et maintenant|je fais quoi|tu peux preciser|peux tu preciser)/
+  /^(?:et |alors |sinon |mais |ensuite|apres|pourquoi\b|comment\b|combien\b|dans combien|quels? documents|quelles? conditions|et pour|et si|comment faire|c est quoi|ca marche|pour cela|et maintenant|je fais quoi|tu peux preciser|peux tu preciser)/
 
 function isMeaningfulRelevant(text) {
   if (!RELEVANT.test(text)) return false
