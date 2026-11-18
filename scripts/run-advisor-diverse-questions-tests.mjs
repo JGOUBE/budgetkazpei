@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises"
 import {
   ADVISOR_TURN_TYPES,
   buildAdvisorConversationContext,
+  resolveAdvisorBudgetConfirmation,
   resolveAdvisorBudgetNoDataAdvice,
 } from "../src/services/advisorConversation.js"
 import {
@@ -14,7 +15,7 @@ import {
 } from "../src/services/advisorQuestionRouter.js"
 import { detectAssistantIntent } from "../src/services/ai/assistantIntentEngine.js"
 import { isProtectedAdvisorQuestion } from "../supabase/functions/assistant-aisupabase/engine/routing/questionScope.ts"
-import { getLocalAdvisorBudgetNoDataAdvice, isContextualAdvisorFollowUp, advisorTopicGroupForQuestion, advisorTrustedTopicLabel } from "../supabase/functions/assistant-aisupabase/engine/routing/offTopicPolicy.ts"
+import { getLocalAdvisorBudgetNoDataAdvice, getLocalAdvisorBudgetObservation, getLocalAdvisorSmallTalk, classifyAdvisorSpendScope, isContextualAdvisorFollowUp, advisorTopicGroupForQuestion, advisorTrustedTopicLabel } from "../supabase/functions/assistant-aisupabase/engine/routing/offTopicPolicy.ts"
 import { buildSystemPrompt } from "../supabase/functions/assistant-aisupabase/prompts/systemPrompt.ts"
 import { getVerifiedReunionFuelPriceComparison, reviewUnsupportedFuelPriceHistory } from "../supabase/functions/assistant-aisupabase/engine/review/fuelPriceEvidence.ts"
 
@@ -419,5 +420,65 @@ assert.ok(
   advisorEdgeSource.indexOf("const openAiResult = await callOpenAi"),
   "Use trusted official fuel prices before making a billable provider call",
 )
+
+
+// Language parity: the same zero-cost BudgetKazPeï capabilities must work
+// when KR is selected, including authentic Kreol wording (not merely French
+// input with a Kreol output flag).
+const kreolObservation = getLocalAdvisorBudgetObservation(
+  "Mi trouv mazout lé tro ser", "kreol", "general",
+)
+assert.match(kreolObservation || "", /Carburant i pé peser/i)
+assert.equal(classifyAdvisorSpendScope({
+  question: "Mi trouv mazout lé tro ser", mode: "general",
+}), "useful")
+assert.equal(advisorTopicGroupForQuestion("Mi trouv mazout lé ser"), "carburant")
+const kreolHistory = [{
+  question: "Mi trouv mazout lé tro ser",
+  answer: kreolObservation || "",
+  source: "local_budget_observation",
+}]
+const kreolYes = resolveAdvisorBudgetConfirmation({
+  question: "Wi", recentHistory: kreolHistory,
+  insights: { budgetAdvisorContext: { spendingByCategory: [] } },
+  language: "kreol",
+})
+assert.equal(kreolYes?.source, "local_budget_followup")
+assert.match(kreolYes?.answer || "", /Mi trouv/i)
+assert.doesNotMatch(kreolYes?.answer || "", /^Je ne trouve/i)
+const kreolSolutionsQuestion = "Donn a moin lezot lide pou mazout"
+const kreolAdvice = resolveAdvisorBudgetNoDataAdvice({
+  question: kreolSolutionsQuestion, recentHistory: kreolHistory, language: "kreol",
+})
+assert.equal(kreolAdvice?.source, "local_budget_advice")
+assert.match(kreolAdvice?.answer || "", /bann|out|mi/i)
+const kreolServerAdvice = getLocalAdvisorBudgetNoDataAdvice(
+  kreolSolutionsQuestion, kreolHistory, "kreol",
+)
+assert.match(kreolServerAdvice || "", /bann|out|mi/i)
+assert.doesNotMatch(kreolServerAdvice || "", /^Voici des pistes/i)
+assert.equal(isContextualAdvisorFollowUp("Sa i va ankor ogmanté ?"), true)
+assert.equal(isContextualAdvisorFollowUp("Konbien sa i kout ?"), true)
+assert.equal(isContextualAdvisorFollowUp("Kosa la arrivé su Jupiter ?"), false)
+assert.match(getLocalAdvisorSmallTalk("Bonzour", "kreol") || "", /Bonzour/i)
+assert.match(getLocalAdvisorSmallTalk("Merci beaucoup", "kreol") || "", /Mi|aou|out|Avèk/i)
+
+// The official dated snapshot also works with natural Kreol questions.
+// The output must not fall back to a full French sentence.
+const kreolFuel = getVerifiedReunionFuelPriceComparison(
+  "Komien pri mazout la ogmanté depi dé zan ?", "kreol", asOfNovember2026,
+)
+assert.match(kreolFuel || "", /36,3 %/)
+assert.match(kreolFuel || "", /Préfekti|Rényon|bann/i)
+assert.doesNotMatch(kreolFuel || "", /^À La Réunion, la comparaison/i)
+const kreolReview = reviewUnsupportedFuelPriceHistory({
+  question: "Komien pri mazout la ogmanté depi 2023 ?",
+  answer: "La hausse moyenne est de 20 à 40 %.",
+  language: "kreol",
+})
+assert.match(kreolReview, /Mi pé pa donne/i)
+assert.match(kreolReview, /Di a moin/i)
+assert.doesNotMatch(kreolReview, /Précisez les deux mois/i)
+assert.doesNotMatch(kreolReview, /20 à 40 %/)
 
 console.log("OK: 40+ diverse/farfelues, context-switch, aid, fiction, and budget routes tested; general answers bypass CAF reviews.")
