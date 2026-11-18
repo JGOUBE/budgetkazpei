@@ -708,26 +708,6 @@ async function buildAssistantContext(params: {
   const usage = await ensureUsageRow(supabaseAdmin, userId)
   const used = Number(usage?.messages_used || 0)
 
-  if (shouldBlockAdvisorUsage(plan, used, consumesExchange)) {
-    return {
-      error: jsonResponse(
-        {
-          success: false,
-          quotaReached: true,
-          code: "advisor_usage_limit_reached",
-          error: isKreol
-            ? "Out Konseye lé pou in ti moman indisponib. Ou pourra réutiliz ali lo prochain cycle."
-            : "Votre Conseiller est temporairement indisponible. Vous pourrez à nouveau l’utiliser lors du prochain cycle.",
-        },
-        403,
-      ),
-    }
-  }
-
-  if (shouldMonitorAdvisorUsage(plan, used, consumesExchange)) {
-    console.warn("ADVISOR_USAGE_MONITORING_THRESHOLD_REACHED", JSON.stringify({ plan, used }))
-  }
-
   const memory = await loadAssistantMemory(supabaseAdmin, userId)
   const trustedBody = {
     ...body,
@@ -781,10 +761,6 @@ Deno.serve(async (req) => {
 
     if (!supabaseUrl || !serviceRoleKey) {
       throw new Error("Configuration Supabase manquante : SUPABASE_URL ou SERVICE_ROLE_KEY absent.")
-    }
-
-    if (!openAiKey) {
-      throw new Error("OPENAI_API_KEY manquante.")
     }
 
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey)
@@ -873,6 +849,25 @@ Deno.serve(async (req) => {
         recommendedAidIds: [],
         recommendedAidNames: [],
       })
+    }
+
+    // Usage limits apply only to real AI requests; local answers remain free.
+    if (shouldBlockAdvisorUsage(context.plan, context.used, context.consumesExchange)) {
+      return jsonResponse({
+        success: false,
+        code: "advisor_temporarily_unavailable",
+        error: context.isKreol
+          ? "Le konseye lé indisponib pou in ti moman. Réessay pli tar."
+          : "Le Conseiller est momentanément indisponible. Réessayez un peu plus tard.",
+      }, 429)
+    }
+    if (shouldMonitorAdvisorUsage(context.plan, context.used, context.consumesExchange)) {
+      console.warn("ADVISOR_USAGE_MONITORING_THRESHOLD_REACHED", JSON.stringify({
+        plan: context.plan, used: context.used,
+      }))
+    }
+    if (!openAiKey) {
+      throw new Error("OPENAI_API_KEY manquante.")
     }
 
     // A strict official-amount review is correct for an actual CAF/finance
