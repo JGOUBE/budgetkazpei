@@ -335,74 +335,93 @@ export function resolveAdvisorBudgetConfirmation({
 }
 
 
-// A follow-up asking for solutions after a missing-data observation is still
-// part of the budget conversation. Give actionable, non-numerical advice
-// locally: an OpenAI call adds little value until the user provides details.
-// Never invent spending totals, pump prices, or a saving estimate.
-const ADVISOR_BUDGET_SOLUTION_REQUEST =
-  /\b(?:solutions?|conseils?|astuces?|idees?|pistes?|proposes?|proposer|recommande(?:s|z|r)?|faire quoi|faire comment|comment (?:je|on|nous|puis je|peux je) (?:faire|reduire|economiser)|par quoi commencer)\b/
-const ADVISOR_BUDGET_NO_DATA =
-  /\b(?:je ne trouve pas encore de depenses|pas encore de depenses classees|mi trouve pas ankor bann depans|aucune depense enregistree)\b/
+// Practical budget follow-ups should remain contextual when the customer asks
+// for ideas after an observation, even if a previous (incorrect) off-topic
+// fallback interrupted the conversation. Keep these replies deterministic and
+// free of OpenAI calls; genuinely personalized questions still use the model.
+const ADVISOR_BUDGET_ADVICE_REQUEST =
+  /\b(?:solutions?|conseils?|astuces?|idees?|pistes?|proposes?|proposer|recommande(?:s|z|r)?|faire quoi|faire comment|comment (?:je|on|nous|puis je|peux je) (?:faire|reduire|economiser)|par quoi commencer|autre chose|quoi d autre|et sinon|sinon quoi|alternatives?)\b/
+const ADVISOR_BUDGET_ADVICE_EXCLUSIONS =
+  /\b(?:personnalise|personnalisee|personnaliser|precis|precise|estimation|estimer|calculer|simulation|ma situation|mon cas|selon mes|selon mon|compte tenu|mon profil|mes contraintes|mes revenus|ma famille|rsa|apl|caf|eligib|recours|demande administrative|chomage|salaire|contrat|recette|gateau|cuisine|meteo|film|chanson|planete|licorne|dragon|poeme|blague)\b/
 
 const ADVISOR_NO_DATA_ADVICE = {
   transport: {
     fr: "Même sans dépenses enregistrées, voici trois pistes concrètes pour réduire le coût du carburant : 1. Regroupez plusieurs déplacements pour éviter les allers-retours. 2. Comparez les prix affichés à la pompe, sans faire un détour qui annulerait l'économie. 3. Pour les trajets réguliers, regardez si covoiturage ou transports en commun sont possibles. Si vous me donnez votre kilométrage habituel et la consommation du véhicule, je pourrai estimer le coût de vos trajets sans inventer de chiffres.",
-    kr: "Minm san dépans anrezistré, ou pé : 1. Regroupe out trajé pou évite bann aller-retour. 2. Compare bann prix carburant san fé in gran détour. 3. Regarde si covoiturage ou transport en commun lé possible. Donne a moin out kilométraz ek consommation loto pou estime out frais san invente bann chiffres.",
+    kr: "Minm san dépans anrezistré, ou pé regroupe out trajé, compare bann prix carburant san grand détour, ek regarde covoiturage ou transport en commun. Avec out kilométraz ek consommation loto, nou pourra estime out frais.",
+    alternativeFr: "Voici d'autres pistes pour le carburant : 1. Vérifiez régulièrement la pression des pneus selon les indications du constructeur. 2. Adoptez une conduite souple, sans accélérations brusques. 3. Quand c'est possible, privilégiez un trajet direct et évitez les heures de forte circulation. Ce sont des pistes générales : pour identifier les plus intéressantes dans votre cas, dites-moi quel type de trajet vous faites le plus souvent.",
+    alternativeKr: "Nana d'autres pistes pou carburant : vérifie pression bann pneus, conduit souple sans accélérations brusques, ek évite bann gros bouchons quand possible. Di a moin ki trajé ou fé le plus souvent.",
   },
   alimentaire: {
     fr: "Même sans historique, vous pouvez commencer par trois gestes : 1. Préparez une liste à partir des repas prévus. 2. Comparez les prix au kilo ou à l'unité, pour un même format. 3. Vérifiez ce que vous avez déjà avant de racheter. En enregistrant quelques tickets, nous pourrons ensuite repérer vos produits fréquents et comparer des prix réellement observés.",
-    kr: "Minm san historique, commence par prépare in liste selon bann repas, compare prix au kilo pou minm format, ek vérifie sak ou nana déjà. Apré kèk tickets, nou pourra mieux regarde out bann achats habituels.",
+    kr: "Minm san historique, prépare in liste selon out repas, compare prix au kilo pou minm format, ek vérifie sak ou nana déjà. Apré kèk tickets, nou pourra mieux regarde out achats.",
+    alternativeFr: "Autres idées pour les courses : privilégiez les produits de saison lorsqu'ils sont avantageux, comparez les formats familiaux au prix unitaire et congelez les portions que vous ne consommerez pas rapidement. Le format le plus grand n'est pas toujours le plus économique.",
+    alternativeKr: "D'autres idées pou courses : produits de saison si prix lé intéressant, compare prix par unité pou bann grands formats, ek congèle bann portions en trop. Grand format lé pas forcément moins cher.",
   },
   logement: {
-    fr: "Sans historique, commencez par trois vérifications : 1. Listez le loyer et les charges réellement payées. 2. Repérez les abonnements ou frais annexes évitables. 3. Vérifiez les aides au logement selon votre situation, sans supposer votre éligibilité. Nous pourrons comparer les montants quand vous les aurez enregistrés.",
-    kr: "San historique, note loyer ek bann charges réelles, regarde bann frais annexes à évite, ek vérifie bann aides logement selon out situation. Nou pourra comparer quand bann montants sera anrezistré.",
+    fr: "Sans historique, commencez par noter votre loyer et les charges réellement payées, puis repérez les frais annexes évitables. Vous pouvez aussi vérifier les aides au logement selon votre situation, sans présumer de votre éligibilité.",
+    kr: "San historique, note loyer ek bann charges réelles, regarde frais annexes à évite, ek vérifie bann aides logement selon out situation.",
+    alternativeFr: "Autres pistes pour le logement : vérifiez les frais qui se renouvellent automatiquement, comparez les contrats à prestations équivalentes et demandez un détail des charges que vous ne comprenez pas. Aucune économie ne peut être chiffrée sans vos montants.",
+    alternativeKr: "Autres pistes logement : vérifie bann frais automatiques, compare bann contrats équivalents, ek demande détail de bann charges pas claires.",
   },
   energie: {
-    fr: "Sans historique, trois actions utiles : 1. Notez le montant et la période de votre dernière facture. 2. Repérez les appareils et usages qui consomment le plus. 3. Comparez vos contrats ou tarifs seulement à consommation équivalente. Avec une facture réelle, je pourrai vous aider à examiner les postes de coût.",
-    kr: "San historique, note montant ek période out dernière facture, repère bann appareils ki consomme plis, ek compare bann tarifs pour minm consommation. Si ou nana in facture, nou pourra regarde ali.",
+    fr: "Sans historique, notez le montant et la période de votre dernière facture, repérez les usages qui consomment le plus et comparez les tarifs seulement à consommation équivalente.",
+    kr: "San historique, note out dernière facture, repère bann appareils ki consomme plis, ek compare bann tarifs pou minm consommation.",
+    alternativeFr: "Autres pistes pour l'énergie : limitez les appareils laissés en veille lorsque c'est pertinent, adaptez l'usage de la climatisation et vérifiez les réglages de chauffe-eau. Sans facture, je ne peux pas promettre un montant d'économie.",
+    alternativeKr: "Autres pistes énergie : vérifie bann veilles, adapte climatisation ek réglages chauffe-eau. Sans facture, mi pé pa chiffre économie.",
   },
   assurances: {
-    fr: "Sans historique, vous pouvez déjà : 1. Faire la liste de vos contrats et mensualités. 2. Vérifier les doublons de garanties. 3. Comparer les offres à garanties et franchises équivalentes, en tenant compte des conditions de résiliation. Une fois les montants enregistrés, nous pourrons prioriser les économies possibles.",
-    kr: "San historique, liste out bann contrats ek mensualités, vérifie si nana bann garanties en double, ek compare bann offres avec minm garanties. Apré nou pourra chwazi bann économies possibles.",
+    fr: "Sans historique, listez vos contrats et mensualités, vérifiez les garanties en double, puis comparez les offres à garanties et franchises équivalentes.",
+    kr: "San historique, liste out contrats ek mensualités, vérifie garanties en double, ek compare bann offres équivalentes.",
+    alternativeFr: "Autres pistes pour les assurances et abonnements : vérifiez l'utilité de chaque service renouvelé automatiquement, les conditions de résiliation et les garanties déjà incluses dans vos autres contrats. Comparez à couverture équivalente.",
+    alternativeKr: "Autres pistes : vérifie utilité de chaque abonnement, conditions résiliation, ek garanties déjà incluses ailleurs.",
   },
 }
 const ADVISOR_GENERIC_NO_DATA_ADVICE = {
-  fr: "Même sans dépenses enregistrées, vous pouvez commencer tout de suite : 1. Notez vos charges fixes et vos achats importants. 2. Repérez une dépense que vous pourriez réduire sans vous priver de l'essentiel. 3. Comparez les prix à quantité et qualité équivalentes. Quelques dépenses classées suffiront ensuite à construire une analyse plus personnelle ; je ne vais pas inventer de montants.",
-  kr: "Minm san dépans anrezistré, note out bann charges fixes, repère in dépans à réduire, ek compare bann prix pou minm quantité. Avec kèk dépans bien classées, nou pourra fé in analyse pli personnelle san invente bann chiffres.",
+  fr: "Même sans historique, vous pouvez déjà noter vos charges fixes, identifier un achat régulier à comparer et regarder les prix à quantité équivalente. Quelques dépenses classées permettront ensuite une analyse plus personnelle, sans inventer de chiffres.",
+  kr: "Minm san historique, note out charges fixes, compare in achat régulier et bann prix pou minm quantité. Kèk dépenses classées aidera nou.",
+  alternativeFr: "Une autre approche consiste à choisir une seule catégorie de dépenses cette semaine, comparer deux possibilités réellement disponibles, puis noter ce qui change. Cela évite de prendre une décision sur des montants supposés.",
+  alternativeKr: "Autre approche : choisi in catégorie de dépenses cette semaine, compare dé possibilités réelles, ek note sak i change.",
 }
 
 export function resolveAdvisorBudgetNoDataAdvice({
   question = "", recentHistory = [], language = "fr",
 } = {}) {
   const text = normalizeAidTopicText(question)
-  // A detailed new question is worth a personalized model response instead.
   if (!text || text.length > 160 || text.split(" ").length > 31 ||
-      !ADVISOR_BUDGET_SOLUTION_REQUEST.test(text) ||
-      /\d|\b(?:personnalise|personnalisee|personnaliser|precis|precise|estimation|estimer|calculer|simulation|ma situation|mon cas|selon mes|selon mon|compte tenu|mon profil|mes contraintes|mes revenus|mes revenus|ma famille)\b/.test(text) ||
-      /\b(?:rsa|apl|caf|eligib|recours|demande administrative|chomage|salaire|contrat|cours de|recette|gateau|cuisine|meteo|film|chanson|planete|licorne|dragon|poeme|blague)\b/.test(text) ||
+      !ADVISOR_BUDGET_ADVICE_REQUEST.test(text) ||
+      /\d/.test(text) || ADVISOR_BUDGET_ADVICE_EXCLUSIONS.test(text) ||
       looksPlayfulOrFictionalQuestion(question)) return null
 
-  const history = Array.isArray(recentHistory) ? recentHistory.slice(0, 4) : []
-  const previous = history[0]
-  if (!previous || !previous.answer || !previous.question) return null
-  const missingData = ADVISOR_BUDGET_NO_DATA.test(normalizeAidTopicText(previous.answer))
-  if (!missingData) return null
-  // Source and the assistant's visible no-data message must agree; do not
-  // convert unrelated conversations into prewritten financial advice.
-  if (previous.source && !["local_budget_followup", "local"].includes(previous.source)) return null
-
-  const previousTopic = history.slice(1).find(item =>
-    /(?:carburant|essence|gazole|diesel|courses|alimentation|loyer|logement|electricite|energie|assurances?|abonnements?)/.test(
-      normalizeAidTopicText(item?.question),
+  // The client shows newest turns first. We accept the latest real financial
+  // observation or prior advice, with at most two intervening local fallbacks.
+  // Don't resurrect an older budget topic after an actual subject change.
+  const history = Array.isArray(recentHistory) ? recentHistory.slice(0, 5) : []
+  const validBudgetSource = new Set([
+    "local_budget_observation", "local_budget_followup", "local_budget_advice",
+  ])
+  const anchorIndex = history.findIndex((item, index) =>
+    index <= 3 && validBudgetSource.has(String(item?.source || "")) &&
+    history.slice(0, index).every(prior =>
+      prior?.source === "local_offtopic" || prior?.source === "local_budget_advice" ||
+      prior?.source === "local_budget_followup",
     ),
   )
-  const previousText = normalizeAidTopicText(previousTopic?.question || "")
-  const topic = ADVISOR_BUDGET_TOPICS.find(item => item.pattern.test(previousText))
-  const answerSet = topic ? ADVISOR_NO_DATA_ADVICE[topic.category] : null
-  const kr = language === "kreol" || language === "kr" || language === "cr"
+  if (anchorIndex < 0) return null
+
+  const context = history.slice(anchorIndex)
+    .map(item => normalizeAidTopicText(item?.question || "")).join(" ")
+  const topic = ADVISOR_BUDGET_TOPICS.find(item => item.pattern.test(context))
+  if (!topic) return null
+  const priorAdvice = history.slice(0, anchorIndex + 1)
+    .some(item => item?.source === "local_budget_advice")
+  const explicitAlternative = /\b(?:autre chose|quoi d autre|et sinon|sinon quoi|alternatives?|autres? (?:solutions?|pistes?|idees?))\b/.test(text)
+  const alternative = priorAdvice || explicitAlternative
+  const answers = ADVISOR_NO_DATA_ADVICE[topic.category] || ADVISOR_GENERIC_NO_DATA_ADVICE
+  const kr = ["kreol", "kr", "cr"].includes(language)
   return {
-    answer: answerSet ? (kr ? answerSet.kr : answerSet.fr) :
-      (kr ? ADVISOR_GENERIC_NO_DATA_ADVICE.kr : ADVISOR_GENERIC_NO_DATA_ADVICE.fr),
+    answer: alternative
+      ? (kr ? answers.alternativeKr : answers.alternativeFr)
+      : (kr ? answers.kr : answers.fr),
     source: "local_budget_advice",
     mode: "budget_depenses",
     intent: "budget_followup",
