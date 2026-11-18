@@ -19,7 +19,7 @@ import {
 } from "./engine/truth/trustedAidFacts.ts"
 import { reviewAssistantAnswer } from "./engine/review/reviewerEngine.ts"
 import { isProtectedAdvisorQuestion } from "./engine/routing/questionScope.ts"
-import { classifyAdvisorSpendScope, getLocalAdvisorSmallTalk, getLocalAdvisorOffTopicResponse, isPotentialAdvisorFollowUp } from "./engine/routing/offTopicPolicy.ts"
+import { classifyAdvisorSpendScope, getLocalAdvisorSmallTalk, getLocalAdvisorOffTopicResponse, isPotentialAdvisorFollowUp, getLocalAdvisorAppGuide } from "./engine/routing/offTopicPolicy.ts"
 import {
   getAdvisorAccess,
   isAdvancedAdvisorMode,
@@ -705,10 +705,12 @@ async function buildAssistantContext(params: {
     }
   }
 
-  const usage = await ensureUsageRow(supabaseAdmin, userId)
-  const used = Number(usage?.messages_used || 0)
+  // Defer counters until a request really requires the paid model.
+  const usage = null
+  const used = 0
 
-  const memory = await loadAssistantMemory(supabaseAdmin, userId)
+  // Local greetings, app guides and off-topic replies do not need memory.
+  const memory = null
   const trustedBody = {
     ...body,
     profile,
@@ -804,6 +806,25 @@ Deno.serve(async (req) => {
       }, 413)
     }
 
+    // Static navigation help is free, local and grounded in existing screens.
+    // Do not intercept benefit eligibility or personal budget calculations.
+    if (context.action !== "analyze_refusal") {
+      const appGuide = getLocalAdvisorAppGuide(
+        context.question, context.language, context.mode,
+      )
+      if (appGuide) {
+        console.info("ADVISOR_API_METER", JSON.stringify({
+          type: "local_app_guide", calls: 0, scope: "app_help",
+        }))
+        return jsonResponse({
+          success: true, answer: appGuide, source: "local_app_guide",
+          language: context.language, mode: context.mode,
+          consumed: false, openAiCallCount: 0,
+          recommendedAidIds: [], recommendedAidNames: [],
+        })
+      }
+    }
+
     // A budget/benefits follow-up must not be mistaken for random chatter.
     // Never trust a client-provided scope to authorize a paid provider call.
     let spendScope = classifyAdvisorSpendScope({
@@ -851,6 +872,11 @@ Deno.serve(async (req) => {
       })
     }
 
+    // Load usage only for the chargeable path; local answers cost no queries.
+    const liveUsage = await ensureUsageRow(supabaseAdmin, context.userId)
+    context.usage = liveUsage
+    context.used = Number(liveUsage?.messages_used || 0)
+
     // Usage limits apply only to real AI requests; local answers remain free.
     if (shouldBlockAdvisorUsage(context.plan, context.used, context.consumesExchange)) {
       return jsonResponse({
@@ -869,6 +895,9 @@ Deno.serve(async (req) => {
     if (!openAiKey) {
       throw new Error("OPENAI_API_KEY manquante.")
     }
+
+    // Read memory only if an AI analysis is going to be performed.
+    context.memory = await loadAssistantMemory(supabaseAdmin, context.userId)
 
     // A strict official-amount review is correct for an actual CAF/finance
     // question, but it can badly corrupt an unrelated answer about astronomy,
