@@ -61,7 +61,7 @@ assert.match(backend,/if \(reservationError \|\| !requestReservation\)/)
 assert.match(backend,/if \(requestReservation\.allowed !== true\)/)
 assert.match(backend,/source: "local_usage_guidance"/)
 assert.match(backend,/type: "local_usage_guidance", calls: 0/)
-assert.match(backend,/success: true,[\\s\\S]{0,150}answer: guidance/)
+assert.match(backend,/success: true,[\s\S]{0,150}answer: guidance/)
 assert.doesNotMatch(backend,/La limite de questions libres|La limite de 5 questions libres|Réessayez dans une heure/)
 
 assert.match(backend,/openAiCallCount: 0/)
