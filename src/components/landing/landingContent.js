@@ -41,7 +41,7 @@ const PLAN_COPY = {
     [PLAN_IDS.premiumPlus]: {
       name: PLAN_NAMES[PLAN_IDS.premiumPlus], cta: "Découvrir Premium+",
       intro: "BudgetKazPéi m'accompagne dans mes actions concrètes.",
-      items: ["Tout le Premium", PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premiumPlus], "Conseiller BudgetKazPéi+ — utilisation illimitée", "Accompagnement avancé des démarches", "Dossiers, courriers, emails, relances et rendez-vous", "Compréhension des refus et préparation des recours"],
+      items: ["Tout le Premium", PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premiumPlus], "Conseiller BudgetKazPéi+ — usage étendu, questions hors sujet limitées", "Accompagnement avancé des démarches", "Dossiers, courriers, emails, relances et rendez-vous", "Compréhension des refus et préparation des recours"],
     },
   },
   kr: {
