@@ -76,7 +76,7 @@ export const PREMIUM_PAGE_COPY = {
     premiumPlusFeatures: [
       "Tout le Premium",
       PLAN_PUBLIC_SCAN_LABELS[PLAN_IDS.premiumPlus],
-      "Conseiller BudgetKazPéi+ — utilisation illimitée",
+      "Conseiller BudgetKazPéi+ — usage étendu, questions hors sujet limitées",
       "Dossiers, courriers, emails, relances, rendez-vous et recours",
     ],
     soonFeatures: [
