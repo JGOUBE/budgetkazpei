@@ -101,6 +101,9 @@ export function getLocalAdvisorBudgetNoDataAdvice(
 
   const history = Array.isArray(recentHistory)
     ? (recentHistory as Record<string, unknown>[]).slice(0, 5) : []
+  const noRecordedSpending = /\b(?:je ne trouve pas encore de depenses|pas encore de depenses classees|mi trouve pas ankor bann depans|aucune depense enregistree)\b/
+  if (history.some(item => item?.source === "local_budget_followup" &&
+      !noRecordedSpending.test(normalize(item?.answer || "")))) return null
   const validSource = new Set(["local_budget_observation", "local_budget_followup", "local_budget_advice"])
   const anchorIndex = history.findIndex((item, index) =>
     index <= 3 && validSource.has(String(item?.source || "")) &&
@@ -119,7 +122,7 @@ export function getLocalAdvisorBudgetNoDataAdvice(
       ? "Voici d'autres possibilités pour le carburant : vérifiez la pression des pneus selon le constructeur, adoptez une conduite souple et, si possible, évitez les trajets aux heures les plus encombrées. Ce sont des pistes générales, sans économie chiffrée."
       : "Autres pistes carburant : vérifie pression bann pneus, conduit souple, ek évite bann gros bouchons quand possible."
     return fr
-      ? "Même sans dépenses enregistrées, vous pouvez déjà réduire le coût du carburant : regroupez les déplacements pour éviter les allers-retours, comparez le prix au litre sans détour coûteux, et envisagez covoiturage ou transports en commun quand c'est possible. Avec votre kilométrage habituel et la consommation du véhicule, je pourrai ensuite estimer vos frais sans inventer de montant."
+      ? "Voici des pistes pour réduire le coût du carburant, même sans historique complet : regroupez les déplacements pour éviter les allers-retours, comparez le prix au litre sans détour coûteux, et envisagez covoiturage ou transports en commun quand c'est possible. Avec votre kilométrage habituel et la consommation du véhicule, je pourrai ensuite estimer vos frais sans inventer de montant."
       : "Minm san dépans anrezistré, groupe out bann trajé, compare bann prix carburant san grand détour, ek regarde si covoiturage ou transport en commun lé possible."
   }
   if (/\b(?:courses?|alimentaire|alimentation)\b/.test(subject)) {
