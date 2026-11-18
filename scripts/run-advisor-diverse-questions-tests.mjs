@@ -16,6 +16,7 @@ import { detectAssistantIntent } from "../src/services/ai/assistantIntentEngine.
 import { isProtectedAdvisorQuestion } from "../supabase/functions/assistant-aisupabase/engine/routing/questionScope.ts"
 import { getLocalAdvisorBudgetNoDataAdvice, isContextualAdvisorFollowUp, advisorTopicGroupForQuestion, advisorTrustedTopicLabel } from "../supabase/functions/assistant-aisupabase/engine/routing/offTopicPolicy.ts"
 import { buildSystemPrompt } from "../supabase/functions/assistant-aisupabase/prompts/systemPrompt.ts"
+import { getVerifiedReunionFuelPriceComparison, reviewUnsupportedFuelPriceHistory } from "../supabase/functions/assistant-aisupabase/engine/review/fuelPriceEvidence.ts"
 
 const base=buildAdvisorConversationContext({
   question: "Je cherche une aide financière pour inscrire mes enfants au sport",
@@ -370,5 +371,53 @@ assert.ok(advisorEdgeSource.indexOf('rpc("reserve_advisor_ai_request"') <
 assert.match(advisorEdgeSource, /Pour un prix futur, n'affirme jamais une hausse ou une baisse certaine/)
 assert.doesNotMatch(advisorEdgeSource, /const recentClientHistory = Array\.isArray\(context\.body\?\.recentHistory\)/)
 
+
+
+// Regression: the app must never improvise "20 à 40 %" about historic fuel
+// prices. Two official dated price observations can give an exact local answer
+// for November 2024/2026 with ZERO OpenAI calls.
+const asOfNovember2026 = new Date("2026-11-18T15:00:00Z")
+const verifiedFuel = getVerifiedReunionFuelPriceComparison(
+  "Les prix du carburant ont augmenté de combien depuis deux ans ?",
+  "fr", asOfNovember2026,
+)
+assert.match(verifiedFuel || "", /1,62/)
+assert.match(verifiedFuel || "", /2,11/)
+assert.match(verifiedFuel || "", /1,24/)
+assert.match(verifiedFuel || "", /1,69/)
+assert.match(verifiedFuel || "", /30,2 %/)
+assert.match(verifiedFuel || "", /36,3 %/)
+assert.match(verifiedFuel || "", /reunion.gouv.fr/)
+assert.equal(getVerifiedReunionFuelPriceComparison(
+  "Les prix du carburant ont augmenté de combien depuis deux ans à Paris ?",
+  "fr", asOfNovember2026,
+), null)
+assert.equal(getVerifiedReunionFuelPriceComparison(
+  "Les prix du carburant ont augmenté de combien depuis deux ans ?",
+  "fr", new Date("2027-04-18T15:00:00Z"),
+), null, "Do not reuse dated November 2026 fuel prices as current in April 2027")
+assert.match(getVerifiedReunionFuelPriceComparison(
+  "Compare les prix du gazole en novembre 2024 et novembre 2026",
+  "fr", new Date("2027-04-18T15:00:00Z"),
+) || "", /36,3 %/, "Explicitly dated historical comparisons remain valid")
+const unsupportedFuelAnswer = reviewUnsupportedFuelPriceHistory({
+  question: "Combien ont augmenté les prix du carburant depuis 2023 ?",
+  answer: "Les prix ont connu une hausse allant de 20 à 40 % en moyenne.",
+})
+assert.match(unsupportedFuelAnswer, /relevés officiels comparables/)
+assert.doesNotMatch(unsupportedFuelAnswer, /20 à 40 %/)
+assert.equal(reviewUnsupportedFuelPriceHistory({
+  question: "Combien de lunes possède Jupiter ?", answer: "95 lunes",
+}), "95 lunes", "Never distort unrelated questions")
+assert.equal(reviewUnsupportedFuelPriceHistory({
+  question: "Combien coûte un plein de 40 litres ?", answer: "Le coût dépend du prix au litre.",
+}), "Le coût dépend du prix au litre.", "Do not interfere with ordinary cost questions")
+assert.match(advisorEdgeSource, /getVerifiedReunionFuelPriceComparison\(/)
+assert.match(advisorEdgeSource, /reviewUnsupportedFuelPriceHistory\(\{/)
+assert.ok(
+  advisorEdgeSource.indexOf("getVerifiedReunionFuelPriceComparison(") <
+  advisorEdgeSource.indexOf("const openAiResult = await callOpenAi"),
+  "Use trusted official fuel prices before making a billable provider call",
+)
 
 console.log("OK: 40+ diverse/farfelues, context-switch, aid, fiction, and budget routes tested; general answers bypass CAF reviews.")
