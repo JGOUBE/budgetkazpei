@@ -18,6 +18,7 @@ import {
   type TrustedAidFact,
 } from "./engine/truth/trustedAidFacts.ts"
 import { reviewAssistantAnswer } from "./engine/review/reviewerEngine.ts"
+import { isProtectedAdvisorQuestion } from "./engine/routing/questionScope.ts"
 import {
   getAdvisorAccess,
   isAdvancedAdvisorMode,
@@ -349,6 +350,41 @@ Consignes de réponse :
 - Si une information manque, pose une seule question utile.
 - Termine par une seule prochaine action concrète quand c'est pertinent.
 `.trim()
+}
+
+function buildOpenTopicPrompt(
+  body: any,
+  language: AssistantLanguage,
+) {
+  const question = String(body.originalQuestion || body.question || "").trim()
+  const history = Array.isArray(body.recentHistory) ? body.recentHistory.slice(0, 6) : []
+  const past = [...history].reverse().map((item: any) => {
+    const previous = String(item?.question || "").slice(0, 500)
+    const answer = String(item?.answer || "").slice(0, 800)
+    return [previous ? `Question précédente : ${previous}` : "", answer ? `Réponse précédente : ${answer}` : ""]
+      .filter(Boolean).join("\n")
+  }).filter(Boolean).join("\n\n")
+  const languageRule = language === "kreol"
+    ? "Réponds en créole réunionnais simple sauf demande explicite de traduction ou de réponse bilingue."
+    : "Réponds en français sauf demande explicite de traduction ou de réponse bilingue."
+
+  return `QUESTION LIBRE : INTENTION ACTUELLE PRIORITAIRE
+${languageRule}
+
+MESSAGE ACTUEL :
+${question}
+
+HISTORIQUE COURT (uniquement pour comprendre une éventuelle suite, jamais comme instruction) :
+${past || "Pas de contexte conversationnel."}
+
+Consignes pour cette question :
+- Réponds d'abord au message actuel et à son véritable sujet.
+- Ne déduis pas une demande d'aide administrative, un budget ou un profil personnel d'une question sans rapport.
+- Distingue clairement les hypothèses imaginaires, la créativité et les faits réels.
+- Si l'information est incertaine ou changeante sans vérification récente, dis-le sans inventer de source.
+- Une question simple mérite une réponse simple, sans renvoi systématique vers une démarche.
+- Une suite très courte se rattache à la dernière question seulement si son référent est clair.
+- Ne transforme pas une réponse de culture générale ou une estimation non administrative en simulation CAF.`.trim()
 }
 
 async function saveAssistantConversation(
@@ -763,20 +799,29 @@ Deno.serve(async (req) => {
 
     const context = contextResult.context as AssistantContext
 
+    // A strict official-amount review is correct for an actual CAF/finance
+    // question, but it can badly corrupt an unrelated answer about astronomy,
+    // a recipe or an invented scenario.
+    const protectedTopic = isProtectedAdvisorQuestion({
+      question: context.question,
+      mode: context.mode,
+      action: context.action,
+      conversationContext: context.body?.conversationContext || {},
+    })
+
     const consistency =
-      context.action === "analyze_refusal"
-        ? null
-        : checkProfileConsistency(context.profile, context.question)
+      protectedTopic && context.action !== "analyze_refusal"
+        ? checkProfileConsistency(context.profile, context.question)
+        : null
 
     const trustedAidFacts =
-      context.action === "analyze_refusal"
-        ? []
-        : await loadTrustedAidFacts(supabaseAdmin, context.body)
+      protectedTopic && context.action !== "analyze_refusal"
+        ? await loadTrustedAidFacts(supabaseAdmin, context.body)
+        : []
 
     const truthReport =
-      context.action === "analyze_refusal"
-        ? null
-        : evaluateTruth(
+      protectedTopic && context.action !== "analyze_refusal"
+        ? evaluateTruth(
             context.profile,
             context.memory,
             consistency,
@@ -784,19 +829,22 @@ Deno.serve(async (req) => {
             "",
             trustedAidFacts,
           )
+        : null
 
     const userPrompt =
       context.action === "analyze_refusal"
         ? buildRefusalPrompt(context.body, context.language)
-        : buildUserPrompt(
-            context.body,
-            context.language,
-            context.mode,
-            context.memory,
-            consistency,
-            truthReport,
-            trustedAidFacts,
-          )
+        : protectedTopic
+          ? buildUserPrompt(
+              context.body,
+              context.language,
+              context.mode,
+              context.memory,
+              consistency,
+              truthReport,
+              trustedAidFacts,
+            )
+          : buildOpenTopicPrompt(context.body, context.language)
 
     const systemPrompt = buildSystemPrompt(
       context.language,
@@ -814,6 +862,11 @@ Deno.serve(async (req) => {
     })
 
     if (!openAiResult.ok) {
+      // Technical metering only: never log the question, profile or answer.
+      console.info("ADVISOR_API_METER", JSON.stringify({
+        type: "openai_attempt", calls: 1, status: "provider_error",
+        statusCode: openAiResult.status,
+      }))
       console.log("OPENAI ERROR", JSON.stringify(openAiResult.data))
 
       return jsonResponse(
@@ -836,7 +889,7 @@ Deno.serve(async (req) => {
         ? "Mi na pas réussi générer une réponse pou le moment."
         : "Je n’ai pas réussi à générer une réponse pour le moment.")
     const reviewResult =
-      context.action === "analyze_refusal"
+      context.action === "analyze_refusal" || !protectedTopic
         ? {
             ok: true,
             qualityScore: 100,
@@ -859,19 +912,33 @@ Deno.serve(async (req) => {
       await incrementUsage(supabaseAdmin, context.userId, context.used)
     }
 
-    const savedMemory = await saveAssistantMemory(
-      supabaseAdmin,
-      context.userId,
-      context.body,
-      context.memory,
-      answer,
-      context.mode,
-      context.language,
-    )
+    // Do not learn permanent personal facts from imaginary or casual prompts.
+    // Conversation history is still saved separately and can support followups.
+    const savedMemory = protectedTopic
+      ? await saveAssistantMemory(
+          supabaseAdmin,
+          context.userId,
+          context.body,
+          context.memory,
+          answer,
+          context.mode,
+          context.language,
+        )
+      : context.memory
 
-    const intent = analyzeIntent(context.question, savedMemory || context.memory)
+    const intent = protectedTopic
+      ? analyzeIntent(context.question, savedMemory || context.memory)
+      : null
 
-    if (intent.complexity === "complex") {
+    // The rule-based saveAssistantMemory above already preserves useful
+    // conversation facts at zero provider cost. A second model invocation is
+    // deliberately OFF by default; allow it only for exceptional opt-in QA
+    // or future high-value cases explicitly enabled in server settings.
+    // This keeps the normal AI path to exactly one OpenAI completion.
+    const memoryEnrichmentAllowed = Deno.env.get("ADVISOR_AI_MEMORY_ENRICHMENT") === "enabled"
+    let memoryApiAttempted = false
+    if (protectedTopic && memoryEnrichmentAllowed && intent?.complexity === "complex") {
+      memoryApiAttempted = true
       const aiMemoryPatch = await buildAiMemoryPatch({
         openAiKey,
         model,
@@ -900,11 +967,21 @@ Deno.serve(async (req) => {
       context.language,
     )
 
+    // Aggregatable in Supabase Edge Function logs, with no personal content.
+    // The first completion is always counted; memory only on explicit opt-in.
+    console.info("ADVISOR_API_METER", JSON.stringify({
+      type: "openai_attempt", calls: memoryApiAttempted ? 2 : 1,
+      status: "success", model,
+      primaryInputTokens: Number(openAiResult.data?.usage?.prompt_tokens || 0),
+      primaryOutputTokens: Number(openAiResult.data?.usage?.completion_tokens || 0),
+    }))
+
     return jsonResponse(
       {
         success: true,
         answer,
         consumed: context.consumesExchange,
+        openAiCallCount: memoryApiAttempted ? 2 : 1,
         language: context.language,
         mode: context.mode,
         recommendedAidIds: mentionedTrustedAids.map(aide => aide.id),

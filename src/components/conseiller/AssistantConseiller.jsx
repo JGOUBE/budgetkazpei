@@ -31,6 +31,12 @@ import { requestAppSectionNavigation } from "../../services/appSectionNavigation
 import { resolveAdvisorLanguage } from "../../services/advisorLanguage"
 import { selectAidCandidatesForAdvisor } from "../../services/aidesRanking"
 import { prepareAdvisorAideContext } from "../../services/advisorAideContext"
+import { buildLocalAidSourceAnswer, isLocalAidSourceRequest } from "../../services/advisorLocalAidAnswer"
+import {
+  shouldLookupAdvisorAids,
+  shouldUseLocalBudgetAnswer,
+  resolveAdvisorModeForQuestion,
+} from "../../services/advisorQuestionRouter"
 import {
   ADVISOR_TURN_TYPES,
   buildAdvisorConversationContext,
@@ -439,7 +445,8 @@ export default function AssistantConseiller({
   async function fetchAides() {
     const { data, error } = await supabase
       .from("aides_reunion")
-      .select("*")
+      .select("id,nom,nom_kreol,description,description_fr,description_kreol,demarches_fr,demarches_kreol,montant_min,montant_max,categorie,condition_logement,condition_profession,condition_famille,commune,lien,lien_officiel,besoin_enfant,besoin_demandeur_emploi,besoin_locataire,besoin_proprietaire,besoin_allocataire_caf,score_priorite,actif")
+      .eq("actif", true)
       .order("score_priorite", { ascending: false })
 
     if (error) {
@@ -509,7 +516,17 @@ export default function AssistantConseiller({
       ],
     }
 
-    const { data, error } = await supabase.functions.invoke("assistant-aisupabase", {
+    // Opt-in QA only: a separate server-side admin-restricted function.
+    // The live budgetkazpei.re always keeps the production assistant.
+    const reviewEnabled = (
+      typeof window !== "undefined" &&
+      window.location.hostname.endsWith(".budgetkazpei.pages.dev") &&
+      new URLSearchParams(window.location.search).get("conseillerBeta") === "1"
+    )
+    const assistantEndpoint = reviewEnabled
+      ? "assistant-aisupabase-review"
+      : "assistant-aisupabase"
+    const { data, error } = await supabase.functions.invoke(assistantEndpoint, {
       body: {
         question: buildQuestionForAi(sentQuestion, mode, assistantIsKreol, currentProfile),
         originalQuestion: sentQuestion,
@@ -561,7 +578,7 @@ export default function AssistantConseiller({
     const sentQuestion = String(messageOverride?.question ?? question).trim()
     if (!sentQuestion) return
 
-    const currentMode = messageOverride?.mode || assistantMode || "general"
+    const requestedMode = messageOverride?.mode || assistantMode || "general"
     const requestedQuickPreset = Boolean(
       messageOverride?.quickQuestionSelected ?? quickQuestionSelected
     )
@@ -569,12 +586,22 @@ export default function AssistantConseiller({
     const interfaceLanguage = isKreol ? "kreol" : "fr"
     const responseLanguage = resolveAdvisorLanguage({ message: sentQuestion, interfaceLanguage })
     const detectedIntent = detectAssistantIntent(sentQuestion)
+    const currentMode = resolveAdvisorModeForQuestion({
+      mode: requestedMode,
+      question: sentQuestion,
+      intent: detectedIntent,
+    })
     const questionInsights = buildForQuestion(sentQuestion, responseLanguage)
-    const shouldAnswerLocally = detectedIntent !== "unknown" && (
-      currentMode === "budget_depenses" ||
-      currentMode === "general" && (
-        isBudgetAssistantIntent(detectedIntent) || detectedIntent === "cheapest_stores"
-      )
+    // The budget engine is for the user's recorded finances, not for every
+    // occurrence of "réduire", "course" or "abonnement" in an unusual question.
+    const shouldAnswerLocally = (
+      (currentMode === "budget_depenses" || currentMode === "general") &&
+      (isBudgetAssistantIntent(detectedIntent) || detectedIntent === "cheapest_stores") &&
+      shouldUseLocalBudgetAnswer({
+        question: sentQuestion,
+        mode: currentMode,
+        intent: detectedIntent,
+      })
     )
 
     setLoadingAssistant(true)
@@ -611,7 +638,47 @@ export default function AssistantConseiller({
     let result
 
     try {
-      const aides = currentMode === "budget_depenses" ? [] : await fetchAides()
+      // Avoid injecting a catalogue of 74 social aids into questions about
+      // science, cooking, fiction or jokes. Keep aid follow-ups and handoffs.
+      const preliminaryContext = buildAdvisorConversationContext({
+        question: sentQuestion,
+        recentHistory: history,
+        aides: [],
+      })
+      const needAidFacts = shouldLookupAdvisorAids({
+        question: sentQuestion,
+        mode: currentMode,
+        conversationContext: preliminaryContext,
+        recentHistory: history,
+        handoffContext: advisorHandoffContext,
+      }) || isLocalAidSourceRequest(sentQuestion)
+      const aides = needAidFacts ? await fetchAides() : []
+
+      // An exact request for an existing aid's reference URL is answered from
+      // the catalogue. No model, no backend Edge Function, and no fabricated
+      // eligibility or amount. Keep the exchange for natural follow-ups.
+      const localAid = ["general", "trouver_aide"].includes(currentMode)
+        ? buildLocalAidSourceAnswer({ question: sentQuestion, aides, language: responseLanguage })
+        : null
+      if (localAid) {
+        setHistory(prev => [{
+          id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          question: sentQuestion,
+          answer: localAid.answer,
+          language: responseLanguage,
+          mode: currentMode,
+          source: localAid.source,
+          conversationContext: preliminaryContext,
+          recommendedAidIds: localAid.recommendedAidIds,
+          recommendedAidNames: localAid.recommendedAidNames,
+          createdAt: new Date().toISOString(),
+        }, ...prev].slice(0, 6))
+        setLoadingAssistant(false)
+        setPendingMessage(null)
+        setAssistantMode("general")
+        setAdvisorHandoffContext(null)
+        return
+      }
 
       result = await callAssistantAi({
         sentQuestion,

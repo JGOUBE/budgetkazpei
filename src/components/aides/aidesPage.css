@@ -247,3 +247,19 @@
 .bkp-category-filters button.is-active {
   box-shadow:none; transform:none; background:#E2ECCA; color:#405A2B; border-color:#BDD0A8;
 }
+
+/* Aid discovery: transparent source status and explainable profile signals.
+   Neither a matching profile nor a reference proves legal eligibility. */
+.bkp-aide-profile-reasons {
+  margin: -3px 0 8px;
+  color: #3C6655;
+  font-size: 12px;
+  font-weight: 720;
+  line-height: 1.45;
+}
+.bkp-aide-source-note {
+  margin: 0 0 12px;
+  color: #626C70;
+  font-size: 11px;
+  line-height: 1.45;
+}

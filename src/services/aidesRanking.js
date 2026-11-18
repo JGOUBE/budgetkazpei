@@ -148,11 +148,17 @@ export function rankAidesForAdvisor(aides = [], profile = {}, question = "", opt
   const candidatesByName = new Map()
 
   for (const aide of Array.isArray(aides) ? aides : []) {
+    if (!aide || aide.actif === false) continue
     const identity = normalizeAidIdentity(aidName(aide)) || `id:${String(aide?.id || "")}`
     if (excludedIds.has(String(aide?.id)) || excludedNames.has(identity)) continue
 
     const current = candidatesByName.get(identity)
-    if (!current || scoreAidForAdvisor(aide, profile, question, options) > scoreAidForAdvisor(current, profile, question, options)) {
+    const candidateScore = scoreAidForAdvisor(aide, profile, question, options)
+    const currentScore = current ? scoreAidForAdvisor(current, profile, question, options) : -Infinity
+    const candidateHasSource = Boolean(aide.lien_officiel || aide.lien)
+    const currentHasSource = Boolean(current?.lien_officiel || current?.lien)
+    if (!current || candidateScore > currentScore ||
+      (candidateScore === currentScore && candidateHasSource && !currentHasSource)) {
       candidatesByName.set(identity, aide)
     }
   }

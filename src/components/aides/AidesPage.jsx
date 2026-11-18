@@ -27,6 +27,7 @@ import { AIDES as FALLBACK_AIDES } from "../../data/categories"
 import { supabase } from "../../services/supabase"
 import { handoffToAdvisor } from "../../services/advisorHandoff"
 import { matchesAidSearch } from "../../services/aidesSearch"
+import { aidSourceStatus, rankAidDiscovery } from "../../services/aidesRecommendationQuality"
 import "./aidesPage.css"
 
 const AIDES_SELECT = `
@@ -59,7 +60,8 @@ const AIDES_SELECT = `
   besoin_locataire,
   besoin_proprietaire,
   besoin_allocataire_caf,
-  score_priorite
+  score_priorite,
+  actif
 `
 
 const DEMARCHES_SELECT = `
@@ -124,11 +126,11 @@ const STATUS_ACTIONS = {
     { id: "email", mode: "generer_email", Icon: Mail, fr: "Générer un email", kr: "Prépar in email" },
   ],
   envoyee: [
-    { id: "relance", mode: "generer_email", Icon: Mail, fr: "Générer une relance", kr: "Prépar in relans" },
+    { id: "relance", mode: "preparer_relance", Icon: Mail, fr: "Générer une relance", kr: "Prépar in relans" },
     { id: "rdv", mode: "preparer_rdv", Icon: CalendarClock, fr: "Préparer un rendez-vous", kr: "Prépar in randévou" },
   ],
   en_attente: [
-    { id: "relance", mode: "generer_email", Icon: Mail, fr: "Générer une relance", kr: "Prépar in relans" },
+    { id: "relance", mode: "preparer_relance", Icon: Mail, fr: "Générer une relance", kr: "Prépar in relans" },
     { id: "rdv", mode: "preparer_rdv", Icon: CalendarClock, fr: "Préparer un rendez-vous", kr: "Prépar in randévou" },
   ],
   refusee: [
@@ -177,7 +179,7 @@ function normalizeAide(row = {}) {
     stepsFr: row.demarches_fr || row.demarches || "",
     stepsKr: row.demarches_kreol || row.demarches_kr || row.demarches_fr || row.demarches || "",
     category: normalizeText(row.categorie || row.category || "autres").replace(/\s+/g, "_"),
-    url: row.lien_officiel || row.lien || row.officialUrl || "",
+    url: aidSourceStatus(row).url,
     isDatabaseAide: row.nom !== undefined,
   }
 }
@@ -196,35 +198,6 @@ function categoryLabel(category, isKreol) {
   if (labels) return isKreol ? labels.kr : labels.fr
   const clean = String(category || "autres").replace(/_/g, " ")
   return clean.charAt(0).toUpperCase() + clean.slice(1)
-}
-
-function matchesProfile(aide, profile = {}) {
-  if (!aide.isDatabaseAide) return true
-  const children = Number(profile.nombre_enfants || 0)
-  const housing = normalizeText(profile.logement || profile.situation_logement)
-  const work = normalizeText(profile.situation_professionnelle)
-  if (aide.besoin_enfant && children <= 0) return false
-  if (aide.besoin_handicap && !profile.handicap) return false
-  if (aide.besoin_etudiant && !profile.etudiant) return false
-  if (aide.besoin_retraite && !profile.retraite) return false
-  if (aide.besoin_demandeur_emploi && !profile.demandeur_emploi && !work.includes("demandeur")) return false
-  if (aide.besoin_allocataire_caf && !profile.allocataire_caf) return false
-  if (aide.besoin_locataire && housing !== "locataire") return false
-  if (aide.besoin_proprietaire && housing !== "proprietaire") return false
-  return true
-}
-
-function relevanceScore(aide, profile = {}) {
-  let score = Number(aide.score_priorite || 0)
-  const children = Number(profile.nombre_enfants || 0)
-  const housing = normalizeText(profile.logement || profile.situation_logement)
-  if (children > 0 && ["famille", "scolarite"].includes(aide.category)) score += 45
-  if (profile.etudiant && aide.category === "etudiant") score += 45
-  if (housing === "locataire" && aide.category === "logement") score += 40
-  if (profile.commune && aide.category === "ccas") score += 35
-  if (aide.category === "emploi") score += 20
-  if (aide.category === "energie") score += 15
-  return score
 }
 
 function statusInfo(status) {
@@ -286,6 +259,23 @@ function AideCard({ aide, isKreol, tracked, saving, onAdd }) {
         <span className="bkp-aide-amount">{formatAmount(aide, isKreol)}</span>
       </div>
       <p className="bkp-aide-description">{description || (isKreol ? "Aide pou vérifié selon out situation." : "Aide à vérifier selon votre situation.")}</p>
+      {Array.isArray(aide.matchReasons) && aide.matchReasons.length > 0 && (
+        <p className="bkp-aide-profile-reasons">
+          {isKreol ? "Pist selon out profil" : "Piste repérée selon votre profil"} :
+          {" "}{aide.matchReasons.map(reason => ({
+            famille: isKreol ? "fami" : "famille",
+            logement: isKreol ? "kaz" : "logement",
+            emploi: isKreol ? "travay" : "emploi",
+            caf: "CAF",
+            commune: isKreol ? "komin" : "commune",
+          })[reason] || reason).join(", ")}.
+        </p>
+      )}
+      <p className="bkp-aide-source-note">
+        {aide.url
+          ? (isKreol ? "Référans disponib · bann kondisyon pou vérifié" : "Référence disponible · conditions à vérifier")
+          : (isKreol ? "Référans absan · vérifie avèk organism" : "Référence à confirmer auprès de l’organisme")}
+      </p>
       <div className="bkp-aide-next">
         <ChevronRight size={16} aria-hidden="true" />
         <span><strong>{isKreol ? "Proshin aksion" : "Prochaine action"}</strong>{steps || (isKreol ? "Vérifie bann kondisyon ek lo lien officiel." : "Vérifiez les conditions et le lien officiel.")}</span>
@@ -412,7 +402,7 @@ export default function AidesPage({ t, isPremiumPlus = false, user, onDiscover, 
       const profilePromise = user?.id
         ? supabase.from("profiles").select("*").eq("id", user.id).maybeSingle()
         : Promise.resolve({ data: null, error: null })
-      const aidesPromise = supabase.from("aides_reunion").select(AIDES_SELECT).order("score_priorite", { ascending: false })
+      const aidesPromise = supabase.from("aides_reunion").select(AIDES_SELECT).eq("actif", true).order("score_priorite", { ascending: false })
       const demarchesPromise = user?.id
         ? supabase.from("user_aide_demarche").select(DEMARCHES_SELECT).eq("user_id", user.id).order("updated_at", { ascending: false })
         : Promise.resolve({ data: [], error: null })
@@ -434,11 +424,17 @@ export default function AidesPage({ t, isPremiumPlus = false, user, onDiscover, 
 
   const trackedIds = useMemo(() => new Set(demarches.map(item => Number(item.aide_id))), [demarches])
   const categories = useMemo(() => [...new Set(aides.map(aide => aide.category))].sort((a, b) => categoryLabel(a, isKreol).localeCompare(categoryLabel(b, isKreol), "fr")), [aides, isKreol])
-  const recommendations = useMemo(() => aides
-    .filter(aide => matchesProfile(aide, profile || {}))
-    .sort((a, b) => relevanceScore(b, profile || {}) - relevanceScore(a, profile || {}))
-    .slice(0, 12), [aides, profile])
-  const searchResults = useMemo(() => aides.filter(aide => (category === "all" || aide.category === category) && matchesAidSearch(aide, query)), [aides, category, query])
+  const recommendations = useMemo(
+    () => rankAidDiscovery(aides, profile || {}, trackedIds, 12),
+    [aides, profile, trackedIds],
+  )
+  const searchResults = useMemo(
+    () => rankAidDiscovery(
+      aides.filter(aide => (category === "all" || aide.category === category) && matchesAidSearch(aide, query)),
+      profile || {}, trackedIds, Infinity,
+    ),
+    [aides, category, query, profile, trackedIds],
+  )
 
   async function addToDemarches(aide) {
     if (!user?.id || !aide.isDatabaseAide) return

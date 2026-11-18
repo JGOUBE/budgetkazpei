@@ -1,5 +1,6 @@
 import { findPrimaryAidTopicIds, normalizeAidTopicText } from "./aidTopics.js"
 import { normalizeAidIdentity } from "./aidesRanking.js"
+import { isSelfContainedNewQuestion, looksPlayfulOrFictionalQuestion } from "./advisorQuestionRouter.js"
 
 export const ADVISOR_TURN_TYPES = Object.freeze({
   NEW_TOPIC: "NEW_TOPIC",
@@ -64,8 +65,10 @@ function inferPreviousActiveTopic(history = []) {
     }
 
     const question = String(item?.question || "").trim()
-    const domains = findPrimaryAidTopicIds(question)
-    if (question && domains.length > 0) return { query: question, domains }
+    // The last turn is the latest context, even when it was general (or a
+    // local-budget answer). Never revive a much older aid topic by searching
+    // back through unrelated conversations.
+    if (question) return { query: question, domains: findPrimaryAidTopicIds(question) }
   }
   return null
 }
@@ -145,15 +148,44 @@ export function classifyAdvisorTurn(question = "", previousActiveTopic = null) {
   const text = normalizeAidTopicText(question)
   const currentDomains = findPrimaryAidTopicIds(text)
   const previousDomains = previousActiveTopic?.domains || []
+  if (!previousActiveTopic || !text) return ADVISOR_TURN_TYPES.NEW_TOPIC
 
-  if (includesMarker(text, CORRECTION_MARKERS)) return ADVISOR_TURN_TYPES.CORRECTION
-  if (includesMarker(text, ALTERNATIVE_MARKERS)) return ADVISOR_TURN_TYPES.REQUEST_ALTERNATIVE
-  if (includesMarker(text, DETAIL_MARKERS)) return ADVISOR_TURN_TYPES.ASK_DETAILS
-  if (includesMarker(text, NEXT_STEP_MARKERS)) return ADVISOR_TURN_TYPES.NEXT_STEP
-  if (!previousActiveTopic) return ADVISOR_TURN_TYPES.NEW_TOPIC
-  if (currentDomains.length > 0 && !sameTopics(currentDomains, previousDomains)) return ADVISOR_TURN_TYPES.NEW_TOPIC
-  if (/\b(maintenant|nouveau sujet|autre sujet)\b/.test(text)) return ADVISOR_TURN_TYPES.NEW_TOPIC
-  if (currentDomains.length === 0 || /^(et|mais|alors|aussi|pour)\b/.test(text)) return ADVISOR_TURN_TYPES.FOLLOW_UP
+  // Explicit corrections of aid eligibility stay corrections even when they
+  // change the aid topic. The current user message overrides prior assumptions.
+  if (includesMarker(text, CORRECTION_MARKERS) && previousDomains.length > 0) {
+    return ADVISOR_TURN_TYPES.CORRECTION
+  }
+
+  // This guard MUST precede loose "combien/comment/autre" matching. A question
+  // about planets after discussing the CAF is not a request for an aid amount.
+  if (looksPlayfulOrFictionalQuestion(question) ||
+      (currentDomains.length > 0 && !sameTopics(currentDomains,previousDomains)) ||
+      isSelfContainedNewQuestion(question)) {
+    return ADVISOR_TURN_TYPES.NEW_TOPIC
+  }
+
+  // Aid-specific followups inherit an aid topic. Generic conversations also
+  // allow natural continuations, but must not be treated as aid requests.
+  if (includesMarker(text, ALTERNATIVE_MARKERS)) {
+    return previousDomains.length > 0
+      ? ADVISOR_TURN_TYPES.REQUEST_ALTERNATIVE
+      : ADVISOR_TURN_TYPES.FOLLOW_UP
+  }
+  if (includesMarker(text, NEXT_STEP_MARKERS)) {
+    return previousDomains.length > 0
+      ? ADVISOR_TURN_TYPES.NEXT_STEP
+      : ADVISOR_TURN_TYPES.FOLLOW_UP
+  }
+  if (includesMarker(text, DETAIL_MARKERS)) {
+    return previousDomains.length > 0
+      ? ADVISOR_TURN_TYPES.ASK_DETAILS
+      : ADVISOR_TURN_TYPES.FOLLOW_UP
+  }
+
+  if (currentDomains.length === 0 || /^(et|mais|alors|aussi|pour)\b/.test(text) ||
+      sameTopics(currentDomains,previousDomains)) {
+    return ADVISOR_TURN_TYPES.FOLLOW_UP
+  }
   return ADVISOR_TURN_TYPES.NEW_TOPIC
 }
 
