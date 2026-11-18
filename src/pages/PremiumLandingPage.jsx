@@ -23,9 +23,9 @@ const STRIPE_LINKS = {
 const PREMIUM_CONTENT = {
   fr: {
     seo: {
-      title: "Offres BudgetKazPéi — Gratuit, Premium et Premium",
+      title: "BudgetKazPéi — Gratuit et Premium",
       description:
-        "Comparez les offres Gratuit, Premium et Premium de BudgetKazPéi et choisissez le niveau d'accompagnement adapté à votre quotidien.",
+        "Découvrez les fonctions gratuites et l'unique offre Premium à 4,99 € par mois ou 49,90 € par an.",
     },
     navItems: [
       { label: "Offres", href: "#offres" },
@@ -36,7 +36,7 @@ const PREMIUM_CONTENT = {
       eyebrow: "Découvrir BudgetKazPéi",
       title: "Découvrez, soyez conseillé, puis accompagné.",
       text:
-        "Gratuit pose les bases. Premium ajoute le Conseiller pour la gestion quotidienne. Premium vous accompagne dans des démarches concrètes.",
+        "Commencez avec les outils gratuits et découvrez le Conseiller complet, le scanner et l'accompagnement avec Premium.",
       trust: [
         "Annulation du renouvellement possible",
         "Paiement sécurisé par Stripe",
@@ -88,7 +88,7 @@ const PREMIUM_CONTENT = {
         ],
         [
           "Que se passe-t-il lorsque j'atteins ma limite de scans ?",
-          "Avec Premium, le scanner redevient disponible au début du mois suivant. Vous pouvez toujours ajouter ou corriger une dépense manuellement.",
+          "Si votre utilisation nécessite une vérification, contactez notre équipe. Vous pouvez toujours enregistrer une dépense manuellement.",
         ],
         [
           "Le scanner de tickets est-il obligatoire ?",
@@ -115,9 +115,9 @@ const PREMIUM_CONTENT = {
   },
   kr: {
     seo: {
-      title: "Bann offres BudgetKazPéi — Gratis, Premium ek Premium",
+      title: "BudgetKazPéi — Gratis ek Premium",
       description:
-        "Konpar bann offres Gratis, Premium ek Premium BudgetKazPéi é swazi lakonpagnman ki korespond ek out kotidien.",
+        "Dékouv zouti gratis ek in sèl offre Premium 4,99 € par mwa ou 49,90 € par ané.",
     },
     navItems: [
       { label: "Bann offres", href: "#offres" },
@@ -128,7 +128,7 @@ const PREMIUM_CONTENT = {
       eyebrow: "Dékouv BudgetKazPéi",
       title: "Dékouv, gagn konsey, épi gagn lakonpagnman.",
       text:
-        "Gratis i poz bann baz. Premium i azout Konseyé-la pou lo kotidien. Premium i akonpagn aou dann bann demars konkrè.",
+        "Koumans avèk bann zouti gratis. Premium i donn aou Konseyé complet, scanner ek lakonpagnman.",
       trust: [
         "Ou pé arèt renouvèlman",
         "Payman sekirizé par Stripe",
@@ -180,7 +180,7 @@ const PREMIUM_CONTENT = {
         ],
         [
           "Kosa i ariv kan mi ariv mon limit scans ?",
-          "Avèk Premium, scanner-la i revien disponib komansman mwa apré. Ou pé touzour azout ou korij in dépans amain.",
+          "Si out utilisation i demande in vérification, kontakte nout lekip. Ou pé touzour rant bann dépans amain.",
         ],
         [
           "Scanner tiké-la lé obligatoire ?",
