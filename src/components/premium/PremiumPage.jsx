@@ -41,7 +41,7 @@ export const PREMIUM_PAGE_COPY = {
     pageEyebrow: "Offres BudgetKazPéi",
     pageTitle: "Choisissez la formule adaptée à votre rythme.",
     pageText:
-      "Comparez ce qui est disponible avec Gratuit, le conseil au quotidien de Premium et l'accompagnement avancé de Premium+.",
+      "Une seule offre Premium réunit les conseils budgétaires et l’accompagnement avancé des démarches.",
     currentTitle: "Votre formule actuelle",
     currentLoading: "Chargement de votre formule...",
     currentFree: "Mode découverte actif",
@@ -159,7 +159,7 @@ export const PREMIUM_PAGE_COPY = {
     statusCardTitles: {
       [PLAN_IDS.free]: "BudgetKazPéi",
       [PLAN_IDS.premium]: "Premium aktif",
-      [PLAN_IDS.premiumPlus]: "Premium+ aktif",
+      [PLAN_IDS.premiumPlus]: "Premium aktif",
     },
     statusCardTexts: {
       [PLAN_IDS.free]: "Pou dékouv sinp, san langazman.",
