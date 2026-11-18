@@ -149,6 +149,14 @@ export function detectAssistantIntent(question = "") {
   if (hasAny(text, ["abonnement", "subscription"])) return ASSISTANT_INTENTS.BUDGET_SUBSCRIPTIONS
   if (hasAny(text, ["charge fixe", "charges fixes", "sarz fix"])) return ASSISTANT_INTENTS.BUDGET_FIXED_EXPENSES
   if (hasAny(text, ["inhabitu", "anormal", "grosse depense", "gro depans"])) return ASSISTANT_INTENTS.BUDGET_UNUSUAL_EXPENSE
+  // The amount and distribution of recorded expenses can be computed locally.
+  const categoryBreakdown = hasAny(text, ["pourcentage", "proportion", "repartition", "part de", "part des", "en pourcent"]) &&
+    hasAny(text, ["depense", "depans", "courses", "aliment", "manze", "logement", "loyer", "transport", "essence", "sante", "energie", "assurance", "categorie", "poste"])
+  if (categoryBreakdown || hasAny(text, [
+    "mes principales depenses", "mes plus grosses depenses",
+    "mes trois principaux postes", "mes 3 principaux postes",
+    "mes trois plus gros postes", "mes 3 plus gros postes",
+  ])) return ASSISTANT_INTENTS.BUDGET_CATEGORY
   if (grocery) return ASSISTANT_INTENTS.BUDGET_GROCERY
   if (hasAny(text, ["categorie", "poste"]) || hasAny(text, ["ou est ce que je depense", "ou je depense", "kot mi depans"])) {
     return ASSISTANT_INTENTS.BUDGET_CATEGORY
@@ -238,20 +246,65 @@ function buildGroceryAnswer(question, insights) {
   })
 }
 
-function buildCategoryAnswer(insights) {
+function categoryRequested(question = "") {
+  const text = normalizeForAssistantMatch(question)
+  const categories = [
+    ["alimentaire", ["alimentation", "alimentaire", "courses", "manze"]],
+    ["logement", ["logement", "loyer"]],
+    ["transport", ["transport", "essence", "carburant"]],
+    ["energie", ["energie", "electricite", "edf"]],
+    ["telecom", ["telephonie", "telephone", "internet"]],
+    ["assurances", ["assurances", "assurance"]],
+    ["sante", ["sante", "pharmacie"]],
+    ["loisirs", ["loisirs", "loisir"]],
+  ]
+  return categories.find(([, labels]) => labels.some(label => text.split(" ").includes(label)))?.[0] || null
+}
+
+function buildCategoryAnswer(question, insights) {
   const context = contextOf(insights)
-  const top = context.spendingByCategory?.[0]
+  const rows = context.spendingByCategory || []
+  const top = rows[0]
   if (!top) return missingResponse(ASSISTANT_INTENTS.BUDGET_CATEGORY, insights, "transactions")
-  const frLabel = getAssistantCategoryLabel(top.category, "fr")
-  const krLabel = getAssistantCategoryLabel(top.category, "kr")
-  const share = top.share === null ? "" : `, soit ${Math.round(top.share)} % de tes dépenses variables enregistrées`
-  const shareKr = top.share === null ? "" : `, soit ${Math.round(top.share)} % out dépans variables anrezistré`
+  const text = normalizeForAssistantMatch(question)
+  const shares = hasAny(text, ["pourcentage", "proportion", "repartition", "part de", "part des", "en pourcent"])
+  const target = shares ? categoryRequested(question) : null
+  const actions = [action("depenses", "Voir mes dépenses", "War mon bann dépans")]
+  if (target) {
+    const row = rows.find(item => item.category === target)
+    const fr = getAssistantCategoryLabel(target, "fr")
+    const kr = getAssistantCategoryLabel(target, "kr")
+    if (!row) return response({
+      fr: "Aucune dépense classée dans " + fr + " " + periodPhrase(context) + " dans les transactions enregistrées. Cela ne signifie pas qu'il n'y a eu aucun achat.",
+      kr: "Nana poin dépans classé dann " + kr + " " + periodPhrase(context) + " parmi bann tranzaksion anrezistré.",
+      intent: ASSISTANT_INTENTS.BUDGET_CATEGORY, insights, actions,
+    })
+    const share = row.share === null || row.share === undefined ? "" : " (" + Math.round(row.share) + " % des dépenses variables enregistrées)"
+    return response({
+      fr: "Pour " + fr + ", " + formatMontant(row.amount) + " " + periodPhrase(context) + share + ". Les charges fixes ne sont pas incluses dans ce pourcentage.",
+      kr: "Pou " + kr + ", " + formatMontant(row.amount) + " " + periodPhrase(context) + share + ". Bann sarz fixes lé pa incli dan pourcentage-la.",
+      intent: ASSISTANT_INTENTS.BUDGET_CATEGORY, insights, actions,
+    })
+  }
+  const details = shares || hasAny(text, ["trois", "3", "principaux", "principales", "grosses", "gros", "detail", "ventilation"])
+  if (details) {
+    const three = rows.slice(0, 3)
+    const parts = language => three.map(row =>
+      getAssistantCategoryLabel(row.category, language) + " : " + formatMontant(row.amount) +
+      (row.share === null || row.share === undefined ? "" : " (" + Math.round(row.share) + " %)")
+    ).join(" ; ")
+    return response({
+      fr: "Les " + three.length + " principaux postes de dépenses variables enregistrées " + periodPhrase(context) + " : " + parts("fr") + ". Ces parts excluent les charges fixes.",
+      kr: "Bann " + three.length + " pli gro postes dépans variables anrezistré " + periodPhrase(context) + " : " + parts("kr") + ". Bann sarz fixes lé pa compté.",
+      intent: ASSISTANT_INTENTS.BUDGET_CATEGORY, insights, actions,
+    })
+  }
+  const share = top.share === null ? "" : ", soit " + Math.round(top.share) + " % de tes dépenses variables enregistrées"
+  const shareKr = top.share === null ? "" : ", soit " + Math.round(top.share) + " % out dépans variables anrezistré"
   return response({
-    fr: `Le poste le plus élevé est ${frLabel} avec ${formatMontant(top.amount)} ${periodPhrase(context)}${share}.`,
-    kr: `Poste le plus haut lé ${krLabel} avèk ${formatMontant(top.amount)} ${periodPhrase(context)}${shareKr}.`,
-    intent: ASSISTANT_INTENTS.BUDGET_CATEGORY,
-    insights,
-    actions: [action("depenses", "Voir mes dépenses", "War mon bann dépans")],
+    fr: "Le poste le plus élevé est " + getAssistantCategoryLabel(top.category, "fr") + " avec " + formatMontant(top.amount) + " " + periodPhrase(context) + share + ".",
+    kr: "Poste le plus haut lé " + getAssistantCategoryLabel(top.category, "kr") + " avèk " + formatMontant(top.amount) + " " + periodPhrase(context) + shareKr + ".",
+    intent: ASSISTANT_INTENTS.BUDGET_CATEGORY, insights, actions,
   })
 }
 
@@ -471,7 +524,7 @@ export function buildUnknownAssistantFallback({ insights } = {}) {
 export function answerAssistantQuestion({ question = "", insights = {} } = {}) {
   const intent = detectAssistantIntent(question)
   if (intent === ASSISTANT_INTENTS.BUDGET_GROCERY) return buildGroceryAnswer(question, insights)
-  if (intent === ASSISTANT_INTENTS.BUDGET_CATEGORY) return buildCategoryAnswer(insights)
+  if (intent === ASSISTANT_INTENTS.BUDGET_CATEGORY) return buildCategoryAnswer(question, insights)
   if (intent === ASSISTANT_INTENTS.BUDGET_FIXED_EXPENSES) return buildFixedAnswer(insights)
   if (intent === ASSISTANT_INTENTS.BUDGET_SUBSCRIPTIONS) return buildFixedAnswer(insights, true)
   if (intent === ASSISTANT_INTENTS.BUDGET_REMAINING) return buildRemainingAnswer(question, insights)
