@@ -236,20 +236,24 @@ function BudgetKazPeiApp({
   const isAdmin = profile?.is_admin === true
 
   useEffect(() => {
+    let canceled = false
+    let timer = null
+    let attempts = 0
+    const returningFromCheckout = typeof window !== "undefined" &&
+      new URLSearchParams(window.location.search).get("premium_retour") === "1"
+
     async function loadSubscriptionPlan() {
       if (!user?.id) {
         setSubscriptionPlan("free")
         setSubscriptionHasBillingRecord(false)
-        setSubscriptionLoading(false)
-        return
+        return false
       }
 
-      setSubscriptionLoading(true)
       try {
-        // A verified account can claim a Stripe checkout completed before
-        // its profile had been linked to the subscription row.
+        // A verified account may claim a Stripe checkout delivered before
+        // the return redirect. Never trust a query string as proof of payment.
         const claim = await supabase.rpc("claim_budgetkazpei_stripe_subscription")
-        if (claim.error) console.warn("Abonnement Stripe : liaison différée", claim.error.code)
+        if (claim.error) console.warn("Liaison Stripe différée", claim.error.code)
         const { data, error } = await supabase
           .from("user_subscriptions")
           .select("plan, status, updated_at")
@@ -257,24 +261,53 @@ function BudgetKazPeiApp({
           .order("updated_at", { ascending: false })
           .limit(10)
 
-        if (error) {
-          console.error("Erreur chargement abonnement:", error)
-          setSubscriptionHasBillingRecord(false)
-          setSubscriptionPlan(profile?.plan || "free")
-        } else {
-          const subscriptionRows = Array.isArray(data) ? data : []
-          setSubscriptionHasBillingRecord(subscriptionRows.length > 0)
-          const active = subscriptionRows.find(row => ["active", "trialing"].includes(row.status))
-          setSubscriptionPlan(subscriptionRows.length > 0
+        if (error) throw error
+        const rows = Array.isArray(data) ? data : []
+        const active = rows.find(row => ["active", "trialing"].includes(row.status))
+        if (!canceled) {
+          // A canceled subscription takes precedence over outdated profile
+          // flags; profile fallback is reserved for genuine legacy accounts.
+          setSubscriptionHasBillingRecord(rows.length > 0)
+          setSubscriptionPlan(rows.length > 0
             ? (active?.plan || "free")
             : (profile?.plan || "free"))
         }
-      } finally {
-        setSubscriptionLoading(false)
+        return Boolean(active)
+      } catch (error) {
+        console.error("Erreur chargement abonnement:", error)
+        if (!canceled) {
+          setSubscriptionHasBillingRecord(true)
+          setSubscriptionPlan("free")
+        }
+        return false
       }
     }
 
-    loadSubscriptionPlan()
+    async function refreshAfterCheckout() {
+      const paid = await loadSubscriptionPlan()
+      if (canceled) return
+      if (returningFromCheckout && !paid && attempts < 10) {
+        // Stripe webhook delivery is asynchronous. Retry briefly after the
+        // verified checkout redirect; no local entitlement is granted here.
+        attempts += 1
+        timer = window.setTimeout(refreshAfterCheckout, 2500)
+        return
+      }
+      setSubscriptionLoading(false)
+      if (returningFromCheckout && paid && typeof window !== "undefined") {
+        const url = new URL(window.location.href)
+        url.searchParams.delete("premium_retour")
+        url.searchParams.delete("session_id")
+        window.history.replaceState(window.history.state, "", url.toString())
+      }
+    }
+
+    setSubscriptionLoading(true)
+    refreshAfterCheckout()
+    return () => {
+      canceled = true
+      if (timer !== null) window.clearTimeout(timer)
+    }
   }, [user?.id, profile?.plan])
 
   const plan = normalizePlan(subscriptionPlan || profile?.plan || "free")
