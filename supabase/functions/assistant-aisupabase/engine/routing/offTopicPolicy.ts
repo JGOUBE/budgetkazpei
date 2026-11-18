@@ -153,6 +153,54 @@ export function isPotentialAdvisorFollowUp(question = "") {
 }
 
 
+
+// A trusted server-stored conversation topic may authorize one short,
+// clearly referential follow-up to use the normal (atomically metered) AI
+// route. This check NEVER relies on a client-provided mode or topic.
+const INDEPENDENT_NON_FINANCIAL_TOPIC =
+  /\b(?:recette|gateau|cuisine|soleil|ciel|etoiles?|jupiter|saturne|mars|planete|astronomie|football|rugby|match|sport|meteo|volcan|plante|chat|chien|film|livre|chanson|poeme|blague|acteur|president|histoire de france)\b/
+const CONTEXT_REFERENCE =
+  /\b(?:ca|cela|ceci|celui|celle|en|encore|toujours|le meme|la meme|cette fois|ces prix|ce prix|c est|c etait|se poursuivre|se calmer)\b/
+const CONTEXT_OPENING =
+  /^(?:oui|non|ok|okay|d accord|alors|mais|donc|du coup|et|ca|cela|ceci|c est|est ce que|est ce qu|tu penses|vous pensez|penses tu|pensez vous|crois tu|vous croyez|pourquoi|comment|quand|combien|et pourquoi|et comment|et quand|et combien)\b/
+const SHORT_ELLIPTICAL = /^(?:et )?(?:pourquoi|comment|combien|quand|et ensuite|et maintenant|et pour moi|la suite|c est certain|est ce certain)\b/
+
+export function isContextualAdvisorFollowUp(question = "") {
+  const text = normalize(question)
+  if (!text || text.length > 170 || text.split(" ").length > 22) return false
+  if (CLEAR_GENERAL_QUERY.test(text) || PLAYFUL.test(text) ||
+    INDEPENDENT_NON_FINANCIAL_TOPIC.test(text)) return false
+  // Do not misroute a standalone new question because it begins with "Et".
+  return CONTEXT_OPENING.test(text) &&
+    (CONTEXT_REFERENCE.test(text) || SHORT_ELLIPTICAL.test(text))
+}
+
+export function advisorTopicGroupForQuestion(question = "") {
+  const text = normalize(question)
+  if (/\b(?:carburant|essence|gazole|diesel|pompe|plein d essence)\b/.test(text)) return "carburant"
+  if (/\b(?:courses?|alimentation|alimentaire|panier|ticket de caisse|magasin)\b/.test(text)) return "courses"
+  if (/\b(?:loyer|logement|locataire|bail)\b/.test(text)) return "logement"
+  if (/\b(?:electricite|energie|chauffage|climatisation)\b/.test(text)) return "energie"
+  if (/\b(?:assurances?|mutuelle|abonnements?)\b/.test(text)) return "assurances"
+  if (/\b(?:apl|caf|rsa|aides?|allocations?|prestations?|bourse|prime d activite)\b/.test(text)) return "aides"
+  if (/\b(?:demarch|dossier|recours|courrier|contrat|administratif)\b/.test(text)) return "administratif"
+  return "budget"
+}
+
+export function advisorTrustedTopicLabel(group = "") {
+  const labels: Record<string, string> = {
+    carburant: "prix et dépenses de carburant",
+    courses: "budget courses et produits alimentaires",
+    logement: "loyer et dépenses de logement",
+    energie: "électricité et dépenses d'énergie",
+    assurances: "assurances et abonnements",
+    aides: "aides sociales et droits",
+    administratif: "démarches et documents administratifs",
+    budget: "budget personnel et économies",
+  }
+  return labels[group] || ""
+}
+
 // Only app navigation and existing interface features; not eligibility decisions.
 const APP_NAV_INTENT = /\b(?:ou (?:est|sont|se trouve|trouver|retrouver|voir|consulter|ouvrir)|comment (?:acceder|ouvrir|consulter|retrouver|aller|scanner|numeriser|creer|faire|modifier)|je (?:ne )?(?:trouve|retrouve|vois) (?:pas|plus)|c est ou|dans quel(?:le)? (?:rubrique|page|menu))\b/
 const APP_NAV_EXCLUDE = /\b(?:calcul(?:e|er|es|ees)?|montant|eligible|eligibilite|conditions?|combien|pourquoi|estimer|simulation|pour mon cas|pour ma situation|dois je|ai je droit)\b/
