@@ -562,10 +562,23 @@ export default function AssistantConseiller({
     })
 
     if (error) {
+      // Keep the server's helpful message when Supabase returns HTTP 429/503.
+      // A generic FunctionsHttpError is not meaningful to the user.
+      let serverError = null
+      try {
+        if (typeof error.context?.clone === "function") {
+          serverError = await error.context.clone().json()
+        } else if (typeof error.context?.json === "function") {
+          serverError = await error.context.json()
+        }
+      } catch (_) {
+        // An offline/network error may not expose a JSON body.
+      }
       console.error("Erreur Edge Function assistant-aisupabase:", error)
       return {
         success: false,
-        error: error.message || "Erreur assistant IA.",
+        code: serverError?.code || null,
+        error: serverError?.error || error.message || "Erreur assistant IA.",
       }
     }
 
