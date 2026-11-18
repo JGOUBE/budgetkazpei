@@ -6,6 +6,7 @@ const chat = await read("src/components/conseiller/AssistantConseiller.jsx")
 const page = await read("src/components/conseiller/ConseillerPage.jsx")
 const css = await read("src/components/conseiller/conseillerChat.css")
 const refinements = await read("src/styles/budgetkazpei-refinement.css")
+const homepage = await read("src/pages/HomePage.jsx")
 const nav = await read("src/services/appSectionNavigation.js")
 const deals = await read("src/pages/GoodDealsPage.jsx")
 const shopping = await read("src/pages/ShoppingListPage.jsx")
@@ -42,4 +43,19 @@ assert.match(deals,/includeRetailPromotions: false/)
 assert.match(deals,/normalizeCategory\(deal\.category\) === "shopping"\) return false/)
 assert.match(nav,/promotions: \{ section: "shopping", shoppingTab: "savings" \}/)
 assert.match(shopping,/onNavigate\(createAppSectionTarget\("shopping", \{ shoppingTab: "savings" \}\)\)/)
+// The advisor inherits the homepage's current 2026 card palette, rather than
+// going back to low-contrast, nearly white surfaces on mobile.
+const advisorColors = refinements.slice(refinements.indexOf("/* Conseiller 2026"))
+assert.ok(advisorColors.length > 100, "The final advisor visual override is required")
+for (const shade of ["#C8E4AA", "#C9D9F0", "#CFD6DD", "#CCE8E0"]) {
+  assert.ok(homepage.includes(shade), `Missing home palette token ${shade}`)
+  assert.ok(advisorColors.includes(shade), `Advisor should reuse home palette token ${shade}`)
+}
+assert.match(advisorColors, /bkp-advisor-bubble--assistant[\\s\\S]*#E9EDE3/)
+assert.match(advisorColors, /bkp-advisor-bubble--user[\\s\\S]*#CCE8E0/)
+assert.match(advisorColors, /bkp-advisor-composer[\\s\\S]*#E7F1E9/)
+assert.match(advisorColors, /bkp-advisor-starter--trouver_aide[\\s\\S]*#C9D9F0/)
+assert.match(advisorColors, /bkp-advisor-starter--comprendre_courrier[\\s\\S]*#CFD6DD/)
+assert.match(advisorColors, /box-shadow: none !important/)
+
 console.log("OK: Conseiller compact and accessible; price collectors stay separate from local bons plans.")
