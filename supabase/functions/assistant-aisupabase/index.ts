@@ -912,20 +912,33 @@ Deno.serve(async (req) => {
       }, 503)
     }
     if (requestReservation.allowed !== true) {
-      // Never disclose internal fair-use thresholds, reset schedules or
-      // technical policy identifiers in a user-facing message.
+      // Internal fair-use enforcement must never leak limits or counters to
+      // the client. Off-topic abuse receives a useful, local conversation
+      // redirect (0 provider calls), never an error badge in the chat.
       const isFreeChat = String(requestReservation.code || "").startsWith("offtopic_")
+      if (isFreeChat) {
+        const guidance = context.isKreol
+          ? "Mon Konseyé lé surtout la pou out bidjé, bann èd ek démarches. Pou linstan, mi pé pa kontinié su sa sujet-la. Ou pé demann a moin in kestyon su out dépans ou bann èd."
+          : "Mon Conseiller est surtout là pour vous aider avec votre budget, vos aides et vos démarches. Je ne peux pas poursuivre cet échange sur ce sujet pour le moment, mais je peux vous accompagner sur une question liée à BudgetKazPeï."
+        console.info("ADVISOR_API_METER", JSON.stringify({
+          type: "offtopic_redirect", calls: 0, status: "guarded",
+        }))
+        return jsonResponse({
+          success: true,
+          answer: guidance,
+          consumed: false,
+          openAiCallCount: 0,
+          source: "local_redirection",
+          language: context.language,
+          mode: context.mode,
+        }, 200)
+      }
       return jsonResponse({
         success: false,
-        code: isFreeChat ? "advisor_offtopic_redirect" : "advisor_temporarily_paused",
-        offTopicLimitReached: isFreeChat,
-        error: isFreeChat
-          ? (context.isKreol
-              ? "Mon Konseyé lé surtout la pou out bidjé, bann èd ek démarches. Pou linstan, mi pé pa kontinié su sa sujet-la. Ou pé demann a moin in kestyon su out dépans ou bann èd."
-              : "Mon Conseiller est surtout là pour vous aider avec votre budget, vos aides et vos démarches. Je ne peux pas poursuivre cet échange sur ce sujet pour le moment, mais je peux vous accompagner sur une question liée à BudgetKazPeï.")
-          : (context.isKreol
-              ? "Bann kestyon i arrive in pé trop vit. Mon Konseyé i fé in ti poz. Ou pé retourn plus tar pou out bidjé ek démarches."
-              : "Plusieurs demandes ont été envoyées très rapidement. Mon Conseiller fait une courte pause par sécurité. Vous pourrez reprendre votre échange ultérieurement."),
+        code: "advisor_temporarily_paused",
+        error: context.isKreol
+          ? "Bann kestyon i arrive in pé trop vit. Mon Konseyé i fé in ti poz. Ou pé retourn plus tar pou out bidjé ek démarches."
+          : "Plusieurs demandes ont été envoyées très rapidement. Mon Conseiller fait une courte pause par sécurité. Vous pourrez reprendre votre échange ultérieurement.",
       }, 429)
     }
 
