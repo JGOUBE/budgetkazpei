@@ -13,9 +13,9 @@ export function resolveReceiptQuotaState({
   const plan = normalizePlan(usage?.plan || fallbackPlan || "free")
   const used = Number(usage?.used ?? usage?.aiUsed ?? fallbackUsed ?? 0)
   const policy = getPlanScanPolicy(plan)
-  const limit = SCAN_LIMITS[plan]
+  const limit = Number.isFinite(Number(usage?.limit)) ? Number(usage.limit) : SCAN_LIMITS[plan]
   const remaining = Math.max(limit - used, 0)
-  const reached = remaining <= 0
+  const reached = usage?.reached === true || remaining <= 0
 
   return {
     used,
@@ -46,7 +46,9 @@ export function formatReceiptQuotaTicketsLabelKr(quota) {
 }
 
 export function getReceiptQuotaBlockingMessage(quota, txt) {
-  return quota?.safetyLimitReached ? txt.intensiveUsage : txt.quotaReached
+  return quota?.plan === "free"
+    ? (txt.discoveryEnded || txt.quotaReached)
+    : quota?.safetyLimitReached ? txt.intensiveUsage : txt.quotaReached
 }
 
 export function useReceiptQuota({
