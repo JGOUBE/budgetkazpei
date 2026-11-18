@@ -587,6 +587,36 @@ async function incrementUsage(supabaseAdmin: any, userId: string, currentUsed: n
   }
 }
 
+// Pricing: GPT-4o mini input $0.15/M, output $0.60/M; internal FX
+// buffer 1 USD = 1.05 EUR to avoid understating the user's spend.
+const ADVISOR_RESERVED_MICROEUR = 20000 // 0.02 EUR per in-flight request
+function advisorCostMicroeur(usage: any): number | null {
+  const input = Number(usage?.prompt_tokens)
+  const output = Number(usage?.completion_tokens)
+  if (!Number.isFinite(input) || !Number.isFinite(output) || input < 0 || output < 0) return null
+  return Math.ceil((input * 0.15 + output * 0.60) * 1.05)
+}
+function advisorSafetyContact(language: AssistantLanguage, reason = "") {
+  const kr = language === "kreol"
+  const pause = ["rate_minute", "rate_hour"].includes(reason)
+  return {
+    success: true,
+    answer: pause
+      ? (kr
+          ? "In ti pause de sécurité lé neseser avant de continuer. Ou pé reessay in pé pli tar ou kontakte nout lekip si ou besoin."
+          : "Une courte pause de sécurité est nécessaire avant de poursuivre. Vous pouvez réessayer un peu plus tard ou contacter notre équipe si nécessaire.")
+      : (kr
+          ? "Out utilisation demande in vérification. Pou continuer bann analyses avancées, contacte nout lekip. Out données ek bann réponses locales i reste disponibles."
+          : "Votre utilisation du Conseiller nécessite une vérification. Pour reprendre les analyses avancées, contactez notre équipe. Vos données et les réponses locales restent accessibles."),
+    source: "local_safety_contact",
+    contactRequired: !pause,
+    actions: [{ type: "open_page", target: "contact",
+      label_fr: "Contacter l’équipe", label_kr: "Kontakte nout lekip" }],
+    language, consumed: false, openAiCallCount: 0,
+    recommendedAidIds: [], recommendedAidNames: [],
+  }
+}
+
 async function callOpenAi(params: {
   openAiKey: string
   model: string
@@ -1108,6 +1138,38 @@ Deno.serve(async (req) => {
       })
     }
 
+    // Any future model upgrade must explicitly update this price guard first.
+    // Unknown models are rejected rather than accidentally billed at mini rates.
+    if (!/^gpt-4o-mini(?:-.+)?$/.test(model)) {
+      console.error("ADVISOR_MODEL_PRICE_GUARD", JSON.stringify({ model }))
+      return jsonResponse({ success: false, code: "advisor_model_not_budgeted",
+        error: "Le Conseiller est momentanément indisponible. Contactez l’équipe." }, 503)
+    }
+    const budgetRequestId = crypto.randomUUID()
+    const { data: budgetReservation, error: budgetError } = await supabaseAdmin
+      .rpc("reserve_advisor_openai", {
+        p_user_id: context.userId,
+        p_request_id: budgetRequestId,
+        p_reserved_microeur: ADVISOR_RESERVED_MICROEUR,
+        p_model: model,
+      })
+    if (budgetError || !budgetReservation) {
+      console.error("ADVISOR_ATOMIC_BUDGET_GUARD_ERROR", budgetError?.code || "missing_result")
+      return jsonResponse({ success: false, code: "advisor_cost_guard_unavailable",
+        error: "Le Conseiller est momentanément indisponible. Réessayez plus tard." }, 503)
+    }
+    if (budgetReservation.allowed !== true) {
+      console.info("ADVISOR_API_METER", JSON.stringify({
+        type: "local_safety_contact", calls: 0, reason: budgetReservation.code,
+      }))
+      return jsonResponse(advisorSafetyContact(context.language, String(budgetReservation.code || "")))
+    }
+    if (budgetReservation.warning) {
+      console.warn("ADVISOR_COST_GUARD_WARNING", JSON.stringify({
+        guard: "approaching_monthly_boundary", userId: context.userId,
+      }))
+    }
+
     const openAiResult = await callOpenAi({
       openAiKey,
       model,
@@ -1115,6 +1177,27 @@ Deno.serve(async (req) => {
       userPrompt,
       action: context.action,
     })
+    const actualMicroeur = advisorCostMicroeur(openAiResult.data?.usage)
+    if (openAiResult.ok && actualMicroeur === null) {
+      // Provider omitted token usage: retain conservative reservation, no extra call.
+      console.warn("ADVISOR_COST_USAGE_UNKNOWN", JSON.stringify({ requestId: budgetRequestId }))
+    } else {
+      const { data: settled, error: settleError } = await supabaseAdmin.rpc(
+        "settle_advisor_openai", {
+          p_request_id: budgetRequestId,
+          p_actual_microeur: openAiResult.ok ? actualMicroeur : 0,
+          p_input_tokens: Math.max(0, Number(openAiResult.data?.usage?.prompt_tokens || 0)),
+          p_output_tokens: Math.max(0, Number(openAiResult.data?.usage?.completion_tokens || 0)),
+        },
+      )
+      if (settleError || !settled?.ok) {
+        // Reservation stays counted if settlement fails, preventing budget escapes.
+        console.error("ADVISOR_COST_SETTLEMENT_FAILED", settleError?.code || settled?.code)
+      }
+      if (settled?.over_reservation) {
+        console.error("ADVISOR_COST_UNDERESTIMATED", JSON.stringify({ requestId: budgetRequestId }))
+      }
+    }
 
     if (!openAiResult.ok) {
       // Technical metering only: never log the question, profile or answer.
@@ -1190,7 +1273,8 @@ Deno.serve(async (req) => {
     // deliberately OFF by default; allow it only for exceptional opt-in QA
     // or future high-value cases explicitly enabled in server settings.
     // This keeps the normal AI path to exactly one OpenAI completion.
-    const memoryEnrichmentAllowed = Deno.env.get("ADVISOR_AI_MEMORY_ENRICHMENT") === "enabled"
+    // Never make an unreserved second provider call. Local memory is retained.
+    const memoryEnrichmentAllowed = false
     let memoryApiAttempted = false
     if (protectedTopic && memoryEnrichmentAllowed && intent?.complexity === "complex") {
       memoryApiAttempted = true
