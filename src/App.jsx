@@ -718,6 +718,7 @@ function BudgetKazPeiApp({
             isMobile={isMobile}
             profile={profile}
             user={user}
+            isPremium={hasPremiumAccess}
             onNavigate={handleNavChange}
             onAddExpense={() => setShowModal(true)}
             budgetStats={{ revenus, depenses, solde }}
