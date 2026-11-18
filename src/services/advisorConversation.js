@@ -378,6 +378,7 @@ export function resolveAdvisorBudgetNoDataAdvice({
   // A detailed new question is worth a personalized model response instead.
   if (!text || text.length > 160 || text.split(" ").length > 31 ||
       !ADVISOR_BUDGET_SOLUTION_REQUEST.test(text) ||
+      /\d|\b(?:personnalise|personnalisee|personnaliser|precis|precise|estimation|estimer|calculer|simulation|ma situation|mon cas|selon mes|selon mon|compte tenu|mon profil|mes contraintes|mes revenus|mes revenus|ma famille)\b/.test(text) ||
       /\b(?:rsa|apl|caf|eligib|recours|demande administrative|chomage|salaire|contrat|cours de|recette|gateau|cuisine|meteo|film|chanson|planete|licorne|dragon|poeme|blague)\b/.test(text) ||
       looksPlayfulOrFictionalQuestion(question)) return null
 
