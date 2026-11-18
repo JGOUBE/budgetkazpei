@@ -204,6 +204,7 @@ function BudgetKazPeiApp({
   const [showSidebar, setShowSidebar] = useState(false)
   const [editingTransaction, setEditingTransaction] = useState(null)
   const [subscriptionPlan, setSubscriptionPlan] = useState("free")
+  const [subscriptionHasBillingRecord, setSubscriptionHasBillingRecord] = useState(false)
   const [subscriptionLoading, setSubscriptionLoading] = useState(true)
   const [dashboardOpportunitiesCount, setDashboardOpportunitiesCount] = useState(0)
   const { themeName } = useTheme()
@@ -238,26 +239,35 @@ function BudgetKazPeiApp({
     async function loadSubscriptionPlan() {
       if (!user?.id) {
         setSubscriptionPlan("free")
+        setSubscriptionHasBillingRecord(false)
         setSubscriptionLoading(false)
         return
       }
 
       setSubscriptionLoading(true)
       try {
+        // A verified account can claim a Stripe checkout completed before
+        // its profile had been linked to the subscription row.
+        const claim = await supabase.rpc("claim_budgetkazpei_stripe_subscription")
+        if (claim.error) console.warn("Abonnement Stripe : liaison différée", claim.error.code)
         const { data, error } = await supabase
           .from("user_subscriptions")
           .select("plan, status, updated_at")
           .eq("user_id", user?.id)
-          .eq("status", "active")
           .order("updated_at", { ascending: false })
-          .limit(1)
-          .maybeSingle()
+          .limit(10)
 
         if (error) {
           console.error("Erreur chargement abonnement:", error)
+          setSubscriptionHasBillingRecord(false)
           setSubscriptionPlan(profile?.plan || "free")
         } else {
-          setSubscriptionPlan(data?.plan || profile?.plan || "free")
+          const subscriptionRows = Array.isArray(data) ? data : []
+          setSubscriptionHasBillingRecord(subscriptionRows.length > 0)
+          const active = subscriptionRows.find(row => ["active", "trialing"].includes(row.status))
+          setSubscriptionPlan(subscriptionRows.length > 0
+            ? (active?.plan || "free")
+            : (profile?.plan || "free"))
         }
       } finally {
         setSubscriptionLoading(false)
@@ -268,12 +278,12 @@ function BudgetKazPeiApp({
   }, [user?.id, profile?.plan])
 
   const plan = normalizePlan(subscriptionPlan || profile?.plan || "free")
-  const planFlags = getPlanFlags(plan, {
+  const planFlags = getPlanFlags(plan, subscriptionHasBillingRecord ? {} : {
     isPremium: profile?.premium === true || profile?.is_premium === true,
     isPremiumPlus: profile?.premium_plus === true,
   })
-  const isPremium = planFlags.isPremium
-  const isPremiumPlus = planFlags.isPremiumPlus
+  const isPremium = !subscriptionLoading && planFlags.isPremium
+  const isPremiumPlus = !subscriptionLoading && planFlags.isPremiumPlus
 
   const hasPremiumAccess = isPremium || isPremiumPlus
 
