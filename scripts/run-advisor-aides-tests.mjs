@@ -98,15 +98,19 @@ assert.equal(shouldBlockAdvisorUsage("free", 0), false, "Le refus Gratuit relèv
 const languageCases = [
   { id: "A", interfaceLanguage: "fr", message: "Existe-t-il des aides pour les activités sportives de mes enfants ?", expected: "fr" },
   { id: "B", interfaceLanguage: "kreol", message: "Kosa mi pé fé pou gagn in aide pou mon marmay ?", expected: "kreol" },
-  { id: "C", interfaceLanguage: "kreol", message: "Existe-t-il des aides pour les activités sportives de mes enfants ?", expected: "fr" },
+  { id: "C", interfaceLanguage: "kreol", message: "Existe-t-il des aides pour les activités sportives de mes enfants ?", expected: "kreol" },
   { id: "D", interfaceLanguage: "fr", message: "Kosa mi pé fé pou gagn in aide pou mon marmay ?", expected: "kreol" },
-  { id: "E", interfaceLanguage: "kreol", message: "Je voudrais connaître les aides pour mes enfants.", recentHistory: [{ answer: "Pou out marmay...", language: "kreol" }], expected: "fr" },
+  { id: "E", interfaceLanguage: "kreol", message: "Je voudrais connaître les aides pour mes enfants.", recentHistory: [{ answer: "Pou out marmay...", language: "kreol" }], expected: "kreol" },
   { id: "F", interfaceLanguage: "fr", message: "Kosa mi pé fé pou mon bann démarches ?", recentHistory: [{ answer: "Voici les démarches.", language: "fr" }], expected: "kreol" },
   { id: "G", interfaceLanguage: "fr", message: "Aide-moi à préparer ce dossier.", advisorHandoffContext: { descriptionFr: "Description française", descriptionKreol: "Deskripsion kréol" }, expected: "fr" },
   { id: "H", interfaceLanguage: "fr", message: "Réponds-moi en kréol : quelles aides existent ?", expected: "kreol" },
   { id: "I", interfaceLanguage: "kreol", message: "Réponds-moi en français : kosa mi pé fé ?", expected: "fr" },
   { id: "J-fr", interfaceLanguage: "fr", message: "RSA ?", expected: "fr" },
   { id: "J-kr", interfaceLanguage: "kreol", message: "RSA ?", expected: "kreol" },
+  { id: "K", interfaceLanguage: "kreol", message: "Les prix du carburant ont augmenté de combien depuis deux ans ?", expected: "kreol" },
+  { id: "L", interfaceLanguage: "kreol", message: "Lequel est le plus avantageux pour mes courses ?", expected: "kreol" },
+  { id: "M", interfaceLanguage: "kreol", message: "Réponds en français, s'il te plaît.", expected: "fr" },
+  { id: "N", interfaceLanguage: "fr", message: "Mi vé konèt les prix carburant", expected: "kreol" },
 ]
 
 for (const testCase of languageCases) {
