@@ -143,7 +143,7 @@ export const PREMIUM_PAGE_COPY = {
     premiumPlusFeatures: [
       "Tout sak lé dann Premium",
       "Scans san limit",
-      "Konseyé BudgetKazPéi+ — itilizasion san limit",
+      "Konseyé BudgetKazPéi+ — lakonpagnman personnalisé dann out démarches",
       "Dosyé, kourrié, email, relans, randévou ek rekour",
     ],
     soonFeatures: [
