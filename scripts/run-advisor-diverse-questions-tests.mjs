@@ -14,7 +14,7 @@ import {
 } from "../src/services/advisorQuestionRouter.js"
 import { detectAssistantIntent } from "../src/services/ai/assistantIntentEngine.js"
 import { isProtectedAdvisorQuestion } from "../supabase/functions/assistant-aisupabase/engine/routing/questionScope.ts"
-import { getLocalAdvisorBudgetNoDataAdvice } from "../supabase/functions/assistant-aisupabase/engine/routing/offTopicPolicy.ts"
+import { getLocalAdvisorBudgetNoDataAdvice, isContextualAdvisorFollowUp, advisorTopicGroupForQuestion, advisorTrustedTopicLabel } from "../supabase/functions/assistant-aisupabase/engine/routing/offTopicPolicy.ts"
 import { buildSystemPrompt } from "../supabase/functions/assistant-aisupabase/prompts/systemPrompt.ts"
 
 const base=buildAdvisorConversationContext({
@@ -313,6 +313,44 @@ for (const question of [
   assert.equal(getLocalAdvisorBudgetNoDataAdvice(question, costObservation, "fr"), null)
 }
 
+
+// A natural follow-up after the Advisor's own AI answer is contextual,
+// regardless of whether the prior reply was a saved-money observation.
+// Trusted server topic (not client-reported history) authorizes its one
+// metered model call. This reproduces the screenshot "Oui ça va encore augmenter ?".
+const contextualQuestions = [
+  "Oui ça va encore augmenter ?",
+  "Est-ce que ça va baisser ?",
+  "Et pourquoi ?",
+  "Ça va encore durer longtemps ?",
+  "Tu penses que ça va continuer ?",
+  "C'est certain ?",
+  "Et pour moi ?",
+]
+for (const question of contextualQuestions) {
+  assert.equal(isContextualAdvisorFollowUp(question), true, question)
+}
+for (const question of [
+  "Quelle est la capitale du Japon ?",
+  "Pourquoi le ciel est-il bleu ?",
+  "Et pourquoi les chats ronronnent-ils ?",
+  "Et si la Lune était en fromage ?",
+  "Je veux une recette de gâteau",
+  "Combien de lunes possède Jupiter ?",
+  "Comment fonctionne un volcan ?",
+]) {
+  assert.equal(isContextualAdvisorFollowUp(question), false, question)
+}
+assert.equal(advisorTopicGroupForQuestion("Le carburant est cher"), "carburant")
+assert.equal(advisorTopicGroupForQuestion("Que faire pour mon APL ?"), "aides")
+assert.equal(advisorTopicGroupForQuestion("Combien me coûtent mes courses ?"), "courses")
+assert.equal(advisorTrustedTopicLabel("carburant"), "prix et dépenses de carburant")
+assert.equal(advisorTrustedTopicLabel("not_a_real_topic"), "")
+const trustedTopicMigration = await readFile(new URL("../supabase/migrations/20261118181000_advisor_trusted_conversation_topic.sql", import.meta.url), "utf8")
+assert.match(trustedTopicMigration, /advisor_conversation_topics/)
+assert.match(trustedTopicMigration, /enable row level security/)
+assert.match(trustedTopicMigration, /revoke all on public.advisor_conversation_topics from public, anon, authenticated/)
+
 const advisorEdgeSource = await readFile(new URL("../supabase/functions/assistant-aisupabase/index.ts", import.meta.url), "utf8")
 assert.ok(
   advisorEdgeSource.indexOf("getLocalAdvisorBudgetNoDataAdvice(") <
@@ -320,5 +358,17 @@ assert.ok(
   "Local no-data advice must be resolved before off-topic fallback",
 )
 assert.match(advisorEdgeSource, /type: "local_budget_advice", calls: 0/)
+assert.match(advisorEdgeSource, /readTrustedAdvisorTopic\(supabaseAdmin, context\.userId\)/)
+assert.match(advisorEdgeSource, /isContextualAdvisorFollowUp\(context\.question\)/)
+assert.match(advisorEdgeSource, /if \(trustedTopic\) \{\s*spendScope = "useful"/)
+assert.match(advisorEdgeSource, /context\.body\.trustedPreviousTopic = trustedTopic/)
+assert.match(advisorEdgeSource, /await rememberAdvisorTopic\(\s*supabaseAdmin, context\.userId, context\.question/)
+assert.ok(advisorEdgeSource.indexOf('if (spendScope === "offtopic")') <
+  advisorEdgeSource.indexOf('rpc("reserve_advisor_openai"'))
+assert.ok(advisorEdgeSource.indexOf('rpc("reserve_advisor_ai_request"') <
+  advisorEdgeSource.indexOf('rpc("reserve_advisor_openai"'))
+assert.match(advisorEdgeSource, /Pour un prix futur, n'affirme jamais une hausse ou une baisse certaine/)
+assert.doesNotMatch(advisorEdgeSource, /const recentClientHistory = Array\.isArray\(context\.body\?\.recentHistory\)/)
+
 
 console.log("OK: 40+ diverse/farfelues, context-switch, aid, fiction, and budget routes tested; general answers bypass CAF reviews.")
