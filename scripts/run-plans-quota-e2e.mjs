@@ -192,7 +192,7 @@ assert.equal(PLAN_PRICES[PLAN_IDS.free], "0 €")
 assert.equal(PLAN_PRICES[PLAN_IDS.premium], "4,99 €/mois")
 assert.equal(PLAN_PRICES[PLAN_IDS.premiumPlus], "4,99 €/mois")
 assert.deepEqual(PUBLIC_PLAN_CARDS.map(plan => plan.id), [PLAN_IDS.free, PLAN_IDS.premium])
-assert.equal(FREE_OPERATIONAL_SCAN_LIMIT, 1)
+assert.equal(FREE_OPERATIONAL_SCAN_LIMIT, 3)
 assert.equal(getPlanScanLimit(PLAN_IDS.premium), 100)
 assert.equal(PREMIUM_PLUS_SAFETY_SCAN_LIMIT, 100)
 assert.equal(getPlanScanLimit(PLAN_IDS.premiumPlus), 100)
@@ -230,7 +230,7 @@ assert.equal(getReceiptQuotaBlockingMessagePure(protectedPremiumQuota, {
   intensiveUsage: "safety", quotaReached: "quota",
 }), "safety")
 const discoveryQuota = resolveReceiptQuotaStatePure({
-  usage: { used: 1, plan: "free" },
+  usage: { used: 3, plan: "free" },
 })
 assert.equal(discoveryQuota.reached, true)
 assert.equal(formatReceiptQuotaTicketsLabelFrPure(discoveryQuota), "Scanner découverte")
@@ -240,7 +240,7 @@ assert.equal(emptyMonthSnapshot.plan, "premium_plus")
 assert.equal(emptyMonthSnapshot.used, 0)
 
 assert.match(scanUsage, /resolveScanUsageSnapshot/, "scan usage service must centralize plan fallback resolution")
-assert.match(scanUsage, /data\?\.plan \|\| fallbackPlan/, "scan usage service must keep the resolved subscription plan when scan_usage has no row yet")
+assert.match(scanUsage, /data\?\.plan \|\| fallbackPlan/, "scan usage service must retain legacy snapshot normalization")
 assert.match(receiptQuota, /source: subscriptionLoading \? "subscription_loading" : "scan_usage"/, "receipt quota hook must expose an explicit subscription loading state instead of defaulting to free")
 assert.match(receiptQuota, /if \(subscriptionLoading\)/, "receipt quota hook must short-circuit while the subscription plan is still loading")
 assert.match(receiptQuota, /fallbackPlan,\s*source: "scan_usage_error"/, "receipt quota hook must keep the resolved plan even when scan usage loading fails")
