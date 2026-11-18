@@ -158,9 +158,9 @@ export function isPotentialAdvisorFollowUp(question = "") {
 // clearly referential follow-up to use the normal (atomically metered) AI
 // route. This check NEVER relies on a client-provided mode or topic.
 const INDEPENDENT_NON_FINANCIAL_TOPIC =
-  /\b(?:recette|gateau|cuisine|soleil|ciel|etoiles?|jupiter|saturne|mars|planete|astronomie|football|rugby|match|sport|meteo|volcans?|plantes?|chats?|chiens?|film|livre|chanson|poeme|blague|acteur|president|histoire de france)\b/
+  /\b(?:recette|gateau|cuisine|soleil|ciel|etoiles?|jupiter|saturne|mars|lune|planete|astronomie|football|rugby|match|sport|meteo|volcans?|plantes?|chats?|chiens?|film|livre|chanson|poeme|blague|acteur|president|histoire de france)\b/
 const CONTEXT_REFERENCE =
-  /\b(?:ca|cela|ceci|celui|celle|en|encore|toujours|le meme|la meme|cette fois|ces prix|ce prix|c est|c etait|se poursuivre|se calmer)\b/
+  /\b(?:ca|cela|ceci|celui|celle|encore|toujours|le meme|la meme|cette fois|ces prix|ce prix|c est|c etait|se poursuivre|se calmer)\b/
 const CONTEXT_OPENING =
   /^(?:oui|non|ok|okay|d accord|alors|mais|donc|du coup|et|ca|cela|ceci|c est|est ce que|est ce qu|tu penses|vous pensez|penses tu|pensez vous|crois tu|vous croyez|pourquoi|comment|quand|combien|et pourquoi|et comment|et quand|et combien)\b/
 const SHORT_ELLIPTICAL = /^(?:et )?(?:pourquoi|comment|combien|quand|et ensuite|et maintenant|et pour moi|la suite|c est certain|est ce certain)\b/
