@@ -210,16 +210,6 @@ export default function ConseillerPage({
             <span>{isKreol ? "Le konseye i servi bann informations disponib pou aide aou." : "Le conseiller s’appuie sur les informations disponibles dans BudgetKazPéi."}</span>
           </div>
         </div>
-        <span
-          className="bkp-advisor-usage-label"
-          title={isKreol
-            ? "Bann kestyon libres : 5 par zour, 20 par mwa. Bann kestyon utiles bidzé, aides ek démarches reste prioritaires."
-            : "Questions libres hors sujet : 5 par jour et 20 par mois. Budget, aides et démarches restent prioritaires. Protection anti-abus : 30 appels IA par heure."}
-        >
-          {access.publicUsageLabel === "unlimited"
-            ? (isKreol ? "Usage libre encadré" : "Usage libre encadré")
-            : (isKreol ? "Itilizasion limité" : "Utilisation limitée")}
-        </span>
       </div>
 
       <AssistantConseiller
