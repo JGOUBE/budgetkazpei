@@ -19,8 +19,8 @@ for (const source of [plans, premium, landing]) {
   assert.doesNotMatch(source, /Konseyé BudgetKazPéi[^\n"]{0,95}(?:itilizasion limité|itilizasion san limit)/i)
 }
 assert.match(plans, /Conseiller BudgetKazPéi — budget, aides et conseils/)
-assert.match(premium, /Conseiller BudgetKazPéi\+ — accompagnement avancé/)
-assert.match(landing, /Konseyé BudgetKazPéi\+ — lakonpagnman avansé/)
+assert.match(premium, /Conseiller BudgetKazPéi — budget, aides et conseils/)
+assert.match(landing, /Konseyé BudgetKazPéi — bidjé, èd ek konsey/)
 
 const backend = await read("supabase/functions/assistant-aisupabase/index.ts")
 assert.match(backend, /rpc\("reserve_advisor_ai_request"/)
