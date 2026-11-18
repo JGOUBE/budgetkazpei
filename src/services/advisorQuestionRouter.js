@@ -3,7 +3,7 @@ import { findPrimaryAidTopicIds, normalizeAidTopicText } from "./aidTopics.js"
 // Heuristics are deliberately conservative: they decide whether to retrieve
 // personal budget/aid data, NEVER what factual answer the model should give.
 // A general question should remain general, even during an aid conversation.
-const SELF_CONTAINED_STARTS = /^(?:pourquoi|comment|combien|quel(?:le|les|s)?|qu(?:e| est ce qu| est ce que)|est ce que|peux tu|pourrais tu|explique|raconte|imagine|invente|ecris|ecrit|donne moi|sais tu|qui |ou |quand )\b/
+const SELF_CONTAINED_STARTS = /^(?:pourquoi|comment|combien|quel(?:le|les|s)?|qu(?:e| est ce qu| est ce que)|est ce que|peux tu|pourrais tu|explique|raconte|imagine|invente|ecris|ecrit|aide moi|donne moi|sais tu|qui |ou |quand )\b/
 const REFERENTIAL = /\b(?:ca|cela|cette aide|cet organisme|ce dossier|ce courrier|la meme aide|celui ci|celle ci|en beneficier|en profiter|l obtenir|la demander|le demander|ce montant|ses conditions|cette demarche|ce sujet|c est quoi|combien de temps faut il attendre|combien de jours pour recevoir|quel delai|dans combien de temps|et ensuite|et pour|et alors)\b/
 const CREATIVE = /\b(?:imagine|invente|raconte une histoire|raconte moi une histoire|fiction|fictif|farfelu|farfelue|extraterrestre|dragon|licorne|magique|super heros|voyage dans le temps|sur la lune|lune en fromage|si les chats|si mon chat|chat president|lune.*fromage|si (?:la |le |les |mon |ma |un |une )?(?:lune|licorne|extraterrestre)|hypothese absurde)\b/
 const AID_REQUEST = /\b(?:aides? financieres?|aides? sociales?|aides? pour|des aides|aides\b|une aide|montant de l aide|allocations?|subventions?|droit aux aides|droits sociaux|prestations? sociales?|caf|rsa|apl|fsl|ccas|mdph|prime d activite|cheque energie|pass sport|aide au logement|demande d aide|demander une aide|eligible a une aide)\b/
@@ -53,6 +53,10 @@ export function shouldLookupAdvisorAids({
   const text = normalizeAidTopicText(question)
   const explicitAid = AID_REQUEST.test(text)
   if (mode === "scan_profil") return true
+  // A new, self-contained question takes priority over a previous aid tab or
+  // handoff. Otherwise "Aide-moi à comprendre la relativité" can retrieve
+  // CAF facts simply because the user was looking at Aides before.
+  if (isSelfContainedNewQuestion(question) && !explicitAid) return false
   if (mode === "trouver_aide" && (!isSelfContainedNewQuestion(question) || explicitAid)) return true
   if (explicitAid) return true
   if (handoffContext && Object.keys(handoffContext).length > 0) return true
