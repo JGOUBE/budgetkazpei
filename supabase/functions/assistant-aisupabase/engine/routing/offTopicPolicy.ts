@@ -87,46 +87,58 @@ export function getLocalAdvisorOffTopicResponse(language = "fr") {
   return language === "kreol" ? LOCAL_OFFTOPIC_KR : LOCAL_OFFTOPIC_FR
 }
 
-// When a prior zero-cost budget answer reports missing data, a natural request
-// for saving ideas must not be routed to the unrelated-question fallback.
-// This is a conservative local response with no provider call and no invented
-// price, eligibility decision, or personal savings calculation.
+// Natural follow-ups to a real budget observation must never be mistaken for
+// an unrelated message simply because the user did not enter expenses.
+// These are cautious, general suggestions only: no AI call, no fabricated data.
+// The history is not used to authorize extra paid requests or alter access.
 export function getLocalAdvisorBudgetNoDataAdvice(
   question = "", recentHistory: unknown = [], language = "fr",
 ) {
   const text = normalize(question)
   if (!text || text.length > 160 || text.split(" ").length > 31 ||
-    !/\b(?:solutions?|conseils?|astuces?|idees?|pistes?|proposes?|proposer|recommande(?:s|z|r)?|faire quoi|comment faire|par quoi commencer)\b/.test(text) ||
-    /\d|\b(?:personnalise|personnalisee|personnaliser|precis|precise|estimation|estimer|calculer|simulation|ma situation|mon cas|selon mes|selon mon|compte tenu|mon profil|mes contraintes|mes revenus|ma famille)\b/.test(text) ||
-    /\b(?:rsa|apl|caf|eligib|recours|chomage|salaire|contrat|recette|gateau|meteo|planete|licorne|dragon|poeme|blague)\b/.test(text)) return null
+    !/\b(?:solutions?|conseils?|astuces?|idees?|pistes?|proposes?|proposer|recommande(?:s|z|r)?|faire quoi|comment faire|par quoi commencer|autre chose|quoi d autre|et sinon|sinon quoi|alternatives?)\b/.test(text) ||
+    /\d|\b(?:personnalise|personnalisee|personnaliser|precis|precise|estimation|estimer|calculer|simulation|ma situation|mon cas|selon mes|selon mon|compte tenu|mon profil|mes contraintes|mes revenus|ma famille|rsa|apl|caf|eligib|recours|chomage|salaire|contrat|recette|gateau|cuisine|meteo|film|chanson|planete|licorne|dragon|poeme|blague)\b/.test(text)) return null
 
-  const history = Array.isArray(recentHistory) ? recentHistory.slice(0, 4) : []
-  const prior = history[0] as Record<string, unknown> | undefined
-  if (!prior || !prior.question || !prior.answer) return null
-  if (!/\b(?:je ne trouve pas encore de depenses|pas encore de depenses classees|mi trouve pas ankor bann depans|aucune depense enregistree)\b/.test(normalize(prior.answer))) return null
-  if (prior.source && !["local_budget_followup", "local"].includes(String(prior.source))) return null
+  const history = Array.isArray(recentHistory)
+    ? (recentHistory as Record<string, unknown>[]).slice(0, 5) : []
+  const validSource = new Set(["local_budget_observation", "local_budget_followup", "local_budget_advice"])
+  const anchorIndex = history.findIndex((item, index) =>
+    index <= 3 && validSource.has(String(item?.source || "")) &&
+    history.slice(0, index).every(prior =>
+      ["local_offtopic", "local_budget_followup", "local_budget_advice"].includes(String(prior?.source || "")),
+    ),
+  )
+  if (anchorIndex < 0) return null
 
-  const subject = history.slice(1)
-    .map(item => normalize((item as Record<string, unknown>)?.question || "")).join(" ")
+  const subject = history.slice(anchorIndex).map(item => normalize(item?.question || "")).join(" ")
   const fr = language !== "kreol" && language !== "kr" && language !== "cr"
+  const alternative = history.slice(0, anchorIndex + 1).some(item => item?.source === "local_budget_advice") ||
+    /\b(?:autre chose|quoi d autre|et sinon|sinon quoi|alternatives?|autres? (?:solutions?|pistes?|idees?))\b/.test(text)
   if (/\b(?:carburant|essence|gazole|diesel)\b/.test(subject)) {
+    if (alternative) return fr
+      ? "Voici d'autres possibilités pour le carburant : vérifiez la pression des pneus selon le constructeur, adoptez une conduite souple et, si possible, évitez les trajets aux heures les plus encombrées. Ce sont des pistes générales, sans économie chiffrée."
+      : "Autres pistes carburant : vérifie pression bann pneus, conduit souple, ek évite bann gros bouchons quand possible."
     return fr
       ? "Même sans dépenses enregistrées, vous pouvez déjà réduire le coût du carburant : regroupez les déplacements pour éviter les allers-retours, comparez le prix au litre sans détour coûteux, et envisagez covoiturage ou transports en commun quand c'est possible. Avec votre kilométrage habituel et la consommation du véhicule, je pourrai ensuite estimer vos frais sans inventer de montant."
-      : "Minm san dépans anrezistré, groupe out bann trajé, compare bann prix carburant san grand détour, ek regarde si covoiturage ou transport en commun lé possible. Donne out kilométraz ek consommation loto pou estime out frais."
+      : "Minm san dépans anrezistré, groupe out bann trajé, compare bann prix carburant san grand détour, ek regarde si covoiturage ou transport en commun lé possible."
   }
   if (/\b(?:courses?|alimentaire|alimentation)\b/.test(subject)) {
+    if (alternative) return fr
+      ? "Autres idées pour les courses : comparez les produits de saison quand ils sont avantageux, les formats familiaux au prix unitaire et les portions que vous pourriez congeler. Un grand format n'est pas toujours le meilleur prix."
+      : "Autres idées courses : compare produits de saison, prix par unité et bann portions à congeler. Grand format lé pas forcément moins cher."
     return fr
       ? "Même sans historique, préparez une liste selon vos repas, comparez les prix au kilo pour un même format, puis vérifiez vos placards avant de racheter. Avec quelques tickets enregistrés, nous pourrons ensuite chercher les économies adaptées à vos habitudes."
-      : "Minm san historique, prépare in liste selon out repas, compare prix au kilo, ek vérifie sak ou nana déjà. Avec bann tickets, nou pourra mieux cherche bann économies."
+      : "Minm san historique, prépare in liste selon out repas, compare prix au kilo, ek vérifie sak ou nana déjà."
   }
   if (/\b(?:loyer|logement|energie|electricite|assurances?|abonnements?)\b/.test(subject)) {
+    if (alternative) return fr
+      ? "Autres pistes : vérifiez les frais renouvelés automatiquement, les éventuelles garanties en double et les contrats comparables à prestations équivalentes. Je ne peux pas chiffrer d'économie sans données."
+      : "Autres pistes : vérifie bann frais automatiques, garanties en double, ek contrats équivalents."
     return fr
-      ? "Sans historique, commencez par noter les factures et charges réellement payées, repérez les abonnements ou garanties en double, puis comparez les offres à conditions équivalentes. Vérifiez aussi les aides possibles sans présumer de vos droits. Nous pourrons ensuite chiffrer vos économies avec vos données."
-      : "San historique, note out bann factures ek charges, vérifie les abonnements en double, ek compare bann offres équivalentes. Apré nou pourra calculer avec out vrais montants."
+      ? "Sans historique, commencez par noter les factures et charges réellement payées, repérez les abonnements ou garanties en double, puis comparez les offres à conditions équivalentes. Vérifiez aussi les aides possibles sans présumer de vos droits."
+      : "San historique, note out bann factures ek charges, vérifie les abonnements en double, ek compare bann offres équivalentes."
   }
-  return fr
-    ? "Même sans dépenses enregistrées, notez d'abord vos charges fixes, identifiez un achat régulier à comparer et regardez les prix à quantité équivalente. Avec quelques dépenses classées, nous pourrons ensuite personnaliser l'analyse sans inventer de montants."
-    : "Minm san dépans anrezistré, note out charges fixes, compare bann prix pou minm quantité, ek classe kèk dépans. Apré nou pourra faire in analyse pli personnelle."
+  return null
 }
 
 // Short, elliptical follow-ups can refer to a recent financial conversation.
