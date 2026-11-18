@@ -57,7 +57,7 @@ const PREMIUM_CONTENT = {
       premiumPlusCta: "Choisir Premium+",
       premiumGuestCta: "Créer mon compte pour Premium",
       premiumPlusGuestCta: "Créer mon compte pour Premium+",
-      normalUse: "Utilisation illimitée dans le cadre d'un usage normal du service.",
+      normalUse: "Questions hors sujet : 5 par jour et 20 par mois. Protection anti-abus : 30 appels IA par heure.",
       comingSoonTitle: "En préparation",
       comingSoonText:
         "Les comparaisons intelligentes et les Bons plans personnalisés seront ajoutés progressivement, à mesure que la base locale s'enrichit.",
@@ -91,7 +91,7 @@ const PREMIUM_CONTENT = {
       items: [
         [
           "Quelle est la différence entre Premium et Premium+ ?",
-          "Premium donne accès au Conseiller BudgetKazPéi en utilisation limitée pour la gestion quotidienne. Premium+ ajoute une utilisation illimitée dans le cadre d'un usage normal et l'accompagnement avancé des démarches.",
+          "Premium donne accès au Conseiller BudgetKazPéi en utilisation limitée pour la gestion quotidienne. Premium+ ajoute un usage étendu pour le budget, les aides et les démarches, avec une limite de 5 questions hors sujet par jour et 20 par mois, et l'accompagnement avancé.",
         ],
         [
           "Que se passe-t-il lorsque j'atteins ma limite de scans ?",
@@ -157,7 +157,7 @@ const PREMIUM_CONTENT = {
       premiumPlusCta: "Swazi Premium+",
       premiumGuestCta: "Kré mon kont pou Premium",
       premiumPlusGuestCta: "Kré mon kont pou Premium+",
-      normalUse: "Itilizasion san limit dann kad in lizaz normal servis-la.",
+      normalUse: "Kestion hors sujet : 5 par zour ek 20 par mwa. Proteksion anti-abus : 30 appels IA par ler.",
       comingSoonTitle: "An préparasyon",
       comingSoonText:
         "Konparézon entélizan ek Bon Plan pèsonalizé va ariv progressivement, amezir baz lokal-la i grandi.",
