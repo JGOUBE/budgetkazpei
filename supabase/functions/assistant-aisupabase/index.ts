@@ -19,6 +19,7 @@ import {
 } from "./engine/truth/trustedAidFacts.ts"
 import { reviewAssistantAnswer } from "./engine/review/reviewerEngine.ts"
 import { isProtectedAdvisorQuestion } from "./engine/routing/questionScope.ts"
+import { classifyAdvisorSpendScope, getLocalAdvisorSmallTalk } from "./engine/routing/offTopicPolicy.ts"
 import {
   getAdvisorAccess,
   isAdvancedAdvisorMode,
@@ -799,6 +800,34 @@ Deno.serve(async (req) => {
 
     const context = contextResult.context as AssistantContext
 
+    // Strict greetings are handled without OpenAI. All real questions,
+    // including creative or unexpected ones, follow the normal model path.
+    if (!context.action || context.action !== "analyze_refusal") {
+      const localText = getLocalAdvisorSmallTalk(context.question, context.language)
+      if (localText && context.mode === "general") {
+        console.info("ADVISOR_API_METER", JSON.stringify({
+          type: "local_pleasantry", calls: 0, scope: "offtopic",
+        }))
+        return jsonResponse({
+          success: true,
+          answer: localText,
+          source: "local_smalltalk",
+          language: context.language,
+          consumed: false,
+          openAiCallCount: 0,
+        })
+      }
+    }
+
+    const questionLengthLimit = context.action === "analyze_refusal" ? 12000 : 4000
+    if (context.question.length > questionLengthLimit) {
+      return jsonResponse({
+        success: false,
+        code: "advisor_question_too_long",
+        error: "Votre message est trop long. Raccourcissez-le ou séparez-le en plusieurs questions.",
+      }, 413)
+    }
+
     // A strict official-amount review is correct for an actual CAF/finance
     // question, but it can badly corrupt an unrelated answer about astronomy,
     // a recipe or an invented scenario.
@@ -853,6 +882,49 @@ Deno.serve(async (req) => {
       context.allowBilingualResponse,
     )
 
+    // Avoid accidentally sending huge account snapshots to the model.
+    if (userPrompt.length > 32000) {
+      return jsonResponse({
+        success: false,
+        code: "advisor_context_too_large",
+        error: "Votre demande contient trop de données à analyser d'un coup. Précisez la période ou le sujet.",
+      }, 413)
+    }
+
+    // Hard spend guard in Postgres: atomic per-user reservation under an
+    // advisory transaction lock. Client-provided mode/context cannot disable
+    // the check, and the RPC is executable by service_role only.
+    const spendScope = classifyAdvisorSpendScope({
+      question: context.question, mode: context.mode, action: context.action,
+    })
+    const { data: requestReservation, error: reservationError } = await supabaseAdmin
+      .rpc("reserve_advisor_ai_request", {
+        p_user_id: context.userId,
+        p_offtopic: spendScope === "offtopic",
+      })
+    if (reservationError || !requestReservation) {
+      // Fail closed: never silently bypass the cost guard.
+      console.error("ADVISOR_SPEND_GUARD_ERROR", reservationError?.code || "missing_result")
+      return jsonResponse({
+        success: false,
+        code: "advisor_spend_guard_unavailable",
+        error: "Le conseiller est momentanément indisponible. Réessayez dans un instant.",
+      }, 503)
+    }
+    if (requestReservation.allowed !== true) {
+      const isFreeChat = String(requestReservation.code || "").startsWith("offtopic_")
+      return jsonResponse({
+        success: false,
+        code: String(requestReservation.code || "advisor_rate_limit"),
+        offTopicLimitReached: isFreeChat,
+        error: isFreeChat
+          ? (requestReservation.code === "offtopic_monthly_limit"
+              ? "La limite de questions libres de ce mois est atteinte. Vos questions sur le budget, les aides et les démarches restent disponibles."
+              : "La limite de 5 questions libres par jour est atteinte. Vos questions sur le budget, les aides et les démarches restent disponibles.")
+          : "Trop de questions ont été envoyées en peu de temps. Réessayez dans une heure.",
+      }, 429)
+    }
+
     const openAiResult = await callOpenAi({
       openAiKey,
       model,
@@ -864,7 +936,7 @@ Deno.serve(async (req) => {
     if (!openAiResult.ok) {
       // Technical metering only: never log the question, profile or answer.
       console.info("ADVISOR_API_METER", JSON.stringify({
-        type: "openai_attempt", calls: 1, status: "provider_error",
+        type: "openai_attempt", calls: 1, scope: spendScope, status: "provider_error",
         statusCode: openAiResult.status,
       }))
       console.log("OPENAI ERROR", JSON.stringify(openAiResult.data))
@@ -971,7 +1043,7 @@ Deno.serve(async (req) => {
     // The first completion is always counted; memory only on explicit opt-in.
     console.info("ADVISOR_API_METER", JSON.stringify({
       type: "openai_attempt", calls: memoryApiAttempted ? 2 : 1,
-      status: "success", model,
+      scope: spendScope, status: "success", model,
       primaryInputTokens: Number(openAiResult.data?.usage?.prompt_tokens || 0),
       primaryOutputTokens: Number(openAiResult.data?.usage?.completion_tokens || 0),
     }))
