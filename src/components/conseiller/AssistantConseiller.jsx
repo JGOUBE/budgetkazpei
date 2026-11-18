@@ -41,6 +41,7 @@ import {
   ADVISOR_TURN_TYPES,
   buildAdvisorConversationContext,
   getAdvisorRankingOptions,
+  resolveAdvisorBudgetConfirmation,
 } from "../../services/advisorConversation"
 
 const COLORS = createColorAliases({ red: () => "#FB7185" })
@@ -553,6 +554,7 @@ export default function AssistantConseiller({
           question: item.question,
           answer: item.answer,
           mode: item.mode,
+          source: item.source || null,
           createdAt: item.createdAt,
           conversationContext: item.conversationContext || null,
           recommendedAidIds: item.recommendedAidIds || [],
@@ -610,6 +612,37 @@ export default function AssistantConseiller({
     setPendingMessage({ question: sentQuestion, mode: currentMode })
     setQuestion("")
     setQuickQuestionSelected(false)
+
+    // A short confirmation should continue the last offer rather than be
+    // dismissed as off-topic. Use recorded figures without an AI call.
+    const budgetConfirmation = resolveAdvisorBudgetConfirmation({
+      question: sentQuestion,
+      recentHistory: history,
+      insights: questionInsights,
+      language: responseLanguage,
+      contextUnavailable: Boolean(financialContextError),
+    })
+    if (budgetConfirmation) {
+      setHistory(prev => [
+        {
+          id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          question: sentQuestion,
+          answer: budgetConfirmation.answer,
+          actions: budgetConfirmation.actions,
+          language: budgetConfirmation.language,
+          mode: budgetConfirmation.mode,
+          intent: budgetConfirmation.intent,
+          source: budgetConfirmation.source,
+          createdAt: new Date().toISOString(),
+        },
+        ...prev,
+      ].slice(0, 6))
+      setLoadingAssistant(false)
+      setPendingMessage(null)
+      setAssistantMode("general")
+      setAdvisorHandoffContext(null)
+      return
+    }
 
     if (shouldAnswerLocally) {
       const localResult = answerAssistantQuestion({ question: sentQuestion, insights: questionInsights })
@@ -742,6 +775,7 @@ export default function AssistantConseiller({
           actions: result.actions || [],
           language: result.language || (responseIsKreol ? "kreol" : "fr"),
           mode: currentMode,
+          source: result.source || (result.openAiCallCount > 0 ? "ai" : null),
           createdAt: new Date().toISOString(),
           conversationContext: result.conversationContext || null,
           recommendedAidIds: result.recommendedAidIds || [],
