@@ -59,6 +59,7 @@ import { findDuplicateReceipt, getConfidenceColor, getConfidenceIcon } from "../
 import { importValidatedReceipt } from "../../../services/scan/receiptImporter"
 import { isItemEligibleForSmartShopping, normalizeItemQualityStatus } from "../../../services/scan/receiptRules"
 import { getScanErrorDetails, ScanError } from "../../../services/scan/scanErrors"
+import { requestAppSectionNavigation } from "../../../services/appSectionNavigation"
 import { createScanMetric, incrementScanUsage } from "../../../services/scan/scanUsageService"
 import { syncShoppingItemsFromReceipt } from "../../shopping/services/shoppingEngine"
 import { BkIcons } from "../../../components/icons-budgetkazpei"
@@ -178,7 +179,7 @@ const TEXT = {
     deleted: "Ticket retiré de l'historique.",
     error: "Analyse impossible. Vous pouvez réessayer ou remplir manuellement.",
     quotaReached: "Quota atteint. Vous pouvez quand même remplir manuellement.",
-    intensiveUsage: "Vous utilisez BudgetKazPéi de manière intensive. Contactez-nous afin que nous trouvions la formule la plus adaptée.",
+    intensiveUsage: "Par sécurité, le scanner nécessite une vérification avant toute nouvelle analyse. Contactez notre équipe pour rétablir ce service.",
     quotaLoading: "Chargement de votre formule en cours...",
     expenseCreated: "Dépense créée",
     noUser: "Utilisateur non connecté.",
@@ -292,7 +293,7 @@ const TEXT = {
     deleted: "Tiké retiré dann listwar.",
     error: "Analiz-la pa marche. Ou pé réessayé ou ranpli amain.",
     quotaReached: "Quota atteint. Ou pé kan même ranpli amain.",
-    intensiveUsage: "Ou pe servi BudgetKazPéi souvan. Contacte a nou pou trouv formule pli adapté.",
+    intensiveUsage: "Pou sécurité, scanner-la i demande in vérification avant in nouvo analiz. Kontakte nout lekip pou continuer.",
     quotaLoading: "Nou pe charg out formule...",
     expenseCreated: "Dépans créée",
     noUser: "Utilisateur pa connecté.",
@@ -2364,7 +2365,7 @@ export default function ReceiptsPage({
         <div style={{ marginTop: 16, display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
           <strong style={{ color: COLORS.yellow, fontSize: 16 }}>{quota.planLabel || (isPremiumPlus ? "Premium+" : isPremium ? "Premium" : "Gratuit")}</strong>
           <span style={{ color: COLORS.muted, fontSize: 13, fontWeight: 800 }}>
-            {isKreol ? "Tiké sa mwa :" : "Tickets ce mois :"} {quota.loading ? "…" : quota.used}
+            {quota.loading ? "…" : (isKreol ? "Analyse de vos tickets" : "Analyse de vos tickets")}
           </span>
         </div>
       </div>
@@ -2409,6 +2410,15 @@ export default function ReceiptsPage({
           fontWeight: 800,
         }}>
           {message}
+          {quota.safetyLimitReached && (
+            <button type="button" onClick={() => requestAppSectionNavigation("contact")}
+              style={{ display: "block", marginTop: 12, padding: "10px 14px",
+                borderRadius: 12, border: "1px solid #A7C7C0",
+                background: "#EDF7F3", color: "#24554A", fontWeight: 750,
+                cursor: "pointer", fontFamily: "inherit" }}>
+              {isKreol ? "Kontakte nout lekip" : "Contacter l'équipe"}
+            </button>
+          )}
         </div>
       )}
 
