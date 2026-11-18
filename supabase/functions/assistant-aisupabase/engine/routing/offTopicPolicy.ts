@@ -5,7 +5,7 @@ const normalize = value => String(value || "")
   .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
   .toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ")
 
-const MONEY_AND_BENEFITS = /\b(?:budget|bidze|depens(?:e|es)?|depans|revenu(?:s)?|salaire|pay(?:er|e|e?s)?|factur(?:e|es)?|loyer|charges? fixes?|epargne|economis(?:er|e|es)?|economies|economi|dettes?|credit|debit|rembourser|mensualit(?:e|es)|impots?|taxes?|retraite|assurance|mutuelle|prix|tarif|moins cher|plus cher|carburant|essence|gazole|diesel|plein d essence|transport|deplacements?|pouvoir d achat|vie chere|magasin|enseigne|courses?|ticket de caisse|achat|panier|alimentation|energie|electricite|eau potable|allocation(?:s)?|prestation(?:s)?|aides? (?:financiere|sociale|au logement|de la caf|publique|pour mon|pour ma)|mes aides|mes droits|quelles aides|aides possibles|trouver une aide|demander une aide|rsa|apl|als|alf|aah|aeeh|ass\b|are\b|caf\b|mdph|ccas|france travail|fsl|bourse|pass sport|prime d activite|crous)\b/
+const MONEY_AND_BENEFITS = /\b(?:budget|bidze|depens(?:e|es)?|depans|revenu(?:s)?|salaire|pay(?:er|e|e?s)?|factur(?:e|es)?|loyer|charges? fixes?|epargne|economis(?:er|e|es)?|economies|economi|dettes?|credit|debit|rembourser|mensualit(?:e|es)|impots?|taxes?|retraite|assurance|mutuelle|prix|tarif|moins cher|plus cher|carburant|carburan|mazout|essence|essans|gazole|diesel|plein d essence|transport|deplacements?|pouvoir d achat|vie chere|magasin|enseigne|courses?|ticket de caisse|achat|panier|alimentation|energie|electricite|eau potable|allocation(?:s)?|prestation(?:s)?|aides? (?:financiere|sociale|au logement|de la caf|publique|pour mon|pour ma)|mes aides|mes droits|quelles aides|aides possibles|trouver une aide|demander une aide|rsa|apl|als|alf|aah|aeeh|ass\b|are\b|caf\b|mdph|ccas|france travail|fsl|bourse|pass sport|prime d activite|crous)\b/
 const ADMIN_AND_FINANCIAL_ADVICE = /\b(?:demarch(?:e|es) administrativ(?:e|es)|dossier(?:s)? administratifs?|mon dossier|ma demande d aide|mes droits|mon courrier|ma lettre|ma declaration|mon refus|mon recours|mes justificatifs|mon contrat|mes prestations|mes allocations|ma retraite|mon travail|mon emploi|mon cv|ma formation|recherche d emploi|aide sociale|aides locales|allocataire|surendettement|aide au logement|droit social|consommation|mon fournisseur|mon abonnement)\b/
 const PERSONAL_MONEY = /\b(?:mon budget|mes depenses|mes revenus|mon salaire|mon argent|mon loyer|mes achats|mes courses|mes droits|mon credit|mes factures|mes economies|mes aides|ma caf|mes prestations)\b/
 const CLEAR_GENERAL_QUERY = /^(?:pourquoi (?:le ciel|la lune|les etoiles|les chats|les chiens|la terre|le soleil)|quelle est la capitale|quel est le president|combien de lunes|raconte(?: moi)? (?:une histoire|une blague)|fais(?: moi)? (?:une blague|une devinette)|invente(?: moi)?|ecris(?: moi)? (?:un poeme|une chanson)|comment(?: ca)? fonctionne (?:une fusee|un volcan)|qui a gagne (?:le match|la coupe))\b/
@@ -53,6 +53,7 @@ export function classifyAdvisorSpendScope({question = "", mode = "general", acti
 // Exact, brief pleasantries only: no template interception of real queries.
 const FR_LOCAL = Object.freeze({
   "bonjour": "Bonjour ! Je peux vous aider avec votre budget, vos achats, les aides et les démarches.",
+  "bonzour": "Bonjour ! Je peux vous aider avec votre budget, vos achats, les aides et les démarches.",
   "salut": "Salut ! Une question sur vos économies, votre budget ou vos aides ?",
   "coucou": "Coucou ! Que souhaitez-vous savoir aujourd'hui ?",
   "bonsoir": "Bonsoir ! Je suis disponible pour vos questions sur BudgetKazPeï.",
@@ -65,6 +66,7 @@ const FR_LOCAL = Object.freeze({
 })
 const KR_LOCAL = Object.freeze({
   "bonjour": "Bonzour ! Mi pé aide aou pou out bidzé, bann aides ek demars.",
+  "bonzour": "Bonzour ! Mi pé aide aou pou out bidzé, bann aides ek demars.",
   "salut": "Salut ! Kosa ou vé konèt su out bidzé ou bann aides ?",
   "merci": "Avec plaisir ! Mi reste disponib pou out kestyon.",
   "ca va": "Mi sava, merci ! Kosa mi pé fé pou aou zordi ?",
@@ -96,7 +98,7 @@ export function getLocalAdvisorBudgetNoDataAdvice(
 ) {
   const text = normalize(question)
   if (!text || text.length > 160 || text.split(" ").length > 31 ||
-    !/\b(?:solutions?|conseils?|astuces?|idees?|pistes?|proposes?|proposer|recommande(?:s|z|r)?|faire quoi|comment faire|par quoi commencer|autre chose|quoi d autre|et sinon|sinon quoi|alternatives?)\b/.test(text) ||
+    !/\b(?:solutions?|solisions?|conseils?|konseys?|astuces?|idees?|lidees?|lide|pistes?|proposes?|proposer|propoz|propoze|recommande(?:s|z|r)?|faire quoi|comment faire|par quoi commencer|autre chose|quoi d autre|et sinon|sinon quoi|alternatives?)\b/.test(text) ||
     /\d|\b(?:personnalise|personnalisee|personnaliser|precis|precise|estimation|estimer|calculer|simulation|ma situation|mon cas|selon mes|selon mon|compte tenu|mon profil|mes contraintes|mes revenus|ma famille|rsa|apl|caf|eligib|recours|chomage|salaire|contrat|recette|gateau|cuisine|meteo|film|chanson|planete|licorne|dragon|poeme|blague)\b/.test(text)) return null
 
   const history = Array.isArray(recentHistory)
@@ -162,10 +164,10 @@ export function isPotentialAdvisorFollowUp(question = "") {
 const INDEPENDENT_NON_FINANCIAL_TOPIC =
   /\b(?:recette|gateau|cuisine|soleil|ciel|etoiles?|jupiter|saturne|mars|lune|planete|astronomie|football|rugby|match|sport|meteo|volcans?|plantes?|chats?|chiens?|film|livre|chanson|poeme|blague|acteur|president|histoire de france)\b/
 const CONTEXT_REFERENCE =
-  /\b(?:ca|cela|ceci|celui|celle|encore|toujours|le meme|la meme|cette fois|ces prix|ce prix|c est|c etait|se poursuivre|se calmer)\b/
+  /\b(?:ca|sa|li|cela|ceci|celui|celle|encore|ankor|toujours|touzor|le meme|la meme|cette fois|ces prix|ce prix|c est|c etait|se poursuivre|se calmer)\b/
 const CONTEXT_OPENING =
-  /^(?:oui|non|ok|okay|d accord|alors|mais|donc|du coup|et|ca|cela|ceci|c est|est ce que|est ce qu|tu penses|vous pensez|penses tu|pensez vous|crois tu|vous croyez|pourquoi|comment|quand|combien|et pourquoi|et comment|et quand|et combien)\b/
-const SHORT_ELLIPTICAL = /^(?:et )?(?:pourquoi|comment|combien|quand|et ensuite|et maintenant|et pour moi|la suite|c est certain|est ce certain)\b/
+  /^(?:oui|wi|non|ok|okay|d accord|alors|mais|donc|du coup|et|ek|ca|sa|li|cela|ceci|c est|est ce que|est ce qu|eske|tu penses|vous pensez|penses tu|pensez vous|crois tu|vous croyez|ou krwar|mi krwar|ou pense|pourquoi|poukoi|comment|koman|kosa|quand|kan|combien|konbien|kombyin|et pourquoi|et comment|et quand|et combien)\b/
+const SHORT_ELLIPTICAL = /^(?:et |ek )?(?:pourquoi|poukoi|comment|koman|kosa|combien|konbien|kombyin|quand|kan|et ensuite|et maintenant|et pour moi|la suite|c est certain|est ce certain)\b/
 
 export function isContextualAdvisorFollowUp(question = "") {
   const text = normalize(question)
@@ -179,7 +181,7 @@ export function isContextualAdvisorFollowUp(question = "") {
 
 export function advisorTopicGroupForQuestion(question = "") {
   const text = normalize(question)
-  if (/\b(?:carburant|essence|gazole|diesel|pompe|plein d essence)\b/.test(text)) return "carburant"
+  if (/\b(?:carburant|carburan|mazout|essence|essans|gazole|diesel|pompe|plein d essence)\b/.test(text)) return "carburant"
   if (/\b(?:courses?|alimentation|alimentaire|panier|ticket de caisse|magasin)\b/.test(text)) return "courses"
   if (/\b(?:loyer|logement|locataire|bail)\b/.test(text)) return "logement"
   if (/\b(?:electricite|energie|chauffage|climatisation)\b/.test(text)) return "energie"
@@ -256,7 +258,7 @@ export function getLocalAdvisorBudgetBasics(question = "", language = "fr", mode
   if (!["general", "budget_depenses"].includes(mode) || !text || text.length > 105) return null
   const definitions = [
     {
-      questions: ["c est quoi un budget", "c est quoi le budget", "qu est ce qu un budget", "qu est ce que le budget", "definition du budget"],
+      questions: ["c est quoi un budget", "c est quoi le budget", "qu est ce qu un budget", "qu est ce que le budget", "definition du budget", "kosa i le in bidze", "kosa i le in budget", "kosa sa ve dire bidze"],
       fr: "Un budget sert à comparer vos revenus aux dépenses prévues et déjà réalisées sur une période, souvent le mois. Commencez par les charges fixes, puis les dépenses variables, sans oublier une marge pour les imprévus.",
       kr: "In bidzé i aide aou compare out revenus ek out dépans su in période. Commence par bann sarz fixes, apré bann dépans variables, ek garde in marge pou imprévu.",
     },
@@ -286,7 +288,7 @@ export function getLocalAdvisorBudgetBasics(question = "", language = "fr", mode
       kr: "In prix observé lé in prix noté in jour dann in magasin précis. Lé in repère historique, pa in garantie pou prix zordi.",
     },
     {
-      questions: ["comment faire un budget", "comment preparer un budget", "comment construire un budget"],
+      questions: ["comment faire un budget", "comment preparer un budget", "comment construire un budget", "koman mi fe in bidze", "koman mi prepare mon bidze"],
       fr: "Pour préparer un budget mensuel, notez vos revenus, puis vos charges fixes et vos dépenses variables. Comparez le total aux revenus et réservez, si possible, une marge pour les imprévus. Vous pouvez enregistrer ces montants dans BudgetKazPeï pour suivre leur évolution.",
       kr: "Pou prépar out bidzé mensuel, note out revenus, bann sarz fixes ek bann dépans variables. Compare total-la ek out revenus, ek garde in marge si ou pé.",
     },
@@ -304,12 +306,12 @@ export function getLocalAdvisorBudgetObservation(question = "", language = "fr",
   const text = normalize(original)
   if (!text || text.length > 165 || text.split(" ").length > 25 ||
       original.includes("?") || original.includes("\n")) return null
-  if (!/^(?:je trouve (?:que )?|je constate que |j ai remarque que |j ai l impression que |c est |ca devient |l |le |la |les |mon |ma |mes )/.test(text)) return null
-  if (!/\b(?:cher|chere|chers|cheres|hors de prix|coute cher|coutent cher|revient cher|reviennent cher|trop cher|trop chere|flambe)\b/.test(text)) return null
-  if (/\b(?:pas cher|pas chere|moins cher|moins chere|bon marche|plus abordable|raisonnable)\b/.test(text)) return null
+  if (!/^(?:je trouve (?:que )?|je constate que |j ai remarque que |j ai l impression que |mi trouv(?:e)? |moin trouv(?:e)? |mwin trouv(?:e)? |c est |ca devient |l |le |la |les |lo |carburan(?:t)? |mazout |mon |ma |mes )/.test(text)) return null
+  if (!/\b(?:cher|chere|chers|cheres|ser|trop ser|tro ser|hors de prix|coute cher|coutent cher|revient cher|reviennent cher|trop cher|trop chere|flambe)\b/.test(text)) return null
+  if (/\b(?:pas cher|pas chere|pa ser|moins cher|moins chere|bon marche|plus abordable|raisonnable)\b/.test(text)) return null
   if (/\b(?:pourquoi|comment|combien|quel|quels|quelle|quelles|compare|comparer|comparaison|calcule|calculer|prevoir|estimer|montant|prix aujourd hui|prix actuel|prix du litre|aujourd hui|cette semaine|ou trouver|que faire)\b/.test(text)) return null
   const fr = language !== "kreol"
-  if (/\b(?:carburant|essence|gazole|diesel|plein d essence)\b/.test(text)) {
+  if (/\b(?:carburant|carburan|mazout|essence|essans|gazole|diesel|plein d essence)\b/.test(text)) {
     return fr
       ? "Le carburant peut peser sur le budget. Nous pouvons comparer vos dépenses de transport enregistrées sur plusieurs périodes, puis regarder des pistes adaptées : regrouper les trajets ou comparer les prix affichés. Souhaitez-vous examiner vos dépenses de carburant ?"
       : "Carburant i pé peser dan bidzé. Nou pé comparer out dépans transport anrezistré su plizyèr périodes ek regarder bann pistes pou économiser. Ou vé regarde out dépans carburant ?"
