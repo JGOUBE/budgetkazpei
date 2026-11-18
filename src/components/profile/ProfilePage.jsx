@@ -94,33 +94,26 @@ export default function ProfilePage({ user, t }) {
     }
 
     try {
-      let query = supabase
+      const { data, error } = await supabase
         .from("user_subscriptions")
         .select("plan, status, billing_period, updated_at")
-        .eq("status", "active")
+        .eq("user_id", user.id)
         .order("updated_at", { ascending: false })
-        .limit(1)
-
-      if (user?.id) {
-        query = query.eq("user_id", user.id)
-      } else if (user?.email) {
-        query = query.eq("email", user.email)
-      }
-
-      const { data, error } = await query.maybeSingle()
+        .limit(10)
 
       if (error) {
         console.error("Erreur chargement abonnement:", error)
-        setSubscriptionPlan(normalizeSubscriptionPlan(profile))
+        setSubscriptionPlan("free")
         return
       }
 
-      if (data?.plan === "premium_plus" || data?.plan === "premium") {
-        setSubscriptionPlan(data.plan)
-        return
-      }
-
-      setSubscriptionPlan(normalizeSubscriptionPlan(profile))
+      const rows = Array.isArray(data) ? data : []
+      const active = rows.find(row => ["active", "trialing"].includes(row.status))
+      // A known canceled or expired subscription must not fall back to a
+      // stale Premium flag from the profile.
+      setSubscriptionPlan(rows.length > 0
+        ? (active?.plan || "free")
+        : normalizeSubscriptionPlan(profile))
     } catch (err) {
       console.error("Erreur abonnement:", err)
       setSubscriptionPlan(normalizeSubscriptionPlan(profile))
@@ -869,8 +862,8 @@ export default function ProfilePage({ user, t }) {
       {!hasPremiumAccess && (
         <div
           style={{
-            background: `linear-gradient(135deg, ${COLORS.yellow}12, ${COLORS.card})`,
-            border: `1px solid ${COLORS.yellow}33`,
+            background: "#F8FBFA",
+            border: "1px solid #D0E2DE",
             borderRadius: 20,
             padding: 24,
             display: "flex",
@@ -879,7 +872,7 @@ export default function ProfilePage({ user, t }) {
           }}
         >
           <div>
-            <div style={{ fontSize: 17, fontWeight: 800, color: COLORS.yellow, marginBottom: 6 }}>
+            <div style={{ fontSize: 17, fontWeight: 800, color: "#28635D", marginBottom: 6 }}>
               {tr(isKreol, "Découvrir Premium", "Découvre Premium")}
             </div>
             <div style={{ fontSize: 13, color: COLORS.muted, lineHeight: 1.6 }}>
@@ -887,33 +880,20 @@ export default function ProfilePage({ user, t }) {
             </div>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr", gap: 10 }}>
-            <div
-              style={{
-                background: "rgba(252,211,77,.08)",
-                border: "1px solid rgba(252,211,77,.22)",
-                borderRadius: 14,
-                padding: 14,
-              }}
-            >
-              <div style={{ color: COLORS.yellow, fontWeight: 800, marginBottom: 6 }}>Premium</div>
-              <div style={{ color: COLORS.muted, fontSize: 13, lineHeight: 1.55 }}>
-                {tr(isKreol, "Assistant aides, suivi des démarches, documents à préparer, bons plans intelligents et créole réunionnais.", "Assistant éd, suivi démarches, dokiman pou préparé, bons plans intelligents ek kréol réunionnais.")}
-              </div>
+          <div style={{ display: "grid", gap: 8, padding: 16,
+            borderRadius: 14, border: "1px solid #BDDCD5", background: "#F3FAF7" }}>
+            <div style={{ color: "#28635D", fontSize: 16, fontWeight: 800 }}>
+              {tr(isKreol, "Premium — une seule offre", "Premium — in sèl lof")}
             </div>
-
-            <div
-              style={{
-                background: "rgba(167,139,250,.08)",
-                border: "1px solid rgba(167,139,250,.25)",
-                borderRadius: 14,
-                padding: 14,
-              }}
-            >
-              <div style={{ color: COLORS.purple, fontWeight: 800, marginBottom: 6 }}>Premium</div>
-              <div style={{ color: COLORS.muted, fontSize: 13, lineHeight: 1.55 }}>
-                {tr(isKreol, "Conseiller IA avancé, aide administrative personnalisée, courriers et accompagnement plus complet.", "Conseiller IA avancé, aide administrative personnalisée, courriers ek accompagnement pli complet.")}
-              </div>
+            <div style={{ color: COLORS.text, fontSize: 14, lineHeight: 1.6 }}>
+              {tr(isKreol,
+                "Conseiller complet pour le budget, les aides et les démarches, scanner Premium, analyses avancées et export.",
+                "Konseyé complet pou bidjé, bann èd ek démarches, scanner Premium, bann analiz avansé ek export.")}
+            </div>
+            <div style={{ color: "#28635D", fontSize: 14, fontWeight: 800 }}>
+              {tr(isKreol,
+                "4,99 €/mois ou 49,90 €/an — mêmes fonctionnalités.",
+                "4,99 € chak mwa ou 49,90 € par ané — minm fonksyon.")}
             </div>
           </div>
 
@@ -921,11 +901,11 @@ export default function ProfilePage({ user, t }) {
             type="button"
             onClick={openPremiumOptions}
             style={{
-              background: COLORS.yellow,
-              border: "none",
+              background: "#E1F2EC",
+              border: "1px solid #AED4C7",
               borderRadius: 12,
               padding: "12px 20px",
-              color: "#0A1628",
+              color: "#28635D",
               fontSize: 14,
               fontWeight: 800,
               cursor: "pointer",
