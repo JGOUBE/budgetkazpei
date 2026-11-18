@@ -101,7 +101,7 @@ export const PUBLIC_PLAN_CARDS = [
       { status: PLAN_FEATURE_STATUS.included, text: PLAN_SCAN_POLICY[PLAN_IDS.premium].publicScanLabel },
       { status: PLAN_FEATURE_STATUS.included, text: "Historique et statistiques avancées" },
       { status: PLAN_FEATURE_STATUS.included, text: "Alertes budget et export PDF" },
-      { status: PLAN_FEATURE_STATUS.included, text: "Conseiller BudgetKazPéi — utilisation limitée" },
+      { status: PLAN_FEATURE_STATUS.included, text: "Conseiller BudgetKazPéi — budget, aides et conseils" },
     ],
   },
   {
@@ -113,7 +113,7 @@ export const PUBLIC_PLAN_CARDS = [
     items: [
       { status: PLAN_FEATURE_STATUS.included, text: "Tout le Premium" },
       { status: PLAN_FEATURE_STATUS.included, text: PLAN_SCAN_POLICY[PLAN_IDS.premiumPlus].publicScanLabel },
-      { status: PLAN_FEATURE_STATUS.included, text: "Conseiller BudgetKazPéi+ — usage étendu, questions hors sujet limitées" },
+      { status: PLAN_FEATURE_STATUS.included, text: "Conseiller BudgetKazPéi+ — accompagnement avancé" },
       { status: PLAN_FEATURE_STATUS.included, text: "Accompagnement avancé des démarches" },
       { status: PLAN_FEATURE_STATUS.included, text: "Dossiers, courriers, emails, relances et rendez-vous" },
       { status: PLAN_FEATURE_STATUS.included, text: "Compréhension des refus et préparation des recours" },
