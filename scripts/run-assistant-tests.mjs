@@ -12,6 +12,11 @@ import {
   selectAssistantAnswerText,
 } from "../src/services/ai/assistantIntentEngine.js"
 import { reviewAssistantAnswer } from "../supabase/functions/assistant-aisupabase/engine/review/reviewerEngine.ts"
+import {
+  classifyAdvisorSpendScope,
+  getLocalAdvisorBudgetObservation,
+  getLocalAdvisorDocumentIntake,
+} from "../supabase/functions/assistant-aisupabase/engine/routing/offTopicPolicy.ts"
 
 const now = new Date("2026-09-05T12:00:00+04:00")
 
@@ -349,5 +354,23 @@ if (process.argv.includes("--show-examples")) {
     console.log(`\nQ: ${question}\nR: ${answer.fr}`)
   })
 }
+
+
+// Non-regression: living costs and administrative intake must not be
+// misclassified as unrelated chatter or trigger provider requests.
+const costRemark = "Je trouve que le carburant est cher"
+assert.equal(classifyAdvisorSpendScope({question:costRemark,mode:"general"}), "useful")
+assert.match(getLocalAdvisorBudgetObservation(costRemark,"fr","general"), /carburant.*budget/i)
+assert.equal(getLocalAdvisorBudgetObservation("Le carburant est moins cher","fr","general"), null)
+assert.equal(getLocalAdvisorBudgetObservation("Quel est le prix du carburant ?","fr","general"), null)
+assert.equal(classifyAdvisorSpendScope({question:"Raconte une blague",mode:"general"}), "offtopic")
+const refusalStarter = "Je vais coller un refus. Explique uniquement ce qui est écrit et ce que je dois vérifier."
+assert.match(getLocalAdvisorDocumentIntake(refusalStarter,"fr","comprendre_refus"), /Collez ici le texte du refus/)
+assert.equal(getLocalAdvisorDocumentIntake(refusalStarter,"fr","general"), null)
+assert.equal(getLocalAdvisorDocumentIntake("Voici le refus de la CAF, daté du 2 novembre : il manque une pièce.",
+  "fr","comprendre_refus"), null)
+assert.equal(classifyAdvisorSpendScope({question:"J'ai reçu une notification de refus",mode:"comprendre_refus"}), "useful")
+assert.match(getLocalAdvisorDocumentIntake("Je vais coller un courrier administratif. Aide-moi à comprendre ce qui est écrit et la prochaine action.",
+  "fr","comprendre_courrier"), /Collez ici votre courrier/)
 
 console.log("Conseiller Budget V2 tests passed")
