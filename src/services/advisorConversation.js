@@ -346,7 +346,7 @@ const ADVISOR_BUDGET_ADVICE_EXCLUSIONS =
 
 const ADVISOR_NO_DATA_ADVICE = {
   transport: {
-    fr: "Même sans dépenses enregistrées, voici trois pistes concrètes pour réduire le coût du carburant : 1. Regroupez plusieurs déplacements pour éviter les allers-retours. 2. Comparez les prix affichés à la pompe, sans faire un détour qui annulerait l'économie. 3. Pour les trajets réguliers, regardez si covoiturage ou transports en commun sont possibles. Si vous me donnez votre kilométrage habituel et la consommation du véhicule, je pourrai estimer le coût de vos trajets sans inventer de chiffres.",
+    fr: "Voici trois pistes concrètes pour réduire le coût du carburant, même avant d’avoir un historique complet : 1. Regroupez plusieurs déplacements pour éviter les allers-retours. 2. Comparez les prix affichés à la pompe, sans faire un détour qui annulerait l'économie. 3. Pour les trajets réguliers, regardez si covoiturage ou transports en commun sont possibles. Si vous me donnez votre kilométrage habituel et la consommation du véhicule, je pourrai estimer le coût de vos trajets sans inventer de chiffres.",
     kr: "Minm san dépans anrezistré, ou pé regroupe out trajé, compare bann prix carburant san grand détour, ek regarde covoiturage ou transport en commun. Avec out kilométraz ek consommation loto, nou pourra estime out frais.",
     alternativeFr: "Voici d'autres pistes pour le carburant : 1. Vérifiez régulièrement la pression des pneus selon les indications du constructeur. 2. Adoptez une conduite souple, sans accélérations brusques. 3. Quand c'est possible, privilégiez un trajet direct et évitez les heures de forte circulation. Ce sont des pistes générales : pour identifier les plus intéressantes dans votre cas, dites-moi quel type de trajet vous faites le plus souvent.",
     alternativeKr: "Nana d'autres pistes pou carburant : vérifie pression bann pneus, conduit souple sans accélérations brusques, ek évite bann gros bouchons quand possible. Di a moin ki trajé ou fé le plus souvent.",
@@ -396,6 +396,11 @@ export function resolveAdvisorBudgetNoDataAdvice({
   // observation or prior advice, with at most two intervening local fallbacks.
   // Don't resurrect an older budget topic after an actual subject change.
   const history = Array.isArray(recentHistory) ? recentHistory.slice(0, 5) : []
+  const noRecordedSpending = /\b(?:je ne trouve pas encore de depenses|pas encore de depenses classees|mi trouve pas ankor bann depans|aucune depense enregistree)\b/
+  // An actual verified spending analysis must not be replaced by a generic
+  // "no data" script just because an older fuel observation is in the history.
+  if (history.some(item => item?.source === "local_budget_followup" &&
+      !noRecordedSpending.test(normalizeAidTopicText(item?.answer || "")))) return null
   const validBudgetSource = new Set([
     "local_budget_observation", "local_budget_followup", "local_budget_advice",
   ])
