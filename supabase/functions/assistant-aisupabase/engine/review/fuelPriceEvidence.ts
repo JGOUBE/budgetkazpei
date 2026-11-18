@@ -24,7 +24,7 @@ const normalize = (value: unknown): string => String(value || "")
 const FUEL = /\b(?:carburant|essence|sans plomb|gazole|diesel|prix a la pompe|plein d essence)\b/
 const OTHER_GEOGRAPHY = /\b(?:metropole|hexagone|paris|lyon|marseille|bordeaux|toulouse|europe|canada|belgique|suisse|afrique|madagascar|maurice|mayotte|guadeloupe|martinique|guyane)\b/
 const HISTORIC_COMPARE = /\b(?:augmente|augmentes|augmentation|hausse|baisse|baisse|diminue|evolue|evolution|compare|comparaison|varie|variation|combien|pourcentage|difference)\b/
-const TWO_YEARS = /\b(?:depuis (?:les )?(?:deux|2) (?:derniere?s? )?ans|(?:en|sur|ces|les|depuis) (?:deux|2) ans|(?:deux|2) dernieres? annees?|entre 2024 et 2026)\b/
+const TWO_YEARS = /\b(?:depuis (?:les )?(?:deux|2) (?:derniere?s? )?ans|(?:en|sur|ces|les|depuis) (?:deux|2) ans|(?:deux|2) dernieres? annees?|entre 2024 et 2026|novembre 2024 (?:et|a|versus|vs) novembre 2026)\b/
 const PRICE_HISTORY_REQUEST = /\b(?:depuis|en (?:20\d{2}|deux|2) ans|sur (?:deux|2) ans|entre 20\d{2} et 20\d{2}|evolution|augmente|hausse|baisse|variation|diminution|comparaison)\b/
 
 function formatEuro(value: number): string {
