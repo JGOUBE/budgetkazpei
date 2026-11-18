@@ -52,8 +52,8 @@ const premiumPlus = PUBLIC_PLAN_CARDS.find(plan => plan.id === PLAN_IDS.premiumP
 assert.equal(PUBLIC_PLAN_CARDS.length, 3)
 assert.equal(free.items.some(item => item.status === PLAN_FEATURE_STATUS.locked && /Conseiller BudgetKazPéi/.test(item.text)), true)
 assert.equal(free.items.some(item => item.status === PLAN_FEATURE_STATUS.included && /Conseiller BudgetKazPéi/.test(item.text)), false)
-assert.equal(premium.items.some(item => /Conseiller BudgetKazPéi — utilisation limitée/.test(item.text)), true)
-assert.equal(premiumPlus.items.some(item => /Conseiller BudgetKazPéi\+ — utilisation illimitée/.test(item.text)), true)
+assert.equal(premium.items.some(item => /Conseiller BudgetKazPéi — conseils pour votre budget et vos aides/.test(item.text)), true)
+assert.equal(premiumPlus.items.some(item => /Conseiller BudgetKazPéi\+ — accompagnement personnalisé de vos démarches/.test(item.text)), true)
 assert.equal(premiumPlus.items.some(item => /Dossiers, courriers, emails, relances et rendez-vous/.test(item.text)), true)
 assert.equal(premiumPlus.items.some(item => /refus et préparation des recours/.test(item.text)), true)
 
