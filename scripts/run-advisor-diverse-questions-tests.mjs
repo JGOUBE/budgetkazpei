@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises"
 import {
   ADVISOR_TURN_TYPES,
   buildAdvisorConversationContext,
+  resolveAdvisorBudgetNoDataAdvice,
 } from "../src/services/advisorConversation.js"
 import {
   isSelfContainedNewQuestion,
@@ -13,6 +14,7 @@ import {
 } from "../src/services/advisorQuestionRouter.js"
 import { detectAssistantIntent } from "../src/services/ai/assistantIntentEngine.js"
 import { isProtectedAdvisorQuestion } from "../supabase/functions/assistant-aisupabase/engine/routing/questionScope.ts"
+import { getLocalAdvisorBudgetNoDataAdvice } from "../supabase/functions/assistant-aisupabase/engine/routing/offTopicPolicy.ts"
 import { buildSystemPrompt } from "../supabase/functions/assistant-aisupabase/prompts/systemPrompt.ts"
 
 const base=buildAdvisorConversationContext({
@@ -196,5 +198,62 @@ assert.equal(
   }),
   true, "A real aid follow-up retains its previous handoff",
 )
+
+// Regression: an ordinary no-data fuel observation followed by "Oui" and a
+// request for solutions is a budget continuation, never an unrelated request.
+// Both frontend and Edge Function should answer without spending OpenAI tokens.
+const missingFuelHistory = [
+  {
+    question: "Oui",
+    answer: "Je ne trouve pas encore de dépenses classées dans cette catégorie sur la période « 1er novembre → 18 novembre ». Pour comparer vos frais, commencez par enregistrer vos achats dans Mes dépenses.",
+    source: "local_budget_followup",
+  },
+  {
+    question: "Je trouve que le carburant est cher",
+    answer: "Le carburant peut peser sur le budget. Souhaitez-vous examiner vos dépenses de carburant ?",
+    source: "local_budget_observation",
+  },
+]
+const requestSolutions = "Ok j'en ai pas encore mais tu me proposes quoi comme solution"
+const localSolutions = resolveAdvisorBudgetNoDataAdvice({
+  question: requestSolutions, recentHistory: missingFuelHistory, language: "fr",
+})
+assert.equal(localSolutions?.source, "local_budget_advice")
+assert.match(localSolutions?.answer || "", /carburant/i)
+assert.match(localSolutions?.answer || "", /regroupez plusieurs déplacements/i)
+assert.doesNotMatch(localSolutions?.answer || "", /je peux surtout vous aider/i)
+const serverSolutions = getLocalAdvisorBudgetNoDataAdvice(
+  requestSolutions, missingFuelHistory, "fr",
+)
+assert.match(serverSolutions || "", /carburant/i)
+assert.match(serverSolutions || "", /prix au litre/i)
+assert.match(getLocalAdvisorBudgetNoDataAdvice(
+  "Et si tu me donnes des conseils ?", missingFuelHistory, "kreol",
+) || "", /carburant/i)
+for (const newQuestion of [
+  "Propose-moi une recette de gâteau",
+  "Quelles aides CAF ou RSA pourrais-je avoir ?",
+  "Je voudrais une comparaison précise des prix du carburant aujourd'hui à Saint-Leu",
+]) {
+  assert.equal(resolveAdvisorBudgetNoDataAdvice({
+    question: newQuestion, recentHistory: missingFuelHistory,
+  }), null, "Genuine personalized or new-topic question must not be intercepted: " + newQuestion)
+  assert.equal(getLocalAdvisorBudgetNoDataAdvice(
+    newQuestion, missingFuelHistory, "fr",
+  ), null)
+}
+assert.equal(resolveAdvisorBudgetNoDataAdvice({question: requestSolutions, recentHistory: []}), null)
+assert.equal(getLocalAdvisorBudgetNoDataAdvice(requestSolutions, [], "fr"), null)
+assert.equal(resolveAdvisorBudgetNoDataAdvice({
+  question: requestSolutions,
+  recentHistory: [{question: "Oui", answer: "Je dépense 40 euros dans ce poste.", source: "local_budget_followup"}, missingFuelHistory[1]],
+}), null, "Real recorded spending must not trigger the no-data template")
+const advisorEdgeSource = await readFile(new URL("../supabase/functions/assistant-aisupabase/index.ts", import.meta.url), "utf8")
+assert.ok(
+  advisorEdgeSource.indexOf("getLocalAdvisorBudgetNoDataAdvice(") <
+  advisorEdgeSource.indexOf('if (spendScope === "offtopic")'),
+  "Local no-data advice must be resolved before off-topic fallback",
+)
+assert.match(advisorEdgeSource, /type: "local_budget_advice", calls: 0/)
 
 console.log("OK: 40+ diverse/farfelues, context-switch, aid, fiction, and budget routes tested; general answers bypass CAF reviews.")
