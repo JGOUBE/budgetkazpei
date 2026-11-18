@@ -31,16 +31,16 @@ export function getAdvisorAccess(planInput, legacyFlags = {}) {
       : planInput
   const plan = normalizePlan(legacyPlan)
   const canUseAdvisor = plan === PLAN_IDS.premium || plan === PLAN_IDS.premiumPlus
-  const canUseAdvancedAdvisorTools = plan === PLAN_IDS.premiumPlus
+  const canUseAdvancedAdvisorTools = canUseAdvisor
 
   return {
     plan,
     canUseAdvisor,
     canUseAdvancedAdvisorTools,
     publicUsageLabel: canUseAdvancedAdvisorTools
-      ? "unlimited"
+      ? "premium"
       : canUseAdvisor
-        ? "limited"
+        ? "premium"
         : "locked",
     allowedModes: canUseAdvancedAdvisorTools
       ? ADVISOR_MODES
