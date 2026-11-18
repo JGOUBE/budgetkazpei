@@ -7,19 +7,21 @@ export const PLAN_IDS = {
 export const PLAN_ORDER = [PLAN_IDS.free, PLAN_IDS.premium]
 
 // Valeur provisoire : le quota gratuit reste à valider après mesure du coût réel du service Python.
-export const FREE_OPERATIONAL_SCAN_LIMIT = 1
+// Trois scans de découverte pendant les trente premiers jours du compte.
+// Le serveur vérifie également l'ancienneté et les scans des mois précédents.
+export const FREE_OPERATIONAL_SCAN_LIMIT = 3
 export const PREMIUM_PLUS_SAFETY_SCAN_LIMIT = 100
 export const MONTHLY_QUOTA_REACHED_CODE = "monthly_quota_reached"
 export const SCAN_SAFETY_LIMIT_REACHED_CODE = "scan_safety_limit_reached"
 
 export const PLAN_SCAN_POLICY = {
   [PLAN_IDS.free]: {
-    publicScanLabel: "Accès découverte au scanner",
+    publicScanLabel: "3 scans offerts pendant les 30 premiers jours",
     commercialScanLimit: null,
     operationalScanLimit: FREE_OPERATIONAL_SCAN_LIMIT,
     isUnlimitedForUser: false,
     isSafetyLimited: false,
-    needsCommercialValidation: true,
+    needsCommercialValidation: false,
   },
   [PLAN_IDS.premium]: {
     publicScanLabel: "Scanner Premium avec protection de sécurité",
@@ -59,6 +61,8 @@ export const PLAN_PRICES = {
   [PLAN_IDS.premium]: "4,99 €/mois",
   [PLAN_IDS.premiumPlus]: "4,99 €/mois",
 }
+
+export const PREMIUM_ANNUAL_PRICE = "49,90 €/an"
 
 export const PLAN_NAMES = {
   [PLAN_IDS.free]: "Gratuit",
