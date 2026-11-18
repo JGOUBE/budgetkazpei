@@ -165,4 +165,36 @@ assert.match(frontend,/assistant-aisupabase-review/)
 assert.ok(frontend.includes('get("conseillerBeta") === "1"'))
 assert.ok(frontend.includes('hostname.endsWith(".budgetkazpei.pages.dev")'))
 
+
+const oldAidHandoff = { aideId: 41, aideName: "Pass'Sport" }
+for (const question of [
+  "Aide-moi à comprendre la relativité",
+  "Aide-moi à écrire un poème pour mon enfant",
+  "Pourquoi les feuilles sont-elles vertes ?",
+]) {
+  assert.equal(isSelfContainedNewQuestion(question), true, question)
+  assert.equal(
+    shouldLookupAdvisorAids({
+      question, mode: "trouver_aide",
+      conversationContext: afterAid(question),
+      recentHistory: aidHistory,
+      handoffContext: oldAidHandoff,
+    }),
+    false, "Old aid handoff must not affect a new unrelated question: " + question,
+  )
+  assert.equal(
+    resolveAdvisorModeForQuestion({ question, mode: "trouver_aide", intent: "unknown" }),
+    "general", question,
+  )
+}
+assert.equal(
+  shouldLookupAdvisorAids({
+    question: "Et pour cette aide ?", mode: "general",
+    conversationContext: afterAid("Et pour cette aide ?"),
+    recentHistory: aidHistory,
+    handoffContext: oldAidHandoff,
+  }),
+  true, "A real aid follow-up retains its previous handoff",
+)
+
 console.log("OK: 40+ diverse/farfelues, context-switch, aid, fiction, and budget routes tested; general answers bypass CAF reviews.")
