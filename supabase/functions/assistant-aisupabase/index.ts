@@ -232,6 +232,26 @@ function buildConsistencyPrompt(consistency: any = null) {
   ].join("\n")
 }
 
+
+// The model receives only the profile attributes needed for personalized
+// financial/benefit advice, not account identifiers, billing keys or contact data.
+const ADVISOR_PROFILE_FIELDS = [
+  "commune", "situation_familiale", "nombre_enfants", "logement",
+  "situation_logement", "revenus_foyer", "revenus_details",
+  "situation_professionnelle", "age", "etudiant", "retraite",
+  "handicap", "allocataire_caf", "permis_conduire", "vehicule_personnel",
+] as const
+
+function advisorProfileForModel(value: any) {
+  if (!value || typeof value !== "object") return {}
+  return Object.fromEntries(
+    ADVISOR_PROFILE_FIELDS
+      .filter((field) => Object.prototype.hasOwnProperty.call(value, field))
+      .filter((field) => value[field] !== undefined && value[field] !== null && value[field] !== "")
+      .map((field) => [field, value[field]])
+  )
+}
+
 function buildUserPrompt(
   body: any,
   language: AssistantLanguage,
@@ -285,8 +305,8 @@ ${mode}
 Résumé du profil affiché par BudgetKazPei (source principale) :
 ${profileSummary || "Non fourni"}
 
-Profil brut disponible (pour compléter uniquement si nécessaire) :
-${safeJson(profile)}
+Profil métier utile pour la personnalisation (sans coordonnées ni données de facturation) :
+${safeJson(advisorProfileForModel(profile))}
 
 Contexte local utile :
 ${safeJson(localContext)}
