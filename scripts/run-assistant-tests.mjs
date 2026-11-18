@@ -139,6 +139,18 @@ const categoryAnswer = answerAssistantQuestion({ question: "Où est-ce que je d�
 assert.match(categoryAnswer.fr, /alimentation.*286,40\s*€/i)
 assertClean(categoryAnswer)
 
+// Répartition et pourcentages : réponses locales, chiffres issus des dépenses variables.
+assert.equal(detectAssistantIntent("Mes principales dépenses"), ASSISTANT_INTENTS.BUDGET_CATEGORY)
+assert.equal(detectAssistantIntent("Quel pourcentage de mes dépenses est consacré aux courses ?"), ASSISTANT_INTENTS.BUDGET_CATEGORY)
+const categoryBreakdown = answerAssistantQuestion({ question: "Mes principales dépenses", insights })
+assert.match(categoryBreakdown.fr, /alimentation.*286,40\\s*€.*transport.*132,00\\s*€/i)
+assert.match(categoryBreakdown.fr, /charges fixes/i)
+const foodShare = answerAssistantQuestion({ question: "Quel pourcentage de mes dépenses est consacré aux courses ?", insights })
+assert.match(foodShare.fr, /alimentation.*286,40\\s*€.*%/i)
+assert.match(foodShare.fr, /charges fixes/i)
+assertClean(categoryBreakdown)
+assertClean(foodShare)
+
 const fixedAnswer = answerAssistantQuestion({ question: "Combien représentent mes charges fixes ?", insights })
 assert.match(fixedAnswer.fr, /565,00\s*€/)
 assert.match(fixedAnswer.fr, /Loyer.*500,00\s*€/)
