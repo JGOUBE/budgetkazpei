@@ -862,6 +862,11 @@ Deno.serve(async (req) => {
     })
 
     if (!openAiResult.ok) {
+      // Technical metering only: never log the question, profile or answer.
+      console.info("ADVISOR_API_METER", JSON.stringify({
+        type: "openai_attempt", calls: 1, status: "provider_error",
+        statusCode: openAiResult.status,
+      }))
       console.log("OPENAI ERROR", JSON.stringify(openAiResult.data))
 
       return jsonResponse(
@@ -931,7 +936,9 @@ Deno.serve(async (req) => {
     // or future high-value cases explicitly enabled in server settings.
     // This keeps the normal AI path to exactly one OpenAI completion.
     const memoryEnrichmentAllowed = Deno.env.get("ADVISOR_AI_MEMORY_ENRICHMENT") === "enabled"
+    let memoryApiAttempted = false
     if (protectedTopic && memoryEnrichmentAllowed && intent?.complexity === "complex") {
+      memoryApiAttempted = true
       const aiMemoryPatch = await buildAiMemoryPatch({
         openAiKey,
         model,
@@ -960,11 +967,21 @@ Deno.serve(async (req) => {
       context.language,
     )
 
+    // Aggregatable in Supabase Edge Function logs, with no personal content.
+    // The first completion is always counted; memory only on explicit opt-in.
+    console.info("ADVISOR_API_METER", JSON.stringify({
+      type: "openai_attempt", calls: memoryApiAttempted ? 2 : 1,
+      status: "success", model,
+      primaryInputTokens: Number(openAiResult.data?.usage?.prompt_tokens || 0),
+      primaryOutputTokens: Number(openAiResult.data?.usage?.completion_tokens || 0),
+    }))
+
     return jsonResponse(
       {
         success: true,
         answer,
         consumed: context.consumesExchange,
+        openAiCallCount: memoryApiAttempted ? 2 : 1,
         language: context.language,
         mode: context.mode,
         recommendedAidIds: mentionedTrustedAids.map(aide => aide.id),
