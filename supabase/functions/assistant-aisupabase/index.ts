@@ -19,7 +19,7 @@ import {
 } from "./engine/truth/trustedAidFacts.ts"
 import { reviewAssistantAnswer } from "./engine/review/reviewerEngine.ts"
 import { isProtectedAdvisorQuestion } from "./engine/routing/questionScope.ts"
-import { classifyAdvisorSpendScope, getLocalAdvisorSmallTalk } from "./engine/routing/offTopicPolicy.ts"
+import { classifyAdvisorSpendScope, getLocalAdvisorSmallTalk, getLocalAdvisorOffTopicResponse, isPotentialAdvisorFollowUp } from "./engine/routing/offTopicPolicy.ts"
 import {
   getAdvisorAccess,
   isAdvancedAdvisorMode,
@@ -828,6 +828,53 @@ Deno.serve(async (req) => {
       }, 413)
     }
 
+    // A budget/benefits follow-up must not be mistaken for random chatter.
+    // Never trust a client-provided scope to authorize a paid provider call.
+    let spendScope = classifyAdvisorSpendScope({
+      question: context.question, mode: context.mode, action: context.action,
+    })
+    if (spendScope === "offtopic" && isPotentialAdvisorFollowUp(context.question)) {
+      const recentClientHistory = Array.isArray(context.body?.recentHistory)
+        ? context.body.recentHistory : []
+      const lastClientQuestion = String(recentClientHistory[0]?.question || "")
+      const clientChangedTopic = lastClientQuestion &&
+        classifyAdvisorSpendScope({ question: lastClientQuestion }) === "offtopic"
+      if (!clientChangedTopic) {
+        const { data: latestConversation } = await supabaseAdmin
+          .from("assistant_conversations")
+          .select("question, mode, created_at")
+          .eq("user_id", context.userId)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle()
+        const lastTime = Date.parse(String(latestConversation?.created_at || ""))
+        const recent = Number.isFinite(lastTime) &&
+          Date.now() - lastTime >= 0 && Date.now() - lastTime <= 30 * 60 * 1000
+        if (recent && classifyAdvisorSpendScope({
+          question: String(latestConversation?.question || ""),
+          mode: String(latestConversation?.mode || "general"),
+        }) === "useful") {
+          spendScope = "useful"
+        }
+      }
+    }
+    if (spendScope === "offtopic") {
+      console.info("ADVISOR_API_METER", JSON.stringify({
+        type: "local_offtopic", calls: 0, scope: "offtopic",
+      }))
+      return jsonResponse({
+        success: true,
+        answer: getLocalAdvisorOffTopicResponse(context.language),
+        source: "local_offtopic",
+        language: context.language,
+        mode: context.mode,
+        consumed: false,
+        openAiCallCount: 0,
+        recommendedAidIds: [],
+        recommendedAidNames: [],
+      })
+    }
+
     // A strict official-amount review is correct for an actual CAF/finance
     // question, but it can badly corrupt an unrelated answer about astronomy,
     // a recipe or an invented scenario.
@@ -894,9 +941,6 @@ Deno.serve(async (req) => {
     // Hard spend guard in Postgres: atomic per-user reservation under an
     // advisory transaction lock. Client-provided mode/context cannot disable
     // the check, and the RPC is executable by service_role only.
-    const spendScope = classifyAdvisorSpendScope({
-      question: context.question, mode: context.mode, action: context.action,
-    })
     const { data: requestReservation, error: reservationError } = await supabaseAdmin
       .rpc("reserve_advisor_ai_request", {
         p_user_id: context.userId,
