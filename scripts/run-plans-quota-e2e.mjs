@@ -282,8 +282,10 @@ assert.doesNotThrow(() => {
   })
 }, "Receipts page SSR render sequence must stay stable when subscriptionLoading changes from true to false")
 
-assert.match(app, /\.eq\("status", "active"\)/, "subscription plan lookup must target only active subscriptions")
-assert.match(app, /setSubscriptionPlan\(profile\?\.plan \|\| "free"\)/, "expired or missing subscriptions must fall back explicitly only after the active-subscription lookup completes")
+assert.match(app, /claim_budgetkazpei_stripe_subscription/, "a verified account may claim a completed Stripe checkout")
+assert.match(app, /\["active", "trialing"\]\.includes\(row\.status\)/, "subscription lookup must accept only active or trialing status")
+assert.match(app, /setSubscriptionHasBillingRecord\(rows\.length > 0\)/, "canceled subscriptions must override legacy profile grants")
+assert.match(app, /premium_retour/, "checkout redirect must recheck actual subscription on return")
 assert.match(app, /setSubscriptionLoading\(true\)/, "App must expose a loading state while the active subscription is being resolved")
 assert.match(app, /setSubscriptionLoading\(false\)/, "App must clear the subscription loading state after resolution")
 assert.match(app, /\}, \[user\?\.id, profile\?\.plan\]\)/, "App must refresh the resolved plan when the profile plan changes without a full reload")
