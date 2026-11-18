@@ -16,6 +16,11 @@ const tests = [
   ["Aide-moi à écrire une chanson", true],
   ["Comment cuisiner du riz ?", true],
   ["Comment puis-je réduire mon budget courses ?", false],
+  ["Je veux trouver les aides possibles pour ma situation.", false],
+  ["Konbien i reste a moin ?", false],
+  ["Kosa mi pé réduire ?", false],
+  ["Mon bann dépans la ogmanté ?", false],
+  ["Je veux comprendre mes droits.", false],
   ["J'ai besoin d'aides pour mon logement", false],
   ["Quelles aides pour ma famille à La Réunion ?", false],
   ["Comment faire mon recours CAF ?", false],
@@ -62,6 +67,9 @@ assert.match(backend, /lastConversation?.question/)
 assert.match(backend, /if \(offTopicError \|\| !offTopicAllowance\)/, "Fail closed on quota DB errors")
 assert.match(backend, /offTopicLimitReached: true/)
 assert.match(backend, /openAiCallCount: 0/)
+assert.match(backend, /await saveAssistantConversation\\([\\s\\S]*courtesyAnswer/)
+assert.match(backend, /const cappedAnswer = getOffTopicLimitAnswer/)
+
 assert.match(migration, /on conflict \(user_id\) do update/i)
 assert.match(migration, /where \(case when usage.day_key/i)
 assert.match(migration, /Indian\/Reunion/)
