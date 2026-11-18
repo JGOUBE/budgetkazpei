@@ -912,16 +912,20 @@ Deno.serve(async (req) => {
       }, 503)
     }
     if (requestReservation.allowed !== true) {
+      // Never disclose internal fair-use thresholds, reset schedules or
+      // technical policy identifiers in a user-facing message.
       const isFreeChat = String(requestReservation.code || "").startsWith("offtopic_")
       return jsonResponse({
         success: false,
-        code: String(requestReservation.code || "advisor_rate_limit"),
+        code: isFreeChat ? "advisor_offtopic_redirect" : "advisor_temporarily_paused",
         offTopicLimitReached: isFreeChat,
         error: isFreeChat
-          ? (requestReservation.code === "offtopic_monthly_limit"
-              ? "La limite de questions libres de ce mois est atteinte. Vos questions sur le budget, les aides et les démarches restent disponibles."
-              : "La limite de 5 questions libres par jour est atteinte. Vos questions sur le budget, les aides et les démarches restent disponibles.")
-          : "Trop de questions ont été envoyées en peu de temps. Réessayez dans une heure.",
+          ? (context.isKreol
+              ? "Mon Konseyé lé surtout la pou out bidjé, bann èd ek démarches. Pou linstan, mi pé pa kontinié su sa sujet-la. Ou pé demann a moin in kestyon su out dépans ou bann èd."
+              : "Mon Conseiller est surtout là pour vous aider avec votre budget, vos aides et vos démarches. Je ne peux pas poursuivre cet échange sur ce sujet pour le moment, mais je peux vous accompagner sur une question liée à BudgetKazPeï.")
+          : (context.isKreol
+              ? "Bann kestyon i arrive in pé trop vit. Mon Konseyé i fé in ti poz. Ou pé retourn plus tar pou out bidjé ek démarches."
+              : "Plusieurs demandes ont été envoyées très rapidement. Mon Conseiller fait une courte pause par sécurité. Vous pourrez reprendre votre échange ultérieurement."),
       }, 429)
     }
 

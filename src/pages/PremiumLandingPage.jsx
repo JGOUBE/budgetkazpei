@@ -57,7 +57,6 @@ const PREMIUM_CONTENT = {
       premiumPlusCta: "Choisir Premium+",
       premiumGuestCta: "Créer mon compte pour Premium",
       premiumPlusGuestCta: "Créer mon compte pour Premium+",
-      normalUse: "Questions hors sujet : 5 par jour et 20 par mois. Protection anti-abus : 30 appels IA par heure.",
       comingSoonTitle: "En préparation",
       comingSoonText:
         "Les comparaisons intelligentes et les Bons plans personnalisés seront ajoutés progressivement, à mesure que la base locale s'enrichit.",
@@ -76,7 +75,7 @@ const PREMIUM_CONTENT = {
         {
           label: "Je veux être conseillé au quotidien",
           plan: "Premium",
-          text: "Le Conseiller analyse budget, dépenses, habitudes, courses et aides, avec une utilisation limitée.",
+          text: "Le Conseiller aide à comprendre votre budget, vos dépenses, vos courses et les aides disponibles.",
         },
         {
           label: "Je veux agir avec un accompagnement avancé",
@@ -91,7 +90,7 @@ const PREMIUM_CONTENT = {
       items: [
         [
           "Quelle est la différence entre Premium et Premium+ ?",
-          "Premium donne accès au Conseiller BudgetKazPéi en utilisation limitée pour la gestion quotidienne. Premium+ ajoute un usage étendu pour le budget, les aides et les démarches, avec une limite de 5 questions hors sujet par jour et 20 par mois, et l'accompagnement avancé.",
+          "Premium donne accès au Conseiller pour le budget, les aides et les conseils au quotidien. Premium+ ajoute la préparation de dossiers, courriers, emails, relances et recours.",
         ],
         [
           "Que se passe-t-il lorsque j'atteins ma limite de scans ?",
@@ -157,7 +156,6 @@ const PREMIUM_CONTENT = {
       premiumPlusCta: "Swazi Premium+",
       premiumGuestCta: "Kré mon kont pou Premium",
       premiumPlusGuestCta: "Kré mon kont pou Premium+",
-      normalUse: "Kestion hors sujet : 5 par zour ek 20 par mwa. Proteksion anti-abus : 30 appels IA par ler.",
       comingSoonTitle: "An préparasyon",
       comingSoonText:
         "Konparézon entélizan ek Bon Plan pèsonalizé va ariv progressivement, amezir baz lokal-la i grandi.",
@@ -176,7 +174,7 @@ const PREMIUM_CONTENT = {
         {
           label: "Mi vé gagn konsey dann mon kotidien",
           plan: "Premium",
-          text: "Konseyé-la i analiz bidjé, dépans, labitid, courses ek èd, avèk in itilizasion limité.",
+          text: "Konseyé-la i aide aou konprann out bidjé, dépans, courses ek bann èd.",
         },
         {
           label: "Mi vé azir avèk in lakonpagnman avansé",
@@ -191,7 +189,7 @@ const PREMIUM_CONTENT = {
       items: [
         [
           "Kosa lé diferans ant Premium ek Premium+ ?",
-          "Premium i donn aksé Konseyé BudgetKazPéi an itilizasion limité pou lo kotidien. Premium+ i azout in itilizasion san limit dann kad in lizaz normal ek lakonpagnman avansé pou bann demars.",
+          "Premium i donn aksé Konseyé BudgetKazPéi pou out bidjé, èd ek bann konsey. Premium+ i azout lakonpagnman avansé pou bann dosyé, kourrié ek rekour.",
         ],
         [
           "Kosa i ariv kan mi ariv mon limit scans ?",
@@ -290,7 +288,6 @@ function PlanCard({ plan, content, isAuthenticated }) {
         </div>
         {!isFree && <p className="premium-plan__billing">{content.monthly}</p>}
         <p className="premium-plan__intro">{plan.intro}</p>
-        {isPremiumPlus && <p className="premium-plan__usage-note">{content.normalUse}</p>}
       </div>
 
       <ul className="premium-plan__features">

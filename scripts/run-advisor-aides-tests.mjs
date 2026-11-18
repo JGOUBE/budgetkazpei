@@ -776,8 +776,7 @@ assert.equal(
 
 assert.match(advisorPage, /if \(!access\.canUseAdvisor\)/)
 assert.match(advisorPage, /LockedAdvisor/)
-assert.match(advisorPage, /Utilisation limitée/)
-assert.match(advisorPage, /Usage libre encadré/)
+assert.doesNotMatch(advisorPage, /bkp-advisor-usage-label|Usage libre encadré|Utilisation illimitée|Utilisation limitée|5 par jour|20 par mois/, "No advisor quota or unlimited badge should be shown")
 assert.match(aidesPage, /role="tablist"/)
 assert.match(aidesPage, /Pour moi/)
 assert.match(aidesPage, /Rechercher/)
