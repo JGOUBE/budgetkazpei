@@ -67,34 +67,32 @@ const premiumPlus = getAdvisorAccess("premium_plus")
 assert.equal(free.canUseAdvisor, false, "Le plan Gratuit ne doit pas utiliser le Conseiller")
 assert.equal(free.allowedModes.length, 0, "Le plan Gratuit ne doit avoir aucun mode")
 assert.equal(premium.canUseAdvisor, true)
-assert.equal(premium.canUseAdvancedAdvisorTools, false)
-assert.deepEqual(premium.allowedModes, STANDARD_ADVISOR_MODES)
-assert.equal(premium.allowedModes.some(mode => ADVANCED_ADVISOR_MODES.includes(mode)), false)
+assert.equal(premium.canUseAdvancedAdvisorTools, true)
+assert.deepEqual(premium.allowedModes, [...STANDARD_ADVISOR_MODES, ...ADVANCED_ADVISOR_MODES])
+assert.equal(premium.allowedModes.some(mode => ADVANCED_ADVISOR_MODES.includes(mode)), true)
 assert.equal(premiumPlus.canUseAdvancedAdvisorTools, true)
 assert.equal(ADVANCED_ADVISOR_MODES.includes("generer_courrier"), true)
-assert.equal(premiumPlus.publicUsageLabel, "unlimited")
+assert.equal(premium.publicUsageLabel, "premium")
+assert.equal(premiumPlus.publicUsageLabel, "premium")
 
 assert.equal(resolveServerPlan({ subscription: { plan: "free", status: "active" }, profile: { premium_plus: true } }), "free")
 assert.equal(resolveServerPlan({ profile: { premium_plus: true } }), "premium_plus")
 assert.equal(getServerAdvisorAccess("free").safetyLimit, 0)
-assert.equal(getServerAdvisorAccess("premium").safetyLimit, 50)
-assert.equal(getServerAdvisorAccess("premium_plus").safetyLimit, 250)
+assert.equal(getServerAdvisorAccess("premium").safetyLimit, 1200)
+assert.equal(getServerAdvisorAccess("premium_plus").safetyLimit, 1200)
 assert.equal(isAdvancedAdvisorMode("generer_courrier"), true)
 assert.equal(isAdvancedAdvisorMode("comprendre_courrier"), false)
 
-assert.equal(shouldBlockAdvisorUsage("premium", 49), false, "Premium doit fonctionner à 49 échanges")
-assert.equal(shouldBlockAdvisorUsage("premium", 50), true, "Premium doit être bloqué à 50 échanges")
-for (const used of [249, 250, 251, 10_000]) {
-  assert.equal(
-    shouldBlockAdvisorUsage("premium_plus", used),
-    false,
-    `Premium+ ne doit pas être bloqué par son compteur mensuel à ${used} échanges`,
-  )
+// A separate atomic reservation and budget guard now blocks excess provider calls,
+// not this legacy local message counter.
+for (const plan of ["premium", "premium_plus"]) {
+  for (const used of [49, 50, 250, 1200, 10000]) {
+    assert.equal(shouldBlockAdvisorUsage(plan, used), false)
+  }
+  assert.equal(shouldMonitorAdvisorUsage(plan, 959), false)
+  assert.equal(shouldMonitorAdvisorUsage(plan, 960), true)
+  assert.equal(shouldMonitorAdvisorUsage(plan, 10_000), true)
 }
-assert.equal(shouldMonitorAdvisorUsage("premium_plus", 249), false)
-assert.equal(shouldMonitorAdvisorUsage("premium_plus", 250), true)
-assert.equal(shouldMonitorAdvisorUsage("premium_plus", 251), true)
-assert.equal(shouldMonitorAdvisorUsage("premium_plus", 10_000), true)
 assert.equal(shouldBlockAdvisorUsage("free", 0), false, "Le refus Gratuit relève du contrôle d'accès")
 
 const languageCases = [
