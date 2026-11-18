@@ -57,13 +57,9 @@ export default function Sidebar({
   const premiumActive = activeNav === "premium"
   const contactActive = activeNav === "contact"
 
-  const premiumButtonLabel = isPremiumPlus
-    ? "Gérer Premium+"
-    : isPremium
-      ? "Passer à Premium+"
-      : isKreol
-        ? "Vir Premium"
-        : "Découvrir Premium"
+  const premiumButtonLabel = isPremium
+    ? (isKreol ? "Gérer Premium" : "Gérer Premium")
+    : (isKreol ? "Dékouv Premium" : "Découvrir Premium")
 
   const premiumColor = isPremiumPlus || isPremium ? ds.purple : ds.warning
 
