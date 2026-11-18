@@ -4,11 +4,11 @@ export const PLAN_IDS = {
   premiumPlus: "premium_plus",
 }
 
-export const PLAN_ORDER = [PLAN_IDS.free, PLAN_IDS.premium, PLAN_IDS.premiumPlus]
+export const PLAN_ORDER = [PLAN_IDS.free, PLAN_IDS.premium]
 
 // Valeur provisoire : le quota gratuit reste à valider après mesure du coût réel du service Python.
 export const FREE_OPERATIONAL_SCAN_LIMIT = 1
-export const PREMIUM_PLUS_SAFETY_SCAN_LIMIT = 50
+export const PREMIUM_PLUS_SAFETY_SCAN_LIMIT = 100
 export const MONTHLY_QUOTA_REACHED_CODE = "monthly_quota_reached"
 export const SCAN_SAFETY_LIMIT_REACHED_CODE = "scan_safety_limit_reached"
 
@@ -22,18 +22,18 @@ export const PLAN_SCAN_POLICY = {
     needsCommercialValidation: true,
   },
   [PLAN_IDS.premium]: {
-    publicScanLabel: "10 scans par mois",
-    commercialScanLimit: 10,
-    operationalScanLimit: 10,
+    publicScanLabel: "Scanner Premium avec protection de sécurité",
+    commercialScanLimit: null,
+    operationalScanLimit: PREMIUM_PLUS_SAFETY_SCAN_LIMIT,
     isUnlimitedForUser: false,
-    isSafetyLimited: false,
+    isSafetyLimited: true,
     needsCommercialValidation: false,
   },
   [PLAN_IDS.premiumPlus]: {
-    publicScanLabel: "Scans illimités",
+    publicScanLabel: "Scanner Premium avec protection de sécurité",
     commercialScanLimit: null,
     operationalScanLimit: PREMIUM_PLUS_SAFETY_SCAN_LIMIT,
-    isUnlimitedForUser: true,
+    isUnlimitedForUser: false,
     isSafetyLimited: true,
     needsCommercialValidation: false,
   },
@@ -56,14 +56,14 @@ export const PREMIUM_PLUS_SAFETY_MESSAGE =
 
 export const PLAN_PRICES = {
   [PLAN_IDS.free]: "0 €",
-  [PLAN_IDS.premium]: "2,99 €/mois",
+  [PLAN_IDS.premium]: "4,99 €/mois",
   [PLAN_IDS.premiumPlus]: "4,99 €/mois",
 }
 
 export const PLAN_NAMES = {
   [PLAN_IDS.free]: "Gratuit",
   [PLAN_IDS.premium]: "Premium",
-  [PLAN_IDS.premiumPlus]: "Premium+",
+  [PLAN_IDS.premiumPlus]: "Premium",
 }
 
 export const PLAN_FEATURE_STATUS = {
@@ -95,28 +95,14 @@ export const PUBLIC_PLAN_CARDS = [
     cta: "Découvrir Premium",
     href: "/decouvrir",
     featured: true,
-    intro: "BudgetKazPéi me conseille au quotidien.",
+    intro: "Un accompagnement complet pour vos finances, vos aides et vos démarches.",
     items: [
       { status: PLAN_FEATURE_STATUS.included, text: "Tout le Gratuit" },
       { status: PLAN_FEATURE_STATUS.included, text: PLAN_SCAN_POLICY[PLAN_IDS.premium].publicScanLabel },
       { status: PLAN_FEATURE_STATUS.included, text: "Historique et statistiques avancées" },
       { status: PLAN_FEATURE_STATUS.included, text: "Alertes budget et export PDF" },
-      { status: PLAN_FEATURE_STATUS.included, text: "Conseiller BudgetKazPéi — budget, aides et conseils" },
-    ],
-  },
-  {
-    id: PLAN_IDS.premiumPlus,
-    tone: "plus",
-    cta: "Découvrir Premium+",
-    href: "/decouvrir",
-    intro: "BudgetKazPéi m'accompagne dans mes actions concrètes.",
-    items: [
-      { status: PLAN_FEATURE_STATUS.included, text: "Tout le Premium" },
-      { status: PLAN_FEATURE_STATUS.included, text: PLAN_SCAN_POLICY[PLAN_IDS.premiumPlus].publicScanLabel },
-      { status: PLAN_FEATURE_STATUS.included, text: "Conseiller BudgetKazPéi+ — accompagnement avancé" },
-      { status: PLAN_FEATURE_STATUS.included, text: "Accompagnement avancé des démarches" },
-      { status: PLAN_FEATURE_STATUS.included, text: "Dossiers, courriers, emails, relances et rendez-vous" },
-      { status: PLAN_FEATURE_STATUS.included, text: "Compréhension des refus et préparation des recours" },
+      { status: PLAN_FEATURE_STATUS.included, text: "Conseiller BudgetKazPéi — budget, aides et conseils personnalisés" },
+      { status: PLAN_FEATURE_STATUS.included, text: "Dossiers, courriers, emails, relances, rendez-vous et recours" },
     ],
   },
 ]
@@ -144,7 +130,8 @@ export function getPlanFlags(planInput, legacyFlags = {}) {
   return {
     plan: resolvedPlan,
     isPremium: resolvedPlan === PLAN_IDS.premium || resolvedPlan === PLAN_IDS.premiumPlus,
-    isPremiumPlus: resolvedPlan === PLAN_IDS.premiumPlus,
+    // Compatibility flag for features previously reserved for Premium+.
+    isPremiumPlus: resolvedPlan === PLAN_IDS.premium || resolvedPlan === PLAN_IDS.premiumPlus,
   }
 }
 
@@ -167,5 +154,6 @@ export function getPlanQuotaExceededCode(planInput) {
 }
 
 export function getPublicPlanCard(planId) {
-  return PUBLIC_PLAN_CARDS.find(plan => plan.id === normalizePlan(planId))
+  const normalized = normalizePlan(planId)
+  return PUBLIC_PLAN_CARDS.find(plan => plan.id === (normalized === PLAN_IDS.premiumPlus ? PLAN_IDS.premium : normalized))
 }
