@@ -19,6 +19,8 @@ html[data-theme="dark"]:has(.bk-landing) #root {
   --bk-lavender: #efebf7;
   --bk-sage: #e9f1e4;
   background: #fbfcfa;
+  background-image: none !important;
+  box-shadow: none !important;
   color: var(--bk-ink);
   color-scheme: light;
   font-family: "DM Sans", "Helvetica Neue", Arial, sans-serif;
@@ -204,7 +206,7 @@ html[data-theme="dark"]:has(.bk-landing) #root {
 .bk-landing .bk-section-heading h2,
 .bk-landing .bk-closing h2 {
   color: var(--bk-ink);
-  font-size: clamp(2.25rem, 4.3vw, 4.15rem);
+  font-size: clamp(2.5rem, 4.9vw, 4.65rem);
   font-weight: 680;
   letter-spacing: -.055em;
   line-height: 1.11;
@@ -242,8 +244,8 @@ html[data-theme="dark"]:has(.bk-landing) #root {
 .bk-landing .bk-feature--blue .bk-feature__icon { background: var(--bk-blue); color: #37728f; }
 .bk-landing .bk-feature--lavender .bk-feature__icon { background: var(--bk-lavender); color: #6b6195; }
 .bk-landing .bk-feature--sage .bk-feature__icon { background: var(--bk-sage); color: #55744c; }
-.bk-landing .bk-feature h3 { margin: 0 0 12px; font-size: 1.15rem; font-weight: 750; letter-spacing: -.025em; }
-.bk-landing .bk-feature p { margin: 0; color: var(--bk-muted); font-size: .91rem; line-height: 1.7; }
+.bk-landing .bk-feature h3 { margin: 0 0 12px; font-size: 1.26rem; font-weight: 750; letter-spacing: -.025em; }
+.bk-landing .bk-feature p { margin: 0; color: var(--bk-muted); font-size: .97rem; line-height: 1.7; }
 
 .bk-landing .bk-two-column {
   display: grid;
@@ -273,7 +275,7 @@ html[data-theme="dark"]:has(.bk-landing) #root {
 .bk-landing .bk-advisor__example small { display: block; margin-top: 22px; color: #647976; font-size: .74rem; line-height: 1.6; }
 
 .bk-landing .bk-deals__details { border-top: 1px solid var(--bk-line); padding-top: 24px; }
-.bk-landing .bk-deals__heading { display: flex; align-items: center; gap: 12px; font-weight: 740; color: #355b5f; margin-bottom: 28px; }
+.bk-landing .bk-deals__heading { display: flex; align-items: center; gap: 12px; font-size: 1.04rem; font-weight: 740; color: #355b5f; margin-bottom: 28px; }
 .bk-landing .bk-deals__categories { display: flex; flex-wrap: wrap; gap: 11px; }
 .bk-landing .bk-deals__categories span {
   padding: 11px 15px;
@@ -375,7 +377,7 @@ html[data-theme="dark"]:has(.bk-landing) #root {
   .bk-landing .bk-quicknav__inner { display: flex; flex-wrap: wrap; gap: 0 16px; padding-top: 11px; padding-bottom: 11px; }
   .bk-landing .bk-quicknav__item { padding: 8px 0; border-right: none; font-size: .72rem; }
   .bk-landing .bk-section { padding: 70px 0; scroll-margin-top: 76px; }
-  .bk-landing .bk-section-heading h2, .bk-landing .bk-closing h2 { font-size: clamp(2rem, 9vw, 3.1rem); }
+  .bk-landing .bk-section-heading h2, .bk-landing .bk-closing h2 { font-size: clamp(2.16rem, 9.4vw, 3.5rem); }
   .bk-landing .bk-features .bk-section-heading { margin-bottom: 32px; }
   .bk-landing .bk-feature-grid { grid-template-columns: 1fr; }
   .bk-landing .bk-feature, .bk-landing .bk-feature + .bk-feature, .bk-landing .bk-feature:nth-child(3) { padding: 23px 0 25px; border-left: 0; border-top: 1px solid var(--bk-line); }
@@ -401,4 +403,23 @@ html[data-theme="dark"]:has(.bk-landing) #root {
     transition-duration: .01ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* Même surface neutre sur mobile et ordinateur : aucun reflet chromatique. */
+.bk-landing::before,
+.bk-landing::after { content: none !important; background: none !important; box-shadow: none !important; }
+.bk-landing .bk-hero,
+.bk-landing .bk-features,
+.bk-landing .bk-deals,
+.bk-landing .bk-closing { background-image: none !important; box-shadow: none !important; }
+@media (min-width: 1280px) {
+  .bk-landing .landing-shell { width: min(1160px, calc(100% - 96px)); }
+}
+@media (max-width: 860px) {
+  .bk-landing .landing-header__inner { padding-top: env(safe-area-inset-top, 0px); }
+}
+@media (max-width: 640px) {
+  .bk-landing .bk-section-heading > p:not(.bk-eyebrow) { font-size: 1.02rem; line-height: 1.75; }
+  .bk-landing .bk-feature h3 { font-size: 1.22rem; }
+  .bk-landing .bk-footer { padding-bottom: max(32px, env(safe-area-inset-bottom, 0px)); }
 }
