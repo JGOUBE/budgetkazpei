@@ -68,7 +68,8 @@ const KR_LOCAL = Object.freeze({
   "bonjour": "Bonzour ! Mi pé aide aou pou out bidzé, bann aides ek demars.",
   "bonzour": "Bonzour ! Mi pé aide aou pou out bidzé, bann aides ek demars.",
   "salut": "Salut ! Kosa ou vé konèt su out bidzé ou bann aides ?",
-  "merci": "Avec plaisir ! Mi reste disponib pou out kestyon.",
+  "merci": "Avèk plézir ! Mi reste disponib pou out kestyon.",
+  "merci beaucoup": "Avèk plézir ! Si ou nana in kestyon, mi lé la.",
   "ca va": "Mi sava, merci ! Kosa mi pé fé pou aou zordi ?",
   "ca va on danse": "Mi sava, merci ! Mi dans mieux avec bann chiffres. Nou regarde out bidzé ou bann lekonomi ?",
 })
@@ -76,8 +77,11 @@ const KR_LOCAL = Object.freeze({
 export function getLocalAdvisorSmallTalk(question = "", language = "fr") {
   const key = normalize(question)
   if (!key || key.length > 40) return null
-  if (!Object.prototype.hasOwnProperty.call(FR_LOCAL, key)) return null
-  return language === "kreol" ? (KR_LOCAL[key] || FR_LOCAL[key]) : FR_LOCAL[key]
+  if (["kreol", "kr", "cr"].includes(language)) {
+    // No French fallback in KR mode: a short greeting must respect the toggle.
+    return KR_LOCAL[key] || null
+  }
+  return FR_LOCAL[key] || null
 }
 
 
@@ -86,7 +90,7 @@ const LOCAL_OFFTOPIC_KR = "Mi lé surtout la pou aide aou su out bidzé, bann l�
 
 // One neutral, reusable reply to unrelated or playful messages; no AI call.
 export function getLocalAdvisorOffTopicResponse(language = "fr") {
-  return language === "kreol" ? LOCAL_OFFTOPIC_KR : LOCAL_OFFTOPIC_FR
+  return ["kreol", "kr", "cr"].includes(language) ? LOCAL_OFFTOPIC_KR : LOCAL_OFFTOPIC_FR
 }
 
 // Natural follow-ups to a real budget observation must never be mistaken for
@@ -119,7 +123,7 @@ export function getLocalAdvisorBudgetNoDataAdvice(
   const fr = language !== "kreol" && language !== "kr" && language !== "cr"
   const alternative = history.slice(0, anchorIndex + 1).some(item => item?.source === "local_budget_advice") ||
     /\b(?:autre chose|quoi d autre|et sinon|sinon quoi|alternatives?|autres? (?:solutions?|pistes?|idees?))\b/.test(text)
-  if (/\b(?:carburant|essence|gazole|diesel)\b/.test(subject)) {
+  if (/\b(?:carburant|carburan|karburan|karbiran|mazout|essence|essans|lesans|gazole|gazoil|diesel)\b/.test(subject)) {
     if (alternative) return fr
       ? "Voici d'autres possibilités pour le carburant : vérifiez la pression des pneus selon le constructeur, adoptez une conduite souple et, si possible, évitez les trajets aux heures les plus encombrées. Ce sont des pistes générales, sans économie chiffrée."
       : "Autres pistes carburant : vérifie pression bann pneus, conduit souple, ek évite bann gros bouchons quand possible."
