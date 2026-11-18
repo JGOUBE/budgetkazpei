@@ -777,7 +777,7 @@ assert.equal(
 assert.match(advisorPage, /if \(!access\.canUseAdvisor\)/)
 assert.match(advisorPage, /LockedAdvisor/)
 assert.match(advisorPage, /Utilisation limitée/)
-assert.match(advisorPage, /Utilisation illimitée/)
+assert.match(advisorPage, /Usage libre encadré/)
 assert.match(aidesPage, /role="tablist"/)
 assert.match(aidesPage, /Pour moi/)
 assert.match(aidesPage, /Rechercher/)
