@@ -42,6 +42,7 @@ import {
   buildAdvisorConversationContext,
   getAdvisorRankingOptions,
   resolveAdvisorBudgetConfirmation,
+  resolveAdvisorBudgetNoDataAdvice,
 } from "../../services/advisorConversation"
 
 const COLORS = createColorAliases({ red: () => "#FB7185" })
@@ -622,17 +623,26 @@ export default function AssistantConseiller({
       language: responseLanguage,
       contextUnavailable: Boolean(financialContextError),
     })
-    if (budgetConfirmation) {
+    // When the previous budget analysis found no data, answer a straightforward
+    // request for saving ideas locally. Detailed or new-topic requests still
+    // reach the model under the server-side cost guard.
+    const budgetNoDataAdvice = budgetConfirmation ? null : resolveAdvisorBudgetNoDataAdvice({
+      question: sentQuestion,
+      recentHistory: history,
+      language: responseLanguage,
+    })
+    const localBudgetFollowUp = budgetConfirmation || budgetNoDataAdvice
+    if (localBudgetFollowUp) {
       setHistory(prev => [
         {
           id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
           question: sentQuestion,
-          answer: budgetConfirmation.answer,
-          actions: budgetConfirmation.actions,
-          language: budgetConfirmation.language,
-          mode: budgetConfirmation.mode,
-          intent: budgetConfirmation.intent,
-          source: budgetConfirmation.source,
+          answer: localBudgetFollowUp.answer,
+          actions: localBudgetFollowUp.actions,
+          language: localBudgetFollowUp.language,
+          mode: localBudgetFollowUp.mode,
+          intent: localBudgetFollowUp.intent,
+          source: localBudgetFollowUp.source,
           createdAt: new Date().toISOString(),
         },
         ...prev,
