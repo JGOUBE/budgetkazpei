@@ -726,17 +726,18 @@ async function buildAssistantContext(params: {
       .from("user_subscriptions")
       .select("plan, status, updated_at")
       .eq("user_id", userId)
-      .eq("status", "active")
       .order("updated_at", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
+      .limit(10),
   ])
 
   if (profileResult.error) console.log("ADVISOR PROFILE LOAD ERROR", profileResult.error.message)
   if (subscriptionResult.error) console.log("ADVISOR SUBSCRIPTION LOAD ERROR", subscriptionResult.error.message)
 
   const profile = profileResult.data || {}
-  const plan = resolveServerPlan({ profile, subscription: subscriptionResult.data })
+  const serverSubscriptions = Array.isArray(subscriptionResult.data) ? subscriptionResult.data : []
+  const selectedSubscription = serverSubscriptions.find(row => ["active", "trialing"].includes(row.status))
+    || serverSubscriptions[0] || null
+  const plan = resolveServerPlan({ profile, subscription: selectedSubscription })
   const access = getAdvisorAccess(plan)
 
   if (!access.canUseAdvisor) {
