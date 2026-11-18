@@ -34,8 +34,8 @@ export const ADVANCED_ADVISOR_MODES: readonly AssistantMode[] = [
 
 export const ADVISOR_SAFETY_LIMITS: Readonly<Record<AdvisorPlan, number>> = {
   free: 0,
-  premium: 50,
-  premium_plus: 250,
+  premium: 1200,
+  premium_plus: 1200,
 }
 
 export function shouldBlockAdvisorUsage(
@@ -46,7 +46,8 @@ export function shouldBlockAdvisorUsage(
   const plan = normalizeAdvisorPlan(planInput)
   const used = Math.max(0, Number(usedInput) || 0)
 
-  return consumesExchange && plan === "premium" && used >= ADVISOR_SAFETY_LIMITS.premium
+  // The atomic per-user OpenAI budget guard now owns hard limits.
+  return false
 }
 
 export function shouldMonitorAdvisorUsage(
@@ -57,7 +58,7 @@ export function shouldMonitorAdvisorUsage(
   const plan = normalizeAdvisorPlan(planInput)
   const used = Math.max(0, Number(usedInput) || 0)
 
-  return consumesExchange && plan === "premium_plus" && used >= ADVISOR_SAFETY_LIMITS.premium_plus
+  return consumesExchange && plan !== "free" && used >= 960
 }
 
 function isTrue(value: unknown) {
@@ -97,7 +98,7 @@ export function resolveServerPlan(params: {
 export function getAdvisorAccess(planInput: unknown) {
   const plan = normalizeAdvisorPlan(planInput)
   const canUseAdvisor = plan === "premium" || plan === "premium_plus"
-  const canUseAdvancedAdvisorTools = plan === "premium_plus"
+  const canUseAdvancedAdvisorTools = canUseAdvisor
 
   return {
     plan,
