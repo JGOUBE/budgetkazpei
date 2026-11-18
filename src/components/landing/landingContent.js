@@ -58,7 +58,7 @@ const PLAN_COPY = {
     [PLAN_IDS.premiumPlus]: {
       name: "Premium+", cta: "Dékouv Premium+",
       intro: "BudgetKazPéi i akonpagn amwin dann mon bann aksion konkrè.",
-      items: ["Tout sak lé dann Premium", "Scans san limit", "Konseyé BudgetKazPéi+ — itilizasion san limit", "Lakonpagnman avansé pou bann demars", "Dosyé, kourrié, email, relans ek randévou", "Konprann bann refi ek prépar bann rekour"],
+      items: ["Tout sak lé dann Premium", "Scans san limit", "Konseyé BudgetKazPéi+ — lakonpagnman personnalisé dann out démarches", "Lakonpagnman avansé pou bann demars", "Dosyé, kourrié, email, relans ek randévou", "Konprann bann refi ek prépar bann rekour"],
     },
   },
 }
