@@ -1,3 +1,4 @@
+import { LockKeyhole } from "lucide-react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { CATEGORIES } from "../../../data/categories"
 import { formatMontant } from "../../../utils/format"
@@ -2370,6 +2371,15 @@ export default function ReceiptsPage({
             {quota.loading ? "…" : (isKreol ? "Analyse de vos tickets" : "Analyse de vos tickets")}
           </span>
         </div>
+        {!quota.loading && quota.plan === "free" && quota.reached && (
+          <button type="button" onClick={() => requestAppSectionNavigation("premium")}
+            style={{marginTop:14,display:"inline-flex",alignItems:"center",gap:9,
+              padding:"10px 15px",borderRadius:12,cursor:"pointer",font:"inherit",
+              background:"#ECF7F3",color:"#27685F",border:"1px solid #B7D8CD"}}>
+            <LockKeyhole size={16} aria-hidden="true" />
+            {isKreol ? "Scanner réservé Premium — dékouv lof" : "Scanner réservé à Premium — découvrir l'offre"}
+          </button>
+        )}
       </div>
 
       {showScanInfo && (
