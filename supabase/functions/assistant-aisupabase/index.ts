@@ -811,6 +811,11 @@ Deno.serve(async (req) => {
       ? getLocalCourtesyAnswer(context.question, context.language)
       : null
     if (courtesyAnswer) {
+      // Keep the server-side last topic consistent with the visible chat.
+      await saveAssistantConversation(
+        supabaseAdmin, context.userId, context.body, courtesyAnswer,
+        false, context.mode, context.language,
+      )
       console.info("ADVISOR_API_METER", JSON.stringify({
         type: "local_courtesy", calls: 0, status: "success",
       }))
@@ -861,12 +866,17 @@ Deno.serve(async (req) => {
         }, 503)
       }
       if (offTopicAllowance.allowed !== true) {
+        const cappedAnswer = getOffTopicLimitAnswer(context.language)
+        await saveAssistantConversation(
+          supabaseAdmin, context.userId, context.body, cappedAnswer,
+          false, context.mode, context.language,
+        )
         console.info("ADVISOR_API_METER", JSON.stringify({
           type: "offtopic_blocked", calls: 0, status: "quota_reached",
         }))
         return jsonResponse({
           success: true,
-          answer: getOffTopicLimitAnswer(context.language),
+          answer: cappedAnswer,
           consumed: false,
           openAiCallCount: 0,
           source: "offtopic_quota",
