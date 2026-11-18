@@ -6,6 +6,7 @@ const chat = await read("src/components/conseiller/AssistantConseiller.jsx")
 const page = await read("src/components/conseiller/ConseillerPage.jsx")
 const css = await read("src/components/conseiller/conseillerChat.css")
 const refinements = await read("src/styles/budgetkazpei-refinement.css")
+const homepage = await read("src/pages/HomePage.jsx")
 const nav = await read("src/services/appSectionNavigation.js")
 const deals = await read("src/pages/GoodDealsPage.jsx")
 const shopping = await read("src/pages/ShoppingListPage.jsx")
@@ -42,4 +43,24 @@ assert.match(deals,/includeRetailPromotions: false/)
 assert.match(deals,/normalizeCategory\(deal\.category\) === "shopping"\) return false/)
 assert.match(nav,/promotions: \{ section: "shopping", shoppingTab: "savings" \}/)
 assert.match(shopping,/onNavigate\(createAppSectionTarget\("shopping", \{ shoppingTab: "savings" \}\)\)/)
+// The advisor's three visible choices must share the precise home palette
+// rather than use three near-white/near-lavender surfaces.
+for (const [label, background, textColor, edge] of [
+  ["budget", "#C8E4AA", "#355B34", "#9DC184"],
+  ["aides", "#A9DEED", "#235774", "#83BFCE"],
+  ["documents", "#CFD6DD", "#344A56", "#AAB9C3"],
+]) {
+  for (const color of [background, textColor, edge]) {
+    assert.ok(homepage.includes(color), `${label}: absent from home palette (${color})`)
+    assert.ok(refinements.includes(color), `${label}: missing advisor color (${color})`)
+  }
+}
+assert.match(refinements, /bkp-advisor-starters button\\.bkp-advisor-starter--budget_depenses/)
+assert.match(refinements, /bkp-advisor-starters button\\.bkp-advisor-starter--trouver_aide/)
+assert.match(refinements, /bkp-advisor-starters button\\.bkp-advisor-starter--comprendre_courrier/)
+assert.match(refinements, /bkp-advisor-composer:focus-within/)
+assert.match(refinements, /bkp-advisor-thread[\\s\\S]*#F7FAF7/)
+assert.match(refinements, /bkp-advisor-quick-details[\\s\\S]*#EDF4E5/)
+assert.match(refinements, /bkp-advisor-advanced[\\s\\S]*#E8EEF1/)
+
 console.log("OK: Conseiller compact and accessible; price collectors stay separate from local bons plans.")
