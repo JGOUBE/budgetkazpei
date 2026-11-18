@@ -281,8 +281,8 @@ function buildCategoryAnswer(question, insights) {
     })
     const share = row.share === null || row.share === undefined ? "" : " (" + Math.round(row.share) + " % des dépenses variables enregistrées)"
     return response({
-      fr: "Pour " + fr + ", " + formatMontant(row.amount) + " " + periodPhrase(context) + share + ". Les charges fixes ne sont pas incluses dans ce pourcentage.",
-      kr: "Pou " + kr + ", " + formatMontant(row.amount) + " " + periodPhrase(context) + share + ". Bann sarz fixes lé pa incli dan pourcentage-la.",
+      fr: "Pour " + fr + ", " + formatMontant(row.amount) + " " + periodPhrase(context) + share + ". Les charges fixes suivies séparément ne sont pas ajoutées dans ce pourcentage.",
+      kr: "Pou " + kr + ", " + formatMontant(row.amount) + " " + periodPhrase(context) + share + ". Bann sarz fixes suivies séparément lé pa ajouté dann pourcentage-la.",
       intent: ASSISTANT_INTENTS.BUDGET_CATEGORY, insights, actions,
     })
   }
@@ -294,8 +294,8 @@ function buildCategoryAnswer(question, insights) {
       (row.share === null || row.share === undefined ? "" : " (" + Math.round(row.share) + " %)")
     ).join(" ; ")
     return response({
-      fr: "Les " + three.length + " principaux postes de dépenses variables enregistrées " + periodPhrase(context) + " : " + parts("fr") + ". Ces parts excluent les charges fixes.",
-      kr: "Bann " + three.length + " pli gro postes dépans variables anrezistré " + periodPhrase(context) + " : " + parts("kr") + ". Bann sarz fixes lé pa compté.",
+      fr: "Les " + three.length + " principaux postes de dépenses variables enregistrées " + periodPhrase(context) + " : " + parts("fr") + ". Ces parts ne comprennent pas les charges fixes suivies séparément.",
+      kr: "Bann " + three.length + " pli gro postes dépans variables anrezistré " + periodPhrase(context) + " : " + parts("kr") + ". Bann sarz fixes suivies séparément lé pa ajouté.",
       intent: ASSISTANT_INTENTS.BUDGET_CATEGORY, insights, actions,
     })
   }
