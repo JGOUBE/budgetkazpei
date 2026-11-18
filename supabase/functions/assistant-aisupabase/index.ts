@@ -19,6 +19,7 @@ import {
 } from "./engine/truth/trustedAidFacts.ts"
 import { reviewAssistantAnswer } from "./engine/review/reviewerEngine.ts"
 import { isProtectedAdvisorQuestion } from "./engine/routing/questionScope.ts"
+import { classifyAdvisorQuestionScope, getOffTopicLimits, localSmallTalkAnswer } from "./engine/routing/offTopicGuard.js"
 import {
   getAdvisorAccess,
   isAdvancedAdvisorMode,
@@ -799,6 +800,37 @@ Deno.serve(async (req) => {
 
     const context = contextResult.context as AssistantContext
 
+    // Fixed social greetings are intentionally handled without provider cost.
+    // User-specific financial, benefit and administrative requests always
+    // bypass this tiny phrase list and continue through the advisor engine.
+    const localSocialAnswer = localSmallTalkAnswer(context.question, context.language)
+    if (localSocialAnswer && context.action !== "analyze_refusal") {
+      console.info("ADVISOR_API_METER", JSON.stringify({
+        type: "local_answer", calls: 0, source: "smalltalk",
+      }))
+      return jsonResponse({
+        success: true,
+        answer: localSocialAnswer,
+        consumed: false,
+        openAiCallCount: 0,
+        source: "local_smalltalk",
+        language: context.language,
+        mode: context.mode,
+        recommendedAidIds: [],
+        recommendedAidNames: [],
+      })
+    }
+
+    // Only the trusted, authenticated server can reserve provider usage.
+    // A clear unrelated topic is subject to a separate daily/monthly limit.
+    // This cannot be reset by refreshing the browser or changing tabs.
+    const costScope = classifyAdvisorQuestionScope({
+      question: context.question,
+      mode: context.mode,
+      action: context.action,
+      conversationContext: context.body?.conversationContext || {},
+    })
+
     // A strict official-amount review is correct for an actual CAF/finance
     // question, but it can badly corrupt an unrelated answer about astronomy,
     // a recipe or an invented scenario.
@@ -853,15 +885,81 @@ Deno.serve(async (req) => {
       context.allowBilingualResponse,
     )
 
-    const openAiResult = await callOpenAi({
-      openAiKey,
-      model,
-      systemPrompt,
-      userPrompt,
-      action: context.action,
-    })
+    let offTopicReservationId: number | null = null
+    const refundOffTopicReservation = async () => {
+      if (offTopicReservationId === null) return
+      const { error: releaseError } = await supabaseAdmin.rpc("release_advisor_offtopic_call", {
+        p_user_id: context.userId,
+        p_reservation_id: offTopicReservationId,
+      })
+      if (releaseError) {
+        // A failed refund cannot authorize an additional provider call.
+        console.warn("ADVISOR_OFFTOPIC_REFUND_ERROR", releaseError.code || "unknown")
+      }
+      offTopicReservationId = null
+    }
+
+    if (costScope === "off_topic") {
+      const caps = getOffTopicLimits(context.plan)
+      const { data: reservation, error: guardError } = await supabaseAdmin.rpc(
+        "reserve_advisor_offtopic_call",
+        { p_user_id: context.userId, p_daily_limit: caps.daily, p_monthly_limit: caps.monthly },
+      )
+
+      // Fail closed for off-topic questions if the rate limiter is unhealthy.
+      if (guardError || !reservation || typeof reservation.allowed !== "boolean") {
+        console.warn("ADVISOR_OFFTOPIC_GUARD_UNAVAILABLE", guardError?.code || "empty")
+        return jsonResponse({
+          success: false,
+          consumed: false,
+          code: "advisor_offtopic_guard_unavailable",
+          error: context.isKreol
+            ? "Bann kestyon libres lé indisponib pou linstan. Out kestyon bidzé, aides ek démarches lé toujou disponib."
+            : "Les questions hors sujet sont temporairement indisponibles. Vos questions sur le budget, les aides et les démarches restent disponibles.",
+        }, 503)
+      }
+      if (!reservation.allowed) {
+        const monthlyExhausted = Number(reservation.monthlyRemaining || 0) === 0
+        const resume = monthlyExhausted ? "le mois prochain" : "demain"
+        console.info("ADVISOR_OFFTOPIC_LIMIT_BLOCK", JSON.stringify({
+          plan: context.plan, daily: caps.daily, monthly: caps.monthly,
+          window: monthlyExhausted ? "month" : "day",
+        }))
+        return jsonResponse({
+          success: false,
+          consumed: false,
+          code: "advisor_offtopic_limit_reached",
+          offTopicLimitReached: true,
+          error: context.isKreol
+            ? `Pou évite bann frais IA, bann kestyon hors sujet lé limité a ${caps.daily} par zour ek ${caps.monthly} par mwa. Essaye ankor ${monthlyExhausted ? "lo mwa prochain" : "demin"}. Bann kestyon budget, aides ek démarches lé toujours la.`
+            : `Pour maîtriser les frais d'IA, les questions sans rapport avec le budget, les aides ou les démarches sont limitées à ${caps.daily} par jour et ${caps.monthly} par mois. Revenez ${resume} pour les questions libres ; vos questions utiles restent disponibles.`,
+        }, 429)
+      }
+      offTopicReservationId = Number(reservation.reservationId)
+      if (!Number.isSafeInteger(offTopicReservationId) || offTopicReservationId < 1) {
+        console.warn("ADVISOR_OFFTOPIC_GUARD_INVALID_RESERVATION")
+        return jsonResponse({ success: false, consumed: false,
+          code: "advisor_offtopic_guard_unavailable",
+          error: "La protection des appels IA est temporairement indisponible." }, 503)
+      }
+    }
+
+    let openAiResult: Awaited<ReturnType<typeof callOpenAi>>
+    try {
+      openAiResult = await callOpenAi({
+        openAiKey,
+        model,
+        systemPrompt,
+        userPrompt,
+        action: context.action,
+      })
+    } catch (requestError) {
+      await refundOffTopicReservation()
+      throw requestError
+    }
 
     if (!openAiResult.ok) {
+      await refundOffTopicReservation()
       // Technical metering only: never log the question, profile or answer.
       console.info("ADVISOR_API_METER", JSON.stringify({
         type: "openai_attempt", calls: 1, status: "provider_error",
@@ -971,7 +1069,7 @@ Deno.serve(async (req) => {
     // The first completion is always counted; memory only on explicit opt-in.
     console.info("ADVISOR_API_METER", JSON.stringify({
       type: "openai_attempt", calls: memoryApiAttempted ? 2 : 1,
-      status: "success", model,
+      status: "success", model, scope: costScope,
       primaryInputTokens: Number(openAiResult.data?.usage?.prompt_tokens || 0),
       primaryOutputTokens: Number(openAiResult.data?.usage?.completion_tokens || 0),
     }))
