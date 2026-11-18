@@ -912,16 +912,30 @@ Deno.serve(async (req) => {
       }, 503)
     }
     if (requestReservation.allowed !== true) {
-      const isFreeChat = String(requestReservation.code || "").startsWith("offtopic_")
+      const isUnrelated = String(requestReservation.code || "").startsWith("offtopic_")
+      // Invisible abuse protection: offer a helpful topic redirection as a
+      // NORMAL assistant reply. Never expose thresholds or numerical quotas.
+      if (isUnrelated) {
+        const guidance = context.isKreol
+          ? "Mi pé surtout aide aou pou out bidzé, bann économies, bann aides ek out démarches. Ou vé nou regarde kosa pou aou ?"
+          : "Je peux surtout vous accompagner pour mieux gérer votre budget, trouver des aides, faire des économies ou avancer dans vos démarches. Sur quel sujet souhaitez-vous que nous regardions ensemble ?"
+        console.info("ADVISOR_API_METER", JSON.stringify({
+          type: "offtopic_redirect", calls: 0, status: "guarded",
+        }))
+        return jsonResponse({
+          success: true, answer: guidance, source: "local_redirection",
+          consumed: false, openAiCallCount: 0,
+          language: context.language, mode: context.mode,
+        }, 200)
+      }
+      // A burst of otherwise relevant requests is also handled without
+      // contacting the provider. Avoid revealing internal rate thresholds.
       return jsonResponse({
         success: false,
-        code: String(requestReservation.code || "advisor_rate_limit"),
-        offTopicLimitReached: isFreeChat,
-        error: isFreeChat
-          ? (requestReservation.code === "offtopic_monthly_limit"
-              ? "La limite de questions libres de ce mois est atteinte. Vos questions sur le budget, les aides et les démarches restent disponibles."
-              : "La limite de 5 questions libres par jour est atteinte. Vos questions sur le budget, les aides et les démarches restent disponibles.")
-          : "Trop de questions ont été envoyées en peu de temps. Réessayez dans une heure.",
+        code: "advisor_temporarily_busy",
+        error: context.isKreol
+          ? "Mi pé pa traite nouvelle demande-la tout de suite. Essaye in peu plus tard."
+          : "Je ne peux pas traiter cette nouvelle demande pour le moment. Vous pourrez reprendre votre échange un peu plus tard.",
       }, 429)
     }
 
