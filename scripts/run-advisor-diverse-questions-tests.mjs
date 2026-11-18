@@ -250,6 +250,69 @@ assert.equal(resolveAdvisorBudgetNoDataAdvice({
   question: requestSolutions,
   recentHistory: [{question: "Oui", answer: "Je dépense 40 euros dans ce poste.", source: "local_budget_followup"}, missingFuelHistory[1]],
 }), null, "Real recorded spending must not trigger the no-data template")
+
+// Screenshot regression: follow-up directly after "fuel is expensive" must
+// receive relevant advice, even if there is no recorded spending yet.
+const costObservation = [{
+  question: "Je trouve que le carburant est cher",
+  answer: "Le carburant peut peser sur le budget. Souhaitez-vous examiner vos dépenses de carburant ?",
+  source: "local_budget_observation",
+}]
+for (const question of [
+  "Je n'en ai pas encore enregistré mais propose moi des solutions",
+  "Ok j'en ai pas encore mais tu me proposes quoi comme solution",
+  "Propose-moi des conseils pour économiser",
+]) {
+  const fromUi = resolveAdvisorBudgetNoDataAdvice({
+    question, recentHistory: costObservation, language: "fr",
+  })
+  assert.equal(fromUi?.source, "local_budget_advice", question)
+  assert.match(fromUi?.answer || "", /carburant/i, question)
+  const fromServer = getLocalAdvisorBudgetNoDataAdvice(question, costObservation, "fr")
+  assert.match(fromServer || "", /prix au litre/i, question)
+}
+// If the old bug had already inserted the generic off-topic response, recover
+// the previous legitimate budget topic instead of repeating that refusal.
+const badFallbackHistory = [{
+  question: "Je n'en ai pas encore enregistré mais propose moi des solutions",
+  answer: "Je peux surtout vous aider sur votre budget, vos économies, les aides et les démarches.",
+  source: "local_offtopic",
+}, ...costObservation]
+const alternativeUi = resolveAdvisorBudgetNoDataAdvice({
+  question: "Propose moi autre chose", recentHistory: badFallbackHistory, language: "fr",
+})
+assert.match(alternativeUi?.answer || "", /pression des pneus/i)
+const alternativeServer = getLocalAdvisorBudgetNoDataAdvice(
+  "Propose moi autre chose", badFallbackHistory, "fr",
+)
+assert.match(alternativeServer || "", /pression des pneus/i)
+assert.doesNotMatch(alternativeUi?.answer || "", /regroupez plusieurs déplacements/i)
+
+// Continuing after our newly provided advice should also give new suggestions
+// without repeating the same local script or paying OpenAI.
+const firstAdviceHistory = [{
+  question: "Je n'en ai pas encore enregistré mais propose moi des solutions",
+  answer: alternativeUi?.answer || "",
+  source: "local_budget_advice",
+}, ...costObservation]
+assert.match(resolveAdvisorBudgetNoDataAdvice({
+  question: "Aurais-tu d'autres pistes ?", recentHistory: firstAdviceHistory,
+})?.answer || "", /pression des pneus/i)
+assert.match(getLocalAdvisorBudgetNoDataAdvice(
+  "Propose moi autre chose", firstAdviceHistory,
+) || "", /pression des pneus/i)
+
+// Don't hijack an unrelated request after a money discussion.
+for (const question of [
+  "Propose-moi une recette de gâteau",
+  "Propose-moi une chanson",
+  "Je veux une solution personnalisée selon ma situation",
+  "Peux-tu me proposer un devis précis à 180 euros ?",
+]) {
+  assert.equal(resolveAdvisorBudgetNoDataAdvice({ question, recentHistory: costObservation }), null)
+  assert.equal(getLocalAdvisorBudgetNoDataAdvice(question, costObservation, "fr"), null)
+}
+
 const advisorEdgeSource = await readFile(new URL("../supabase/functions/assistant-aisupabase/index.ts", import.meta.url), "utf8")
 assert.ok(
   advisorEdgeSource.indexOf("getLocalAdvisorBudgetNoDataAdvice(") <
