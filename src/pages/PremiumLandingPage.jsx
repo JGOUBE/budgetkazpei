@@ -15,7 +15,8 @@ const CONTACT_EMAIL = "contact.budgetkazpei@gmail.com"
 const LANDING_LANGUAGE_STORAGE_KEY = "budgetkazpei-public-language"
 
 const STRIPE_LINKS = {
-  premiumMonthly: "https://buy.stripe.com/7sYbJ0fIR2JU4yua1ggMw00",
+  // Reuse the existing 4.99 EUR Stripe payment link until its product label is unified.
+  premiumMonthly: "https://buy.stripe.com/7sY28qdAJ1FQ6GCddsgMw03",
   premiumPlusMonthly: "https://buy.stripe.com/7sY28qdAJ1FQ6GCddsgMw03",
 }
 
@@ -328,7 +329,40 @@ function PlanCard({ plan, content, isAuthenticated }) {
 export default function PremiumLandingPage({ isAuthenticated = false }) {
   const [language, setLanguage] = useState(getInitialLanguage)
   const sharedContent = getLandingContent(language)
-  const content = PREMIUM_CONTENT[language]
+  const rawContent = PREMIUM_CONTENT[language]
+  const fr = language !== LANDING_LANGUAGES.kr
+  const content = {
+    ...rawContent,
+    seo: {
+      ...rawContent.seo,
+      title: fr ? "BudgetKazPéi — Gratuit et Premium" : "BudgetKazPéi — Gratis ek Premium",
+      description: fr
+        ? "Une offre gratuite et une seule offre Premium à 4,99 € par mois avec accompagnement complet."
+        : "In lof gratis ek in sel lof Premium 4,99 € par mwa, avèk lakonpagnman complet.",
+    },
+    hero: {
+      ...rawContent.hero,
+      text: fr
+        ? "Commencez gratuitement. Avec Premium à 4,99 €/mois, accédez au Conseiller et à l'accompagnement complet de vos démarches."
+        : "Koumans gratis. Avec Premium 4,99 € par mwa, retrouve Konseyé ek lakonpagnman pou bann démarches.",
+    },
+    offers: {
+      ...rawContent.offers,
+      title: fr ? "Gratuit ou Premium, tout simplement." : "Gratis ou Premium, tout senp.",
+      intro: fr ? "Une seule offre payante, sans niveaux supplémentaires." : "In sel lof payant, san lezot nivo.",
+    },
+    comparison: {
+      ...rawContent.comparison,
+      intro: fr
+        ? "Choisissez l'essentiel gratuit ou l'accompagnement complet avec Premium."
+        : "Choisi Gratis pou l'esansyèl ou Premium pou lakonpagnman complet.",
+      choices: rawContent.comparison.choices.filter(choice => choice.plan !== "Premium+"),
+    },
+    faq: {
+      ...rawContent.faq,
+      items: rawContent.faq.items.filter(([question]) => !question.includes("Premium+")),
+    },
+  }
 
   usePremiumSeo(content.seo, language)
 
