@@ -134,5 +134,10 @@ assert.ok(edgeSource.indexOf("getVerifiedReunionFuelPriceComparison(") <
   edgeSource.indexOf("const openAiResult = await callOpenAi"))
 assert.match(edgeSource,/reserve_advisor_openai/)
 assert.match(edgeSource,/reviewUnsupportedFuelPriceHistory/)
+assert.ok(edgeSource.includes('DATE DE RÉFÉRENCE À LA RÉUNION'))
+assert.ok(edgeSource.includes('LANGUE DE SORTIE VERROUILLÉE : créole réunionnais simple uniquement'))
+assert.ok(edgeSource.includes('const history = Array.isArray(body.recentHistory) ? body.recentHistory.slice(0, 3)'))
+assert.ok(edgeSource.includes('const protectedTopic = spendScope === "useful" && isProtectedAdvisorQuestion'))
+assert.doesNotMatch(edgeSource, /source: "local_offtopic"/)
 
 console.log("OK: FR/KR Premium advisor parity, Kreol local replies, contextual follow-ups, verified fuel prices and zero-extra-AI safeguards.")
