@@ -1,4 +1,5 @@
 import { aidSourceStatus, safeAidSourceUrl } from "./aidesRecommendationQuality.js"
+import { findAidTopicIds, findPrimaryAidTopicIds } from "./aidTopics.js"
 
 const NON_MONETARY_AID_TYPES = new Set([
   "accompagnement", "aide_alimentaire", "aide_materielle",
@@ -22,8 +23,32 @@ export function formatAdvisorAideAmount(aide = {}) {
   return "Montant éventuel non vérifié"
 }
 
-export function prepareAdvisorAideContext(aides = [], isKreol = false) {
-  return aides.filter(aide => aide && aide.actif !== false).slice(0, 8).map(aide => {
+// Each response contains a maximum of eight relevant fiches, sampled across
+// requested domains. A mixed housing+employment need should not crowd one out.
+export function pickRelevantAidKnowledge(aides = [], question = "", limit = 8) {
+  const candidates = (Array.isArray(aides) ? aides : [])
+    .filter(aide => aide && aide.actif !== false && aide.statut_verification !== "suspendu")
+  const domains = findPrimaryAidTopicIds(question)
+  if (domains.length < 2) return candidates.slice(0, limit)
+  const selected = []
+  const used = new Set()
+  for (const domain of domains) {
+    const matches = aide => !used.has(aide) && findAidTopicIds(
+      [aide.nom, aide.categorie, aide.type_dispositif, aide.nom_kreol]
+        .filter(Boolean).join(" ")
+    ).includes(domain)
+    const match = candidates.find(matches) || candidates.find(aide =>
+      !used.has(aide) && findAidTopicIds(
+        [aide.description_fr, aide.description, aide.description_kreol]
+          .filter(Boolean).join(" ")
+      ).includes(domain))
+    if (match) { selected.push(match); used.add(match) }
+  }
+  return [...selected, ...candidates.filter(item => !used.has(item))].slice(0, limit)
+}
+
+export function prepareAdvisorAideContext(aides = [], isKreol = false, question = "") {
+  return pickRelevantAidKnowledge(aides, question, 8).map(aide => {
     const reference = aidSourceStatus(aide)
     const sourceVerification = safeAidSourceUrl(aide.source_verification)
     const nature = aide.type_dispositif || "non_classe"
