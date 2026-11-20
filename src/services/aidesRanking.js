@@ -153,9 +153,9 @@ export function scoreAidForAdvisor(aide, profile = {}, question = "", options = 
   const commune = normalizeAidRankingText(aide.commune || "")
   const zone = normalizeAidRankingText(aide.zone_couverte || "")
   const type = normalizeAidRankingText(aide.type_dispositif || "")
-  const wantsLocalService = /\\b(?:association|collectif|epicerie|colis|repas|entraide|benevole|distribution|permanence|accompagnement|ou aller|pres de chez moi|proche de moi)\\b/.test(query)
-  const wantsPayment = /\\b(?:montant|combien|prime|allocation|versement|verser|subvention|virement)\\b/.test(query)
-  const isService = /\\b(?:association|collectif|orientation|service|accompagnement|epicerie|distribution)\\b/.test(type)
+  const wantsLocalService = /\b(?:association|collectif|epicerie|colis|repas|entraide|benevole|distribution|permanence|accompagnement|ou aller|pres de chez moi|proche de moi)\b/.test(query)
+  const wantsPayment = /\b(?:montant|combien|prime|allocation|versement|verser|subvention|virement)\b/.test(query)
+  const isService = /\b(?:association|collectif|orientation|service|accompagnement|epicerie|distribution)\b/.test(type)
   let intentBonus = wantsLocalService && isService ? 125 : 0
   if (wantsPayment && isService && !wantsLocalService) intentBonus -= 100
   if (commune && query.includes(commune)) intentBonus += 180
