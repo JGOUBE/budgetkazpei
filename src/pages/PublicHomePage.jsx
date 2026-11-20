@@ -56,7 +56,7 @@ const COPY = {
     heroEyebrow: "Une application pensée pour La Réunion",
     heroTitleLead: "Plus qu’un budget.",
     heroTitleFocus: "Des décisions éclairées.",
-    heroLead: "BudgetKazPeï va plus loin que le suivi des dépenses : comprenez vos courses, repérez les aides utiles et découvrez les bons plans de La Réunion."
+    heroLead: "BudgetKazPeï va plus loin que le suivi des dépenses : comprenez vos courses, repérez les aides utiles et découvrez les bons plans de La Réunion.",
     heroPrimary: "Commencer gratuitement",
     heroSecondary: "Découvrir les fonctionnalités",
     quick: ["Mon budget", "Mes courses", "Mes aides", "Mon Conseiller", "Bons plans"],
@@ -97,7 +97,7 @@ const COPY = {
     heroEyebrow: "In aplikasyon pansé pou La Rényon",
     heroTitleLead: "Pa zis in bidjé.",
     heroTitleFocus: "Bann désizion pli klèr.",
-    heroLead: "BudgetKazPeï i fé plis ke swiv out dépans : konprann out courses, repèr bann èd itil ek dékouv bann bon plan dann La Rényon."
+    heroLead: "BudgetKazPeï i fé plis ke swiv out dépans : konprann out courses, repèr bann èd itil ek dékouv bann bon plan dann La Rényon.",
     heroPrimary: "Koumans gratis",
     heroSecondary: "Dékouv bann fonksionalité",
     quick: ["Mon bidjé", "Mon bann courses", "Mon bann èd", "Mon Konseyé", "Bon Plan"],
