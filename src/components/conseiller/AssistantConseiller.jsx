@@ -100,6 +100,10 @@ const MODE_LABELS = {
 
 const advisorSessionByUser = new Map()
 
+// Public aid catalogue: refresh occasionally, not at every user question.
+// Promise sharing prevents concurrent requests from multiplying Supabase reads.
+const advisorAidCatalogueCache = { rows: null, expiresAt: 0, pending: null }
+
 function formatAdvisorAnswer(value = "") {
   const text = String(value || "").replace(/\r\n/g, "\n")
   const lines = text.split("\n")
@@ -445,18 +449,41 @@ export default function AssistantConseiller({
   }, [])
 
   async function fetchAides() {
-    const { data, error } = await supabase
-      .from("aides_reunion")
-      .select("id,nom,nom_kreol,description,description_fr,description_kreol,demarches_fr,demarches_kreol,montant_min,montant_max,categorie,condition_logement,condition_profession,condition_famille,commune,lien,lien_officiel,besoin_enfant,besoin_demandeur_emploi,besoin_locataire,besoin_proprietaire,besoin_allocataire_caf,score_priorite,actif")
-      .eq("actif", true)
-      .order("score_priorite", { ascending: false })
+    const now = Date.now()
+    if (advisorAidCatalogueCache.rows && now < advisorAidCatalogueCache.expiresAt) {
+      return advisorAidCatalogueCache.rows
+    }
+    if (advisorAidCatalogueCache.pending) return advisorAidCatalogueCache.pending
 
-    if (error) {
-      console.error("Erreur chargement aides conseiller:", error)
-      return []
+    const loadAll = async () => {
+      const rows = []
+      const pageSize = 500
+      // No silent truncation after Supabase's default row cap.
+      for (let offset = 0; offset < 10000; offset += pageSize) {
+        const { data, error } = await supabase
+          .from("aides_reunion")
+          .select("id,nom,nom_kreol,description,description_fr,description_kreol,demarches_fr,demarches_kreol,montant_min,montant_max,categorie,condition_logement,condition_profession,condition_famille,commune,zone_couverte,type_dispositif,statut_verification,date_verification,source_verification,periode_validite,lien,lien_officiel,besoin_enfant,besoin_handicap,besoin_etudiant,besoin_retraite,besoin_demandeur_emploi,besoin_locataire,besoin_proprietaire,besoin_allocataire_caf,score_priorite,actif")
+          .eq("actif", true)
+          .order("id", { ascending: true })
+          .range(offset, offset + pageSize - 1)
+        if (error) throw error
+        rows.push(...(data || []))
+        if ((data || []).length < pageSize) break
+      }
+      advisorAidCatalogueCache.rows = rows
+      advisorAidCatalogueCache.expiresAt = Date.now() + 5 * 60 * 1000
+      return rows
     }
 
-    return data || []
+    advisorAidCatalogueCache.pending = loadAll()
+    try {
+      return await advisorAidCatalogueCache.pending
+    } catch (error) {
+      console.error("Erreur chargement catalogue aides:", error)
+      return []
+    } finally {
+      advisorAidCatalogueCache.pending = null
+    }
   }
 
   async function callAssistantAi({
