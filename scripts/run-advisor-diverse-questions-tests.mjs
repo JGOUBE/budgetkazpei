@@ -365,8 +365,19 @@ assert.match(advisorEdgeSource, /isContextualAdvisorFollowUp\(context\.question\
 assert.match(advisorEdgeSource, /if \(trustedTopic\) \{\s*spendScope = "useful"/)
 assert.match(advisorEdgeSource, /context\.body\.trustedPreviousTopic = trustedTopic/)
 assert.match(advisorEdgeSource, /await rememberAdvisorTopic\(\s*supabaseAdmin, context\.userId, context\.question/)
-assert.ok(advisorEdgeSource.indexOf('if (spendScope === "offtopic")') <
-  advisorEdgeSource.indexOf('rpc("reserve_advisor_openai"'))
+// Open-ended questions now reach the model while still passing BOTH atomic
+// server cost guards. Old local generic redirects must not swallow them.
+assert.match(advisorEdgeSource, /if \\(spendScope === "offtopic" &&/)
+assert.doesNotMatch(advisorEdgeSource, /source: "local_offtopic"/)
+assert.match(advisorEdgeSource, /const protectedTopic = spendScope === "useful" && isProtectedAdvisorQuestion/)
+assert.match(advisorEdgeSource, /context\\.memory = protectedTopic[\\s\\S]*?loadAssistantMemory/)
+assert.match(advisorEdgeSource, /buildOpenTopicPrompt\\(context\\.body, context\\.language\\)/)
+assert.match(advisorEdgeSource, /DATE DE RÉFÉRENCE À LA RÉUNION/)
+assert.match(advisorEdgeSource, /dataCompleteness\\.missingFields/)
+assert.match(advisorEdgeSource, /Ne compare pas mécaniquement un mois partiel/)
+assert.match(advisorEdgeSource, /Pour les droits, barèmes, inflation, SMIC/)
+assert.ok(advisorEdgeSource.indexOf('rpc("reserve_advisor_ai_request"') <
+  advisorEdgeSource.indexOf('const openAiResult = await callOpenAi'))
 assert.ok(advisorEdgeSource.indexOf('rpc("reserve_advisor_ai_request"') <
   advisorEdgeSource.indexOf('rpc("reserve_advisor_openai"'))
 assert.match(advisorEdgeSource, /Pour un prix futur, n'affirme jamais une hausse ou une baisse certaine/)
