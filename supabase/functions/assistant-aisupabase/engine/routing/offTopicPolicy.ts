@@ -9,6 +9,9 @@ const MONEY_AND_BENEFITS = /\b(?:budget|bidze|depens(?:e|es)?|depans|revenu(?:s)
 const ADMIN_AND_FINANCIAL_ADVICE = /\b(?:demarch(?:e|es) administrativ(?:e|es)|dossier(?:s)? administratifs?|mon dossier|ma demande d aide|mes droits|mon courrier|ma lettre|ma declaration|mon refus|mon recours|mes justificatifs|mon contrat|mes prestations|mes allocations|ma retraite|mon travail|mon emploi|mon cv|ma formation|recherche d emploi|aide sociale|aides locales|allocataire|surendettement|aide au logement|droit social|consommation|mon fournisseur|mon abonnement)\b/
 const PERSONAL_MONEY = /\b(?:mon budget|mes depenses|mes revenus|mon salaire|mon argent|mon loyer|mes achats|mes courses|mes droits|mon credit|mes factures|mes economies|mes aides|ma caf|mes prestations)\b/
 const CLEAR_GENERAL_QUERY = /^(?:pourquoi (?:le ciel|la lune|les etoiles|les chats|les chiens|la terre|le soleil)|quelle est la capitale|quel est le president|combien de lunes|raconte(?: moi)? (?:une histoire|une blague)|fais(?: moi)? (?:une blague|une devinette)|invente(?: moi)?|ecris(?: moi)? (?:un poeme|une chanson)|comment(?: ca)? fonctionne (?:une fusee|un volcan)|qui a gagne (?:le match|la coupe))\b/
+// Avoid classifying common non-financial homonyms as personal spending.
+const NON_FINANCIAL_HOMONYMS = /\\b(?:courses? de chevaux|courses? a pied|course de velo|panier de basket|panier de basket ball)\\b/
+
 const PLAYFUL = /\b(?:licornes?|dragons?|extraterrestres?|magique|sorcier|devinettes?|blagues?|danser|on danse|histoires? droles?|poemes?|chansons?|jeu de role|jeux videos?|jeux de mots|fictif|fiction|imagine une planete|chats? presidents?)\b/
 
 // Detect real-life cost, eligibility and administrative questions even when
@@ -39,6 +42,7 @@ export function classifyAdvisorSpendScope({question = "", mode = "general", acti
   // Explicitly independent off-topic questions take precedence over a stale
   // form mode or an irrelevant financial keyword appended to the question.
   if (CLEAR_GENERAL_QUERY.test(text)) return "offtopic"
+  if (NON_FINANCIAL_HOMONYMS.test(text) && !PERSONAL_MONEY.test(text)) return "offtopic"
   if (PLAYFUL.test(text) && !PERSONAL_MONEY.test(text)) return "offtopic"
   if (MONEY_AND_BENEFITS.test(text) || ADMIN_AND_FINANCIAL_ADVICE.test(text) || EXTRA_FINANCE_AND_ADMIN.test(text)) return "useful"
   // A short follow-up to a selected financial/administrative tool remains
