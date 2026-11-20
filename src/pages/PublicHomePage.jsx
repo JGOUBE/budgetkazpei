@@ -69,12 +69,14 @@ const COPY = {
       { title: "Mes aides", lead: "Repérez les aides possibles et organisez vos démarches.", Icon: HandHeart, tone: "lavender" },
       { title: "Mon Conseiller", lead: "Posez vos questions et avancez avec des conseils adaptés à votre offre.", Icon: MessageCircle, tone: "sage" },
     ],
-    advisorEyebrow: "Un accompagnement utile",
-    advisorTitle: "Des réponses qui vous aident à avancer.",
-    advisorLead: "Pour mieux comprendre vos dépenses et préparer vos démarches, votre Conseiller vous accompagne selon les fonctionnalités de votre offre.",
-    advisorExampleLabel: "Exemple de question",
-    advisorAnswerLabel: "Exemple de réponse",
-    advisorNote: "Les droits et les montants des aides sont à vérifier auprès des organismes concernés.",
+    advisorEyebrow: "Un Conseiller qui va plus loin",
+    advisorTitle: "Comprendre ce qui change. Savoir où agir.",
+    advisorLead: "Le Conseiller peut s’appuyer sur les informations disponibles de votre budget et de vos achats pour identifier les écarts et vous aider à choisir les actions prioritaires.",
+    advisorExampleLabel: "Une vraie question du quotidien",
+    advisorAnswerLabel: "Une réponse qui raisonne",
+    advisorNote: "Exemple illustratif : l’analyse dépend des tickets et des prix réellement disponibles. Aucune économie n’est garantie.",
+    advisorQuestion: "Mes courses ont augmenté de 120 € ce mois-ci, pourtant j’ai l’impression d’acheter la même chose. À partir de mes tickets, peux-tu m’expliquer pourquoi et me dire quoi changer en priorité ?",
+    advisorAnswer: "Je chercherais d’abord à distinguer trois causes : des prix unitaires plus élevés, des quantités différentes ou des achats plus fréquents. Je regarderais ensuite tes produits récurrents pour identifier les postes qui pèsent le plus. Enfin, je proposerais des ajustements concrets et des comparaisons locales quand les données sont suffisantes, sans inventer d’économies.",
     dealsEyebrow: "Découvrir l'île autrement",
     dealsTitle: "De bonnes adresses, tout près de vous.",
     dealsLead: "Restaurants, commerces, artisans, sorties et services : retrouvez les bons plans locaux selon les informations disponibles.",
@@ -110,12 +112,14 @@ const COPY = {
       { title: "Mon bann èd", lead: "Repèr bann èd posib ek organiz out bann démars.", Icon: HandHeart, tone: "lavender" },
       { title: "Mon Konseyé", lead: "Poz out kestyon ek trouv bann konsey selon out lof.", Icon: MessageCircle, tone: "sage" },
     ],
-    advisorEyebrow: "In koudmin itil",
-    advisorTitle: "Bann répons pou aide aou avansé.",
-    advisorLead: "Pou konpran out dépans ek prépar out bann démars, out Konseyé i aide aou selon bann fonksionalité out lof.",
-    advisorExampleLabel: "In legzanp kestyon",
-    advisorAnswerLabel: "In legzanp répons",
-    advisorNote: "Fodra vérifié bann drwa ek bann montan èd kot bann organismes konsèrné.",
+    advisorEyebrow: "In Konseyé ki va pli lwin",
+    advisorTitle: "Konpran kosa la sanjé. War koté azir.",
+    advisorLead: "Konseyé-la i pé servi bann zinformasyon disponib dann out bidjé ek out courses pou repèr bann ékar ek aide aou swazi bann priorité.",
+    advisorExampleLabel: "In vré kestyon dan la vi",
+    advisorAnswerLabel: "In répons ki réfléshi",
+    advisorNote: "In legzanp pou montré : lanaliz i dépann bann tiké ek bann pri disponib. Okenn lékonomi lé garanti.",
+    advisorQuestion: "Mon bann courses la ogmanté de 120 € sa mwa-la, mé mi achète presk minm zafèr. Avèk mon bann tiké, ou pé explik amwin poukwa ek kosa mi doi sanjé an premié ?",
+    advisorAnswer: "Mi va dabor sépar troi koz posib : bann pri inn ogmanté, bann kantité la sanjé ou ou achète pli souvan. Apré, mi va gad bann produi ou achète souvan pou trouv sak i pèz plis. Si bann donné lé sifizan, mi pé propoz bann ajustman konkré ek bann konparézon pri lokal, san invant bann lékonomi.",
     dealsEyebrow: "Dékouv nout lil",
     dealsTitle: "Bann bon ladres près koté ou.",
     dealsLead: "Restoran, komers, artizan, sorti ek servis : trouv bann Bon Plan lokal selon bann zinformasyon disponib.",
@@ -220,10 +224,10 @@ export default function PublicHomePage({ isAuthenticated = false }) {
           </div>
           <div className="bk-advisor__example">
             <p className="bk-example-label">{copy.advisorExampleLabel}</p>
-            <p className="bk-advisor__question">{content.advisor.conversation.user}</p>
+            <p className="bk-advisor__question">{copy.advisorQuestion}</p>
             <div className="bk-advisor__answer">
               <p className="bk-example-label">{copy.advisorAnswerLabel}</p>
-              <p>{content.advisor.conversation.assistant}</p>
+              <p>{copy.advisorAnswer}</p>
             </div>
             <small>{copy.advisorNote}</small>
           </div>
