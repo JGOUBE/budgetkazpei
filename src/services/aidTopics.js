@@ -40,6 +40,26 @@ export const AID_TOPIC_GROUPS = [
     terms: ["culture", "culturel", "loisir", "loisirs", "cinema", "musee", "musique", "lecture", "pass culture"],
   },
   {
+    id: "solidarite_proximite",
+    terms: [
+      "epicerie solidaire", "epicerie sociale", "aide alimentaire", "colis alimentaire",
+      "distribution alimentaire", "repas solidaire", "nourriture", "manger",
+      "restos du coeur", "banque alimentaire", "secours populaire", "croix rouge",
+      "association", "associations", "collectif", "collectifs", "entraide",
+      "solidarite", "solidaire", "aide d urgence", "secours d urgence",
+      "aide de proximite", "pres de chez moi",
+    ],
+  },
+  {
+    id: "accompagnement_social",
+    terms: [
+      "travailleur social", "assistante sociale", "assistant social",
+      "permanence sociale", "accompagnement social", "acces aux droits",
+      "maison des solidarites", "orientation sociale", "point conseil budget",
+      "mediateur social", "permanence juridique",
+    ],
+  },
+  {
     id: "budget",
     terms: ["budget", "depense", "dette", "credit", "surendettement", "revenu", "alimentaire"],
   },
