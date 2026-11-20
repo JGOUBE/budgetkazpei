@@ -466,7 +466,7 @@ export default function AssistantConseiller({
       for (let offset = 0; offset < 5000; offset += pageSize) {
         const { data, error } = await supabase
           .from("aides_reunion")
-          .select("id,nom,nom_kreol,description,description_fr,description_kreol,demarches_fr,demarches_kreol,montant_min,montant_max,categorie,condition_logement,condition_profession,condition_famille,commune,lien,lien_officiel,besoin_enfant,besoin_demandeur_emploi,besoin_locataire,besoin_proprietaire,besoin_allocataire_caf,score_priorite,actif")
+          .select("id,nom,nom_kreol,description,description_fr,description_kreol,demarches_fr,demarches_kreol,montant_min,montant_max,categorie,condition_logement,condition_profession,condition_famille,commune,organisme,type_dispositif,zone_couverte,date_verification,source_verification,statut_verification,periode_validite,lien,lien_officiel,besoin_enfant,besoin_demandeur_emploi,besoin_locataire,besoin_proprietaire,besoin_allocataire_caf,score_priorite,actif")
           .eq("actif", true)
           .order("score_priorite", { ascending: false })
           .order("id", { ascending: true })
