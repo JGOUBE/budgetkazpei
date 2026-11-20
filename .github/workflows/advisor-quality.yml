@@ -35,4 +35,8 @@ jobs:
           npm run test:advisor-aide-quality
           npm test
       - name: Build complet sans déploiement
+        env:
+          # Placeholder values for compile-time initialization only; no backend is contacted.
+          VITE_SUPABASE_URL: https://ci.example.invalid
+          VITE_SUPABASE_ANON_KEY: ci-dummy-anon-key-no-real-account
         run: npm run build
