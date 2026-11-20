@@ -22,6 +22,11 @@ export function isSelfContainedNewQuestion(question = "") {
   if (looksPlayfulOrFictionalQuestion(question)) return true
   if (/\b(?:nouveau sujet|autre question|changeons de sujet|sans rapport|rien a voir|parlons de)\b/.test(text)) return true
   if (REFERENTIAL.test(text)) return false
+  // Brief complete requests can name an independent topic in just four words:
+  // "Parle-moi du soleil", "C'est quoi un volcan ?", "Kosa i lé volcan ?".
+  if (/^(?:parle moi (?:de|du|des)|c est quoi|kosa i le|kosa le|koman marche)\\s+(?:(?:le|la|les|un|une|in|du|de)\\s+)?[a-z]{4,}\\b/.test(text)) {
+    return true
+  }
   if (!SELF_CONTAINED_STARTS.test(text)) {
     // Many fully explicit statements are not interrogatives: "Je voudrais
     // une recette de gâteau", "Explique-moi le fonctionnement d'un volcan".
