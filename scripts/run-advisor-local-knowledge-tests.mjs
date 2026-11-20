@@ -68,9 +68,11 @@ assert.ok(prepared.every(item=>item.regles_et_montants_a_confirmer===true))
 
 const localContext=prepareAdvisorAideContext([localAides[1]],true,"Épicerie solidaire")[0]
 assert.equal(localContext.commune,"Saint-Leu")
-assert.equal(localContext.derniere_verification,null)
-assert.equal(localContext.bareme_verifie,false)
-assert.equal(localContext.nature_du_soutien_a_confirmer,true)
+assert.equal(localContext.date_verification_source,null)
+assert.equal(localContext.source_status,"a_verifier")
+assert.equal(localContext.type_dispositif,"non_classe")
+assert.equal(localContext.eligibilite_confirmee,false)
+assert.equal(localContext.regles_et_montants_a_confirmer,true)
 
 const front=await readFile(new URL("../src/components/conseiller/AssistantConseiller.jsx",import.meta.url),"utf8")
 const backend=await readFile(new URL("../supabase/functions/assistant-aisupabase/index.ts",import.meta.url),"utf8")
