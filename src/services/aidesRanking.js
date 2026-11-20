@@ -185,7 +185,7 @@ export function rankAidesForAdvisor(aides = [], profile = {}, question = "", opt
   const candidatesByName = new Map()
 
   for (const aide of Array.isArray(aides) ? aides : []) {
-    if (!aide || aide.actif === false) continue
+    if (!aide || aide.actif === false || aide.statut_verification === "suspendu") continue
     const identity = normalizeAidIdentity(aidName(aide)) || `id:${String(aide?.id || "")}`
     if (excludedIds.has(String(aide?.id)) || excludedNames.has(identity)) continue
 
