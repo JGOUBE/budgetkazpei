@@ -1,7 +1,15 @@
 export const AID_TOPIC_GROUPS = [
   {
     id: "logement",
-    terms: ["logement", "kaz", "loyer", "location", "locataire", "proprietaire", "apl", "fsl", "hebergement"],
+    terms: ["logement", "kaz", "loyer", "location", "locataire", "proprietaire", "apl", "fsl", "hebergement", "dalo", "expulsion", "relogement", "mal logement"],
+  },
+  {
+    id: "alimentaire",
+    terms: ["alimentaire", "alimentation", "nourriture", "manger", "manze", "mange", "mangé", "repas", "colis alimentaire", "distribution alimentaire", "épicerie solidaire", "epicerie solidaire", "epicerie sociale", "panier solidaire", "courses alimentaires"],
+  },
+  {
+    id: "solidarite",
+    terms: ["entraide", "solidarite", "association", "associatif", "associations", "collectif", "benevole", "secours populaire", "croix rouge", "caritas", "urgence sociale", "centre communal action sociale"],
   },
   {
     id: "energie",
@@ -61,7 +69,7 @@ export const AID_TOPIC_GROUPS = [
   },
   {
     id: "budget",
-    terms: ["budget", "depense", "dette", "credit", "surendettement", "revenu", "alimentaire"],
+    terms: ["budget", "depense", "dette", "credit", "surendettement", "revenu", "impaye", "budget familial"],
   },
   {
     id: "demarches",
