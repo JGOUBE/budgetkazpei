@@ -24,7 +24,7 @@ export function isSelfContainedNewQuestion(question = "") {
   if (REFERENTIAL.test(text)) return false
   // Brief complete requests can name an independent topic in just four words:
   // "Parle-moi du soleil", "C'est quoi un volcan ?", "Kosa i lé volcan ?".
-  if (/^(?:parle moi (?:de|du|des)|c est quoi|kosa i le|kosa le|koman marche)\\s+(?:(?:le|la|les|un|une|in|du|de)\\s+)?[a-z]{4,}\\b/.test(text)) {
+  if (/^(?:parle moi (?:de|du|des)|c est quoi|kosa i le|kosa le|koman marche)\s+(?:(?:le|la|les|un|une|in|du|de)\s+)?[a-z]{4,}\b/.test(text)) {
     return true
   }
   if (!SELF_CONTAINED_STARTS.test(text)) {
@@ -50,7 +50,7 @@ export function shouldUseLocalBudgetAnswer({question = "",mode = "general",inten
   // A date or a generic word like "courses" is not proof of a personal
   // budget request. A self-contained question about science or sport wins
   // over a stale budget tab, unless it explicitly asks about recorded costs.
-  if (NON_FINANCIAL.test(text) && !/\\b(?:mon budget|mes depenses|mes revenus|mes achats|combien j ai depense|je paie)\\b/.test(text)) return false
+  if (NON_FINANCIAL.test(text) && !/\b(?:mon budget|mes depenses|mes revenus|mes achats|combien j ai depense|je paie)\b/.test(text)) return false
   if (personal) return true
   const specificallyFinancial = /\b(?:argent|budget|cout|prix|depens|economis|factur|achats?|cher|paye|payer|abonnement|loyer|credit|revenu|salaire)\b/.test(text)
   return mode === "budget_depenses" && specificallyFinancial
