@@ -78,9 +78,9 @@ const fixedAnswer = answerAssistantQuestion({
   question:"Comment améliorer mon budget ?",insights:onlyFixed,
 })
 assert.match(fixedAnswer.fr, /pas encore assez de dépenses classées/i)
-assert.match(fixedAnswer.fr, /Loyer.*700,00\\s*€/i)
-assert.doesNotMatch(fixedAnswer.fr, /est\\s+\\./)
-assert.match(fixedAnswer.kr, /Loyer.*700,00\\s*€/i)
+assert.match(fixedAnswer.fr, /Loyer.*700,00\s*€/i)
+assert.doesNotMatch(fixedAnswer.fr, /est\s+\./)
+assert.match(fixedAnswer.kr, /Loyer.*700,00\s*€/i)
 
 const onlyGrocery = {
   budgetAdvisorContext: {
@@ -92,10 +92,10 @@ const onlyGrocery = {
 const groceryAnswer = answerAssistantQuestion({
   question:"Comment réduire mes dépenses ?",insights:onlyGrocery,
 })
-assert.match(groceryAnswer.fr, /210,00\\s*€/)
+assert.match(groceryAnswer.fr, /210,00\s*€/)
 assert.match(groceryAnswer.fr, /prix unitaires/)
 assert.match(groceryAnswer.fr, /historiques peuvent avoir changé/)
-assert.match(groceryAnswer.kr, /210,00\\s*€/)
+assert.match(groceryAnswer.kr, /210,00\s*€/)
 
 const full = buildSystemPrompt("fr", "", "general")
 for (const language of ["fr","kreol"]) {
@@ -110,8 +110,8 @@ assert.match(buildOpenQuestionSystemPrompt("kreol",true), /bilingue/)
 
 const backend = await readFile(new URL(
   "../supabase/functions/assistant-aisupabase/index.ts",import.meta.url),"utf8")
-assert.match(backend, /buildOpenQuestionSystemPrompt\\(/)
-assert.match(backend, /protectedTopic \\|\\| context.action === "analyze_refusal"/)
+assert.match(backend, /buildOpenQuestionSystemPrompt\(/)
+assert.match(backend, /protectedTopic \|\| context.action === "analyze_refusal"/)
 assert.ok(backend.indexOf('rpc("reserve_advisor_ai_request"') <
   backend.indexOf("const openAiResult = await callOpenAi"))
 assert.ok(backend.indexOf('rpc("reserve_advisor_openai"') <
