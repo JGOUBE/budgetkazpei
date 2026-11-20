@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
-import { buildSystemPrompt } from "./prompts/systemPrompt.ts"
+import { buildSystemPrompt, buildOpenQuestionSystemPrompt } from "./prompts/systemPrompt.ts"
 import {
   buildMemoryPrompt,
   loadAssistantMemory,
@@ -1174,12 +1174,16 @@ Deno.serve(async (req) => {
             )
           : buildOpenTopicPrompt(context.body, context.language)
 
-    const systemPrompt = buildSystemPrompt(
-      context.language,
-      context.action,
-      context.mode,
-      context.allowBilingualResponse,
-    )
+    // Independent questions use a compact system instruction. Complex
+    // rights/budget cases retain the full protective prompt and source checks.
+    const systemPrompt = protectedTopic || context.action === "analyze_refusal"
+      ? buildSystemPrompt(
+          context.language, context.action, context.mode,
+          context.allowBilingualResponse,
+        )
+      : buildOpenQuestionSystemPrompt(
+          context.language, context.allowBilingualResponse,
+        )
 
     // Avoid accidentally sending huge account snapshots to the model.
     if (userPrompt.length > 32000) {
