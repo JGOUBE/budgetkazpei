@@ -189,10 +189,11 @@ html[data-theme="dark"]:has(.bk-landing) #root {
 .bk-landing .bk-quicknav__item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 11px;
   padding: 20px 10px;
-  font-size: .94rem;
-  font-weight: 670;
+  font-size: 1.1rem;
+  line-height: 1.4;
+  font-weight: 730;
   color: #42605e;
   border-right: 1px solid var(--bk-line);
 }
@@ -616,12 +617,29 @@ html[data-theme="dark"]:has(.bk-landing) #root {
 @media (max-width: 640px) {
   .bk-landing:not(.bk-offers-page) .bk-hero { padding: 52px 0 45px; }
   .bk-landing:not(.bk-offers-page) .bk-section { padding-block: 52px; }
+  /* Sur Android/iPhone : deux colonnes pour de vrais intitulés lisibles,
+     sans tasser Conseiller ou Bons plans à côté des pastilles. */
   .bk-landing:not(.bk-offers-page) .bk-quicknav__inner {
-    gap: 0 12px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0 15px;
+    padding-top: 12px;
+    padding-bottom: 12px;
   }
   .bk-landing:not(.bk-offers-page) .bk-quicknav__item {
+    min-width: 0;
+    min-height: 48px;
+    gap: 11px;
+    border-right: 0;
     padding: 10px 2px;
-    font-size: .9rem;
+    font-size: clamp(1.08rem, 4.45vw, 1.2rem);
+    line-height: 1.35;
+    font-weight: 730;
+  }
+  .bk-landing:not(.bk-offers-page) .bk-quicknav__item::before {
+    width: 10px;
+    height: 10px;
+    flex-basis: 10px;
   }
   .bk-landing:not(.bk-offers-page) .bk-section-heading h2,
   .bk-landing:not(.bk-offers-page) .bk-closing h2 {
@@ -656,5 +674,12 @@ html[data-theme="dark"]:has(.bk-landing) #root {
   }
   .bk-landing:not(.bk-offers-page) .bk-feature:nth-child(2) {
     border-top: 0;
+  }
+}
+
+@media (max-width: 370px) {
+  .bk-landing:not(.bk-offers-page) .bk-quicknav__item {
+    font-size: 1.07rem;
+    gap: 8px;
   }
 }
