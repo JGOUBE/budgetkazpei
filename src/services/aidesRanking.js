@@ -52,6 +52,10 @@ function aidTextParts(aide = {}) {
       aide.condition_profession,
       aide.condition_famille,
       aide.commune,
+      aide.zone_couverte,
+      aide.organisme,
+      aide.type_dispositif,
+      ...(Array.isArray(aide.mots_cles) ? aide.mots_cles : []),
     ].join(" ")),
   }
 }
@@ -113,7 +117,13 @@ export function profileRelevanceScore(aide, profile = {}) {
   const situationPro = normalizeAidRankingText(profile?.situation_professionnelle || "")
   const text = aidText(aide)
 
-  if (commune && (normalizeAidRankingText(aide.commune) === commune || text.includes(commune))) score += 40
+  // Geography is a ranking signal, never a hard eligibility exclusion.
+  // A genuinely local service should beat a distant service when both cover
+  // the same need. A territory-wide resource remains eligible.
+  const aidCommune = normalizeAidRankingText(aide.commune || "")
+  const coverage = normalizeAidRankingText(aide.zone_couverte || "")
+  if (commune && (aidCommune === commune || coverage.includes(commune))) score += 150
+  else if (commune && !aidCommune && text.includes(commune)) score += 25
   if (enfants > 0 && (aide.besoin_enfant || text.includes("famille") || text.includes("scolaire"))) score += 35
   if (logement === "locataire" && (aide.besoin_locataire || text.includes("logement") || text.includes("apl"))) score += 30
   if (logement.includes("proprietaire") && aide.besoin_proprietaire) score += 30
@@ -139,7 +149,19 @@ export function scoreAidForAdvisor(aide, profile = {}, question = "", options = 
   const preferredIds = normalizeIdSet(options.preferredAidIds)
   const preferredNames = normalizeNameSet(options.preferredAidNames)
   const preferredBonus = isPreferredAid(aide, preferredIds, preferredNames) ? 500 : 0
-  return questionRelevanceScore(aide, question) + profileRelevanceScore(aide, profile) + preferredBonus
+  const query = normalizeAidRankingText(question)
+  const commune = normalizeAidRankingText(aide.commune || "")
+  const zone = normalizeAidRankingText(aide.zone_couverte || "")
+  const type = normalizeAidRankingText(aide.type_dispositif || "")
+  const wantsLocalService = /\\b(?:association|collectif|epicerie|colis|repas|entraide|benevole|distribution|permanence|accompagnement|ou aller|pres de chez moi|proche de moi)\\b/.test(query)
+  const wantsPayment = /\\b(?:montant|combien|prime|allocation|versement|verser|subvention|virement)\\b/.test(query)
+  const isService = /\\b(?:association|collectif|orientation|service|accompagnement|epicerie|distribution)\\b/.test(type)
+  let intentBonus = wantsLocalService && isService ? 125 : 0
+  if (wantsPayment && isService && !wantsLocalService) intentBonus -= 100
+  if (commune && query.includes(commune)) intentBonus += 180
+  else if (zone && query.includes(zone) && zone.length > 3) intentBonus += 90
+  if (aide.statut_verification === "verifie" && (aide.source_verification || aide.lien_officiel)) intentBonus += 25
+  return questionRelevanceScore(aide, question) + profileRelevanceScore(aide, profile) + preferredBonus + intentBonus
 }
 
 export function rankAidesForAdvisor(aides = [], profile = {}, question = "", options = {}) {
