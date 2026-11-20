@@ -3,11 +3,11 @@ import { findPrimaryAidTopicIds, normalizeAidTopicText } from "./aidTopics.js"
 // Heuristics are deliberately conservative: they decide whether to retrieve
 // personal budget/aid data, NEVER what factual answer the model should give.
 // A general question should remain general, even during an aid conversation.
-const SELF_CONTAINED_STARTS = /^(?:pourquoi|comment|combien|quel(?:le|les|s)?|qu(?:e| est ce qu| est ce que)|est ce que|peux tu|pourrais tu|explique|raconte|imagine|invente|ecris|ecrit|aide moi|donne moi|sais tu|qui |ou |quand )\b/
-const REFERENTIAL = /\b(?:ca|cela|cette aide|cet organisme|ce dossier|ce courrier|la meme aide|celui ci|celle ci|en beneficier|en profiter|l obtenir|la demander|le demander|ce montant|ses conditions|cette demarche|ce sujet|c est quoi|combien de temps faut il attendre|combien de jours pour recevoir|quel delai|dans combien de temps|et ensuite|et pour|et alors)\b/
+const SELF_CONTAINED_STARTS = /^(?:pourquoi|comment|combien|quel(?:le|les|s)?|qu(?:e| est ce qu| est ce que)|est ce que|peux tu|pourrais tu|explique|raconte|imagine|invente|ecris|ecrit|aide moi|donne moi|sais tu|qui |ou |quand |c est quoi|parle moi de|parle moi du|kosa|koman|poukoi|konbien|kombyin)\b/
+const REFERENTIAL = /\b(?:ca|cela|cette aide|cet organisme|ce dossier|ce courrier|la meme aide|celui ci|celle ci|en beneficier|en profiter|l obtenir|la demander|le demander|ce montant|ses conditions|cette demarche|ce sujet|combien de temps faut il attendre|combien de jours pour recevoir|quel delai|dans combien de temps|et ensuite|et pour|et alors)\b/
 const CREATIVE = /\b(?:imagine|invente|raconte une histoire|raconte moi une histoire|fiction|fictif|farfelu|farfelue|extraterrestre|dragon|licorne|magique|super heros|voyage dans le temps|sur la lune|lune en fromage|si les chats|si mon chat|chat president|lune.*fromage|si (?:la |le |les |mon |ma |un |une )?(?:lune|licorne|extraterrestre)|hypothese absurde)\b/
 const AID_REQUEST = /\b(?:aides? financieres?|aides? sociales?|aides? pour|des aides|aides\b|une aide|montant de l aide|allocations?|subventions?|droit aux aides|droits sociaux|prestations? sociales?|caf|rsa|apl|fsl|ccas|mdph|prime d activite|cheque energie|pass sport|aide au logement|demande d aide|demander une aide|eligible a une aide)\b/
-const PERSONAL_BUDGET = /\b(?:mon budget|mes budgets|mes depenses|ma depense|mon loyer|mon abonnement|mes revenus|mon revenu|mes charges|mes abonnements|mes economies|mes achats|ma liste de courses|mon panier|mes courses|mon argent|ma marge|combien j ai depense|combien je depense|ce mois ci|mois dernier|ma facture|mes factures|reste t il|me reste|j ai paye|je paie|je depense|me coute|ai je depense|j ai depense|je gagne|euros? par mois|depenses alimentaires)\b/
+const PERSONAL_BUDGET = /\b(?:mon budget|mes budgets|mes depenses|ma depense|mon loyer|mon abonnement|mes revenus|mon revenu|mes charges|mes abonnements|mes economies|mes achats|ma liste de courses|mon panier|mes courses|mon argent|ma marge|combien j ai depense|combien je depense|ma facture|mes factures|reste t il|me reste|j ai paye|je paie|je depense|me coute|ai je depense|j ai depense|je gagne|euros? par mois|depenses alimentaires)\b/
 // Wording for explicit personal breakdowns, including statements without "dépenses".
 const PERSONAL_DISTRIBUTION = /\b(?:mes principales depenses|mes plus grosses depenses|mes (?:trois|3) (?:principaux|plus gros) postes|mes postes de depenses|repartition de mon budget|repartition de mes depenses|part de mes depenses|pourcentage de mes depenses)\b/
 const NON_FINANCIAL = /\b(?:pollution|soleil|etoiles?|jupiter|saturne|planetes?|galaxie|animaux?|chats?|chiens?|football|course a pied|courses de chevaux|course de velo|basket ball|panier de basket|cuisson|cuisine|recette|plantes?|volcans?|vagues?|marees?|fantomes?|super pouvoirs?|licornes?|dinosaures?|conjugaison|poemes?|rime|humour|blague)\b/
@@ -42,7 +42,10 @@ export function shouldUseLocalBudgetAnswer({question = "",mode = "general",inten
   const personal = PERSONAL_BUDGET.test(text) || PERSONAL_DISTRIBUTION.test(text)
   // Strongly non-financial wording should never trigger a budget answer just
   // because it contains generic words like réduire, cours(es) or abonnement.
-  if (NON_FINANCIAL.test(text) && !personal) return false
+  // A date or a generic word like "courses" is not proof of a personal
+  // budget request. A self-contained question about science or sport wins
+  // over a stale budget tab, unless it explicitly asks about recorded costs.
+  if (NON_FINANCIAL.test(text) && !/\\b(?:mon budget|mes depenses|mes revenus|mes achats|combien j ai depense|je paie)\\b/.test(text)) return false
   if (personal) return true
   const specificallyFinancial = /\b(?:argent|budget|cout|prix|depens|economis|factur|achats?|cher|paye|payer|abonnement|loyer|credit|revenu|salaire)\b/.test(text)
   return mode === "budget_depenses" && specificallyFinancial
