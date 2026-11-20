@@ -19,6 +19,21 @@ export function normalizeAidIdentity(value = "") {
   return normalizeAidRankingText(value).replace(/\s+/g, "")
 }
 
+// The commune may describe an association's headquarters rather than its
+// entire service area. Use it as a ranking hint, not as legal eligibility.
+function aidCommunes(aide = {}) {
+  return String(aide.commune || "")
+    .split(/[,;\/|]/)
+    .map(normalizeAidRankingText)
+    .filter(value => value.length >= 3 && !/^(?:toute la reunion|la reunion|toutes communes|toute l ile|departement|regional|region reunion|974)$/.test(value))
+}
+
+function mentionedCommunes(aides = [], question = "") {
+  const query = " " + normalizeAidRankingText(question) + " "
+  return [...new Set((Array.isArray(aides) ? aides : []).flatMap(aidCommunes))]
+    .filter(commune => query.includes(" " + commune + " "))
+}
+
 function aidName(aide = {}) {
   return String(aide.nom || aide.aide_nom || aide.nameFr || aide.name || "").trim()
 }
@@ -149,22 +164,22 @@ export function scoreAidForAdvisor(aide, profile = {}, question = "", options = 
   const preferredIds = normalizeIdSet(options.preferredAidIds)
   const preferredNames = normalizeNameSet(options.preferredAidNames)
   const preferredBonus = isPreferredAid(aide, preferredIds, preferredNames) ? 500 : 0
-  const query = normalizeAidRankingText(question)
-  const commune = normalizeAidRankingText(aide.commune || "")
-  const zone = normalizeAidRankingText(aide.zone_couverte || "")
-  const type = normalizeAidRankingText(aide.type_dispositif || "")
-  const wantsLocalService = /\b(?:association|collectif|epicerie|colis|repas|entraide|benevole|distribution|permanence|accompagnement|ou aller|pres de chez moi|proche de moi)\b/.test(query)
-  const wantsPayment = /\b(?:montant|combien|prime|allocation|versement|verser|subvention|virement)\b/.test(query)
-  const isService = /\b(?:association|collectif|orientation|service|accompagnement|epicerie|distribution)\b/.test(type)
-  let intentBonus = wantsLocalService && isService ? 125 : 0
-  if (wantsPayment && isService && !wantsLocalService) intentBonus -= 100
-  if (commune && query.includes(commune)) intentBonus += 180
-  else if (zone && query.includes(zone) && zone.length > 3) intentBonus += 90
-  if (aide.statut_verification === "verifie" && (aide.source_verification || aide.lien_officiel)) intentBonus += 25
-  return questionRelevanceScore(aide, question) + profileRelevanceScore(aide, profile) + preferredBonus + intentBonus
+  const communes = aidCommunes(aide)
+  const explicitlyRequested = Array.isArray(options.requestedCommunes) ? options.requestedCommunes : []
+  const userCommune = normalizeAidRankingText(profile?.commune || "")
+  const matchedRequested = communes.some(commune => explicitlyRequested.includes(commune))
+  const matchedHome = userCommune && communes.includes(userCommune)
+  // A requested commune takes precedence over the saved home commune.
+  const localityBonus = matchedRequested ? 220
+    : explicitlyRequested.length && communes.length ? -160
+      : matchedHome ? 100
+        : userCommune && communes.length ? -70 : 0
+  return questionRelevanceScore(aide, question) + profileRelevanceScore(aide, profile)
+    + preferredBonus + localityBonus
 }
 
 export function rankAidesForAdvisor(aides = [], profile = {}, question = "", options = {}) {
+  const rankedOptions = { ...options, requestedCommunes: mentionedCommunes(aides, question) }
   const excludedIds = normalizeIdSet(options.excludeIds)
   const excludedNames = normalizeNameSet(options.excludeNames)
   const candidatesByName = new Map()
@@ -175,8 +190,8 @@ export function rankAidesForAdvisor(aides = [], profile = {}, question = "", opt
     if (excludedIds.has(String(aide?.id)) || excludedNames.has(identity)) continue
 
     const current = candidatesByName.get(identity)
-    const candidateScore = scoreAidForAdvisor(aide, profile, question, options)
-    const currentScore = current ? scoreAidForAdvisor(current, profile, question, options) : -Infinity
+    const candidateScore = scoreAidForAdvisor(aide, profile, question, rankedOptions)
+    const currentScore = current ? scoreAidForAdvisor(current, profile, question, rankedOptions) : -Infinity
     const candidateHasSource = Boolean(aide.lien_officiel || aide.lien)
     const currentHasSource = Boolean(current?.lien_officiel || current?.lien)
     if (!current || candidateScore > currentScore ||
@@ -186,7 +201,7 @@ export function rankAidesForAdvisor(aides = [], profile = {}, question = "", opt
   }
 
   return [...candidatesByName.values()].sort((a, b) => {
-    const totalDifference = scoreAidForAdvisor(b, profile, question, options) - scoreAidForAdvisor(a, profile, question, options)
+    const totalDifference = scoreAidForAdvisor(b, profile, question, rankedOptions) - scoreAidForAdvisor(a, profile, question, rankedOptions)
     if (totalDifference !== 0) return totalDifference
     return questionRelevanceScore(b, question) - questionRelevanceScore(a, question)
   })
