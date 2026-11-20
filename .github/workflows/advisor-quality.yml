@@ -4,15 +4,6 @@ on:
   push:
     branches:
       - feat/advisor-intelligence-fr-kreol-20261120
-  pull_request:
-    paths:
-      - ".github/workflows/advisor-quality.yml"
-      - "src/services/advisorQuestionRouter.js"
-      - "src/services/ai/**"
-      - "supabase/functions/assistant-aisupabase/**"
-      - "scripts/run-advisor-*.mjs"
-      - "scripts/run-assistant-tests.mjs"
-      - "package.json"
 
 permissions:
   contents: read
@@ -30,7 +21,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "22.16.0"
+          node-version: "24"
           cache: npm
       - run: npm ci --no-audit --no-fund
       - name: Tests Conseiller Premium sans appel OpenAI
