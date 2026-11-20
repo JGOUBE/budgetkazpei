@@ -45,6 +45,11 @@ import {
   resolveAdvisorBudgetNoDataAdvice,
 } from "../../services/advisorConversation"
 
+// Public reference catalogue: short-lived cache shared across advisor turns.
+// Supabase is queried only when social/aid knowledge is required.
+let advisorAidCache = { data: null, until: 0, pending: null }
+const ADVISOR_AID_CACHE_MS = 3 * 60 * 1000
+
 const COLORS = createColorAliases({ red: () => "#FB7185" })
 
 const MODE_LABELS = {
@@ -449,40 +454,37 @@ export default function AssistantConseiller({
   }, [])
 
   async function fetchAides() {
-    const now = Date.now()
-    if (advisorAidCatalogueCache.rows && now < advisorAidCatalogueCache.expiresAt) {
-      return advisorAidCatalogueCache.rows
+    if (Array.isArray(advisorAidCache.data) && Date.now() < advisorAidCache.until) {
+      return advisorAidCache.data
     }
-    if (advisorAidCatalogueCache.pending) return advisorAidCatalogueCache.pending
+    if (advisorAidCache.pending) return advisorAidCache.pending
 
-    const loadAll = async () => {
-      const rows = []
+    advisorAidCache.pending = (async () => {
       const pageSize = 500
-      // No silent truncation after Supabase's default row cap.
-      for (let offset = 0; offset < 10000; offset += pageSize) {
+      const all = []
+      // Do not silently truncate the directory as associations are added.
+      for (let offset = 0; offset < 5000; offset += pageSize) {
         const { data, error } = await supabase
           .from("aides_reunion")
-          .select("id,nom,nom_kreol,description,description_fr,description_kreol,demarches_fr,demarches_kreol,montant_min,montant_max,categorie,condition_logement,condition_profession,condition_famille,commune,zone_couverte,type_dispositif,statut_verification,date_verification,source_verification,periode_validite,lien,lien_officiel,besoin_enfant,besoin_handicap,besoin_etudiant,besoin_retraite,besoin_demandeur_emploi,besoin_locataire,besoin_proprietaire,besoin_allocataire_caf,score_priorite,actif")
+          .select("id,nom,nom_kreol,description,description_fr,description_kreol,demarches_fr,demarches_kreol,montant_min,montant_max,categorie,condition_logement,condition_profession,condition_famille,commune,lien,lien_officiel,besoin_enfant,besoin_demandeur_emploi,besoin_locataire,besoin_proprietaire,besoin_allocataire_caf,score_priorite,actif")
           .eq("actif", true)
+          .order("score_priorite", { ascending: false })
           .order("id", { ascending: true })
           .range(offset, offset + pageSize - 1)
         if (error) throw error
-        rows.push(...(data || []))
-        if ((data || []).length < pageSize) break
+        all.push(...(data || []))
+        if (!data || data.length < pageSize) {
+          advisorAidCache.data = all
+          advisorAidCache.until = Date.now() + ADVISOR_AID_CACHE_MS
+          return all
+        }
       }
-      advisorAidCatalogueCache.rows = rows
-      advisorAidCatalogueCache.expiresAt = Date.now() + 5 * 60 * 1000
-      return rows
-    }
-
-    advisorAidCatalogueCache.pending = loadAll()
+      throw new Error("Catalogue d'aides trop volumineux : pagination à étendre.")
+    })()
     try {
-      return await advisorAidCatalogueCache.pending
-    } catch (error) {
-      console.error("Erreur chargement catalogue aides:", error)
-      return []
+      return await advisorAidCache.pending
     } finally {
-      advisorAidCatalogueCache.pending = null
+      advisorAidCache.pending = null
     }
   }
 
@@ -514,7 +516,8 @@ export default function AssistantConseiller({
       selectedAides.length === 0
     const preparedAides = prepareAdvisorAideContext(
       selectedAides,
-      assistantIsKreol
+      assistantIsKreol,
+      conversationContext.rankingQuery,
     )
     const financialContext = buildAssistantAiSummary(questionInsights || financialInsights, detectedIntent)
 
