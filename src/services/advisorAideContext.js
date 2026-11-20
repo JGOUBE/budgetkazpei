@@ -19,7 +19,7 @@ export function formatAdvisorAideAmount(aide = {}) {
 // (e.g. unpaid rent AND returning to work), so one category cannot use up all
 // eight slots sent to the model. Never send the entire catalogue to OpenAI.
 export function pickRelevantAidKnowledge(aides = [], question = "", limit = 8) {
-  const candidates = (Array.isArray(aides) ? aides : []).filter(aide => aide && aide.actif !== false)
+  const candidates = (Array.isArray(aides) ? aides : []).filter(aide => aide && aide.actif !== false && aide.statut_verification !== "suspendu")
   const subjects = findPrimaryAidTopicIds(question)
   if (subjects.length < 2) return candidates.slice(0, limit)
   const chosen = []
@@ -53,10 +53,14 @@ export function prepareAdvisorAideContext(aides = [], isKreol = false, question 
     categorie: aide.categorie || "",
     commune: aide.commune || null,
     zone_couverte: aide.zone_couverte || null,
-    type_soutien: aide.type_soutien || "a_confirmer",
+    type_soutien: aide.type_dispositif && aide.type_dispositif !== "non_classe"
+      ? aide.type_dispositif : "a_confirmer",
+    statut_verification: aide.statut_verification || "a_verifier",
     derniere_verification: aide.date_verification || null,
-    nature_du_soutien_a_confirmer: !aide.type_soutien,
-    // A linked source is not evidence that its barème is current.
+    source_verification: aide.source_verification || null,
+    periode_validite: aide.periode_validite || null,
+    nature_du_soutien_a_confirmer: !aide.type_dispositif || aide.type_dispositif === "non_classe",
+    // A linked source and reading date never verify a current cash barème.
     bareme_verifie: Boolean(aide.bareme_verifie && aide.date_verification),
     montant: formatAdvisorAideAmount(aide),
     montant_min: aide.montant_min ?? null,
