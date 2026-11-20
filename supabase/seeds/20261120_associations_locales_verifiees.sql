@@ -2,7 +2,6 @@
 -- Réexécutable : ignore les noms déjà présents, ne modifie pas les fiches existantes.
 DO $add_local_aids$
 DECLARE r record;
-DECLARE next_id bigint;
 BEGIN
   PERFORM pg_advisory_xact_lock(84690123);
   FOR r IN
@@ -16,15 +15,14 @@ BEGIN
     IF NOT EXISTS (
       SELECT 1 FROM public.aides_reunion a WHERE lower(unaccent(a.nom))=lower(unaccent(r.nom))
     ) THEN
-      SELECT coalesce(max(id),0)+1 INTO next_id FROM public.aides_reunion;
       INSERT INTO public.aides_reunion(
-        id,nom,categorie,commune,zone_couverte,organisme,type_dispositif,
+        nom,categorie,commune,zone_couverte,organisme,type_dispositif,
         description,description_fr,description_kreol,demarches_fr,demarches_kreol,
         lien,lien_officiel,source_verification,periode_validite,
         statut_verification,date_verification,score_priorite,
         besoin_enfant,besoin_locataire,actif
       ) VALUES(
-        next_id,r.nom,r.categorie,r.commune,r.zone_couverte,r.organisme,r.type_dispositif,
+        r.nom,r.categorie,r.commune,r.zone_couverte,r.organisme,r.type_dispositif,
         r.description_fr,r.description_fr,r.description_kreol,r.demarches_fr,r.demarches_kreol,
         r.lien_officiel,r.lien_officiel,r.source_verification,r.periode_validite,
         'verifie',date '2026-11-20',r.score_priorite,
