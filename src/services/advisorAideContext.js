@@ -1,4 +1,5 @@
 import { aidSourceStatus } from "./aidesRecommendationQuality.js"
+import { findAidTopicIds, findPrimaryAidTopicIds } from "./aidTopics.js"
 
 export function formatAdvisorAideAmount(aide = {}) {
   const min = Number(aide.montant_min)
@@ -14,8 +15,32 @@ export function formatAdvisorAideAmount(aide = {}) {
   return "Montant variable"
 }
 
-export function prepareAdvisorAideContext(aides = [], isKreol = false) {
-  return aides.filter(aide => aide && aide.actif !== false).slice(0, 8).map(aide => ({
+// Diversify only when the user actually asks about several subjects
+// (e.g. unpaid rent AND returning to work), so one category cannot use up all
+// eight slots sent to the model. Never send the entire catalogue to OpenAI.
+export function pickRelevantAidKnowledge(aides = [], question = "", limit = 8) {
+  const candidates = (Array.isArray(aides) ? aides : []).filter(aide => aide && aide.actif !== false)
+  const subjects = findPrimaryAidTopicIds(question)
+  if (subjects.length < 2) return candidates.slice(0, limit)
+  const chosen = []
+  const used = new Set()
+  for (const subject of subjects) {
+    const primary = candidates.find(aide =>
+      !used.has(aide) &&
+      findAidTopicIds([aide.nom, aide.categorie, aide.nom_kreol].filter(Boolean).join(" ")).includes(subject))
+    const secondary = primary || candidates.find(aide =>
+      !used.has(aide) &&
+      findAidTopicIds([aide.description_fr, aide.description, aide.description_kreol].filter(Boolean).join(" ")).includes(subject))
+    if (secondary) {
+      chosen.push(secondary)
+      used.add(secondary)
+    }
+  }
+  return [...chosen, ...candidates.filter(aide => !used.has(aide))].slice(0, limit)
+}
+
+export function prepareAdvisorAideContext(aides = [], isKreol = false, question = "") {
+  return pickRelevantAidKnowledge(aides, question, 8).map(aide => ({
     // Source presence is NOT an eligibility guarantee: the user must confirm
     // current rules and amounts with the authority before any application.
     source_status: aidSourceStatus(aide).label,
@@ -26,6 +51,13 @@ export function prepareAdvisorAideContext(aides = [], isKreol = false) {
     nom_kreol: aide.nom_kreol || aide.nom || "Aide",
     organisme: aide.organisme || "",
     categorie: aide.categorie || "",
+    commune: aide.commune || null,
+    zone_couverte: aide.zone_couverte || null,
+    type_soutien: aide.type_soutien || "a_confirmer",
+    derniere_verification: aide.date_verification || null,
+    nature_du_soutien_a_confirmer: !aide.type_soutien,
+    // A linked source is not evidence that its barème is current.
+    bareme_verifie: Boolean(aide.bareme_verifie && aide.date_verification),
     montant: formatAdvisorAideAmount(aide),
     montant_min: aide.montant_min ?? null,
     montant_max: aide.montant_max ?? null,
