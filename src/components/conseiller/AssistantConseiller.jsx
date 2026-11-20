@@ -105,10 +105,6 @@ const MODE_LABELS = {
 
 const advisorSessionByUser = new Map()
 
-// Public aid catalogue: refresh occasionally, not at every user question.
-// Promise sharing prevents concurrent requests from multiplying Supabase reads.
-const advisorAidCatalogueCache = { rows: null, expiresAt: 0, pending: null }
-
 function formatAdvisorAnswer(value = "") {
   const text = String(value || "").replace(/\r\n/g, "\n")
   const lines = text.split("\n")
