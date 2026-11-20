@@ -12,6 +12,19 @@ const PERSONAL_BUDGET = /\b(?:mon budget|mes budgets|mes depenses|ma depense|mon
 const PERSONAL_DISTRIBUTION = /\b(?:mes principales depenses|mes plus grosses depenses|mes (?:trois|3) (?:principaux|plus gros) postes|mes postes de depenses|repartition de mon budget|repartition de mes depenses|part de mes depenses|pourcentage de mes depenses)\b/
 const NON_FINANCIAL = /\b(?:pollution|soleil|etoiles?|jupiter|saturne|planetes?|galaxie|animaux?|chats?|chiens?|football|course a pied|courses de chevaux|course de velo|basket ball|panier de basket|cuisson|cuisine|recette|plantes?|volcans?|vagues?|marees?|fantomes?|super pouvoirs?|licornes?|dinosaures?|conjugaison|poemes?|rime|humour|blague)\b/
 
+// Associations and solidarity services are real advisor topics even when
+// no financial keyword is used. A generic question ABOUT associations is not
+// automatically a personal request for aid.
+const LOCAL_SUPPORT_TOPIC = /\b(?:epiceries? (?:sociales?|solidaires?)|associations?|collectifs?|entraide|solidarite|restos du coeur|banque alimentaire|secours populaire|croix rouge|distribution alimentaire|colis alimentaires?|travailleur social|assistante sociale|point conseil budget|accompagnement social|maison des solidarites)\b/
+const LOCAL_SUPPORT_NEED = /\b(?:je cherche|je voudrais|j ai besoin|besoin d|besoin de|qui peut m aider|ou (?:trouver|aller|m adresser)|vers qui|comment (?:obtenir|contacter|trouver)|a qui (?:parler|demander)|koman (?:trouve|gagn)|kot (?:mi|moin)|mi cherche|mi besoin|ou trouve)\b/
+const FOOD_EMERGENCY = /\b(?:plus de quoi manger|pas de quoi manger|rien a manger|plus rien a manger|pas assez a manger|plus d argent pour manger|j ai faim et|mon frigo est vide)\b/
+
+export function isLocalSupportRequest(question = "") {
+  const text = normalizeAidTopicText(question)
+  return FOOD_EMERGENCY.test(text) ||
+    (LOCAL_SUPPORT_TOPIC.test(text) && LOCAL_SUPPORT_NEED.test(text))
+}
+
 export function looksPlayfulOrFictionalQuestion(question = "") {
   return CREATIVE.test(normalizeAidTopicText(question))
 }
@@ -61,7 +74,7 @@ export function shouldLookupAdvisorAids({
 } = {}) {
   if (looksPlayfulOrFictionalQuestion(question)) return false
   const text = normalizeAidTopicText(question)
-  const explicitAid = AID_REQUEST.test(text)
+  const explicitAid = AID_REQUEST.test(text) || isLocalSupportRequest(question)
   if (mode === "scan_profil") return true
   // A new, self-contained question takes priority over a previous aid tab or
   // handoff. Otherwise "Aide-moi à comprendre la relativité" can retrieve
@@ -96,6 +109,6 @@ export function resolveAdvisorModeForQuestion({
   if (mode === "budget_depenses" &&
       !shouldUseLocalBudgetAnswer({ question,mode,intent })) return "general"
   if (mode === "trouver_aide" &&
-      (looksPlayfulOrFictionalQuestion(question) || !AID_REQUEST.test(normalizeAidTopicText(question)))) return "general"
+      (looksPlayfulOrFictionalQuestion(question) || !(AID_REQUEST.test(normalizeAidTopicText(question)) || isLocalSupportRequest(question)))) return "general"
   return mode
 }
