@@ -3,7 +3,6 @@ import {
   ArrowRight,
   ArrowUpRight,
   HandHeart,
-  MapPin,
   MessageCircle,
   Search,
   ShoppingBasket,
@@ -55,11 +54,11 @@ function useLandingSeo(content, language) {
 const COPY = {
   fr: {
     heroEyebrow: "Une application pensée pour La Réunion",
-    heroTitle: "Votre quotidien, plus simple. Votre budget, plus clair.",
-    heroLead: "Suivez vos dépenses, comprenez vos courses, repérez les aides utiles et découvrez les bonnes adresses de l'île.",
+    heroTitleLead: "Plus qu’un budget.",
+    heroTitleFocus: "Des décisions éclairées.",
+    heroLead: "BudgetKazPeï va plus loin que le suivi des dépenses : comprenez vos courses, repérez les aides utiles et découvrez les bons plans de La Réunion."
     heroPrimary: "Commencer gratuitement",
     heroSecondary: "Découvrir les fonctionnalités",
-    heroLocal: "À La Réunion, en français et en kréol",
     quick: ["Mon budget", "Mes courses", "Mes aides", "Mon Conseiller", "Bons plans"],
     featureEyebrow: "L'essentiel, sans complication",
     featureTitle: "Tout est plus simple quand on y voit clair.",
@@ -93,15 +92,14 @@ const COPY = {
     endText: "Commencez gratuitement et découvrez les fonctionnalités qui correspondent à vos besoins.",
     endLink: "Découvrir les offres",
     navPro: "Je propose",
-    languageLine: "Français · Kréol réunionnais",
   },
   kr: {
     heroEyebrow: "In aplikasyon pansé pou La Rényon",
-    heroTitle: "Out kotidien pli sinp. Out bidjé pli klèr.",
-    heroLead: "Swiv out dépans, konpran out courses, trouv bann èd itil ek dékouv bann bon ladres dann lil.",
+    heroTitleLead: "Pa zis in bidjé.",
+    heroTitleFocus: "Bann désizion pli klèr.",
+    heroLead: "BudgetKazPeï i fé plis ke swiv out dépans : konprann out courses, repèr bann èd itil ek dékouv bann bon plan dann La Rényon."
     heroPrimary: "Koumans gratis",
     heroSecondary: "Dékouv bann fonksionalité",
-    heroLocal: "La Rényon, an fransé ek an kréol",
     quick: ["Mon bidjé", "Mon bann courses", "Mon bann èd", "Mon Konseyé", "Bon Plan"],
     featureEyebrow: "Sak lé esansyèl, san komplikasyon",
     featureTitle: "Kan tout lé klèr, la vi lé pli sinp.",
@@ -135,7 +133,6 @@ const COPY = {
     endText: "Koumans gratis ek dékouv bann fonksionalité ki korésponn a out bézwin.",
     endLink: "Dékouv bann lof",
     navPro: "Mi propoz",
-    languageLine: "Fransé · Kréol rényoné",
   },
 }
 
@@ -174,7 +171,10 @@ export default function PublicHomePage({ isAuthenticated = false }) {
       <section className="bk-hero" aria-labelledby="landing-title">
         <div className="landing-shell bk-hero__inner">
           <p className="bk-eyebrow">{copy.heroEyebrow}</p>
-          <h1 id="landing-title">{copy.heroTitle}</h1>
+          <h1 id="landing-title">
+            <span className="bk-hero__title-lead">{copy.heroTitleLead}</span>
+            <span className="bk-hero__title-focus">{copy.heroTitleFocus}</span>
+          </h1>
           <p className="bk-hero__lead">{copy.heroLead}</p>
           <div className="bk-hero__actions">
             <LandingLink href={appHref} className="landing-link-button landing-link-button--primary">
@@ -183,7 +183,6 @@ export default function PublicHomePage({ isAuthenticated = false }) {
             </LandingLink>
             <a className="landing-link-button landing-link-button--ghost" href="#fonctionnalites">{copy.heroSecondary}</a>
           </div>
-          <p className="bk-hero__local"><MapPin size={15} aria-hidden="true" />{copy.heroLocal}</p>
         </div>
       </section>
 
@@ -285,7 +284,7 @@ export default function PublicHomePage({ isAuthenticated = false }) {
 
       <footer className="bk-footer">
         <div className="landing-shell bk-footer__inner">
-          <span>© {new Date().getFullYear()} BudgetKazPeï · {copy.languageLine}</span>
+          <span>© {new Date().getFullYear()} BudgetKazPeï</span>
           <nav aria-label={content.footer.navigationAriaLabel}>
             <LandingLink href="/privacy">{content.footer.privacy}</LandingLink>
             <LandingLink href="/mentions-legales">{content.footer.legalNotices}</LandingLink>
