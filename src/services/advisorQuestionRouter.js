@@ -7,6 +7,7 @@ const SELF_CONTAINED_STARTS = /^(?:pourquoi|comment|combien|quel(?:le|les|s)?|qu
 const REFERENTIAL = /\b(?:ca|cela|cette aide|cet organisme|ce dossier|ce courrier|la meme aide|celui ci|celle ci|en beneficier|en profiter|l obtenir|la demander|le demander|ce montant|ses conditions|cette demarche|ce sujet|combien de temps faut il attendre|combien de jours pour recevoir|quel delai|dans combien de temps|et ensuite|et pour|et alors)\b/
 const CREATIVE = /\b(?:imagine|invente|raconte une histoire|raconte moi une histoire|fiction|fictif|farfelu|farfelue|extraterrestre|dragon|licorne|magique|super heros|voyage dans le temps|sur la lune|lune en fromage|si les chats|si mon chat|chat president|lune.*fromage|si (?:la |le |les |mon |ma |un |une )?(?:lune|licorne|extraterrestre)|hypothese absurde)\b/
 const AID_REQUEST = /\b(?:aides? financieres?|aides? sociales?|aides? pour|des aides|aides\b|une aide|montant de l aide|allocations?|subventions?|droit aux aides|droits sociaux|prestations? sociales?|caf|rsa|apl|fsl|ccas|mdph|prime d activite|cheque energie|pass sport|aide au logement|demande d aide|demander une aide|eligible a une aide|aide alimentaire|colis alimentaire|distribution de repas|banque alimentaire|epiceries? (?:sociales?|solidaires?)|panier solidaire|fami lien|k di le coeur|dal 974|secours catholique|croix rouge|unir oi|associations? d entraide|collectifs? de solidarite|accompagnement social|permanences? sociale|qui peut m aider|qui peut nous aider)\b/
+const URGENT_SUPPORT_NEED = /\b(?:plus de quoi manger|pas de quoi manger|rien a manger|plus rien a manger|plus d argent pour manger|mon frigo est vide|mi nana pu manze|mi nana pu de koi manze|mi nana pi manze|je peux plus payer mon loyer|je ne peux plus payer mon loyer|menace d expulsion|menace d etre expulse|sans logement|je dors dehors)\b/
 const PERSONAL_BUDGET = /\b(?:mon budget|mes budgets|mes depenses|ma depense|mon loyer|mon abonnement|mes revenus|mon revenu|mes charges|mes abonnements|mes economies|mes achats|ma liste de courses|mon panier|mes courses|mon argent|ma marge|combien j ai depense|combien je depense|ma facture|mes factures|reste t il|me reste|j ai paye|je paie|je depense|me coute|ai je depense|j ai depense|je gagne|euros? par mois|depenses alimentaires)\b/
 // Wording for explicit personal breakdowns, including statements without "dépenses".
 const PERSONAL_DISTRIBUTION = /\b(?:mes principales depenses|mes plus grosses depenses|mes (?:trois|3) (?:principaux|plus gros) postes|mes postes de depenses|repartition de mon budget|repartition de mes depenses|part de mes depenses|pourcentage de mes depenses)\b/
@@ -74,7 +75,7 @@ export function shouldLookupAdvisorAids({
 } = {}) {
   if (looksPlayfulOrFictionalQuestion(question)) return false
   const text = normalizeAidTopicText(question)
-  const explicitAid = AID_REQUEST.test(text) || isLocalSupportRequest(question)
+  const explicitAid = AID_REQUEST.test(text) || URGENT_SUPPORT_NEED.test(text) || isLocalSupportRequest(question)
   if (mode === "scan_profil") return true
   // A new, self-contained question takes priority over a previous aid tab or
   // handoff. Otherwise "Aide-moi à comprendre la relativité" can retrieve
