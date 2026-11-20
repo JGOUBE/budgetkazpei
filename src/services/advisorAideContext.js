@@ -67,7 +67,7 @@ export function prepareAdvisorAideContext(aides = [], isKreol = false, question 
       aide_en_especes: isNonMonetary ? false : null,
       commune: aide.commune || "",
       zone_couverte: aide.zone_couverte || "Zone à confirmer auprès de l'organisme",
-      source_status: aide.statut_verification || "a_verifier",
+      source_status: reference.label,
       source_availability: reference.label,
       verification_status: aide.statut_verification || "a_verifier",
       source_reference_disponible: reference.available,
