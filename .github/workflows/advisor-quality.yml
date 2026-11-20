@@ -27,6 +27,7 @@ jobs:
       - name: Tests Conseiller Premium sans appel OpenAI
         run: |
           npm run test:advisor-intelligence
+          npm run test:advisor-local-knowledge
           npm run test:advisor-diverse
           npm run test:advisor-kreol-parity
           npm run test:advisor-spend-guard
