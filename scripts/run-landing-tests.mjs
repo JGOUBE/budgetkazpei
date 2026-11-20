@@ -102,6 +102,11 @@ assert.match(page, /Exemple illustratif, pas une analyse réelle/, "advisor exam
 assert.match(page, /Mon bann courses la ogmanté de 120 €/, "Creole advisor example missing")
 assert.match(page, /\{copy\.advisorQuestion\}/, "landing must display new advisor question")
 assert.match(page, /<nav className="bk-quicknav"/, "five benefits must be clickable navigation")
+assert.match(styles, /font-size: 1\.1rem;\s*line-height: 1\.4;\s*font-weight: 730;/, "desktop benefit labels must be prominent")
+assert.match(styles, /font-size: clamp\(1\.08rem, 4\.45vw, 1\.2rem\)/, "mobile benefit labels must be substantially larger")
+assert.match(styles, /\.bk-landing:not\(\.bk-offers-page\) \.bk-quicknav__inner \{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/, "mobile benefits must have two readable columns")
+assert.match(styles, /\.bk-landing:not\(\.bk-offers-page\) \.bk-quicknav__item::before/, "mobile bullet spacing must be sized for larger labels")
+
 assert.match(page, /copy.quick.map\(\(\{ label, href \}, index\)/, "navigation should use anchored links")
 assert.match(page, /<a key=\{index\} href=\{href\}/, "benefit link missing")
 assert.match(page, /bk-local__grid/, "compact bons plans and professional section missing")
