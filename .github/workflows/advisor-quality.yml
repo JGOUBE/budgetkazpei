@@ -1,0 +1,43 @@
+name: Conseiller FR-Kreol regression
+
+on:
+  push:
+    branches:
+      - feat/advisor-intelligence-fr-kreol-20261120
+
+permissions:
+  contents: read
+
+concurrency:
+  group: conseiller-qa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Conseiller budget / aides / questions libres
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Tests Conseiller Premium sans appel OpenAI
+        run: |
+          npm run test:advisor-intelligence
+          npm run test:advisor-local-knowledge
+          npm run test:advisor-diverse
+          npm run test:advisor-kreol-parity
+          npm run test:advisor-spend-guard
+          npm run test:advisor-ai-cost
+          npm run test:advisor-aides
+          npm run test:advisor-aide-quality
+          npm test
+      - name: Build complet sans déploiement
+        env:
+          # Placeholder values for compile-time initialization only; no backend is contacted.
+          VITE_SUPABASE_URL: https://ci.example.invalid
+          VITE_SUPABASE_ANON_KEY: ci-dummy-anon-key-no-real-account
+        run: npm run build

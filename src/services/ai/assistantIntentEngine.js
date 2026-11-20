@@ -338,8 +338,8 @@ function buildRemainingAnswer(question, insights) {
     Number(context.currentAvailableMargin) >= 0
   ) {
     return response({
-      fr: `D'après les dépenses enregistrées dans BudgetKazPéi, je ne peux pas confirmer qu'il te reste peu ce mois-ci. Après tes charges fixes, il restait ${formatMontant(context.remainingAfterFixedExpenses)}. Tes dépenses variables enregistrées atteignent ${formatMontant(context.expenses?.variable || 0)}, ce qui laisse une marge estimée à ${formatMontant(context.currentAvailableMargin)}. Si ton solde réel est beaucoup plus bas, certaines dépenses ou charges ne sont probablement pas encore enregistrées dans BudgetKazPéi.`,
-      kr: `Dapré bann dépans anrezistré dann BudgetKazPéi, mi pé pa confirme ke i reste aou peu sa mwa-la. Apré out sarz fix, té reste ${formatMontant(context.remainingAfterFixedExpenses)}. Out dépans variables anrezistré i monte ${formatMontant(context.expenses?.variable || 0)}, sak i laisse in marge estimé ${formatMontant(context.currentAvailableMargin)}. Si out solde réel lé bokou pli bas, nana probablement bann dépans ou sarz pankor anrezistré dann BudgetKazPéi.`,
+      fr: `D'après les dépenses enregistrées dans BudgetKazPéi, je ne peux pas confirmer qu'il te reste peu ce mois-ci. Après tes charges fixes, il restait ${formatMontant(context.remainingAfterFixedExpenses)}. Tes dépenses variables enregistrées atteignent ${formatMontant(context.expenses?.variable || 0)}, ce qui laisse une marge estimée à ${formatMontant(context.currentAvailableMargin)}. Les données montrent ces montants, mais ne suffisent pas à attribuer une cause. Si ton solde réel est plus bas, compare les opérations enregistrées avec tes relevés avant de conclure.`,
+      kr: `Dapré bann dépans anrezistré dann BudgetKazPéi, mi pé pa confirme ke i reste aou peu sa mwa-la. Apré out sarz fix, té reste ${formatMontant(context.remainingAfterFixedExpenses)}. Out dépans variables anrezistré i monte ${formatMontant(context.expenses?.variable || 0)}, sak i laisse in marge estimé ${formatMontant(context.currentAvailableMargin)}. Bann donné i montre montants-la, mé sa suffit pa pou trouve in cause. Si out solde réel lé pli bas, compare bann opérations anrezistré avèk out relevés avan tire in conclusion.`,
       intent: ASSISTANT_INTENTS.BUDGET_REMAINING,
       insights,
       actions: [action("depenses", "Voir mes dépenses", "War mon bann dépans")],
@@ -476,13 +476,39 @@ function buildGeneralBudgetAnswer(insights) {
   const topCategory = context.spendingByCategory?.[0]
   const topCharge = context.recurringCharges?.[0]
   if (!topCategory && !topCharge) return missingResponse(ASSISTANT_INTENTS.BUDGET_GENERAL, insights, "transactions")
-  const categoryFr = topCategory ? `${getAssistantCategoryLabel(topCategory.category, "fr")} (${formatMontant(topCategory.amount)})` : ""
-  const categoryKr = topCategory ? `${getAssistantCategoryLabel(topCategory.category, "kr")} (${formatMontant(topCategory.amount)})` : ""
-  const chargeFr = topCharge ? ` La charge récurrente la plus élevée est « ${topCharge.label} » (${formatMontant(topCharge.amount)}). Tu peux vérifier si elle est encore adaptée, sans supposer qu'elle est supprimable.` : ""
-  const chargeKr = topCharge ? ` Sarz récurrente le plus haut lé « ${topCharge.label} » (${formatMontant(topCharge.amount)}). Ou pé vérifie si li lé ankor adapté, sans suppose li pé supprimé.` : ""
+
+  const categoryFr = topCategory
+    ? `Le poste de dépenses classées le plus élevé ${periodPhrase(context)} est ${getAssistantCategoryLabel(topCategory.category, "fr")} (${formatMontant(topCategory.amount)}).`
+    : "Je n'ai pas encore assez de dépenses classées pour établir un classement fiable."
+  const categoryKr = topCategory
+    ? `Poste dépans classé le pli haut ${periodPhrase(context)} lé ${getAssistantCategoryLabel(topCategory.category, "kr")} (${formatMontant(topCategory.amount)}).`
+    : "Mi nana pa ankor assez dépans classées pou fé in classement fiable."
+
+  const chargeFr = topCharge
+    ? ` Ta charge récurrente la plus élevée enregistrée est « ${topCharge.label} » (${formatMontant(topCharge.amount)}). Vérifie si elle est toujours adaptée, sans supposer qu'elle peut être supprimée.`
+    : ""
+  const chargeKr = topCharge
+    ? ` Out sarz récurrente le pli haut anrezistrée lé « ${topCharge.label} » (${formatMontant(topCharge.amount)}). Vérifie si li lé ankor adapté, sans imagine ou pé supprim ali.`
+    : ""
+
+  const practicalFr = topCategory?.category === "alimentaire"
+    ? " Pour commencer à économiser, compare les prix unitaires de tes produits achetés régulièrement dans Mes économies. Les prix historiques peuvent avoir changé."
+    : topCategory?.category === "transport"
+      ? " Pour avancer, regarde d'abord quelles dépenses de transport sont répétées et lesquelles peuvent éventuellement être regroupées."
+      : topCategory
+        ? " Pour avancer, examine les achats répétitifs de ce poste avant de chercher des économies."
+        : ""
+  const practicalKr = topCategory?.category === "alimentaire"
+    ? " Pou économiz, compare bann pri à l'unité out produits réguliers dann Mes économies. Bann anciens pri i pé avoir changé."
+    : topCategory?.category === "transport"
+      ? " Pou avancé, regarde bann dépans transport ki revient souvent ek sak ou pé regroupe."
+      : topCategory
+        ? " Pou avancé, regarde bann achats réguliers dann sa poste-la avan cherche bann lékonomi."
+        : ""
+
   return response({
-    fr: `Le premier poste à examiner est ${categoryFr}.${chargeFr}`,
-    kr: `Premier poste pou regarde lé ${categoryKr}.${chargeKr}`,
+    fr: `${categoryFr}${chargeFr}${practicalFr}`,
+    kr: `${categoryKr}${chargeKr}${practicalKr}`,
     intent: ASSISTANT_INTENTS.BUDGET_GENERAL,
     insights,
     actions: [action("depenses", "Voir mes dépenses", "War mon bann dépans")],

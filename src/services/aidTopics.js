@@ -1,7 +1,15 @@
 export const AID_TOPIC_GROUPS = [
   {
     id: "logement",
-    terms: ["logement", "kaz", "loyer", "location", "locataire", "proprietaire", "apl", "fsl", "hebergement"],
+    terms: ["logement", "kaz", "loyer", "location", "locataire", "proprietaire", "apl", "fsl", "hebergement", "dalo", "expulsion", "relogement", "mal logement"],
+  },
+  {
+    id: "alimentaire",
+    terms: ["alimentaire", "alimentation", "nourriture", "manger", "manze", "mange", "mangé", "repas", "colis alimentaire", "distribution alimentaire", "épicerie solidaire", "epicerie solidaire", "epicerie sociale", "panier solidaire", "courses alimentaires"],
+  },
+  {
+    id: "solidarite",
+    terms: ["entraide", "solidarite", "association", "associatif", "associations", "collectif", "benevole", "secours populaire", "croix rouge", "caritas", "urgence sociale", "centre communal action sociale"],
   },
   {
     id: "energie",
@@ -40,8 +48,28 @@ export const AID_TOPIC_GROUPS = [
     terms: ["culture", "culturel", "loisir", "loisirs", "cinema", "musee", "musique", "lecture", "pass culture"],
   },
   {
+    id: "solidarite_proximite",
+    terms: [
+      "epicerie solidaire", "epicerie sociale", "aide alimentaire", "colis alimentaire",
+      "distribution alimentaire", "repas solidaire", "nourriture", "manger",
+      "restos du coeur", "banque alimentaire", "secours populaire", "croix rouge",
+      "association", "associations", "collectif", "collectifs", "entraide",
+      "solidarite", "solidaire", "aide d urgence", "secours d urgence",
+      "aide de proximite", "pres de chez moi",
+    ],
+  },
+  {
+    id: "accompagnement_social",
+    terms: [
+      "travailleur social", "assistante sociale", "assistant social",
+      "permanence sociale", "accompagnement social", "acces aux droits",
+      "maison des solidarites", "orientation sociale", "point conseil budget",
+      "mediateur social", "permanence juridique",
+    ],
+  },
+  {
     id: "budget",
-    terms: ["budget", "depense", "dette", "credit", "surendettement", "revenu", "alimentaire"],
+    terms: ["budget", "depense", "dette", "credit", "surendettement", "revenu", "impaye", "budget familial"],
   },
   {
     id: "demarches",

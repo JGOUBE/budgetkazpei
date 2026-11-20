@@ -45,6 +45,11 @@ import {
   resolveAdvisorBudgetNoDataAdvice,
 } from "../../services/advisorConversation"
 
+// Public reference catalogue: short-lived cache shared across advisor turns.
+// Supabase is queried only when social/aid knowledge is required.
+let advisorAidCache = { data: null, until: 0, pending: null }
+const ADVISOR_AID_CACHE_MS = 3 * 60 * 1000
+
 const COLORS = createColorAliases({ red: () => "#FB7185" })
 
 const MODE_LABELS = {
@@ -445,18 +450,38 @@ export default function AssistantConseiller({
   }, [])
 
   async function fetchAides() {
-    const { data, error } = await supabase
-      .from("aides_reunion")
-      .select("id,nom,nom_kreol,description,description_fr,description_kreol,demarches_fr,demarches_kreol,montant_min,montant_max,categorie,condition_logement,condition_profession,condition_famille,commune,lien,lien_officiel,besoin_enfant,besoin_demandeur_emploi,besoin_locataire,besoin_proprietaire,besoin_allocataire_caf,score_priorite,actif")
-      .eq("actif", true)
-      .order("score_priorite", { ascending: false })
-
-    if (error) {
-      console.error("Erreur chargement aides conseiller:", error)
-      return []
+    if (Array.isArray(advisorAidCache.data) && Date.now() < advisorAidCache.until) {
+      return advisorAidCache.data
     }
+    if (advisorAidCache.pending) return advisorAidCache.pending
 
-    return data || []
+    advisorAidCache.pending = (async () => {
+      const pageSize = 500
+      const all = []
+      // Do not silently truncate the directory as associations are added.
+      for (let offset = 0; offset < 5000; offset += pageSize) {
+        const { data, error } = await supabase
+          .from("aides_reunion")
+          .select("id,nom,nom_kreol,description,description_fr,description_kreol,demarches_fr,demarches_kreol,montant_min,montant_max,categorie,condition_logement,condition_profession,condition_famille,commune,organisme,type_dispositif,zone_couverte,date_verification,source_verification,statut_verification,periode_validite,lien,lien_officiel,besoin_enfant,besoin_demandeur_emploi,besoin_locataire,besoin_proprietaire,besoin_allocataire_caf,score_priorite,actif")
+          .eq("actif", true)
+          .order("score_priorite", { ascending: false })
+          .order("id", { ascending: true })
+          .range(offset, offset + pageSize - 1)
+        if (error) throw error
+        all.push(...(data || []))
+        if (!data || data.length < pageSize) {
+          advisorAidCache.data = all
+          advisorAidCache.until = Date.now() + ADVISOR_AID_CACHE_MS
+          return all
+        }
+      }
+      throw new Error("Catalogue d'aides trop volumineux : pagination à étendre.")
+    })()
+    try {
+      return await advisorAidCache.pending
+    } finally {
+      advisorAidCache.pending = null
+    }
   }
 
   async function callAssistantAi({
@@ -487,7 +512,8 @@ export default function AssistantConseiller({
       selectedAides.length === 0
     const preparedAides = prepareAdvisorAideContext(
       selectedAides,
-      assistantIsKreol
+      assistantIsKreol,
+      conversationContext.rankingQuery,
     )
     const financialContext = buildAssistantAiSummary(questionInsights || financialInsights, detectedIntent)
 
