@@ -19,10 +19,11 @@ const NON_FINANCIAL = /\b(?:pollution|soleil|etoiles?|jupiter|saturne|planetes?|
 const LOCAL_SUPPORT_TOPIC = /\b(?:epiceries? (?:sociales?|solidaires?)|associations?|collectifs?|entraide|solidarite|restos du coeur|banque alimentaire|secours populaire|croix rouge|distribution alimentaire|colis alimentaires?|travailleur social|assistante sociale|point conseil budget|accompagnement social|maison des solidarites)\b/
 const LOCAL_SUPPORT_NEED = /\b(?:je cherche|je voudrais|j ai besoin|besoin d|besoin de|qui peut m aider|ou (?:trouver|aller|m adresser)|vers qui|comment (?:obtenir|contacter|trouver)|a qui (?:parler|demander)|koman (?:trouve|gagn)|kot (?:mi|moin)|mi cherche|mi besoin|ou trouve)\b/
 const FOOD_EMERGENCY = /\b(?:plus de quoi manger|pas de quoi manger|rien a manger|plus rien a manger|pas assez a manger|plus d argent pour manger|j ai faim et|mon frigo est vide)\b/
+const DIRECT_SUPPORT = /\b(?:je suis victime|je subis des violences|je vis des violences|victime de violences|violences conjugales|violences intrafamiliales|mon conjoint me frappe|on me harcele|je suis harcele|besoin de soutien scolaire|besoin d aide aux devoirs|je cherche du soutien scolaire|je recherche du soutien scolaire|mon enfant a des difficultes scolaires|mon enfant a besoin d aide aux devoirs)\b/
 
 export function isLocalSupportRequest(question = "") {
   const text = normalizeAidTopicText(question)
-  return FOOD_EMERGENCY.test(text) ||
+  return FOOD_EMERGENCY.test(text) || DIRECT_SUPPORT.test(text) ||
     (LOCAL_SUPPORT_TOPIC.test(text) && LOCAL_SUPPORT_NEED.test(text))
 }
 
