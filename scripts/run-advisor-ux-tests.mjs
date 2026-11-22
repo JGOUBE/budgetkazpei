@@ -63,29 +63,29 @@ assert.match(advisorColors, /box-shadow: none !important/)
 
 // Reproduce the exact colon/list issue shown in Android screenshots.
 const screenshots = [
-  "À Saint-Leu, plusieurs options s'offrent à vous :\\n\\n1.\\n**K’DI LE CŒUR**\\n: C'est une épicerie sociale et solidaire. Plus d'informations : [K’DI LE CŒUR](https://andes-france.com/structure/kdi-le-coeur/).",
-  "2.\\n**Croix-Rouge sur Roues**\\n: Cet organisme propose une distribution itinérante de colis alimentaires.",
+  "À Saint-Leu, plusieurs options s'offrent à vous :\n\n1.\n**K’DI LE CŒUR**\n: C'est une épicerie sociale et solidaire. Plus d'informations : [K’DI LE CŒUR](https://andes-france.com/structure/kdi-le-coeur/).",
+  "2.\n**Croix-Rouge sur Roues**\n: Cet organisme propose une distribution itinérante de colis alimentaires.",
   "1. **CCAS** : Prenez contact avec votre travailleur social.",
-  "3.\\nCCAS de Saint-Leu\\n: Informez-vous sur les permanences.",
-  "1.\\n**Épicerie solidaire**\\n: Mi pé demande in aide.",
+  "3.\nCCAS de Saint-Leu\n: Informez-vous sur les permanences.",
+  "1.\n**Épicerie solidaire**\n: Mi pé demande in aide.",
 ]
 for (const raw of screenshots) {
-  const output = normalizeAdvisorAnswerTypography(raw.replaceAll("\\n", "\n"))
-  assert.doesNotMatch(output, /(?:^|\\n)\\s*:/, "No colon may appear detached at start of a line")
-  assert.doesNotMatch(output, /(?:^|\\n)\\s*\\d+[.)]\\s*(?:\\n|$)/, "List numbers should stay with their headings")
-  assert.doesNotMatch(output, /\\*\\*[^*]+\\*\\*\\s*(?::|\\n\\s*:)/, "Association heading must not have an orphan colon")
+  const output = normalizeAdvisorAnswerTypography(raw)
+  assert.doesNotMatch(output, /(?:^|\n)\s*:/, "No colon may appear detached at start of a line")
+  assert.doesNotMatch(output, /(?:^|\n)\s*\d+[.)]\s*(?:\n|$)/, "List numbers should stay with their headings")
+  assert.doesNotMatch(output, /\*\*[^*]+\*\*\s*(?::|\n\s*:)/, "Association heading must not have an orphan colon")
 }
-const sample = normalizeAdvisorAnswerTypography(screenshots[0].replaceAll("\\n", "\n"))
-assert.match(sample, /1\\. \\*\\*K’DI LE CŒUR\\*\\* — C'est une épicerie/)
-assert.match(sample, /\\[K’DI LE CŒUR\\]\\(https:\\/\\/andes-france\\.com\\/structure\\/kdi-le-coeur\\/\\)/)
+const sample = normalizeAdvisorAnswerTypography(screenshots[0])
+assert.match(sample, /1\. \*\*K’DI LE CŒUR\*\* — C'est une épicerie/)
+assert.match(sample, /\[K’DI LE CŒUR\]\(https:\/\/andes-france\.com\/structure\/kdi-le-coeur\/\)/)
 const segments = tokenizeAdvisorAnswerLine(
   "**Croix-Rouge sur Roues** — Voir [la source officielle](https://reunion.deets.gouv.fr/L-aide-alimentaire)."
 )
 assert.ok(segments.some(part => part.kind === "strong" && part.value === "Croix-Rouge sur Roues"))
 assert.ok(segments.some(part => part.kind === "link" && part.label === "la source officielle"))
 assert.equal(tokenizeAdvisorAnswerLine("[mauvais lien](javascript:alert(1))").some(part => part.kind === "link"), false)
-assert.match(chat, /normalizeAdvisorAnswerTypography\\(value\\)/, "All displayed advisor replies must normalize typography")
-assert.match(chat, /tokenizeAdvisorAnswerLine\\(line\\)/, "Links and emphasis must render safely")
+assert.match(chat, /normalizeAdvisorAnswerTypography\(value\)/, "All displayed advisor replies must normalize typography")
+assert.match(chat, /tokenizeAdvisorAnswerLine\(line\)/, "Links and emphasis must render safely")
 console.log("OK: corrected assistant response typography, attached list numbers, no orphan colons and HTTPS links.")
 
 console.log("OK: Conseiller compact and accessible; price collectors stay separate from local bons plans.")
