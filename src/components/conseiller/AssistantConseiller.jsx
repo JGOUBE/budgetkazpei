@@ -32,6 +32,7 @@ import { resolveAdvisorLanguage } from "../../services/advisorLanguage"
 import { selectAidCandidatesForAdvisor } from "../../services/aidesRanking"
 import { prepareAdvisorAideContext } from "../../services/advisorAideContext"
 import { buildAdvisorRequestBody } from "../../services/advisorRequestPayload"
+import { normalizeAdvisorAnswerTypography, tokenizeAdvisorAnswerLine } from "../../services/advisorAnswerTypography"
 import { buildLocalAidSourceAnswer, isLocalAidSourceRequest } from "../../services/advisorLocalAidAnswer"
 import {
   shouldLookupAdvisorAids,
@@ -107,22 +108,30 @@ const MODE_LABELS = {
 const advisorSessionByUser = new Map()
 
 function formatAdvisorAnswer(value = "") {
-  const text = String(value || "").replace(/\r\n/g, "\n")
-  const lines = text.split("\n")
-  const nodes = []
-
-  lines.forEach((line, lineIndex) => {
-    const parts = line.split(/(\*\*[^*]+\*\*)/g).filter(Boolean)
-    parts.forEach((part, partIndex) => {
-      const strong = /^\*\*[^*]+\*\*$/.test(part)
-      nodes.push(strong
-        ? <strong key={`${lineIndex}-${partIndex}`}>{part.slice(2, -2)}</strong>
-        : <span key={`${lineIndex}-${partIndex}`}>{part.replace(/\*\*/g, "")}</span>)
+  const text = normalizeAdvisorAnswerTypography(value)
+  return text.split("\n").flatMap((line, lineIndex, lines) => {
+    const parts = tokenizeAdvisorAnswerLine(line).map((part, partIndex) => {
+      const key = `${lineIndex}-${partIndex}`
+      if (part.kind === "strong") return <strong key={key}>{part.value}</strong>
+      if (part.kind === "link") {
+        return (
+          <a
+            key={key}
+            href={part.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: "inherit", fontWeight: 600, textDecoration: "underline", textUnderlineOffset: "2px", overflowWrap: "anywhere" }}
+          >
+            {part.label}
+          </a>
+        )
+      }
+      return <span key={key}>{part.value}</span>
     })
-    if (lineIndex < lines.length - 1) nodes.push(<br key={`br-${lineIndex}`} />)
+    return lineIndex < lines.length - 1
+      ? [...parts, <br key={`br-${lineIndex}`} />]
+      : parts
   })
-
-  return nodes
 }
 
 function normalizeText(value = "") {
