@@ -410,6 +410,19 @@
   border-bottom-left-radius: 5px;
   box-shadow: 0 5px 18px rgb(15 23 42 / 5%);
 }
+/* The generic bubble uses block bold labels, but AI prose needs inline
+   emphasis so punctuation, numbering and descriptions never stand alone. */
+.bkp-advisor-bubble.bkp-advisor-answer strong {
+  display: inline;
+  margin-bottom: 0;
+}
+.bkp-advisor-bubble.bkp-advisor-answer a {
+  color: #246c64;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  overflow-wrap: anywhere;
+}
+
 
 .bkp-advisor-answer-actions {
   display: flex;

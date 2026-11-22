@@ -32,6 +32,7 @@ import { resolveAdvisorLanguage } from "../../services/advisorLanguage"
 import { selectAidCandidatesForAdvisor } from "../../services/aidesRanking"
 import { prepareAdvisorAideContext } from "../../services/advisorAideContext"
 import { buildAdvisorRequestBody } from "../../services/advisorRequestPayload"
+import { normalizeAdvisorAnswerFormatting } from "../../services/advisorAnswerFormatting"
 import { buildLocalAidSourceAnswer, isLocalAidSourceRequest } from "../../services/advisorLocalAidAnswer"
 import {
   shouldLookupAdvisorAids,
@@ -107,19 +108,26 @@ const MODE_LABELS = {
 const advisorSessionByUser = new Map()
 
 function formatAdvisorAnswer(value = "") {
-  const text = String(value || "").replace(/\r\n/g, "\n")
+  const text = normalizeAdvisorAnswerFormatting(value)
   const lines = text.split("\n")
   const nodes = []
 
   lines.forEach((line, lineIndex) => {
-    const parts = line.split(/(\*\*[^*]+\*\*)/g).filter(Boolean)
+    // Display HTTPS references as actual links, not literal Markdown.
+    // React escapes all other text; no HTML from the model is evaluated.
+    const parts = line.split(/(\*\*[^*\n]+\*\*|\[[^\]\n]+\]\(https:\/\/[^\s)]+\))/g).filter(Boolean)
     parts.forEach((part, partIndex) => {
-      const strong = /^\*\*[^*]+\*\*$/.test(part)
-      nodes.push(strong
-        ? <strong key={`${lineIndex}-${partIndex}`}>{part.slice(2, -2)}</strong>
-        : <span key={`${lineIndex}-${partIndex}`}>{part.replace(/\*\*/g, "")}</span>)
+      const key = lineIndex + "-" + partIndex
+      const link = /^\[([^\]\n]+)\]\((https:\/\/[^\s)]+)\)$/.exec(part)
+      if (link) {
+        nodes.push(<a key={key} href={link[2]} target="_blank" rel="noopener noreferrer">{link[1]}</a>)
+      } else if (/^\*\*[^*]+\*\*$/.test(part)) {
+        nodes.push(<strong key={key}>{part.slice(2, -2)}</strong>)
+      } else {
+        nodes.push(<span key={key}>{part.replace(/\*\*/g, "")}</span>)
+      }
     })
-    if (lineIndex < lines.length - 1) nodes.push(<br key={`br-${lineIndex}`} />)
+    if (lineIndex < lines.length - 1) nodes.push(<br key={"br-" + lineIndex} />)
   })
 
   return nodes
