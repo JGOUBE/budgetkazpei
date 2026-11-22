@@ -3,11 +3,17 @@ import { findAidTopicIds, findPrimaryAidTopicIds } from "./aidTopics.js"
 
 const NON_MONETARY_AID_TYPES = new Set([
   "accompagnement", "aide_alimentaire", "aide_materielle",
-  "service_gratuit", "orientation",
+  "service_gratuit", "orientation", "reduction_tarifaire", "credit_culturel",
 ])
 
 export function formatAdvisorAideAmount(aide = {}) {
   // A service / association is not necessarily a grant or a cash benefit.
+  if (aide.type_dispositif === "reduction_tarifaire") {
+    return "Réduction sur frais ou facture : aucun versement automatique en espèces"
+  }
+  if (aide.type_dispositif === "credit_culturel") {
+    return "Crédit culturel réservé aux offres du dispositif, non convertible en espèces"
+  }
   if (NON_MONETARY_AID_TYPES.has(aide.type_dispositif)) {
     return "Service ou aide matérielle : aucun versement en espèces annoncé"
   }
