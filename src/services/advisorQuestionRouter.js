@@ -19,12 +19,18 @@ const NON_FINANCIAL = /\b(?:pollution|soleil|etoiles?|jupiter|saturne|planetes?|
 const LOCAL_SUPPORT_TOPIC = /\b(?:epiceries? (?:sociales?|solidaires?)|associations?|collectifs?|entraide|solidarite|restos du coeur|banque alimentaire|secours populaire|croix rouge|distribution alimentaire|colis alimentaires?|travailleur social|assistante sociale|point conseil budget|accompagnement social|maison des solidarites)\b/
 const LOCAL_SUPPORT_NEED = /\b(?:je cherche|je voudrais|j ai besoin|besoin d|besoin de|qui peut m aider|ou (?:trouver|aller|m adresser)|vers qui|comment (?:obtenir|contacter|trouver)|a qui (?:parler|demander)|koman (?:trouve|gagn)|kot (?:mi|moin)|mi cherche|mi besoin|ou trouve)\b/
 const FOOD_EMERGENCY = /\b(?:plus de quoi manger|pas de quoi manger|rien a manger|plus rien a manger|pas assez a manger|plus d argent pour manger|j ai faim et|mon frigo est vide)\b/
+// A request for groceries or food assistance is never a request to compare
+// previously recorded shopping statistics, even when it says "mes courses".
+const FOOD_HARDSHIP = /\b(?:je (?:n? ?ai|suis)|j ai|on a|nous avons|mi|moin).{0,50}\b(?:pas|plus|du mal|difficile|galere|assez|pou paie).{0,65}\b(?:manger|nourrir|acheter|payer|courses?|repas|nourriture)\b|\b(?:plus assez|pas assez|pas de quoi|plus de quoi|du mal a payer|difficultes? a payer|galere a payer).{0,70}\b(?:manger|nourrir|acheter a manger|mes courses|les courses|repas|nourriture|alimentaire)\b/
+const IMPOSSIBLE_TO_BUY_FOOD = /\b(?:je (?:ne )?(?:peux|arrive|parviens|reussis) (?:plus|pas)|je n ai (?:plus|pas) les moyens de).{0,60}\b(?:payer|acheter).{0,32}\b(?:courses?|repas|nourriture|aliments?)\b/
+const KREOL_FOOD_HARDSHIP = /\b(?:mi|moin|nou).{0,35}\b(?:pu|pi|pa|gagne pu|arrive pu).{0,45}\b(?:manze|mange|nourriture|achete|acheter|course|repas)\b/
+const SUPPORT_REQUEST_WORDS = /\b(?:quelles? associations?|quels? collectifs?|qui peut nous aider|peuvent m aider|peut m aider|pour m aider|pour nous aider|a qui dois je m adresser|qui contacter|ou je peux aller|besoin de soutien)\b/
 const DIRECT_SUPPORT = /\b(?:je suis victime|je subis des violences|je vis des violences|victime de violences|violences conjugales|violences intrafamiliales|mon conjoint me frappe|on me harcele|je suis harcele|besoin de soutien scolaire|besoin d aide aux devoirs|je cherche du soutien scolaire|je recherche du soutien scolaire|mon enfant a des difficultes scolaires|mon enfant a besoin d aide aux devoirs)\b/
 
 export function isLocalSupportRequest(question = "") {
   const text = normalizeAidTopicText(question)
-  return FOOD_EMERGENCY.test(text) || DIRECT_SUPPORT.test(text) ||
-    (LOCAL_SUPPORT_TOPIC.test(text) && LOCAL_SUPPORT_NEED.test(text))
+  return FOOD_EMERGENCY.test(text) || FOOD_HARDSHIP.test(text) || IMPOSSIBLE_TO_BUY_FOOD.test(text) || KREOL_FOOD_HARDSHIP.test(text) || DIRECT_SUPPORT.test(text) ||
+    (LOCAL_SUPPORT_TOPIC.test(text) && (LOCAL_SUPPORT_NEED.test(text) || SUPPORT_REQUEST_WORDS.test(text)))
 }
 
 export function looksPlayfulOrFictionalQuestion(question = "") {
@@ -59,6 +65,7 @@ export function shouldUseLocalBudgetAnswer({question = "",mode = "general",inten
   if (intent === "unknown") return false
   if (looksPlayfulOrFictionalQuestion(question)) return false
   const text = normalizeAidTopicText(question)
+  if (isLocalSupportRequest(question)) return false
   const personal = PERSONAL_BUDGET.test(text) || PERSONAL_DISTRIBUTION.test(text)
   // Strongly non-financial wording should never trigger a budget answer just
   // because it contains generic words like réduire, cours(es) or abonnement.

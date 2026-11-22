@@ -19,9 +19,15 @@ const PLAYFUL = /\b(?:licornes?|dragons?|extraterrestres?|magique|sorcier|devine
 const EXTRA_FINANCE_AND_ADMIN = /\b(?:une aide|des aides|mon aide|aide pour (?:mon |ma |mes |le |la |les )?(?:logement|loyer|enfant|famille|factur|energie|travail|emploi|formation|retraite|sante)|aide a payer|obtenir (?:une|des) aides?|beneficier (?:d une|des) aides?|droit a (?:une|des) aides?|subventions?|fin de mois|reste a vivre|decouvert bancaire|besoin d argent|pas assez d argent|chomage|sans emploi|demandeur d emploi|indemnisation|allocation chomage|mes charges|mon solde|faire des economies|mettre de cote|echelonner (?:un paiement|une dette)|courrier administratif|lettre administrative|email administratif|relance administrative|rendez vous administratif|demarches administratives|trouver un emploi|recherche d emploi|financer une formation|formation professionnelle)\b/
 // Assistance from local associations, CCAS and solidarity collectives is a
 // useful advisor request, even without the words "CAF" or "aide financière".
-const LOCAL_HELP = /\b(?:epicerie (?:sociale|solidaire)|associations?|collectifs?|entraide|banque alimentaire|restos du coeur|secours populaire|croix rouge|distribution alimentaire|travailleur social|assistante sociale|maison des solidarites|colis alimentaire)\b/
+const LOCAL_HELP = /\b(?:epiceries? (?:sociales?|solidaires?)|associations?|collectifs?|entraide|banque alimentaire|restos du coeur|secours populaire|croix rouge|distributions? alimentaires?|travailleur social|assistante sociale|maison des solidarites|colis alimentaires?)\b/
 const HELP_INTENT = /\b(?:je cherche|j ai besoin|besoin de|besoin d|ou trouver|ou aller|vers qui|qui peut m aider|comment contacter|comment obtenir|a qui demander|mi cherche|mi besoin|koman trouve|kot mi)\b/
 const FOOD_EMERGENCY = /\b(?:plus de quoi manger|pas de quoi manger|rien a manger|plus rien a manger|plus d argent pour manger|mon frigo est vide)\b/
+// Financial hardship with food or grocery wording requires social assistance,
+// not an off-topic answer or an automatic personal-spending analysis.
+const FOOD_HARDSHIP = /\b(?:je (?:n? ?ai|suis)|j ai|on a|nous avons|mi|moin).{0,50}\b(?:pas|plus|du mal|difficile|galere|assez|pou paie).{0,65}\b(?:manger|nourrir|acheter|payer|courses?|repas|nourriture)\b|\b(?:plus assez|pas assez|pas de quoi|plus de quoi|du mal a payer|difficultes? a payer|galere a payer).{0,70}\b(?:manger|nourrir|acheter a manger|mes courses|les courses|repas|nourriture|alimentaire)\b/
+const IMPOSSIBLE_TO_BUY_FOOD = /\b(?:je (?:ne )?(?:peux|arrive|parviens|reussis) (?:plus|pas)|je n ai (?:plus|pas) les moyens de).{0,60}\b(?:payer|acheter).{0,32}\b(?:courses?|repas|nourriture|aliments?)\b/
+const KREOL_FOOD_HARDSHIP = /\b(?:mi|moin|nou).{0,35}\b(?:pu|pi|pa|gagne pu|arrive pu).{0,45}\b(?:manze|mange|nourriture|achete|acheter|course|repas)\b/
+const LOCAL_SUPPORT_QUESTION = /\b(?:quelles? associations?|quels? collectifs?|qui peut nous aider|peuvent m aider|peut m aider|pour m aider|pour nous aider|a qui dois je m adresser|qui contacter|ou je peux aller|besoin de soutien)\b/
 const DIRECT_SUPPORT = /\b(?:je suis victime|je subis des violences|je vis des violences|victime de violences|violences conjugales|violences intrafamiliales|mon conjoint me frappe|on me harcele|je suis harcele|besoin de soutien scolaire|besoin d aide aux devoirs|je cherche du soutien scolaire|je recherche du soutien scolaire|mon enfant a des difficultes scolaires|mon enfant a besoin d aide aux devoirs)\b/
 
 const BUDGET_SHORTCUT = /^(?:que puis je reduire|ou puis je economiser|comment reduire|comment economiser|comment ameliorer mon budget|combien me reste(?: t il)?|ou va mon argent)\b/
@@ -51,7 +57,7 @@ export function classifyAdvisorSpendScope({question = "", mode = "general", acti
   if (CLEAR_GENERAL_QUERY.test(text)) return "offtopic"
   if (NON_FINANCIAL_HOMONYMS.test(text) && !PERSONAL_MONEY.test(text)) return "offtopic"
   if (PLAYFUL.test(text) && !PERSONAL_MONEY.test(text)) return "offtopic"
-  if (FOOD_EMERGENCY.test(text) || DIRECT_SUPPORT.test(text) || (LOCAL_HELP.test(text) && HELP_INTENT.test(text))) return "useful"
+  if (FOOD_EMERGENCY.test(text) || FOOD_HARDSHIP.test(text) || IMPOSSIBLE_TO_BUY_FOOD.test(text) || KREOL_FOOD_HARDSHIP.test(text) || DIRECT_SUPPORT.test(text) || (LOCAL_HELP.test(text) && (HELP_INTENT.test(text) || LOCAL_SUPPORT_QUESTION.test(text)))) return "useful"
   if (MONEY_AND_BENEFITS.test(text) || ADMIN_AND_FINANCIAL_ADVICE.test(text) || EXTRA_FINANCE_AND_ADMIN.test(text)) return "useful"
   // A short follow-up to a selected financial/administrative tool remains
   // useful. Longer self-contained unrelated queries cannot spoof this mode.
