@@ -54,18 +54,20 @@ const COPY = {
     heroEyebrow: "Une application pensée pour La Réunion",
     heroTitleLead: "Plus qu’un budget.",
     heroTitleFocus: "Des décisions éclairées.",
-    heroLead: "Budget, courses, aides et conseils personnalisés : mieux comprendre son argent, à La Réunion.",
+    heroLead: "Analysez vos achats avec Courses intelligentes. Posez vos questions à un Conseiller qui tient compte des informations disponibles.",
+    islandTitle: "La Rényon lé la !",
+    islandText: "Nout Konseyé i répond aou an kréol. BudgetKazPeï i aide aou konpran out courses.",
     heroPrimary: "Commencer gratuitement",
     heroSecondary: "Comment ça marche ?",
-    quick: [{ label: "Budget", href: "#fonctionnalites" }, { label: "Courses", href: "#fonctionnalites" }, { label: "Aides", href: "#fonctionnalites" }, { label: "Conseiller", href: "#conseiller" }, { label: "Bons plans", href: "#bons-plans" }],
-    featureEyebrow: "L’essentiel, sans complication",
-    featureTitle: "Tout pour mieux décider.",
-    featureLead: "Quatre outils, un seul espace.",
+    quick: [{ label: "Budget", href: "#fonctionnalites" }, { label: "Courses intelligentes", href: "#courses-intelligentes" }, { label: "Aides", href: "#fonctionnalites" }, { label: "Conseiller", href: "#conseiller" }, { label: "Bons plans", href: "#bons-plans" }],
+    featureEyebrow: "Notre différence",
+    featureTitle: "Mieux acheter. Mieux décider.",
+    featureLead: "Courses intelligentes et Mon Conseiller : deux outils pour comprendre et agir, avec le budget et les aides à portée de main.",
     features: [
-      { title: "Mon budget", lead: "Voyez ce qui entre, sort et reste.", Icon: Wallet, tone: "mint" },
-      { title: "Mes courses", lead: "Tickets, habitudes et listes de courses.", Icon: ShoppingBasket, tone: "blue" },
-      { title: "Mes aides", lead: "Repérez vos droits et préparez vos démarches.", Icon: HandHeart, tone: "lavender" },
-      { title: "Mon Conseiller", lead: "Des pistes adaptées aux données disponibles.", Icon: MessageCircle, tone: "sage" },
+      { title: "Courses intelligentes", lead: "Tickets analysés, habitudes d’achat et pistes pour mieux préparer vos courses.", Icon: ShoppingBasket, tone: "blue", featured: true, anchor: "courses-intelligentes", link: "Découvrir mes courses" },
+      { title: "Mon Conseiller", lead: "Des réponses contextualisées pour comprendre vos dépenses et préparer vos démarches.", Icon: MessageCircle, tone: "sage", featured: true, anchor: "conseiller-apercu", link: "Voir un exemple" },
+      { title: "Mon budget", lead: "Revenus, dépenses et reste disponible.", Icon: Wallet, tone: "mint" },
+      { title: "Mes aides", lead: "Des aides à repérer et des démarches à préparer.", Icon: HandHeart, tone: "lavender" },
     ],
     advisorEyebrow: "Un Conseiller qui va plus loin",
     advisorTitle: "Il ne répond pas seulement. Il aide à comprendre.",
@@ -97,18 +99,20 @@ const COPY = {
     heroEyebrow: "In aplikasyon pansé pou La Rényon",
     heroTitleLead: "Pa zis in bidjé.",
     heroTitleFocus: "Bann désizion pli klèr.",
-    heroLead: "Bidjé, courses, bann èd ek konsey adapté : konpran out larzan dann La Rényon.",
+    heroLead: "Avèk Courses intelligentes, konpran out achats. Koz avèk in Konseyé ki servi bann donné disponib.",
+    islandTitle: "La Rényon lé la !",
+    islandText: "Nout Konseyé i répond aou an kréol. BudgetKazPeï i aide aou konpran out courses.",
     heroPrimary: "Koumans gratis",
     heroSecondary: "Koman sa i mars ?",
-    quick: [{ label: "Bidjé", href: "#fonctionnalites" }, { label: "Courses", href: "#fonctionnalites" }, { label: "Bann èd", href: "#fonctionnalites" }, { label: "Konseyé", href: "#conseiller" }, { label: "Bon Plan", href: "#bons-plans" }],
-    featureEyebrow: "Sak lé esansyèl, san komplikasyon",
-    featureTitle: "Tout pou mié désidé.",
-    featureLead: "Kat zouti dann in sèl lespas.",
+    quick: [{ label: "Bidjé", href: "#fonctionnalites" }, { label: "Courses intelligentes", href: "#courses-intelligentes" }, { label: "Bann èd", href: "#fonctionnalites" }, { label: "Konseyé", href: "#conseiller" }, { label: "Bon Plan", href: "#bons-plans" }],
+    featureEyebrow: "Sak i fé la diferans",
+    featureTitle: "Mié achté. Mié désidé.",
+    featureLead: "Courses intelligentes ek Mon Konseyé pou konpran ek azir. Bidjé ek bann èd lé osi la.",
     features: [
-      { title: "Mon bidjé", lead: "War sak i rantre, sak i sort ek sak i reste.", Icon: Wallet, tone: "mint" },
-      { title: "Mon bann courses", lead: "Tiké, labitid achat ek list courses.", Icon: ShoppingBasket, tone: "blue" },
-      { title: "Mon bann èd", lead: "Repèr bann drwa ek prépar out bann démars.", Icon: HandHeart, tone: "lavender" },
-      { title: "Mon Konseyé", lead: "Bann piste selon bann donné disponib.", Icon: MessageCircle, tone: "sage" },
+      { title: "Courses intelligentes", lead: "Tiké analizé, labitid achat ek bann piste pou prépar out courses.", Icon: ShoppingBasket, tone: "blue", featured: true, anchor: "courses-intelligentes", link: "Dékouv mon courses" },
+      { title: "Mon Konseyé", lead: "Bann répons adapté pou konpran out dépans ek prépar out bann démars.", Icon: MessageCircle, tone: "sage", featured: true, anchor: "conseiller-apercu", link: "War in legzanp" },
+      { title: "Mon bidjé", lead: "Larzan i rantre, dépans ek sak i reste.", Icon: Wallet, tone: "mint" },
+      { title: "Mon bann èd", lead: "Bann èd a repéré ek bann démars a prépar.", Icon: HandHeart, tone: "lavender" },
     ],
     advisorEyebrow: "In Konseyé ki va pli lwin",
     advisorTitle: "Li répond pa zis. Li aide aou konpran.",
@@ -185,6 +189,10 @@ export default function PublicHomePage({ isAuthenticated = false }) {
             </LandingLink>
             <a className="landing-link-button landing-link-button--ghost" href="#fonctionnalites">{copy.heroSecondary}</a>
           </div>
+          <div className="bk-island-signature" aria-label="BudgetKazPeï en créole réunionnais" lang="rcf">
+            <img src="/reunion-flag-unified-v2.svg" alt="Drapeau réunionnais" width="53" height="36" loading="lazy" />
+            <div><strong>{copy.islandTitle}</strong><span>{copy.islandText}</span></div>
+          </div>
         </div>
       </section>
 
@@ -204,11 +212,12 @@ export default function PublicHomePage({ isAuthenticated = false }) {
             <p>{copy.featureLead}</p>
           </div>
           <div className="bk-feature-grid">
-            {copy.features.map(({ title, lead, Icon, tone }) => (
-              <article className={"bk-feature bk-feature--" + tone} key={title}>
-                <span className="bk-feature__icon"><Icon size={22} strokeWidth={1.8} aria-hidden="true" /></span>
+            {copy.features.map(({ title, lead, Icon, tone, featured, anchor, link }) => (
+              <article id={anchor} className={"bk-feature bk-feature--" + tone + (featured ? " bk-feature--featured" : "")} key={title}>
+                <span className="bk-feature__icon"><Icon size={featured ? 26 : 22} strokeWidth={1.8} aria-hidden="true" /></span>
                 <h3>{title}</h3>
                 <p>{lead}</p>
+                {featured && <a href={tone === "sage" ? "#conseiller" : appHref} className="bk-feature__link">{link}<ArrowUpRight size={17} aria-hidden="true" /></a>}
               </article>
             ))}
           </div>
