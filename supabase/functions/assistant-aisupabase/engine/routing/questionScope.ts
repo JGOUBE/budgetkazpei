@@ -18,6 +18,7 @@ const ADMIN = /\b(?:mon dossier|ma demande|mon courrier|mon refus|mon recours|ma
 const LOCAL_HELP = /\b(?:epicerie (?:sociale|solidaire)|associations?|collectifs?|entraide|banque alimentaire|restos du coeur|secours populaire|croix rouge|distribution alimentaire|travailleur social|assistante sociale|maison des solidarites|colis alimentaire)\b/
 const HELP_INTENT = /\b(?:je cherche|j ai besoin|besoin de|besoin d|ou trouver|ou aller|vers qui|qui peut m aider|comment contacter|comment obtenir|a qui demander|mi cherche|mi besoin|koman trouve|kot mi)\b/
 const FOOD_EMERGENCY = /\b(?:plus de quoi manger|pas de quoi manger|rien a manger|plus rien a manger|plus d argent pour manger|mon frigo est vide)\b/
+const DIRECT_SUPPORT = /\b(?:je suis victime|je subis des violences|je vis des violences|victime de violences|violences conjugales|violences intrafamiliales|mon conjoint me frappe|on me harcele|je suis harcele|besoin de soutien scolaire|besoin d aide aux devoirs|je cherche du soutien scolaire|je recherche du soutien scolaire|mon enfant a des difficultes scolaires|mon enfant a besoin d aide aux devoirs)\b/
 
 const GUARDED_MODES = new Set<AssistantMode>([
   "budget_depenses","trouver_aide","preparer_dossier","generer_courrier",
@@ -36,7 +37,7 @@ export function isProtectedAdvisorQuestion({
   const text = normalize(question)
   if (action === "analyze_refusal") return true
   if (FICTIONAL.test(text)) return false
-  if (FOOD_EMERGENCY.test(text) || (LOCAL_HELP.test(text) && HELP_INTENT.test(text))) return true
+  if (FOOD_EMERGENCY.test(text) || DIRECT_SUPPORT.test(text) || (LOCAL_HELP.test(text) && HELP_INTENT.test(text))) return true
   if (BENEFITS.test(text) || PERSONAL_BUDGET.test(text) || ADMIN.test(text)) return true
   if (GUARDED_MODES.has(mode as AssistantMode)) return true
 
