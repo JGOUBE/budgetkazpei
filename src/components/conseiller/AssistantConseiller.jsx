@@ -514,8 +514,20 @@ export default function AssistantConseiller({
       selectedAides,
       assistantIsKreol,
       conversationContext.rankingQuery,
-    )
-    const financialContext = buildAssistantAiSummary(questionInsights || financialInsights, detectedIntent)
+    ).slice(0, 5).map(aide => ({
+      ...aide,
+      description: String(aide.description || "").slice(0, 520),
+      demarches: String(aide.demarches || "").slice(0, 420),
+      periode_validite: String(aide.periode_validite || "").slice(0, 250),
+    }))
+    // Ne pas envoyer les transactions détaillées pour une demande d'aide alimentaire.
+    const needsAidKnowledge = shouldLookupAdvisorAids({ question: sentQuestion, mode })
+    const needsBudgetFigures = mode === "scan_profil" || (!needsAidKnowledge && (
+      mode === "budget_depenses" || isBudgetAssistantIntent(detectedIntent) || detectedIntent === "cheapest_stores"
+    ))
+    const financialContext = needsBudgetFigures
+      ? buildAssistantAiSummary(questionInsights || financialInsights, detectedIntent)
+      : null
 
     const localContext = {
       commune: currentProfile?.commune || "",
@@ -527,7 +539,7 @@ export default function AssistantConseiller({
       revenus_details: currentProfile?.revenus_details ?? null,
       allocataire_caf: currentProfile?.allocataire_caf ?? null,
       financial: financialContext,
-      financial_context_status: financialContextError ? "partially_unavailable" : "available",
+      financial_context_status: !needsBudgetFigures ? "not_requested" : financialContextError ? "partially_unavailable" : "available",
       financial_reliability_rules: {
         aggregated_only: true,
         historical_prices_may_have_changed: true,
@@ -565,21 +577,27 @@ export default function AssistantConseiller({
         interfaceLanguage,
         isKreol: assistantIsKreol,
         isQuickPreset: isQuickPreset || mode === "scan_profil",
-        profile: currentProfile,
-        profile_summary: buildProfileSummary(currentProfile, assistantIsKreol),
+        profile: {
+          commune: currentProfile?.commune || null,
+          situation_familiale: currentProfile?.situation_familiale || null,
+          logement: currentProfile?.logement || null,
+          situation_professionnelle: currentProfile?.situation_professionnelle || null,
+          nombre_enfants: currentProfile?.nombre_enfants ?? null,
+          revenus_foyer: currentProfile?.revenus_foyer ?? null,
+          revenus_details: currentProfile?.revenus_details ?? null,
+          allocataire_caf: currentProfile?.allocataire_caf ?? null,
+        },
         localContext,
         recommendedAides: preparedAides,
-        recommended_aides: preparedAides,
         reunionOrientation: REUNION_ORIENTATION,
-        reunion_orientation: REUNION_ORIENTATION,
         advisorHandoffContext: handoffContext || null,
         conversationContext: {
           ...conversationContext,
           noRelevantAlternative,
         },
-        recentHistory: (recentHistory || []).map(item => ({
-          question: item.question,
-          answer: item.answer,
+        recentHistory: (recentHistory || []).slice(0, 3).map(item => ({
+          question: String(item.question || "").slice(0, 350),
+          answer: String(item.answer || "").slice(0, 550),
           mode: item.mode,
           source: item.source || null,
           createdAt: item.createdAt,
@@ -592,10 +610,15 @@ export default function AssistantConseiller({
 
     if (error) {
       console.error("Erreur Edge Function assistant-aisupabase:", error)
-      return {
-        success: false,
-        error: error.message || "Erreur assistant IA.",
-      }
+      let readableError = error.message || "Le conseiller est momentanément indisponible."
+      try {
+        const payload = await error.context?.clone?.().json?.()
+        if (typeof payload?.error === "string") readableError = payload.error
+      } catch (_) { /* Réponse non JSON. */ }
+      if (error.context?.status === 413) readableError = assistantIsKreol
+        ? "Trop renseignman dan la demande. Essaye in kestyon plus ciblée."
+        : "Le contexte de la demande est trop volumineux. Essayez de préciser le sujet."
+      return { success: false, error: readableError }
     }
 
     return data
@@ -624,6 +647,7 @@ export default function AssistantConseiller({
     // The budget engine is for the user's recorded finances, not for every
     // occurrence of "réduire", "course" or "abonnement" in an unusual question.
     const shouldAnswerLocally = (
+      !shouldLookupAdvisorAids({ question: sentQuestion, mode: currentMode }) &&
       (currentMode === "budget_depenses" || currentMode === "general") &&
       (isBudgetAssistantIntent(detectedIntent) || detectedIntent === "cheapest_stores") &&
       shouldUseLocalBudgetAnswer({
