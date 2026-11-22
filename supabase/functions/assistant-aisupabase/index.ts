@@ -1230,7 +1230,7 @@ Deno.serve(async (req) => {
           organisme: aide.organisme, type_dispositif: aide.type_dispositif,
           verification_status: aide.verification_status,
           description: String(aide.description || "").slice(0, 300),
-          demarches: String(aide.demarches || "").slice(0, 250),
+          demarches: String(aide.demarches || "").slice(0, 240),
           lien_officiel: aide.lien_officiel || aide.lien,
         }))
       const compactBody = {
