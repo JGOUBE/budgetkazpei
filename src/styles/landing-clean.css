@@ -696,14 +696,13 @@ html[data-theme="dark"]:has(.bk-landing) #root {
   border-top: 1px solid var(--bk-line);
 }
 .bk-landing:not(.bk-offers-page) .bk-island-signature img {
-  width: 53px;
-  height: 36px;
-  flex: 0 0 53px;
+  width: 56px;
+  height: 35px;
+  flex: 0 0 56px;
   border: 1px solid #bdd0cc;
   border-radius: 5px;
-  object-fit: cover;
-  object-position: 50% 40%;
-  background: #0e63cb;
+  object-fit: contain;
+  background: #1769b4;
 }
 .bk-landing:not(.bk-offers-page) .bk-island-signature > div {
   display: flex;
@@ -798,9 +797,9 @@ html[data-theme="dark"]:has(.bk-landing) #root {
     gap: 12px;
   }
   .bk-landing:not(.bk-offers-page) .bk-island-signature img {
-    width: 47px;
-    height: 34px;
-    flex-basis: 47px;
+    width: 49px;
+    height: 31px;
+    flex-basis: 49px;
   }
   .bk-landing:not(.bk-offers-page) .bk-island-signature strong {
     font-size: 1rem;
