@@ -56,6 +56,18 @@ assert.match(noCash[0].montant,/Crédit culturel/)
 assert.match(noCash[1].montant,/Réduction/)
 
 
+const supportCases = [
+  {id:"legal",nom:"ARAJUFA France Victimes Réunion",categorie:"social",
+    description_fr:"Accompagnement de victimes de violences et soutien juridique",actif:true},
+  {id:"homework",nom:"CLAS — accompagnement à la scolarité",categorie:"scolarite",
+    description_fr:"Soutien scolaire et aide aux devoirs des enfants",actif:true},
+  {id:"food",nom:"Épicerie solidaire Saint-Leu",categorie:"alimentaire",
+    description_fr:"Colis alimentaires et entraide",actif:true},
+]
+assert.equal(selectAidCandidatesForAdvisor(supportCases,{},"Je suis victime de violences")[0]?.id,"legal")
+assert.equal(selectAidCandidatesForAdvisor(supportCases,{},"Mon enfant a des difficultés scolaires")[0]?.id,"homework")
+assert.equal(selectAidCandidatesForAdvisor(supportCases,{},"Je ne peux plus payer mes courses alimentaires")[0]?.id,"food")
+
 const localAides = [
   { id:1, nom:"Épicerie solidaire Saint-Pierre",commune:"Saint-Pierre",categorie:"alimentaire",
     description_fr:"Distribution alimentaire solidaire",score_priorite:200,actif:true },
