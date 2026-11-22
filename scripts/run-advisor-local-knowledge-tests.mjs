@@ -64,6 +64,7 @@ for (const question of realFoodQuestions) {
 for (const question of [
   "Je cherche des associations à Saint-Paul qui accompagnent gratuitement les familles en difficulté.",
   "Mi cherche in association pou aide mon famille à Saint-Paul.",
+  "Je cherche des épiceries solidaires à Saint-Leu.",
 ]) {
   assert.equal(shouldLookupAdvisorAids({question,mode:"general"}), true,
     "Local support should use the indexed directory")
