@@ -399,6 +399,7 @@ CONNAISSANCE DES AIDES ET SOLIDARITÉS À LA RÉUNION :
 - La localisation d'un siège social ne prouve pas que l'organisme couvre seulement cette commune ; si la zone couverte est inconnue, indique qu'il faut confirmer l'accueil et les conditions directement.
 - Les besoins et restrictions mentionnés dans une fiche sont des pistes d'orientation, pas une décision d'éligibilité. Ne rejette pas une piste sur un plafond de revenus générique non sourcé, un âge incertain ou une situation familiale incomplète.
 - Si la question concerne plusieurs difficultés, traite en priorité la plus urgente et propose ensuite les pistes complémentaires sans écraser une catégorie par une autre.
+- Urgence alimentaire ou manque de nourriture : oriente d'abord vers des structures nommées dans les fiches pertinentes, la démarche de prescription sociale éventuelle et le CCAS ; ne remplace jamais cette orientation par des statistiques d'achats, un menu générique ou le conseil de demander simplement à des amis.
 - Si le catalogue ne contient pas de structure vérifiée pour la commune ou la difficulté, dis-le clairement. N'invente ni association, adresse, horaires, téléphone, montant, couverture territoriale ou disponibilité.
 - Pour toute prestation, les liens du catalogue sont des points de départ, non des preuves d'actualisation ; signale les informations à confirmer avant une demande.
 
@@ -1171,7 +1172,7 @@ Deno.serve(async (req) => {
           )
         : null
 
-    const userPrompt =
+    let userPrompt =
       context.action === "analyze_refusal"
         ? buildRefusalPrompt(context.body, context.language)
         : protectedTopic
@@ -1196,6 +1197,65 @@ Deno.serve(async (req) => {
       : buildOpenQuestionSystemPrompt(
           context.language, context.allowBilingualResponse,
         )
+
+    // Les fiches, l'historique et les relevés peuvent gonfler le prompt au-delà
+    // de la limite protectrice. Réduire le contexte avant de renvoyer un 413.
+    // Il vaut mieux une réponse prudente basée sur les données essentielles
+    // qu'une erreur systématique pour un utilisateur ayant beaucoup de tickets.
+    if (userPrompt.length > 32000 && protectedTopic && context.action !== "analyze_refusal") {
+      const originalPromptLength = userPrompt.length
+      const originalFinancial = context.body?.localContext?.financial
+      const budget = originalFinancial?.budgetAdvisorContext || {}
+      const compactFinancial = originalFinancial
+        ? {
+            intent: originalFinancial.intent,
+            budgetAdvisorContext: {
+              period: budget.period,
+              dataCompleteness: budget.dataCompleteness,
+              income: budget.income,
+              expenses: budget.expenses,
+              remainingAfterFixedExpenses: budget.remainingAfterFixedExpenses,
+              currentAvailableMargin: budget.currentAvailableMargin,
+              spendingByCategory: Array.isArray(budget.spendingByCategory)
+                ? budget.spendingByCategory.slice(0, 5)
+                : [],
+            },
+          }
+        : null
+      const originalAides = context.body.recommendedAides || context.body.recommended_aides || []
+      const compactAides = (Array.isArray(originalAides) ? originalAides : [])
+        .slice(0, 4)
+        .map((aide: any) => ({
+          id: aide.id, nom: aide.nom, commune: aide.commune,
+          organisme: aide.organisme, type_dispositif: aide.type_dispositif,
+          verification_status: aide.verification_status,
+          description: String(aide.description || "").slice(0, 300),
+          demarches: String(aide.demarches || "").slice(0, 250),
+          lien_officiel: aide.lien_officiel || aide.lien,
+        }))
+      const compactBody = {
+        ...context.body,
+        localContext: { ...context.body.localContext, financial: compactFinancial },
+        recommendedAides: compactAides,
+        recommended_aides: [],
+        reunionOrientation: [],
+        reunion_orientation: [],
+        recentHistory: (Array.isArray(context.body.recentHistory) ? context.body.recentHistory : [])
+          .slice(0, 2)
+          .map((item: any) => ({
+            question: String(item.question || "").slice(0, 200),
+            answer: String(item.answer || "").slice(0, 300),
+          })),
+      }
+      userPrompt = buildUserPrompt(
+        compactBody, context.language, context.mode,
+        null, consistency, truthReport, trustedAidFacts.slice(0, 4),
+      )
+      console.info("ADVISOR_CONTEXT_COMPACTED", JSON.stringify({
+        reason: "prompt_size_guard", originalLength: originalPromptLength,
+        compactLength: userPrompt.length, keptAides: compactAides.length,
+      }))
+    }
 
     // Avoid accidentally sending huge account snapshots to the model.
     if (userPrompt.length > 32000) {
