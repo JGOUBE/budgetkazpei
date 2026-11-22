@@ -12,6 +12,7 @@ BEGIN
  IF NOT EXISTS(SELECT 1 FROM public.aides_reunion WHERE lower(nom)=lower(r.nom)) THEN
  next_id := next_id + 1;
  INSERT INTO public.aides_reunion(id,nom,categorie,commune,zone_couverte,organisme,type_dispositif,description,description_fr,description_kreol,demarches_fr,demarches_kreol,lien,lien_officiel,source_verification,statut_verification,date_verification,periode_validite,score_priorite,besoin_enfant,besoin_handicap,besoin_retraite,besoin_locataire,besoin_demandeur_emploi,actif)
+ OVERRIDING SYSTEM VALUE
  VALUES(next_id,r.nom,r.categorie,r.commune,r.zone_couverte,r.organisme,r.type_dispositif,r.description_fr,r.description_fr,r.description_kreol,r.demarches_fr,r.demarches_kreol,r.lien_officiel,r.lien_officiel,r.source_verification,r.statut_verification,r.date_verification,r.periode_validite,r.score_priorite,r.besoin_enfant,r.besoin_handicap,r.besoin_retraite,r.besoin_locataire,r.besoin_demandeur_emploi,true);
  END IF;
  END LOOP;
