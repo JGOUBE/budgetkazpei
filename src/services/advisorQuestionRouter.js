@@ -22,12 +22,13 @@ const FOOD_EMERGENCY = /\b(?:plus de quoi manger|pas de quoi manger|rien a mange
 // A request for groceries or food assistance is never a request to compare
 // previously recorded shopping statistics, even when it says "mes courses".
 const FOOD_HARDSHIP = /\b(?:je (?:n? ?ai|suis)|j ai|on a|nous avons|mi|moin).{0,50}\b(?:pas|plus|du mal|difficile|galere|assez|pou paie).{0,65}\b(?:manger|nourrir|acheter|payer|courses?|repas|nourriture)\b|\b(?:plus assez|pas assez|pas de quoi|plus de quoi|du mal a payer|difficultes? a payer|galere a payer).{0,70}\b(?:manger|nourrir|acheter a manger|mes courses|les courses|repas|nourriture|alimentaire)\b/
+const KREOL_FOOD_HARDSHIP = /\b(?:mi|moin|nou).{0,35}\b(?:pu|pi|pa|gagne pu|arrive pu).{0,45}\b(?:manze|mange|nourriture|achete|acheter|course|repas)\b/
 const SUPPORT_REQUEST_WORDS = /\b(?:quelles? associations?|quels? collectifs?|qui peut nous aider|peuvent m aider|peut m aider|pour m aider|pour nous aider|a qui dois je m adresser|qui contacter|ou je peux aller|besoin de soutien)\b/
 const DIRECT_SUPPORT = /\b(?:je suis victime|je subis des violences|je vis des violences|victime de violences|violences conjugales|violences intrafamiliales|mon conjoint me frappe|on me harcele|je suis harcele|besoin de soutien scolaire|besoin d aide aux devoirs|je cherche du soutien scolaire|je recherche du soutien scolaire|mon enfant a des difficultes scolaires|mon enfant a besoin d aide aux devoirs)\b/
 
 export function isLocalSupportRequest(question = "") {
   const text = normalizeAidTopicText(question)
-  return FOOD_EMERGENCY.test(text) || FOOD_HARDSHIP.test(text) || DIRECT_SUPPORT.test(text) ||
+  return FOOD_EMERGENCY.test(text) || FOOD_HARDSHIP.test(text) || KREOL_FOOD_HARDSHIP.test(text) || DIRECT_SUPPORT.test(text) ||
     (LOCAL_SUPPORT_TOPIC.test(text) && (LOCAL_SUPPORT_NEED.test(text) || SUPPORT_REQUEST_WORDS.test(text)))
 }
 
