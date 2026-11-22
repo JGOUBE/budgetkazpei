@@ -209,4 +209,6 @@ assert.match(backend,/N'invente ni association, adresse, horaires/)
 assert.match(backend,/rpc\("reserve_advisor_ai_request"/)
 assert.ok(backend.indexOf('rpc("reserve_advisor_ai_request"') <
   backend.indexOf("const openAiResult = await callOpenAi"))
+assert.match(backend,/ADVISOR_CONTEXT_COMPACTED/)
+assert.match(backend,/if \(userPrompt.length > 32000 && protectedTopic/)
 console.log("OK: real solidarity needs, local associations, request-area priority, multi-need diversity, bounded contextual aid recall.")
