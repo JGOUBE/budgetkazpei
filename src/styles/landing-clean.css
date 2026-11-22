@@ -683,3 +683,154 @@ html[data-theme="dark"]:has(.bk-landing) #root {
     gap: 8px;
   }
 }
+
+
+/* Signature locale et bénéfices distinctifs : une hiérarchie sobre, sans reflets. */
+.bk-landing:not(.bk-offers-page) .bk-island-signature {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  max-width: 780px;
+  padding-top: 19px;
+  margin-top: 29px;
+  border-top: 1px solid var(--bk-line);
+}
+.bk-landing:not(.bk-offers-page) .bk-island-signature img {
+  width: 53px;
+  height: 36px;
+  flex: 0 0 53px;
+  border: 1px solid #bdd0cc;
+  border-radius: 5px;
+  object-fit: cover;
+  object-position: 50% 40%;
+  background: #0e63cb;
+}
+.bk-landing:not(.bk-offers-page) .bk-island-signature > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 3px 12px;
+  min-width: 0;
+}
+.bk-landing:not(.bk-offers-page) .bk-island-signature strong {
+  font-size: 1.08rem;
+  color: #215c48;
+  font-weight: 780;
+  white-space: nowrap;
+}
+.bk-landing:not(.bk-offers-page) .bk-island-signature span {
+  font-size: 1rem;
+  line-height: 1.5;
+  color: #46625c;
+}
+.bk-landing:not(.bk-offers-page) .bk-feature-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  border-bottom: 0;
+}
+.bk-landing:not(.bk-offers-page) .bk-feature,
+.bk-landing:not(.bk-offers-page) .bk-feature + .bk-feature,
+.bk-landing:not(.bk-offers-page) .bk-feature:nth-child(3) {
+  border-left: 0;
+  border-top: 0;
+  padding: 22px 30px 22px 0;
+}
+.bk-landing:not(.bk-offers-page) .bk-feature:nth-child(even) {
+  border-left: 1px solid var(--bk-line);
+  padding-left: 28px;
+}
+.bk-landing:not(.bk-offers-page) .bk-feature:nth-child(n+3) {
+  border-top: 1px solid var(--bk-line);
+  padding-top: 21px;
+}
+.bk-landing:not(.bk-offers-page) .bk-feature--featured {
+  padding-top: 25px;
+  padding-bottom: 32px;
+}
+.bk-landing:not(.bk-offers-page) .bk-feature--featured .bk-feature__icon {
+  width: 54px;
+  height: 54px;
+  margin-bottom: 14px;
+}
+.bk-landing:not(.bk-offers-page) .bk-feature--featured h3 {
+  font-size: clamp(1.6rem, 2.3vw, 2.18rem);
+  line-height: 1.2;
+  letter-spacing: -.04em;
+  font-weight: 720;
+  margin-bottom: 12px;
+}
+.bk-landing:not(.bk-offers-page) .bk-feature--featured p {
+  max-width: 450px;
+  font-size: 1.11rem;
+}
+.bk-landing:not(.bk-offers-page) .bk-feature__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 18px;
+  color: #24634f;
+  text-decoration: none;
+  border-bottom: 1px solid #a0c9b7;
+  font-size: 1rem;
+  font-weight: 740;
+  padding: 6px 0;
+}
+.bk-landing:not(.bk-offers-page) .bk-feature__link:hover {
+  color: #164d39;
+}
+@media (max-width: 860px) {
+  .bk-landing:not(.bk-offers-page) .bk-feature-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .bk-landing:not(.bk-offers-page) .bk-feature,
+  .bk-landing:not(.bk-offers-page) .bk-feature + .bk-feature,
+  .bk-landing:not(.bk-offers-page) .bk-feature:nth-child(3) {
+    padding-right: 16px;
+  }
+  .bk-landing:not(.bk-offers-page) .bk-feature:nth-child(even) {
+    padding-left: 18px;
+  }
+}
+@media (max-width: 640px) {
+  .bk-landing:not(.bk-offers-page) .bk-island-signature {
+    margin-top: 25px;
+    padding-top: 17px;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .bk-landing:not(.bk-offers-page) .bk-island-signature img {
+    width: 47px;
+    height: 34px;
+    flex-basis: 47px;
+  }
+  .bk-landing:not(.bk-offers-page) .bk-island-signature strong {
+    font-size: 1rem;
+  }
+  .bk-landing:not(.bk-offers-page) .bk-island-signature span {
+    font-size: .95rem;
+  }
+  .bk-landing:not(.bk-offers-page) .bk-feature-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .bk-landing:not(.bk-offers-page) .bk-feature,
+  .bk-landing:not(.bk-offers-page) .bk-feature + .bk-feature,
+  .bk-landing:not(.bk-offers-page) .bk-feature:nth-child(even),
+  .bk-landing:not(.bk-offers-page) .bk-feature:nth-child(3) {
+    border-left: 0;
+    border-top: 1px solid var(--bk-line);
+    padding: 19px 0 20px;
+  }
+  .bk-landing:not(.bk-offers-page) .bk-feature:first-child {
+    border-top: 0;
+  }
+  .bk-landing:not(.bk-offers-page) .bk-feature--featured h3 {
+    font-size: clamp(1.5rem, 6vw, 1.9rem);
+  }
+  .bk-landing:not(.bk-offers-page) .bk-feature--featured p {
+    font-size: 1.08rem;
+  }
+  .bk-landing:not(.bk-offers-page) .bk-feature--featured .bk-feature__icon {
+    width: 48px;
+    height: 48px;
+  }
+}
