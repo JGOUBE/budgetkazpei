@@ -126,10 +126,16 @@ assert.match(page, /title: "Courses intelligentes"/, "Courses intelligentes must
 assert.match(page, /title: "Mon Conseiller"/, "Conseiller must be promoted as a key selling point")
 assert.equal([...page.matchAll(/featured: true/g)].length, 4, "two key features in French and Creole must be featured")
 assert.match(page, /id=\{anchor\}/, "features must expose direct navigation anchors")
-assert.match(page, /La Rényon lé la !/, "Creole signature missing")
+assert.match(page, /An kréol osi\./, "Creole signature missing")
 assert.match(page, /Nout Konseyé i répond aou an kréol/, "Creole language capability must be visible")
 assert.match(page, /lang="rcf"/, "Creole text should have proper language annotation")
 assert.match(styles, /bk-island-signature/, "island signature needs responsive styles")
+assert.match(page, /<aside className="bk-island-signature"/, "Creole signature must be a distinct element")
+assert.match(page, /className="bk-hero__support"/, "hero must group the key promise and local identity")
+assert.match(styles, /\.bk-hero__support \{[\s\S]*?grid-template-columns:/, "signature should be beside the main hero on desktop")
+assert.match(styles, /@media \(max-width: 900px\)/, "signature must stack accessibly on mobile")
+assert.match(page, /L’aplikasyon osi/, "local-language support must be clear")
+
 assert.match(styles, /bk-feature--featured h3/, "key features need stronger visual hierarchy")
 assert.match(styles, /@media \(max-width: 640px\)/, "mobile display remains required")
 
