@@ -17,8 +17,8 @@ const NON_FINANCIAL = /\b(?:pollution|soleil|etoiles?|jupiter|saturne|planetes?|
 // no financial keyword is used. A generic question ABOUT associations is not
 // automatically a personal request for aid.
 const LOCAL_SUPPORT_TOPIC = /\b(?:epiceries? (?:sociales?|solidaires?)|associations?|collectifs?|entraide|solidarite|restos du coeur|banque alimentaire|secours populaire|croix rouge|distribution alimentaire|colis alimentaires?|travailleur social|assistante sociale|point conseil budget|accompagnement social|maison des solidarites)\b/
-const LOCAL_SUPPORT_NEED = /\b(?:je cherche|je voudrais|j ai besoin|besoin d|besoin de|qui peut m aider|ou (?:trouver|aller|m adresser)|vers qui|comment (?:obtenir|contacter|trouver)|a qui (?:parler|demander)|koman (?:trouve|gagn)|kot (?:mi|moin)|mi cherche|mi besoin|ou trouve)\b/
-const FOOD_EMERGENCY = /\b(?:plus de quoi manger|pas de quoi manger|rien a manger|plus rien a manger|pas assez a manger|plus d argent pour manger|j ai faim et|mon frigo est vide)\b/
+const LOCAL_SUPPORT_NEED = /\b(?:je cherche|je voudrais|j ai besoin|besoin d|besoin de|qui peut m aider|ou (?:trouver|aller|m adresser)|vers qui|comment (?:obtenir|contacter|trouver)|a qui (?:parler|demander|dois je m adresser)|qui contacter|quelles? (?:associations?|structures?|epiceries?)|koman (?:trouve|gagn)|kot (?:mi|moin)|mi cherche|mi besoin|ou trouve)\b/
+const FOOD_EMERGENCY = /\b(?:plus de quoi manger|pas de quoi manger|rien a manger|plus rien a manger|pas assez a manger|plus d argent pour manger|j ai faim et|mon frigo est vide|plus assez d argent pour (?:acheter (?:a )?)?(?:manger|des courses|de la nourriture)|pas assez d argent pour (?:acheter (?:a )?)?(?:manger|des courses|de la nourriture)|pas les moyens d acheter (?:a )?manger|(?:je|nous|on) n? (?:arrive|peut) plus (?:a )?(?:payer|acheter) (?:de quoi manger|a manger|mes courses))\b/
 const DIRECT_SUPPORT = /\b(?:je suis victime|je subis des violences|je vis des violences|victime de violences|violences conjugales|violences intrafamiliales|mon conjoint me frappe|on me harcele|je suis harcele|besoin de soutien scolaire|besoin d aide aux devoirs|je cherche du soutien scolaire|je recherche du soutien scolaire|mon enfant a des difficultes scolaires|mon enfant a besoin d aide aux devoirs)\b/
 
 export function isLocalSupportRequest(question = "") {
@@ -59,6 +59,9 @@ export function shouldUseLocalBudgetAnswer({question = "",mode = "general",inten
   if (intent === "unknown") return false
   if (looksPlayfulOrFictionalQuestion(question)) return false
   const text = normalizeAidTopicText(question)
+  // Une demande de solidarité, même si elle mentionne « mes courses » ou « payer »,
+  // ne doit jamais être remplacée par les statistiques de tickets de caisse.
+  if (isLocalSupportRequest(question)) return false
   const personal = PERSONAL_BUDGET.test(text) || PERSONAL_DISTRIBUTION.test(text)
   // Strongly non-financial wording should never trigger a budget answer just
   // because it contains generic words like réduire, cours(es) or abonnement.
