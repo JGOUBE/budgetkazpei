@@ -1,5 +1,6 @@
 import assert from "node:assert/strict"
 import { readFile } from "node:fs/promises"
+import { normalizeAdvisorAnswerFormatting } from "../src/services/advisorAnswerFormatting.js"
 
 const read = path => readFile(new URL("../" + path, import.meta.url), "utf8")
 const chat = await read("src/components/conseiller/AssistantConseiller.jsx")
@@ -57,5 +58,38 @@ assert.match(advisorColors, /bkp-advisor-composer[\s\S]*#E7F1E9/)
 assert.match(advisorColors, /bkp-advisor-starter--trouver_aide[\s\S]*#C9D9F0/)
 assert.match(advisorColors, /bkp-advisor-starter--comprendre_courrier[\s\S]*#CFD6DD/)
 assert.match(advisorColors, /box-shadow: none !important/)
+
+// Regression: Android screenshots from 22/11 showed detached numbering and
+// punctuation at the beginning of an association's description.
+const malformed = [
+  "À Saint-Leu, plusieurs options s'offrent à vous :",
+  "",
+  "1.",
+  "**K’DI LE CŒUR**",
+  ": C'est une épicerie sociale et solidaire. Une prescription est nécessaire.",
+  "",
+  "2.",
+  "",
+  "**Croix-Rouge sur Roues**",
+  "",
+  ": Cet organisme propose une distribution itinérante.",
+  "",
+  "Pour en savoir plus : [Croix-Rouge sur Roues](https://reunion.deets.gouv.fr/L-aide-alimentaire).",
+].join("\n")
+const formatted = normalizeAdvisorAnswerFormatting(malformed)
+assert.ok(formatted.includes("1. **K’DI LE CŒUR** — C'est une épicerie sociale"))
+assert.ok(formatted.includes("2. **Croix-Rouge sur Roues** — Cet organisme"))
+assert.doesNotMatch(formatted, /^\s*:/m, "Description must not start with a colon")
+assert.doesNotMatch(formatted, /^\d+[.)]\s*$/m, "List numbers must stay with headings")
+assert.match(formatted, /\[Croix-Rouge sur Roues\]\(https:\/\/reunion\.deets\.gouv\.fr/)
+assert.equal(
+  normalizeAdvisorAnswerFormatting("Mon budget :\n**Conseil**\n: Mi peut mett in pé larzan de côté."),
+  "Mon budget :\n**Conseil** — Mi peut mett in pé larzan de côté."
+)
+assert.equal(normalizeAdvisorAnswerFormatting("1. Dépenser moins\n2. Vérifier mes achats"),
+  "1. Dépenser moins\n2. Vérifier mes achats", "Healthy numbered answers must stay intact")
+assert.match(chat, /normalizeAdvisorAnswerFormatting\(value\)/)
+assert.match(chat, /target="_blank" rel="noopener noreferrer"/)
+assert.match(css, /bkp-advisor-bubble\.bkp-advisor-answer strong\s*\{\s*display: inline/)
 
 console.log("OK: Conseiller compact and accessible; price collectors stay separate from local bons plans.")
