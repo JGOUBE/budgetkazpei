@@ -31,6 +31,31 @@ for (const question of ["Pourquoi les associations existent-elles ?", "Imagine u
 }
 assert.equal(classifyAdvisorSpendScope({question:"Pourquoi les associations existent-elles ?"}),"offtopic")
 
+for (const question of [
+  "Je suis victime de violences conjugales",
+  "Mon enfant a des difficultés scolaires",
+  "Je cherche du soutien scolaire",
+]) {
+  assert.equal(isLocalSupportRequest(question),true,question)
+  assert.equal(shouldLookupAdvisorAids({question,mode:"general"}),true,question)
+  assert.equal(classifyAdvisorSpendScope({question,mode:"general"}),"useful",question)
+  assert.equal(isProtectedAdvisorQuestion({question,mode:"general"}),true,question)
+}
+assert.ok(findPrimaryAidTopicIds("Je suis victime de violences").includes("victimes"))
+assert.ok(findPrimaryAidTopicIds("Mon enfant a des difficultés scolaires").includes("scolarite"))
+const nonCashFixtures = [
+  {nom:"Pass Culture",type_dispositif:"credit_culturel",montant_max:150,
+   statut_verification:"source_confirmee",actif:true},
+  {nom:"Pass'Sport",type_dispositif:"reduction_tarifaire",montant_max:100,
+   statut_verification:"source_confirmee",actif:true},
+]
+const noCash = prepareAdvisorAideContext(nonCashFixtures,false)
+assert.ok(noCash.every(aide=>aide.aide_en_especes===false))
+assert.ok(noCash.every(aide=>aide.montant_max===null))
+assert.match(noCash[0].montant,/Crédit culturel/)
+assert.match(noCash[1].montant,/Réduction/)
+
+
 const localAides = [
   { id:1, nom:"Épicerie solidaire Saint-Pierre",commune:"Saint-Pierre",categorie:"alimentaire",
     description_fr:"Distribution alimentaire solidaire",score_priorite:200,actif:true },
