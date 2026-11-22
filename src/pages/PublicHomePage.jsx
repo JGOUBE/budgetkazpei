@@ -56,7 +56,7 @@ const COPY = {
     heroTitleFocus: "Des décisions éclairées.",
     heroLead: "Courses intelligentes analyse vos tickets et vos habitudes d’achat. Mon Conseiller vous aide à comprendre vos dépenses et à préparer vos démarches.",
     islandTitle: "An kréol osi.",
-    islandText: "Nout Konseyé i répond aou an kréol rényoné. L’aplikasyon osi.",
+    islandText: "Nout Konseyé i réponn aou an kréol rényoné.",
     heroPrimary: "Commencer gratuitement",
     heroSecondary: "Comment ça marche ?",
     quick: [{ label: "Budget", href: "#fonctionnalites" }, { label: "Courses intelligentes", href: "#courses-intelligentes" }, { label: "Aides", href: "#fonctionnalites" }, { label: "Conseiller", href: "#conseiller" }, { label: "Bons plans", href: "#bons-plans" }],
@@ -101,7 +101,7 @@ const COPY = {
     heroTitleFocus: "Bann désizion pli klèr.",
     heroLead: "Courses intelligentes i analiz out tiké ek out labitid achat. Mon Konseyé i aide aou konpran out dépans ek prépar out démars.",
     islandTitle: "An kréol osi.",
-    islandText: "Nout Konseyé i répond aou an kréol rényoné. L’aplikasyon osi.",
+    islandText: "Nout Konseyé i réponn aou an kréol rényoné.",
     heroPrimary: "Koumans gratis",
     heroSecondary: "Koman sa i mars ?",
     quick: [{ label: "Bidjé", href: "#fonctionnalites" }, { label: "Courses intelligentes", href: "#courses-intelligentes" }, { label: "Bann èd", href: "#fonctionnalites" }, { label: "Konseyé", href: "#conseiller" }, { label: "Bon Plan", href: "#bons-plans" }],
@@ -193,7 +193,7 @@ export default function PublicHomePage({ isAuthenticated = false }) {
               </div>
             </div>
             <aside className="bk-island-signature" aria-label="BudgetKazPeï en créole réunionnais" lang="rcf">
-              <img src="/reunion-flag-unified-v2.svg" alt="Drapeau réunionnais" width="53" height="36" loading="lazy" />
+              <img src="/landing-flag-reunion.svg" alt="Drapeau réunionnais" width="56" height="35" loading="eager" />
               <div><strong>{copy.islandTitle}</strong><span>{copy.islandText}</span></div>
             </aside>
           </div>
