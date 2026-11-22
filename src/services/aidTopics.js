@@ -29,7 +29,19 @@ export const AID_TOPIC_GROUPS = [
   },
   {
     id: "scolarite",
-    terms: ["scolarite", "ecole", "lekol", "cantine", "bourse", "etudiant", "etudes", "universite", "scolaire"],
+    terms: ["scolarite", "ecole", "lekol", "cantine", "bourse", "etudiant", "etudes", "universite", "scolaire", "devoirs", "aide aux devoirs", "soutien scolaire", "difficultes scolaires", "clas"],
+  },
+  {
+    id: "victimes",
+    terms: ["victime", "victimes", "violence", "violences", "violences conjugales",
+      "violences intrafamiliales", "agression", "agresse", "harcelement",
+      "aide juridique", "soutien juridique", "protection", "mise en securite"],
+  },
+  {
+    id: "parentalite",
+    terms: ["parentalite", "soutien parental", "aide aux parents", "soutien aux parents",
+      "relation parent enfant", "mediatrice familiale", "mediation familiale",
+      "parent isole", "parent seul", "education des enfants", "parentalite positive"],
   },
   {
     id: "sante",
