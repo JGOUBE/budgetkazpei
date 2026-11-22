@@ -16,8 +16,8 @@ const ADMIN = /\b(?:mon dossier|ma demande|mon courrier|mon refus|mon recours|ma
 // Directories of nearby associations and in-kind aid are protected advisor
 // knowledge too, not generic small-talk.
 const LOCAL_HELP = /\b(?:epicerie (?:sociale|solidaire)|associations?|collectifs?|entraide|banque alimentaire|restos du coeur|secours populaire|croix rouge|distribution alimentaire|travailleur social|assistante sociale|maison des solidarites|colis alimentaire)\b/
-const HELP_INTENT = /\b(?:je cherche|j ai besoin|besoin de|besoin d|ou trouver|ou aller|vers qui|qui peut m aider|comment contacter|comment obtenir|a qui demander|mi cherche|mi besoin|koman trouve|kot mi)\b/
-const FOOD_EMERGENCY = /\b(?:plus de quoi manger|pas de quoi manger|rien a manger|plus rien a manger|plus d argent pour manger|mon frigo est vide)\b/
+const HELP_INTENT = /\b(?:je cherche|j ai besoin|besoin de|besoin d|ou trouver|ou aller|vers qui|qui peut m aider|comment contacter|comment obtenir|a qui (?:demander|dois je m adresser)|qui contacter|quelles? (?:associations?|structures?|epiceries?)|mi cherche|mi besoin|koman trouve|kot mi)\b/
+const FOOD_EMERGENCY = /\b(?:plus de quoi manger|pas de quoi manger|rien a manger|plus rien a manger|plus d argent pour manger|mon frigo est vide|plus assez d argent pour (?:acheter (?:a )?)?(?:manger|des courses|de la nourriture)|pas assez d argent pour (?:acheter (?:a )?)?(?:manger|des courses|de la nourriture)|pas les moyens d acheter (?:a )?manger|(?:je|nous|on) n? (?:arrive|peut) plus (?:a )?(?:payer|acheter) (?:de quoi manger|a manger|mes courses))\b/
 const DIRECT_SUPPORT = /\b(?:je suis victime|je subis des violences|je vis des violences|victime de violences|violences conjugales|violences intrafamiliales|mon conjoint me frappe|on me harcele|je suis harcele|besoin de soutien scolaire|besoin d aide aux devoirs|je cherche du soutien scolaire|je recherche du soutien scolaire|mon enfant a des difficultes scolaires|mon enfant a besoin d aide aux devoirs)\b/
 
 const GUARDED_MODES = new Set<AssistantMode>([
