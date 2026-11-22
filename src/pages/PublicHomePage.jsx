@@ -54,9 +54,9 @@ const COPY = {
     heroEyebrow: "Une application pensée pour La Réunion",
     heroTitleLead: "Plus qu’un budget.",
     heroTitleFocus: "Des décisions éclairées.",
-    heroLead: "Analysez vos achats avec Courses intelligentes. Posez vos questions à un Conseiller qui tient compte des informations disponibles.",
-    islandTitle: "La Rényon lé la !",
-    islandText: "Nout Konseyé i répond aou an kréol. BudgetKazPeï i aide aou konpran out courses.",
+    heroLead: "Courses intelligentes analyse vos tickets et vos habitudes d’achat. Mon Conseiller vous aide à comprendre vos dépenses et à préparer vos démarches.",
+    islandTitle: "An kréol osi.",
+    islandText: "Nout Konseyé i répond aou an kréol rényoné. L’aplikasyon osi.",
     heroPrimary: "Commencer gratuitement",
     heroSecondary: "Comment ça marche ?",
     quick: [{ label: "Budget", href: "#fonctionnalites" }, { label: "Courses intelligentes", href: "#courses-intelligentes" }, { label: "Aides", href: "#fonctionnalites" }, { label: "Conseiller", href: "#conseiller" }, { label: "Bons plans", href: "#bons-plans" }],
@@ -64,8 +64,8 @@ const COPY = {
     featureTitle: "Mieux acheter. Mieux décider.",
     featureLead: "Courses intelligentes et Mon Conseiller : deux outils pour comprendre et agir, avec le budget et les aides à portée de main.",
     features: [
-      { title: "Courses intelligentes", lead: "Tickets analysés, habitudes d’achat et pistes pour mieux préparer vos courses.", Icon: ShoppingBasket, tone: "blue", featured: true, anchor: "courses-intelligentes", link: "Découvrir mes courses" },
-      { title: "Mon Conseiller", lead: "Des réponses contextualisées pour comprendre vos dépenses et préparer vos démarches.", Icon: MessageCircle, tone: "sage", featured: true, anchor: "conseiller-apercu", link: "Voir un exemple" },
+      { title: "Courses intelligentes", lead: "Tickets analysés, habitudes d’achat et pistes d’économies selon les prix disponibles.", Icon: ShoppingBasket, tone: "blue", featured: true, anchor: "courses-intelligentes", link: "Découvrir mes courses" },
+      { title: "Mon Conseiller", lead: "Des conseils qui tiennent compte de votre budget, de vos courses et des aides possibles.", Icon: MessageCircle, tone: "sage", featured: true, anchor: "conseiller-apercu", link: "Voir un exemple" },
       { title: "Mon budget", lead: "Revenus, dépenses et reste disponible.", Icon: Wallet, tone: "mint" },
       { title: "Mes aides", lead: "Des aides à repérer et des démarches à préparer.", Icon: HandHeart, tone: "lavender" },
     ],
@@ -99,9 +99,9 @@ const COPY = {
     heroEyebrow: "In aplikasyon pansé pou La Rényon",
     heroTitleLead: "Pa zis in bidjé.",
     heroTitleFocus: "Bann désizion pli klèr.",
-    heroLead: "Avèk Courses intelligentes, konpran out achats. Koz avèk in Konseyé ki servi bann donné disponib.",
-    islandTitle: "La Rényon lé la !",
-    islandText: "Nout Konseyé i répond aou an kréol. BudgetKazPeï i aide aou konpran out courses.",
+    heroLead: "Courses intelligentes i analiz out tiké ek out labitid achat. Mon Konseyé i aide aou konpran out dépans ek prépar out démars.",
+    islandTitle: "An kréol osi.",
+    islandText: "Nout Konseyé i répond aou an kréol rényoné. L’aplikasyon osi.",
     heroPrimary: "Koumans gratis",
     heroSecondary: "Koman sa i mars ?",
     quick: [{ label: "Bidjé", href: "#fonctionnalites" }, { label: "Courses intelligentes", href: "#courses-intelligentes" }, { label: "Bann èd", href: "#fonctionnalites" }, { label: "Konseyé", href: "#conseiller" }, { label: "Bon Plan", href: "#bons-plans" }],
@@ -109,8 +109,8 @@ const COPY = {
     featureTitle: "Mié achté. Mié désidé.",
     featureLead: "Courses intelligentes ek Mon Konseyé pou konpran ek azir. Bidjé ek bann èd lé osi la.",
     features: [
-      { title: "Courses intelligentes", lead: "Tiké analizé, labitid achat ek bann piste pou prépar out courses.", Icon: ShoppingBasket, tone: "blue", featured: true, anchor: "courses-intelligentes", link: "Dékouv mon courses" },
-      { title: "Mon Konseyé", lead: "Bann répons adapté pou konpran out dépans ek prépar out bann démars.", Icon: MessageCircle, tone: "sage", featured: true, anchor: "conseiller-apercu", link: "War in legzanp" },
+      { title: "Courses intelligentes", lead: "Tiké analizé, labitid achat ek bann piste pou fé lékonomi selon bann pri disponib.", Icon: ShoppingBasket, tone: "blue", featured: true, anchor: "courses-intelligentes", link: "Dékouv mon courses" },
+      { title: "Mon Konseyé", lead: "Bann konsey selon out bidjé, out courses ek bann èd posib.", Icon: MessageCircle, tone: "sage", featured: true, anchor: "conseiller-apercu", link: "War in legzanp" },
       { title: "Mon bidjé", lead: "Larzan i rantre, dépans ek sak i reste.", Icon: Wallet, tone: "mint" },
       { title: "Mon bann èd", lead: "Bann èd a repéré ek bann démars a prépar.", Icon: HandHeart, tone: "lavender" },
     ],
@@ -181,17 +181,21 @@ export default function PublicHomePage({ isAuthenticated = false }) {
             <span className="bk-hero__title-lead">{copy.heroTitleLead}</span>
             <span className="bk-hero__title-focus">{copy.heroTitleFocus}</span>
           </h1>
-          <p className="bk-hero__lead">{copy.heroLead}</p>
-          <div className="bk-hero__actions">
-            <LandingLink href={appHref} className="landing-link-button landing-link-button--primary">
-              {isAuthenticated ? content.hero.primaryAuthenticated : copy.heroPrimary}
-              <ArrowRight size={17} aria-hidden="true" />
-            </LandingLink>
-            <a className="landing-link-button landing-link-button--ghost" href="#fonctionnalites">{copy.heroSecondary}</a>
-          </div>
-          <div className="bk-island-signature" aria-label="BudgetKazPeï en créole réunionnais" lang="rcf">
-            <img src="/reunion-flag-unified-v2.svg" alt="Drapeau réunionnais" width="53" height="36" loading="lazy" />
-            <div><strong>{copy.islandTitle}</strong><span>{copy.islandText}</span></div>
+          <div className="bk-hero__support">
+            <div className="bk-hero__support-main">
+              <p className="bk-hero__lead">{copy.heroLead}</p>
+              <div className="bk-hero__actions">
+                <LandingLink href={appHref} className="landing-link-button landing-link-button--primary">
+                  {isAuthenticated ? content.hero.primaryAuthenticated : copy.heroPrimary}
+                  <ArrowRight size={17} aria-hidden="true" />
+                </LandingLink>
+                <a className="landing-link-button landing-link-button--ghost" href="#fonctionnalites">{copy.heroSecondary}</a>
+              </div>
+            </div>
+            <aside className="bk-island-signature" aria-label="BudgetKazPeï en créole réunionnais" lang="rcf">
+              <img src="/reunion-flag-unified-v2.svg" alt="Drapeau réunionnais" width="53" height="36" loading="lazy" />
+              <div><strong>{copy.islandTitle}</strong><span>{copy.islandText}</span></div>
+            </aside>
           </div>
         </div>
       </section>
