@@ -3,9 +3,47 @@ import { readFile } from "node:fs/promises"
 import { findPrimaryAidTopicIds } from "../src/services/aidTopics.js"
 import { rankAidesForAdvisor, selectAidCandidatesForAdvisor } from "../src/services/aidesRanking.js"
 import { pickRelevantAidKnowledge, prepareAdvisorAideContext } from "../src/services/advisorAideContext.js"
-import { isLocalSupportRequest, shouldLookupAdvisorAids, resolveAdvisorModeForQuestion } from "../src/services/advisorQuestionRouter.js"
+import { isLocalSupportRequest, shouldLookupAdvisorAids, shouldUseLocalBudgetAnswer, resolveAdvisorModeForQuestion } from "../src/services/advisorQuestionRouter.js"
 import { classifyAdvisorSpendScope } from "../supabase/functions/assistant-aisupabase/engine/routing/offTopicPolicy.ts"
 import { isProtectedAdvisorQuestion } from "../supabase/functions/assistant-aisupabase/engine/routing/questionScope.ts"
+
+
+const screenshotsRegressions = [
+  {
+    name: "Saint-Leu : des associations pour payer les courses",
+    question: "J'habite à Saint-Leu, j'ai du mal à payer mes courses. Quelles associations ou épiceries solidaires peuvent m'aider près de chez moi ?",
+    financialIntent: "budget_grocery",
+  },
+  {
+    name: "Urgence alimentaire : pas assez d'argent pour manger",
+    question: "Je n'ai plus assez d'argent pour acheter à manger cette semaine. À qui dois-je m'adresser rapidement ?",
+    financialIntent: "budget_grocery",
+  },
+  {
+    name: "Saint-Paul : associations locales",
+    question: "Je cherche des associations à Saint-Paul qui accompagnent gratuitement les familles en difficulté.",
+    financialIntent: "unknown",
+  },
+  {
+    name: "Urgence familiale à Saint-Pierre",
+    question: "Je suis au chômage, j'ai deux enfants, 900 € de revenus et 750 € de loyer. J'habite à Saint-Pierre. Trouve-moi toutes les aides possibles, y compris les associations, et explique-moi par quoi commencer.",
+    financialIntent: "budget_general",
+  },
+  {
+    name: "Créole : association de proximité",
+    question: "Mi cherche in association pou aide mon famille à Saint-Paul.",
+    financialIntent: "unknown",
+  },
+]
+for (const example of screenshotsRegressions) {
+  assert.equal(shouldLookupAdvisorAids({question:example.question,mode:"general"}),true,example.name)
+  assert.equal(shouldUseLocalBudgetAnswer({question:example.question,mode:"general",intent:example.financialIntent}),false,example.name)
+  assert.equal(classifyAdvisorSpendScope({question:example.question,mode:"general"}),"useful",example.name)
+  assert.equal(isProtectedAdvisorQuestion({question:example.question,mode:"general"}),true,example.name)
+}
+assert.equal(shouldUseLocalBudgetAnswer({
+  question:"Combien ai-je dépensé en courses ce mois-ci ?",mode:"general",intent:"budget_grocery"
+}),true,"A genuine request for recorded grocery totals must still use local budget stats")
 
 const needs = [
   "Je cherche une épicerie solidaire à Saint-Leu",
@@ -136,4 +174,10 @@ assert.match(backend,/N'invente ni association, adresse, horaires/)
 assert.match(backend,/rpc\("reserve_advisor_ai_request"/)
 assert.ok(backend.indexOf('rpc("reserve_advisor_ai_request"') <
   backend.indexOf("const openAiResult = await callOpenAi"))
+assert.match(front,/const needsBudgetFigures =/)
+assert.match(front,/!shouldLookupAdvisorAids\(\{ question: sentQuestion, mode: currentMode \}\)/)
+assert.match(front,/\.slice\(0, 5\)\.map\(aide/)
+assert.ok(!front.includes("recommended_aides: preparedAides"), "Do not resend all aid files twice")
+assert.ok(!front.includes("reunion_orientation: REUNION_ORIENTATION"), "Do not duplicate directory payload")
+assert.match(backend,/ADVISOR_CONTEXT_COMPACTED/)
 console.log("OK: real solidarity needs, local associations, request-area priority, multi-need diversity, bounded contextual aid recall.")
