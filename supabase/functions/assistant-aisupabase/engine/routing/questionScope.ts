@@ -15,7 +15,7 @@ const PERSONAL_BUDGET = /\b(?:mon budget|mes budgets|ma depense|mes depenses|mes
 const ADMIN = /\b(?:mon dossier|ma demande|mon courrier|mon refus|mon recours|ma declaration|mon contrat|mes justificatifs|mes demarches|rendez vous caf|courrier administratif|lettre administrative|recours administratif)\b/
 // Directories of nearby associations and in-kind aid are protected advisor
 // knowledge too, not generic small-talk.
-const LOCAL_HELP = /\b(?:epicerie (?:sociale|solidaire)|associations?|collectifs?|entraide|banque alimentaire|restos du coeur|secours populaire|croix rouge|distribution alimentaire|travailleur social|assistante sociale|maison des solidarites|colis alimentaire)\b/
+const LOCAL_HELP = /\b(?:epiceries? (?:sociales?|solidaires?)|associations?|collectifs?|entraide|banque alimentaire|restos du coeur|secours populaire|croix rouge|distributions? alimentaires?|travailleur social|assistante sociale|maison des solidarites|colis alimentaires?)\b/
 const HELP_INTENT = /\b(?:je cherche|j ai besoin|besoin de|besoin d|ou trouver|ou aller|vers qui|qui peut m aider|comment contacter|comment obtenir|a qui demander|mi cherche|mi besoin|koman trouve|kot mi)\b/
 const FOOD_EMERGENCY = /\b(?:plus de quoi manger|pas de quoi manger|rien a manger|plus rien a manger|plus d argent pour manger|mon frigo est vide)\b/
 // Financial hardship with food or grocery wording requires social assistance,
