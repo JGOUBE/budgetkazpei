@@ -160,6 +160,18 @@ function isPreferredAid(aide, preferredIds, preferredNames) {
   return preferredIds.has(String(aide?.id)) || preferredNames.has(normalizeAidIdentity(aidName(aide)))
 }
 
+// Privilégier la traçabilité d'une source à pertinence et commune équivalentes.
+// Cela ne confirme jamais l'éligibilité, les montants ou l'ouverture du service.
+export function aidEvidenceRankingScore(aide = {}) {
+  switch (aide.statut_verification) {
+    case "source_confirmee": return 65
+    case "operateur_reference_2026": return 40
+    case "a_reconfirmer": return -55
+    case "a_verifier": return -65
+    default: return -65
+  }
+}
+
 export function scoreAidForAdvisor(aide, profile = {}, question = "", options = {}) {
   const preferredIds = normalizeIdSet(options.preferredAidIds)
   const preferredNames = normalizeNameSet(options.preferredAidNames)
@@ -175,7 +187,7 @@ export function scoreAidForAdvisor(aide, profile = {}, question = "", options = 
       : matchedHome ? 100
         : userCommune && communes.length ? -70 : 0
   return questionRelevanceScore(aide, question) + profileRelevanceScore(aide, profile)
-    + preferredBonus + localityBonus
+    + preferredBonus + localityBonus + aidEvidenceRankingScore(aide)
 }
 
 export function rankAidesForAdvisor(aides = [], profile = {}, question = "", options = {}) {
