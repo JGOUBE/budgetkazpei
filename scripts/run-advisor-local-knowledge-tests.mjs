@@ -3,7 +3,9 @@ import { readFile } from "node:fs/promises"
 import { findPrimaryAidTopicIds } from "../src/services/aidTopics.js"
 import { rankAidesForAdvisor, selectAidCandidatesForAdvisor } from "../src/services/aidesRanking.js"
 import { pickRelevantAidKnowledge, prepareAdvisorAideContext } from "../src/services/advisorAideContext.js"
-import { isLocalSupportRequest, shouldLookupAdvisorAids, resolveAdvisorModeForQuestion } from "../src/services/advisorQuestionRouter.js"
+import { isLocalSupportRequest, shouldLookupAdvisorAids, shouldUseLocalBudgetAnswer, resolveAdvisorModeForQuestion } from "../src/services/advisorQuestionRouter.js"
+import { buildAdvisorRequestBody } from "../src/services/advisorRequestPayload.js"
+import { REUNION_ORIENTATION } from "../src/data/reunionOrientation.js"
 import { classifyAdvisorSpendScope } from "../supabase/functions/assistant-aisupabase/engine/routing/offTopicPolicy.ts"
 import { isProtectedAdvisorQuestion } from "../supabase/functions/assistant-aisupabase/engine/routing/questionScope.ts"
 
@@ -41,6 +43,76 @@ for (const question of [
   assert.equal(classifyAdvisorSpendScope({question,mode:"general"}),"useful",question)
   assert.equal(isProtectedAdvisorQuestion({question,mode:"general"}),true,question)
 }
+// Regressions reproduced from user screenshots after the 22 Nov release.
+const realFoodQuestions = [
+  "J'habite à Saint-Leu, j'ai du mal à payer mes courses. Quelles associations ou épiceries solidaires peuvent m'aider près de chez moi ?",
+  "Je n'ai plus assez d'argent pour acheter à manger cette semaine. À qui dois-je m'adresser rapidement ?",
+  "Je ne peux plus payer mes courses alimentaires, qui peut m'aider ?",
+  "Mi nana pu de quoi manzé, mi cherche in association.",
+]
+for (const question of realFoodQuestions) {
+  assert.equal(isLocalSupportRequest(question), true, "Food support was missed: "+question)
+  assert.equal(shouldLookupAdvisorAids({question,mode:"general"}), true,
+    "Aid directory should be consulted: "+question)
+  assert.equal(shouldUseLocalBudgetAnswer({question,mode:"general",intent:"budget_grocery"}), false,
+    "Food aid request must never answer with unrelated grocery statistics: "+question)
+  assert.equal(classifyAdvisorSpendScope({question,mode:"general"}), "useful",
+    "Food hardship must not cost an off-topic quota: "+question)
+  assert.equal(isProtectedAdvisorQuestion({question,mode:"general"}), true,
+    "Food assistance must retain source safeguards: "+question)
+}
+for (const question of [
+  "Je cherche des associations à Saint-Paul qui accompagnent gratuitement les familles en difficulté.",
+  "Mi cherche in association pou aide mon famille à Saint-Paul.",
+]) {
+  assert.equal(shouldLookupAdvisorAids({question,mode:"general"}), true,
+    "Local support should use the indexed directory")
+  assert.equal(classifyAdvisorSpendScope({question,mode:"general"}), "useful")
+}
+assert.equal(shouldUseLocalBudgetAnswer({
+ question:"Combien ai-je dépensé en courses ce mois-ci ?",mode:"general",intent:"budget_grocery"
+}),true,"Explicit analysis of saved shopping expenses must still use its local answer")
+
+const oversizedFiches = Array.from({length:8},(_,i)=>({
+  id:i+1, nom:"Épicerie solidaire "+i,nom_kreol:"Epicerie solider "+i,
+  description:"Accompagnement social et colis alimentaires. ".repeat(120),
+  demarches:"Contacter une assistante sociale. ".repeat(90),
+  organisme:"Association de proximité",categorie:"alimentaire",
+  type_dispositif:"aide_alimentaire",commune:"Saint-Leu",
+  verification_status:"operateur_reference_2026",
+  periode_validite:"Permanences à reconfirmer. ".repeat(40),
+  lien_officiel:"https://reunion.deets.gouv.fr/",
+  source_verification:"https://reunion.deets.gouv.fr/",
+}))
+const oversizedFinancial = {intent:"budget_grocery",budgetAdvisorContext:{
+  period:{current:"2026-11",comparison:"2026-10"},
+  spendingByCategory:Array.from({length:150},(_,i)=>({name:"poste "+i,amount:i})),
+  grocery:{historicalBasketEstimate:400,reliableSavingsTotal:null},
+},dataUsed:{sources:["recorded_data"]}}
+const leanRequest = buildAdvisorRequestBody({
+  originalQuestion:realFoodQuestions[0],assistantMode:"general",language:"fr",
+  localContext:{commune:"Saint-Leu",financial:oversizedFinancial},
+  recommendedAides:oversizedFiches,
+  recommended_aides:oversizedFiches,
+  reunionOrientation:REUNION_ORIENTATION,
+  reunion_orientation:REUNION_ORIENTATION,
+  recentHistory:Array.from({length:6},()=>({
+    question:"Une ancienne question longue ".repeat(30),
+    answer:"Une ancienne réponse longue ".repeat(90),
+    recommendedAidIds:[1,2,3],
+  })),
+})
+assert.equal(leanRequest.recommendedAides.length,8)
+assert.equal(leanRequest.recommended_aides,undefined)
+assert.equal(leanRequest.reunion_orientation,undefined)
+assert.equal(leanRequest.profile,undefined)
+assert.equal(leanRequest.localContext.commune,"Saint-Leu")
+assert.equal(leanRequest.recommendedAides[0].eligibilite_confirmee,false)
+assert.equal(leanRequest.recommendedAides[0].source_verification,"https://reunion.deets.gouv.fr/")
+assert.equal(leanRequest.recentHistory.length,4)
+assert.ok(JSON.stringify(leanRequest).length < 22000,
+  "Oversized advisor data must be reduced below safe Edge Function request bounds")
+
 assert.ok(findPrimaryAidTopicIds("Je suis victime de violences").includes("victimes"))
 assert.ok(findPrimaryAidTopicIds("Mon enfant a des difficultés scolaires").includes("scolarite"))
 const nonCashFixtures = [
