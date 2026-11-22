@@ -3,11 +3,8 @@ import {
   ArrowRight,
   ArrowUpRight,
   HandHeart,
-  MapPin,
   MessageCircle,
-  Search,
   ShoppingBasket,
-  Store,
   Wallet,
 } from "lucide-react"
 import LandingHeader from "../components/landing/LandingHeader"
@@ -55,87 +52,93 @@ function useLandingSeo(content, language) {
 const COPY = {
   fr: {
     heroEyebrow: "Une application pensée pour La Réunion",
-    heroTitle: "Votre quotidien, plus simple. Votre budget, plus clair.",
-    heroLead: "Suivez vos dépenses, comprenez vos courses, repérez les aides utiles et découvrez les bonnes adresses de l'île.",
+    heroTitleLead: "Plus qu’un budget.",
+    heroTitleFocus: "Des décisions éclairées.",
+    heroLead: "Courses intelligentes analyse vos tickets et vos habitudes d’achat. Mon Conseiller vous aide à comprendre vos dépenses et à préparer vos démarches.",
+    islandTitle: "An kréol osi.",
+    islandText: "Nout Konseyé i réponn aou an kréol rényoné.",
     heroPrimary: "Commencer gratuitement",
-    heroSecondary: "Découvrir les fonctionnalités",
-    heroLocal: "À La Réunion, en français et en kréol",
-    quick: ["Mon budget", "Mes courses", "Mes aides", "Mon Conseiller", "Bons plans"],
-    featureEyebrow: "L'essentiel, sans complication",
-    featureTitle: "Tout est plus simple quand on y voit clair.",
-    featureLead: "Des outils concrets, une navigation directe et uniquement les informations qui vous sont utiles.",
+    heroSecondary: "Comment ça marche ?",
+    quick: [{ label: "Budget", href: "#fonctionnalites" }, { label: "Courses intelligentes", href: "#courses-intelligentes" }, { label: "Aides", href: "#fonctionnalites" }, { label: "Conseiller", href: "#conseiller" }, { label: "Bons plans", href: "#bons-plans" }],
+    featureEyebrow: "Notre différence",
+    featureTitle: "Mieux acheter. Mieux décider.",
+    featureLead: "Courses intelligentes et Mon Conseiller : deux outils pour comprendre et agir, avec le budget et les aides à portée de main.",
     features: [
-      { title: "Mon budget", lead: "Visualisez vos revenus, vos dépenses et ce qu'il vous reste.", Icon: Wallet, tone: "mint" },
-      { title: "Mes courses", lead: "Scannez vos tickets, suivez vos achats et préparez vos listes.", Icon: ShoppingBasket, tone: "blue" },
-      { title: "Mes aides", lead: "Repérez les aides possibles et organisez vos démarches.", Icon: HandHeart, tone: "lavender" },
-      { title: "Mon Conseiller", lead: "Posez vos questions et avancez avec des conseils adaptés à votre offre.", Icon: MessageCircle, tone: "sage" },
+      { title: "Courses intelligentes", lead: "Tickets analysés, habitudes d’achat et pistes d’économies selon les prix disponibles.", Icon: ShoppingBasket, tone: "blue", featured: true, anchor: "courses-intelligentes", link: "Découvrir mes courses" },
+      { title: "Mon Conseiller", lead: "Des conseils qui tiennent compte de votre budget, de vos courses et des aides possibles.", Icon: MessageCircle, tone: "sage", featured: true, anchor: "conseiller-apercu", link: "Voir un exemple" },
+      { title: "Mon budget", lead: "Revenus, dépenses et reste disponible.", Icon: Wallet, tone: "mint" },
+      { title: "Mes aides", lead: "Des aides à repérer et des démarches à préparer.", Icon: HandHeart, tone: "lavender" },
     ],
-    advisorEyebrow: "Un accompagnement utile",
-    advisorTitle: "Des réponses qui vous aident à avancer.",
-    advisorLead: "Pour mieux comprendre vos dépenses et préparer vos démarches, votre Conseiller vous accompagne selon les fonctionnalités de votre offre.",
-    advisorExampleLabel: "Exemple de question",
-    advisorAnswerLabel: "Exemple de réponse",
-    advisorNote: "Les droits et les montants des aides sont à vérifier auprès des organismes concernés.",
-    dealsEyebrow: "Découvrir l'île autrement",
-    dealsTitle: "De bonnes adresses, tout près de vous.",
-    dealsLead: "Restaurants, commerces, artisans, sorties et services : retrouvez les bons plans locaux selon les informations disponibles.",
+    advisorEyebrow: "Un Conseiller qui va plus loin",
+    advisorTitle: "Il ne répond pas seulement. Il aide à comprendre.",
+    advisorLead: "À partir des informations disponibles, il cherche les causes d’un écart et les actions utiles.",
+    advisorExampleLabel: "Votre question",
+    advisorAnswerLabel: "Son raisonnement",
+    advisorNote: "Exemple illustratif, pas une analyse réelle. Résultats selon les données disponibles.",
+    advisorQuestion: "Mes courses ont augmenté de 120 €, pourtant j’achète presque pareil. Pourquoi ?",
+    advisorSteps: [{ label: "Je compare", text: "Prix, quantités et fréquence des achats." }, { label: "Je repère", text: "Les produits qui expliquent le plus l’écart." }, { label: "Je propose", text: "Des pistes concrètes si les données le permettent." }],
+    dealsEyebrow: "Près de vous",
+    dealsTitle: "La Réunion, aussi dans vos bons plans.",
+    dealsLead: "Restaurants, artisans, activités et services locaux.",
     dealsLink: "Découvrir les bons plans",
     dealsLocation: "Recherche par commune ou sur toute l'île",
-    proEyebrow: "Artisans, créateurs et professionnels",
-    proTitle: "Votre activité mérite d'être découverte.",
-    proLead: "Nous préparons un espace pour présenter votre savoir-faire avec une photo, une description, votre commune et un lien vers votre site ou vos réseaux sociaux.",
+    proEyebrow: "Pour les professionnels",
+    proTitle: "Faites découvrir votre activité.",
+    proLead: "Un espace de présentation simple arrive bientôt.",
     proOffer: "12 mois de visibilité offerts au lancement",
     proDisclosure: "Sans engagement, sans paiement et sans obligation de partenariat. Offre de lancement soumise à validation, dans la limite des places disponibles.",
     proLater: "Espace « Je propose » en préparation",
     proFields: ["Une photo", "Une présentation", "Un lien"],
     endEyebrow: "BudgetKazPeï",
-    endTitle: "Un quotidien plus léger commence ici.",
-    endText: "Commencez gratuitement et découvrez les fonctionnalités qui correspondent à vos besoins.",
+    endTitle: "Essayez BudgetKazPeï.",
+    endText: "Commencez gratuitement. Passez à Premium seulement si vous en avez besoin.",
     endLink: "Découvrir les offres",
     navPro: "Je propose",
-    languageLine: "Français · Kréol réunionnais",
   },
   kr: {
     heroEyebrow: "In aplikasyon pansé pou La Rényon",
-    heroTitle: "Out kotidien pli sinp. Out bidjé pli klèr.",
-    heroLead: "Swiv out dépans, konpran out courses, trouv bann èd itil ek dékouv bann bon ladres dann lil.",
+    heroTitleLead: "Pa zis in bidjé.",
+    heroTitleFocus: "Bann désizion pli klèr.",
+    heroLead: "Courses intelligentes i analiz out tiké ek out labitid achat. Mon Konseyé i aide aou konpran out dépans ek prépar out démars.",
+    islandTitle: "An kréol osi.",
+    islandText: "Nout Konseyé i réponn aou an kréol rényoné.",
     heroPrimary: "Koumans gratis",
-    heroSecondary: "Dékouv bann fonksionalité",
-    heroLocal: "La Rényon, an fransé ek an kréol",
-    quick: ["Mon bidjé", "Mon bann courses", "Mon bann èd", "Mon Konseyé", "Bon Plan"],
-    featureEyebrow: "Sak lé esansyèl, san komplikasyon",
-    featureTitle: "Kan tout lé klèr, la vi lé pli sinp.",
-    featureLead: "Bann zouti itil, in navigasyon dirèk ek zis bann zinformasyon ou la bézwin.",
+    heroSecondary: "Koman sa i mars ?",
+    quick: [{ label: "Bidjé", href: "#fonctionnalites" }, { label: "Courses intelligentes", href: "#courses-intelligentes" }, { label: "Bann èd", href: "#fonctionnalites" }, { label: "Konseyé", href: "#conseiller" }, { label: "Bon Plan", href: "#bons-plans" }],
+    featureEyebrow: "Sak i fé la diferans",
+    featureTitle: "Mié achté. Mié désidé.",
+    featureLead: "Courses intelligentes ek Mon Konseyé pou konpran ek azir. Bidjé ek bann èd lé osi la.",
     features: [
-      { title: "Mon bidjé", lead: "War larzan i rantre, bann dépans ek sak i reste.", Icon: Wallet, tone: "mint" },
-      { title: "Mon bann courses", lead: "Scan out tiké, swiv out achats ek prépar out list.", Icon: ShoppingBasket, tone: "blue" },
-      { title: "Mon bann èd", lead: "Repèr bann èd posib ek organiz out bann démars.", Icon: HandHeart, tone: "lavender" },
-      { title: "Mon Konseyé", lead: "Poz out kestyon ek trouv bann konsey selon out lof.", Icon: MessageCircle, tone: "sage" },
+      { title: "Courses intelligentes", lead: "Tiké analizé, labitid achat ek bann piste pou fé lékonomi selon bann pri disponib.", Icon: ShoppingBasket, tone: "blue", featured: true, anchor: "courses-intelligentes", link: "Dékouv mon courses" },
+      { title: "Mon Konseyé", lead: "Bann konsey selon out bidjé, out courses ek bann èd posib.", Icon: MessageCircle, tone: "sage", featured: true, anchor: "conseiller-apercu", link: "War in legzanp" },
+      { title: "Mon bidjé", lead: "Larzan i rantre, dépans ek sak i reste.", Icon: Wallet, tone: "mint" },
+      { title: "Mon bann èd", lead: "Bann èd a repéré ek bann démars a prépar.", Icon: HandHeart, tone: "lavender" },
     ],
-    advisorEyebrow: "In koudmin itil",
-    advisorTitle: "Bann répons pou aide aou avansé.",
-    advisorLead: "Pou konpran out dépans ek prépar out bann démars, out Konseyé i aide aou selon bann fonksionalité out lof.",
-    advisorExampleLabel: "In legzanp kestyon",
-    advisorAnswerLabel: "In legzanp répons",
-    advisorNote: "Fodra vérifié bann drwa ek bann montan èd kot bann organismes konsèrné.",
-    dealsEyebrow: "Dékouv nout lil",
-    dealsTitle: "Bann bon ladres près koté ou.",
-    dealsLead: "Restoran, komers, artizan, sorti ek servis : trouv bann Bon Plan lokal selon bann zinformasyon disponib.",
+    advisorEyebrow: "In Konseyé ki va pli lwin",
+    advisorTitle: "Li répond pa zis. Li aide aou konpran.",
+    advisorLead: "Avèk bann donné disponib, li rode poukwa néna in ékar ek kosa fé.",
+    advisorExampleLabel: "Out kestyon",
+    advisorAnswerLabel: "Son rézonman",
+    advisorNote: "In legzanp, pa in vré analiz. Résilta selon bann donné disponib.",
+    advisorQuestion: "Mon bann courses la ogmanté de 120 €, mé mi achète presk parey. Poukwa ?",
+    advisorSteps: [{ label: "Mi konpar", text: "Pri, kantité ek frékans bann achats." }, { label: "Mi repèr", text: "Bann produi ki explik plis l’écar." }, { label: "Mi propoz", text: "Bann piste si bann donné lé sifizan." }],
+    dealsEyebrow: "Près koté ou",
+    dealsTitle: "Bann Bon Plan dann La Rényon.",
+    dealsLead: "Restoran, artizan, aktivité ek servis lokal.",
     dealsLink: "Dékouv bann Bon Plan",
     dealsLocation: "Rode par kominn ou bien dann toute lil",
-    proEyebrow: "Artizan, kréatèr ek profésionèl",
-    proTitle: "Fé konèt out laktivité.",
-    proLead: "Nou lé an train prépar in lespas pou présant out savoir-fèr, avèk in foto, in déskripsion, out kominn ek in lien vers out site ou rézo sosyo.",
+    proEyebrow: "Pou bann profésionèl",
+    proTitle: "Fé dékouv out laktivité.",
+    proLead: "In lespas sinp pou présant out laktivité i ariv biento.",
     proOffer: "12 mwa visibilité ofèr pou lansman",
     proDisclosure: "San angazman, san péman ek san obligasyon partnarya. Lof lansman lé soumèt a validasyon, dann limit bann plas disponib.",
     proLater: "Léspas « Mi propoz » lé an préparasyon",
     proFields: ["In foto", "In présantasyon", "In lien"],
     endEyebrow: "BudgetKazPeï",
-    endTitle: "Out kotidien pé vinn pli sinp.",
-    endText: "Koumans gratis ek dékouv bann fonksionalité ki korésponn a out bézwin.",
+    endTitle: "Essay BudgetKazPeï.",
+    endText: "Koumans gratis. Pas dan Premium selman si ou néna besoin.",
     endLink: "Dékouv bann lof",
     navPro: "Mi propoz",
-    languageLine: "Fransé · Kréol rényoné",
   },
 }
 
@@ -174,24 +177,36 @@ export default function PublicHomePage({ isAuthenticated = false }) {
       <section className="bk-hero" aria-labelledby="landing-title">
         <div className="landing-shell bk-hero__inner">
           <p className="bk-eyebrow">{copy.heroEyebrow}</p>
-          <h1 id="landing-title">{copy.heroTitle}</h1>
-          <p className="bk-hero__lead">{copy.heroLead}</p>
-          <div className="bk-hero__actions">
-            <LandingLink href={appHref} className="landing-link-button landing-link-button--primary">
-              {isAuthenticated ? content.hero.primaryAuthenticated : copy.heroPrimary}
-              <ArrowRight size={17} aria-hidden="true" />
-            </LandingLink>
-            <a className="landing-link-button landing-link-button--ghost" href="#fonctionnalites">{copy.heroSecondary}</a>
+          <h1 id="landing-title">
+            <span className="bk-hero__title-lead">{copy.heroTitleLead}</span>
+            <span className="bk-hero__title-focus">{copy.heroTitleFocus}</span>
+          </h1>
+          <div className="bk-hero__support">
+            <div className="bk-hero__support-main">
+              <p className="bk-hero__lead">{copy.heroLead}</p>
+              <div className="bk-hero__actions">
+                <LandingLink href={appHref} className="landing-link-button landing-link-button--primary">
+                  {isAuthenticated ? content.hero.primaryAuthenticated : copy.heroPrimary}
+                  <ArrowRight size={17} aria-hidden="true" />
+                </LandingLink>
+                <a className="landing-link-button landing-link-button--ghost" href="#fonctionnalites">{copy.heroSecondary}</a>
+              </div>
+            </div>
+            <aside className="bk-island-signature" aria-label="BudgetKazPeï en créole réunionnais" lang="rcf">
+              <img src="/landing-flag-reunion.svg" alt="Drapeau réunionnais" width="56" height="35" loading="eager" />
+              <div><strong>{copy.islandTitle}</strong><span>{copy.islandText}</span></div>
+            </aside>
           </div>
-          <p className="bk-hero__local"><MapPin size={15} aria-hidden="true" />{copy.heroLocal}</p>
         </div>
       </section>
 
-      <div className="bk-quicknav" aria-label={content.summaryAriaLabel}>
+      <nav className="bk-quicknav" aria-label={content.summaryAriaLabel}>
         <div className="landing-shell bk-quicknav__inner">
-          {copy.quick.map((item, index) => <span key={item} className={"bk-quicknav__item bk-quicknav__item--" + index}>{item}</span>)}
+          {copy.quick.map(({ label, href }, index) => (
+            <a key={index} href={href} className={"bk-quicknav__item bk-quicknav__item--" + index}>{label}</a>
+          ))}
         </div>
-      </div>
+      </nav>
 
       <section className="bk-section bk-features" id="fonctionnalites" aria-labelledby="bk-features-title">
         <div className="landing-shell">
@@ -201,11 +216,12 @@ export default function PublicHomePage({ isAuthenticated = false }) {
             <p>{copy.featureLead}</p>
           </div>
           <div className="bk-feature-grid">
-            {copy.features.map(({ title, lead, Icon, tone }) => (
-              <article className={"bk-feature bk-feature--" + tone} key={title}>
-                <span className="bk-feature__icon"><Icon size={22} strokeWidth={1.8} aria-hidden="true" /></span>
+            {copy.features.map(({ title, lead, Icon, tone, featured, anchor, link }) => (
+              <article id={anchor} className={"bk-feature bk-feature--" + tone + (featured ? " bk-feature--featured" : "")} key={title}>
+                <span className="bk-feature__icon"><Icon size={featured ? 26 : 22} strokeWidth={1.8} aria-hidden="true" /></span>
                 <h3>{title}</h3>
                 <p>{lead}</p>
+                {featured && <a href={tone === "sage" ? "#conseiller" : appHref} className="bk-feature__link">{link}<ArrowUpRight size={17} aria-hidden="true" /></a>}
               </article>
             ))}
           </div>
@@ -221,47 +237,34 @@ export default function PublicHomePage({ isAuthenticated = false }) {
           </div>
           <div className="bk-advisor__example">
             <p className="bk-example-label">{copy.advisorExampleLabel}</p>
-            <p className="bk-advisor__question">{content.advisor.conversation.user}</p>
+            <p className="bk-advisor__question">{copy.advisorQuestion}</p>
             <div className="bk-advisor__answer">
               <p className="bk-example-label">{copy.advisorAnswerLabel}</p>
-              <p>{content.advisor.conversation.assistant}</p>
+              <ol className="bk-advisor__steps">
+                {copy.advisorSteps.map(step => (
+                  <li key={step.label}><strong>{step.label}</strong><span>{step.text}</span></li>
+                ))}
+              </ol>
             </div>
             <small>{copy.advisorNote}</small>
           </div>
         </div>
       </section>
 
-      <section className="bk-section bk-deals" id="bons-plans" aria-labelledby="bk-deals-title">
-        <div className="landing-shell bk-two-column">
-          <div className="bk-section-heading">
+      <section className="bk-section bk-local" id="bons-plans" aria-labelledby="bk-deals-title">
+        <div className="landing-shell bk-local__grid">
+          <div className="bk-local__deals">
             <p className="bk-eyebrow">{copy.dealsEyebrow}</p>
             <h2 id="bk-deals-title">{copy.dealsTitle}</h2>
             <p>{copy.dealsLead}</p>
             <TextLink href={appHref}>{copy.dealsLink}</TextLink>
           </div>
-          <div className="bk-deals__details">
-            <div className="bk-deals__heading"><Search size={20} aria-hidden="true" />{copy.dealsLocation}</div>
-            <div className="bk-deals__categories">
-              {content.localDeals.localOffers.categories.map(item => <span key={item.label}>{item.label}</span>)}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="bk-section bk-professionals" id="je-propose" aria-labelledby="bk-professionals-title">
-        <div className="landing-shell bk-two-column">
-          <div className="bk-section-heading">
+          <div className="bk-local__pro" id="je-propose">
             <p className="bk-eyebrow">{copy.proEyebrow}</p>
-            <h2 id="bk-professionals-title">{copy.proTitle}</h2>
+            <h3>{copy.proTitle}</h3>
             <p>{copy.proLead}</p>
-          </div>
-          <div className="bk-professionals__offer">
-            <p className="bk-professionals__offer-title"><Store size={24} aria-hidden="true" />{copy.proOffer}</p>
-            <div className="bk-professionals__fields">
-              {copy.proFields.map(field => <span key={field}>{field}</span>)}
-            </div>
-            <p>{copy.proDisclosure}</p>
-            <small>{copy.proLater}</small>
+            <strong>{copy.proOffer}</strong>
+            <small>{copy.proDisclosure} {copy.proLater}.</small>
           </div>
         </div>
       </section>
@@ -285,7 +288,7 @@ export default function PublicHomePage({ isAuthenticated = false }) {
 
       <footer className="bk-footer">
         <div className="landing-shell bk-footer__inner">
-          <span>© {new Date().getFullYear()} BudgetKazPeï · {copy.languageLine}</span>
+          <span>© {new Date().getFullYear()} BudgetKazPeï</span>
           <nav aria-label={content.footer.navigationAriaLabel}>
             <LandingLink href="/privacy">{content.footer.privacy}</LandingLink>
             <LandingLink href="/mentions-legales">{content.footer.legalNotices}</LandingLink>

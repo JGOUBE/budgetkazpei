@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 84 52" aria-labelledby="title">
+  <title id="title">Drapeau de La Réunion — Lo Mavéli</title>
+  <rect width="84" height="52" fill="#1769b4"/>
+  <g fill="#f4d650">
+    <path d="M42 31 L0 3 L0 10 Z"/>
+    <path d="M42 31 L19 0 L28 0 Z"/>
+    <path d="M42 31 L56 0 L64 0 Z"/>
+    <path d="M42 31 L84 3 L84 10 Z"/>
+    <path d="M42 31 L84 25 L84 30 Z"/>
+    <path d="M42 31 L0 25 L0 30 Z"/>
+  </g>
+  <path d="M19 52 L42 31 L65 52 Z" fill="#cf3349"/>
+</svg>
