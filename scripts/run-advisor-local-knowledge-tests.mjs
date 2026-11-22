@@ -79,6 +79,19 @@ const localAides = [
 const requested=rankAidesForAdvisor(localAides,{commune:"Saint-Pierre"},
   "Je cherche une épicerie solidaire à Saint-Leu")
 assert.equal(requested[0].id,2,"Requested commune must beat the saved commune")
+const evidenceCandidates=[
+  {id:"outdated",nom:"Aide au dépôt de garantie",categorie:"logement",commune:"Saint-Leu",
+    description_fr:"Accompagnement pour le dépôt de garantie",
+    statut_verification:"a_reconfirmer",score_priorite:135,actif:true},
+  {id:"verified",nom:"Avance aide dépôt de garantie",categorie:"logement",commune:"Saint-Leu",
+    description_fr:"Accompagnement pour le dépôt de garantie",
+    statut_verification:"source_confirmee",score_priorite:98,actif:true},
+]
+assert.equal(rankAidesForAdvisor(evidenceCandidates,{commune:"Saint-Leu"},
+  "Comment financer un dépôt de garantie ?")[0]?.id,"verified",
+  "A documented source should win against a similarly relevant stale aid")
+assert.ok(prepareAdvisorAideContext(evidenceCandidates)[0].eligibilite_confirmee===false,
+  "Source verification is never a legal eligibility decision")
 const home=rankAidesForAdvisor(localAides,{commune:"Saint-Pierre"},"Je cherche une épicerie solidaire")
 assert.equal(home[0].id,1,"Home commune should win without a requested alternative")
 assert.ok(selectAidCandidatesForAdvisor(localAides,{commune:"Saint-Leu"},
