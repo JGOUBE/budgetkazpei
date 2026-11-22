@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
-import { buildSystemPrompt } from "./prompts/systemPrompt.ts"
+import { buildSystemPrompt, buildOpenQuestionSystemPrompt } from "./prompts/systemPrompt.ts"
 import {
   buildMemoryPrompt,
   loadAssistantMemory,
@@ -314,6 +314,9 @@ function buildUserPrompt(
     : "Aucun échange récent fourni par l'interface."
   const consistencyPrompt = buildConsistencyPrompt(consistency)
   const truthPrompt = buildTruthPrompt(truthReport)
+  const dateReunion = new Intl.DateTimeFormat("fr-FR", {
+    timeZone: "Indian/Reunion", day: "2-digit", month: "2-digit", year: "numeric",
+  }).format(new Date())
   const bilingualRequested = allowsBilingualAdvisorResponse(originalQuestion)
   const languageInstruction = bilingualRequested
     ? `LANGUE DE RÉPONSE : l'utilisateur demande explicitement une réponse bilingue ou une traduction. Respecte exactement cette demande et identifie clairement chaque langue.`
@@ -333,6 +336,7 @@ ${originalQuestion || body.question || ""}
 
 Mode demandé par l'interface :
 ${mode}
+Date de référence à La Réunion : ${dateReunion}.
 
 Profil métier utile pour la personnalisation (sans coordonnées ni données de facturation) :
 ${safeJson(advisorProfileForModel(profile))}
@@ -349,8 +353,9 @@ ${safeJson(recommendedAides.slice(0, 8), [])}
 Contexte conversationnel structuré calculé par BudgetKazPei :
 ${safeJson(conversationContext, {})}
 
-Faits officiels vérifiés en base avant génération :
+Fiches d'aides retrouvées en base par identifiant, avec sources de référence :
 ${safeJson(trustedAidFacts, [])}
+Ces fiches ne constituent pas une vérification web des règles en vigueur ce jour.
 
 Repères locaux BudgetKazPeï correspondant à la question (non exhaustifs) :
 ${safeJson(reunionOrientation, [])}
@@ -386,6 +391,29 @@ Règles de continuité conversationnelle :
 - Pour un prix futur, n'affirme jamais une hausse ou une baisse certaine : distingue les facteurs possibles d'une prévision que tu ne peux pas vérifier.
 - CORRECTION : tiens compte de la correction sans défendre la réponse précédente.
 
+CONNAISSANCE DES AIDES ET SOLIDARITÉS À LA RÉUNION :
+- Le catalogue BudgetKazPeï couvre non seulement les prestations nationales et locales, mais aussi les associations, collectifs, CCAS, épiceries solidaires, accompagnements et distributions en nature. Cherche la bonne réponse dans les fiches fournies pour le sujet actuel ; ne récite pas toute la base.
+- Identifie d'abord le besoin réel (se nourrir, se loger, garder un enfant, travailler, mobilité, santé, urgence, accompagnement), puis la commune demandée explicitement, la commune du profil si aucune n'est précisée, et uniquement les critères personnels connus.
+- Privilégie au plus trois pistes réellement pertinentes, avec le nom exact, la nature du soutien, la zone ou commune enregistrée, le contact ou lien documentaire disponible et une première démarche concrète.
+- Distingue une aide monétaire, un service gratuit, une distribution matérielle et une simple orientation : un collectif ou une association ne verse pas automatiquement une allocation. N'annonce jamais un montant pour une prestation en nature ou une prise de contact.
+- La localisation d'un siège social ne prouve pas que l'organisme couvre seulement cette commune ; si la zone couverte est inconnue, indique qu'il faut confirmer l'accueil et les conditions directement.
+- Les besoins et restrictions mentionnés dans une fiche sont des pistes d'orientation, pas une décision d'éligibilité. Ne rejette pas une piste sur un plafond de revenus générique non sourcé, un âge incertain ou une situation familiale incomplète.
+- Si la question concerne plusieurs difficultés, traite en priorité la plus urgente et propose ensuite les pistes complémentaires sans écraser une catégorie par une autre.
+- Si le catalogue ne contient pas de structure vérifiée pour la commune ou la difficulté, dis-le clairement. N'invente ni association, adresse, horaires, téléphone, montant, couverture territoriale ou disponibilité.
+- Pour toute prestation, les liens du catalogue sont des points de départ, non des preuves d'actualisation ; signale les informations à confirmer avant une demande.
+
+FIABILITÉ DES AIDES, DÉMARCHES ET DONNÉES ÉCONOMIQUES :
+- Les faits enregistrés et les liens d'organismes ne constituent pas une consultation en temps réel. Un lien HTTPS ne garantit pas la fraîcheur du montant : n'affirme pas qu'un barème est encore en vigueur sans date certaine.
+- Pour les droits, barèmes, inflation, SMIC, prix et autres chiffres variables, ne présente pas une connaissance du modèle comme un montant officiel vérifié. Si le dossier ne contient pas de chiffre sourcé et daté, dis ce qui manque et oriente vers la source officielle compétente.
+- Distingue systématiquement les conditions à confirmer, les étapes certaines et l'estimation personnelle. Ne promets ni éligibilité, ni versement, ni délai.
+
+ANALYSE PERSONNALISÉE DES BUDGETS :
+- Pour les questions sur les propres dépenses de l'utilisateur, pars d'abord de localContext.financial.budgetAdvisorContext lorsqu'il est présent ; ne remplace jamais une valeur absente (null) par zéro.
+- Vérifie period, income.available, expenses.fixed/variable, spendingByCategory et dataCompleteness.missingFields avant de conclure.
+- Une dépense du mois en cours n'est pas un mois complet. Ne compare pas mécaniquement un mois partiel à un mois entier ; précise la période et n'extrapole pas sans demande explicite.
+- Pour une analyse utile : donne un constat chiffré réellement présent, identifie un levier d'économie cohérent avec les catégories observées, et propose une action réaliste ; si les données ne suffisent pas, dis exactement laquelle manque.
+- N'invente ni montant d'économies potentielles, ni meilleur magasin, ni prime éligible. Les prix historiques ne sont jamais des prix garantis aujourd'hui.
+
 PRIORITÉ DE RAISONNEMENT BUDGETKAZPEI :
 - La demande actuelle et son sujet actif déterminent d'abord la pertinence métier.
 - Utilise ensuite les faits officiels et aides recommandées du même sujet, puis le profil pour départager ou personnaliser.
@@ -412,10 +440,11 @@ function buildOpenTopicPrompt(
   language: AssistantLanguage,
 ) {
   const question = String(body.originalQuestion || body.question || "").trim()
-  const history = Array.isArray(body.recentHistory) ? body.recentHistory.slice(0, 6) : []
+  // Short context suffices for follow-ups and reduces token consumption.
+  const history = Array.isArray(body.recentHistory) ? body.recentHistory.slice(0, 3) : []
   const past = [...history].reverse().map((item: any) => {
-    const previous = String(item?.question || "").slice(0, 500)
-    const answer = String(item?.answer || "").slice(0, 800)
+    const previous = String(item?.question || "").slice(0, 350)
+    const answer = String(item?.answer || "").slice(0, 500)
     return [previous ? `Question précédente : ${previous}` : "", answer ? `Réponse précédente : ${answer}` : ""]
       .filter(Boolean).join("\n")
   }).filter(Boolean).join("\n\n")
@@ -423,8 +452,13 @@ function buildOpenTopicPrompt(
     ? "Réponds en créole réunionnais simple sauf demande explicite de traduction ou de réponse bilingue."
     : "Réponds en français sauf demande explicite de traduction ou de réponse bilingue."
 
+  const dateReunion = new Intl.DateTimeFormat("fr-FR", {
+    timeZone: "Indian/Reunion", day: "2-digit", month: "2-digit", year: "numeric",
+  }).format(new Date())
+
   return `QUESTION LIBRE : INTENTION ACTUELLE PRIORITAIRE
 ${languageRule}
+DATE DE RÉFÉRENCE À LA RÉUNION : ${dateReunion}
 
 MESSAGE ACTUEL :
 ${question}
@@ -439,6 +473,7 @@ Consignes pour cette question :
 - Réponds d'abord au message actuel et à son véritable sujet.
 - Ne déduis pas une demande d'aide administrative, un budget ou un profil personnel d'une question sans rapport.
 - Distingue clairement les hypothèses imaginaires, la créativité et les faits réels.
+- Tu n'as pas de recherche Internet en direct ici : pour les chiffres économiques, taux, lois, aides, prix, actualités ou titulaires d'une fonction, ne présente pas un chiffre mémorisé comme vérifié aujourd'hui. Précise ce qui doit être confirmé et nomme le site officiel adapté sans inventer de lien.
 - Si l'information est incertaine ou changeante sans vérification récente, dis-le sans inventer de source.
 - Une question simple mérite une réponse simple, sans renvoi systématique vers une démarche.
 - Une suite courte comme « Oui, ça va encore augmenter ? » se rattache au sujet précédent vérifié (par exemple le carburant). Réponds à ce sujet, sans dévier vers un message hors sujet.
@@ -1068,26 +1103,12 @@ Deno.serve(async (req) => {
         }))
       }
     }
-    if (spendScope === "offtopic") {
-      // A genuinely unrelated question ends the prior topic, so a later
-      // elliptical question cannot silently reactivate stale financial advice.
-      if (!isContextualAdvisorFollowUp(context.question)) {
-        await clearTrustedAdvisorTopic(supabaseAdmin, context.userId)
-      }
-      console.info("ADVISOR_API_METER", JSON.stringify({
-        type: "local_offtopic", calls: 0, scope: "offtopic",
-      }))
-      return jsonResponse({
-        success: true,
-        answer: getLocalAdvisorOffTopicResponse(context.language),
-        source: "local_offtopic",
-        language: context.language,
-        mode: context.mode,
-        consumed: false,
-        openAiCallCount: 0,
-        recommendedAidIds: [],
-        recommendedAidNames: [],
-      })
+    // Respond to genuine free-form questions with one model completion,
+    // under existing server-side off-topic and cost guards.
+    // An unrelated new topic must not revive earlier financial advice.
+    if (spendScope === "offtopic" &&
+        !isContextualAdvisorFollowUp(context.question)) {
+      await clearTrustedAdvisorTopic(supabaseAdmin, context.userId)
     }
 
     // Load usage only for the chargeable path; local answers cost no queries.
@@ -1114,18 +1135,19 @@ Deno.serve(async (req) => {
       throw new Error("OPENAI_API_KEY manquante.")
     }
 
-    // Read memory only if an AI analysis is going to be performed.
-    context.memory = await loadAssistantMemory(supabaseAdmin, context.userId)
-
+    // Unrelated general questions do not need the user\'s private financial memory.
     // A strict official-amount review is correct for an actual CAF/finance
     // question, but it can badly corrupt an unrelated answer about astronomy,
     // a recipe or an invented scenario.
-    const protectedTopic = isProtectedAdvisorQuestion({
+    const protectedTopic = spendScope === "useful" && isProtectedAdvisorQuestion({
       question: context.question,
       mode: context.mode,
       action: context.action,
       conversationContext: context.body?.conversationContext || {},
     })
+    context.memory = protectedTopic
+      ? await loadAssistantMemory(supabaseAdmin, context.userId)
+      : null
 
     const consistency =
       protectedTopic && context.action !== "analyze_refusal"
@@ -1164,12 +1186,16 @@ Deno.serve(async (req) => {
             )
           : buildOpenTopicPrompt(context.body, context.language)
 
-    const systemPrompt = buildSystemPrompt(
-      context.language,
-      context.action,
-      context.mode,
-      context.allowBilingualResponse,
-    )
+    // Independent questions use a compact system instruction. Complex
+    // rights/budget cases retain the full protective prompt and source checks.
+    const systemPrompt = protectedTopic || context.action === "analyze_refusal"
+      ? buildSystemPrompt(
+          context.language, context.action, context.mode,
+          context.allowBilingualResponse,
+        )
+      : buildOpenQuestionSystemPrompt(
+          context.language, context.allowBilingualResponse,
+        )
 
     // Avoid accidentally sending huge account snapshots to the model.
     if (userPrompt.length > 32000) {

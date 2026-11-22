@@ -356,8 +356,8 @@ assert.match(trustedTopicMigration, /revoke all on public.advisor_conversation_t
 const advisorEdgeSource = await readFile(new URL("../supabase/functions/assistant-aisupabase/index.ts", import.meta.url), "utf8")
 assert.ok(
   advisorEdgeSource.indexOf("getLocalAdvisorBudgetNoDataAdvice(") <
-  advisorEdgeSource.indexOf('if (spendScope === "offtopic")'),
-  "Local no-data advice must be resolved before off-topic fallback",
+  advisorEdgeSource.indexOf('if (spendScope === "offtopic" &&'),
+  "Local no-data advice must be resolved before off-topic routing",
 )
 assert.match(advisorEdgeSource, /type: "local_budget_advice", calls: 0/)
 assert.match(advisorEdgeSource, /readTrustedAdvisorTopic\(supabaseAdmin, context\.userId\)/)
@@ -365,8 +365,19 @@ assert.match(advisorEdgeSource, /isContextualAdvisorFollowUp\(context\.question\
 assert.match(advisorEdgeSource, /if \(trustedTopic\) \{\s*spendScope = "useful"/)
 assert.match(advisorEdgeSource, /context\.body\.trustedPreviousTopic = trustedTopic/)
 assert.match(advisorEdgeSource, /await rememberAdvisorTopic\(\s*supabaseAdmin, context\.userId, context\.question/)
-assert.ok(advisorEdgeSource.indexOf('if (spendScope === "offtopic")') <
-  advisorEdgeSource.indexOf('rpc("reserve_advisor_openai"'))
+// Open-ended questions now reach the model while still passing both atomic
+// server cost guards. A generic local redirect must not swallow them.
+assert.ok(advisorEdgeSource.includes('if (spendScope === "offtopic" &&'))
+assert.doesNotMatch(advisorEdgeSource, /source: "local_offtopic"/)
+assert.ok(advisorEdgeSource.includes('const protectedTopic = spendScope === "useful" && isProtectedAdvisorQuestion'))
+assert.ok(advisorEdgeSource.includes('context.memory = protectedTopic'))
+assert.ok(advisorEdgeSource.includes('buildOpenTopicPrompt(context.body, context.language)'))
+assert.ok(advisorEdgeSource.includes('DATE DE RÉFÉRENCE À LA RÉUNION'))
+assert.ok(advisorEdgeSource.includes('dataCompleteness.missingFields'))
+assert.ok(advisorEdgeSource.includes('Ne compare pas mécaniquement un mois partiel'))
+assert.ok(advisorEdgeSource.includes('Pour les droits, barèmes, inflation, SMIC'))
+assert.ok(advisorEdgeSource.indexOf('rpc("reserve_advisor_ai_request"') <
+  advisorEdgeSource.indexOf('const openAiResult = await callOpenAi'))
 assert.ok(advisorEdgeSource.indexOf('rpc("reserve_advisor_ai_request"') <
   advisorEdgeSource.indexOf('rpc("reserve_advisor_openai"'))
 assert.match(advisorEdgeSource, /Pour un prix futur, n'affirme jamais une hausse ou une baisse certaine/)

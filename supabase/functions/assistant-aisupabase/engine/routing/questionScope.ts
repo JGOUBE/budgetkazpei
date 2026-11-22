@@ -13,6 +13,13 @@ const FICTIONAL = /\b(?:fiction|fictif|imagine|invente|raconte une histoire|raco
 const BENEFITS = /\b(?:aides? financieres?|aides? sociales?|aides? pour|aides\b|une aide|montant de l aide|droit a l aide\b|allocations?|prestations? sociales?|caf|rsa|apl|fsl|ccas|mdph|aah|are|prime d activite|cheque energie|pass sport|allocation logement|allocataire|eligibilite|eligible aux|droit aux aides)\b/
 const PERSONAL_BUDGET = /\b(?:mon budget|mes budgets|ma depense|mes depenses|mes charges|mon loyer|mes revenus|mon revenu|ma marge|mes factures|mes abonnements|mon abonnement|mes achats|mes courses|ma liste de courses|ma liste de courses|mon panier|mes economies|mes dettes|mon credit|mes paiements|mon salaire|combien me reste|combien j ai depense|combien ai je depense|je depense|je paie|je touche comme revenu|je gagne par mois)\b/
 const ADMIN = /\b(?:mon dossier|ma demande|mon courrier|mon refus|mon recours|ma declaration|mon contrat|mes justificatifs|mes demarches|rendez vous caf|courrier administratif|lettre administrative|recours administratif)\b/
+// Directories of nearby associations and in-kind aid are protected advisor
+// knowledge too, not generic small-talk.
+const LOCAL_HELP = /\b(?:epicerie (?:sociale|solidaire)|associations?|collectifs?|entraide|banque alimentaire|restos du coeur|secours populaire|croix rouge|distribution alimentaire|travailleur social|assistante sociale|maison des solidarites|colis alimentaire)\b/
+const HELP_INTENT = /\b(?:je cherche|j ai besoin|besoin de|besoin d|ou trouver|ou aller|vers qui|qui peut m aider|comment contacter|comment obtenir|a qui demander|mi cherche|mi besoin|koman trouve|kot mi)\b/
+const FOOD_EMERGENCY = /\b(?:plus de quoi manger|pas de quoi manger|rien a manger|plus rien a manger|plus d argent pour manger|mon frigo est vide)\b/
+const DIRECT_SUPPORT = /\b(?:je suis victime|je subis des violences|je vis des violences|victime de violences|violences conjugales|violences intrafamiliales|mon conjoint me frappe|on me harcele|je suis harcele|besoin de soutien scolaire|besoin d aide aux devoirs|je cherche du soutien scolaire|je recherche du soutien scolaire|mon enfant a des difficultes scolaires|mon enfant a besoin d aide aux devoirs)\b/
+
 const GUARDED_MODES = new Set<AssistantMode>([
   "budget_depenses","trouver_aide","preparer_dossier","generer_courrier",
   "generer_email","preparer_relance","comprendre_courrier","comprendre_refus",
@@ -30,6 +37,7 @@ export function isProtectedAdvisorQuestion({
   const text = normalize(question)
   if (action === "analyze_refusal") return true
   if (FICTIONAL.test(text)) return false
+  if (FOOD_EMERGENCY.test(text) || DIRECT_SUPPORT.test(text) || (LOCAL_HELP.test(text) && HELP_INTENT.test(text))) return true
   if (BENEFITS.test(text) || PERSONAL_BUDGET.test(text) || ADMIN.test(text)) return true
   if (GUARDED_MODES.has(mode as AssistantMode)) return true
 

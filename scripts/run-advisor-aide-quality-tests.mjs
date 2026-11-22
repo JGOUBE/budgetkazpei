@@ -48,6 +48,21 @@ assert.ok(facts.every(row=>row.eligibilite_confirmee===false))
 assert.ok(facts.every(row=>row.regles_et_montants_a_confirmer===true))
 assert.equal(facts.find(row=>row.nom==="Aide familiale").source_status,"reference_a_confirmer")
 assert.equal(facts.find(row=>row.nom==="APL").source_status,"reference_disponible")
+assert.equal(facts.find(row=>row.nom==="Aide familiale").verification_status,"a_verifier")
+assert.equal(facts.find(row=>row.nom==="APL").verification_status,"a_verifier")
+assert.equal(facts.find(row=>row.nom==="Aide familiale").source_reference_disponible,false)
+assert.equal(facts.find(row=>row.nom==="APL").source_reference_disponible,true)
+assert.equal(facts.find(row=>row.nom==="APL").source_confirmee,false)
+const solidarityService = prepareAdvisorAideContext([{
+  id:119,nom:"Épicerie solidaire",categorie:"alimentaire",
+  type_dispositif:"aide_alimentaire",statut_verification:"source_confirmee",
+  date_verification:"2026-11-20",commune:"Saint-Leu",
+  lien_officiel:"https://andes-france.com/structure/kdi-le-coeur/",actif:true,
+}],false)[0]
+assert.equal(solidarityService.aide_en_especes,false)
+assert.equal(solidarityService.source_confirmee,true)
+assert.equal(solidarityService.montant_min,null)
+assert.match(solidarityService.montant,/aucun versement en espèces/i)
 const aidePage=await read("src/components/aides/AidesPage.jsx")
 const assistant=await read("src/components/conseiller/AssistantConseiller.jsx")
 assert.match(aidePage,/rankAidDiscovery\(aides, profile \|\| \{\}, trackedIds, 12\)/)
