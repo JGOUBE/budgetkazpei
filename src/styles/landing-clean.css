@@ -834,3 +834,71 @@ html[data-theme="dark"]:has(.bk-landing) #root {
     height: 48px;
   }
 }
+
+
+/* Landing signature 2026 : deux bénéfices visibles, identité créole à droite. */
+.bk-landing:not(.bk-offers-page) .bk-hero__support {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(270px, .75fr);
+  gap: clamp(25px, 5vw, 78px);
+  align-items: center;
+}
+.bk-landing:not(.bk-offers-page) .bk-hero__support-main {
+  min-width: 0;
+}
+.bk-landing:not(.bk-offers-page) .bk-island-signature {
+  max-width: none;
+  min-width: 0;
+  margin: 0;
+  padding: 6px 0 6px 24px;
+  border-top: 0;
+  border-left: 2px solid #aacbb9;
+  align-self: stretch;
+  align-items: center;
+}
+.bk-landing:not(.bk-offers-page) .bk-island-signature > div {
+  align-items: flex-start;
+}
+.bk-landing:not(.bk-offers-page) .bk-island-signature strong {
+  font-size: 1.16rem;
+  line-height: 1.35;
+}
+.bk-landing:not(.bk-offers-page) .bk-island-signature span {
+  font-size: 1.02rem;
+  line-height: 1.55;
+}
+.bk-landing:not(.bk-offers-page) .bk-feature--featured {
+  position: relative;
+}
+.bk-landing:not(.bk-offers-page) .bk-feature--featured h3 {
+  font-size: clamp(1.7rem, 2.4vw, 2.25rem);
+}
+@media (max-width: 900px) {
+  .bk-landing:not(.bk-offers-page) .bk-hero__support {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 21px;
+  }
+  .bk-landing:not(.bk-offers-page) .bk-island-signature {
+    padding: 18px 0 0;
+    margin: 0;
+    border-left: 0;
+    border-top: 1px solid var(--bk-line);
+    align-self: auto;
+    max-width: 650px;
+  }
+}
+@media (max-width: 640px) {
+  .bk-landing:not(.bk-offers-page) .bk-island-signature {
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .bk-landing:not(.bk-offers-page) .bk-island-signature strong {
+    font-size: 1.09rem;
+  }
+  .bk-landing:not(.bk-offers-page) .bk-island-signature span {
+    font-size: .99rem;
+  }
+  .bk-landing:not(.bk-offers-page) .bk-feature--featured h3 {
+    font-size: clamp(1.55rem, 6.2vw, 1.95rem);
+  }
+}
