@@ -31,6 +31,7 @@ import { requestAppSectionNavigation } from "../../services/appSectionNavigation
 import { resolveAdvisorLanguage } from "../../services/advisorLanguage"
 import { selectAidCandidatesForAdvisor } from "../../services/aidesRanking"
 import { prepareAdvisorAideContext } from "../../services/advisorAideContext"
+import { buildAdvisorRequestBody } from "../../services/advisorRequestPayload"
 import { buildLocalAidSourceAnswer, isLocalAidSourceRequest } from "../../services/advisorLocalAidAnswer"
 import {
   shouldLookupAdvisorAids,
@@ -515,7 +516,17 @@ export default function AssistantConseiller({
       assistantIsKreol,
       conversationContext.rankingQuery,
     )
-    const financialContext = buildAssistantAiSummary(questionInsights || financialInsights, detectedIntent)
+    // Aid/service searches are not a request to upload every saved shopping
+    // metric. Keep the authenticated profile and the eight relevant aid cards.
+    // A full personal-budget analysis explicitly asked for is the exception.
+    const normalizedQuestion = normalizeText(sentQuestion)
+    const explicitRecordedBudgetAnalysis = /(?:analyse|analyser|d apres|selon|regarde).{0,48}(?:mes depenses|mes achats|mon budget|mes statistiques|mes tickets)/.test(normalizedQuestion)
+    const isAidQuestion = shouldLookupAdvisorAids({
+      question: sentQuestion, mode, conversationContext, recentHistory, handoffContext,
+    })
+    const financialContext = isAidQuestion && !explicitRecordedBudgetAnalysis
+      ? { intent: "trouver_aide", budgetAdvisorContext: {} }
+      : buildAssistantAiSummary(questionInsights || financialInsights, detectedIntent)
 
     const localContext = {
       commune: currentProfile?.commune || "",
@@ -554,8 +565,8 @@ export default function AssistantConseiller({
     const assistantEndpoint = reviewEnabled
       ? "assistant-aisupabase-review"
       : "assistant-aisupabase"
-    const { data, error } = await supabase.functions.invoke(assistantEndpoint, {
-      body: {
+    const requestBody = buildAdvisorRequestBody({
+      
         question: buildQuestionForAi(sentQuestion, mode, assistantIsKreol, currentProfile),
         originalQuestion: sentQuestion,
         assistantMode: mode,
@@ -587,14 +598,25 @@ export default function AssistantConseiller({
           recommendedAidIds: item.recommendedAidIds || [],
           recommendedAidNames: item.recommendedAidNames || [],
         })),
-      },
+    })
+    const { data, error } = await supabase.functions.invoke(assistantEndpoint, {
+      body: requestBody,
     })
 
     if (error) {
       console.error("Erreur Edge Function assistant-aisupabase:", error)
+      let edgeMessage = ""
+      try {
+        if (error.context?.json) {
+          const response = await error.context.json()
+          edgeMessage = String(response?.error || "")
+        }
+      } catch (_) { /* non-JSON network errors keep their native message */ }
       return {
         success: false,
-        error: error.message || "Erreur assistant IA.",
+        error: edgeMessage || (error.context?.status === 413
+          ? "Le contexte envoyé au Conseiller est trop volumineux. Réessayez en formulant une question plus ciblée."
+          : "Le Conseiller n'a pas pu répondre. Réessayez dans quelques instants."),
       }
     }
 
