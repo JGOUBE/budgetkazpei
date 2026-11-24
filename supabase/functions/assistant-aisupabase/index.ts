@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import { extractPurchasePreferences, isPurchaseConstraintFollowUp } from "./engine/purchases/purchasePreferences.mjs"
+import { isDirectPurchaseAction, renderLocalPurchaseAction } from "./engine/purchases/localPurchaseActions.mjs"
 import { identifyPurchaseAction, buildPurchaseActionPlan } from "./engine/purchases/purchaseActionPlan.mjs"
 import { renderPurchaseAdviceCases, buildPurchaseAdviceCases } from "./engine/purchases/purchaseAdviceCases.mjs"
 import { personalPurchaseIntent, loadRecordedPurchases, recordedPurchaseEvidence } from "./engine/purchases/recordedPurchases.mjs"
@@ -957,9 +958,14 @@ Deno.serve(async (req) => {
     const purchaseAction = identifyPurchaseAction(context.question) || (isPurchaseConstraintFollowUp(context.question,purchaseHistory) ? purchaseHistory.slice(0,3).map((turn:any)=>identifyPurchaseAction(turn?.question||"")).find((action:any)=>action?.kind==="goal") || null : null)
     const recordedPurchases = purchaseIntent ? await loadRecordedPurchases(supabaseAdmin, context.userId) : null
     if (recordedPurchases) {
+      const actionPlan = buildPurchaseActionPlan(recordedPurchases, purchaseAction, purchasePreferences)
       const local = context.body.localContext || {}
       const financial = local.financial || {}
-      context.body.localContext = { ...local, financial: { ...financial, budgetAdvisorContext: { ...financial.budgetAdvisorContext, shoppingHabits: { ...recordedPurchases, actionPlan: buildPurchaseActionPlan(recordedPurchases, purchaseAction, purchasePreferences), adviceCases: buildPurchaseAdviceCases(recordedPurchases,purchasePreferences).map(({advice,...item})=>item) } } } }
+      context.body.localContext = { ...local, financial: { ...financial, budgetAdvisorContext: { ...financial.budgetAdvisorContext, shoppingHabits: { ...recordedPurchases, actionPlan, adviceCases: buildPurchaseAdviceCases(recordedPurchases,purchasePreferences).map(({advice,...item})=>item) } } } }
+      if (isDirectPurchaseAction(context.question,purchaseAction)) {
+        const directAnswer=renderLocalPurchaseAction(actionPlan,purchaseAction,context.language)
+        if(directAnswer) return jsonResponse({success:true,answer:directAnswer,source:"local_purchase_action",language:context.language,mode:context.mode,consumed:false,openAiCallCount:0,recommendedAidIds:[],recommendedAidNames:[]})
+      }
       if (purchaseIntent === "latest" || !recordedPurchases.available || !recordedPurchases.latestPurchases.length) {
         return jsonResponse({ success: true, answer: recordedPurchaseEvidence(recordedPurchases, context.language), source: "local_recorded_purchases", language: context.language, mode: context.mode, consumed: false, openAiCallCount: 0, recommendedAidIds: [], recommendedAidNames: [] })
       }
