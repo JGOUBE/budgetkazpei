@@ -125,20 +125,29 @@ function collectPreviousRecommendations(history = [], aides = [], activeTopic = 
   return { ids, names }
 }
 
-function getLastRecommendedAid(history = [], aides = []) {
+// Explicit ordinal references must resolve against the immediately preceding answer.
+function ordinalAidIndex(text = "") {
+  if (/^(?:et |mais )?(?:la |le |du |de la )?(?:deuxieme|seconde|second|2e|2eme)(?: aide| organisme| association| option)?\b/.test(text)) return 1
+  if (/^(?:et |mais )?(?:la |le |du |de la )?(?:troisieme|3e|3eme)(?: aide| organisme| association| option)?\b/.test(text)) return 2
+  if (/^(?:et |mais )?(?:la |le |du |de la )?(?:premiere|premier|1ere|1er)(?: aide| organisme| association| option)?\b/.test(text)) return 0
+  return -1
+}
+
+function getLastRecommendedAid(history = [], aides = [], question = "") {
   const latest = history[0]
   if (!latest) return { ids: [], names: [] }
 
+  const index = Math.max(0, ordinalAidIndex(normalizeAidTopicText(question)))
   const storedIds = Array.isArray(latest.recommendedAidIds) ? latest.recommendedAidIds : []
   const storedNames = Array.isArray(latest.recommendedAidNames) ? latest.recommendedAidNames : []
   if (storedIds.length > 0 || storedNames.length > 0) {
     return {
-      ids: storedIds.length > 0 ? [storedIds[0]] : [],
-      names: storedNames.length > 0 ? [storedNames[0]] : [],
+      ids: storedIds.length > index ? [storedIds[index]] : [],
+      names: storedNames.length > index ? [storedNames[index]] : [],
     }
   }
 
-  const firstMention = inferAidMentions(latest.answer, aides)[0]
+  const firstMention = inferAidMentions(latest.answer, aides)[index]
   return firstMention
     ? { ids: [firstMention.id], names: [firstMention.name] }
     : { ids: [], names: [] }
@@ -155,6 +164,8 @@ export function classifyAdvisorTurn(question = "", previousActiveTopic = null) {
   if (includesMarker(text, CORRECTION_MARKERS) && previousDomains.length > 0) {
     return ADVISOR_TURN_TYPES.CORRECTION
   }
+
+  if (previousDomains.length > 0 && ordinalAidIndex(text) >= 0) return ADVISOR_TURN_TYPES.ASK_DETAILS
 
   // This guard MUST precede loose "combien/comment/autre" matching. A question
   // about planets after discussing the CAF is not a request for an aid amount.
@@ -210,7 +221,7 @@ export function buildAdvisorConversationContext({ question = "", recentHistory =
   const previous = startsNewTopic
     ? { ids: [], names: [] }
     : collectPreviousRecommendations(history, aides, activeTopic)
-  const lastRecommended = getLastRecommendedAid(history, aides)
+  const lastRecommended = getLastRecommendedAid(history, aides, question)
   const rankingQuery = startsNewTopic
     ? String(question || "").trim()
     : `${activeTopic.query} ${question}`.trim()
