@@ -2,7 +2,6 @@ import LanguageSwitcher from "../LanguageSwitcher"
 import { BkIcons } from "../icons-budgetkazpei"
 import { ds, buttonStyle } from "../../styles/designSystem"
 import AppLogo from "../AppLogo"
-import ThemeToggle from "../ThemeToggle"
 import { useTheme } from "../../styles/ThemeProvider"
 
 export default function Header({ activeNav, lang, onToggleLang, t, commune, onProfile }) {
@@ -54,7 +53,6 @@ export default function Header({ activeNav, lang, onToggleLang, t, commune, onPr
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-        <ThemeToggle />
         <LanguageSwitcher lang={lang} onToggle={onToggleLang} />
         <button
           type="button"
