@@ -644,3 +644,12 @@ assert.equal(resolvePurchaseGoal("Imagine une histoire",goalHistory),null)
 assert.equal(buildPurchaseAdviceCases(adviceSummary,{protectedFamilies:["alcohol"]}).length,0)
 const noCookAdvice=buildPurchaseAdviceCases({available:true,adviceFamilies:[{key:"cakes",label:"Biscuits",purchaseDays:3,purchaseVisits:3,observedSpend:40}]},{avoidHomemade:true})
 assert.match(noCookAdvice[0].advice.fr,/sans vous imposer de cuisiner/)
+
+
+const successivePreferences=[{question:"Mais je veux garder mes biscuits"},...goalHistory]
+const nextGoal=resolvePurchaseGoal("Je n'ai pas le temps de cuisiner",successivePreferences)
+assert.equal(nextGoal.constraints.avoidHomemade,true)
+assert.deepEqual(nextGoal.constraints.protectedFamilies,["cakes"])
+assert.equal(isPersonalPurchaseAnalysisQuestion("Je n'ai pas le temps de cuisiner",successivePreferences),true)
+assert.equal(resolvePurchaseGoal("Je veux garder mes biscuits",[{question:"Quelle est la météo ?"},...goalHistory]),null)
+assert.equal(resolvePurchaseGoal("Mais je cherche une aide alimentaire et je veux garder mes biscuits",goalHistory),null)
