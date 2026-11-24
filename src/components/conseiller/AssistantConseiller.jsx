@@ -722,7 +722,8 @@ export default function AssistantConseiller({
       return
     }
 
-    if (shouldAnswerLocally && !isShoppingHabitQuestion(sentQuestion)) {
+    const multipleQuestions = (sentQuestion.match(/\?/g) || []).length > 1 || /\b(?:et aussi|puis explique|et pourquoi|et comment|et combien)\b/.test(normalizeText(sentQuestion))
+    if (shouldAnswerLocally && !isShoppingHabitQuestion(sentQuestion) && !multipleQuestions) {
       const localResult = answerAssistantQuestion({ question: sentQuestion, insights: questionInsights })
       const answer = selectAssistantAnswerText(localResult, responseLanguage)
       setHistory(prev => [
