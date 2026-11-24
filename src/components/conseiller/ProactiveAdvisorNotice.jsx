@@ -6,6 +6,8 @@ import { loadRecordedPurchases } from "../../../supabase/functions/assistant-ais
 import { buildProactiveAdvisorNotice, shouldShowAdvisorNotice, noticeFingerprint, createNoticeLoader } from "../../services/ai/proactiveAdvisor"
 
 const loader=createNoticeLoader(userId=>loadRecordedPurchases(supabase,userId))
+// Invalidate even when the home screen is unmounted during a scan.
+if(typeof window!=="undefined")window.addEventListener("budgetkazpei:transactions-updated",()=>loader.clear())
 const keyFor=userId=>"bkp-advisor-notice-dismissed-v1:"+userId
 function readDismissed(userId){
   try{
