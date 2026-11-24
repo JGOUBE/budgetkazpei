@@ -369,7 +369,7 @@ assert.match(advisorEdgeSource, /await rememberAdvisorTopic\(\s*supabaseAdmin, c
 // server cost guards. A generic local redirect must not swallow them.
 assert.ok(advisorEdgeSource.includes('if (spendScope === "offtopic" &&'))
 assert.doesNotMatch(advisorEdgeSource, /source: "local_offtopic"/)
-assert.ok(advisorEdgeSource.includes('const protectedTopic = spendScope === "useful" && isProtectedAdvisorQuestion'))
+assert.ok(advisorEdgeSource.includes('const protectedTopic = spendScope === "useful" && (Boolean(purchaseIntent) || isProtectedAdvisorQuestion'))
 assert.ok(advisorEdgeSource.includes('context.memory = protectedTopic'))
 assert.ok(advisorEdgeSource.includes('buildOpenTopicPrompt(context.body, context.language)'))
 assert.ok(advisorEdgeSource.includes('DATE DE RÉFÉRENCE À LA RÉUNION'))
@@ -537,7 +537,7 @@ assert.match(chatSource,/purchaseAnalysis \? "budget_grocery" : detectedIntent/)
 assert.match(chatSource,/!isPersonalPurchaseAnalysisQuestion\(sentQuestion\) && !multipleQuestions/)
 
 
-import { personalPurchaseIntent, summarizeRecordedPurchases, recordedPurchaseEvidence } from "../supabase/functions/assistant-aisupabase/engine/purchases/recordedPurchases.mjs"
+import { personalPurchaseIntent, summarizeRecordedPurchases, recordedPurchaseEvidence, identifyPurchaseAdviceFamily } from "../supabase/functions/assistant-aisupabase/engine/purchases/recordedPurchases.mjs"
 assert.equal(personalPurchaseIntent("Ok et par rapport à mes derniers achats tu peux regarder ?"),"latest")
 assert.equal(personalPurchaseIntent("Je peux améliorer mon alimentation ?"),"analysis")
 assert.equal(personalPurchaseIntent("Par rapport à ce que j'achète"),"analysis")
@@ -556,3 +556,19 @@ assert.match(recordedPurchaseEvidence(recorded),/23\/11\/2026/)
 assert.match(recordedPurchaseEvidence(recorded),/Riz 1 kg/)
 assert.doesNotMatch(recordedPurchaseEvidence(recorded),/Produit incertain/)
 assert.match(recordedPurchaseEvidence(summarizeRecordedPurchases([],new Date(),false)),/indisponible/)
+
+assert.equal(identifyPurchaseAdviceFamily("Bière blonde 6x33 cl"),"alcohol")
+assert.equal(identifyPurchaseAdviceFamily("Bière sans alcool 0.0"),null)
+assert.equal(identifyPurchaseAdviceFamily("Vinaigre de vin"),null)
+assert.equal(identifyPurchaseAdviceFamily("Gâteaux fourrés chocolat"),"cakes")
+assert.equal(identifyPurchaseAdviceFamily("Farine pour gâteau"),null)
+assert.equal(identifyPurchaseAdviceFamily("Cola sans sucre"),null)
+assert.equal(identifyPurchaseAdviceFamily("Conserve de lentilles"),"plain_preserves")
+assert.equal(identifyPurchaseAdviceFamily("Cassoulet en conserve"),"prepared_meals")
+const adviceSummary = summarizeRecordedPurchases([
+  {product_name:"Bière blonde",price:6,created_at:"2026-11-23",receipt_id:"x"},
+  {product_name:"Vin rouge",price:8,created_at:"2026-11-15",receipt_id:"y"},
+  {product_name:"Bière sans alcool",price:4,created_at:"2026-11-15",receipt_id:"y"},
+],new Date("2026-11-24T12:00:00Z"))
+assert.equal(adviceSummary.adviceFamilies[0].observedSpend,14)
+assert.equal(adviceSummary.adviceFamilies[0].purchaseVisits,2)
