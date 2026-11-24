@@ -493,3 +493,24 @@ assert.doesNotMatch(kreolReview, /Précisez les deux mois/i)
 assert.doesNotMatch(kreolReview, /20 à 40 %/)
 
 console.log("OK: 40+ diverse/farfelues, context-switch, aid, fiction, and budget routes tested; general answers bypass CAF reviews.")
+
+
+import { buildShoppingHabitSummary, buildLocalShoppingHabitAnswer } from "../src/services/ai/shoppingHabitSummary.js"
+const habitRows = [
+  {id:"a",receipt_id:"r1",product_name:"Lait de chèvre 1 L",price:3,created_at:"2026-11-01T12:00:00Z"},
+  {id:"b",receipt_id:"r1",product_name:"Lait de chèvre 1 L",price:3,created_at:"2026-11-01T12:00:00Z"},
+  {id:"c",receipt_id:"r2",product_name:"Lait de chèvre 1 L",price:3,created_at:"2026-11-10T12:00:00Z"},
+  {id:"d",receipt_id:"r3",product_name:"Lait de chèvre 500 ml",price:2,created_at:"2026-11-12T12:00:00Z"},
+  {id:"e",receipt_id:"r4",product_name:"Lait de chèvre 1 L",price:3,created_at:"2026-11-14T12:00:00Z",needs_review:true},
+]
+const habitSummary = buildShoppingHabitSummary(habitRows,{now:new Date("2026-11-24T12:00:00Z")})
+assert.equal(habitSummary.products.length,1)
+assert.equal(habitSummary.products[0].purchaseVisits,2)
+assert.equal(habitSummary.products[0].purchaseDays,2)
+assert.match(buildLocalShoppingHabitAnswer({question:"Quels produits j'achète régulièrement ?",insights:{shoppingHabits:habitSummary}}).answer,/Lait de chèvre/)
+assert.equal(buildLocalShoppingHabitAnswer({question:"Quels produits j'achète régulièrement ? Et combien je dépense ?",insights:{shoppingHabits:habitSummary}}),null)
+assert.equal(buildShoppingHabitSummary(habitRows,{available:false}).products.length,0)
+assert.equal(afterAid("Finalement, je suis au chômage").turnType,ADVISOR_TURN_TYPES.CORRECTION)
+assert.equal(afterAid("J'habite maintenant à Saint-Paul").turnType,ADVISOR_TURN_TYPES.CORRECTION)
+assert.match(afterAid("J'habite maintenant à Saint-Paul").rankingQuery,/Saint-Paul/)
+assert.equal(afterAid("J'ai déjà essayé cette solution").turnType,ADVISOR_TURN_TYPES.REQUEST_ALTERNATIVE)
