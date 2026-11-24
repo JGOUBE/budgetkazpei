@@ -1,5 +1,4 @@
 import AppLogo from "../AppLogo"
-import ThemeToggle from "../ThemeToggle"
 import { navigate } from "../../services/authNavigation"
 import "../../styles/auth.css"
 
@@ -36,7 +35,6 @@ export default function AuthLayout({
             <button type="button" className="auth-back-link" onClick={() => navigate("/")}>
               Retour accueil
             </button>
-            <ThemeToggle compact />
           </div>
           <div className="auth-mobile-brand">
             <AppLogo size={46} alt="Logo BudgetKazPéi" />
