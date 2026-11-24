@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+import { renderPurchaseAdviceCases, buildPurchaseAdviceCases } from "./engine/purchases/purchaseAdviceCases.mjs"
 import { personalPurchaseIntent, loadRecordedPurchases, recordedPurchaseEvidence } from "./engine/purchases/recordedPurchases.mjs"
 import { buildSystemPrompt, buildOpenQuestionSystemPrompt } from "./prompts/systemPrompt.ts"
 import { isSimpleLocalSolidarityQuestion, buildFocusedLocalAidPrompts } from "./prompts/localAidPrompt.mjs"
@@ -949,7 +950,7 @@ Deno.serve(async (req) => {
     if (recordedPurchases) {
       const local = context.body.localContext || {}
       const financial = local.financial || {}
-      context.body.localContext = { ...local, financial: { ...financial, budgetAdvisorContext: { ...financial.budgetAdvisorContext, shoppingHabits: recordedPurchases } } }
+      context.body.localContext = { ...local, financial: { ...financial, budgetAdvisorContext: { ...financial.budgetAdvisorContext, shoppingHabits: { ...recordedPurchases, adviceCases: buildPurchaseAdviceCases(recordedPurchases).map(({advice,...item})=>item) } } } }
       if (purchaseIntent === "latest" || !recordedPurchases.available || !recordedPurchases.latestPurchases.length) {
         return jsonResponse({ success: true, answer: recordedPurchaseEvidence(recordedPurchases, context.language), source: "local_recorded_purchases", language: context.language, mode: context.mode, consumed: false, openAiCallCount: 0, recommendedAidIds: [], recommendedAidNames: [] })
       }
@@ -1483,8 +1484,9 @@ Deno.serve(async (req) => {
         })
     // Only improve generic Markdown link labels pointing to exact, trusted
     // source URLs. Never rewrite any URL or add an invented reference.
+    const purchaseAdvice = recordedPurchases ? renderPurchaseAdviceCases(recordedPurchases, context.language) : ""
     const answer = recordedPurchases
-      ? recordedPurchaseEvidence(recordedPurchases, context.language) + "\n\n" + (/\b(?:je ne peux pas acceder|je n ai pas acces|je ne peux pas consulter|je ne dispose pas de vos achats|je ne peux pas voir)\b/.test(checkedAnswer.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g," ")) ? (context.isKreol ? "Nou pé regarde bann produits-la pou prépare out prochains achats." : "Nous pouvons partir de ces produits pour comparer les prix et varier les prochains achats selon vos besoins.") : checkedAnswer)
+      ? recordedPurchaseEvidence(recordedPurchases, context.language) + "\n\n" + (purchaseAdvice ? purchaseAdvice + "\n\n" : "") + (/\b(?:je ne peux pas acceder|je n ai pas acces|je ne peux pas consulter|je ne dispose pas de vos achats|je ne peux pas voir)\b/.test(checkedAnswer.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g," ")) ? (context.isKreol ? "Nou pé regarde bann produits-la pou prépare out prochains achats." : "Nous pouvons partir de ces produits pour comparer les prix et varier les prochains achats selon vos besoins.") : checkedAnswer)
       : focusedAidPrompts ? clarifyLocalAidLinks(checkedAnswer, trustedAidFacts) : checkedAnswer
     const mentionedTrustedAids = findMentionedTrustedAids(answer, trustedAidFacts)
 
