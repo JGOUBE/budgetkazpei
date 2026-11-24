@@ -73,6 +73,7 @@ function compactFinancial(financial) {
     remainingAfterFixedExpenses: source.remainingAfterFixedExpenses,
     periodComparison: source.periodComparison,
     grocery: source.grocery,
+    shoppingHabits: source.shoppingHabits,
     spendingByCategory: list(source.spendingByCategory).slice(0, 8),
     recurringCharges: list(source.recurringCharges).slice(0, 8),
     budgetTargets: list(source.budgetTargets).slice(0, 5),

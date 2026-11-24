@@ -1,4 +1,5 @@
 import { normalizeForAssistantMatch } from "./assistantLanguage.js"
+import { buildShoppingHabitSummary } from "./shoppingHabitSummary.js"
 import { buildSavingsInsights } from "../savings/savingsEngine.ts"
 import { buildBudgetAdvisorContext } from "./budgetAdvisorContext.js"
 import { dateIsInBudgetRange, resolveBudgetPeriod } from "./budgetPeriodResolver.js"
@@ -367,6 +368,7 @@ export function buildAssistantInsights({
     storeComparisons,
     savings,
     frequentProducts,
+    shoppingHabits: buildShoppingHabitSummary(shoppingItems, { available: dataAvailability.shoppingItems !== false, receipts, now }),
     smallRepeatedPurchases,
     budgetInputs: {
       income: configuredIncome,
@@ -412,11 +414,11 @@ export function buildAssistantAiSummary(insights = {}, intent = "budget_general"
     budget_remaining: ["income", "expenses", "remainingAfterFixedExpenses", "currentAvailableMargin", "spendingByCategory", "recentSignificantTransactions"],
     budget_category: ["expenses", "spendingByCategory"],
     budget_period_compare: ["expenses", "spendingByCategory", "periodComparison"],
-    budget_grocery: ["currentAvailableMargin", "grocery", "budgetTargets"],
+    budget_grocery: ["currentAvailableMargin", "grocery", "budgetTargets", "shoppingHabits"],
     budget_fixed_expenses: ["income", "expenses", "remainingAfterFixedExpenses", "recurringCharges"],
     budget_subscriptions: ["expenses", "recurringCharges"],
     budget_unusual_expense: ["unusualExpenses", "recentSignificantTransactions", "spendingByCategory"],
-    budget_savings: ["grocery"],
+    budget_savings: ["grocery", "shoppingHabits"],
     budget_shopping_affordability: ["currentAvailableMargin", "grocery", "budgetTargets"],
   }
   const fields = intentFields[intent]

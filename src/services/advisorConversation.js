@@ -13,7 +13,7 @@ export const ADVISOR_TURN_TYPES = Object.freeze({
 
 const ALTERNATIVE_MARKERS = [
   "autre aide", "autre chose", "quoi d autre", "rien d autre", "rien d autres",
-  "encore une", "encore autre", "et sinon", "sinon", "y en a d autres", "il y a pas une autre",
+  "encore une", "encore autre", "et sinon", "sinon", "y en a d autres", "il y a pas une autre", "j ai deja essaye", "j ai deja tente", "ca n a pas marche", "cela n a pas fonctionne", "mi la deja essaye",
 ]
 const DETAIL_MARKERS = [
   "combien", "montant", "quelles conditions", "quelle condition", "eligible", "eligibilite",
@@ -22,6 +22,7 @@ const DETAIL_MARKERS = [
 ]
 const NEXT_STEP_MARKERS = ["et ensuite", "je fais quoi maintenant", "prochaine etape", "quelle suite", "apres ca"]
 const CORRECTION_MARKERS = ["en fait", "je corrige", "ce n est pas", "pas exactement", "je voulais dire"]
+const SITUATION_CHANGE = /\b(?:finalement je suis|je suis maintenant|je ne suis plus|j habite maintenant|je vis maintenant|j ai demenage|je viens de demenager|j ai perdu mon emploi|je suis au chomage|je viens de perdre mon emploi|je me suis separe|je me suis separee|mi la demenage)\b/
 
 function includesMarker(text, markers) {
   return markers.some(marker => ` ${text} `.includes(` ${marker} `))
@@ -125,20 +126,29 @@ function collectPreviousRecommendations(history = [], aides = [], activeTopic = 
   return { ids, names }
 }
 
-function getLastRecommendedAid(history = [], aides = []) {
+// Explicit ordinal references must resolve against the immediately preceding answer.
+function ordinalAidIndex(text = "") {
+  if (/^(?:et |mais )?(?:la |le |du |de la )?(?:deuxieme|seconde|second|2e|2eme)(?: aide| organisme| association| option)?\b/.test(text)) return 1
+  if (/^(?:et |mais )?(?:la |le |du |de la )?(?:troisieme|3e|3eme)(?: aide| organisme| association| option)?\b/.test(text)) return 2
+  if (/^(?:et |mais )?(?:la |le |du |de la )?(?:premiere|premier|1ere|1er)(?: aide| organisme| association| option)?\b/.test(text)) return 0
+  return -1
+}
+
+function getLastRecommendedAid(history = [], aides = [], question = "") {
   const latest = history[0]
   if (!latest) return { ids: [], names: [] }
 
+  const index = Math.max(0, ordinalAidIndex(normalizeAidTopicText(question)))
   const storedIds = Array.isArray(latest.recommendedAidIds) ? latest.recommendedAidIds : []
   const storedNames = Array.isArray(latest.recommendedAidNames) ? latest.recommendedAidNames : []
   if (storedIds.length > 0 || storedNames.length > 0) {
     return {
-      ids: storedIds.length > 0 ? [storedIds[0]] : [],
-      names: storedNames.length > 0 ? [storedNames[0]] : [],
+      ids: storedIds.length > index ? [storedIds[index]] : [],
+      names: storedNames.length > index ? [storedNames[index]] : [],
     }
   }
 
-  const firstMention = inferAidMentions(latest.answer, aides)[0]
+  const firstMention = inferAidMentions(latest.answer, aides)[index]
   return firstMention
     ? { ids: [firstMention.id], names: [firstMention.name] }
     : { ids: [], names: [] }
@@ -152,9 +162,13 @@ export function classifyAdvisorTurn(question = "", previousActiveTopic = null) {
 
   // Explicit corrections of aid eligibility stay corrections even when they
   // change the aid topic. The current user message overrides prior assumptions.
-  if (includesMarker(text, CORRECTION_MARKERS) && previousDomains.length > 0) {
+  if ((includesMarker(text, CORRECTION_MARKERS) || SITUATION_CHANGE.test(text)) && previousDomains.length > 0) {
     return ADVISOR_TURN_TYPES.CORRECTION
   }
+
+  if (previousDomains.length > 0 && ordinalAidIndex(text) >= 0) return ADVISOR_TURN_TYPES.ASK_DETAILS
+
+  if (previousDomains.length > 0 && /^(?:j ai deja (?:essaye|tente)|ca n a pas marche|cela n a pas fonctionne|mi la deja essaye)\b/.test(text)) return ADVISOR_TURN_TYPES.REQUEST_ALTERNATIVE
 
   // This guard MUST precede loose "combien/comment/autre" matching. A question
   // about planets after discussing the CAF is not a request for an aid amount.
@@ -202,15 +216,19 @@ export function buildAdvisorConversationContext({ question = "", recentHistory =
         domains: previousActiveTopic.domains,
       }
 
-  if (turnType === ADVISOR_TURN_TYPES.CORRECTION && currentDomains.length > 0) {
-    activeTopic.query = String(question || "").trim()
-    activeTopic.domains = currentDomains
+  if (turnType === ADVISOR_TURN_TYPES.CORRECTION) {
+    if (SITUATION_CHANGE.test(normalizeAidTopicText(question))) {
+      activeTopic.query = `${previousActiveTopic.query} — mise à jour utilisateur : ${question}`.slice(-600)
+    } else if (currentDomains.length > 0) {
+      activeTopic.query = String(question || "").trim()
+      activeTopic.domains = currentDomains
+    }
   }
 
   const previous = startsNewTopic
     ? { ids: [], names: [] }
     : collectPreviousRecommendations(history, aides, activeTopic)
-  const lastRecommended = getLastRecommendedAid(history, aides)
+  const lastRecommended = getLastRecommendedAid(history, aides, question)
   const rankingQuery = startsNewTopic
     ? String(question || "").trim()
     : `${activeTopic.query} ${question}`.trim()
