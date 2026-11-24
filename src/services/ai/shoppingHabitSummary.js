@@ -1,3 +1,4 @@
+import { resolvePurchaseGoal } from "../../../supabase/functions/assistant-aisupabase/engine/purchases/purchaseActionPlan.mjs"
 import { buildShoppingHabitFamilies } from "../../features/shopping/services/shoppingHabitFamilies.js"
 import { shoppingProductGroupingKey } from "../../features/shopping/services/priceHistory.ts"
 import { evaluateSavingsProductEligibility } from "../savings/savingsEngine.ts"
@@ -13,8 +14,7 @@ export function isShoppingHabitQuestion(question = "") {
 export function isPersonalPurchaseAnalysisQuestion(question = "", recentHistory = []) {
   const t = normalize(question)
   if (/\b(?:ou (?:voir|trouver|consulter)|comment (?:acceder|ouvrir|consulter)|ouvrir (?:la rubrique|mes achats))\b/.test(t)) return false
-  const previous = normalize(recentHistory?.[0]?.question || "")
-  if (/\b(?:economiser|economies de|reduire de|gagner)\b/.test(previous) && /\b(?:par mois|chaque mois|mensuel|mensuelle)\b/.test(previous) && /\b(?:mes courses|mes achats|mon budget courses|mon budget alimentaire)\b/.test(previous) && /^(?:ok |et |mais |d accord |finalement |plutot |je |sans |pas le temps )/.test(t) && /\b(?:garder|sans reduire|sans supprimer|sans toucher|pas le temps|pas de four|pas cuisiner|sans cuisiner|ne veux pas|ne touche pas)\b/.test(t) && !/\b(?:caf|rsa|ccas|aide alimentaire|plus de quoi manger|pas de quoi manger|fiction|imagine|invente)\b/.test(t)) return true
+  if (resolvePurchaseGoal(question, recentHistory)?.kind === "goal") return true
   if (/\b(?:mes courses|mes achats|mes depenses alimentaires|mon budget courses|mon budget alimentaire|mes tickets|mes habitudes d achat|mes habitudes alimentaires)\b/.test(t) &&
       /\b(?:economiser|economies|reduire|gagner|liste de courses|liste d achats|quoi racheter|quoi acheter|prochaines courses|progres|evolution|depense moins|depense plus|par rapport au mois dernier|compare les depenses)\b/.test(t) &&
       !/\b(?:caf|rsa|ccas|aide alimentaire|plus de quoi manger|pas de quoi manger|fiction|imagine|invente)\b/.test(t)) return true
