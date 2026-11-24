@@ -6,6 +6,20 @@ import { normalizeAidName, safeAidSourceUrl } from "./aidesRecommendationQuality
 const SOURCE_WORDS = /\b(?:lien|url|site officiel|site internet|site web|page officielle?|adresse web|ou (?:trouver|consulter) (?:le |la |l )?(?:site|page)|ou (?:faire|deposer|envoyer) (?:ma |une |la )?demande)\b/
 const NEEDS_ADVICE = /\b(?:combien|montant|plafond|conditions?|eligible|eligibilite|droit|delai|duree|refus|recours|simulation|est ce que|peux je|puis je|pourquoi|conseil|quel dossier|et|ainsi que)\b/
 
+function referenceLabel(url = "") {
+  let host = ""
+  try { host = new URL(url).hostname.toLowerCase() } catch { return "Lien de référence" }
+  // A directory page is proof of referencing, not the association's own website.
+  if (host === "reunion.deets.gouv.fr") return "Référencement officiel DEETS"
+  if (host === "andes-france.com" || host === "www.andes-france.com") return "Fiche de l’organisme sur ANDES"
+  if (host === "caf.fr" || host === "www.caf.fr") return "Page de la CAF"
+  if (host === "departement974.fr" || host === "www.departement974.fr") return "Page du Département"
+  if (host === "regionreunion.com" || host === "www.regionreunion.com") return "Page de la Région"
+  if (host === "service-public.fr" || host === "www.service-public.fr" ||
+      host === "service-public.gouv.fr" || host === "www.service-public.gouv.fr") return "Fiche Service-Public"
+  return "Lien de référence"
+}
+
 export function isLocalAidSourceRequest(question = "") {
   const text = normalizeAidName(question)
   return Boolean(text && SOURCE_WORDS.test(text) && !NEEDS_ADVICE.test(text))
@@ -21,7 +35,7 @@ export function buildLocalAidSourceAnswer({ question = "", aides = [], language 
     const normalized = normalizeAidName(name)
     if (normalized.length < 3 || !text.includes(` ${normalized} `)) continue
     const url = safeAidSourceUrl(aide.lien_officiel || aide.lien)
-    if (!url) continue
+    if (!url || !url.startsWith("https://")) continue
     const entry = { id: aide.id, name, url, isOfficial: Boolean(safeAidSourceUrl(aide.lien_officiel)) }
     const existing = matches.get(normalized)
     if (!existing || (!existing.isOfficial && entry.isOfficial)) matches.set(normalized, entry)
@@ -31,13 +45,14 @@ export function buildLocalAidSourceAnswer({ question = "", aides = [], language 
   const aide = [...matches.values()][0]
   const kreol = language === "kreol" || language === "kr"
   const heading = kreol
-    ? (aide.isOfficial ? "Lien officiel enregistré pou" : "Lien de référence enregistré pou")
-    : (aide.isOfficial ? "Le lien officiel enregistré pour" : "Le lien de référence enregistré pour")
+    ? "Pou « " + aide.name + " », voici lien de référence enregistré : "
+    : "Pour « " + aide.name + " », voici le lien de référence enregistré : "
+  const evidence = "[" + referenceLabel(aide.url) + "](" + aide.url + ")"
   const caution = kreol
-    ? "Vérifie bann conditions ek demars à jour direct su site-la. Ce lien ne confirme pas out éligibilité."
-    : "Vérifiez sur le site les conditions et les démarches à jour. Ce lien ne confirme pas votre éligibilité."
+    ? "Ce lien i prouve pa si l'association lé ouverte astèr ni si ou lé éligible. Vérifie bann conditions ek kontak."
+    : "Ce lien ne confirme pas votre éligibilité ni l'ouverture actuelle du service. Vérifiez les conditions avant de vous déplacer."
   return {
-    answer: `${heading} « ${aide.name} » : ${aide.url}\n\n${caution}`,
+    answer: `${heading}${evidence}\n\n${caution}`,
     recommendedAidIds: [aide.id],
     recommendedAidNames: [aide.name],
     source: "local_aid_reference",

@@ -48,6 +48,45 @@ assert.equal(isLocalAidSourceRequest("Où faire ma demande d'APL ?"), true)
 assert.equal(buildLocalAidSourceAnswer({ question: "Lien aide périmée", aides }), null)
 assert.equal(buildLocalAidSourceAnswer({ question: "Lien aide factice", aides }), null)
 
+// A link recorded in lien_officiel is often an INSTITUTIONAL DIRECTORY,
+// not the organization's own website. Zero-model responses must say so.
+const realDirectories = [
+ {id:119,nom:"K’DI LE CŒUR — épicerie solidaire de Saint-Leu",
+  lien_officiel:"https://andes-france.com/structure/kdi-le-coeur/",actif:true},
+ {id:127,nom:"Croix-Rouge sur Roues — Saint-Leu (Case du Piton)",
+  lien_officiel:"https://reunion.deets.gouv.fr/L-aide-alimentaire",actif:true},
+]
+const andesLink=buildLocalAidSourceAnswer({
+  question:"Donne-moi le lien de K’DI LE CŒUR — épicerie solidaire de Saint-Leu",
+  aides:realDirectories,language:"fr",
+})
+assert.match(andesLink?.answer||"",/Fiche de l’organisme sur ANDES/)
+assert.doesNotMatch(andesLink?.answer||"",/le lien officiel enregistré/)
+assert.match(andesLink?.answer||"",/Ce lien ne confirme pas votre éligibilité/)
+const deetsLink=buildLocalAidSourceAnswer({
+  question:"Donne-moi le lien de Croix-Rouge sur Roues — Saint-Leu (Case du Piton)",
+  aides:realDirectories,language:"fr",
+})
+assert.match(deetsLink?.answer||"",/Référencement officiel DEETS/)
+assert.doesNotMatch(deetsLink?.answer||"",/le lien officiel enregistré/)
+const invalidHttp=buildLocalAidSourceAnswer({
+  question:"Donne-moi le lien de Association non sécurisée",
+  aides:[{id:455,nom:"Association non sécurisée",lien:"http://example.org/",actif:true}],
+})
+assert.equal(invalidHttp,null,"An insecure http link should never be presented as a clickable source")
+const inactiveDirectory=buildLocalAidSourceAnswer({
+ question:"Donne-moi le lien de Croix-Rouge sur Roues — Saint-Leu (Case du Piton)",
+ aides:[{...realDirectories[1],actif:false}],
+})
+assert.equal(inactiveDirectory,null)
+const trustedFactsSource=await readFile(new URL(
+  "../supabase/functions/assistant-aisupabase/engine/truth/trustedAidFacts.ts",
+  import.meta.url), "utf8")
+assert.equal((trustedFactsSource.match(/\.eq\("actif", true\)/g)||[]).length,2,
+  "Server must reject inactive rows for BOTH aid-id and aid-name lookups")
+console.log("OK: instant aid source links correctly label DEETS/ANDES; server excludes inactive aid facts without extra OpenAI calls.")
+
+
 // End-to-end build guard: if the server code regresses to a second paid model
 // call as default, fail the preview build before it can be released.
 const backend = await readFile(new URL("../supabase/functions/assistant-aisupabase/index.ts", import.meta.url), "utf8")
