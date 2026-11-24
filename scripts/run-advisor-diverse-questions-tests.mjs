@@ -628,3 +628,21 @@ assert.equal(buildPurchaseActionPlan(planSummary,{kind:"goal",monthlyTarget:5}).
 assert.equal(buildPurchaseActionPlan({...planSummary,truncated:true},monthlyGoal).goal.modeledGrossReduction,0)
 assert.equal(buildPurchaseActionPlan({...planSummary,trends:{}},monthlyGoal).goal.insufficientHistory,true)
 assert.equal(buildPurchaseActionPlan({available:false},monthlyGoal).available,false)
+
+
+import { extractPurchasePreferences, isPurchaseConstraintFollowUp } from "../supabase/functions/assistant-aisupabase/engine/purchases/purchasePreferences.mjs"
+const priorGoal=[{question:"Je veux économiser 50 € par mois sur mes courses"}]
+const prefs=extractPurchasePreferences("Je veux garder les biscuits. Je n'ai pas le temps de cuisiner. Sans faire plusieurs magasins.",priorGoal)
+assert.deepEqual(prefs,{excludedFamilies:["cakes"],noCooking:true,noExtraTrips:true})
+assert.equal(isPurchaseConstraintFollowUp("Je veux garder les biscuits",priorGoal),true)
+assert.equal(personalPurchaseIntent("Je veux garder les biscuits",priorGoal),"analysis")
+assert.equal(isPurchaseConstraintFollowUp("Je veux garder les biscuits",[{question:"Quelle est la capitale de la France ?"}]),false)
+assert.equal(isPurchaseConstraintFollowUp("Je veux garder les biscuits pour une aide alimentaire",priorGoal),false)
+assert.equal(extractPurchasePreferences("Finalement je peux réduire les biscuits",[{question:"Je veux garder les biscuits"}]).excludedFamilies.length,0)
+assert.equal(extractPurchasePreferences("Je peux cuisiner maintenant",[{question:"Je ne peux pas cuisiner"}]).noCooking,false)
+assert.equal(buildPurchaseActionPlan(planSummary,monthlyGoal,prefs).goal.modeledGrossReduction,20)
+assert.equal(buildPurchaseActionPlan(planSummary,monthlyGoal,prefs).goal.remainingTarget,30)
+assert.equal(buildPurchaseAdviceCases(adviceSummary,{excludedFamilies:["alcohol"]}).length,0)
+const noCookSummary={available:true,adviceFamilies:[{key:"cakes",label:"Biscuits",purchaseDays:4,purchaseVisits:4,observedSpend:40}]}
+assert.doesNotMatch(renderPurchaseAdviceCases(noCookSummary,"fr",{preferences:{noCooking:true}}),/préparations maison/)
+assert.equal(extractPurchasePreferences("J'aime les biscuits").excludedFamilies.length,0)
