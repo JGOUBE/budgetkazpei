@@ -3,6 +3,12 @@ export interface TrustedAidFact {
   name: string
   nameKreol: string
   category: string
+  organisme: string
+  commune: string
+  zoneCouverte: string
+  typeDispositif: string
+  verificationStatus: string
+  periodeValidite: string
   officialSource: string
   amountMin: number | null
   amountMax: number | null
@@ -130,6 +136,12 @@ export function buildTrustedAidFacts(rows: any[] = []): TrustedAidFact[] {
       name,
       nameKreol: text(row?.nom_kreol || row?.nom),
       category: text(row?.categorie),
+      organisme: text(row?.organisme),
+      commune: text(row?.commune),
+      zoneCouverte: text(row?.zone_couverte),
+      typeDispositif: text(row?.type_dispositif),
+      verificationStatus: text(row?.statut_verification),
+      periodeValidite: text(row?.periode_validite),
       officialSource,
       amountMin,
       amountMax,
@@ -181,7 +193,7 @@ export async function loadTrustedAidFacts(supabaseAdmin: any, body: any): Promis
   if (ids.length === 0 && names.length === 0) return []
 
   try {
-    const selectedColumns = "id, nom, nom_kreol, categorie, description, description_fr, description_kreol, demarches_fr, demarches_kreol, montant_min, montant_max, condition_logement, condition_profession, condition_famille, lien, lien_officiel"
+    const selectedColumns = "id, nom, nom_kreol, categorie, organisme, commune, zone_couverte, type_dispositif, statut_verification, periode_validite, description, description_fr, description_kreol, demarches_fr, demarches_kreol, montant_min, montant_max, condition_logement, condition_profession, condition_famille, lien, lien_officiel"
     const rowsById: any[] = []
     const rowsByName: any[] = []
 
