@@ -163,7 +163,7 @@ const localResponse = buildFocusedLocalAidPrompts({
 assert.equal(localResponse.keptAides,2)
 assert.match(localResponse.userPrompt,/Fiche de l’organisme sur ANDES/)
 assert.match(localResponse.userPrompt,/Référencement officiel DEETS/)
-assert.match(localResponse.systemPrompt,/90 à 140 mots/)
+assert.match(localResponse.systemPrompt,/80 à 125 mots/)
 assert.match(localResponse.systemPrompt,/pas le site de la Croix-Rouge/i)
 assert.doesNotMatch(localResponse.systemPrompt,/fiche ici ».*autorise/i)
 const modelDraft = [
@@ -183,6 +183,36 @@ assert.equal(clarifyLocalAidLinks("[fiche ici]("+deets+")",[
   {...actualLocalAids[1],verificationStatus:"a_verifier"}
 ]),"[fiche ici]("+deets+")","Never certify an unverified source")
 assert.match(backend,/clarifyLocalAidLinks\(checkedAnswer, trustedAidFacts\)/)
+// Real Saint-Leu regression: two source cards have exactly the same social
+// referral instructions; don't send those instructions twice to the model.
+const saintLeuProcedure = "Pour demander l aide alimentaire habilitée DEETS, solliciter d abord un travailleur social (CCAS, mairie, Département ou service social spécialisé) : une prescription sociale est requise. Contacter ensuite la structure avant tout déplacement ; conditions et distributions à reconfirmer."
+const sharedSources = actualLocalAids.map(a => ({...a,steps:[saintLeuProcedure,"Demande in prescription kot travayèr sosyal."]}))
+const sharedPrompt = buildFocusedLocalAidPrompts({
+  question:simpleLocal[0],language:"fr",profile:{commune:"Saint-Leu"},
+  trustedAidFacts:sharedSources,dateReunion:"24/11/2026",
+})
+assert.equal(sharedPrompt.sharedProcedures,1)
+assert.equal(sharedPrompt.userPrompt.split(saintLeuProcedure).length-1,1,
+ "The same CCAS instruction must be sent only once for both organizations")
+assert.match(sharedPrompt.userPrompt,/DEMARCHES COMMUNES, À EXPLIQUER UNE SEULE FOIS/)
+assert.match(sharedPrompt.userPrompt,/Croix-Rouge sur Roues/)
+assert.match(sharedPrompt.userPrompt,/K’DI LE CŒUR/)
+assert.match(sharedPrompt.systemPrompt,/Ne répète ni prescription, ni orientation, ni CCAS deux fois/)
+assert.match(sharedPrompt.systemPrompt,/N’invente pas horaires ou fréquence de distribution/)
+const differentProcedures = buildFocusedLocalAidPrompts({
+  question:simpleLocal[0],language:"fr",profile:{commune:"Saint-Leu"},
+  trustedAidFacts:[
+    {...sharedSources[0],steps:["Contacter directement l'organisme pour un rendez-vous"]},
+    {...sharedSources[1],steps:[saintLeuProcedure]},
+  ],
+})
+assert.equal(differentProcedures.sharedProcedures,0)
+assert.match(differentProcedures.userPrompt,/Contacter directement l'organisme/)
+assert.match(differentProcedures.userPrompt,/une prescription sociale est requise/)
+assert.doesNotMatch(differentProcedures.userPrompt,/DEMARCHES COMMUNES/)
+assert.match(sharedPrompt.systemPrompt,/80 à 125 mots/)
+console.log("OK: real Saint-Leu duplicate CCAS/prescription guidance is transmitted once; different prerequisites remain separate.")
+
 console.log("OK: local sources identified without claiming DEETS or ANDES is the association's own site.")
 
 console.log("OK: focused FR/KR solidarity prompts preserve trusted sources at <9000 chars; complex rights keep safeguards.")
