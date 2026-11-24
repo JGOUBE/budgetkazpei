@@ -945,7 +945,7 @@ Deno.serve(async (req) => {
     const context = contextResult.context as AssistantContext
 
     // Personal purchase questions use authenticated server data, even with an old client.
-    const purchaseIntent = context.action !== "analyze_refusal" ? personalPurchaseIntent(context.question) : null
+    const purchaseIntent = context.action !== "analyze_refusal" ? personalPurchaseIntent(context.question, context.body?.recentHistory) : null
     const recordedPurchases = purchaseIntent ? await loadRecordedPurchases(supabaseAdmin, context.userId) : null
     if (recordedPurchases) {
       const local = context.body.localContext || {}
@@ -1484,7 +1484,7 @@ Deno.serve(async (req) => {
         })
     // Only improve generic Markdown link labels pointing to exact, trusted
     // source URLs. Never rewrite any URL or add an invented reference.
-    const purchaseAdvice = recordedPurchases ? renderPurchaseAdviceCases(recordedPurchases, context.language) : ""
+    const purchaseAdvice = recordedPurchases && /\b(?:alimentation|economi|economiser|economies|conseil|conseils|ameliorer|habitudes|depenses|achats)\b/i.test(context.question.normalize("NFD").replace(/[\u0300-\u036f]/g,"")) ? renderPurchaseAdviceCases(recordedPurchases, context.language) : ""
     const answer = recordedPurchases
       ? recordedPurchaseEvidence(recordedPurchases, context.language) + "\n\n" + (purchaseAdvice ? purchaseAdvice + "\n\n" : "") + (/\b(?:je ne peux pas acceder|je n ai pas acces|je ne peux pas consulter|je ne dispose pas de vos achats|je ne peux pas voir)\b/.test(checkedAnswer.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g," ")) ? (context.isKreol ? "Nou pé regarde bann produits-la pou prépare out prochains achats." : "Nous pouvons partir de ces produits pour comparer les prix et varier les prochains achats selon vos besoins.") : checkedAnswer)
       : focusedAidPrompts ? clarifyLocalAidLinks(checkedAnswer, trustedAidFacts) : checkedAnswer
