@@ -534,7 +534,7 @@ assert.equal(isPersonalPurchaseAnalysisQuestion("Où voir mes achats ?"),false)
 assert.ok(habitSummary.recentProducts.some(p=>p.label==="Lait de chèvre 500 ml"&&p.purchaseVisits===1))
 const chatSource = await readFile(new URL("../src/components/conseiller/AssistantConseiller.jsx",import.meta.url),"utf8")
 assert.match(chatSource,/purchaseAnalysis \? "budget_grocery" : detectedIntent/)
-assert.match(chatSource,/!isPersonalPurchaseAnalysisQuestion\(sentQuestion\) && !multipleQuestions/)
+assert.match(chatSource,/!isPersonalPurchaseAnalysisQuestion\(sentQuestion, history\) && !multipleQuestions/)
 
 
 import { personalPurchaseIntent, summarizeRecordedPurchases, recordedPurchaseEvidence, identifyPurchaseAdviceFamily } from "../supabase/functions/assistant-aisupabase/engine/purchases/recordedPurchases.mjs"
@@ -606,7 +606,7 @@ assert.equal(buildPurchaseTrends(trendRows.map(r=>({...r,price:2.8*r.quantity}))
 assert.equal(buildPurchaseTrends(trendRows.slice(0,2),trendNow).priceChanges.length,0)
 
 
-import { identifyPurchaseAction, buildPurchaseActionPlan } from "../supabase/functions/assistant-aisupabase/engine/purchases/purchaseActionPlan.mjs"
+import { identifyPurchaseAction, buildPurchaseActionPlan, identifyPurchaseConstraints, resolvePurchaseGoal } from "../supabase/functions/assistant-aisupabase/engine/purchases/purchaseActionPlan.mjs"
 const monthlyGoal = identifyPurchaseAction("Je veux économiser 50 € par mois sur mes courses")
 assert.deepEqual(monthlyGoal,{kind:"goal",monthlyTarget:50})
 assert.deepEqual(identifyPurchaseAction("Comment économiser 12,50 euros chaque mois sur mes achats ?"),{kind:"goal",monthlyTarget:12.5})
@@ -628,3 +628,19 @@ assert.equal(buildPurchaseActionPlan(planSummary,{kind:"goal",monthlyTarget:5}).
 assert.equal(buildPurchaseActionPlan({...planSummary,truncated:true},monthlyGoal).goal.modeledGrossReduction,0)
 assert.equal(buildPurchaseActionPlan({...planSummary,trends:{}},monthlyGoal).goal.insufficientHistory,true)
 assert.equal(buildPurchaseActionPlan({available:false},monthlyGoal).available,false)
+
+const goalHistory=[{question:"Je veux économiser 50 € par mois sur mes courses"}]
+assert.deepEqual(identifyPurchaseConstraints("Je veux garder mes biscuits").protectedFamilies,["cakes"])
+assert.deepEqual(identifyPurchaseConstraints("Sans réduire le vin").protectedFamilies,["alcohol"])
+assert.equal(identifyPurchaseConstraints("Je n'ai pas le temps de cuisiner").avoidHomemade,true)
+const adjustedGoal=resolvePurchaseGoal("Mais je veux garder mes biscuits",goalHistory)
+assert.equal(adjustedGoal.monthlyTarget,50)
+assert.equal(buildPurchaseActionPlan(planSummary,adjustedGoal).goal.modeledGrossReduction,20)
+assert.equal(buildPurchaseActionPlan(planSummary,adjustedGoal).goal.remainingTarget,30)
+assert.equal(personalPurchaseIntent("Mais je veux garder mes biscuits",goalHistory),"analysis")
+assert.equal(isPersonalPurchaseAnalysisQuestion("Mais je veux garder mes biscuits",goalHistory),true)
+assert.equal(resolvePurchaseGoal("Je veux garder mes biscuits",[]),null)
+assert.equal(resolvePurchaseGoal("Imagine une histoire",goalHistory),null)
+assert.equal(buildPurchaseAdviceCases(adviceSummary,{protectedFamilies:["alcohol"]}).length,0)
+const noCookAdvice=buildPurchaseAdviceCases({available:true,adviceFamilies:[{key:"cakes",label:"Biscuits",purchaseDays:3,purchaseVisits:3,observedSpend:40}]},{avoidHomemade:true})
+assert.match(noCookAdvice[0].advice.fr,/sans vous imposer de cuisiner/)
