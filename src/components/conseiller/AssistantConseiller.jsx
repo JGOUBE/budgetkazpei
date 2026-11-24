@@ -533,7 +533,7 @@ export default function AssistantConseiller({
     const isAidQuestion = shouldLookupAdvisorAids({
       question: sentQuestion, mode, conversationContext, recentHistory, handoffContext,
     })
-    const purchaseAnalysis = isShoppingHabitQuestion(sentQuestion) || isPersonalPurchaseAnalysisQuestion(sentQuestion)
+    const purchaseAnalysis = isShoppingHabitQuestion(sentQuestion) || isPersonalPurchaseAnalysisQuestion(sentQuestion, recentHistory)
     const financialContext = isAidQuestion && !explicitRecordedBudgetAnalysis && !purchaseAnalysis
       ? { intent: "trouver_aide", budgetAdvisorContext: {} }
       : buildAssistantAiSummary(questionInsights || financialInsights, purchaseAnalysis ? "budget_grocery" : detectedIntent)
@@ -700,7 +700,7 @@ export default function AssistantConseiller({
       recentHistory: history,
       language: responseLanguage,
     })
-    const localBudgetFollowUp = isPersonalPurchaseAnalysisQuestion(sentQuestion) ? null : budgetConfirmation || budgetNoDataAdvice
+    const localBudgetFollowUp = isPersonalPurchaseAnalysisQuestion(sentQuestion, history) ? null : budgetConfirmation || budgetNoDataAdvice
     if (localBudgetFollowUp) {
       setHistory(prev => [
         {
@@ -724,7 +724,7 @@ export default function AssistantConseiller({
     }
 
     const multipleQuestions = (sentQuestion.match(/\?/g) || []).length > 1 || /\b(?:et aussi|puis explique|et pourquoi|et comment|et combien)\b/.test(normalizeText(sentQuestion))
-    if (shouldAnswerLocally && !isShoppingHabitQuestion(sentQuestion) && !isPersonalPurchaseAnalysisQuestion(sentQuestion) && !multipleQuestions) {
+    if (shouldAnswerLocally && !isShoppingHabitQuestion(sentQuestion) && !isPersonalPurchaseAnalysisQuestion(sentQuestion, history) && !multipleQuestions) {
       const localResult = answerAssistantQuestion({ question: sentQuestion, insights: questionInsights })
       const answer = selectAssistantAnswerText(localResult, responseLanguage)
       setHistory(prev => [

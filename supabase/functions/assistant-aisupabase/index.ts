@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
-import { identifyPurchaseAction, buildPurchaseActionPlan } from "./engine/purchases/purchaseActionPlan.mjs"
+import { resolvePurchaseGoal, identifyPurchaseConstraints, buildPurchaseActionPlan } from "./engine/purchases/purchaseActionPlan.mjs"
 import { renderPurchaseAdviceCases, buildPurchaseAdviceCases } from "./engine/purchases/purchaseAdviceCases.mjs"
 import { personalPurchaseIntent, loadRecordedPurchases, recordedPurchaseEvidence } from "./engine/purchases/recordedPurchases.mjs"
 import { buildSystemPrompt, buildOpenQuestionSystemPrompt } from "./prompts/systemPrompt.ts"
@@ -420,6 +420,7 @@ ANALYSE PERSONNALISÉE DES BUDGETS :
 - Utilise adviceFamilies lorsque présent : cite les catégories et les montants réellement observés sur la période. Pour alcool, biscuits/gâteaux et boissons sucrées, propose de réduire certains achats si cela représente un poste significatif ; ne suppose ni consommation personnelle ni excès médical. Pour conserves simples, ne les assimile pas aux plats préparés : elles peuvent être économiques. Ne qualifie pas un produit d'ultra-transformé sans composition vérifiée. Toute économie future est conditionnelle, jamais garantie. Si truncated, précise que les observations sont partielles.
 - Lorsque shoppingHabits.trends est disponible, exploite uniquement ses comparaisons chiffrées. Les deux fenêtres de 30 jours excluent aujourd'hui et portent sur les lignes de tickets enregistrées, pas la totalité des dépenses du foyer. Une différence peut provenir du nombre de tickets, des quantités ou des articles, pas nécessairement d'une hausse de prix. Pour priceChanges, cite les prix unitaires observés et leurs dates, sans les présenter comme les prix actuels du magasin. Pour replenishment, propose une vérification du stock avant d'acheter, sans affirmer que le produit manque. N'invente ni progrès ni économies réalisées.
 - Si shoppingHabits.actionPlan.goal est présent, réponds directement à l’objectif mensuel : détaille les postes et réductions hypothétiques déjà calculées, leur total et le reliquat. Ne promets pas le montant cible si les pistes ne le couvrent pas ; ne confonds pas réduction brute et économie nette après remplacements. Si insufficientHistory, explique que les relevés sont insuffisants et propose une méthode sans inventer de montant.
+- Respecte shoppingHabits.constraints et actionPlan.goal.protectedFamilies : ne propose pas de réduire les postes que l’utilisateur veut conserver. Si avoidHomemade, ne propose pas de cuisiner ; privilégie les comparaisons simples et les alternatives compatibles avec son temps. Présente le reliquat d’objectif sans pression et sans inventer d’autres économies. Ces préférences valent pour l’échange, pas une modification permanente du profil.
 - Pour une liste de courses adaptée, utilise actionPlan.checklist comme vérification de stock, non comme ordre d’achat. Ne prétends pas avoir enregistré la liste. Pour un bilan, utilise actionPlan.progress : une baisse des dépenses enregistrées n’est pas une économie réalisée vérifiée, notamment si des tickets manquent.
 - Pour les produits réguliers, utilise shoppingHabits : dates start/end, available, observedVisits, products (purchaseVisits et purchaseDays). Ce sont des observations personnelles sur 90 jours et non des quantités consommées. Ne complète jamais la liste par des produits supposés ; si la période demandée diffère, indique la limite de ces données.
 - Une dépense du mois en cours n'est pas un mois complet. Ne compare pas mécaniquement un mois partiel à un mois entier ; précise la période et n'extrapole pas sans demande explicite.
@@ -950,11 +951,13 @@ Deno.serve(async (req) => {
 
     // Personal purchase questions use authenticated server data, even with an old client.
     const purchaseIntent = context.action !== "analyze_refusal" ? personalPurchaseIntent(context.question, context.body?.recentHistory) : null
+    const purchaseAction = purchaseIntent ? resolvePurchaseGoal(context.question, context.body?.recentHistory) : null
+    const purchaseConstraints = purchaseAction?.constraints || identifyPurchaseConstraints(context.question)
     const recordedPurchases = purchaseIntent ? await loadRecordedPurchases(supabaseAdmin, context.userId) : null
     if (recordedPurchases) {
       const local = context.body.localContext || {}
       const financial = local.financial || {}
-      context.body.localContext = { ...local, financial: { ...financial, budgetAdvisorContext: { ...financial.budgetAdvisorContext, shoppingHabits: { ...recordedPurchases, actionPlan: buildPurchaseActionPlan(recordedPurchases, identifyPurchaseAction(context.question)), adviceCases: buildPurchaseAdviceCases(recordedPurchases).map(({advice,...item})=>item) } } } }
+      context.body.localContext = { ...local, financial: { ...financial, budgetAdvisorContext: { ...financial.budgetAdvisorContext, shoppingHabits: { ...recordedPurchases, actionPlan: buildPurchaseActionPlan(recordedPurchases, purchaseAction), constraints: purchaseConstraints, adviceCases: buildPurchaseAdviceCases(recordedPurchases, purchaseConstraints).map(({advice,...item})=>item) } } } }
       if (purchaseIntent === "latest" || !recordedPurchases.available || !recordedPurchases.latestPurchases.length) {
         return jsonResponse({ success: true, answer: recordedPurchaseEvidence(recordedPurchases, context.language), source: "local_recorded_purchases", language: context.language, mode: context.mode, consumed: false, openAiCallCount: 0, recommendedAidIds: [], recommendedAidNames: [] })
       }
@@ -1488,7 +1491,7 @@ Deno.serve(async (req) => {
         })
     // Only improve generic Markdown link labels pointing to exact, trusted
     // source URLs. Never rewrite any URL or add an invented reference.
-    const purchaseAdvice = recordedPurchases && /\b(?:alimentation|economi|economiser|economies|conseil|conseils|ameliorer|habitudes|depenses|achats)\b/i.test(context.question.normalize("NFD").replace(/[\u0300-\u036f]/g,"")) ? renderPurchaseAdviceCases(recordedPurchases, context.language) : ""
+    const purchaseAdvice = recordedPurchases && /\b(?:alimentation|economi|economiser|economies|conseil|conseils|ameliorer|habitudes|depenses|achats)\b/i.test(context.question.normalize("NFD").replace(/[\u0300-\u036f]/g,"")) ? renderPurchaseAdviceCases(recordedPurchases, context.language, { constraints: purchaseConstraints }) : ""
     const answer = recordedPurchases
       ? recordedPurchaseEvidence(recordedPurchases, context.language) + "\n\n" + (purchaseAdvice ? purchaseAdvice + "\n\n" : "") + (/\b(?:je ne peux pas acceder|je n ai pas acces|je ne peux pas consulter|je ne dispose pas de vos achats|je ne peux pas voir)\b/.test(checkedAnswer.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g," ")) ? (context.isKreol ? "Nou pé regarde bann produits-la pou prépare out prochains achats." : "Nous pouvons partir de ces produits pour comparer les prix et varier les prochains achats selon vos besoins.") : checkedAnswer)
       : focusedAidPrompts ? clarifyLocalAidLinks(checkedAnswer, trustedAidFacts) : checkedAnswer
