@@ -201,6 +201,7 @@ export async function loadTrustedAidFacts(supabaseAdmin: any, body: any): Promis
       const { data, error } = await supabaseAdmin
         .from("aides_reunion")
         .select(selectedColumns)
+        .eq("actif", true)
         .in("id", ids)
 
       if (error) console.log("Trusted aid facts by id unavailable:", error.message)
@@ -211,6 +212,7 @@ export async function loadTrustedAidFacts(supabaseAdmin: any, body: any): Promis
       const { data, error } = await supabaseAdmin
         .from("aides_reunion")
         .select(selectedColumns)
+        .eq("actif", true)
         .in("nom", names)
 
       if (error) console.log("Trusted aid facts by name unavailable:", error.message)
