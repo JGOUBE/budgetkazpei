@@ -616,10 +616,19 @@ function fakeAidRepository(rows = []) {
           assert.match(columns, /montant_max/)
           assert.match(columns, /lien_officiel/)
           return {
+            activeOnly: false,
+            eq(field, value) {
+              assert.equal(field, "actif")
+              assert.equal(value, true)
+              this.activeOnly = true
+              return this
+            },
             async in(field, values) {
+              assert.equal(this.activeOnly, true, "Server aid lookup must filter active records")
               const requested = new Set(values.map(String))
               return {
-                data: rows.filter(row => requested.has(String(row[field]))),
+                data: rows.filter(row =>
+                  row.actif !== false && requested.has(String(row[field]))),
                 error: null,
               }
             },
@@ -636,6 +645,12 @@ const trustedFactsEndToEnd = await loadTrustedAidFacts(
   fakeAidRepository([realPlan5000Row]),
   { recommendedAides: preparedRealPlan },
 )
+const inactiveTrustedFacts = await loadTrustedAidFacts(
+  fakeAidRepository([{ ...realPlan5000Row, id: 909, actif: false }]),
+  { recommendedAides: [{ id: 909, nom: realPlan5000Row.nom }] },
+)
+assert.deepEqual(inactiveTrustedFacts, [],
+  "A deactivated aid must not be loaded as trusted source through ID or name")
 const trustedClaimsEndToEnd = toTrustedAmountClaims(trustedFactsEndToEnd)
 const truthBeforeDraft = evaluateTruth(
   advisorProfile,
