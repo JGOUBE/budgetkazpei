@@ -535,3 +535,24 @@ assert.ok(habitSummary.recentProducts.some(p=>p.label==="Lait de chèvre 500 ml"
 const chatSource = await readFile(new URL("../src/components/conseiller/AssistantConseiller.jsx",import.meta.url),"utf8")
 assert.match(chatSource,/purchaseAnalysis \? "budget_grocery" : detectedIntent/)
 assert.match(chatSource,/!isPersonalPurchaseAnalysisQuestion\(sentQuestion\) && !multipleQuestions/)
+
+
+import { personalPurchaseIntent, summarizeRecordedPurchases, recordedPurchaseEvidence } from "../supabase/functions/assistant-aisupabase/engine/purchases/recordedPurchases.mjs"
+assert.equal(personalPurchaseIntent("Ok et par rapport à mes derniers achats tu peux regarder ?"),"latest")
+assert.equal(personalPurchaseIntent("Je peux améliorer mon alimentation ?"),"analysis")
+assert.equal(personalPurchaseIntent("Par rapport à ce que j'achète"),"analysis")
+assert.equal(personalPurchaseIntent("Ok mais regarde dans mes achats"),"analysis")
+assert.equal(personalPurchaseIntent("Où voir mes achats ?"),null)
+assert.equal(personalPurchaseIntent("Qu'est-ce qu'une alimentation équilibrée ?"),null)
+const recorded = summarizeRecordedPurchases([
+  {product_name:"Lait de chèvre 1 L",created_at:"2026-11-23T12:00:00Z",receipt_id:"1"},
+  {product_name:"Lait de chèvre 1 L",created_at:"2026-11-15T12:00:00Z",receipt_id:"2"},
+  {product_name:"Riz 1 kg",created_at:"2026-11-23T12:00:00Z",receipt_id:"1"},
+  {product_name:"Produit incertain",created_at:"2026-11-23T12:00:00Z",receipt_id:"1",confidence_score:20},
+],new Date("2026-11-24T12:00:00Z"))
+assert.equal(recorded.observedVisits,2)
+assert.equal(recorded.products[0].purchaseVisits,2)
+assert.match(recordedPurchaseEvidence(recorded),/23\/11\/2026/)
+assert.match(recordedPurchaseEvidence(recorded),/Riz 1 kg/)
+assert.doesNotMatch(recordedPurchaseEvidence(recorded),/Produit incertain/)
+assert.match(recordedPurchaseEvidence(summarizeRecordedPurchases([],new Date(),false)),/indisponible/)
