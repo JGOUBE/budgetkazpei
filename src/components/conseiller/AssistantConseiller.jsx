@@ -19,6 +19,7 @@ import {
   consumeAdvisorHandoff,
 } from "../../services/advisorHandoff"
 import { useAssistantInsights } from "../../hooks/useAssistantInsights"
+import { isPurchaseConstraintFollowUp } from "../../../supabase/functions/assistant-aisupabase/engine/purchases/purchasePreferences.mjs"
 import { buildLocalShoppingHabitAnswer, isShoppingHabitQuestion, isPersonalPurchaseAnalysisQuestion } from "../../services/ai/shoppingHabitSummary.js"
 import { buildAssistantAiSummary } from "../../services/ai/assistantInsightsService"
 import {
@@ -533,7 +534,7 @@ export default function AssistantConseiller({
     const isAidQuestion = shouldLookupAdvisorAids({
       question: sentQuestion, mode, conversationContext, recentHistory, handoffContext,
     })
-    const purchaseAnalysis = isShoppingHabitQuestion(sentQuestion) || isPersonalPurchaseAnalysisQuestion(sentQuestion)
+    const purchaseAnalysis = isShoppingHabitQuestion(sentQuestion) || isPersonalPurchaseAnalysisQuestion(sentQuestion) || isPurchaseConstraintFollowUp(sentQuestion,recentHistory || [])
     const financialContext = isAidQuestion && !explicitRecordedBudgetAnalysis && !purchaseAnalysis
       ? { intent: "trouver_aide", budgetAdvisorContext: {} }
       : buildAssistantAiSummary(questionInsights || financialInsights, purchaseAnalysis ? "budget_grocery" : detectedIntent)
@@ -655,7 +656,9 @@ export default function AssistantConseiller({
     const questionInsights = buildForQuestion(sentQuestion, responseLanguage)
     // The budget engine is for the user's recorded finances, not for every
     // occurrence of "réduire", "course" or "abonnement" in an unusual question.
+    const purchaseConstraintFollowUp = isPurchaseConstraintFollowUp(sentQuestion,history || [])
     const shouldAnswerLocally = (
+      !purchaseConstraintFollowUp &&
       (currentMode === "budget_depenses" || currentMode === "general") &&
       (isBudgetAssistantIntent(detectedIntent) || detectedIntent === "cheapest_stores") &&
       shouldUseLocalBudgetAnswer({
@@ -700,7 +703,7 @@ export default function AssistantConseiller({
       recentHistory: history,
       language: responseLanguage,
     })
-    const localBudgetFollowUp = isPersonalPurchaseAnalysisQuestion(sentQuestion) ? null : budgetConfirmation || budgetNoDataAdvice
+    const localBudgetFollowUp = (purchaseConstraintFollowUp || isPersonalPurchaseAnalysisQuestion(sentQuestion)) ? null : budgetConfirmation || budgetNoDataAdvice
     if (localBudgetFollowUp) {
       setHistory(prev => [
         {
