@@ -35,6 +35,7 @@ import {
   selectAdvisorLocalizedContext,
 } from "../supabase/functions/assistant-aisupabase/language/languagePolicy.ts"
 import { buildSystemPrompt } from "../supabase/functions/assistant-aisupabase/prompts/systemPrompt.ts"
+import { buildFocusedLocalAidPrompts } from "../supabase/functions/assistant-aisupabase/prompts/localAidPrompt.mjs"
 import { buildMemoryPrompt } from "../supabase/functions/assistant-aisupabase/memory/memory.ts"
 import { reviewAssistantAnswer } from "../supabase/functions/assistant-aisupabase/engine/review/reviewerEngine.ts"
 import { evaluateTruth } from "../supabase/functions/assistant-aisupabase/engine/truth/truthAnalyzer.ts"
@@ -45,6 +46,22 @@ import {
   toTrustedAmountClaims,
 } from "../supabase/functions/assistant-aisupabase/engine/truth/trustedAidFacts.ts"
 import { prepareAdvisorAideContext } from "../src/services/advisorAideContext.js"
+
+const temporalPrompt = buildFocusedLocalAidPrompts({
+  question: "Où obtenir des colis alimentaires à Saint-Leu ?",
+  trustedAidFacts: [{
+    id: "127", name: "Croix-Rouge sur Roues — Saint-Leu (Case du Piton)",
+    verificationStatus: "operateur_reference_2026",
+    periodeValidite: "Annuaire DEETS 2025-2026",
+    description: "Colis environ une fois par mois selon l'annuaire 2025-2026",
+    officialSource: "https://reunion.deets.gouv.fr/L-aide-alimentaire",
+  }],
+})
+assert.match(temporalPrompt.systemPrompt, /FIABILITÉ TEMPORELLE/)
+assert.match(temporalPrompt.systemPrompt, /annuaire 2025-2026 indique/)
+assert.match(temporalPrompt.systemPrompt, /ne les cite que si la fiche les documente explicitement/)
+assert.match(temporalPrompt.userPrompt, /Annuaire DEETS 2025-2026/)
+assert.match(temporalPrompt.userPrompt, /environ une fois par mois/)
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const read = relativePath => readFile(path.join(root, relativePath), "utf8")
