@@ -94,7 +94,7 @@ export function shouldLookupAdvisorAids({
   if (handoffContext && Object.keys(handoffContext).length > 0) return true
   const previousRecommended = (Array.isArray(recentHistory)?recentHistory:[]).some(item =>
     (item?.recommendedAidIds?.length||0)>0 || (item?.recommendedAidNames?.length||0)>0)
-  const types = new Set(["REQUEST_ALTERNATIVE","ASK_DETAILS","NEXT_STEP","FOLLOW_UP"])
+  const types = new Set(["REQUEST_ALTERNATIVE","ASK_DETAILS","NEXT_STEP","FOLLOW_UP","CORRECTION"])
   const activeTopics = conversationContext?.activeTopic?.domains || []
   if (previousRecommended && activeTopics.length>0 &&
       types.has(conversationContext?.turnType) &&
