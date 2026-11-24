@@ -8,6 +8,15 @@ export function isShoppingHabitQuestion(question = "") {
   return /\b(?:habitudes? (?:de consommation|d achats?|alimentaires?)|achats? (?:reguliers?|frequents?|repetes?)|produits? (?:reguliers?|frequents?|repetes?|les plus achetes)|articles? (?:reguliers?|frequents?|les plus achetes)|(?:j achete|je rachete|mi achete|mi asete|mi aste) (?:le plus|souvent|regulierement)|(?:achetes?|achete) (?:regulierement|souvent|le plus souvent)|(?:out|mes) bann achats)\b/.test(t)
 }
 
+// Personal requests for analysis are distinct from generic nutrition advice
+// and from simple navigation to the purchases screen.
+export function isPersonalPurchaseAnalysisQuestion(question = "") {
+  const t = normalize(question)
+  if (/\b(?:ou (?:voir|trouver|consulter)|comment (?:acceder|ouvrir|consulter)|ouvrir (?:la rubrique|mes achats))\b/.test(t)) return false
+  return /\b(?:mon alimentation|mes habitudes alimentaires|mon regime alimentaire|ma facon de manger|ce que j achete|ce que je mange|ce que je consomme|dans mes achats|dans mes tickets|selon mes achats|d apres mes achats|a partir de mes achats|mes produits achetes|mes tickets de caisse|out bann achats|sak mi aste|sak mi achete|out manze)\b/.test(t) ||
+    /\b(?:analyse|analyser|regarde|examiner|etudier|ameliorer|ameliore|avis|conseil|conseils|penses tu|que penses).{0,65}\b(?:mes achats|mes courses|mes tickets|mes produits|ma consommation)\b/.test(t)
+}
+
 export function buildShoppingHabitSummary(items = [], { available = true, receipts = [], now = new Date() } = {}) {
   const cutoff = new Date(now); cutoff.setDate(cutoff.getDate() - 90)
   const start = cutoff.toISOString().slice(0, 10), end = new Date(now).toISOString().slice(0, 10)
@@ -31,6 +40,7 @@ export function buildShoppingHabitSummary(items = [], { available = true, receip
   }
   return { available, start, end, observedVisits: visits.size,
     families: buildShoppingHabitFamilies(familyRows).filter(f => f.receiptCount >= 2).map(f => ({label:f.label, purchaseVisits:f.receiptCount, variants:f.variants.slice(0,3).map(v=>v.label.slice(0,100))})).slice(0,8),
+    recentProducts: [...groups.values()].map(r=>({label:r.label,purchaseVisits:r.visits.size,purchaseDays:r.days.size})).sort((a,b)=>b.purchaseVisits-a.purchaseVisits||a.label.localeCompare(b.label)).slice(0,25),
     products: [...groups.values()].filter(r => r.visits.size >= 2 && r.days.size >= 2)
       .map(r => ({ label: r.label, purchaseVisits: r.visits.size, purchaseDays: r.days.size }))
       .sort((a,b) => b.purchaseVisits - a.purchaseVisits || a.label.localeCompare(b.label)).slice(0, 10) }
@@ -38,7 +48,7 @@ export function buildShoppingHabitSummary(items = [], { available = true, receip
 
 export function buildLocalShoppingHabitAnswer({ question = "", insights = {}, language = "fr", unavailable = false } = {}) {
   const t = normalize(question)
-  if (!isShoppingHabitQuestion(question) || (String(question).match(/\?/g) || []).length > 1 || /\b(?:et|puis|aussi|pourquoi|comment|combien|economiser|economies|compare|comparaison|mois dernier|cette semaine|cette annee|depuis|en janvier|en fevrier|en mars|en avril|en mai|en juin|en juillet|en aout|en septembre|en octobre|en novembre|en decembre)\b/.test(t)) return null
+  if (isPersonalPurchaseAnalysisQuestion(question) || !isShoppingHabitQuestion(question) || (String(question).match(/\?/g) || []).length > 1 || /\b(?:et|puis|aussi|pourquoi|comment|combien|economiser|economies|compare|comparaison|mois dernier|cette semaine|cette annee|depuis|en janvier|en fevrier|en mars|en avril|en mai|en juin|en juillet|en aout|en septembre|en octobre|en novembre|en decembre)\b/.test(t)) return null
   const h = insights.shoppingHabits
   const kr = ["kreol","kr","cr"].includes(language)
   if (unavailable || !h?.available) return { answer: kr ? "Mi pé pa vérifie out bann achats pou l'instant." : "Je ne peux pas vérifier vos achats enregistrés pour le moment.", source:"local_shopping_habits" }
