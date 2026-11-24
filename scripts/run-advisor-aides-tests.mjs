@@ -553,6 +553,30 @@ assert.doesNotMatch(invented137Reviewed.revisedAnswer, /137\s*€/)
 const invented1000Reviewed = reviewAssistantAnswer("Une autre aide verse 1000 EUR.", "fr", [])
 assert.doesNotMatch(invented1000Reviewed.revisedAnswer, /1000\s*EUR/i)
 
+// Explicit references to numbered recommendations must not select the first aid.
+const ordinalHistory = [{
+  question: "Quelles aides pour le sport ?",
+  answer: "Deux propositions.",
+  conversationContext: { activeTopic: { query: "Quelles aides pour le sport ?", domains: ["sport"] } },
+  recommendedAidIds: [101, 102, 103],
+  recommendedAidNames: ["Première structure", "Deuxième structure", "Troisième structure"],
+}]
+for (const [question, id, name] of [
+  ["Et la deuxième ?", 102, "Deuxième structure"],
+  ["La troisième association, comment faire ?", 103, "Troisième structure"],
+  ["Et la première ?", 101, "Première structure"],
+]) {
+  const ctx = buildAdvisorConversationContext({ question, recentHistory: ordinalHistory })
+  assert.equal(ctx.turnType, ADVISOR_TURN_TYPES.ASK_DETAILS)
+  assert.deepEqual(ctx.targetAidIds, [id])
+  assert.deepEqual(ctx.targetAidNames, [name])
+}
+const missingOrdinal = buildAdvisorConversationContext({
+  question: "Et la troisième ?", recentHistory: [{ ...ordinalHistory[0], recommendedAidIds: [101], recommendedAidNames: ["Première structure"] }],
+})
+assert.deepEqual(missingOrdinal.targetAidIds, [])
+assert.deepEqual(missingOrdinal.targetAidNames, [])
+
 // TEST I — « combien ? » cible la dernière aide réellement proposée.
 const amountTurn = getConversationSelection("Combien ?", planHistory)
 assert.equal(amountTurn.conversationContext.turnType, ADVISOR_TURN_TYPES.ASK_DETAILS)
