@@ -572,3 +572,19 @@ const adviceSummary = summarizeRecordedPurchases([
 ],new Date("2026-11-24T12:00:00Z"))
 assert.equal(adviceSummary.adviceFamilies[0].observedSpend,14)
 assert.equal(adviceSummary.adviceFamilies[0].purchaseVisits,2)
+
+
+import { buildPurchaseAdviceCases, renderPurchaseAdviceCases } from "../supabase/functions/assistant-aisupabase/engine/purchases/purchaseAdviceCases.mjs"
+assert.equal(personalPurchaseIntent("Ok et par rapport à mes derniers achats tu peux regarder ?",[{question:"Je peux améliorer mon alimentation ?"}]),"analysis")
+assert.equal(personalPurchaseIntent("Je n'ai plus d'argent pour mes courses"),null)
+assert.equal(personalPurchaseIntent("Je cherche une aide alimentaire pour mes courses"),null)
+assert.equal(identifyPurchaseAdviceFamily("Chips nature"),"salty_snacks")
+assert.equal(identifyPurchaseAdviceFamily("Biscuits apéritifs"),"salty_snacks")
+assert.equal(identifyPurchaseAdviceFamily("Eau minérale 1,5 L"),"bottled_water")
+const cases = buildPurchaseAdviceCases(adviceSummary)
+assert.equal(cases[0].key,"alcohol")
+assert.equal(cases[0].scenario25,3.5)
+assert.match(renderPurchaseAdviceCases(adviceSummary),/avant le coût d'éventuels remplacements/)
+assert.equal(buildPurchaseAdviceCases({available:false,adviceFamilies:adviceSummary.adviceFamilies}).length,0)
+assert.equal(buildPurchaseAdviceCases({available:true,adviceFamilies:[{key:"cakes",purchaseDays:1,purchaseVisits:3,observedSpend:20}]}).length,0)
+assert.equal(buildPurchaseAdviceCases({available:true,adviceFamilies:[{key:"plain_preserves",purchaseDays:2,purchaseVisits:2,observedSpend:20} ]})[0].scenario25,null)
