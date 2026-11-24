@@ -713,3 +713,18 @@ assert.equal(isDirectPurchaseAction("Pourquoi mes courses me coûtent plus cher 
 assert.equal(isDirectPurchaseAction("Pourquoi mes courses me coûtent plus cher et comment obtenir une aide ?",{kind:"drivers"}),false)
 assert.equal(isPersonalPurchaseAnalysisQuestion("Pourquoi mes courses me coûtent plus cher ?"),true)
 assert.match(renderLocalPurchaseAction({available:true,drivers},{kind:"drivers"}),/Effet estimé/)
+
+for(const question of ["Quels produits de mes achats ont changé de prix ?","Quelles économies possibles sur mes achats ?","Kels produits dann mon bann achats la sanzé de pri ?","Kels lékonomi possibles su mon bann achats ?","Prépare mon liste courses selon mon bann labitid d'achat.","Poukwa mi dépansé plis pou mon bann courses ?"]){
+  const action=identifyPurchaseAction(question)
+  assert.ok(action,question)
+  assert.equal(isDirectPurchaseAction(question,action),true,question)
+  assert.equal(personalPurchaseIntent(question),"analysis",question)
+  assert.equal(isPersonalPurchaseAnalysisQuestion(question),true,question)
+}
+assert.equal(isDirectPurchaseAction("Quels produits de mes achats ont changé de prix et comment obtenir une aide ?",{kind:"price_changes"}),false)
+const localPricePlan=buildPurchaseActionPlan({...noticeSummary,trends:noticeSummary.trends},{kind:"price_changes"})
+assert.match(renderLocalPurchaseAction(localPricePlan,{kind:"price_changes"}),/25 %/)
+const localOpportunityPlan=buildPurchaseActionPlan({...planSummary,adviceFamilies:[{key:"cakes",label:"Biscuits",purchaseDays:4,purchaseVisits:4,observedSpend:90,recent30Spend:40,recent30PurchaseDays:3}]},{kind:"opportunities"})
+assert.match(renderLocalPurchaseAction(localOpportunityPlan,{kind:"opportunities"}),/10,00/)
+assert.doesNotMatch(renderLocalPurchaseAction(localOpportunityPlan,{kind:"opportunities"}),/90,00/)
+assert.equal(buildPurchaseActionPlan({...noticeSummary,truncated:true},{kind:"price_changes"}).priceChanges.length,0)

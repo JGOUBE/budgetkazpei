@@ -26,7 +26,7 @@ export function buildProactiveAdvisorNotices(summary,language="fr",now=new Date(
       text:kr?"In pri su in produit ou achète souvent la changé.":up?"Le prix d’un produit habituel a augmenté dans vos relevés.":"Un produit habituel est revenu moins cher dans vos relevés.",
       detail:p.label+" : "+money(p.previousObservedUnitPrice)+"/"+unit+" → "+money(p.recentObservedUnitPrice)+"/"+unit+" ("+(up?"+":"")+p.changePercent+" %). "+(kr?"Pri observé dann out tiké, pa garanti zordi.":"Prix unitaires observés sur "+p.observations+" jours d'achat ; pas des prix garantis aujourd'hui."),
       action:kr?"Compare pri pou minm produit ek minm format.":"Comparez le même produit et le même format avant votre prochain achat.",
-      prompt:kr?"Sak mi aste, analyse bann pri ki la changé dann mon bann tiké.":"Analyse mes achats : quels produits habituels ont changé de prix dans mes relevés et quelles solutions me proposes-tu ?"})
+      prompt:kr?"Kels produits dann mon bann achats la sanzé de pri ?":"Quels produits de mes achats ont changé de prix ?"})
   }
   for(const f of summary.adviceFamilies||[]){
     if(!["alcohol","cakes","sweet_drinks","prepared_meals","salty_snacks"].includes(f.key)||f.recent30PurchaseDays<3||!finite(f.recent30Spend)||f.recent30Spend<20||!f.label)continue
@@ -35,7 +35,7 @@ export function buildProactiveAdvisorNotices(summary,language="fr",now=new Date(
       text:kr?"Mi la repéré in poste d’achat régulier pou fé bann lékonomi.":"Un poste d’achat régulier pourrait offrir des pistes d’économies.",
       detail:f.label+" : "+money(f.recent30Spend)+(kr?" su 30 derniers jours complets.":" sur les 30 derniers jours complets, sur "+f.recent30PurchaseDays+" jours d’achat."),
       action:kr?"Si ou baisse sa dépans-la de 25 %, sa fé "+money(f.recent30Spend*.25)+" avan pri remplacement.":"Une réduction hypothétique de 25 % représenterait "+money(f.recent30Spend*.25)+" avant le coût des éventuels remplacements.",
-      prompt:kr?"Sak mi aste, aide a moin trouve bann lékonomi adaptées.":"Analyse mes achats réguliers et propose-moi des économies adaptées à mes préférences."})
+      prompt:kr?"Kels lékonomi possibles su mon bann achats ?":"Quelles économies possibles sur mes achats ?"})
   }
   const c=summary.trends?.comparison
   if(c&&c.recent30?.days>=4&&c.prior30?.days>=4&&finite(c.recent30.spend)&&finite(c.prior30.spend)&&c.prior30.spend>=100&&finite(c.observedDifference)&&Math.abs(c.observedDifference)>=30&&Math.abs(c.observedDifference)/c.prior30.spend>=.15){
@@ -44,14 +44,14 @@ export function buildProactiveAdvisorNotices(summary,language="fr",now=new Date(
       text:kr?"Out bann dépans anrezistré la changé.":up?"Vos dépenses enregistrées ont augmenté.":"Vos dépenses enregistrées ont diminué.",
       detail:money(c.prior30.spend)+" → "+money(c.recent30.spend)+(kr?" su deux périodes de 30 jours.":" sur deux périodes de 30 jours, hors aujourd’hui."),
       action:kr?"Vérifie si tout out bann tiké lé anrezistré.":summary.trends?.drivers?.canExplainPriceQuantity?"Le détail des achats permet de distinguer les écarts de prix unitaires et de quantités.":"Le nombre de tickets et les quantités peuvent expliquer cette différence. Ce n’est pas une économie vérifiée.",
-      prompt:kr?"Sak mi aste, compare mon bann dépans su deux périodes de 30 jours.":"Analyse mes achats et compare les dépenses des deux dernières périodes de 30 jours."})
+      prompt:kr?"Poukwa mi dépansé "+(up?"plis":"moins")+" pou mon bann courses ?":"Pourquoi je dépense "+(up?"plus":"moins")+" sur mes courses ?"})
   }
   const stock=(summary.trends?.replenishment||[]).filter(p=>p.observedDays>=4&&p.typicalGapDays>=3&&p.daysSinceLast>=p.typicalGapDays&&p.label).slice(0,3)
   if(stock.length>=2)add({kind:"stock",key:"stock:"+stock.map(p=>p.label).sort().join("|"),score:40,
     text:kr?"Bann produits habituels pou vérifié avan fé courses.":"Quelques produits habituels à vérifier avant vos courses.",
     detail:stock.map(p=>p.label+" ("+p.typicalGapDays+(kr?" jours anviron":" jours entre achats habituellement")+")").join(" · "),
     action:kr?"Vérifie kosa i reste la kaz avan aste.":"Vérifiez ce qu’il reste chez vous avant d'ajouter ces produits à votre liste.",
-    prompt:kr?"Sak mi aste souvent, aide a moin prépare mon liste courses.":"Prépare une liste de courses à vérifier selon mes habitudes d'achat."})
+    prompt:kr?"Prépare mon liste courses selon mon bann labitid d'achat.":"Prépare une liste de courses selon mes habitudes d'achat."})
   return list.sort((a,b)=>b.score-a.score||a.key.localeCompare(b.key))
 }
 export function buildProactiveAdvisorNotice(summary,language="fr",now=new Date(),dismissed=[]){

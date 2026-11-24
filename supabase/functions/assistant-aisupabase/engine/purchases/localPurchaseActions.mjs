@@ -7,15 +7,28 @@ export function isDirectPurchaseAction(question="",action=null){
   if(!action||(String(question).match(/\?/g)||[]).length>1)return false
   const t=norm(question)
   if(t.length>160||/\b(?:et aussi|et pourquoi|et comment|et si|puis|mais|sans|avec|tout en|caf|rsa|ccas|aide|urgence|recette|enfants|sante|alimentation|sans gluten|allergie|diabete)\b/.test(t))return false
-  if(action.kind==="drivers")return /^(?:pourquoi mes courses (?:me )?coutent (?:plus|moins) cher|pourquoi mes depenses alimentaires (?:ont augmente|ont diminue)|pourquoi je depense (?:plus|moins) sur mes courses|explique(?: moi)? pourquoi mes courses (?:me )?coutent (?:plus|moins) cher)$/.test(t)
+  if(action.kind==="price_changes")return /^(?:quels produits de mes achats ont change de prix|kels produits dann mon bann achats la sanze de pri)$/.test(t)
+  if(action.kind==="opportunities")return /^(?:quelles economies possibles sur mes achats|kels lekonomi possibles su mon bann achats)$/.test(t)
+  if(action.kind==="drivers")return /^(?:pourquoi mes courses (?:me )?coutent (?:plus|moins) cher|pourquoi mes depenses alimentaires (?:ont augmente|ont diminue)|pourquoi je depense (?:plus|moins) sur mes courses|explique(?: moi)? pourquoi mes courses (?:me )?coutent (?:plus|moins) cher|poukwa mi depanse (?:plis|moins) pou mon bann courses)$/.test(t)
   if(action.kind==="goal")return /^(?:je veux|je souhaite|j aimerais|comment puis je|comment)?\s*(?:economiser|reduire de)\s+\d+(?: \d{1,2})?\s*(?:euros? )?(?:par mois|chaque mois) sur (?:mes courses|mes achats|mon budget courses|mon budget alimentaire)$/.test(t)
-  if(action.kind==="shopping_checklist")return /^(?:prepare|propose|fais) (?:moi )?(?:une|ma) liste de courses (?:selon|d apres|a partir de) mes habitudes d achat$/.test(t)
+  if(action.kind==="shopping_checklist")return /^(?:prepare|propose|fais) (?:moi )?(?:une|ma) liste de courses (?:selon|d apres|a partir de) mes habitudes d achat$|^prepare mon liste courses selon mon bann labitid d achat$/.test(t)
   if(action.kind==="progress")return /^(?:est ce que )?(?:j ai fait des economies|j ai depense moins|j ai depense plus) sur mes (?:courses|achats)$/.test(t)
   return false
 }
 export function renderLocalPurchaseAction(plan,action,language="fr"){
   if(!plan?.available||!action)return null
   const kr=language==="kreol"
+  if(action.kind==="price_changes"){
+    const rows=plan.priceChanges||[]
+    if(!rows.length)return kr?"Mi trouve poin changement de pri assez fiable dann out relevés.":"Je ne trouve pas de variation de prix suffisamment étayée dans vos relevés."
+    const unit={l:"L",kg:"kg",g:"g",ml:"mL",piece:"unité",unite:"unité"}
+    return (kr?"**Bann pri unitaires observé ki la changé**":"**Variations de prix unitaires observées**")+"\n\n"+rows.map(p=>"- "+p.label+" : "+euro(p.previousObservedUnitPrice)+"/"+(unit[p.unit]||p.unit)+" → "+euro(p.recentObservedUnitPrice)+"/"+(unit[p.unit]||p.unit)+" ("+(p.changePercent>0?"+":"")+p.changePercent+" %, "+p.observations+(kr?" jours d'achat":" jours d'achat")+").").join("\n\n")+"\n\n"+(kr?"Compare minm produit ek minm format. Pri observé pa garanti zordi.":"Comparez le même produit et le même format. Ces prix ont été observés sur vos tickets, ils ne sont pas garantis aujourd'hui.")
+  }
+  if(action.kind==="opportunities"){
+    const cases=plan.opportunities||[]
+    if(!cases.length)return kr?"Mi trouve poin poste assez régulier pou chiffre in piste fiable.":"Je ne trouve pas encore de poste d'achat suffisamment régulier pour chiffrer une piste fiable."
+    return (kr?"**Bann pistes lékonomi su out achats**":"**Pistes d'économies sur vos achats**")+"\n\n"+cases.map(f=>"- **"+f.label+"** : "+euro(f.recent30Spend)+(kr?" su 30 derniers jours complets. ":" sur les 30 derniers jours complets. ")+(kr?f.advice.kr:f.advice.fr)+(f.scenario25===null?"":(kr?" In baisse de 25 % i représente ":" Une réduction hypothétique de 25 % représenterait ")+euro(f.recent30Spend*.25)+(kr?" avan pri remplacement.":" avant le coût des éventuels remplacements."))).join("\n\n")
+  }
   if(action.kind==="drivers")return renderPurchaseDrivers(plan.drivers,language)||(kr?"Nana poin assez relevés pou explique sa différence-la.":"Je n’ai pas encore suffisamment de relevés comparables pour expliquer cette évolution de façon fiable.")
   if(action.kind==="goal"&&plan.goal){
     const g=plan.goal

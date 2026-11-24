@@ -1,3 +1,4 @@
+import { buildPurchaseAdviceCases } from "./purchaseAdviceCases.mjs"
 // Action plans are computed, not invented by the language model.
 const norm=s=>String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim()
 const cents=n=>Math.round(n*100)
@@ -6,6 +7,10 @@ const adjustable=new Set(["alcohol","cakes","sweet_drinks","prepared_meals","sal
 export function identifyPurchaseAction(question=""){
   const t=norm(question)
   if(/\b(?:caf|rsa|ccas|aide alimentaire|plus de quoi manger|pas de quoi manger|fiction|imagine|invente)\b/.test(t))return null
+  if (/^(?:quels produits de mes achats ont change de prix|kels produits dann mon bann achats la sanze de pri)$/.test(t))return {kind:"price_changes"}
+  if (/^(?:quelles economies possibles sur mes achats|kels lekonomi possibles su mon bann achats)$/.test(t))return {kind:"opportunities"}
+  if (/^prepare mon liste courses selon mon bann labitid d achat$/.test(t))return {kind:"shopping_checklist"}
+  if (/^poukwa mi depanse (?:plis|moins) pou mon bann courses$/.test(t))return {kind:"drivers"}
   const scope=/\b(?:mes courses|mes achats|mes depenses alimentaires|mon budget courses|mon budget alimentaire|mes tickets|mes habitudes d achat|mes habitudes alimentaires)\b/.test(t)
   if(!scope)return null
   const amount=String(question).match(/(?:économiser|economiser|économies de|economies de|réduire de|reduire de|gagner)\s+(\d{1,5}(?:[.,]\d{1,2})?)\s*(?:€|euros?\b)/i)
@@ -42,5 +47,5 @@ export function buildPurchaseActionPlan(summary={},action=null,preferences={}){
     }
     goal={monthlyTarget:money(target),steps,modeledGrossReduction:money(target-remaining),remainingTarget:money(remaining),netSavingsVerified:false,coverageWarning:true,insufficientHistory:!comparison||Boolean(summary.truncated)}
   }
-  return {available:true,goal,checklist,progress,preferences,drivers:summary.trends?.drivers||null}
+  return {available:true,goal,checklist,progress,preferences,drivers:summary.trends?.drivers||null,priceChanges:summary.truncated?[]:(summary.trends?.priceChanges||[]),opportunities:summary.truncated?[]:buildPurchaseAdviceCases(summary,preferences).filter(f=>f.recent30PurchaseDays>=2&&Number.isFinite(f.recent30Spend)&&f.recent30Spend>0).sort((a,b)=>b.recent30Spend-a.recent30Spend).slice(0,4)}
 }

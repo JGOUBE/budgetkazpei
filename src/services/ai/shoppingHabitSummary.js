@@ -12,6 +12,7 @@ export function isShoppingHabitQuestion(question = "") {
 // and from simple navigation to the purchases screen.
 export function isPersonalPurchaseAnalysisQuestion(question = "") {
   const t = normalize(question)
+  if (/^(?:quels produits de mes achats ont change de prix|quelles economies possibles sur mes achats|kels produits dann mon bann achats la sanze de pri|kels lekonomi possibles su mon bann achats|prepare mon liste courses selon mon bann labitid d achat|poukwa mi depanse (?:plis|moins) pou mon bann courses)$/.test(t)) return true
   if (/\b(?:ou (?:voir|trouver|consulter)|comment (?:acceder|ouvrir|consulter)|ouvrir (?:la rubrique|mes achats))\b/.test(t)) return false
   if (/\b(?:mes courses|mes achats|mes depenses alimentaires|mon budget courses|mon budget alimentaire|mes tickets|mes habitudes d achat|mes habitudes alimentaires)\b/.test(t) &&
       /\b(?:economiser|economies|reduire|gagner|coutent plus cher|coutent moins cher|ont augmente|ont diminue|liste de courses|liste d achats|quoi racheter|quoi acheter|prochaines courses|progres|evolution|depense moins|depense plus|par rapport au mois dernier|compare les depenses)\b/.test(t) &&
