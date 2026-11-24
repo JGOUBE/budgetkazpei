@@ -12,14 +12,16 @@ export function personalPurchaseIntent(question="") {
 // Non-alcoholic variants and ambiguous product labels must not be classified as alcohol.
 export function identifyPurchaseAdviceFamily(label="") {
   const t=norm(label)
+  if (/\b(?:chips|biscuits aperitifs|cacahuetes grillees|snack sale)\b/.test(t)) return "salty_snacks"
   if (/\b(?:biere|bieres|vin|vins|rhum|whisky|vodka|champagne|cidre|aperitif alcoolise|pastis)\b/.test(t) && !/\b(?:sans alcool|0 0|0 alcool|vinaigre|sauce|arome|gel|shampooing|cuisine)\b/.test(t)) return "alcohol"
   if (/\b(?:biscuit|biscuits|cookie|cookies|madeleine|madeleines|gateau|gateaux|gaufrette|gaufrettes|brownie|brownies|cake|cakes|barquette|barquettes|quatre quarts|gouter|gouters)\b/.test(t) && !/\b(?:moule|farine|preparation|levure|recette|emporte piece)\b/.test(t)) return "cakes"
   if (/\b(?:soda|sodas|cola|limonade|boisson sucree|boissons sucrees|boisson energisante|sirop de grenadine)\b/.test(t) && !/\b(?:zero|sans sucre|light|non sucre)\b/.test(t)) return "sweet_drinks"
   if (/\b(?:conserve|conserves|bocal|boite|boites)\b/.test(t) && /\b(?:lentilles?|haricots?|pois chiches|mais|tomates?|thon|sardines?|maquereaux?|legumes?)\b/.test(t)) return "plain_preserves"
+  if (/\b(?:eau minerale|eau de source|eau plate|eau gazeuse)\b/.test(t) && !/\b(?:parfum|toilette|micellaire|florale)\b/.test(t)) return "bottled_water"
   if (/\b(?:cassoulet|raviolis?|choucroute garnie|plat prepare|plats prepares|saucisses lentilles|petit sale)\b/.test(t)) return "prepared_meals"
   return null
 }
-const adviceLabels={alcohol:"Boissons alcoolisées",cakes:"Biscuits et gâteaux",sweet_drinks:"Boissons sucrées",plain_preserves:"Conserves de légumes, légumineuses ou poisson",prepared_meals:"Plats préparés"}
+const adviceLabels={alcohol:"Boissons alcoolisées",cakes:"Biscuits et gâteaux",sweet_drinks:"Boissons sucrées",plain_preserves:"Conserves de légumes, légumineuses ou poisson",prepared_meals:"Plats préparés",salty_snacks:"Produits apéritifs",bottled_water:"Eau en bouteille"}
 export function summarizeRecordedPurchases(rows=[],now=new Date(),available=true,truncated=false) {
   const start=new Date(now.getTime()-90*86400000).toISOString().slice(0,10)
   const end=now.toISOString().slice(0,10)
