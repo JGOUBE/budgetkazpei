@@ -630,7 +630,7 @@ assert.equal(buildPurchaseActionPlan({...planSummary,trends:{}},monthlyGoal).goa
 assert.equal(buildPurchaseActionPlan({available:false},monthlyGoal).available,false)
 
 
-import { buildProactiveAdvisorNotice, shouldShowAdvisorNotice, NOTICE_COOLDOWN } from "../src/services/ai/proactiveAdvisor.js"
+import { buildProactiveAdvisorNotice, shouldShowAdvisorNotice, NOTICE_COOLDOWN, noticeFingerprint } from "../src/services/ai/proactiveAdvisor.js"
 const noticeSummary={available:true,observedVisits:5,trends:{priceChanges:[{label:"Lait 1 L",observations:4,changePercent:25,previousObservedUnitPrice:2.8,recentObservedUnitPrice:3.5,lastDate:"2026-11-23"}]}}
 assert.equal(buildProactiveAdvisorNotice(noticeSummary).kind,"price")
 assert.equal(buildProactiveAdvisorNotice({...noticeSummary,truncated:true}),null)
@@ -640,3 +640,7 @@ assert.equal(buildProactiveAdvisorNotice({available:true,observedVisits:5,advice
 assert.equal(shouldShowAdvisorNotice({kind:"price"},1000,1000+NOTICE_COOLDOWN-1),false)
 assert.equal(shouldShowAdvisorNotice({kind:"price"},1000,1000+NOTICE_COOLDOWN),true)
 assert.equal(shouldShowAdvisorNotice(null,0),false)
+
+const priorNotice=buildProactiveAdvisorNotice(noticeSummary)
+assert.equal(shouldShowAdvisorNotice(priorNotice,1000,1000+NOTICE_COOLDOWN,noticeFingerprint(priorNotice)),false)
+assert.equal(shouldShowAdvisorNotice({...priorNotice,key:priorNotice.key+":new"},1000,1000+NOTICE_COOLDOWN,noticeFingerprint(priorNotice)),true)
