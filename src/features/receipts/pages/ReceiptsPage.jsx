@@ -61,6 +61,7 @@ import { importValidatedReceipt } from "../../../services/scan/receiptImporter"
 import { isItemEligibleForSmartShopping, normalizeItemQualityStatus } from "../../../services/scan/receiptRules"
 import { getScanErrorDetails, ScanError } from "../../../services/scan/scanErrors"
 import { requestAppSectionNavigation } from "../../../services/appSectionNavigation"
+import { handoffToAdvisor } from "../../../services/advisorHandoff"
 import { createScanMetric, incrementScanUsage } from "../../../services/scan/scanUsageService"
 import { syncShoppingItemsFromReceipt } from "../../shopping/services/shoppingEngine"
 import { BkIcons } from "../../../components/icons-budgetkazpei"
@@ -1142,6 +1143,7 @@ export default function ReceiptsPage({
   const [detail, setDetail] = useState(null)
   const [detailImageUrl, setDetailImageUrl] = useState("")
   const [message, setMessage] = useState("")
+  const [scanAdvisorResult, setScanAdvisorResult] = useState(null)
   const [scanError, setScanError] = useState(null)
   const [busy, setBusy] = useState(false)
   const [scanProgress, setScanProgress] = useState(null)
@@ -1940,9 +1942,12 @@ export default function ReceiptsPage({
         console.warn("[scanner] scan_usage ou scan_metrics ERREUR exacte:", usageError)
       }
 
-      setMessage(!canEditScanDetails && draft.ocr_status !== "manual" && Number(importResult.shoppingItemsCreated || 0) > 0
+      const importedShoppingCount = Number(importResult.shoppingItemsCreated || 0)
+      const savedMessage = !canEditScanDetails && draft.ocr_status !== "manual" && importedShoppingCount > 0
         ? `${txt.saved} · ${importResult.shoppingItemsCreated} prix transmis à Courses intelligentes`
-        : txt.saved)
+        : txt.saved
+      setScanAdvisorResult(draft.ocr_status !== "manual" && importedShoppingCount > 0 ? { count: importedShoppingCount, message: savedMessage, userId: user?.id } : null)
+      setMessage(savedMessage)
       setDraft(null)
       setReceipt(null)
       setDuplicateReceipt(null)
@@ -2422,6 +2427,14 @@ export default function ReceiptsPage({
           fontWeight: 800,
         }}>
           {message}
+          {mode === "history" && !busy && !scanError && scanAdvisorResult?.userId === user?.id && scanAdvisorResult?.message === message && (isPremium || isPremiumPlus) && (
+            <div style={{ marginTop: 12, fontWeight: 500, lineHeight: 1.5 }}>
+              <div>{isKreol ? `${scanAdvisorResult.count} lartik i enrichi out labitid d’achat.` : `${scanAdvisorResult.count} articles enrichissent votre historique et les conseils sur vos habitudes d’achat.`}</div>
+              <button type="button" onClick={() => handoffToAdvisor({ mode: "general", prompt: isKreol ? "Regarde out bann achats anrezistré ek di a moin kosa mi pé amélioré pou mon bidzé." : "Analyse mes achats enregistrés, notamment les plus récents, et propose-moi des économies adaptées à mes habitudes." })} style={{ display: "block", marginTop: 10, padding: "10px 14px", borderRadius: 12, border: "1px solid #A7C7C0", background: "#EDF7F3", color: "#24554A", fontWeight: 750, cursor: "pointer", fontFamily: "inherit" }}>
+                {isKreol ? "Voir bann conseils su mon achats" : "Analyser mes achats avec le Conseiller"}
+              </button>
+            </div>
+          )}
           {quota.safetyLimitReached && (
             <button type="button" onClick={() => requestAppSectionNavigation("contact")}
               style={{ display: "block", marginTop: 12, padding: "10px 14px",

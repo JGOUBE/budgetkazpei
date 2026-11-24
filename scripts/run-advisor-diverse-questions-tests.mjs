@@ -369,7 +369,7 @@ assert.match(advisorEdgeSource, /await rememberAdvisorTopic\(\s*supabaseAdmin, c
 // server cost guards. A generic local redirect must not swallow them.
 assert.ok(advisorEdgeSource.includes('if (spendScope === "offtopic" &&'))
 assert.doesNotMatch(advisorEdgeSource, /source: "local_offtopic"/)
-assert.ok(advisorEdgeSource.includes('const protectedTopic = spendScope === "useful" && isProtectedAdvisorQuestion'))
+assert.ok(advisorEdgeSource.includes('const protectedTopic = spendScope === "useful" && (Boolean(purchaseIntent) || isProtectedAdvisorQuestion'))
 assert.ok(advisorEdgeSource.includes('context.memory = protectedTopic'))
 assert.ok(advisorEdgeSource.includes('buildOpenTopicPrompt(context.body, context.language)'))
 assert.ok(advisorEdgeSource.includes('DATE DE RÉFÉRENCE À LA RÉUNION'))
@@ -535,3 +535,72 @@ assert.ok(habitSummary.recentProducts.some(p=>p.label==="Lait de chèvre 500 ml"
 const chatSource = await readFile(new URL("../src/components/conseiller/AssistantConseiller.jsx",import.meta.url),"utf8")
 assert.match(chatSource,/purchaseAnalysis \? "budget_grocery" : detectedIntent/)
 assert.match(chatSource,/!isPersonalPurchaseAnalysisQuestion\(sentQuestion\) && !multipleQuestions/)
+
+
+import { personalPurchaseIntent, summarizeRecordedPurchases, recordedPurchaseEvidence, identifyPurchaseAdviceFamily } from "../supabase/functions/assistant-aisupabase/engine/purchases/recordedPurchases.mjs"
+assert.equal(personalPurchaseIntent("Ok et par rapport à mes derniers achats tu peux regarder ?"),"latest")
+assert.equal(personalPurchaseIntent("Je peux améliorer mon alimentation ?"),"analysis")
+assert.equal(personalPurchaseIntent("Par rapport à ce que j'achète"),"analysis")
+assert.equal(personalPurchaseIntent("Ok mais regarde dans mes achats"),"analysis")
+assert.equal(personalPurchaseIntent("Où voir mes achats ?"),null)
+assert.equal(personalPurchaseIntent("Qu'est-ce qu'une alimentation équilibrée ?"),null)
+const recorded = summarizeRecordedPurchases([
+  {product_name:"Lait de chèvre 1 L",created_at:"2026-11-23T12:00:00Z",receipt_id:"1"},
+  {product_name:"Lait de chèvre 1 L",created_at:"2026-11-15T12:00:00Z",receipt_id:"2"},
+  {product_name:"Riz 1 kg",created_at:"2026-11-23T12:00:00Z",receipt_id:"1"},
+  {product_name:"Produit incertain",created_at:"2026-11-23T12:00:00Z",receipt_id:"1",confidence_score:20},
+],new Date("2026-11-24T12:00:00Z"))
+assert.equal(recorded.observedVisits,2)
+assert.equal(recorded.products[0].purchaseVisits,2)
+assert.match(recordedPurchaseEvidence(recorded),/23\/11\/2026/)
+assert.match(recordedPurchaseEvidence(recorded),/Riz 1 kg/)
+assert.doesNotMatch(recordedPurchaseEvidence(recorded),/Produit incertain/)
+assert.match(recordedPurchaseEvidence(summarizeRecordedPurchases([],new Date(),false)),/indisponible/)
+
+assert.equal(identifyPurchaseAdviceFamily("Bière blonde 6x33 cl"),"alcohol")
+assert.equal(identifyPurchaseAdviceFamily("Bière sans alcool 0.0"),null)
+assert.equal(identifyPurchaseAdviceFamily("Vinaigre de vin"),null)
+assert.equal(identifyPurchaseAdviceFamily("Gâteaux fourrés chocolat"),"cakes")
+assert.equal(identifyPurchaseAdviceFamily("Farine pour gâteau"),null)
+assert.equal(identifyPurchaseAdviceFamily("Cola sans sucre"),null)
+assert.equal(identifyPurchaseAdviceFamily("Conserve de lentilles"),"plain_preserves")
+assert.equal(identifyPurchaseAdviceFamily("Cassoulet en conserve"),"prepared_meals")
+const adviceSummary = summarizeRecordedPurchases([
+  {product_name:"Bière blonde",price:6,created_at:"2026-11-23",receipt_id:"x"},
+  {product_name:"Vin rouge",price:8,created_at:"2026-11-15",receipt_id:"y"},
+  {product_name:"Bière sans alcool",price:4,created_at:"2026-11-15",receipt_id:"y"},
+],new Date("2026-11-24T12:00:00Z"))
+assert.equal(adviceSummary.adviceFamilies[0].observedSpend,14)
+assert.equal(adviceSummary.adviceFamilies[0].purchaseVisits,2)
+
+
+import { buildPurchaseAdviceCases, renderPurchaseAdviceCases } from "../supabase/functions/assistant-aisupabase/engine/purchases/purchaseAdviceCases.mjs"
+assert.equal(personalPurchaseIntent("Ok et par rapport à mes derniers achats tu peux regarder ?",[{question:"Je peux améliorer mon alimentation ?"}]),"analysis")
+assert.equal(personalPurchaseIntent("Je n'ai plus d'argent pour mes courses"),null)
+assert.equal(personalPurchaseIntent("Je cherche une aide alimentaire pour mes courses"),null)
+assert.equal(identifyPurchaseAdviceFamily("Chips nature"),"salty_snacks")
+assert.equal(identifyPurchaseAdviceFamily("Biscuits apéritifs"),"salty_snacks")
+assert.equal(identifyPurchaseAdviceFamily("Eau minérale 1,5 L"),"bottled_water")
+const cases = buildPurchaseAdviceCases(adviceSummary)
+assert.equal(cases[0].key,"alcohol")
+assert.equal(cases[0].scenario25,3.5)
+assert.match(renderPurchaseAdviceCases(adviceSummary),/avant le coût d'éventuels remplacements/)
+assert.equal(buildPurchaseAdviceCases({available:false,adviceFamilies:adviceSummary.adviceFamilies}).length,0)
+assert.equal(buildPurchaseAdviceCases({available:true,adviceFamilies:[{key:"cakes",purchaseDays:1,purchaseVisits:3,observedSpend:20}]}).length,0)
+assert.equal(buildPurchaseAdviceCases({available:true,adviceFamilies:[{key:"plain_preserves",purchaseDays:2,purchaseVisits:2,observedSpend:20} ]})[0].scenario25,null)
+
+
+import { buildPurchaseTrends } from "../supabase/functions/assistant-aisupabase/engine/purchases/purchaseTrends.mjs"
+const trendNow = new Date("2026-11-24T12:00:00Z")
+const trendRows = [0,7,14,21,28,35,42,49].map((age,i)=>({product_name:"Lait de chèvre 1 L",created_at:new Date(trendNow.getTime()-age*86400000).toISOString(),receipt_id:"trend"+i,unit:"l",quantity:i%2?2:1,price:(i<2?3.5:2.8)*(i%2?2:1)}))
+const trend = buildPurchaseTrends(trendRows,trendNow)
+assert.equal(trend.priceChanges[0].changePercent,25)
+assert.equal(trend.priceChanges[0].previousObservedUnitPrice,2.8)
+assert.equal(trend.priceChanges[0].recentObservedUnitPrice,3.5)
+assert.equal(trend.comparison.recent30.days,4)
+assert.equal(trend.comparison.prior30.days,3)
+assert.equal(buildPurchaseTrends(trendRows,trendNow,true).priceChanges.length,0)
+assert.equal(buildPurchaseTrends(trendRows,trendNow,true).comparison,null)
+assert.equal(buildPurchaseTrends(trendRows.filter(r=>r.receipt_id!=="trend0"),trendNow).replenishment[0].typicalGapDays,7)
+assert.equal(buildPurchaseTrends(trendRows.map(r=>({...r,price:2.8*r.quantity})),trendNow).priceChanges.length,0)
+assert.equal(buildPurchaseTrends(trendRows.slice(0,2),trendNow).priceChanges.length,0)
