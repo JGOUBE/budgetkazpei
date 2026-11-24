@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import { buildSystemPrompt, buildOpenQuestionSystemPrompt } from "./prompts/systemPrompt.ts"
+import { isSimpleLocalSolidarityQuestion, buildFocusedLocalAidPrompts } from "./prompts/localAidPrompt.mjs"
 import {
   buildMemoryPrompt,
   loadAssistantMemory,
@@ -1172,8 +1173,34 @@ Deno.serve(async (req) => {
           )
         : null
 
+    // Simple local solidarity searches need grounded sources, not the entire
+    // rights/benefits/budget prompt. Keep full prompts for eligibility, money,
+    // mixed problems and contextual follow-ups. Server-side DB facts only.
+    const focusedAidCandidate = isSimpleLocalSolidarityQuestion({
+      question: context.question,
+      mode: context.mode,
+      action: context.action,
+      protectedTopic,
+      trustedAidFacts,
+      conversationContext: context.body?.conversationContext || {},
+    })
+      ? buildFocusedLocalAidPrompts({
+          question: context.question,
+          language: context.language,
+          profile: context.profile,
+          trustedAidFacts,
+          recommendedAides: context.body?.recommendedAides || context.body?.recommended_aides || [],
+          dateReunion: new Intl.DateTimeFormat("fr-FR", {
+            timeZone: "Indian/Reunion", day: "2-digit", month: "2-digit", year: "numeric",
+          }).format(new Date()),
+        })
+      : null
+    const focusedAidPrompts = focusedAidCandidate?.keptAides ? focusedAidCandidate : null
+
     let userPrompt =
-      context.action === "analyze_refusal"
+      focusedAidPrompts
+        ? focusedAidPrompts.userPrompt
+        : context.action === "analyze_refusal"
         ? buildRefusalPrompt(context.body, context.language)
         : protectedTopic
           ? buildUserPrompt(
@@ -1189,14 +1216,26 @@ Deno.serve(async (req) => {
 
     // Independent questions use a compact system instruction. Complex
     // rights/budget cases retain the full protective prompt and source checks.
-    const systemPrompt = protectedTopic || context.action === "analyze_refusal"
-      ? buildSystemPrompt(
-          context.language, context.action, context.mode,
-          context.allowBilingualResponse,
-        )
-      : buildOpenQuestionSystemPrompt(
-          context.language, context.allowBilingualResponse,
-        )
+    const systemPrompt = focusedAidPrompts
+      ? focusedAidPrompts.systemPrompt
+      : protectedTopic || context.action === "analyze_refusal"
+        ? buildSystemPrompt(
+            context.language, context.action, context.mode,
+            context.allowBilingualResponse,
+          )
+        : buildOpenQuestionSystemPrompt(
+            context.language, context.allowBilingualResponse,
+          )
+
+    if (focusedAidPrompts) {
+      // Aggregate QA: no text from the user's question or profile is logged.
+      console.info("ADVISOR_PROMPT_PROFILE", JSON.stringify({
+        kind: "focused_local_solidarity",
+        systemChars: systemPrompt.length,
+        userChars: userPrompt.length,
+        keptAides: focusedAidPrompts.keptAides,
+      }))
+    }
 
     // Les fiches, l'historique et les relevés peuvent gonfler le prompt au-delà
     // de la limite protectrice. Réduire le contexte avant de renvoyer un 413.
