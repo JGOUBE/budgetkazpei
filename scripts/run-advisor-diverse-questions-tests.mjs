@@ -514,3 +514,24 @@ assert.equal(afterAid("Finalement, je suis au chômage").turnType,ADVISOR_TURN_T
 assert.equal(afterAid("J'habite maintenant à Saint-Paul").turnType,ADVISOR_TURN_TYPES.CORRECTION)
 assert.match(afterAid("J'habite maintenant à Saint-Paul").rankingQuery,/Saint-Paul/)
 assert.equal(afterAid("J'ai déjà essayé cette solution").turnType,ADVISOR_TURN_TYPES.REQUEST_ALTERNATIVE)
+
+
+import { isPersonalPurchaseAnalysisQuestion } from "../src/services/ai/shoppingHabitSummary.js"
+for (const q of [
+  "Je peux améliorer mon alimentation ?",
+  "Par rapport à ce que j'achète",
+  "Ok mais regarde dans mes achats",
+  "Analyse mes courses",
+  "Que penses-tu de mes achats ?",
+]) {
+  assert.equal(isPersonalPurchaseAnalysisQuestion(q),true,q)
+  assert.equal(classifyAdvisorSpendScope({question:q}),"useful",q)
+  assert.equal(isProtectedAdvisorQuestion({question:q}),true,q)
+  assert.equal(buildLocalShoppingHabitAnswer({question:q,insights:{shoppingHabits:habitSummary}}),null,q)
+}
+assert.equal(isPersonalPurchaseAnalysisQuestion("Qu'est-ce qu'une alimentation équilibrée ?"),false)
+assert.equal(isPersonalPurchaseAnalysisQuestion("Où voir mes achats ?"),false)
+assert.ok(habitSummary.recentProducts.some(p=>p.label==="Lait de chèvre 500 ml"&&p.purchaseVisits===1))
+const chatSource = await readFile(new URL("../src/components/conseiller/AssistantConseiller.jsx",import.meta.url),"utf8")
+assert.match(chatSource,/purchaseAnalysis \? "budget_grocery" : detectedIntent/)
+assert.match(chatSource,/!isPersonalPurchaseAnalysisQuestion\(sentQuestion\) && !multipleQuestions/)
