@@ -1,3 +1,4 @@
+import { identifyPurchaseAction } from "./purchaseActionPlan.mjs"
 import { buildPurchaseTrends } from "./purchaseTrends.mjs"
 // Authenticated purchase context; never take a user ID from the request body.
 const norm = s=>String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim()
@@ -7,6 +8,7 @@ export function personalPurchaseIntent(question="", recentHistory=[]) {
   const personal=/\b(?:mes (?:derniers |recents |anciens |propres |precedents )?(?:achats|tickets|courses|produits achetes)|mon (?:alimentation|regime alimentaire)|mon alimentation|mes habitudes (?:alimentaires|de consommation|d achats)|ce que j achete|ce que je mange|ce que je consomme|out bann achats|sak mi aste|sak mi achete|j achete (?:souvent|regulierement|le plus))\b/.test(t)
   // Urgent financial difficulty and aid take priority over shopping analytics.
   if (/\b(?:je n ai plus d argent|plus de quoi manger|pas de quoi manger|je n ai rien a manger|je ne peux plus payer|aide alimentaire|colis alimentaire|urgence alimentaire|banque alimentaire|ccas|rsa|caf)\b/.test(t)) return null
+  if(identifyPurchaseAction(question)) return "analysis"
   if(!personal) return null
   const previous=norm(recentHistory?.[0]?.question||"")
   const contextualAdvice=/\b(?:alimentation|nutrition|equilibre|economies?|economiser|ameliorer|conseils?)\b/.test(previous) && /^(?:ok|et|mais|par rapport|d apres|selon)\b/.test(t)
@@ -31,6 +33,7 @@ export function summarizeRecordedPurchases(rows=[],now=new Date(),available=true
   const start=new Date(now.getTime()-90*86400000).toISOString().slice(0,10)
   const end=now.toISOString().slice(0,10)
   const groups=new Map(), visits=new Set(), recent=[], seen=new Set(), advice=new Map()
+  const dayEnd=Date.parse(end+"T00:00:00Z")
   for(const r of rows) {
     const label=String(r.product_name||r.normalized_name||"").trim().slice(0,100)
     const date=String(r.created_at||"").slice(0,10)
@@ -41,13 +44,13 @@ export function summarizeRecordedPurchases(rows=[],now=new Date(),available=true
     g.visits.add(visit);g.days.add(date);if(date>g.lastObservedAt)g.lastObservedAt=date
     groups.set(key,g);visits.add(visit)
     const family=identifyPurchaseAdviceFamily(label)
-    if(family){const a=advice.get(family)||{visits:new Set(),days:new Set(),labels:new Set(),total:0,pricedLines:0};a.visits.add(visit);a.days.add(date);a.labels.add(label);const price=Number(r.price);if(Number.isFinite(price)&&price>0){a.total+=price;a.pricedLines++}advice.set(family,a)}
+    if(family){const a=advice.get(family)||{visits:new Set(),days:new Set(),labels:new Set(),total:0,pricedLines:0,recent30Spend:0,recent30Days:new Set()};a.visits.add(visit);a.days.add(date);a.labels.add(label);const price=Number(r.price);if(Number.isFinite(price)&&price>0){a.total+=price;a.pricedLines++;const age=(dayEnd-Date.parse(date+"T00:00:00Z"))/86400000;if(age>=1&&age<=30){a.recent30Spend+=price;a.recent30Days.add(date)}}advice.set(family,a)}
     const recentKey=date+"|"+key
     if(!seen.has(recentKey)){seen.add(recentKey);recent.push({label,date})}
   }
   const products=[...groups.values()].map(g=>({label:g.label,purchaseVisits:g.visits.size,purchaseDays:g.days.size,lastObservedAt:g.lastObservedAt}))
   const latest=recent.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,12)
-  return {available,start,end,truncated,trends:available?buildPurchaseTrends(rows,now,truncated):null,adviceFamilies:[...advice.entries()].map(([key,a])=>({key,label:adviceLabels[key],purchaseVisits:a.visits.size,purchaseDays:a.days.size,observedSpend:a.pricedLines?Math.round(a.total*100)/100:null,examples:[...a.labels].slice(0,3)})).sort((a,b)=>(b.observedSpend??0)-(a.observedSpend??0)),observedVisits:visits.size,distinctProducts:groups.size,latestPurchases:latest,recentProducts:products.sort((a,b)=>b.purchaseVisits-a.purchaseVisits).slice(0,25),products:products.filter(p=>p.purchaseDays>=2).slice(0,10)}
+  return {available,start,end,truncated,trends:available?buildPurchaseTrends(rows,now,truncated):null,adviceFamilies:[...advice.entries()].map(([key,a])=>({key,label:adviceLabels[key],purchaseVisits:a.visits.size,purchaseDays:a.days.size,observedSpend:a.pricedLines?Math.round(a.total*100)/100:null,recent30Spend:a.recent30Days.size?Math.round(a.recent30Spend*100)/100:null,recent30PurchaseDays:a.recent30Days.size,examples:[...a.labels].slice(0,3)})).sort((a,b)=>(b.observedSpend??0)-(a.observedSpend??0)),observedVisits:visits.size,distinctProducts:groups.size,latestPurchases:latest,recentProducts:products.sort((a,b)=>b.purchaseVisits-a.purchaseVisits).slice(0,25),products:products.filter(p=>p.purchaseDays>=2).slice(0,10)}
 }
 export async function loadRecordedPurchases(client,userId,now=new Date()) {
   if(!userId)return summarizeRecordedPurchases([],now,false)
