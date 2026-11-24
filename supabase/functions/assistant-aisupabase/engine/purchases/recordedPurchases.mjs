@@ -1,11 +1,15 @@
 // Authenticated purchase context; never take a user ID from the request body.
 const norm = s=>String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim()
-export function personalPurchaseIntent(question="") {
+export function personalPurchaseIntent(question="", recentHistory=[]) {
   const t=norm(question)
   if (/\b(?:ou (?:voir|trouver|consulter)|comment (?:acceder|ouvrir|consulter)|ouvrir la rubrique|fiction|imagine|invente|licorne|dragon)\b/.test(t)) return null
   const personal=/\b(?:mes (?:derniers |recents |anciens |propres |precedents )?(?:achats|tickets|courses|produits achetes)|mon (?:alimentation|regime alimentaire)|mon alimentation|mes habitudes (?:alimentaires|de consommation|d achats)|ce que j achete|ce que je mange|ce que je consomme|out bann achats|sak mi aste|sak mi achete|j achete (?:souvent|regulierement|le plus))\b/.test(t)
+  // Urgent financial difficulty and aid take priority over shopping analytics.
+  if (/\b(?:je n ai plus d argent|plus de quoi manger|pas de quoi manger|je n ai rien a manger|je ne peux plus payer|aide alimentaire|colis alimentaire|urgence alimentaire|banque alimentaire|ccas|rsa|caf)\b/.test(t)) return null
   if(!personal) return null
-  if (/\b(?:dernier(?:s|es)?|recents?|precedents?)\b/.test(t) && !/\b(?:alimentation|nutrition|sante|ameliorer|equilibre|economies?|pourquoi|comment|compare|combien|conseils?)\b/.test(t)) return "latest"
+  const previous=norm(recentHistory?.[0]?.question||"")
+  const contextualAdvice=/\b(?:alimentation|nutrition|equilibre|economies?|economiser|ameliorer|conseils?)\b/.test(previous) && /^(?:ok|et|mais|par rapport|d apres|selon)\b/.test(t)
+  if (!contextualAdvice && /\b(?:dernier(?:s|es)?|recents?|precedents?)\b/.test(t) && !/\b(?:alimentation|nutrition|sante|ameliorer|equilibre|economies?|pourquoi|comment|compare|combien|conseils?)\b/.test(t)) return "latest"
   return "analysis"
 }
 // Conservative categories: observations of shopping, not a diagnosis of diet.
