@@ -59,6 +59,7 @@ export function classifyAdvisorSpendScope({question = "", mode = "general", acti
   if (PLAYFUL.test(text) && !PERSONAL_MONEY.test(text)) return "offtopic"
   if (FOOD_EMERGENCY.test(text) || FOOD_HARDSHIP.test(text) || IMPOSSIBLE_TO_BUY_FOOD.test(text) || KREOL_FOOD_HARDSHIP.test(text) || DIRECT_SUPPORT.test(text) || (LOCAL_HELP.test(text) && (HELP_INTENT.test(text) || LOCAL_SUPPORT_QUESTION.test(text)))) return "useful"
   if (MONEY_AND_BENEFITS.test(text) || ADMIN_AND_FINANCIAL_ADVICE.test(text) || EXTRA_FINANCE_AND_ADMIN.test(text)) return "useful"
+  if (/\b(?:mon alimentation|mes habitudes alimentaires|mon regime alimentaire|ma facon de manger|ce que j achete|ce que je mange|ce que je consomme|mes achats|mes tickets|mes produits achetes|sak mi aste|sak mi achete|out manze)\b/.test(text)) return "useful"
   if (/\b(?:mes habitudes de consommation|habitudes d achats?|produits? (?:reguliers?|frequents?|les plus achetes)|articles? (?:reguliers?|frequents?|les plus achetes)|j achete (?:souvent|regulierement|le plus)|je rachete|mi achete|mi asete|j habite maintenant|j ai demenage|j ai deja essaye)\b/.test(text)) return "useful"
   // A short follow-up to a selected financial/administrative tool remains
   // useful. Longer self-contained unrelated queries cannot spoof this mode.
@@ -234,6 +235,7 @@ const APP_NAV_EXCLUDE = /\b(?:calcul(?:e|er|es|ees)?|montant|eligible|eligibilit
 export function getLocalAdvisorAppGuide(question = "", language = "fr", mode = "general") {
   const text = normalize(question)
   if (mode !== "general" || !text || text.length > 220) return null
+  if (/\b(?:regarde|analyse|analyser|examine|d apres|selon|par rapport|a partir de|ce que j achete)\b/.test(text) && /\b(?:achats|courses|tickets|achete)\b/.test(text)) return null
   const nav = APP_NAV_INTENT.test(text)
   const fr = language !== "kreol"
   // Explicit ticket-scanning help, not interpreting ticket content or prices.

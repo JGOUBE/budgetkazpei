@@ -19,7 +19,7 @@ import {
   consumeAdvisorHandoff,
 } from "../../services/advisorHandoff"
 import { useAssistantInsights } from "../../hooks/useAssistantInsights"
-import { buildLocalShoppingHabitAnswer, isShoppingHabitQuestion } from "../../services/ai/shoppingHabitSummary.js"
+import { buildLocalShoppingHabitAnswer, isShoppingHabitQuestion, isPersonalPurchaseAnalysisQuestion } from "../../services/ai/shoppingHabitSummary.js"
 import { buildAssistantAiSummary } from "../../services/ai/assistantInsightsService"
 import {
   answerAssistantQuestion,
@@ -533,9 +533,10 @@ export default function AssistantConseiller({
     const isAidQuestion = shouldLookupAdvisorAids({
       question: sentQuestion, mode, conversationContext, recentHistory, handoffContext,
     })
-    const financialContext = isAidQuestion && !explicitRecordedBudgetAnalysis && !isShoppingHabitQuestion(sentQuestion)
+    const purchaseAnalysis = isShoppingHabitQuestion(sentQuestion) || isPersonalPurchaseAnalysisQuestion(sentQuestion)
+    const financialContext = isAidQuestion && !explicitRecordedBudgetAnalysis && !purchaseAnalysis
       ? { intent: "trouver_aide", budgetAdvisorContext: {} }
-      : buildAssistantAiSummary(questionInsights || financialInsights, isShoppingHabitQuestion(sentQuestion) ? "budget_grocery" : detectedIntent)
+      : buildAssistantAiSummary(questionInsights || financialInsights, purchaseAnalysis ? "budget_grocery" : detectedIntent)
 
     const localContext = {
       commune: currentProfile?.commune || "",
@@ -699,7 +700,7 @@ export default function AssistantConseiller({
       recentHistory: history,
       language: responseLanguage,
     })
-    const localBudgetFollowUp = budgetConfirmation || budgetNoDataAdvice
+    const localBudgetFollowUp = isPersonalPurchaseAnalysisQuestion(sentQuestion) ? null : budgetConfirmation || budgetNoDataAdvice
     if (localBudgetFollowUp) {
       setHistory(prev => [
         {
@@ -723,7 +724,7 @@ export default function AssistantConseiller({
     }
 
     const multipleQuestions = (sentQuestion.match(/\?/g) || []).length > 1 || /\b(?:et aussi|puis explique|et pourquoi|et comment|et combien)\b/.test(normalizeText(sentQuestion))
-    if (shouldAnswerLocally && !isShoppingHabitQuestion(sentQuestion) && !multipleQuestions) {
+    if (shouldAnswerLocally && !isShoppingHabitQuestion(sentQuestion) && !isPersonalPurchaseAnalysisQuestion(sentQuestion) && !multipleQuestions) {
       const localResult = answerAssistantQuestion({ question: sentQuestion, insights: questionInsights })
       const answer = selectAssistantAnswerText(localResult, responseLanguage)
       setHistory(prev => [
