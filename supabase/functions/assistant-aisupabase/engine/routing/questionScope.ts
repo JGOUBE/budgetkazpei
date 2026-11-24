@@ -45,6 +45,7 @@ export function isProtectedAdvisorQuestion({
   if (FICTIONAL.test(text)) return false
   if (FOOD_EMERGENCY.test(text) || FOOD_HARDSHIP.test(text) || IMPOSSIBLE_TO_BUY_FOOD.test(text) || KREOL_FOOD_HARDSHIP.test(text) || DIRECT_SUPPORT.test(text) || (LOCAL_HELP.test(text) && (HELP_INTENT.test(text) || LOCAL_SUPPORT_QUESTION.test(text)))) return true
   if (BENEFITS.test(text) || PERSONAL_BUDGET.test(text) || ADMIN.test(text)) return true
+  if (/\b(?:mon alimentation|mes habitudes alimentaires|mon regime alimentaire|ma facon de manger|ce que j achete|ce que je mange|ce que je consomme|dans mes tickets|mes produits achetes|sak mi aste|sak mi achete|out manze)\b/.test(text)) return true
   if (/\b(?:mes habitudes de consommation|habitudes d achats?|produits? (?:reguliers?|frequents?|les plus achetes)|articles? (?:reguliers?|frequents?|les plus achetes)|j achete (?:souvent|regulierement|le plus)|je rachete|mi achete|mi asete)\b/.test(text)) return true
   if (GUARDED_MODES.has(mode as AssistantMode)) return true
 
