@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import { readFile } from "node:fs/promises"
 import { buildLocalAidSourceAnswer, isLocalAidSourceRequest } from "../src/services/advisorLocalAidAnswer.js"
 import { isSimpleLocalSolidarityQuestion, buildFocusedLocalAidPrompts } from "../supabase/functions/assistant-aisupabase/prompts/localAidPrompt.mjs"
+import { classifyLocalAidSource, clarifyLocalAidLinks } from "../supabase/functions/assistant-aisupabase/prompts/localAidSources.mjs"
 
 const aides = [
   { id: 1, nom: "APL", lien_officiel: "https://www.caf.fr/allocataires", actif: true },
@@ -136,6 +137,54 @@ assert.match(kreolPrompts.systemPrompt,/créole réunionnais simple/)
 assert.match(kreolPrompts.userPrompt,/Bann demoun i gagne aide/)
 assert.match(backend,/focusedAidPrompts/)
 assert.match(backend,/ADVISOR_PROMPT_PROFILE/)
+// Same live sources as the 24 November test in Saint-Leu: directories are
+// evidence of referencing, never direct homepages or live booking details.
+const deets = "https://reunion.deets.gouv.fr/L-aide-alimentaire"
+const andes = "https://andes-france.com/structure/kdi-le-coeur/"
+const deetsSource = classifyLocalAidSource(deets)
+const andesSource = classifyLocalAidSource(andes)
+assert.equal(deetsSource.label, "Référencement officiel DEETS")
+assert.equal(deetsSource.type, "official_directory")
+assert.equal(andesSource.label, "Fiche de l’organisme sur ANDES")
+assert.equal(andesSource.type, "association_directory")
+assert.equal(classifyLocalAidSource("javascript:alert(1)").url, "")
+assert.equal(classifyLocalAidSource("https://example.org/reference").label, "Lien de référence")
+
+const actualLocalAids = [
+  {...sampleTrustedAids[0], id:"119",name:"K’DI LE CŒUR — épicerie solidaire de Saint-Leu",
+    officialSource:andes, verificationStatus:"source_confirmee"},
+  {...sampleTrustedAids[1], id:"127",name:"Croix-Rouge sur Roues — Saint-Leu (Case du Piton)",
+    officialSource:deets, verificationStatus:"operateur_reference_2026"},
+]
+const localResponse = buildFocusedLocalAidPrompts({
+  question:simpleLocal[0],language:"fr",profile:{commune:"Saint-Leu"},
+  trustedAidFacts:actualLocalAids,dateReunion:"24/11/2026",
+})
+assert.equal(localResponse.keptAides,2)
+assert.match(localResponse.userPrompt,/Fiche de l’organisme sur ANDES/)
+assert.match(localResponse.userPrompt,/Référencement officiel DEETS/)
+assert.match(localResponse.systemPrompt,/90 à 140 mots/)
+assert.match(localResponse.systemPrompt,/pas le site de la Croix-Rouge/i)
+assert.doesNotMatch(localResponse.systemPrompt,/fiche ici ».*autorise/i)
+const modelDraft = [
+  "1. **Croix-Rouge sur Roues** : distribution alimentaire. [fiche ici]("+deets+")",
+  "2. **K’DI LE CŒUR** : épicerie solidaire. [leur site]("+andes+")",
+].join("\n")
+const improved = clarifyLocalAidLinks(modelDraft,actualLocalAids)
+assert.ok(improved.includes("[Référencement officiel DEETS]("+deets+")"))
+assert.ok(improved.includes("[Fiche de l’organisme sur ANDES]("+andes+")"))
+assert.ok(!improved.includes("[fiche ici]"))
+assert.ok(!improved.includes("[leur site]"))
+assert.equal(clarifyLocalAidLinks("[Fiche directe]("+andes+")",actualLocalAids),
+  "[Fiche directe]("+andes+")", "Specific accurate titles must remain untouched")
+assert.equal(clarifyLocalAidLinks("[fiche ici](https://fake.example/info)",actualLocalAids),
+  "[fiche ici](https://fake.example/info)", "Never retitle a URL not in verified facts")
+assert.equal(clarifyLocalAidLinks("[fiche ici]("+deets+")",[
+  {...actualLocalAids[1],verificationStatus:"a_verifier"}
+]),"[fiche ici]("+deets+")","Never certify an unverified source")
+assert.match(backend,/clarifyLocalAidLinks\(checkedAnswer, trustedAidFacts\)/)
+console.log("OK: local sources identified without claiming DEETS or ANDES is the association's own site.")
+
 console.log("OK: focused FR/KR solidarity prompts preserve trusted sources at <9000 chars; complex rights keep safeguards.")
 
 console.log("OK: source-only aid requests have zero model calls; complex memory enrichment opt-in only.")
