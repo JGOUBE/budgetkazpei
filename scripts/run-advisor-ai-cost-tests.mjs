@@ -163,7 +163,7 @@ const localResponse = buildFocusedLocalAidPrompts({
 assert.equal(localResponse.keptAides,2)
 assert.match(localResponse.userPrompt,/Fiche de l’organisme sur ANDES/)
 assert.match(localResponse.userPrompt,/Référencement officiel DEETS/)
-assert.match(localResponse.systemPrompt,/90 à 140 mots/)
+assert.match(localResponse.systemPrompt,/80 à 125 mots/)
 assert.match(localResponse.systemPrompt,/pas le site de la Croix-Rouge/i)
 assert.doesNotMatch(localResponse.systemPrompt,/fiche ici ».*autorise/i)
 const modelDraft = [
