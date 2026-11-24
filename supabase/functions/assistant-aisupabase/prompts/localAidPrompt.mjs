@@ -54,7 +54,7 @@ export function buildFocusedLocalAidPrompts({
     statutSource: take(r.verificationStatus, 55),
     validite: take(r.periodeValidite, 145),
     description: take(kreol ? r.descriptionKreol || r.description : r.description, 350),
-    demarche: take(kreol ? r.steps?.[1] || r.steps?.[0] : r.steps?.[0], 235),
+    demarche: take(kreol ? r.steps?.[1] || r.steps?.[0] : r.steps?.[0], 430),
     lien: secureSource(r.officialSource),
     libelleSource: classifyLocalAidSource(r.officialSource).label,
     natureSource: classifyLocalAidSource(r.officialSource).type,
