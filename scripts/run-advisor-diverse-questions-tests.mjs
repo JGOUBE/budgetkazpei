@@ -588,3 +588,19 @@ assert.match(renderPurchaseAdviceCases(adviceSummary),/avant le coût d'éventue
 assert.equal(buildPurchaseAdviceCases({available:false,adviceFamilies:adviceSummary.adviceFamilies}).length,0)
 assert.equal(buildPurchaseAdviceCases({available:true,adviceFamilies:[{key:"cakes",purchaseDays:1,purchaseVisits:3,observedSpend:20}]}).length,0)
 assert.equal(buildPurchaseAdviceCases({available:true,adviceFamilies:[{key:"plain_preserves",purchaseDays:2,purchaseVisits:2,observedSpend:20} ]})[0].scenario25,null)
+
+
+import { buildPurchaseTrends } from "../supabase/functions/assistant-aisupabase/engine/purchases/purchaseTrends.mjs"
+const trendNow = new Date("2026-11-24T12:00:00Z")
+const trendRows = [0,7,14,21,28,35,42,49].map((age,i)=>({product_name:"Lait de chèvre 1 L",created_at:new Date(trendNow.getTime()-age*86400000).toISOString(),receipt_id:"trend"+i,unit:"l",quantity:i%2?2:1,price:(i<2?3.5:2.8)*(i%2?2:1)}))
+const trend = buildPurchaseTrends(trendRows,trendNow)
+assert.equal(trend.priceChanges[0].changePercent,25)
+assert.equal(trend.priceChanges[0].previousObservedUnitPrice,2.8)
+assert.equal(trend.priceChanges[0].recentObservedUnitPrice,3.5)
+assert.equal(trend.comparison.recent30.days,4)
+assert.equal(trend.comparison.prior30.days,3)
+assert.equal(buildPurchaseTrends(trendRows,trendNow,true).priceChanges.length,0)
+assert.equal(buildPurchaseTrends(trendRows,trendNow,true).comparison,null)
+assert.equal(buildPurchaseTrends(trendRows.filter(r=>r.receipt_id!=="trend0"),trendNow).replenishment[0].typicalGapDays,7)
+assert.equal(buildPurchaseTrends(trendRows.map(r=>({...r,price:2.8*r.quantity})),trendNow).priceChanges.length,0)
+assert.equal(buildPurchaseTrends(trendRows.slice(0,2),trendNow).priceChanges.length,0)
