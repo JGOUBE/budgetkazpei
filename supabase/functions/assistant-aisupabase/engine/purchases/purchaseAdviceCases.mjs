@@ -9,19 +9,20 @@ const CASES = Object.freeze({
   bottled_water: {fr:"Comparez le coût de l'eau en bouteille avec une autre solution adaptée. N'utilisez l'eau du robinet que si elle est potable au lieu et au moment concernés.",kr:"Compare pri delo bouteille avèk in solution adaptée. Vérifie delo robinet lé potable avan servi ali."},
 })
 const round = value=>Math.round(value*100)/100
-export function buildPurchaseAdviceCases(summary={}) {
+export function buildPurchaseAdviceCases(summary={},constraints={}) {
   if (!summary.available) return []
+  const excluded=new Set(constraints.protectedFamilies||[])
   return (summary.adviceFamilies||[])
-    .filter(f=>CASES[f.key] && f.purchaseDays>=2 && Number.isFinite(f.observedSpend) && f.observedSpend>0)
-    .map(f=>({...f, advice:CASES[f.key],
+    .filter(f=>CASES[f.key] && !excluded.has(f.key) && f.purchaseDays>=2 && Number.isFinite(f.observedSpend) && f.observedSpend>0)
+    .map(f=>({...f, advice:constraints.avoidHomemade&&["cakes","prepared_meals"].includes(f.key)?{fr:"Comparez les prix par portion de produits équivalents et choisissez ceux qui correspondent à votre temps disponible, sans vous imposer de cuisiner.",kr:"Compare pri par portion bann produits équivalents, san oblig aou cuisiner."}:CASES[f.key],
       // A hypothetical decrease in spending, not a guaranteed net saving.
       scenario25: f.key==="plain_preserves"||f.key==="bottled_water"?null:round(f.observedSpend*.25),
     }))
     .sort((a,b)=>b.observedSpend-a.observedSpend)
 }
-export function renderPurchaseAdviceCases(summary={},language="fr",{limit=2}={}) {
+export function renderPurchaseAdviceCases(summary={},language="fr",{limit=2,constraints={}}={}) {
   const kr=language==="kreol", money=n=>new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR"}).format(n)
-  const cases=buildPurchaseAdviceCases(summary).slice(0,limit)
+  const cases=buildPurchaseAdviceCases(summary,constraints).slice(0,limit)
   if (!cases.length) return ""
   const heading=kr?"Bann pistes dapré out achats :":"Pistes à partir de vos achats enregistrés :"
   return heading+"\n\n"+cases.map(f=>"- **"+f.label+"** : "+money(f.observedSpend)+(kr?" su la période, ":" sur la période, ")+f.purchaseVisits+(kr?" passages. ":" passages d'achat. ")+(kr?f.advice.kr:f.advice.fr)+(f.scenario25!==null?(kr?" Si ou baisse sa dépans-la de 25 %, sa fé ":" Une baisse de 25 % de ce poste représenterait ")+money(f.scenario25)+(kr?" de dépans en moins, avan pri remplacement.":" de dépenses en moins, avant le coût d'éventuels remplacements."):"")).join("\n\n")
