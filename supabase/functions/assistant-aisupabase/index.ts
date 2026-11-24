@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import { buildSystemPrompt, buildOpenQuestionSystemPrompt } from "./prompts/systemPrompt.ts"
 import { isSimpleLocalSolidarityQuestion, buildFocusedLocalAidPrompts } from "./prompts/localAidPrompt.mjs"
+import { clarifyLocalAidLinks } from "./prompts/localAidSources.mjs"
 import {
   buildMemoryPrompt,
   loadAssistantMemory,
@@ -1456,13 +1457,18 @@ Deno.serve(async (req) => {
 
     // No second provider call: remove any unsupported historical pump-price
     // figures or claimed direction from other, unverified date ranges.
-    const answer = context.action === "analyze_refusal"
+    const checkedAnswer = context.action === "analyze_refusal"
       ? reviewResult.revisedAnswer
       : reviewUnsupportedFuelPriceHistory({
           question: context.question,
           answer: reviewResult.revisedAnswer,
           language: context.language,
         })
+    // Only improve generic Markdown link labels pointing to exact, trusted
+    // source URLs. Never rewrite any URL or add an invented reference.
+    const answer = focusedAidPrompts
+      ? clarifyLocalAidLinks(checkedAnswer, trustedAidFacts)
+      : checkedAnswer
     const mentionedTrustedAids = findMentionedTrustedAids(answer, trustedAidFacts)
 
     if (context.consumesExchange && answer) {
