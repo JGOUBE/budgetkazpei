@@ -119,27 +119,21 @@ export const themeLight = {
 
 export const ds = {}
 
+// BudgetKazPeï est exclusivement en thème clair.
 export function getStoredThemeName() {
-  if (typeof window === "undefined") return null
-  try {
-    const stored = window.localStorage.getItem(THEME_STORAGE_KEY)
-    return stored === "light" || stored === "dark" ? stored : null
-  } catch {
-    return null
-  }
+  return "light"
 }
 
 export function getInitialThemeName() {
-  // A missing preference is intentionally light. The device/browser theme must
-  // never silently choose the app theme before the user has made a choice.
-  return getStoredThemeName() || "light"
+  return "light"
 }
 
-export function getThemeTokens(themeName = getInitialThemeName()) {
-  return themeName === "light" ? themeLight : themeDark
+export function getThemeTokens() {
+  return themeLight
 }
 
 export function applyTheme(themeName = getInitialThemeName(), { persist = false } = {}) {
+  // Toute ancienne demande « dark » est normalisée en clair.
   const tokens = getThemeTokens(themeName)
   Object.assign(ds, tokens)
 
