@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import { readFile } from "node:fs/promises"
 import { buildLocalAidSourceAnswer, isLocalAidSourceRequest } from "../src/services/advisorLocalAidAnswer.js"
+import { isSimpleLocalSolidarityQuestion, buildFocusedLocalAidPrompts } from "../supabase/functions/assistant-aisupabase/prompts/localAidPrompt.mjs"
 
 const aides = [
   { id: 1, nom: "APL", lien_officiel: "https://www.caf.fr/allocataires", actif: true },
@@ -58,4 +59,76 @@ assert.match(backend, /openAiCallCount: memoryApiAttempted \? 2 : 1/)
 assert.doesNotMatch(backend, /ADVISOR_API_METER[^\n]*question|ADVISOR_API_METER[^\n]*userId/)
 assert.match(frontend, /buildLocalAidSourceAnswer\(\{ question: sentQuestion, aides, language: responseLanguage \}\)/)
 assert.match(frontend, /if \(localAid\)/)
+
+// Production regression: 7177 input tokens were recorded on simple Saint-Leu
+// local aid searches. The full case-rights prompt is not needed here.
+const sampleTrustedAids = Array.from({length:6},(_,i)=>({
+  id:String(900+i), name:i===0?"K’DI LE CŒUR":i===1?"Croix-Rouge sur Roues":"Association test "+i,
+  organisme:i===1?"Croix-Rouge française":"Association locale",commune:"Saint-Leu",
+  zoneCouverte:"Saint-Leu et environs",typeDispositif:"aide_alimentaire",
+  verificationStatus:"operateur_reference_2026",periodeValidite:"Opérateur référencé 2025–2026 ; horaires à vérifier.",
+  description:"Épicerie solidaire et soutien alimentaire pour des ménages en difficulté. ".repeat(10),
+  descriptionKreol:"Bann demoun i gagne aide alimentaire sou condition.",
+  steps:["Passer par un travailleur social ou CCAS pour une prescription, contacter la structure avant le déplacement.",
+    "Demande in prescription sosyal kot CCAS avan ou déplac aou."],
+  officialSource:"https://reunion.deets.gouv.fr/L-aide-alimentaire",
+}))
+const simpleLocal = [
+  "J'habite à Saint-Leu, j'ai du mal à payer mes courses. Quelles associations ou épiceries solidaires peuvent m'aider près de chez moi ?",
+  "Je n'ai plus assez d'argent pour acheter à manger cette semaine. À qui dois-je m'adresser rapidement ?",
+  "Je cherche des associations à Saint-Paul pour m'aider à manger.",
+  "Mi cherche in association pou aide mon famille à Saint-Paul.",
+  "Quelles épiceries solidaires existent près de Saint-Leu ?",
+]
+for (const question of simpleLocal) {
+  assert.equal(isSimpleLocalSolidarityQuestion({
+    question, mode:"general",protectedTopic:true,trustedAidFacts:sampleTrustedAids,
+  }),true,"Simple Réunion solidarity request should use a focused prompt: "+question)
+}
+for (const question of [
+  "Je suis au chômage avec 2 enfants, 900 euros de revenus : calcule toutes mes aides.",
+  "À combien d'euros de RSA ai-je droit à Saint-Leu ?",
+  "J'ai 20 euros pour nourrir 4 personnes, analyse mes achats et mon budget.",
+  "Comment faire un recours après un refus du FSL ?",
+  "Je cherche des aides pour le logement et l'emploi à Saint-Leu.",
+  "Et cette association, est-ce que je suis éligible ?",
+]) {
+  assert.equal(isSimpleLocalSolidarityQuestion({
+    question,mode:"general",protectedTopic:true,trustedAidFacts:sampleTrustedAids,
+  }),false,"Complex/entitlement/follow-up case must keep full safeguarded prompt: "+question)
+}
+assert.equal(isSimpleLocalSolidarityQuestion({
+  question:simpleLocal[0], mode:"general",protectedTopic:true,trustedAidFacts:[],
+}),false,"Without trusted DB sources, retain the regular fact-finding workflow")
+assert.equal(isSimpleLocalSolidarityQuestion({
+  question:simpleLocal[0], mode:"general",protectedTopic:false,trustedAidFacts:sampleTrustedAids,
+}),false,"Only protected financial/aid topics use the focused prompt")
+assert.equal(isSimpleLocalSolidarityQuestion({
+  question:simpleLocal[0], mode:"general",protectedTopic:true,trustedAidFacts:sampleTrustedAids,
+  conversationContext:{turnType:"REQUEST_ALTERNATIVE"},
+}),false,"Alternative asks should retain recommendation and conversation safeguards")
+const focusedPrompts=buildFocusedLocalAidPrompts({
+  question:simpleLocal[0],language:"fr",
+  profile:{commune:"Saint-Leu",email:"secret@example.com",nom:"Ne pas afficher"},
+  recommendedAides:sampleTrustedAids.map(a=>({id:a.id,description:"untrusted fake payout €9000"})),
+  trustedAidFacts:sampleTrustedAids,dateReunion:"24/11/2026",
+})
+assert.ok(focusedPrompts.systemPrompt.length+focusedPrompts.userPrompt.length<9000,
+  "Local solidarity prompt must stay below 9000 characters while retaining four sources")
+assert.equal(focusedPrompts.keptAides,4)
+assert.ok(focusedPrompts.userPrompt.includes("Croix-Rouge sur Roues"))
+assert.ok(focusedPrompts.userPrompt.includes("https://reunion.deets.gouv.fr/L-aide-alimentaire"))
+assert.ok(focusedPrompts.userPrompt.includes("operateur_reference_2026"))
+assert.ok(focusedPrompts.systemPrompt.includes("prescription"))
+assert.doesNotMatch(focusedPrompts.userPrompt,/secret@example|untrusted fake payout/)
+const kreolPrompts=buildFocusedLocalAidPrompts({
+  question:simpleLocal[3],language:"kreol",profile:{commune:"Saint-Paul"},
+  trustedAidFacts:sampleTrustedAids,dateReunion:"24/11/2026",
+})
+assert.match(kreolPrompts.systemPrompt,/créole réunionnais simple/)
+assert.match(kreolPrompts.userPrompt,/Bann demoun i gagne aide/)
+assert.match(backend,/focusedAidPrompts/)
+assert.match(backend,/ADVISOR_PROMPT_PROFILE/)
+console.log("OK: focused FR/KR solidarity prompts preserve trusted sources at <9000 chars; complex rights keep safeguards.")
+
 console.log("OK: source-only aid requests have zero model calls; complex memory enrichment opt-in only.")
