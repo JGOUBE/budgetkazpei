@@ -17,7 +17,7 @@ export function buildProactiveAdvisorNotices(summary,language="fr",now=new Date(
   const kr=["kr","cr","kreol"].includes(language), list=[]
   const add=n=>list.push(n)
   for(const p of summary.trends?.priceChanges||[]){
-    if(p.observations<4||!finite(p.changePercent)||Math.abs(p.changePercent)<15||!finite(p.previousObservedUnitPrice)||!finite(p.recentObservedUnitPrice)||p.previousObservedUnitPrice<=0||p.recentObservedUnitPrice<=0||!units[p.unit]||!p.label||!p.lastDate||dateAge(p.lastDate,now)<0||dateAge(p.lastDate,now)>30)continue
+    if(p.observations<4||!finite(p.changePercent)||Math.abs(p.changePercent)<15||!finite(p.previousObservedUnitPrice)||!finite(p.recentObservedUnitPrice)||p.previousObservedUnitPrice<=0||p.recentObservedUnitPrice<=0||!units[p.unit]||!p.label||!p.lastDate||!finite(dateAge(p.lastDate,now))||dateAge(p.lastDate,now)<0||dateAge(p.lastDate,now)>30)continue
     const up=p.changePercent>0
     if(up!==(p.recentObservedUnitPrice>p.previousObservedUnitPrice))continue
     const unit=units[p.unit]
@@ -49,7 +49,7 @@ export function buildProactiveAdvisorNotices(summary,language="fr",now=new Date(
   const stock=(summary.trends?.replenishment||[]).filter(p=>p.observedDays>=4&&p.typicalGapDays>=3&&p.daysSinceLast>=p.typicalGapDays&&p.label).slice(0,3)
   if(stock.length>=2)add({kind:"stock",key:"stock:"+stock.map(p=>p.label).sort().join("|"),score:40,
     text:kr?"Bann produits habituels pou vérifié avan fé courses.":"Quelques produits habituels à vérifier avant vos courses.",
-    detail:stock.map(p=>p.label+" ("+p.typicalGapDays+(kr?" jours anviron":" jours entre achats en moyenne estimée")+")").join(" · "),
+    detail:stock.map(p=>p.label+" ("+p.typicalGapDays+(kr?" jours anviron":" jours entre achats habituellement")+")").join(" · "),
     action:kr?"Vérifie kosa i reste la kaz avan aste.":"Vérifiez ce qu’il reste chez vous avant d'ajouter ces produits à votre liste.",
     prompt:kr?"Sak mi aste souvent, aide a moin prépare mon liste courses.":"Prépare une liste de courses à vérifier selon mes habitudes d'achat."})
   return list.sort((a,b)=>b.score-a.score||a.key.localeCompare(b.key))
