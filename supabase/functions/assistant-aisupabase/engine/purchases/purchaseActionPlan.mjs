@@ -17,7 +17,7 @@ export function identifyPurchaseAction(question=""){
   if(/\b(?:progres|evolution|depense moins|depense plus|economies realisees|fait des economies|ameliore|amelioration|par rapport au mois dernier|compare les depenses)\b/.test(t))return {kind:"progress"}
   return null
 }
-export function buildPurchaseActionPlan(summary={},action=null){
+export function buildPurchaseActionPlan(summary={},action=null,preferences={}){
   if(!summary.available)return {available:false}
   const comparison=summary.trends?.comparison
   const checklist=(summary.trends?.replenishment||[]).slice(0,5).map(p=>({label:p.label,typicalGapDays:p.typicalGapDays,daysSinceLast:p.daysSinceLast,checkStockFirst:true}))
@@ -27,7 +27,7 @@ export function buildPurchaseActionPlan(summary={},action=null){
   if(action?.kind==="goal"){
     const target=cents(action.monthlyTarget)
     const candidates=(!summary.truncated&&comparison?(summary.adviceFamilies||[]):[])
-      .filter(f=>adjustable.has(f.key)&&f.recent30PurchaseDays>=2&&Number.isFinite(f.recent30Spend)&&f.recent30Spend>0)
+      .filter(f=>adjustable.has(f.key)&&!(preferences.excludedFamilies||[]).includes(f.key)&&f.recent30PurchaseDays>=2&&Number.isFinite(f.recent30Spend)&&f.recent30Spend>0)
       .map(f=>({key:f.key,label:f.label,observed30DaySpend:f.recent30Spend,cap:Math.floor(cents(f.recent30Spend)*.25)}))
       .sort((a,b)=>b.cap-a.cap)
     let remaining=target
@@ -41,5 +41,5 @@ export function buildPurchaseActionPlan(summary={},action=null){
     }
     goal={monthlyTarget:money(target),steps,modeledGrossReduction:money(target-remaining),remainingTarget:money(remaining),netSavingsVerified:false,coverageWarning:true,insufficientHistory:!comparison||Boolean(summary.truncated)}
   }
-  return {available:true,goal,checklist,progress}
+  return {available:true,goal,checklist,progress,preferences}
 }

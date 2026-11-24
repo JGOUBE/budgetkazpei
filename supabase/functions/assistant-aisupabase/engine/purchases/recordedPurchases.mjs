@@ -1,3 +1,4 @@
+import { isPurchaseConstraintFollowUp } from "./purchasePreferences.mjs"
 import { identifyPurchaseAction } from "./purchaseActionPlan.mjs"
 import { buildPurchaseTrends } from "./purchaseTrends.mjs"
 // Authenticated purchase context; never take a user ID from the request body.
@@ -8,7 +9,7 @@ export function personalPurchaseIntent(question="", recentHistory=[]) {
   const personal=/\b(?:mes (?:derniers |recents |anciens |propres |precedents )?(?:achats|tickets|courses|produits achetes)|mon (?:alimentation|regime alimentaire)|mon alimentation|mes habitudes (?:alimentaires|de consommation|d achats)|ce que j achete|ce que je mange|ce que je consomme|out bann achats|sak mi aste|sak mi achete|j achete (?:souvent|regulierement|le plus))\b/.test(t)
   // Urgent financial difficulty and aid take priority over shopping analytics.
   if (/\b(?:je n ai plus d argent|plus de quoi manger|pas de quoi manger|je n ai rien a manger|je ne peux plus payer|aide alimentaire|colis alimentaire|urgence alimentaire|banque alimentaire|ccas|rsa|caf)\b/.test(t)) return null
-  if(identifyPurchaseAction(question)) return "analysis"
+  if(identifyPurchaseAction(question)||isPurchaseConstraintFollowUp(question,recentHistory)) return "analysis"
   if(!personal) return null
   const previous=norm(recentHistory?.[0]?.question||"")
   const contextualAdvice=/\b(?:alimentation|nutrition|equilibre|economies?|economiser|ameliorer|conseils?)\b/.test(previous) && /^(?:ok|et|mais|par rapport|d apres|selon)\b/.test(t)
