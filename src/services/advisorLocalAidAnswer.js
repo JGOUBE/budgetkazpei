@@ -49,8 +49,8 @@ export function buildLocalAidSourceAnswer({ question = "", aides = [], language 
     : "Pour « " + aide.name + " », voici le lien de référence enregistré : "
   const evidence = "[" + referenceLabel(aide.url) + "](" + aide.url + ")"
   const caution = kreol
-    ? "Ce lien i prouve pa si l'association lé ouverte astèr ni si ou lé éligible. Vérifi bann conditions ek kontak."
-    : "Ce référencement ne garantit ni l'ouverture actuelle du service ni votre éligibilité. Vérifiez les conditions avant de vous déplacer."
+    ? "Ce lien i prouve pa si l'association lé ouverte astèr ni si ou lé éligible. Vérifie bann conditions ek kontak."
+    : "Ce lien ne confirme pas votre éligibilité ni l'ouverture actuelle du service. Vérifiez les conditions avant de vous déplacer."
   return {
     answer: `${heading}${evidence}\n\n${caution}`,
     recommendedAidIds: [aide.id],
