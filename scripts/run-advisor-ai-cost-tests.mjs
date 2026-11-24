@@ -116,6 +116,13 @@ const focusedPrompts=buildFocusedLocalAidPrompts({
 assert.ok(focusedPrompts.systemPrompt.length+focusedPrompts.userPrompt.length<9000,
   "Local solidarity prompt must stay below 9000 characters while retaining four sources")
 assert.equal(focusedPrompts.keptAides,4)
+const undocumented = buildFocusedLocalAidPrompts({
+  question:simpleLocal[0],language:"fr",profile:{commune:"Saint-Leu"},
+  trustedAidFacts:sampleTrustedAids.map(a=>({...a,verificationStatus:"a_verifier"})),
+  dateReunion:"24/11/2026",
+})
+assert.equal(undocumented.keptAides,0,
+  "Unconfirmed associations must fall back to the normal answer instead of being presented as validated")
 assert.ok(focusedPrompts.userPrompt.includes("Croix-Rouge sur Roues"))
 assert.ok(focusedPrompts.userPrompt.includes("https://reunion.deets.gouv.fr/L-aide-alimentaire"))
 assert.ok(focusedPrompts.userPrompt.includes("operateur_reference_2026"))
