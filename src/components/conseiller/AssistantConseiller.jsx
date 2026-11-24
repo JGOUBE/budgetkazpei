@@ -19,6 +19,7 @@ import {
   consumeAdvisorHandoff,
 } from "../../services/advisorHandoff"
 import { useAssistantInsights } from "../../hooks/useAssistantInsights"
+import { buildLocalShoppingHabitAnswer, isShoppingHabitQuestion } from "../../services/ai/shoppingHabitSummary.js"
 import { buildAssistantAiSummary } from "../../services/ai/assistantInsightsService"
 import {
   answerAssistantQuestion,
@@ -532,9 +533,9 @@ export default function AssistantConseiller({
     const isAidQuestion = shouldLookupAdvisorAids({
       question: sentQuestion, mode, conversationContext, recentHistory, handoffContext,
     })
-    const financialContext = isAidQuestion && !explicitRecordedBudgetAnalysis
+    const financialContext = isAidQuestion && !explicitRecordedBudgetAnalysis && !isShoppingHabitQuestion(sentQuestion)
       ? { intent: "trouver_aide", budgetAdvisorContext: {} }
-      : buildAssistantAiSummary(questionInsights || financialInsights, detectedIntent)
+      : buildAssistantAiSummary(questionInsights || financialInsights, isShoppingHabitQuestion(sentQuestion) ? "budget_grocery" : detectedIntent)
 
     const localContext = {
       commune: currentProfile?.commune || "",
@@ -672,6 +673,17 @@ export default function AssistantConseiller({
 
     // A short confirmation should continue the last offer rather than be
     // dismissed as off-topic. Use recorded figures without an AI call.
+    const habitAnswer = ["general", "budget_depenses", "trouver_aide"].includes(currentMode)
+      ? buildLocalShoppingHabitAnswer({ question: sentQuestion, insights: questionInsights, language: responseLanguage, unavailable: Boolean(financialContextError) }) : null
+    if (habitAnswer) {
+      setHistory(prev => [{ id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, question: sentQuestion,
+        answer: habitAnswer.answer, source: habitAnswer.source, language: responseLanguage, mode: "budget_depenses", createdAt: new Date().toISOString() }, ...prev].slice(0, 6))
+      setLoadingAssistant(false)
+      setPendingMessage(null)
+      setAssistantMode("general")
+      setAdvisorHandoffContext(null)
+      return
+    }
     const budgetConfirmation = resolveAdvisorBudgetConfirmation({
       question: sentQuestion,
       recentHistory: history,
@@ -710,7 +722,7 @@ export default function AssistantConseiller({
       return
     }
 
-    if (shouldAnswerLocally) {
+    if (shouldAnswerLocally && !isShoppingHabitQuestion(sentQuestion)) {
       const localResult = answerAssistantQuestion({ question: sentQuestion, insights: questionInsights })
       const answer = selectAssistantAnswerText(localResult, responseLanguage)
       setHistory(prev => [
