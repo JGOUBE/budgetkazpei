@@ -1,3 +1,4 @@
+import { buildPurchaseTrends } from "./purchaseTrends.mjs"
 // Authenticated purchase context; never take a user ID from the request body.
 const norm = s=>String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim()
 export function personalPurchaseIntent(question="", recentHistory=[]) {
@@ -46,13 +47,13 @@ export function summarizeRecordedPurchases(rows=[],now=new Date(),available=true
   }
   const products=[...groups.values()].map(g=>({label:g.label,purchaseVisits:g.visits.size,purchaseDays:g.days.size,lastObservedAt:g.lastObservedAt}))
   const latest=recent.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,12)
-  return {available,start,end,truncated,adviceFamilies:[...advice.entries()].map(([key,a])=>({key,label:adviceLabels[key],purchaseVisits:a.visits.size,purchaseDays:a.days.size,observedSpend:a.pricedLines?Math.round(a.total*100)/100:null,examples:[...a.labels].slice(0,3)})).sort((a,b)=>(b.observedSpend??0)-(a.observedSpend??0)),observedVisits:visits.size,distinctProducts:groups.size,latestPurchases:latest,recentProducts:products.sort((a,b)=>b.purchaseVisits-a.purchaseVisits).slice(0,25),products:products.filter(p=>p.purchaseDays>=2).slice(0,10)}
+  return {available,start,end,truncated,trends:available?buildPurchaseTrends(rows,now,truncated):null,adviceFamilies:[...advice.entries()].map(([key,a])=>({key,label:adviceLabels[key],purchaseVisits:a.visits.size,purchaseDays:a.days.size,observedSpend:a.pricedLines?Math.round(a.total*100)/100:null,examples:[...a.labels].slice(0,3)})).sort((a,b)=>(b.observedSpend??0)-(a.observedSpend??0)),observedVisits:visits.size,distinctProducts:groups.size,latestPurchases:latest,recentProducts:products.sort((a,b)=>b.purchaseVisits-a.purchaseVisits).slice(0,25),products:products.filter(p=>p.purchaseDays>=2).slice(0,10)}
 }
 export async function loadRecordedPurchases(client,userId,now=new Date()) {
   if(!userId)return summarizeRecordedPurchases([],now,false)
   const rows=[], since=new Date(now.getTime()-90*86400000).toISOString()
   for(let offset=0;offset<2000;offset+=500) {
-    const {data,error}=await client.from("shopping_items").select("product_name,normalized_name,receipt_id,created_at,confidence_score,price").eq("user_id",userId).gte("created_at",since).order("created_at",{ascending:false}).order("id",{ascending:false}).range(offset,offset+499)
+    const {data,error}=await client.from("shopping_items").select("product_name,normalized_name,receipt_id,created_at,confidence_score,price,quantity,unit").eq("user_id",userId).gte("created_at",since).order("created_at",{ascending:false}).order("id",{ascending:false}).range(offset,offset+499)
     if(error)return summarizeRecordedPurchases([],now,false)
     rows.push(...(data||[]))
     if(!data||data.length<500)return summarizeRecordedPurchases(rows,now,true,false)
