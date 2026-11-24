@@ -35,7 +35,9 @@ export function buildFocusedLocalAidPrompts({
   const kreol = language === "kreol"
   const priorityIds = (Array.isArray(recommendedAides) ? recommendedAides : [])
     .map(a => String(a?.id ?? "")).filter(Boolean)
-  const rows = [...(Array.isArray(trustedAidFacts) ? trustedAidFacts : [])].sort((a, b) => {
+  const rows = [...(Array.isArray(trustedAidFacts) ? trustedAidFacts : [])]
+    .filter(r => ["source_confirmee", "operateur_reference_2026"].includes(String(r?.verificationStatus || "")))
+    .sort((a, b) => {
     const aRank = priorityIds.indexOf(String(a.id ?? ""))
     const bRank = priorityIds.indexOf(String(b.id ?? ""))
     return (aRank < 0 ? 999 : aRank) - (bRank < 0 ? 999 : bRank)
