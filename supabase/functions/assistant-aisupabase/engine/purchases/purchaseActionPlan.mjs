@@ -17,6 +17,39 @@ export function identifyPurchaseAction(question=""){
   if(/\b(?:progres|evolution|depense moins|depense plus|economies realisees|fait des economies|ameliore|amelioration|par rapport au mois dernier|compare les depenses)\b/.test(t))return {kind:"progress"}
   return null
 }
+// A preference applies to this answer and explicit continuations, not a permanent user profile.
+const familyTerms={
+  alcohol:"alcool|biere|bieres|vin|vins|rhum|whisky",
+  cakes:"gateaux?|biscuits?|gouters?|cookies?",
+  sweet_drinks:"sodas?|boissons? sucrees?|colas?",
+  prepared_meals:"plats? prepares?|repas prepares?",
+  salty_snacks:"chips|aperitifs?|snacks? sales?",
+}
+export function identifyPurchaseConstraints(question=""){
+  const t=norm(question)
+  const protectedFamilies=[]
+  for(const [key,terms] of Object.entries(familyTerms)){
+    const re=new RegExp("\\b(?:sans (?:supprimer|reduire|diminuer|toucher a|changer)|je (?:veux|souhaite|prefere) garder|je ne veux pas (?:supprimer|reduire|diminuer|changer)|je tiens a garder|ne touche pas a|pas touche aux) (?:mes |mon |ma |les |le |la |aux |au |l )?(?:"+terms+")\\b")
+    if(re.test(t))protectedFamilies.push(key)
+  }
+  const avoidHomemade=/\b(?:pas le temps de cuisiner|pas de temps pour cuisiner|sans cuisiner|sans faire maison|je ne peux pas cuisiner|je ne veux pas cuisiner|pas de four)\b/.test(t)
+  const lowEffort=/\b(?:peu de temps|rapide|sans effort|facile|pas le temps)\b/.test(t)
+  return {protectedFamilies,avoidHomemade,lowEffort}
+}
+export function resolvePurchaseGoal(question="",recentHistory=[]){
+  const direct=identifyPurchaseAction(question)
+  const current=identifyPurchaseConstraints(question)
+  if(direct?.kind==="goal")return {...direct,constraints:current}
+  const t=norm(question)
+  const followup=/^(?:ok |et |mais |d accord |finalement |plutot |je (?:veux|souhaite|prefere) garder |je ne veux pas |sans |pas le temps )/.test(t)
+  if(!followup||(!current.protectedFamilies.length&&!current.avoidHomemade&&!current.lowEffort))return direct
+  const previous=Array.isArray(recentHistory)?recentHistory[0]?.question:""
+  const prior=identifyPurchaseAction(previous||"")
+  if(prior?.kind!=="goal")return direct
+  const earlier=identifyPurchaseConstraints(previous)
+  return {...prior,constraints:{protectedFamilies:[...new Set([...earlier.protectedFamilies,...current.protectedFamilies])],avoidHomemade:earlier.avoidHomemade||current.avoidHomemade,lowEffort:earlier.lowEffort||current.lowEffort}}
+}
+
 export function buildPurchaseActionPlan(summary={},action=null){
   if(!summary.available)return {available:false}
   const comparison=summary.trends?.comparison
@@ -26,8 +59,9 @@ export function buildPurchaseActionPlan(summary={},action=null){
   let goal=null
   if(action?.kind==="goal"){
     const target=cents(action.monthlyTarget)
+    const protectedFamilies=new Set(action.constraints?.protectedFamilies||[])
     const candidates=(!summary.truncated&&comparison?(summary.adviceFamilies||[]):[])
-      .filter(f=>adjustable.has(f.key)&&f.recent30PurchaseDays>=2&&Number.isFinite(f.recent30Spend)&&f.recent30Spend>0)
+      .filter(f=>adjustable.has(f.key)&&!protectedFamilies.has(f.key)&&f.recent30PurchaseDays>=2&&Number.isFinite(f.recent30Spend)&&f.recent30Spend>0)
       .map(f=>({key:f.key,label:f.label,observed30DaySpend:f.recent30Spend,cap:Math.floor(cents(f.recent30Spend)*.25)}))
       .sort((a,b)=>b.cap-a.cap)
     let remaining=target
@@ -39,7 +73,7 @@ export function buildPurchaseActionPlan(summary={},action=null){
       steps.push({key:p.key,label:p.label,observed30DaySpend:p.observed30DaySpend,hypotheticalReduction:money(reduction)})
       remaining-=reduction
     }
-    goal={monthlyTarget:money(target),steps,modeledGrossReduction:money(target-remaining),remainingTarget:money(remaining),netSavingsVerified:false,coverageWarning:true,insufficientHistory:!comparison||Boolean(summary.truncated)}
+    goal={monthlyTarget:money(target),protectedFamilies:[...protectedFamilies],avoidHomemade:Boolean(action.constraints?.avoidHomemade),lowEffort:Boolean(action.constraints?.lowEffort),steps,modeledGrossReduction:money(target-remaining),remainingTarget:money(remaining),netSavingsVerified:false,coverageWarning:true,insufficientHistory:!comparison||Boolean(summary.truncated)}
   }
   return {available:true,goal,checklist,progress}
 }
