@@ -258,6 +258,7 @@ export function buildBudgetAdvisorContext(insights = {}) {
       promotionWithoutHistoricalPriceCount: shopping ? Number(shopping.promotionWithoutHistoricalPriceCount || 0) : null,
       source: shopping?.source || null,
     },
+    shoppingHabits: insights.shoppingHabits || null,
     periodComparison: {
       previousIncome: hasPreviousExpenses ? positiveOrNull(previous.incomes) : null,
       previousExpenses,
