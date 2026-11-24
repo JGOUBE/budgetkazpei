@@ -628,3 +628,15 @@ assert.equal(buildPurchaseActionPlan(planSummary,{kind:"goal",monthlyTarget:5}).
 assert.equal(buildPurchaseActionPlan({...planSummary,truncated:true},monthlyGoal).goal.modeledGrossReduction,0)
 assert.equal(buildPurchaseActionPlan({...planSummary,trends:{}},monthlyGoal).goal.insufficientHistory,true)
 assert.equal(buildPurchaseActionPlan({available:false},monthlyGoal).available,false)
+
+
+import { buildProactiveAdvisorNotice, shouldShowAdvisorNotice, NOTICE_COOLDOWN } from "../src/services/ai/proactiveAdvisor.js"
+const noticeSummary={available:true,observedVisits:5,trends:{priceChanges:[{label:"Lait 1 L",observations:4,changePercent:25,previousObservedUnitPrice:2.8,recentObservedUnitPrice:3.5,lastDate:"2026-11-23"}]}}
+assert.equal(buildProactiveAdvisorNotice(noticeSummary).kind,"price")
+assert.equal(buildProactiveAdvisorNotice({...noticeSummary,truncated:true}),null)
+assert.equal(buildProactiveAdvisorNotice({...noticeSummary,observedVisits:2}),null)
+assert.equal(buildProactiveAdvisorNotice({available:true,observedVisits:5,adviceFamilies:[{key:"cakes",recent30PurchaseDays:3,recent30Spend:25}]}).kind,"opportunity")
+assert.equal(buildProactiveAdvisorNotice({available:true,observedVisits:5,adviceFamilies:[{key:"plain_preserves",recent30PurchaseDays:4,recent30Spend:50}]}),null)
+assert.equal(shouldShowAdvisorNotice({kind:"price"},1000,1000+NOTICE_COOLDOWN-1),false)
+assert.equal(shouldShowAdvisorNotice({kind:"price"},1000,1000+NOTICE_COOLDOWN),true)
+assert.equal(shouldShowAdvisorNotice(null,0),false)
