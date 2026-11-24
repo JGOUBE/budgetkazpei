@@ -35,7 +35,7 @@ export function buildShoppingHabitSummary(items = [], { available = true, receip
 
 export function buildLocalShoppingHabitAnswer({ question = "", insights = {}, language = "fr", unavailable = false } = {}) {
   const t = normalize(question)
-  if (!isShoppingHabitQuestion(question) || /\b(?:et|pourquoi|comment|combien|economis|economies|compare|comparaison|mois dernier|cette semaine|cette annee|depuis|en janvier|en fevrier|en mars|en avril|en mai|en juin|en juillet|en aout|en septembre|en octobre|en novembre|en decembre)\b/.test(t)) return null
+  if (!isShoppingHabitQuestion(question) || (String(question).match(/\?/g) || []).length > 1 || /\b(?:et|puis|aussi|pourquoi|comment|combien|economiser|economies|compare|comparaison|mois dernier|cette semaine|cette annee|depuis|en janvier|en fevrier|en mars|en avril|en mai|en juin|en juillet|en aout|en septembre|en octobre|en novembre|en decembre)\b/.test(t)) return null
   const h = insights.shoppingHabits
   const kr = ["kreol","kr","cr"].includes(language)
   if (unavailable || !h?.available) return { answer: kr ? "Mi pé pa vérifie out bann achats pou l'instant." : "Je ne peux pas vérifier vos achats enregistrés pour le moment.", source:"local_shopping_habits" }
