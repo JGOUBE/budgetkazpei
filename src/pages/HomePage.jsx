@@ -1,4 +1,5 @@
 import { ArrowRight, CalendarDays, ChevronRight, LockKeyhole } from "lucide-react"
+import ProactiveAdvisorNotice from "../components/conseiller/ProactiveAdvisorNotice"
 import { BkIcons } from "../components/icons-budgetkazpei"
 import { formatMontant } from "../utils/format"
 
@@ -54,6 +55,8 @@ export default function HomePage({
         <h1>{isKreol ? "Byenvini" : "Bonjour"}{name ? " " + name : ""}.</h1>
         <p>{isKreol ? "Out bidzé, tout simplement." : "Votre budget, tout simplement."}</p>
       </header>
+
+      <ProactiveAdvisorNotice userId={user?.id} language={language} enabled={isPremium} />
 
       <nav className="bkp-home-action-grid" aria-label={isKreol ? "Bann aksyon rapides" : "Accès rapides"}>
         {ACTIONS.map(action => {
