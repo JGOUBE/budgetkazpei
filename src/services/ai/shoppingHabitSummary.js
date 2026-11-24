@@ -1,3 +1,4 @@
+import { buildShoppingHabitFamilies } from "../../features/shopping/services/shoppingHabitFamilies.js"
 import { shoppingProductGroupingKey } from "../../features/shopping/services/priceHistory.ts"
 import { evaluateSavingsProductEligibility } from "../savings/savingsEngine.ts"
 
@@ -11,7 +12,7 @@ export function buildShoppingHabitSummary(items = [], { available = true, receip
   const cutoff = new Date(now); cutoff.setDate(cutoff.getDate() - 90)
   const start = cutoff.toISOString().slice(0, 10), end = new Date(now).toISOString().slice(0, 10)
   const byReceipt = new Map(receipts.map(r => [String(r.id), r.purchase_date]))
-  const groups = new Map(), visits = new Set(), seen = new Set()
+  const groups = new Map(), visits = new Set(), seen = new Set(), familyRows = []
   if (available) for (const item of items) {
     if (item?.needs_review || !evaluateSavingsProductEligibility(item).eligible) continue
     const key = shoppingProductGroupingKey(item)
@@ -26,8 +27,10 @@ export function buildShoppingHabitSummary(items = [], { available = true, receip
     const row = groups.get(key) || { label, visits: new Set(), days: new Set() }
     row.visits.add(visit); row.days.add(date); visits.add(visit)
     groups.set(key, row)
+    familyRows.push({...item, receipt_id: visit, created_at: date})
   }
   return { available, start, end, observedVisits: visits.size,
+    families: buildShoppingHabitFamilies(familyRows).filter(f => f.receiptCount >= 2).map(f => ({label:f.label, purchaseVisits:f.receiptCount, variants:f.variants.slice(0,3).map(v=>v.label.slice(0,100))})).slice(0,8),
     products: [...groups.values()].filter(r => r.visits.size >= 2 && r.days.size >= 2)
       .map(r => ({ label: r.label, purchaseVisits: r.visits.size, purchaseDays: r.days.size }))
       .sort((a,b) => b.purchaseVisits - a.purchaseVisits || a.label.localeCompare(b.label)).slice(0, 10) }
@@ -39,7 +42,9 @@ export function buildLocalShoppingHabitAnswer({ question = "", insights = {}, la
   const h = insights.shoppingHabits
   const kr = ["kreol","kr","cr"].includes(language)
   if (unavailable || !h?.available) return { answer: kr ? "Mi pé pa vérifie out bann achats pou l'instant." : "Je ne peux pas vérifier vos achats enregistrés pour le moment.", source:"local_shopping_habits" }
-  if (!h.products.length) return { answer: kr ? "Mi nana pa ankor assez tiké pou repère bann produits ou achète souvent." : "Sur les 90 derniers jours, je ne trouve pas encore de produit identifié sur au moins deux jours d'achat distincts. Cela ne signifie pas que vous ne l'achetez pas régulièrement.", source:"local_shopping_habits" }
+  if (!h.products.length && !h.families?.length) return { answer: kr ? "Mi nana pa ankor assez tiké pou repère bann produits ou achète souvent." : "Sur les 90 derniers jours, je ne trouve pas encore de produit identifié sur au moins deux jours d'achat distincts. Cela ne signifie pas que vous ne l'achetez pas régulièrement.", source:"local_shopping_habits" }
   const lines = h.products.slice(0,5).map((p,i) => (i+1)+". **"+p.label+"** — "+p.purchaseVisits+(kr?" achats observés":" passages d'achat observés"))
-  return { answer: (kr ? "Dapré out bann tiké anrezistrés su 90 derniers jours :" : "D'après vos achats enregistrés sur les 90 derniers jours :") + "\n\n"+lines.join("\n")+"\n\n"+(kr?"Sa lé bann achats observés, pa quantité consommée.":"Ce classement mesure la fréquence des achats enregistrés, pas les quantités consommées. Comparez en priorité ces produits dans Mes économies."),source:"local_shopping_habits" }
+  const families = (h.families || []).slice(0,4).map(f=> "**"+f.label+"** — "+f.purchaseVisits+(kr?" achats observés":" passages observés"))
+  const familyText = families.length ? "\n\n"+(kr?"Bann familles produits :":"Familles de produits récurrents :")+"\n"+families.join("\n") : ""
+  return { answer: (kr ? "Dapré out bann tiké anrezistrés su 90 derniers jours :" : "D'après vos achats enregistrés sur les 90 derniers jours :") + "\n\n"+lines.join("\n")+familyText+"\n\n"+(kr?"Sa lé bann achats observés, pa quantité consommée.":"Ce classement mesure la fréquence des achats enregistrés, pas les quantités consommées. Comparez en priorité ces produits dans Mes économies."),source:"local_shopping_habits" }
 }
