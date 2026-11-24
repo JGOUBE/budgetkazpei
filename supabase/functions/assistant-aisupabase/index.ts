@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
+import { personalPurchaseIntent, loadRecordedPurchases, recordedPurchaseEvidence } from "./engine/purchases/recordedPurchases.mjs"
 import { buildSystemPrompt, buildOpenQuestionSystemPrompt } from "./prompts/systemPrompt.ts"
 import { isSimpleLocalSolidarityQuestion, buildFocusedLocalAidPrompts } from "./prompts/localAidPrompt.mjs"
 import { clarifyLocalAidLinks } from "./prompts/localAidSources.mjs"
@@ -941,6 +942,18 @@ Deno.serve(async (req) => {
 
     const context = contextResult.context as AssistantContext
 
+    // Personal purchase questions use authenticated server data, even with an old client.
+    const purchaseIntent = context.action !== "analyze_refusal" ? personalPurchaseIntent(context.question) : null
+    const recordedPurchases = purchaseIntent ? await loadRecordedPurchases(supabaseAdmin, context.userId) : null
+    if (recordedPurchases) {
+      const local = context.body.localContext || {}
+      const financial = local.financial || {}
+      context.body.localContext = { ...local, financial: { ...financial, budgetAdvisorContext: { ...financial.budgetAdvisorContext, shoppingHabits: recordedPurchases } } }
+      if (purchaseIntent === "latest" || !recordedPurchases.available || !recordedPurchases.latestPurchases.length) {
+        return jsonResponse({ success: true, answer: recordedPurchaseEvidence(recordedPurchases, context.language), source: "local_recorded_purchases", language: context.language, mode: context.mode, consumed: false, openAiCallCount: 0, recommendedAidIds: [], recommendedAidNames: [] })
+      }
+    }
+
     // Strict greetings are handled without OpenAI. All real questions,
     // including creative or unexpected ones, follow the normal model path.
     if (!context.action || context.action !== "analyze_refusal") {
@@ -1091,7 +1104,7 @@ Deno.serve(async (req) => {
 
     // A budget/benefits follow-up must not be mistaken for random chatter.
     // Never trust a client-provided scope to authorize a paid provider call.
-    let spendScope = classifyAdvisorSpendScope({
+    let spendScope = purchaseIntent ? "useful" : classifyAdvisorSpendScope({
       question: context.question, mode: context.mode, action: context.action,
     })
     if (spendScope === "offtopic" &&
@@ -1144,12 +1157,12 @@ Deno.serve(async (req) => {
     // A strict official-amount review is correct for an actual CAF/finance
     // question, but it can badly corrupt an unrelated answer about astronomy,
     // a recipe or an invented scenario.
-    const protectedTopic = spendScope === "useful" && isProtectedAdvisorQuestion({
+    const protectedTopic = spendScope === "useful" && (Boolean(purchaseIntent) || isProtectedAdvisorQuestion({
       question: context.question,
       mode: context.mode,
       action: context.action,
       conversationContext: context.body?.conversationContext || {},
-    })
+    }))
     context.memory = protectedTopic
       ? await loadAssistantMemory(supabaseAdmin, context.userId)
       : null
@@ -1469,9 +1482,9 @@ Deno.serve(async (req) => {
         })
     // Only improve generic Markdown link labels pointing to exact, trusted
     // source URLs. Never rewrite any URL or add an invented reference.
-    const answer = focusedAidPrompts
-      ? clarifyLocalAidLinks(checkedAnswer, trustedAidFacts)
-      : checkedAnswer
+    const answer = recordedPurchases
+      ? recordedPurchaseEvidence(recordedPurchases, context.language) + "\n\n" + (/\b(?:je ne peux pas acceder|je n ai pas acces|je ne peux pas consulter|je ne dispose pas de vos achats|je ne peux pas voir)\b/.test(checkedAnswer.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g," ")) ? (context.isKreol ? "Nou pé regarde bann produits-la pou prépare out prochains achats." : "Nous pouvons partir de ces produits pour comparer les prix et varier les prochains achats selon vos besoins.") : checkedAnswer)
+      : focusedAidPrompts ? clarifyLocalAidLinks(checkedAnswer, trustedAidFacts) : checkedAnswer
     const mentionedTrustedAids = findMentionedTrustedAids(answer, trustedAidFacts)
 
     if (context.consumesExchange && answer) {
