@@ -3,11 +3,11 @@ import { Sparkles, X, ChevronRight } from "lucide-react"
 import { supabase } from "../../services/supabase"
 import { handoffToAdvisor } from "../../services/advisorHandoff"
 import { loadRecordedPurchases } from "../../../supabase/functions/assistant-aisupabase/engine/purchases/recordedPurchases.mjs"
-import { buildProactiveAdvisorNotice, shouldShowAdvisorNotice } from "../../services/ai/proactiveAdvisor"
+import { buildProactiveAdvisorNotice, shouldShowAdvisorNotice, noticeFingerprint } from "../../services/ai/proactiveAdvisor"
 
 const keyFor = userId => "bkp-advisor-notice-dismissed-v1:" + userId
 function readDismissed(userId) {
-  try { return Number(localStorage.getItem(keyFor(userId))) || 0 } catch { return 0 }
+  try { const raw=localStorage.getItem(keyFor(userId)); const data=JSON.parse(raw||"null"); return typeof data==="number"?{at:data,fingerprint:""}:{at:Number(data?.at)||0,fingerprint:String(data?.fingerprint||"")} } catch { return {at:0,fingerprint:""} }
 }
 export default function ProactiveAdvisorNotice({ userId, language="fr", enabled=false }) {
   const [result,setResult]=useState(null)
@@ -17,7 +17,7 @@ export default function ProactiveAdvisorNotice({ userId, language="fr", enabled=
     let active=true
     setResult(null)
     if(!enabled||!userId)return
-    if(!shouldShowAdvisorNotice({kind:"candidate"},readDismissed(userId)))return
+    if(!shouldShowAdvisorNotice({kind:"candidate"},readDismissed(userId).at))return
     async function load(){
       try {
         const summary=await loadRecordedPurchases(supabase,userId)
@@ -30,9 +30,10 @@ export default function ProactiveAdvisorNotice({ userId, language="fr", enabled=
     return ()=>{active=false}
   },[userId,language,enabled])
   const notice=enabled&&result?.userId===userId&&result?.language===language&&hiddenFor!==userId?result.notice:null
-  if(!notice||!shouldShowAdvisorNotice(notice,readDismissed(userId)))return null
+  const dismissed=readDismissed(userId)
+  if(!notice||!shouldShowAdvisorNotice(notice,dismissed.at,Date.now(),dismissed.fingerprint))return null
   function dismiss(){
-    try{localStorage.setItem(keyFor(userId),String(Date.now()))}catch{}
+    try{localStorage.setItem(keyFor(userId),JSON.stringify({at:Date.now(),fingerprint:noticeFingerprint(notice)}))}catch{}
     setHiddenFor(userId)
   }
   function open(){
