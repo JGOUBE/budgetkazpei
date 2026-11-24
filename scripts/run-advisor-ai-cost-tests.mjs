@@ -164,7 +164,7 @@ assert.equal(localResponse.keptAides,2)
 assert.match(localResponse.userPrompt,/Fiche de l’organisme sur ANDES/)
 assert.match(localResponse.userPrompt,/Référencement officiel DEETS/)
 assert.match(localResponse.systemPrompt,/90 à 140 mots/)
-assert.match(localResponse.systemPrompt,/ne.*pas le site/i)
+assert.match(localResponse.systemPrompt,/pas le site de la Croix-Rouge/i)
 assert.doesNotMatch(localResponse.systemPrompt,/fiche ici ».*autorise/i)
 const modelDraft = [
   "1. **Croix-Rouge sur Roues** : distribution alimentaire. [fiche ici]("+deets+")",
