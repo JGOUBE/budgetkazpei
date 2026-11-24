@@ -18,7 +18,7 @@ function readDismissed(userId){
   }catch{return {at:0,fingerprints:[]}}
 }
 const buttonStyle={background:"#DCECE5",border:"1px solid #B7D8CD",color:"#286558",borderRadius:9,padding:"9px 12px",fontSize:13,fontWeight:650,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:6,fontFamily:"inherit"}
-export default function ProactiveAdvisorNotice({userId,language="fr",enabled=false}){
+export default function ProactiveAdvisorNotice({userId,language="fr",enabled=false,onNavigate}){
   const [result,setResult]=useState(null)
   const [hidden,setHidden]=useState(null)
   const [expanded,setExpanded]=useState(false)
@@ -52,7 +52,8 @@ export default function ProactiveAdvisorNotice({userId,language="fr",enabled=fal
   }
   function open(){
     dismiss()
-    handoffToAdvisor({mode:"general",prompt:notice.prompt})
+    if(notice.destination==="shoppingSavingsOnly" && typeof onNavigate==="function"){onNavigate(notice.destination);return}
+    if(notice.prompt)handoffToAdvisor({mode:"general",prompt:notice.prompt})
   }
   return (
     <aside aria-label={kr?"In constat mon konseye":"Un constat de mon conseiller"} style={{background:"#EDF5F1",border:"1px solid #B7D8CD",borderRadius:14,padding:"14px 15px",marginBottom:18,color:"#344D47"}}>
@@ -68,7 +69,7 @@ export default function ProactiveAdvisorNotice({userId,language="fr",enabled=fal
       {expanded&&<div style={{borderTop:"1px solid #B7D8CD",marginTop:12,paddingTop:12}}>
         <p style={{fontWeight:650,fontSize:14,lineHeight:1.6,margin:"0 0 8px",overflowWrap:"anywhere"}}>{notice.detail}</p>
         <p style={{fontSize:13,lineHeight:1.6,margin:"0 0 12px"}}>{notice.action}</p>
-        <button type="button" onClick={open} style={buttonStyle}>{kr?"Parle avèk mon konseye":"En parler au Conseiller"}<ChevronRight size={16} aria-hidden="true"/></button>
+        <button type="button" onClick={open} style={buttonStyle}>{notice.destination==="shoppingSavingsOnly"?(kr?"Mon bann lékonomi":"Voir mes économies"):(kr?"Parle avèk mon konseye":"En parler au Conseiller")}<ChevronRight size={16} aria-hidden="true"/></button>
       </div>}
     </aside>
   )

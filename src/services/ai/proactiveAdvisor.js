@@ -52,6 +52,16 @@ export function buildProactiveAdvisorNotices(summary,language="fr",now=new Date(
     detail:stock.map(p=>p.label+" ("+p.typicalGapDays+(kr?" jours anviron":" jours entre achats habituellement")+")").join(" · "),
     action:kr?"Vérifie kosa i reste la kaz avan aste.":"Vérifiez ce qu’il reste chez vous avant d'ajouter ces produits à votre liste.",
     prompt:kr?"Prépare mon liste courses selon mon bann labitid d'achat.":"Prépare une liste de courses selon mes habitudes d'achat."})
+  // A meaningful lower-priority insight when prices are stable or no large
+  // discretionary expense is detected. Use actual recurring products, not
+  // a fabricated price change or an estimate of savings.
+  const recurring=(summary.products||[]).filter(p=>p.label&&p.purchaseDays>=2&&finite(dateAge(p.lastObservedAt,now))&&dateAge(p.lastObservedAt,now)>=0&&dateAge(p.lastObservedAt,now)<=30)
+    .sort((a,b)=>b.purchaseDays-a.purchaseDays||a.label.localeCompare(b.label)).slice(0,3)
+  if(recurring.length>=2)add({kind:"recurring",key:"recurring:"+recurring.map(p=>p.label).sort().join("|"),score:30,
+    text:kr?"Mi la repéré bann produits ou rachète souvent.":"J’ai repéré plusieurs produits que vous achetez régulièrement.",
+    detail:recurring.map(p=>p.label+" — "+p.purchaseDays+(kr?" jours d’achat":" jours d’achat")).join(" · ")+". "+(kr?"Su bann tiké anrezistré, 90 derniers jours.":"D’après les tickets enregistrés sur les 90 derniers jours."),
+    action:kr?"Compare en priorité bann produits ou achète souvent. Bann lékonomi i dépend bann pri disponibles.":"Comparez en priorité ces produits récurrents dans Mes économies. Le gain éventuel dépend des prix disponibles pour le même produit et le même format.",
+    destination:"shoppingSavingsOnly"})
   return list.sort((a,b)=>b.score-a.score||a.key.localeCompare(b.key))
 }
 export function buildProactiveAdvisorNotice(summary,language="fr",now=new Date(),dismissed=[]){

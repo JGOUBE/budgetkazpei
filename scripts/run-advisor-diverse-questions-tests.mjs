@@ -728,3 +728,22 @@ const localOpportunityPlan=buildPurchaseActionPlan({...planSummary,adviceFamilie
 assert.match(renderLocalPurchaseAction(localOpportunityPlan,{kind:"opportunities"}),/10,00/)
 assert.doesNotMatch(renderLocalPurchaseAction(localOpportunityPlan,{kind:"opportunities"}),/90,00/)
 assert.equal(buildPurchaseActionPlan({...noticeSummary,truncated:true},{kind:"price_changes"}).priceChanges.length,0)
+
+const recurringNoticeSummary={available:true,truncated:false,observedVisits:9,products:[
+  {label:"Pains au chocolat x10",purchaseDays:5,purchaseVisits:5,lastObservedAt:"2026-11-23"},
+  {label:"Chocolat noir extra",purchaseDays:5,purchaseVisits:5,lastObservedAt:"2026-11-17"},
+  {label:"Gouda 300 g",purchaseDays:3,purchaseVisits:3,lastObservedAt:"2026-11-23"},
+  {label:"Produit ancien",purchaseDays:9,purchaseVisits:9,lastObservedAt:"2026-09-20"},
+  {label:"Produit ponctuel",purchaseDays:1,purchaseVisits:1,lastObservedAt:"2026-11-23"}
+],trends:{priceChanges:[],replenishment:[]},adviceFamilies:[]}
+const recurringNotice=buildProactiveAdvisorNotice(recurringNoticeSummary,"fr",noticeNow)
+assert.equal(recurringNotice.kind,"recurring")
+assert.equal(recurringNotice.destination,"shoppingSavingsOnly")
+assert.match(recurringNotice.detail,/Pains au chocolat x10 — 5 jours/)
+assert.match(recurringNotice.detail,/Chocolat noir extra — 5 jours/)
+assert.doesNotMatch(recurringNotice.detail,/Produit ancien|Produit ponctuel/)
+assert.equal(buildProactiveAdvisorNotice({...recurringNoticeSummary,truncated:true},"fr",noticeNow),null)
+assert.equal(buildProactiveAdvisorNotice({...recurringNoticeSummary,products:recurringNoticeSummary.products.slice(0,1)},"fr",noticeNow),null)
+assert.equal(buildProactiveAdvisorNotice({...recurringNoticeSummary,trends:noticeSummary.trends},"fr",noticeNow).kind,"price")
+assert.equal(buildProactiveAdvisorNotice(recurringNoticeSummary,"fr",noticeNow,[noticeFingerprint(recurringNotice)]),null)
+assert.equal(buildProactiveAdvisorNotice(recurringNoticeSummary,"kreol",noticeNow).destination,"shoppingSavingsOnly")

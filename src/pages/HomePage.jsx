@@ -56,7 +56,7 @@ export default function HomePage({
         <p>{isKreol ? "Out bidzé, tout simplement." : "Votre budget, tout simplement."}</p>
       </header>
 
-      <ProactiveAdvisorNotice userId={user?.id} language={language} enabled={isPremium} />
+      <ProactiveAdvisorNotice userId={user?.id} language={language} enabled={isPremium} onNavigate={onNavigate} />
 
       <nav className="bkp-home-action-grid" aria-label={isKreol ? "Bann aksyon rapides" : "Accès rapides"}>
         {ACTIONS.map(action => {
