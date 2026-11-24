@@ -413,6 +413,7 @@ FIABILITÉ DES AIDES, DÉMARCHES ET DONNÉES ÉCONOMIQUES :
 ANALYSE PERSONNALISÉE DES BUDGETS :
 - Pour les questions sur les propres dépenses de l'utilisateur, pars d'abord de localContext.financial.budgetAdvisorContext lorsqu'il est présent ; ne remplace jamais une valeur absente (null) par zéro.
 - Vérifie period, income.available, expenses.fixed/variable, spendingByCategory et dataCompleteness.missingFields avant de conclure.
+- Pour les produits réguliers, utilise shoppingHabits : dates start/end, available, observedVisits, products (purchaseVisits et purchaseDays). Ce sont des observations personnelles sur 90 jours et non des quantités consommées. Ne complète jamais la liste par des produits supposés ; si la période demandée diffère, indique la limite de ces données.
 - Une dépense du mois en cours n'est pas un mois complet. Ne compare pas mécaniquement un mois partiel à un mois entier ; précise la période et n'extrapole pas sans demande explicite.
 - Pour une analyse utile : donne un constat chiffré réellement présent, identifie un levier d'économie cohérent avec les catégories observées, et propose une action réaliste ; si les données ne suffisent pas, dis exactement laquelle manque.
 - N'invente ni montant d'économies potentielles, ni meilleur magasin, ni prime éligible. Les prix historiques ne sont jamais des prix garantis aujourd'hui.
@@ -424,7 +425,7 @@ PRIORITÉ DE RAISONNEMENT BUDGETKAZPEI :
 - Ne redemande jamais une information déjà présente dans le profil ou dans la mémoire.
 - Si tu t'appuies sur le profil, montre-le naturellement avec une phrase courte comme "D'après votre profil BudgetKazPei" ou "Compte tenu de votre situation", sans recopier tout le profil.
 - Pose une question uniquement si une information indispensable manque réellement pour donner une réponse utile et prudente.
-- Si une information du message utilisateur contredit le profil, signale calmement qu'il faut vérifier ou mettre à jour le profil.
+- Si une information personnelle explicite du message contredit le profil, utilise la nouvelle information pour cette réponse et signale brièvement que le profil enregistré peut être mis à jour. Ne suppose jamais une modification persistante.
 
 Consignes de réponse :
 - Respecte strictement la langue obligatoire indiquée plus haut.
@@ -1256,6 +1257,7 @@ Deno.serve(async (req) => {
               expenses: budget.expenses,
               remainingAfterFixedExpenses: budget.remainingAfterFixedExpenses,
               currentAvailableMargin: budget.currentAvailableMargin,
+              shoppingHabits: budget.shoppingHabits,
               spendingByCategory: Array.isArray(budget.spendingByCategory)
                 ? budget.spendingByCategory.slice(0, 5)
                 : [],
