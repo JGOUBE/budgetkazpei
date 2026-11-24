@@ -13,6 +13,7 @@ export function identifyPurchaseAction(question=""){
     const target=Number(amount[1].replace(",","."))
     if(target>0&&target<=10000)return {kind:"goal",monthlyTarget:target}
   }
+  if(/\b(?:pourquoi|explique|expliquer|raison|raisons)\b/.test(t)&&/\b(?:plus cher|moins cher|augment|augmente|augmentation|baisse|diminue|diminution|coutent plus|coutent moins|depense plus|depense moins|ecart|evolution)\b/.test(t))return {kind:"drivers"}
   if(/\b(?:liste de courses|liste d achats|quoi racheter|quoi acheter|prochaines courses)\b/.test(t))return {kind:"shopping_checklist"}
   if(/\b(?:progres|evolution|depense moins|depense plus|economies realisees|fait des economies|ameliore|amelioration|par rapport au mois dernier|compare les depenses)\b/.test(t))return {kind:"progress"}
   return null
@@ -41,5 +42,5 @@ export function buildPurchaseActionPlan(summary={},action=null,preferences={}){
     }
     goal={monthlyTarget:money(target),steps,modeledGrossReduction:money(target-remaining),remainingTarget:money(remaining),netSavingsVerified:false,coverageWarning:true,insufficientHistory:!comparison||Boolean(summary.truncated)}
   }
-  return {available:true,goal,checklist,progress,preferences}
+  return {available:true,goal,checklist,progress,preferences,drivers:summary.trends?.drivers||null}
 }

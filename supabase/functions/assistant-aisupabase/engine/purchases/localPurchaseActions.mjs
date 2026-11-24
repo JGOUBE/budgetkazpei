@@ -1,3 +1,4 @@
+import { renderPurchaseDrivers } from "./purchaseDrivers.mjs"
 // Strict, single-intent requests can be answered directly from computed facts.
 // More complex questions are left to the model and its existing budget guard.
 const norm=s=>String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim()
@@ -6,6 +7,7 @@ export function isDirectPurchaseAction(question="",action=null){
   if(!action||(String(question).match(/\?/g)||[]).length>1)return false
   const t=norm(question)
   if(t.length>160||/\b(?:et aussi|et pourquoi|et comment|et si|puis|mais|sans|avec|tout en|caf|rsa|ccas|aide|urgence|recette|enfants|sante|alimentation|sans gluten|allergie|diabete)\b/.test(t))return false
+  if(action.kind==="drivers")return /^(?:pourquoi mes courses (?:me )?coutent (?:plus|moins) cher|pourquoi mes depenses alimentaires (?:ont augmente|ont diminue)|pourquoi je depense (?:plus|moins) sur mes courses|explique(?: moi)? pourquoi mes courses (?:me )?coutent (?:plus|moins) cher)$/.test(t)
   if(action.kind==="goal")return /^(?:je veux|je souhaite|j aimerais|comment puis je|comment)?\s*(?:economiser|reduire de)\s+\d+(?: \d{1,2})?\s*(?:euros? )?(?:par mois|chaque mois) sur (?:mes courses|mes achats|mon budget courses|mon budget alimentaire)$/.test(t)
   if(action.kind==="shopping_checklist")return /^(?:prepare|propose|fais) (?:moi )?(?:une|ma) liste de courses (?:selon|d apres|a partir de) mes habitudes d achat$/.test(t)
   if(action.kind==="progress")return /^(?:est ce que )?(?:j ai fait des economies|j ai depense moins|j ai depense plus) sur mes (?:courses|achats)$/.test(t)
@@ -14,6 +16,7 @@ export function isDirectPurchaseAction(question="",action=null){
 export function renderLocalPurchaseAction(plan,action,language="fr"){
   if(!plan?.available||!action)return null
   const kr=language==="kreol"
+  if(action.kind==="drivers")return renderPurchaseDrivers(plan.drivers,language)||(kr?"Nana poin assez relevés pou explique sa différence-la.":"Je n’ai pas encore suffisamment de relevés comparables pour expliquer cette évolution de façon fiable.")
   if(action.kind==="goal"&&plan.goal){
     const g=plan.goal
     const title=kr?"**Out objectif : "+euro(g.monthlyTarget)+" par mwa**":"**Votre objectif : "+euro(g.monthlyTarget)+" par mois**"

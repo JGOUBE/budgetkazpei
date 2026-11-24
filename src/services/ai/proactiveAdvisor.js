@@ -43,7 +43,7 @@ export function buildProactiveAdvisorNotices(summary,language="fr",now=new Date(
     add({kind:"trend",key:"trend:"+(up?"up":"down")+":"+Math.floor(Math.abs(c.observedDifference)/20),score:Math.min(85,45+Math.abs(c.observedDifference)/5),
       text:kr?"Out bann dépans anrezistré la changé.":up?"Vos dépenses enregistrées ont augmenté.":"Vos dépenses enregistrées ont diminué.",
       detail:money(c.prior30.spend)+" → "+money(c.recent30.spend)+(kr?" su deux périodes de 30 jours.":" sur deux périodes de 30 jours, hors aujourd’hui."),
-      action:kr?"Vérifie si tout out bann tiké lé anrezistré.":"Le nombre de tickets et les quantités peuvent expliquer cette différence. Ce n’est pas une économie vérifiée.",
+      action:kr?"Vérifie si tout out bann tiké lé anrezistré.":summary.trends?.drivers?.canExplainPriceQuantity?"Le détail des achats permet de distinguer les écarts de prix unitaires et de quantités.":"Le nombre de tickets et les quantités peuvent expliquer cette différence. Ce n’est pas une économie vérifiée.",
       prompt:kr?"Sak mi aste, compare mon bann dépans su deux périodes de 30 jours.":"Analyse mes achats et compare les dépenses des deux dernières périodes de 30 jours."})
   }
   const stock=(summary.trends?.replenishment||[]).filter(p=>p.observedDays>=4&&p.typicalGapDays>=3&&p.daysSinceLast>=p.typicalGapDays&&p.label).slice(0,3)

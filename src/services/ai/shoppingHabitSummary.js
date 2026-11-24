@@ -14,7 +14,7 @@ export function isPersonalPurchaseAnalysisQuestion(question = "") {
   const t = normalize(question)
   if (/\b(?:ou (?:voir|trouver|consulter)|comment (?:acceder|ouvrir|consulter)|ouvrir (?:la rubrique|mes achats))\b/.test(t)) return false
   if (/\b(?:mes courses|mes achats|mes depenses alimentaires|mon budget courses|mon budget alimentaire|mes tickets|mes habitudes d achat|mes habitudes alimentaires)\b/.test(t) &&
-      /\b(?:economiser|economies|reduire|gagner|liste de courses|liste d achats|quoi racheter|quoi acheter|prochaines courses|progres|evolution|depense moins|depense plus|par rapport au mois dernier|compare les depenses)\b/.test(t) &&
+      /\b(?:economiser|economies|reduire|gagner|coutent plus cher|coutent moins cher|ont augmente|ont diminue|liste de courses|liste d achats|quoi racheter|quoi acheter|prochaines courses|progres|evolution|depense moins|depense plus|par rapport au mois dernier|compare les depenses)\b/.test(t) &&
       !/\b(?:caf|rsa|ccas|aide alimentaire|plus de quoi manger|pas de quoi manger|fiction|imagine|invente)\b/.test(t)) return true
   return /\b(?:mon alimentation|mes habitudes alimentaires|mon regime alimentaire|ma facon de manger|ce que j achete|ce que je mange|ce que je consomme|dans mes achats|dans mes tickets|selon mes achats|d apres mes achats|a partir de mes achats|mes produits achetes|mes tickets de caisse|out bann achats|sak mi aste|sak mi achete|out manze)\b/.test(t) ||
     /\b(?:analyse|analyser|regarde|examiner|etudier|ameliorer|ameliore|avis|conseil|conseils|penses tu|que penses).{0,65}\b(?:mes achats|mes courses|mes tickets|mes produits|ma consommation)\b/.test(t)

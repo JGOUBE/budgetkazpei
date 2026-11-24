@@ -688,3 +688,28 @@ assert.match(renderLocalPurchaseAction(actionPlan,monthlyGoal),/20,00/)
 assert.match(renderLocalPurchaseAction(actionPlan,monthlyGoal),/ne garantit pas/)
 assert.match(renderLocalPurchaseAction(actionPlan,{kind:"shopping_checklist"}),/Riz 1 kg/)
 assert.match(renderLocalPurchaseAction({...actionPlan,progress:{...actionPlan.progress,recent30:{spend:300,visits:5},prior30:{spend:350,visits:6}}},{kind:"progress"}),/ne prouve pas une économie réalisée/)
+
+import { buildPurchaseDrivers, renderPurchaseDrivers } from "../supabase/functions/assistant-aisupabase/engine/purchases/purchaseDrivers.mjs"
+const driverRows=[]
+for(let i=0;i<3;i++){
+  driverRows.push({product_name:"Produit "+i+" 1 kg",unit:"kg",quantity:2,price:6,created_at:"2026-11-"+(10+i),receipt_id:"recent-"+i})
+  driverRows.push({product_name:"Produit "+i+" 1 kg",unit:"kg",quantity:1,price:2,created_at:"2026-10-"+(10+i),receipt_id:"prior-"+i})
+}
+driverRows.push({product_name:"Produit seulement récent",unit:"piece",quantity:1,price:5,created_at:"2026-11-10",receipt_id:"recent-0"})
+driverRows.push({product_name:"Produit seulement ancien",unit:"piece",quantity:1,price:4,created_at:"2026-10-10",receipt_id:"prior-0"})
+const driverComparison={recent30:{spend:23},prior30:{spend:10},observedDifference:13}
+const drivers=buildPurchaseDrivers(driverRows,new Date("2026-11-24T12:00:00Z"),driverComparison)
+assert.equal(drivers.priceEffect,4.5)
+assert.equal(drivers.quantityEffect,7.5)
+assert.equal(drivers.onlyRecent,5)
+assert.equal(drivers.onlyPrior,-4)
+assert.equal(drivers.canExplainPriceQuantity,true)
+assert.equal(drivers.roundingResidual,0)
+assert.match(renderPurchaseDrivers(drivers),/quantités achetées/)
+assert.equal(buildPurchaseDrivers(driverRows,new Date("2026-11-24T12:00:00Z"),driverComparison,true),null)
+assert.equal(buildPurchaseDrivers(driverRows,new Date("2026-11-24T12:00:00Z"),{...driverComparison,recent30:{spend:99}}),null)
+assert.equal(identifyPurchaseAction("Pourquoi mes courses me coûtent plus cher ?").kind,"drivers")
+assert.equal(isDirectPurchaseAction("Pourquoi mes courses me coûtent plus cher ?",{kind:"drivers"}),true)
+assert.equal(isDirectPurchaseAction("Pourquoi mes courses me coûtent plus cher et comment obtenir une aide ?",{kind:"drivers"}),false)
+assert.equal(isPersonalPurchaseAnalysisQuestion("Pourquoi mes courses me coûtent plus cher ?"),true)
+assert.match(renderLocalPurchaseAction({available:true,drivers},{kind:"drivers"}),/Effet estimé/)

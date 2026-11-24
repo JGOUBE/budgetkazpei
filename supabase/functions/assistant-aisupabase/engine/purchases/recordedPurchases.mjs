@@ -1,5 +1,6 @@
 import { isPurchaseConstraintFollowUp } from "./purchasePreferences.mjs"
 import { identifyPurchaseAction } from "./purchaseActionPlan.mjs"
+import { buildPurchaseDrivers } from "./purchaseDrivers.mjs"
 import { buildPurchaseTrends } from "./purchaseTrends.mjs"
 // Authenticated purchase context; never take a user ID from the request body.
 const norm = s=>String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim()
@@ -51,7 +52,9 @@ export function summarizeRecordedPurchases(rows=[],now=new Date(),available=true
   }
   const products=[...groups.values()].map(g=>({label:g.label,purchaseVisits:g.visits.size,purchaseDays:g.days.size,lastObservedAt:g.lastObservedAt}))
   const latest=recent.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,12)
-  return {available,start,end,truncated,trends:available?buildPurchaseTrends(rows,now,truncated):null,adviceFamilies:[...advice.entries()].map(([key,a])=>({key,label:adviceLabels[key],purchaseVisits:a.visits.size,purchaseDays:a.days.size,observedSpend:a.pricedLines?Math.round(a.total*100)/100:null,recent30Spend:a.recent30Days.size?Math.round(a.recent30Spend*100)/100:null,recent30PurchaseDays:a.recent30Days.size,examples:[...a.labels].slice(0,3)})).sort((a,b)=>(b.observedSpend??0)-(a.observedSpend??0)),observedVisits:visits.size,distinctProducts:groups.size,latestPurchases:latest,recentProducts:products.sort((a,b)=>b.purchaseVisits-a.purchaseVisits).slice(0,25),products:products.filter(p=>p.purchaseDays>=2).slice(0,10)}
+  const trends=available?buildPurchaseTrends(rows,now,truncated):null
+  if(trends)trends.drivers=buildPurchaseDrivers(rows,now,trends.comparison,truncated)
+  return {available,start,end,truncated,trends,adviceFamilies:[...advice.entries()].map(([key,a])=>({key,label:adviceLabels[key],purchaseVisits:a.visits.size,purchaseDays:a.days.size,observedSpend:a.pricedLines?Math.round(a.total*100)/100:null,recent30Spend:a.recent30Days.size?Math.round(a.recent30Spend*100)/100:null,recent30PurchaseDays:a.recent30Days.size,examples:[...a.labels].slice(0,3)})).sort((a,b)=>(b.observedSpend??0)-(a.observedSpend??0)),observedVisits:visits.size,distinctProducts:groups.size,latestPurchases:latest,recentProducts:products.sort((a,b)=>b.purchaseVisits-a.purchaseVisits).slice(0,25),products:products.filter(p=>p.purchaseDays>=2).slice(0,10)}
 }
 export async function loadRecordedPurchases(client,userId,now=new Date()) {
   if(!userId)return summarizeRecordedPurchases([],now,false)
