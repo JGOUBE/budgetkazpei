@@ -646,3 +646,45 @@ assert.equal(buildPurchaseAdviceCases(adviceSummary,{excludedFamilies:["alcohol"
 const noCookSummary={available:true,adviceFamilies:[{key:"cakes",label:"Biscuits",purchaseDays:4,purchaseVisits:4,observedSpend:40}]}
 assert.doesNotMatch(renderPurchaseAdviceCases(noCookSummary,"fr",{preferences:{noCooking:true}}),/préparations maison/)
 assert.equal(extractPurchasePreferences("J'aime les biscuits").excludedFamilies.length,0)
+
+
+import { buildProactiveAdvisorNotice, buildProactiveAdvisorNotices, shouldShowAdvisorNotice, NOTICE_COOLDOWN, NOTICE_CACHE_TTL, noticeFingerprint, createNoticeLoader } from "../src/services/ai/proactiveAdvisor.js"
+import { isDirectPurchaseAction, renderLocalPurchaseAction } from "../supabase/functions/assistant-aisupabase/engine/purchases/localPurchaseActions.mjs"
+const noticeNow = new Date("2026-11-24T12:00:00Z")
+const noticeSummary={available:true,observedVisits:5,trends:{priceChanges:[{label:"Lait 1 L",unit:"l",observations:4,changePercent:25,previousObservedUnitPrice:2.8,recentObservedUnitPrice:3.5,lastDate:"2026-11-23"}]}}
+const notice=buildProactiveAdvisorNotice(noticeSummary,"fr",noticeNow)
+assert.equal(notice.kind,"price")
+assert.match(notice.detail,/25 %/)
+assert.equal(buildProactiveAdvisorNotice({...noticeSummary,truncated:true},"fr",noticeNow),null)
+assert.equal(buildProactiveAdvisorNotice({...noticeSummary,observedVisits:2},"fr",noticeNow),null)
+assert.equal(buildProactiveAdvisorNotice({...noticeSummary,trends:{priceChanges:[{...noticeSummary.trends.priceChanges[0],lastDate:"2026-10-01"}]}},"fr",noticeNow),null)
+assert.equal(buildProactiveAdvisorNotice({...noticeSummary,trends:{priceChanges:[{...noticeSummary.trends.priceChanges[0],lastDate:"invalid"}]}},"fr",noticeNow),null)
+assert.equal(buildProactiveAdvisorNotice({...noticeSummary,trends:{priceChanges:[{...noticeSummary.trends.priceChanges[0],changePercent:-20,recentObservedUnitPrice:2.24}]}},"fr",noticeNow).kind,"price_down")
+const opportunitySummary={available:true,observedVisits:5,adviceFamilies:[{key:"cakes",label:"Biscuits",recent30PurchaseDays:3,recent30Spend:40}]}
+assert.equal(buildProactiveAdvisorNotice(opportunitySummary,"fr",noticeNow).kind,"opportunity")
+assert.match(buildProactiveAdvisorNotice(opportunitySummary,"fr",noticeNow).action,/10,00/)
+assert.equal(buildProactiveAdvisorNotice({...opportunitySummary,adviceFamilies:[{key:"plain_preserves",label:"Conserves",recent30PurchaseDays:4,recent30Spend:50}]},"fr",noticeNow),null)
+assert.equal(buildProactiveAdvisorNotice({...noticeSummary,...{adviceFamilies:opportunitySummary.adviceFamilies}},"fr",noticeNow,[noticeFingerprint(notice)]).kind,"opportunity")
+assert.equal(shouldShowAdvisorNotice(notice,1000,1000+NOTICE_COOLDOWN-1),false)
+assert.equal(shouldShowAdvisorNotice(notice,1000,1000+NOTICE_COOLDOWN,noticeFingerprint(notice)),false)
+assert.equal(shouldShowAdvisorNotice(notice,1000,1000+NOTICE_COOLDOWN),true)
+let noticeReads=0
+const cacheLoader=createNoticeLoader(async id=>({available:true,id,calls:++noticeReads}))
+const [cacheA,cacheB]=await Promise.all([cacheLoader.get("test-a",1000),cacheLoader.get("test-a",1000)])
+assert.equal(noticeReads,1)
+assert.deepEqual(cacheA,cacheB)
+assert.equal((await cacheLoader.get("test-b",1001)).id,"test-b")
+assert.equal(noticeReads,2)
+await cacheLoader.get("test-b",1001+NOTICE_CACHE_TTL)
+assert.equal(noticeReads,3)
+cacheLoader.clear()
+await cacheLoader.get("test-b",1002+NOTICE_CACHE_TTL)
+assert.equal(noticeReads,4)
+assert.equal(isDirectPurchaseAction("Je veux économiser 50 € par mois sur mes courses",monthlyGoal),true)
+assert.equal(isDirectPurchaseAction("Je veux économiser 50 € par mois sur mes courses et comment demander le RSA ?",monthlyGoal),false)
+assert.equal(isDirectPurchaseAction("Je veux économiser 50 € par mois sur mes courses sans changer de magasin",monthlyGoal),false)
+assert.match(renderLocalPurchaseAction(actionPlan,monthlyGoal),/30,00/)
+assert.match(renderLocalPurchaseAction(actionPlan,monthlyGoal),/20,00/)
+assert.match(renderLocalPurchaseAction(actionPlan,monthlyGoal),/ne garantit pas/)
+assert.match(renderLocalPurchaseAction(actionPlan,{kind:"shopping_checklist"}),/Riz 1 kg/)
+assert.match(renderLocalPurchaseAction({...actionPlan,progress:{...actionPlan.progress,recent30:{spend:300,visits:5},prior30:{spend:350,visits:6}}},{kind:"progress"}),/ne prouve pas une économie réalisée/)
