@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/run-verified-shopping-link-tests.mjs && node scripts/run-shopping-price-copy-tests.mjs && node scripts/run-shopping-query-relevance-tests.mjs && node scripts/run-shopping-shared-catalog-audit-tests.mjs && node scripts/run-shopping-compact-rows-tests.mjs && node scripts/run-shopping-multipack-prices-tests.mjs && node scripts/run-shopping-receipt-quality-tests.mjs && node scripts/run-good-deals-local-only-tests.mjs && node scripts/run-advisor-ux-tests.mjs && node scripts/run-advisor-aides-tests.mjs && node scripts/run-advisor-aide-quality-tests.mjs && node scripts/run-advisor-diverse-questions-tests.mjs && node scripts/run-advisor-intelligence-tests.mjs && node scripts/run-advisor-local-knowledge-tests.mjs && node scripts/run-advisor-kreol-parity-tests.mjs && node scripts/run-advisor-ai-cost-tests.mjs && node scripts/run-advisor-spend-guard-tests.mjs && node scripts/run-advisor-discreet-protection-tests.mjs && node scripts/run-shopping-dated-price-display-tests.mjs && node scripts/run-receipt-long-photo-regression.mjs && node scripts/run-receipt-product-dictionary-batch-tests.mjs && node scripts/run-shopping-habit-advice-tests.mjs && node scripts/run-shopping-family-habits-tests.mjs && node scripts/run-premium-checkout-tests.mjs && vite build",
+    "build": "node scripts/run-verified-shopping-link-tests.mjs && node scripts/run-shopping-price-copy-tests.mjs && node scripts/run-shopping-query-relevance-tests.mjs && node scripts/run-shopping-shared-catalog-audit-tests.mjs && node scripts/run-shopping-compact-rows-tests.mjs && node scripts/run-shopping-multipack-prices-tests.mjs && node scripts/run-shopping-receipt-quality-tests.mjs && node scripts/run-good-deals-local-only-tests.mjs && node scripts/run-advisor-ux-tests.mjs && node scripts/run-advisor-aides-tests.mjs && node scripts/run-advisor-aide-quality-tests.mjs && node scripts/run-advisor-diverse-questions-tests.mjs && node scripts/run-advisor-intelligence-tests.mjs && node scripts/run-advisor-local-knowledge-tests.mjs && node scripts/run-advisor-kreol-parity-tests.mjs && node scripts/run-advisor-ai-cost-tests.mjs && node scripts/run-advisor-spend-guard-tests.mjs && node scripts/run-advisor-discreet-protection-tests.mjs && node scripts/run-shopping-dated-price-display-tests.mjs && node scripts/run-receipt-long-photo-regression.mjs && node scripts/run-receipt-product-dictionary-batch-tests.mjs && node scripts/run-shopping-habit-advice-tests.mjs && node scripts/run-shopping-family-habits-tests.mjs && node scripts/run-premium-checkout-tests.mjs && node scripts/run-light-only-tests.mjs && vite build",
     "test": "node scripts/run-assistant-tests.mjs",
     "test:scanner": "node scripts/run-scanner-regression.mjs",
     "test:landing": "node scripts/run-landing-tests.mjs",
@@ -53,7 +53,8 @@
     "test:shopping-families": "node scripts/run-shopping-family-habits-tests.mjs",
     "test:advisor-ai-cost": "node scripts/run-advisor-ai-cost-tests.mjs",
     "test:advisor-spend-guard": "node scripts/run-advisor-spend-guard-tests.mjs",
-    "test:advisor-discreet-protection": "node scripts/run-advisor-discreet-protection-tests.mjs"
+    "test:advisor-discreet-protection": "node scripts/run-advisor-discreet-protection-tests.mjs",
+    "test:theme": "node scripts/run-light-only-tests.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.0",
