@@ -36,18 +36,29 @@ export function identifyPurchaseConstraints(question=""){
   const lowEffort=/\b(?:peu de temps|rapide|sans effort|facile|pas le temps)\b/.test(t)
   return {protectedFamilies,avoidHomemade,lowEffort}
 }
+const hasConstraints=c=>Boolean(c.protectedFamilies.length||c.avoidHomemade||c.lowEffort)
+function isConstraintContinuation(question){
+  const t=norm(question)
+  if(/\b(?:caf|rsa|ccas|aide alimentaire|urgence alimentaire|plus de quoi manger|pas de quoi manger|fiction|imagine|invente)\b/.test(t))return false
+  return /^(?:ok |et |mais |d accord |finalement |plutot |je (?:veux|souhaite|prefere) garder |je ne veux pas |je ne peux pas |je n ai pas le temps |sans |pas le temps |pas de four|ne touche pas)/.test(t)&&hasConstraints(identifyPurchaseConstraints(question))
+}
 export function resolvePurchaseGoal(question="",recentHistory=[]){
   const direct=identifyPurchaseAction(question)
   const current=identifyPurchaseConstraints(question)
   if(direct?.kind==="goal")return {...direct,constraints:current}
-  const t=norm(question)
-  const followup=/^(?:ok |et |mais |d accord |finalement |plutot |je (?:veux|souhaite|prefere) garder |je ne veux pas |sans |pas le temps )/.test(t)
-  if(!followup||(!current.protectedFamilies.length&&!current.avoidHomemade&&!current.lowEffort))return direct
-  const previous=Array.isArray(recentHistory)?recentHistory[0]?.question:""
-  const prior=identifyPurchaseAction(previous||"")
-  if(prior?.kind!=="goal")return direct
-  const earlier=identifyPurchaseConstraints(previous)
-  return {...prior,constraints:{protectedFamilies:[...new Set([...earlier.protectedFamilies,...current.protectedFamilies])],avoidHomemade:earlier.avoidHomemade||current.avoidHomemade,lowEffort:earlier.lowEffort||current.lowEffort}}
+  if(!isConstraintContinuation(question))return direct
+  const constraints={...current,protectedFamilies:[...current.protectedFamilies]}
+  for(const item of (Array.isArray(recentHistory)?recentHistory:[]).slice(0,4)){
+    const previous=item?.question||""
+    const prior=identifyPurchaseAction(previous)
+    if(prior?.kind!=="goal"&&!isConstraintContinuation(previous))break
+    const earlier=identifyPurchaseConstraints(previous)
+    constraints.protectedFamilies=[...new Set([...earlier.protectedFamilies,...constraints.protectedFamilies])]
+    constraints.avoidHomemade ||= earlier.avoidHomemade
+    constraints.lowEffort ||= earlier.lowEffort
+    if(prior?.kind==="goal")return {...prior,constraints}
+  }
+  return direct
 }
 
 export function buildPurchaseActionPlan(summary={},action=null){
