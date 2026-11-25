@@ -38,9 +38,11 @@ export function buildPurchaseTrends(rows=[],now=new Date(),truncated=false){
     const priceDays=[...g.prices.entries()].sort((a,b)=>a[0]-b[0])
     if(!truncated&&priceDays.length>=4){
       const old=priceDays.slice(0,-2).map(([,p])=>p.price/p.qty),last=priceDays.slice(-2).map(([,p])=>p.price/p.qty)
-      const before=median(old),after=median(last),change=(after-before)/before
+      const factor=["g","ml"].includes(g.unit)?1000:1
+      const displayUnit=g.unit==="g"?"kg":g.unit==="ml"?"l":g.unit
+      const before=median(old)*factor,after=median(last)*factor,change=(after-before)/before
       if(before>0&&Math.abs(change)>=.10&&Math.abs(after-before)>=.05){
-        priceChanges.push({label:g.label,unit:g.unit,previousObservedUnitPrice:round(before),recentObservedUnitPrice:round(after),changePercent:Math.round(change*100),observations:priceDays.length,firstDate:new Date(priceDays[0][0]*DAY).toISOString().slice(0,10),lastDate:new Date(priceDays.at(-1)[0]*DAY).toISOString().slice(0,10)})
+        priceChanges.push({label:g.label,unit:displayUnit,previousObservedUnitPrice:round(before),recentObservedUnitPrice:round(after),changePercent:Math.round(change*100),observations:priceDays.length,firstDate:new Date(priceDays[0][0]*DAY).toISOString().slice(0,10),lastDate:new Date(priceDays.at(-1)[0]*DAY).toISOString().slice(0,10)})
       }
     }
     if(!truncated&&days.length>=4){

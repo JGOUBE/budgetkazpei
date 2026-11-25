@@ -29,7 +29,7 @@ export function buildProactiveAdvisorNotices(summary,language="fr",now=new Date(
       prompt:kr?"Kels produits dann mon bann achats la sanzé de pri ?":"Quels produits de mes achats ont changé de prix ?"})
   }
   for(const f of summary.adviceFamilies||[]){
-    if(!["alcohol","cakes","sweet_drinks","prepared_meals","salty_snacks"].includes(f.key)||f.recent30PurchaseDays<3||!finite(f.recent30Spend)||f.recent30Spend<20||!f.label)continue
+    if(!["alcohol","cakes","chocolate","sweet_drinks","prepared_meals","salty_snacks"].includes(f.key)||f.recent30PurchaseDays<3||!finite(f.recent30Spend)||f.recent30Spend<20||!f.label)continue
     // Quantize the amount so a trivial change doesn't create a duplicate notice.
     add({kind:"opportunity",key:"opportunity:"+f.key+":"+Math.floor(f.recent30Spend/10),score:Math.min(90,55+f.recent30Spend/5),
       text:kr?"Mi la repéré in poste d’achat régulier pou fé bann lékonomi.":"Un poste d’achat régulier pourrait offrir des pistes d’économies.",

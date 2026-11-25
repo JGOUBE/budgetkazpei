@@ -3,7 +3,7 @@ import { buildPurchaseAdviceCases } from "./purchaseAdviceCases.mjs"
 const norm=s=>String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim()
 const cents=n=>Math.round(n*100)
 const money=n=>n/100
-const adjustable=new Set(["alcohol","cakes","sweet_drinks","prepared_meals","salty_snacks"])
+const adjustable=new Set(["alcohol","cakes","chocolate","sweet_drinks","prepared_meals","salty_snacks"])
 export function identifyPurchaseAction(question=""){
   const t=norm(question)
   if(/\b(?:caf|rsa|ccas|aide alimentaire|plus de quoi manger|pas de quoi manger|fiction|imagine|invente)\b/.test(t))return null
