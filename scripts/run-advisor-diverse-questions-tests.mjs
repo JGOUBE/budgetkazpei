@@ -770,3 +770,23 @@ assert.equal(extractPurchasePreferences("Je veux garder le chocolat").excludedFa
 assert.equal(recurringNotice.rows.length,3)
 assert.ok(recurringNotice.rows.some(row=>row.label==="Pains au chocolat x10"&&row.meta==="5 jours d’achat"))
 assert.match(recurringNotice.period,/90 derniers jours/)
+
+import { buildLocalAdministrativeAction } from "../supabase/functions/assistant-aisupabase/engine/routing/localAdministrativeActions.mjs"
+import { buildLocalAidProcedureAnswer } from "../src/services/advisorLocalAidAnswer.js"
+assert.match(buildLocalAdministrativeAction({question:"Rédige un mail pour relancer mon dossier"}).answer,/\[date, si connue\]/)
+assert.match(buildLocalAdministrativeAction({question:"Rédige un courrier pour demander un rendez-vous"}).answer,/Objet : Demande de rendez-vous/)
+assert.match(buildLocalAdministrativeAction({question:"Quels justificatifs préparer pour une demande d'aide ?"}).answer,/indicative/)
+assert.equal(buildLocalAdministrativeAction({question:"Rédige un mail pour relancer mon dossier CAF refusé hier"}),null)
+assert.equal(buildLocalAdministrativeAction({question:"Rédige un mail pour relancer mon dossier et calcule mes droits"}),null)
+assert.equal(buildLocalAdministrativeAction({question:"Rédige un mail pour relancer mon dossier",action:"analyze_refusal"}),null)
+const exactAidFixture={id:"demo",nom:"Aide de test",actif:true,statut_verification:"source_confirmee",demarches_fr:"Contactez le service référent.",lien_officiel:"https://www.service-public.fr",date_verification:"2026-11-01"}
+assert.match(buildLocalAidProcedureAnswer({question:"Comment demander l'aide de test ?",aides:[exactAidFixture]}).answer,/Contactez le service référent/)
+assert.equal(buildLocalAidProcedureAnswer({question:"Comment demander l'aide de test si je gagne 1000 euros ?",aides:[exactAidFixture]}),null)
+assert.equal(buildLocalAidProcedureAnswer({question:"Comment demander l'aide de test ?",aides:[{...exactAidFixture,statut_verification:"non_verifie"}]}),null)
+const priorityNoticeSummary={...recurringNoticeSummary,priorityProducts:[{label:"Lait de chèvre 6x1 L",recent30Spend:32.76,recent30PurchaseDays:2},{label:"Gouda 300 g",recent30Spend:16.15,recent30PurchaseDays:3}]}
+const priorityNotice=buildProactiveAdvisorNotice(priorityNoticeSummary,"fr",noticeNow)
+assert.equal(priorityNotice.kind,"priority")
+assert.equal(priorityNotice.rows.length,2)
+assert.equal(priorityNotice.destination,"shoppingSavingsOnly")
+assert.match(priorityNotice.period,/30 derniers jours complets/)
+assert.equal(buildProactiveAdvisorNotice({...priorityNoticeSummary,truncated:true},"fr",noticeNow),null)

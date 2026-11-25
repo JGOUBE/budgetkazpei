@@ -52,6 +52,15 @@ export function buildProactiveAdvisorNotices(summary,language="fr",now=new Date(
     detail:stock.map(p=>p.label+" ("+p.typicalGapDays+(kr?" jours anviron":" jours entre achats habituellement")+")").join(" · "),
     action:kr?"Vérifie kosa i reste la kaz avan aste.":"Vérifiez ce qu’il reste chez vous avant d'ajouter ces produits à votre liste.",
     prompt:kr?"Prépare mon liste courses selon mon bann labitid d'achat.":"Prépare une liste de courses selon mes habitudes d'achat."})
+  const priority=(summary.priorityProducts||[]).filter(p=>p.label&&p.recent30PurchaseDays>=2&&finite(p.recent30Spend)&&p.recent30Spend>=10).slice(0,3)
+  if(priority.length>=2&&priority.reduce((s,p)=>s+p.recent30Spend,0)>=35)add({
+    kind:"priority",key:"priority:"+priority.map(p=>p.label).sort().join("|"),score:48,
+    text:kr?"Mi la repéré bann produits habituels ki pèse dann out bidzé.":"Comparez en priorité ces produits qui pèsent sur votre budget.",
+    detail:priority.map(p=>p.label+" : "+money(p.recent30Spend)).join(" · "),
+    rows:priority.map(p=>({label:p.label,meta:money(p.recent30Spend)})),
+    period:kr?"Dépans anrezistré su 30 derniers jours complets.":"Dépenses enregistrées sur les 30 derniers jours complets.",
+    action:kr?"Pa besoin sanz out labitid : compare pri minm produit ek minm format.":"Commencez par comparer le même produit et le même format, sans changer vos habitudes. Aucun gain n’est garanti.",
+    destination:"shoppingSavingsOnly"})
   // A meaningful lower-priority insight when prices are stable or no large
   // discretionary expense is detected. Use actual recurring products, not
   // a fabricated price change or an estimate of savings.

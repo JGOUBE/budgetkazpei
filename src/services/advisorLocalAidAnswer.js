@@ -58,3 +58,29 @@ export function buildLocalAidSourceAnswer({ question = "", aides = [], language 
     source: "local_aid_reference",
   }
 }
+
+// Exact title only. Reproduce the recorded procedure, not an inferred entitlement.
+// The source is dated and does not certify current availability.
+function requestedProcedureName(question=""){
+  const t=normalizeAidName(question)
+  if(t.length>200||(String(question).match(/\?/g)||[]).length>1)return ""
+  const m=t.match(/^(?:comment (?:demander|faire une demande pour|deposer une demande pour)|koman demann|koman demande) (.+)$/)
+  if(!m||/\b(?:combien|montant|delai|eligible|eligibilite|droit|recours|refus|et comment|et combien|si je|avec mon|sans mon)\b/.test(m[1]))return ""
+  return m[1].replace(/^(?:l |la |le |les |une |un )/,"").trim()
+}
+export function isLocalAidProcedureRequest(question=""){return Boolean(requestedProcedureName(question))}
+export function buildLocalAidProcedureAnswer({question="",aides=[],language="fr"}={}){
+  const requested=requestedProcedureName(question)
+  if(!requested)return null
+  const matches=(Array.isArray(aides)?aides:[]).filter(a=>a?.actif!==false&&["source_confirmee","operateur_reference_2026"].includes(a?.statut_verification)&&[a.nom,a.nom_kreol].some(n=>normalizeAidName(n).replace(/^(?:l |la |le |les |une |un )/,"")===requested))
+  if(matches.length!==1)return null
+  const a=matches[0],url=safeAidSourceUrl(a.lien_officiel||a.lien)
+  if(!url||!url.startsWith("https://"))return null
+  const kr=language==="kreol"||language==="kr"
+  const steps=String(kr?a.demarches_kreol||a.demarches_fr:a.demarches_fr||"").trim()
+  // Do not cut instructions mid-sentence, or repeat dated financial or deadline claims.
+  if(!steps||steps.length>1200||/\d\s*(?:€|euros?|jours?|semaines?|mois|ans)\b/i.test(steps)||/https?:\/\//i.test(steps))return null
+  const date=/^\d{4}-\d{2}-\d{2}/.test(String(a.date_verification||""))?String(a.date_verification).slice(0,10).split("-").reverse().join("/"):""
+  const heading=kr?"**Démarche anrezistrée pou "+a.nom+"**":"**Démarche enregistrée pour "+a.nom+"**"
+  return {answer:heading+"\n\n"+steps+"\n\n"+(date?(kr?"Référence vérifiée le ":"Fiche vérifiée le ")+date+".\n\n":"")+"["+referenceLabel(url)+"]("+url+")\n\n"+(kr?"Vérifie bann conditions actuelles auprès de l'organisme. Sa i confirme pa out droit.":"Vérifiez les conditions et modalités actuelles auprès de l'organisme. Cette fiche ne confirme pas votre éligibilité."),recommendedAidIds:[a.id],recommendedAidNames:[a.nom],source:"local_aid_procedure"}
+}

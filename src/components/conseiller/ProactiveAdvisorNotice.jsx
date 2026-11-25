@@ -23,6 +23,7 @@ export default function ProactiveAdvisorNotice({userId,language="fr",enabled=fal
   const [hidden,setHidden]=useState(null)
   const [expanded,setExpanded]=useState(false)
   const [revision,setRevision]=useState(0)
+  const [sessionDismissed,setSessionDismissed]=useState({userId:null,at:0,fingerprints:[]})
   const kr=["kr","cr","kreol"].includes(String(language).toLowerCase())
   useEffect(()=>{
     if(!enabled||!userId){loader.clear();return}
@@ -35,19 +36,22 @@ export default function ProactiveAdvisorNotice({userId,language="fr",enabled=fal
     setResult(null)
     setExpanded(false)
     if(!enabled||!userId)return
-    const dismissed=readDismissed(userId)
+    const stored=readDismissed(userId)
+    const dismissed=sessionDismissed.userId===userId?{at:Math.max(stored.at,sessionDismissed.at),fingerprints:[...new Set([...stored.fingerprints,...sessionDismissed.fingerprints])]}:stored
     if(!shouldShowAdvisorNotice({kind:"candidate"},dismissed.at))return
     loader.get(userId).then(summary=>{
       if(active)setResult({userId,language,notice:buildProactiveAdvisorNotice(summary,language,new Date(),dismissed.fingerprints)})
     }).catch(()=>{if(active)setResult(null)})
     return ()=>{active=false}
-  },[userId,language,enabled,revision])
+  },[userId,language,enabled,revision,sessionDismissed])
   const notice=enabled&&result?.userId===userId&&result?.language===language?result.notice:null
   const fingerprint=noticeFingerprint(notice)
-  const dismissed=readDismissed(userId)
+  const stored=readDismissed(userId)
+  const dismissed=sessionDismissed.userId===userId?{at:Math.max(stored.at,sessionDismissed.at),fingerprints:[...new Set([...stored.fingerprints,...sessionDismissed.fingerprints])]}:stored
   if(!notice||hidden?.userId===userId&&hidden?.fingerprint===fingerprint||dismissed.fingerprints.includes(fingerprint)||!shouldShowAdvisorNotice(notice,dismissed.at))return null
   function dismiss(){
     try{localStorage.setItem(keyFor(userId),JSON.stringify({at:Date.now(),fingerprints:[fingerprint,...dismissed.fingerprints.filter(x=>x!==fingerprint)].slice(0,12)}))}catch{}
+    setSessionDismissed({userId,at:Date.now(),fingerprints:[fingerprint,...dismissed.fingerprints].slice(0,12)})
     setHidden({userId,fingerprint})
   }
   function open(){

@@ -43,19 +43,21 @@ export function summarizeRecordedPurchases(rows=[],now=new Date(),available=true
     if(!label||!date||date<start||date>end||r.needs_review===true||r.confidence_score!=null&&Number(r.confidence_score)<70||/\b(?:total ttc|sous total|rendu monnaie|carte bancaire|remise|ticket de caisse)\b/.test(norm(label)))continue
     const key=norm(label),visit=r.receipt_id||date
     if(!key||!visit)continue
-    const g=groups.get(key)||{label,visits:new Set(),days:new Set(),lastObservedAt:date}
+    const g=groups.get(key)||{label,visits:new Set(),days:new Set(),lastObservedAt:date,recent30Spend:0,recent30Days:new Set()}
     g.visits.add(visit);g.days.add(date);if(date>g.lastObservedAt)g.lastObservedAt=date
+    const observedPrice=Number(r.price),age=(dayEnd-Date.parse(date+"T00:00:00Z"))/86400000
+    if(age>=1&&age<=30&&Number.isFinite(observedPrice)&&observedPrice>0){g.recent30Spend+=observedPrice;g.recent30Days.add(date)}
     groups.set(key,g);visits.add(visit)
     const family=identifyPurchaseAdviceFamily(label)
     if(family){const a=advice.get(family)||{visits:new Set(),days:new Set(),labels:new Set(),total:0,pricedLines:0,recent30Spend:0,recent30Days:new Set()};a.visits.add(visit);a.days.add(date);a.labels.add(label);const price=Number(r.price);if(Number.isFinite(price)&&price>0){a.total+=price;a.pricedLines++;const age=(dayEnd-Date.parse(date+"T00:00:00Z"))/86400000;if(age>=1&&age<=30){a.recent30Spend+=price;a.recent30Days.add(date)}}advice.set(family,a)}
     const recentKey=date+"|"+key
     if(!seen.has(recentKey)){seen.add(recentKey);recent.push({label,date})}
   }
-  const products=[...groups.values()].map(g=>({label:g.label,purchaseVisits:g.visits.size,purchaseDays:g.days.size,lastObservedAt:g.lastObservedAt}))
+  const products=[...groups.values()].map(g=>({label:g.label,purchaseVisits:g.visits.size,purchaseDays:g.days.size,lastObservedAt:g.lastObservedAt,recent30Spend:Math.round(g.recent30Spend*100)/100,recent30PurchaseDays:g.recent30Days.size}))
   const latest=recent.sort((a,b)=>b.date.localeCompare(a.date)).slice(0,12)
   const trends=available?buildPurchaseTrends(rows,now,truncated):null
   if(trends)trends.drivers=buildPurchaseDrivers(rows,now,trends.comparison,truncated)
-  return {available,start,end,truncated,trends,adviceFamilies:[...advice.entries()].map(([key,a])=>({key,label:adviceLabels[key],purchaseVisits:a.visits.size,purchaseDays:a.days.size,observedSpend:a.pricedLines?Math.round(a.total*100)/100:null,recent30Spend:a.recent30Days.size?Math.round(a.recent30Spend*100)/100:null,recent30PurchaseDays:a.recent30Days.size,examples:[...a.labels].slice(0,3)})).sort((a,b)=>(b.observedSpend??0)-(a.observedSpend??0)),observedVisits:visits.size,distinctProducts:groups.size,latestPurchases:latest,recentProducts:products.sort((a,b)=>b.purchaseVisits-a.purchaseVisits).slice(0,25),products:products.filter(p=>p.purchaseDays>=2).slice(0,10)}
+  return {available,start,end,truncated,trends,adviceFamilies:[...advice.entries()].map(([key,a])=>({key,label:adviceLabels[key],purchaseVisits:a.visits.size,purchaseDays:a.days.size,observedSpend:a.pricedLines?Math.round(a.total*100)/100:null,recent30Spend:a.recent30Days.size?Math.round(a.recent30Spend*100)/100:null,recent30PurchaseDays:a.recent30Days.size,examples:[...a.labels].slice(0,3)})).sort((a,b)=>(b.observedSpend??0)-(a.observedSpend??0)),observedVisits:visits.size,distinctProducts:groups.size,priorityProducts:truncated?[]:products.filter(p=>p.recent30PurchaseDays>=2&&p.recent30Spend>0).sort((a,b)=>b.recent30Spend-a.recent30Spend||b.recent30PurchaseDays-a.recent30PurchaseDays).slice(0,5),latestPurchases:latest,recentProducts:products.sort((a,b)=>b.purchaseVisits-a.purchaseVisits).slice(0,25),products:products.filter(p=>p.purchaseDays>=2).slice(0,10)}
 }
 export async function loadRecordedPurchases(client,userId,now=new Date()) {
   if(!userId)return summarizeRecordedPurchases([],now,false)

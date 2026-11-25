@@ -47,5 +47,5 @@ export function buildPurchaseActionPlan(summary={},action=null,preferences={}){
     }
     goal={monthlyTarget:money(target),steps,modeledGrossReduction:money(target-remaining),remainingTarget:money(remaining),netSavingsVerified:false,coverageWarning:true,insufficientHistory:!comparison||Boolean(summary.truncated)}
   }
-  return {available:true,goal,checklist,progress,preferences,drivers:summary.trends?.drivers||null,priceChanges:summary.truncated?[]:(summary.trends?.priceChanges||[]),opportunities:summary.truncated?[]:buildPurchaseAdviceCases(summary,preferences).filter(f=>f.recent30PurchaseDays>=2&&Number.isFinite(f.recent30Spend)&&f.recent30Spend>0).sort((a,b)=>b.recent30Spend-a.recent30Spend).slice(0,4)}
+  return {available:true,goal,checklist,progress,preferences,priorityProducts:summary.truncated?[]:(summary.priorityProducts||[]),drivers:summary.trends?.drivers||null,priceChanges:summary.truncated?[]:(summary.trends?.priceChanges||[]),opportunities:summary.truncated?[]:buildPurchaseAdviceCases(summary,preferences).filter(f=>f.recent30PurchaseDays>=2&&Number.isFinite(f.recent30Spend)&&f.recent30Spend>0).sort((a,b)=>b.recent30Spend-a.recent30Spend).slice(0,4)}
 }
