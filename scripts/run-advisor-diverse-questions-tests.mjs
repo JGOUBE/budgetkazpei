@@ -766,3 +766,7 @@ assert.equal(gramTrend.priceChanges[0].changePercent,20)
 const sweetNoticeSummary={available:true,observedVisits:5,adviceFamilies:[{key:"chocolate",label:"Chocolats et confiseries",recent30Spend:30,recent30PurchaseDays:3}]}
 assert.equal(buildProactiveAdvisorNotice(sweetNoticeSummary,"fr",noticeNow).kind,"opportunity")
 assert.equal(extractPurchasePreferences("Je veux garder le chocolat").excludedFamilies.includes("chocolate"),true)
+
+assert.equal(recurringNotice.rows.length,3)
+assert.ok(recurringNotice.rows.some(row=>row.label==="Pains au chocolat x10"&&row.meta==="5 jours d’achat"))
+assert.match(recurringNotice.period,/90 derniers jours/)

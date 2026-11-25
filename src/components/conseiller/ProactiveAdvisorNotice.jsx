@@ -51,7 +51,7 @@ export default function ProactiveAdvisorNotice({userId,language="fr",enabled=fal
     setHidden({userId,fingerprint})
   }
   function open(){
-    dismiss()
+    // Opening a suggestion is not the same as explicitly dismissing it.
     if(notice.destination==="shoppingSavingsOnly" && typeof onNavigate==="function"){onNavigate(notice.destination);return}
     if(notice.prompt)handoffToAdvisor({mode:"general",prompt:notice.prompt})
   }
@@ -60,14 +60,22 @@ export default function ProactiveAdvisorNotice({userId,language="fr",enabled=fal
       <div style={{display:"flex",alignItems:"flex-start",gap:8}}>
         <Sparkles size={19} color="#397B68" strokeWidth={1.8} aria-hidden="true" style={{flexShrink:0}}/>
         <strong style={{flex:1,fontSize:14,color:"#286558",lineHeight:1.4}}>{kr?"Mon konseye la repéré in keksoz":"Votre Conseiller a remarqué quelque chose"}</strong>
-        <button type="button" aria-label={kr?"Ferm in constat":"Fermer le constat"} onClick={dismiss} style={{background:"transparent",color:"#45665C",border:0,padding:5,cursor:"pointer",display:"flex"}}><X size={19} aria-hidden="true"/></button>
+        <button type="button" aria-label={kr?"Ferm in constat":"Fermer le constat"} onClick={dismiss} style={{background:"transparent",color:"#45665C",border:0,padding:5,minWidth:44,minHeight:44,alignItems:"center",justifyContent:"center",cursor:"pointer",display:"flex"}}><X size={19} aria-hidden="true"/></button>
       </div>
       <p style={{fontSize:14,lineHeight:1.5,margin:"9px 0 11px"}}>{notice.text}</p>
       <button type="button" aria-expanded={expanded} onClick={()=>setExpanded(x=>!x)} style={buttonStyle}>
         {expanded?(kr?"Maske détay":"Masquer le détail"):(kr?"Voir lo constat":"Découvrir le constat")}<ChevronDown size={16} aria-hidden="true" style={{transform:expanded?"rotate(180deg)":undefined}}/>
       </button>
       {expanded&&<div style={{borderTop:"1px solid #B7D8CD",marginTop:12,paddingTop:12}}>
-        <p style={{fontWeight:650,fontSize:14,lineHeight:1.6,margin:"0 0 8px",overflowWrap:"anywhere"}}>{notice.detail}</p>
+        {notice.rows?.length ? <div style={{marginBottom:12}}>
+          <ul style={{listStyle:"none",margin:0,padding:0}}>
+            {notice.rows.map((row,index)=><li key={row.label} style={{display:"flex",alignItems:"baseline",justifyContent:"space-between",gap:12,padding:"9px 0",borderTop:index===0?"none":"1px solid #DCE6E1"}}>
+              <span style={{flex:1,minWidth:0,fontSize:13,fontWeight:600,lineHeight:1.45,overflowWrap:"anywhere"}}>{row.label}</span>
+              <span style={{fontSize:12,lineHeight:1.4,flexShrink:0,color:"#48665B",whiteSpace:"nowrap"}}>{row.meta}</span>
+            </li>)}
+          </ul>
+          <p style={{fontSize:12,lineHeight:1.5,margin:"5px 0 0",color:"#48665B"}}>{notice.period}</p>
+        </div> : <p style={{fontWeight:650,fontSize:14,lineHeight:1.6,margin:"0 0 8px",overflowWrap:"anywhere"}}>{notice.detail}</p>}
         <p style={{fontSize:13,lineHeight:1.6,margin:"0 0 12px"}}>{notice.action}</p>
         <button type="button" onClick={open} style={buttonStyle}>{notice.destination==="shoppingSavingsOnly"?(kr?"Mon bann lékonomi":"Voir mes économies"):(kr?"Parle avèk mon konseye":"En parler au Conseiller")}<ChevronRight size={16} aria-hidden="true"/></button>
       </div>}

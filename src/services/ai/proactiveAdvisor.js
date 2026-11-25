@@ -59,7 +59,9 @@ export function buildProactiveAdvisorNotices(summary,language="fr",now=new Date(
     .sort((a,b)=>b.purchaseDays-a.purchaseDays||a.label.localeCompare(b.label)).slice(0,3)
   if(recurring.length>=2)add({kind:"recurring",key:"recurring:"+recurring.map(p=>p.label).sort().join("|"),score:30,
     text:kr?"Mi la repéré bann produits ou rachète souvent.":"J’ai repéré plusieurs produits que vous achetez régulièrement.",
-    detail:recurring.map(p=>p.label+" — "+p.purchaseDays+(kr?" jours d’achat":" jours d’achat")).join(" · ")+". "+(kr?"Su bann tiké anrezistré, 90 derniers jours.":"D’après les tickets enregistrés sur les 90 derniers jours."),
+    detail:recurring.map(p=>p.label+" — "+p.purchaseDays+" jours d’achat").join(" · ")+". "+(kr?"Su bann tiké anrezistré, 90 derniers jours.":"D’après les tickets enregistrés sur les 90 derniers jours."),
+    rows:recurring.map(p=>({label:p.label,meta:p.purchaseDays+(kr?" jours d’achat":" jours d’achat")})),
+    period:kr?"Su bann tiké anrezistré, 90 derniers jours.":"D’après les tickets enregistrés sur les 90 derniers jours.",
     action:kr?"Compare en priorité bann produits ou achète souvent. Bann lékonomi i dépend bann pri disponibles.":"Comparez en priorité ces produits récurrents dans Mes économies. Le gain éventuel dépend des prix disponibles pour le même produit et le même format.",
     destination:"shoppingSavingsOnly"})
   return list.sort((a,b)=>b.score-a.score||a.key.localeCompare(b.key))
