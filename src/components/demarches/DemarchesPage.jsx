@@ -372,6 +372,7 @@ export default function DemarchesPage({
       prev.map(item => (item.id === demarcheId ? normalizedDemarche : item))
     )
 
+    window.dispatchEvent(new Event("budgetkazpei:demarches-updated"))
     if (statut === "obtenue") {
       setGainModalDemarche(normalizedDemarche)
     }
@@ -435,6 +436,7 @@ export default function DemarchesPage({
     )
 
     setGainModalDemarche(null)
+    window.dispatchEvent(new Event("budgetkazpei:demarches-updated"))
     return { data, error: null }
   }
 
@@ -496,7 +498,6 @@ export default function DemarchesPage({
     })
 
     setReminders(mapped)
-    window.dispatchEvent(new Event("budgetkazpei:demarches-updated"))
   }
 
   async function saveReminder(demarcheId, reminder) {
@@ -555,6 +556,7 @@ export default function DemarchesPage({
       },
     }))
 
+    window.dispatchEvent(new Event("budgetkazpei:demarches-updated"))
     return { data, error: null }
   }
 
@@ -590,6 +592,7 @@ export default function DemarchesPage({
       return next
     })
 
+    window.dispatchEvent(new Event("budgetkazpei:demarches-updated"))
     return { error: null }
   }
 

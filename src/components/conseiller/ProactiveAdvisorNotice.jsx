@@ -60,8 +60,9 @@ export default function ProactiveAdvisorNotice({userId,language="fr",enabled=fal
   const dismissed=sessionDismissed.userId===userId?{at:Math.max(stored.at,sessionDismissed.at),fingerprints:[...new Set([...stored.fingerprints,...sessionDismissed.fingerprints])]}:stored
   if(!notice||hidden?.userId===userId&&hidden?.fingerprint===fingerprint||dismissed.fingerprints.includes(fingerprint)||!shouldShowAdvisorNotice(notice,notice.kind==="admin_reminder"?0:dismissed.at))return null
   function dismiss(){
-    try{localStorage.setItem(keyFor(userId),JSON.stringify({at:Date.now(),fingerprints:[fingerprint,...dismissed.fingerprints.filter(x=>x!==fingerprint)].slice(0,12)}))}catch{}
-    setSessionDismissed({userId,at:Date.now(),fingerprints:[fingerprint,...dismissed.fingerprints].slice(0,12)})
+    const at=notice.kind==="admin_reminder"?dismissed.at:Date.now()
+    try{localStorage.setItem(keyFor(userId),JSON.stringify({at,fingerprints:[fingerprint,...dismissed.fingerprints.filter(x=>x!==fingerprint)].slice(0,12)}))}catch{}
+    setSessionDismissed({userId,at,fingerprints:[fingerprint,...dismissed.fingerprints].slice(0,12)})
     setHidden({userId,fingerprint})
   }
   function open(){
