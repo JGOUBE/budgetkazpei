@@ -63,12 +63,12 @@ export default function ProactiveAdvisorNotice({userId,language="fr",enabled=fal
     <aside aria-label={kr?"In constat mon konseye":"Un constat de mon conseiller"} style={{background:"#EDF5F1",border:"1px solid #B7D8CD",borderRadius:14,padding:"14px 15px",marginBottom:18,color:"#344D47"}}>
       <div style={{display:"flex",alignItems:"flex-start",gap:8}}>
         <Sparkles size={19} color="#397B68" strokeWidth={1.8} aria-hidden="true" style={{flexShrink:0}}/>
-        <strong style={{flex:1,fontSize:14,color:"#286558",lineHeight:1.4}}>{kr?"Mon konseye la repéré in keksoz":"Votre Conseiller a remarqué quelque chose"}</strong>
-        <button type="button" aria-label={kr?"Ferm in constat":"Fermer le constat"} onClick={dismiss} style={{background:"transparent",color:"#45665C",border:0,padding:5,minWidth:44,minHeight:44,alignItems:"center",justifyContent:"center",cursor:"pointer",display:"flex"}}><X size={19} aria-hidden="true"/></button>
+        <strong style={{flex:1,fontSize:14,color:"#286558",lineHeight:1.4}}>{kr?"Mon konseyé la vu in keksoz pou moin":"Votre Conseiller a remarqué quelque chose"}</strong>
+        <button type="button" aria-label={kr?"Ferm sa message-la":"Fermer le constat"} onClick={dismiss} style={{background:"transparent",color:"#45665C",border:0,padding:5,minWidth:44,minHeight:44,alignItems:"center",justifyContent:"center",cursor:"pointer",display:"flex"}}><X size={19} aria-hidden="true"/></button>
       </div>
       <p style={{fontSize:14,lineHeight:1.5,margin:"9px 0 11px"}}>{notice.text}</p>
       <button type="button" aria-expanded={expanded} onClick={()=>setExpanded(x=>!x)} style={buttonStyle}>
-        {expanded?(kr?"Maske détay":"Masquer le détail"):(kr?"Voir lo constat":"Découvrir le constat")}<ChevronDown size={16} aria-hidden="true" style={{transform:expanded?"rotate(180deg)":undefined}}/>
+        {expanded?(kr?"Maske détay":"Masquer le détail"):(kr?"Voir kosa li la repéré":"Découvrir le constat")}<ChevronDown size={16} aria-hidden="true" style={{transform:expanded?"rotate(180deg)":undefined}}/>
       </button>
       {expanded&&<div style={{borderTop:"1px solid #B7D8CD",marginTop:12,paddingTop:12}}>
         {notice.rows?.length ? <div style={{marginBottom:12}}>
@@ -81,7 +81,7 @@ export default function ProactiveAdvisorNotice({userId,language="fr",enabled=fal
           <p style={{fontSize:12,lineHeight:1.5,margin:"5px 0 0",color:"#48665B"}}>{notice.period}</p>
         </div> : <p style={{fontWeight:650,fontSize:14,lineHeight:1.6,margin:"0 0 8px",overflowWrap:"anywhere"}}>{notice.detail}</p>}
         <p style={{fontSize:13,lineHeight:1.6,margin:"0 0 12px"}}>{notice.action}</p>
-        <button type="button" onClick={open} style={buttonStyle}>{notice.destination==="shoppingSavingsOnly"?(kr?"Mon bann lékonomi":"Voir mes économies"):(kr?"Parle avèk mon konseye":"En parler au Conseiller")}<ChevronRight size={16} aria-hidden="true"/></button>
+        <button type="button" onClick={open} style={buttonStyle}>{notice.destination==="shoppingSavingsOnly"?(kr?"Mon bann lékonomi":"Voir mes économies"):(kr?"Koz ek mon konseyé":"En parler au Conseiller")}<ChevronRight size={16} aria-hidden="true"/></button>
       </div>}
     </aside>
   )

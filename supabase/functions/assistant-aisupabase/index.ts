@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import { extractPurchasePreferences, isPurchaseConstraintFollowUp } from "./engine/purchases/purchasePreferences.mjs"
+import { buildBriefLocalConversation, briefConversationFallback, finishBriefConversation } from "./engine/routing/briefConversation.mjs"
 import { buildLocalAdministrativeAction } from "./engine/routing/localAdministrativeActions.mjs"
 import { isDirectPurchaseAction, renderLocalPurchaseAction } from "./engine/purchases/localPurchaseActions.mjs"
 import { identifyPurchaseAction, buildPurchaseActionPlan } from "./engine/purchases/purchaseActionPlan.mjs"
@@ -492,7 +493,7 @@ Consignes pour cette question :
 - Distingue clairement les hypothèses imaginaires, la créativité et les faits réels.
 - Tu n'as pas de recherche Internet en direct ici : pour les chiffres économiques, taux, lois, aides, prix, actualités ou titulaires d'une fonction, ne présente pas un chiffre mémorisé comme vérifié aujourd'hui. Précise ce qui doit être confirmé et nomme le site officiel adapté sans inventer de lien.
 - Si l'information est incertaine ou changeante sans vérification récente, dis-le sans inventer de source.
-- Une question simple mérite une réponse simple, sans renvoi systématique vers une démarche.
+- Une question simple mérite une réponse simple. Sur un sujet extérieur au métier du Conseiller, une réponse courte et une transition naturelle suffisent ; ne développe pas longuement. Sur un vrai sujet de budget, d’aides ou de démarches, reste pleinement utile.
 - Une suite courte comme « Oui, ça va encore augmenter ? » se rattache au sujet précédent vérifié (par exemple le carburant). Réponds à ce sujet, sans dévier vers un message hors sujet.
 - Pour une évolution future du prix, exprime l'incertitude et n'invente pas de prévision ou de prix actuel.
 - Ne transforme pas une réponse de culture générale ou une estimation non administrative en simulation CAF.`.trim()
@@ -719,8 +720,9 @@ async function callOpenAi(params: {
   systemPrompt: string
   userPrompt: string
   action: string
+  briefConversation?: boolean
 }) {
-  const { openAiKey, model, systemPrompt, userPrompt, action } = params
+  const { openAiKey, model, systemPrompt, userPrompt, action, briefConversation = false } = params
 
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -731,7 +733,7 @@ async function callOpenAi(params: {
     body: JSON.stringify({
       model,
       temperature: action === "analyze_refusal" ? 0.15 : 0.45,
-      max_tokens: action === "analyze_refusal" ? 1300 : 1100,
+      max_tokens: briefConversation ? 160 : action === "analyze_refusal" ? 1300 : 1100,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
@@ -1151,6 +1153,16 @@ Deno.serve(async (req) => {
       await clearTrustedAdvisorTopic(supabaseAdmin, context.userId)
     }
 
+    // Known everyday questions and clear out-of-scope writing tasks are free.
+    // Unknown benign questions get at most one short, metered completion.
+    const briefConversation = spendScope === "offtopic"
+    if (briefConversation) {
+      const briefAnswer = context.allowBilingualResponse ? null : buildBriefLocalConversation(context.question, context.language)
+      if (briefAnswer || !openAiKey) {
+        return jsonResponse({success:true,answer:briefAnswer || briefConversationFallback(context.language),source:"local_brief_conversation",language:context.language,mode:context.mode,consumed:false,openAiCallCount:0,recommendedAidIds:[],recommendedAidNames:[]})
+      }
+    }
+
     // Load usage only for the chargeable path; local answers cost no queries.
     const liveUsage = await ensureUsageRow(supabaseAdmin, context.userId)
     context.usage = liveUsage
@@ -1262,7 +1274,7 @@ Deno.serve(async (req) => {
             context.allowBilingualResponse,
           )
         : buildOpenQuestionSystemPrompt(
-            context.language, context.allowBilingualResponse,
+            context.language, context.allowBilingualResponse, briefConversation,
           )
 
     if (focusedAidPrompts) {
@@ -1366,9 +1378,7 @@ Deno.serve(async (req) => {
       // Show a friendly advisor answer instead of a technical error or a quota.
       // The server stops here: no OpenAI call, no usage counter increment.
       const guidance = isFreeChat
-        ? (context.isKreol
-            ? "Mi lé surtout la pou aide aou su out bidzé, out aides ek out démarches. Pou ke servis-la reste utile pou tout demoun, nou pé retourne su in kestyon pratique ? Par exemple : ou vé trouve in aide ou fé bann lekonomi ?"
-            : "Je suis surtout là pour vous aider à mieux gérer votre budget, trouver des aides et avancer dans vos démarches. Pour garder ce service utile à tous, je vous propose de revenir à ces sujets. Souhaitez-vous chercher des aides ou des pistes d’économies ?")
+        ? briefConversationFallback(context.language)
         : (context.isKreol
             ? "Ou la envoyé plizyèr kestyon a la suite. Pou garde le servis fluid, nou fait in ti poz su bann nouvelles demandes. Ou pé toujours consulte out bidzé ek bann aides, puis réessay in pe pli tar."
             : "Vous avez envoyé plusieurs demandes rapprochées. Pour préserver la disponibilité du service, je vous propose de reprendre la discussion un peu plus tard. Votre budget et le catalogue des aides restent consultables.")
@@ -1426,6 +1436,7 @@ Deno.serve(async (req) => {
       systemPrompt,
       userPrompt,
       action: context.action,
+      briefConversation,
     })
     const actualMicroeur = advisorCostMicroeur(openAiResult.data?.usage)
     if (openAiResult.ok && actualMicroeur === null) {
@@ -1457,6 +1468,7 @@ Deno.serve(async (req) => {
       }))
       console.log("OPENAI ERROR", JSON.stringify(openAiResult.data))
 
+      if (briefConversation) return jsonResponse({success:true,answer:briefConversationFallback(context.language),source:"local_brief_conversation",language:context.language,mode:context.mode,consumed:false,openAiCallCount:1,recommendedAidIds:[],recommendedAidNames:[]})
       return jsonResponse(
         {
           success: false,
@@ -1507,7 +1519,7 @@ Deno.serve(async (req) => {
     const purchaseAdvice = recordedPurchases && /\b(?:alimentation|economi|economiser|economies|conseil|conseils|ameliorer|habitudes|depenses|achats)\b/i.test(context.question.normalize("NFD").replace(/[\u0300-\u036f]/g,"")) ? renderPurchaseAdviceCases(recordedPurchases, context.language, {preferences:purchasePreferences}) : ""
     const answer = recordedPurchases
       ? recordedPurchaseEvidence(recordedPurchases, context.language) + "\n\n" + (purchaseAdvice ? purchaseAdvice + "\n\n" : "") + (/\b(?:je ne peux pas acceder|je n ai pas acces|je ne peux pas consulter|je ne dispose pas de vos achats|je ne peux pas voir)\b/.test(checkedAnswer.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g," ")) ? (context.isKreol ? "Nou pé regarde bann produits-la pou prépare out prochains achats." : "Nous pouvons partir de ces produits pour comparer les prix et varier les prochains achats selon vos besoins.") : checkedAnswer)
-      : focusedAidPrompts ? clarifyLocalAidLinks(checkedAnswer, trustedAidFacts) : checkedAnswer
+      : briefConversation ? finishBriefConversation(checkedAnswer,context.language) : focusedAidPrompts ? clarifyLocalAidLinks(checkedAnswer, trustedAidFacts) : checkedAnswer
     const mentionedTrustedAids = findMentionedTrustedAids(answer, trustedAidFacts)
 
     if (context.consumesExchange && answer) {

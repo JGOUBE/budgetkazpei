@@ -141,3 +141,6 @@ assert.ok(edgeSource.includes('const protectedTopic = spendScope === "useful" &&
 assert.doesNotMatch(edgeSource, /source: "local_offtopic"/)
 
 console.log("OK: FR/KR Premium advisor parity, Kreol local replies, contextual follow-ups, verified fuel prices and zero-extra-AI safeguards.")
+
+assert.match(edgeSource,/briefConversation \? 160/)
+assert.match(edgeSource,/source:"local_brief_conversation"/)

@@ -23,7 +23,7 @@ export function buildProactiveAdvisorNotices(summary,language="fr",now=new Date(
     const unit=units[p.unit]
     add({kind:up?"price":"price_down",key:"price:"+p.label+":"+p.unit+":"+p.lastDate+":"+p.changePercent,
       score:Math.min(95,60+Math.abs(p.changePercent)/2)+(up?0:-5),
-      text:kr?"In pri su in produit ou achète souvent la changé.":up?"Le prix d’un produit habituel a augmenté dans vos relevés.":"Un produit habituel est revenu moins cher dans vos relevés.",
+      text:kr?"Mi la vu in pri la changé su in produit ou aste souvan.":up?"Le prix d’un produit habituel a augmenté dans vos relevés.":"Un produit habituel est revenu moins cher dans vos relevés.",
       detail:p.label+" : "+money(p.previousObservedUnitPrice)+"/"+unit+" → "+money(p.recentObservedUnitPrice)+"/"+unit+" ("+(up?"+":"")+p.changePercent+" %). "+(kr?"Pri observé dann out tiké, pa garanti zordi.":"Prix unitaires observés sur "+p.observations+" jours d'achat ; pas des prix garantis aujourd'hui."),
       action:kr?"Compare pri pou minm produit ek minm format.":"Comparez le même produit et le même format avant votre prochain achat.",
       prompt:kr?"Kels produits dann mon bann achats la sanzé de pri ?":"Quels produits de mes achats ont changé de prix ?"})
@@ -32,7 +32,7 @@ export function buildProactiveAdvisorNotices(summary,language="fr",now=new Date(
     if(!["alcohol","cakes","chocolate","sweet_drinks","prepared_meals","salty_snacks"].includes(f.key)||f.recent30PurchaseDays<3||!finite(f.recent30Spend)||f.recent30Spend<20||!f.label)continue
     // Quantize the amount so a trivial change doesn't create a duplicate notice.
     add({kind:"opportunity",key:"opportunity:"+f.key+":"+Math.floor(f.recent30Spend/10),score:Math.min(90,55+f.recent30Spend/5),
-      text:kr?"Mi la repéré in poste d’achat régulier pou fé bann lékonomi.":"Un poste d’achat régulier pourrait offrir des pistes d’économies.",
+      text:kr?"Mi la vu in dépans i revient souvan. Nou pé rode comment fé bann lékonomi.":"Un poste d’achat régulier pourrait offrir des pistes d’économies.",
       detail:f.label+" : "+money(f.recent30Spend)+(kr?" su 30 derniers jours complets.":" sur les 30 derniers jours complets, sur "+f.recent30PurchaseDays+" jours d’achat."),
       action:kr?"Si ou baisse sa dépans-la de 25 %, sa fé "+money(f.recent30Spend*.25)+" avan pri remplacement.":"Une réduction hypothétique de 25 % représenterait "+money(f.recent30Spend*.25)+" avant le coût des éventuels remplacements.",
       prompt:kr?"Kels lékonomi possibles su mon bann achats ?":"Quelles économies possibles sur mes achats ?"})
@@ -55,10 +55,10 @@ export function buildProactiveAdvisorNotices(summary,language="fr",now=new Date(
   const priority=(summary.priorityProducts||[]).filter(p=>p.label&&p.recent30PurchaseDays>=2&&finite(p.recent30Spend)&&p.recent30Spend>=10).slice(0,3)
   if(priority.length>=2&&priority.reduce((s,p)=>s+p.recent30Spend,0)>=35)add({
     kind:"priority",key:"priority:"+priority.map(p=>p.label).sort().join("|"),score:48,
-    text:kr?"Mi la repéré bann produits habituels ki pèse dann out bidzé.":"Comparez en priorité ces produits qui pèsent sur votre budget.",
+    text:kr?"Mi la vu bann produits ou aste souvan i pèse dann out bidzé.":"Comparez en priorité ces produits qui pèsent sur votre budget.",
     detail:priority.map(p=>p.label+" : "+money(p.recent30Spend)).join(" · "),
     rows:priority.map(p=>({label:p.label,meta:money(p.recent30Spend)})),
-    period:kr?"Dépans anrezistré su 30 derniers jours complets.":"Dépenses enregistrées sur les 30 derniers jours complets.",
+    period:kr?"Bann dépans anrezistré su 30 derniers jours complets.":"Dépenses enregistrées sur les 30 derniers jours complets.",
     action:kr?"Pa besoin sanz out labitid : compare pri minm produit ek minm format.":"Commencez par comparer le même produit et le même format, sans changer vos habitudes. Aucun gain n’est garanti.",
     destination:"shoppingSavingsOnly"})
   // A meaningful lower-priority insight when prices are stable or no large
@@ -67,7 +67,7 @@ export function buildProactiveAdvisorNotices(summary,language="fr",now=new Date(
   const recurring=(summary.products||[]).filter(p=>p.label&&p.purchaseDays>=2&&finite(dateAge(p.lastObservedAt,now))&&dateAge(p.lastObservedAt,now)>=0&&dateAge(p.lastObservedAt,now)<=30)
     .sort((a,b)=>b.purchaseDays-a.purchaseDays||a.label.localeCompare(b.label)).slice(0,3)
   if(recurring.length>=2)add({kind:"recurring",key:"recurring:"+recurring.map(p=>p.label).sort().join("|"),score:30,
-    text:kr?"Mi la repéré bann produits ou rachète souvent.":"J’ai repéré plusieurs produits que vous achetez régulièrement.",
+    text:kr?"Mi la repéré bann produits ou aste souvan.":"J’ai repéré plusieurs produits que vous achetez régulièrement.",
     detail:recurring.map(p=>p.label+" — "+p.purchaseDays+" jours d’achat").join(" · ")+". "+(kr?"Su bann tiké anrezistré, 90 derniers jours.":"D’après les tickets enregistrés sur les 90 derniers jours."),
     rows:recurring.map(p=>({label:p.label,meta:p.purchaseDays+(kr?" jours d’achat":" jours d’achat")})),
     period:kr?"Su bann tiké anrezistré, 90 derniers jours.":"D’après les tickets enregistrés sur les 90 derniers jours.",

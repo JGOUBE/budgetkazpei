@@ -56,8 +56,9 @@ export function classifyAdvisorSpendScope({question = "", mode = "general", acti
   // form mode or an irrelevant financial keyword appended to the question.
   if (CLEAR_GENERAL_QUERY.test(text)) return "offtopic"
   if (NON_FINANCIAL_HOMONYMS.test(text) && !PERSONAL_MONEY.test(text)) return "offtopic"
-  if (PLAYFUL.test(text) && !PERSONAL_MONEY.test(text)) return "offtopic"
+  if (PLAYFUL.test(text) && !PERSONAL_MONEY.test(text) && !/\b(?:prix|tarif|cout|combien coute|combien coutent|budget|bidze|economies|lekonomi|moins cher|aide financiere|gratuit|gratuite|depenses|depans)\b/.test(text)) return "offtopic"
   if (FOOD_EMERGENCY.test(text) || FOOD_HARDSHIP.test(text) || IMPOSSIBLE_TO_BUY_FOOD.test(text) || KREOL_FOOD_HARDSHIP.test(text) || DIRECT_SUPPORT.test(text) || (LOCAL_HELP.test(text) && (HELP_INTENT.test(text) || LOCAL_SUPPORT_QUESTION.test(text)))) return "useful"
+  if (/\b(?:lo bidze|out bidze|mon bidze|nout bidze|lekonomi|leconomie|bann zed|in zed|domann zed|kou de la vi|lavi i kout ser|mi na poin d arzan|mi nana poin d arzan|mi gagne pu paie|mi gagne pu payer|mon bann tik[eé]|mon bann courses|mon bann achats|out bann courses|out bann achats|bann demars|mon kourrie|mon dosie)\b/.test(text)) return "useful"
   if (MONEY_AND_BENEFITS.test(text) || ADMIN_AND_FINANCIAL_ADVICE.test(text) || EXTRA_FINANCE_AND_ADMIN.test(text)) return "useful"
   if (/\b(?:mon alimentation|mes habitudes alimentaires|mon regime alimentaire|ma facon de manger|ce que j achete|ce que je mange|ce que je consomme|mes achats|mes tickets|mes produits achetes|sak mi aste|sak mi achete|out manze)\b/.test(text)) return "useful"
   if (/\b(?:mes habitudes de consommation|habitudes d achats?|produits? (?:reguliers?|frequents?|les plus achetes)|articles? (?:reguliers?|frequents?|les plus achetes)|j achete (?:souvent|regulierement|le plus)|je rachete|mi achete|mi asete|j habite maintenant|j ai demenage|j ai deja essaye)\b/.test(text)) return "useful"
@@ -75,7 +76,7 @@ const FR_LOCAL = Object.freeze({
   "bonjour": "Bonjour ! Je peux vous aider avec votre budget, vos achats, les aides et les démarches.",
   "bonzour": "Bonjour ! Je peux vous aider avec votre budget, vos achats, les aides et les démarches.",
   "salut": "Salut ! Une question sur vos économies, votre budget ou vos aides ?",
-  "coucou": "Coucou ! Que souhaitez-vous savoir aujourd'hui ?",
+  "coucou": "Coucou ! Comment puis-je vous aider aujourd’hui ?",
   "bonsoir": "Bonsoir ! Je suis disponible pour vos questions sur BudgetKazPeï.",
   "merci": "Avec plaisir ! Je reste disponible si vous avez une autre question.",
   "merci beaucoup": "Avec plaisir ! N'hésitez pas si vous avez besoin d'aide pour vos démarches.",
@@ -90,7 +91,13 @@ const KR_LOCAL = Object.freeze({
   "salut": "Salut ! Kosa ou vé konèt su out bidzé ou bann aides ?",
   "merci": "Avèk plézir ! Mi reste disponib pou out kestyon.",
   "merci beaucoup": "Avèk plézir ! Si ou nana in kestyon, mi lé la.",
-  "ca va": "Mi sava, merci ! Kosa mi pé fé pou aou zordi ?",
+  "ca va": "Mi sava, mersi ! Kosa mi pé fé pou aou zordi ?",
+  "koman i le": "Mi sava, mersi ! Kosa ou vé konèt zordi ?",
+  "mersi": "Avèk plézir ! Mi lé la si ou nana in lot kestyon.",
+  "mersi bokou": "Avèk plézir !",
+  "bonsoir": "Bonswar ! Kosa mi pé fé pou aou ?",
+  "bonswar": "Bonswar ! Kosa mi pé fé pou aou ?",
+  "coucou": "Koukou ! Kosa mi pé fé pou aou ?",
   "ca va on danse": "Mi sava, merci ! Mi dans mieux avec bann chiffres. Nou regarde out bidzé ou bann lekonomi ?",
 })
 
