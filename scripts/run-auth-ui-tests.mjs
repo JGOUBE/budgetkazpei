@@ -76,6 +76,11 @@ assert(includes("styles", "min-height: 44px"), "Les actions Auth doivent conserv
 assert(includes("styles", ".auth-checkbox em"), "Les erreurs de consentement doivent être stylées.")
 assert(!/text-shadow/i.test(files.styles), "Les styles Auth ne doivent pas compenser le contraste par text-shadow.")
 
+assert(!/#(?:ea580c|c2410c|f97316|fb923c|fdba74|f59e0b|fbbf24)/i.test(files.styles), "La palette Auth ne doit contenir aucun orange saturé.")
+assert(!/(?:linear|radial)-gradient\s*\(/i.test(files.styles), "Les écrans Auth ne doivent pas avoir de dégradé.")
+assert(includes("styles", "--auth-primary: #DFEBCD"), "Le bouton principal doit être matcha clair.")
+assert(includes("styles", "--auth-primary-ink: #35512A"), "Le bouton principal doit avoir un texte foncé contrasté.")
+assert(includes("styles", "box-shadow: none !important"), "Les boutons Auth doivent rester plats.")
 if (failures.length) {
   console.error("Auth UI checks failed:")
   for (const failure of failures) console.error(`- ${failure}`)
