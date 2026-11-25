@@ -3,11 +3,20 @@ import { Sparkles, X, ChevronRight, ChevronDown } from "lucide-react"
 import { supabase } from "../../services/supabase"
 import { handoffToAdvisor } from "../../services/advisorHandoff"
 import { loadRecordedPurchases } from "../../../supabase/functions/assistant-aisupabase/engine/purchases/recordedPurchases.mjs"
-import { buildProactiveAdvisorNotice, shouldShowAdvisorNotice, noticeFingerprint, createNoticeLoader } from "../../services/ai/proactiveAdvisor"
+import { buildProactiveAdvisorNotice, shouldShowAdvisorNotice, noticeFingerprint, createNoticeLoader, loadAdministrativeReminders } from "../../services/ai/proactiveAdvisor"
 
-const loader=createNoticeLoader(userId=>loadRecordedPurchases(supabase,userId))
+const loader=createNoticeLoader(async userId=>{
+  const [summary,administrativeReminders]=await Promise.all([
+    loadRecordedPurchases(supabase,userId).catch(()=>({available:false})),
+    loadAdministrativeReminders(supabase,userId).catch(()=>[])
+  ])
+  return {...summary,administrativeReminders}
+})
 // Invalidate even when the home screen is unmounted during a scan.
-if(typeof window!=="undefined")window.addEventListener("budgetkazpei:transactions-updated",()=>loader.clear())
+if(typeof window!=="undefined"){
+  window.addEventListener("budgetkazpei:transactions-updated",()=>loader.clear())
+  window.addEventListener("budgetkazpei:demarches-updated",()=>loader.clear())
+}
 const keyFor=userId=>"bkp-advisor-notice-dismissed-v1:"+userId
 function readDismissed(userId){
   try{
@@ -29,7 +38,8 @@ export default function ProactiveAdvisorNotice({userId,language="fr",enabled=fal
     if(!enabled||!userId){loader.clear();return}
     const refresh=()=>{loader.clear();setRevision(x=>x+1)}
     window.addEventListener("budgetkazpei:transactions-updated",refresh)
-    return ()=>window.removeEventListener("budgetkazpei:transactions-updated",refresh)
+    window.addEventListener("budgetkazpei:demarches-updated",refresh)
+    return ()=>{window.removeEventListener("budgetkazpei:transactions-updated",refresh);window.removeEventListener("budgetkazpei:demarches-updated",refresh)}
   },[userId,enabled])
   useEffect(()=>{
     let active=true
@@ -38,7 +48,7 @@ export default function ProactiveAdvisorNotice({userId,language="fr",enabled=fal
     if(!enabled||!userId)return
     const stored=readDismissed(userId)
     const dismissed=sessionDismissed.userId===userId?{at:Math.max(stored.at,sessionDismissed.at),fingerprints:[...new Set([...stored.fingerprints,...sessionDismissed.fingerprints])]}:stored
-    if(!shouldShowAdvisorNotice({kind:"candidate"},dismissed.at))return
+    // Personal reminders must not be hidden by a shopping notice cooldown.
     loader.get(userId).then(summary=>{
       if(active)setResult({userId,language,notice:buildProactiveAdvisorNotice(summary,language,new Date(),dismissed.fingerprints)})
     }).catch(()=>{if(active)setResult(null)})
@@ -48,7 +58,7 @@ export default function ProactiveAdvisorNotice({userId,language="fr",enabled=fal
   const fingerprint=noticeFingerprint(notice)
   const stored=readDismissed(userId)
   const dismissed=sessionDismissed.userId===userId?{at:Math.max(stored.at,sessionDismissed.at),fingerprints:[...new Set([...stored.fingerprints,...sessionDismissed.fingerprints])]}:stored
-  if(!notice||hidden?.userId===userId&&hidden?.fingerprint===fingerprint||dismissed.fingerprints.includes(fingerprint)||!shouldShowAdvisorNotice(notice,dismissed.at))return null
+  if(!notice||hidden?.userId===userId&&hidden?.fingerprint===fingerprint||dismissed.fingerprints.includes(fingerprint)||!shouldShowAdvisorNotice(notice,notice.kind==="admin_reminder"?0:dismissed.at))return null
   function dismiss(){
     try{localStorage.setItem(keyFor(userId),JSON.stringify({at:Date.now(),fingerprints:[fingerprint,...dismissed.fingerprints.filter(x=>x!==fingerprint)].slice(0,12)}))}catch{}
     setSessionDismissed({userId,at:Date.now(),fingerprints:[fingerprint,...dismissed.fingerprints].slice(0,12)})
@@ -56,7 +66,7 @@ export default function ProactiveAdvisorNotice({userId,language="fr",enabled=fal
   }
   function open(){
     // Opening a suggestion is not the same as explicitly dismissing it.
-    if(notice.destination==="shoppingSavingsOnly" && typeof onNavigate==="function"){onNavigate(notice.destination);return}
+    if(["shoppingSavingsOnly","demarches"].includes(notice.destination) && typeof onNavigate==="function"){onNavigate(notice.destination);return}
     if(notice.prompt)handoffToAdvisor({mode:"general",prompt:notice.prompt})
   }
   return (
@@ -81,7 +91,7 @@ export default function ProactiveAdvisorNotice({userId,language="fr",enabled=fal
           <p style={{fontSize:12,lineHeight:1.5,margin:"5px 0 0",color:"#48665B"}}>{notice.period}</p>
         </div> : <p style={{fontWeight:650,fontSize:14,lineHeight:1.6,margin:"0 0 8px",overflowWrap:"anywhere"}}>{notice.detail}</p>}
         <p style={{fontSize:13,lineHeight:1.6,margin:"0 0 12px"}}>{notice.action}</p>
-        <button type="button" onClick={open} style={buttonStyle}>{notice.destination==="shoppingSavingsOnly"?(kr?"Mon bann lékonomi":"Voir mes économies"):(kr?"Koz ek mon konseyé":"En parler au Conseiller")}<ChevronRight size={16} aria-hidden="true"/></button>
+        <button type="button" onClick={open} style={buttonStyle}>{notice.destination==="demarches"?(kr?"Voir mon démarche":"Voir ma démarche"):notice.destination==="shoppingSavingsOnly"?(kr?"Mon bann lékonomi":"Voir mes économies"):(kr?"Koz ek mon konseyé":"En parler au Conseiller")}<ChevronRight size={16} aria-hidden="true"/></button>
       </div>}
     </aside>
   )

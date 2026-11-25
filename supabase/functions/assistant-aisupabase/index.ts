@@ -1131,7 +1131,8 @@ Deno.serve(async (req) => {
     let spendScope = purchaseIntent ? "useful" : classifyAdvisorSpendScope({
       question: context.question, mode: context.mode, action: context.action,
     })
-    if (spendScope === "offtopic" &&
+    const knownBriefAnswer = spendScope === "offtopic" && !context.allowBilingualResponse ? buildBriefLocalConversation(context.question,context.language) : null
+    if (spendScope === "offtopic" && !knownBriefAnswer &&
         (isContextualAdvisorFollowUp(context.question) ||
          isPotentialAdvisorFollowUp(context.question))) {
       // Never treat unverified client conversation history or a mode flag as
@@ -1157,7 +1158,7 @@ Deno.serve(async (req) => {
     // Unknown benign questions get at most one short, metered completion.
     const briefConversation = spendScope === "offtopic"
     if (briefConversation) {
-      const briefAnswer = context.allowBilingualResponse ? null : buildBriefLocalConversation(context.question, context.language)
+      const briefAnswer = context.allowBilingualResponse ? null : (knownBriefAnswer || buildBriefLocalConversation(context.question, context.language))
       if (briefAnswer || !openAiKey) {
         return jsonResponse({success:true,answer:briefAnswer || briefConversationFallback(context.language),source:"local_brief_conversation",language:context.language,mode:context.mode,consumed:false,openAiCallCount:0,recommendedAidIds:[],recommendedAidNames:[]})
       }

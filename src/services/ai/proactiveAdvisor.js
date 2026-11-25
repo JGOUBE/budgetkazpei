@@ -13,8 +13,10 @@ export function noticeFingerprint(notice){
   return (h>>>0).toString(36)
 }
 export function buildProactiveAdvisorNotices(summary,language="fr",now=new Date()){
-  if(!summary?.available||summary.truncated||summary.observedVisits<3)return []
   const kr=["kr","cr","kreol"].includes(language), list=[]
+  const reminder=buildAdministrativeReminderNotice(summary?.administrativeReminders,language,now)
+  if(reminder)list.push(reminder)
+  if(!summary?.available||summary.truncated||summary.observedVisits<3)return list
   const add=n=>list.push(n)
   for(const p of summary.trends?.priceChanges||[]){
     if(p.observations<4||!finite(p.changePercent)||Math.abs(p.changePercent)<15||!finite(p.previousObservedUnitPrice)||!finite(p.recentObservedUnitPrice)||p.previousObservedUnitPrice<=0||p.recentObservedUnitPrice<=0||!units[p.unit]||!p.label||!p.lastDate||!finite(dateAge(p.lastDate,now))||dateAge(p.lastDate,now)<0||dateAge(p.lastDate,now)>30)continue
@@ -91,10 +93,38 @@ export function createNoticeLoader(load,ttl=NOTICE_CACHE_TTL){
     if(entry?.userId===userId&&now-entry.at<ttl)return entry.promise
     const current={userId,at:now}
     current.promise=Promise.resolve().then(()=>load(userId)).then(value=>{
-      if(!value?.available&&entry===current)entry=null
+      if(!value?.available&&!value?.administrativeReminders?.length&&entry===current)entry=null
       return value
     }).catch(error=>{if(entry===current)entry=null;throw error})
     entry=current
     return current.promise
   }}
+}
+
+// Only reminders entered by the user, tied to a still-active personal procedure.
+// No guessed statutory deadline and no inference of benefit eligibility.
+export function buildAdministrativeReminderNotice(rows=[],language="fr",now=new Date()){
+  const kr=["kr","cr","kreol"].includes(language)
+  const today=new Intl.DateTimeFormat("en-CA",{timeZone:"Indian/Reunion",year:"numeric",month:"2-digit",day:"2-digit"}).format(now)
+  const valid=(Array.isArray(rows)?rows:[]).filter(r=>r?.id&&r?.title&&/^\d{4}-\d{2}-\d{2}$/.test(r.date||"")&&["a_preparer","envoyee","en_attente"].includes(r.status))
+    .map(r=>({...r,days:Math.round((Date.parse(r.date)-Date.parse(today))/DAY)}))
+    .filter(r=>Number.isFinite(r.days)&&r.days>=-7&&r.days<=7)
+    .sort((a,b)=>a.days-b.days||String(a.id).localeCompare(String(b.id)))
+  if(!valid.length)return null
+  const r=valid[0], when=r.days===0?(kr?"Zordi":"Aujourd’hui"):r.days===1?(kr?"Demin":"Demain"):r.days<0?(kr?"Dat rappel la passé":"Date du rappel passée"):(kr?"Dann "+r.days+" zour":"Dans "+r.days+" jours")
+  return {kind:"admin_reminder",key:"admin_reminder:"+r.id+":"+r.date,score:110,text:kr?"Ou té anrezistré in rappel pou out démarche.":"Vous avez un rappel de démarche à consulter.",detail:r.title+" — "+when,rows:[{label:String(r.title).slice(0,120),meta:r.date.split("-").reverse().join("/")}],period:kr?"Dat rappel ou la choisi.":"Date du rappel que vous avez enregistré.",action:kr?"Ouv out démarche pou vérifie la suite. Sa lé out rappel, pa in délai officiel.":"Consultez votre démarche pour faire le point. Il s’agit de votre rappel personnel, pas d’un délai officiel.",destination:"demarches"}
+}
+export async function loadAdministrativeReminders(client,userId){
+  if(!userId)return []
+  const [reminders,procedures]=await Promise.all([
+    client.from("user_reminders").select("id,demarche_id,reminder_date").eq("user_id",userId).limit(100),
+    client.from("user_aide_demarche").select("id,statut,aides_reunion(nom,nom_kreol)").eq("user_id",userId).in("statut",["a_preparer","envoyee","en_attente"]).limit(100)
+  ])
+  if(reminders.error||procedures.error)return []
+  const map=new Map((procedures.data||[]).map(r=>[String(r.id),r]))
+  return (reminders.data||[]).map(r=>{
+    const p=map.get(String(r.demarche_id))
+    const aid=Array.isArray(p?.aides_reunion)?p.aides_reunion[0]:p?.aides_reunion
+    return p&&aid?.nom?{id:r.id,date:String(r.reminder_date||"").slice(0,10),title:aid.nom,status:p.statut}:null
+  }).filter(Boolean)
 }

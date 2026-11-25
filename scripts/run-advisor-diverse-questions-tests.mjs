@@ -806,3 +806,12 @@ assert.match(briefConversationFallback("kreol"),/out bidzé/)
 assert.equal(classifyAdvisorSpendScope({question:"Quel budget prévoir pour les jeux vidéo de mes enfants ?"}),"useful")
 assert.equal(classifyAdvisorSpendScope({question:"Koman mi pé fé bann lékonomi ?"}),"useful")
 assert.equal(classifyAdvisorSpendScope({question:"Mi vé demann in zéd"}),"useful")
+
+import { buildAdministrativeReminderNotice } from "../src/services/ai/proactiveAdvisor.js"
+const reminderFixture={id:"r1",date:"2026-11-25",title:"Dossier de test",status:"a_preparer"}
+assert.equal(buildAdministrativeReminderNotice([reminderFixture],"fr",noticeNow).kind,"admin_reminder")
+assert.equal(buildAdministrativeReminderNotice([{...reminderFixture,status:"obtenue"}],"fr",noticeNow),null)
+assert.equal(buildAdministrativeReminderNotice([{...reminderFixture,date:"2026-12-20"}],"fr",noticeNow),null)
+assert.equal(buildProactiveAdvisorNotice({available:false,administrativeReminders:[reminderFixture]},"fr",noticeNow).destination,"demarches")
+assert.equal(buildProactiveAdvisorNotice({...noticeSummary,administrativeReminders:[reminderFixture]},"fr",noticeNow).kind,"admin_reminder")
+assert.match(buildAdministrativeReminderNotice([reminderFixture],"kreol",noticeNow).action,/pa in délai officiel/)

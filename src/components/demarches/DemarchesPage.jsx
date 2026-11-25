@@ -461,6 +461,7 @@ export default function DemarchesPage({
     }
 
     setDemarches(prev => prev.filter(item => item.id !== id))
+    window.dispatchEvent(new Event("budgetkazpei:demarches-updated"))
   }
 
   async function fetchReminders() {
@@ -495,6 +496,7 @@ export default function DemarchesPage({
     })
 
     setReminders(mapped)
+    window.dispatchEvent(new Event("budgetkazpei:demarches-updated"))
   }
 
   async function saveReminder(demarcheId, reminder) {
