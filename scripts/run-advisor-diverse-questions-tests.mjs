@@ -838,3 +838,9 @@ assert.equal(buildMonthlyPlanningContext({...planningFixture,currentMonth:{incom
 assert.equal(buildMonthlyPlanningContext({...planningFixture,recurringCharges:[{nom:"Loyer",montant:80}],currentTransactions:[{label:"Loyer",amount:-80,date:"2026-11-01"}]}),null,"Potential duplicate fixed charge")
 assert.equal(identifyBudgetPlanningQuestion("Koman mi pé tini ziska la fin du mwa ?").kind,"daily")
 assert.match(buildLocalBudgetPlanningAnswer({question:"Comment tenir jusqu'à la fin du mois ?",insights:{...planningFixture,currentMonth:{incomes:0}}}).answer,/revenu prévu/)
+
+// Regression: shopping_items SELECT is restricted to authenticated callers.
+assert.match(advisorEdgeSource,/loadRecordedPurchases\(purchaseClient, context\.userId\)/)
+assert.doesNotMatch(advisorEdgeSource,/loadRecordedPurchases\(supabaseAdmin, context\.userId\)/)
+assert.match(advisorEdgeSource,/global: \{ headers: \{ Authorization: req\.headers\.get\("Authorization"\)/)
+assert.ok(advisorEdgeSource.indexOf("const context = contextResult.context") < advisorEdgeSource.indexOf("const purchaseClient ="))

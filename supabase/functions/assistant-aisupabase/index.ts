@@ -964,7 +964,15 @@ Deno.serve(async (req) => {
     const purchaseHistory = Array.isArray(context.body?.recentHistory) ? context.body.recentHistory : []
     const purchasePreferences = extractPurchasePreferences(context.question,purchaseHistory)
     const purchaseAction = identifyPurchaseAction(context.question) || (isPurchaseConstraintFollowUp(context.question,purchaseHistory) ? purchaseHistory.slice(0,3).map((turn:any)=>identifyPurchaseAction(turn?.question||"")).find((action:any)=>action?.kind==="goal") || null : null)
-    const recordedPurchases = purchaseIntent ? await loadRecordedPurchases(supabaseAdmin, context.userId) : null
+    // shopping_items deliberately grants SELECT only to authenticated users.
+    // Read with the verified caller's JWT, not the administrative service role.
+    // Keep the explicit user filter in addition to RLS; never broaden grants.
+    const publicKey = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || req.headers.get("apikey") || ""
+    const purchaseClient = purchaseIntent && publicKey ? createClient(supabaseUrl, publicKey, {
+      global: { headers: { Authorization: req.headers.get("Authorization") || "" } },
+      auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    }) : null
+    const recordedPurchases = purchaseIntent ? await (purchaseClient ? loadRecordedPurchases(purchaseClient, context.userId) : loadRecordedPurchases(supabaseAdmin, "")) : null
     if (recordedPurchases) {
       const actionPlan = buildPurchaseActionPlan(recordedPurchases, purchaseAction, purchasePreferences)
       const local = context.body.localContext || {}
