@@ -145,7 +145,7 @@ export function buildExplicitBudgetEvidence({userId,transactions=[],targets=[],n
   const totals=new Map()
   for(const row of transactions){
     const date=String(row.date||"").slice(0,10), category=String(row.category||row.categorie||row.categoryId||"").toLowerCase(),n=Number(row.amount)
-    if(row.user_id!==userId||!date.startsWith(month+"-")||date>today||!Object.hasOwn(budgetLabels,category)||!Number.isFinite(n)||n>=0)continue
+    if(row.user_id!==userId||!/^\d{4}-\d{2}-\d{2}$/.test(date)||!Number.isFinite(Date.parse(date))||!date.startsWith(month+"-")||date>today||!Object.hasOwn(budgetLabels,category)||!Number.isFinite(n)||n>=0)continue
     totals.set(category,(totals.get(category)||0)+Math.round(-n*100))
   }
   return targets.filter(t=>t.user_id===userId&&t.alert_enabled!==false&&Object.hasOwn(budgetLabels,t.category)&&Number.isFinite(Number(t.amount))&&Number(t.amount)>0)

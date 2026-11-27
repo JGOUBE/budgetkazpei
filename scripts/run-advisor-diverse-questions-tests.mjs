@@ -833,3 +833,8 @@ assert.equal(identifyBudgetPlanningQuestion("Je veux mettre 100 € de côté ce
 assert.equal(identifyBudgetPlanningQuestion("Il me reste 100 € pour 0 jours"),null)
 assert.equal(identifyBudgetPlanningQuestion("Il me reste -100 € pour 7 jours"),null)
 assert.equal(identifyBudgetPlanningQuestion("Il me reste 100 € pour 7 jours et je n'ai plus de quoi manger"),null)
+
+assert.equal(buildMonthlyPlanningContext({...planningFixture,currentMonth:{incomes:0}}),null,"A configured income is not cash")
+assert.equal(buildMonthlyPlanningContext({...planningFixture,recurringCharges:[{nom:"Loyer",montant:80}],currentTransactions:[{label:"Loyer",amount:-80,date:"2026-11-01"}]}),null,"Potential duplicate fixed charge")
+assert.equal(identifyBudgetPlanningQuestion("Koman mi pé tini ziska la fin du mwa ?").kind,"daily")
+assert.match(buildLocalBudgetPlanningAnswer({question:"Comment tenir jusqu'à la fin du mois ?",insights:{...planningFixture,currentMonth:{incomes:0}}}).answer,/revenu prévu/)

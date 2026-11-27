@@ -321,7 +321,7 @@ function BudgetKazPeiApp({
 
   const hasPremiumAccess = isPremium || isPremiumPlus
 
-  const { customBudgets, saveBudgets } = useCustomBudgets(
+  const { customBudgets, saveBudgets, loading: budgetTargetsLoading } = useCustomBudgets(
     user?.id,
     hasPremiumAccess
   )
@@ -767,7 +767,7 @@ function BudgetKazPeiApp({
             onAddExpense={() => setShowModal(true)}
             budgetStats={{ revenus, depenses, solde }}
             budgetLoading={transactionsLoading || abonnementsLoading}
-            budgetEvidence={buildExplicitBudgetEvidence({userId:user?.id,transactions,targets:customBudgets,loading:transactionsLoading})}
+            budgetEvidence={buildExplicitBudgetEvidence({userId:user?.id,transactions,targets:customBudgets,loading:transactionsLoading||budgetTargetsLoading})}
           />
         )}
 

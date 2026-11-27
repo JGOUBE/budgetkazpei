@@ -16,6 +16,13 @@ export function buildMonthlyPlanningContext(insights={}){
   if(d>monthDays)return null
   const income=c.income?.total,fixed=c.expenses?.fixed,variable=c.expenses?.variable
   if(![income,fixed,variable].every(valid)||income<=0||fixed<0||variable<0)return null
+  // The configured income is a plan, not money known to have been received.
+  if(!valid(insights.currentMonth?.incomes)||insights.currentMonth.incomes<=0)return null
+  const possibleOverlap=(insights.recurringCharges||[]).some(charge=>{
+    const name=norm(charge.nom||charge.label),value=Number(charge.montant??charge.amount)
+    return name&&Number.isFinite(value)&&value>0&&(insights.currentTransactions||[]).some(t=>Number(t.amount)<0&&Math.abs(cents(Number(t.amount))+cents(value))<=1&&norm(t.label||t.nom)===name)
+  })
+  if(possibleOverlap)return null
   const margin=cents(income)-cents(fixed)-cents(variable)
   const days=new Set((insights.currentTransactions||[]).filter(t=>Number(t.amount)<0).map(t=>String(t.date||t.created_at||"").slice(0,10)).filter(s=>/^\d{4}-\d{2}-\d{2}$/.test(s)))
   const observedDaily=d>=14&&days.size>=5?cents(variable)/d:null
@@ -24,7 +31,7 @@ export function buildMonthlyPlanningContext(insights={}){
 export function identifyBudgetPlanningQuestion(question=""){
   if(String(question).length>220||(String(question).match(/\?/g)||[]).length>1)return null
   const t=norm(question)
-  if(/^(?:comment tenir jusqu a la fin du mois|comment finir le mois sans depasser mon budget|combien puis je depenser par jour jusqu a la fin du mois|combien je peux depenser par jour jusqu a la fin du mois|combien par jour jusqu a la fin du mois|koman tenir ziska la fin du mwa|kombyin mi pe depanse par zour ziska la fin du mwa|konbien mi pe depanse par zour ziska la fin du mwa)$/.test(t))return {kind:"daily"}
+  if(/^(?:comment tenir jusqu a la fin du mois|comment finir le mois sans depasser mon budget|combien puis je depenser par jour jusqu a la fin du mois|combien je peux depenser par jour jusqu a la fin du mois|combien par jour jusqu a la fin du mois|koman tenir ziska la fin du mwa|koman mi pe tini ziska la fin du mwa|kombyin mi pe depanse par zour ziska la fin du mwa|konbien mi pe depanse par zour ziska la fin du mwa)$/.test(t))return {kind:"daily"}
   if(/^(?:si je continue comme ca combien me restera t il a la fin du mois|si je continue comme ca combien me restera il a la fin du mois|ou en serai je a la fin du mois si je continue comme ca|quel serait mon budget a la fin du mois a ce rythme|si mi continue komsa kombyin i reste a moin la fin du mwa)$/.test(t))return {kind:"pace"}
   let m=t.match(new RegExp("^(?:si je depense|si j ajoute une depense de|si mi depanse) "+moneyToken+"(?: de plus)? (?:ce mois ci|avant la fin du mois|sa mwa la)$"))
   if(m){const n=amount(m[1]);return n===null?null:{kind:"extra",amount:n}}
@@ -41,6 +48,7 @@ export function buildLocalBudgetPlanningAnswer({question="",insights={},language
   const rate=(n,d)=>euro(Math.floor(Math.max(0,n)/d))
   if(a.kind==="explicit")return answer("Avec "+euro(a.amount)+" pour "+a.days+" jours, vous pouvez prévoir au maximum "+rate(a.amount,a.days)+" par jour, si aucune autre dépense n’est à régler. Gardez d’abord de côté ce qui doit couvrir vos charges et vos besoins indispensables.","Avèk "+euro(a.amount)+" pou "+a.days+" zour, ou pé prévwar o maximum "+rate(a.amount,a.days)+" par zour, si nana poin lezot dépans pou réglé. Mèt dabor de koté sak i fo pou out sarz ek bann besoins indispensables.")
   const p=unavailable?null:buildMonthlyPlanningContext(insights)
+  if(!p&&insights.currentMonth?.incomes<=0&&valid(insights.budgetAdvisorContext?.income?.total)&&insights.budgetAdvisorContext.income.total>0&&!unavailable)return answer("Vos revenus prévus sont renseignés, mais je ne vois pas encore de revenu reçu dans les relevés du mois. Je préfère ne pas calculer une somme disponible sur un revenu prévu. Vous pouvez me dire combien il vous reste réellement et pour combien de jours.","Out revenus prévus lé renseignés, mé mi trouve poin revenu reçu dann relevés mwa-la. Mi préfère pa kalkil larzan disponible su revenu prévu. Di a moin kombyin i reste aou vraiment ek pou kombyin zour.")
   if(!p)return answer("Je peux vous aider à préparer la fin du mois, mais il me manque des données suffisamment fiables sur vos revenus, vos charges fixes ou vos dépenses enregistrées. Vous pouvez aussi me dire directement combien il vous reste et pour combien de jours.","Mi pé aide aou prépar la fin du mwa, mé i mank a moin bann données fiables su out revenus, sarz fixes ou dépans anrezistré. Ou pé osi di a moin kombyin i reste aou ek pou kombyin zour.")
   const basis=p.incomeBasis==="recorded"?"revenus enregistrés":"revenus renseignés"
   const basisKr=p.incomeBasis==="recorded"?"revenus anrezistré":"revenus renseigné"
