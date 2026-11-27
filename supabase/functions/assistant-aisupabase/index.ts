@@ -2,6 +2,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import { extractPurchasePreferences, isPurchaseConstraintFollowUp } from "./engine/purchases/purchasePreferences.mjs"
 import { buildBriefLocalConversation, briefConversationFallback, finishBriefConversation } from "./engine/routing/briefConversation.mjs"
 import { buildBudgetScenario } from "./engine/routing/budgetScenarios.mjs"
+import { compactAdvisorLocalContext } from "./engine/routing/compactAdvisorContext.mjs"
 import { buildLocalAdministrativeAction } from "./engine/routing/localAdministrativeActions.mjs"
 import { isDirectPurchaseAction, renderLocalPurchaseAction } from "./engine/purchases/localPurchaseActions.mjs"
 import { identifyPurchaseAction, buildPurchaseActionPlan } from "./engine/purchases/purchaseActionPlan.mjs"
@@ -80,9 +81,9 @@ function normalizeText(value = "") {
 
 function safeJson(value: unknown, fallback: unknown = {}) {
   try {
-    return JSON.stringify(value ?? fallback, null, 2)
+    return JSON.stringify(value ?? fallback)
   } catch (_) {
-    return JSON.stringify(fallback, null, 2)
+    return JSON.stringify(fallback)
   }
 }
 
@@ -306,7 +307,7 @@ function buildUserPrompt(
 ) {
   const originalQuestion = String(body.originalQuestion || body.question || "").trim()
   const profile = body.profile || {}
-  const localContext = body.localContext || body.local_context || {}
+  const localContext = compactAdvisorLocalContext(body.localContext || body.local_context || {})
   const recommendedAides = body.recommendedAides || body.recommended_aides || []
   const conversationContext = body.conversationContext || {}
   const reunionOrientation = selectRelevantAdvisorOrientation(body.reunionOrientation || body.reunion_orientation, originalQuestion)
@@ -1335,7 +1336,7 @@ Deno.serve(async (req) => {
         }))
       const compactBody = {
         ...context.body,
-        localContext: { ...context.body.localContext, financial: compactFinancial },
+        localContext: compactAdvisorLocalContext({ ...context.body.localContext, financial: compactFinancial }),
         recommendedAides: compactAides,
         recommended_aides: [],
         reunionOrientation: [],
@@ -1357,6 +1358,14 @@ Deno.serve(async (req) => {
       }))
     }
 
+    // If a large personal purchase question still exceeds the guard, return
+    // computed evidence and advice instead of a technical error or paid retry.
+    if (userPrompt.length > 32000 && recordedPurchases?.available && context.action !== "analyze_refusal") {
+      const evidence = recordedPurchaseEvidence(recordedPurchases, context.language)
+      const advice = renderPurchaseAdviceCases(recordedPurchases, context.language, {preferences:purchasePreferences,limit:3})
+      const note = context.isKreol ? "Mi la gard bann éléments fiables pou donne aou in premier bilan." : "Je vous propose un premier bilan à partir des informations fiables disponibles."
+      return jsonResponse({success:true,answer:[note,evidence,advice].filter(Boolean).join("\n\n"),source:"local_purchase_compact_fallback",language:context.language,mode:context.mode,consumed:false,openAiCallCount:0,recommendedAidIds:[],recommendedAidNames:[]})
+    }
     // Avoid accidentally sending huge account snapshots to the model.
     if (userPrompt.length > 32000) {
       return jsonResponse({

@@ -82,3 +82,16 @@ assert.match(migration,/v_monthly_limit constant integer := 20/)
 assert.match(migration,/v_hourly_limit constant integer := 30/)
 assert.ok(!migration.includes("message_body"))
 console.log("OK: paid calls are reserved atomically, off-topic limits are server-side, and simple greetings are free.")
+
+import { compactAdvisorLocalContext, compactShoppingFacts } from "../supabase/functions/assistant-aisupabase/engine/routing/compactAdvisorContext.mjs"
+const hugePurchase={available:true,start:"2026-09-01",end:"2026-11-27",observedVisits:8,products:Array.from({length:500},(_,i)=>({label:"Produit "+i,purchaseDays:2})),recentProducts:Array.from({length:500},(_,i)=>({label:"Produit "+i})),trends:{priceChanges:Array.from({length:100},()=>({label:"Test",changePercent:15})),comparison:{observedDifference:10}},actionPlan:{preferences:{excludedFamilies:["cakes"],noCooking:true},goal:{monthlyTarget:20},priceChanges:Array(500).fill("duplicated")},rawRows:Array(1000).fill("raw")}
+const compact=compactShoppingFacts(hugePurchase)
+assert.equal(compact.products.length,6)
+assert.equal(compact.trends.priceChanges.length,4)
+assert.equal(compact.actionPlan.preferences.noCooking,true)
+assert.equal(compact.actionPlan.goal.monthlyTarget,20)
+assert.equal(compact.rawRows,undefined)
+assert.equal(compact.actionPlan.priceChanges,undefined)
+assert.ok(JSON.stringify(compactAdvisorLocalContext({financial:{budgetAdvisorContext:{shoppingHabits:hugePurchase},rawRows:hugePurchase.rawRows}})).length<5000)
+assert.match(backend,/local_purchase_compact_fallback/)
+assert.ok(backend.indexOf("local_purchase_compact_fallback")<backend.indexOf('rpc("reserve_advisor_ai_request"'))
