@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import { extractPurchasePreferences, isPurchaseConstraintFollowUp } from "./engine/purchases/purchasePreferences.mjs"
 import { buildBriefLocalConversation, briefConversationFallback, finishBriefConversation } from "./engine/routing/briefConversation.mjs"
+import { buildBudgetScenario } from "./engine/routing/budgetScenarios.mjs"
 import { buildLocalAdministrativeAction } from "./engine/routing/localAdministrativeActions.mjs"
 import { isDirectPurchaseAction, renderLocalPurchaseAction } from "./engine/purchases/localPurchaseActions.mjs"
 import { identifyPurchaseAction, buildPurchaseActionPlan } from "./engine/purchases/purchaseActionPlan.mjs"
@@ -955,7 +956,7 @@ Deno.serve(async (req) => {
 
     const context = contextResult.context as AssistantContext
 
-    const localAdministrative = buildLocalAdministrativeAction({question:context.question,mode:context.mode,language:context.language,action:context.action})
+    const localAdministrative = (!context.action ? buildBudgetScenario({question:context.question,mode:context.mode,language:context.language}) : null) || buildLocalAdministrativeAction({question:context.question,mode:context.mode,language:context.language,action:context.action})
     if (localAdministrative) return jsonResponse({success:true,answer:localAdministrative.answer,source:localAdministrative.source,language:context.language,mode:context.mode,consumed:false,openAiCallCount:0,recommendedAidIds:[],recommendedAidNames:[]})
 
     // Personal purchase questions use authenticated server data, even with an old client.

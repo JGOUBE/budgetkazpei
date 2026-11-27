@@ -16,7 +16,9 @@ export function buildProactiveAdvisorNotices(summary,language="fr",now=new Date(
   const kr=["kr","cr","kreol"].includes(language), list=[]
   const reminder=buildAdministrativeReminderNotice(summary?.administrativeReminders,language,now,dismissed)
   if(reminder)list.push(reminder)
-  if(!summary?.available||summary.truncated||summary.observedVisits<3)return list
+  const budgetNotice=buildExplicitBudgetNotice(summary?.budgetEvidence,language,now)
+  if(budgetNotice)list.push(budgetNotice)
+  if(!summary?.available||summary.truncated||summary.observedVisits<3)return list.sort((a,b)=>b.score-a.score)
   const add=n=>list.push(n)
   for(const p of summary.trends?.priceChanges||[]){
     if(p.observations<4||!finite(p.changePercent)||Math.abs(p.changePercent)<15||!finite(p.previousObservedUnitPrice)||!finite(p.recentObservedUnitPrice)||p.previousObservedUnitPrice<=0||p.recentObservedUnitPrice<=0||!units[p.unit]||!p.label||!p.lastDate||!finite(dateAge(p.lastDate,now))||dateAge(p.lastDate,now)<0||dateAge(p.lastDate,now)>30)continue
@@ -130,4 +132,36 @@ export async function loadAdministrativeReminders(client,userId){
     const aid=Array.isArray(p?.aides_reunion)?p.aides_reunion[0]:p?.aides_reunion
     return p&&aid?.nom?{id:r.id,date:String(r.reminder_date||"").slice(0,10),title:aid.nom,titleKreol:aid.nom_kreol,status:p.statut}:null
   }).filter(Boolean)
+}
+
+// Only explicit user-created targets, current-month recorded expenses, and
+// rows belonging to the current account. No defaults, receipt double-counting,
+// or inferred monthly projection. Use information already loaded on Home.
+const budgetLabels={alimentaire:["Courses","Courses"],logement:["Logement","Kaz"],transport:["Transport","Transport"],energie:["Énergie","Kouran"],telecom:["Téléphone et internet","Téléfone ek internet"],assurances:["Assurances","Assirans"],sante:["Santé","Santé"],loisirs:["Loisirs","Loizir"],divers:["Divers","Divers"]}
+export function buildExplicitBudgetEvidence({userId,transactions=[],targets=[],now=new Date(),loading=false}={}){
+  if(!userId||loading)return []
+  const month=new Intl.DateTimeFormat("en-CA",{timeZone:"Indian/Reunion",year:"numeric",month:"2-digit"}).format(now).slice(0,7)
+  const today=new Intl.DateTimeFormat("en-CA",{timeZone:"Indian/Reunion",year:"numeric",month:"2-digit",day:"2-digit"}).format(now)
+  const totals=new Map()
+  for(const row of transactions){
+    const date=String(row.date||"").slice(0,10), category=String(row.category||row.categorie||row.categoryId||"").toLowerCase(),n=Number(row.amount)
+    if(row.user_id!==userId||!date.startsWith(month+"-")||date>today||!Object.hasOwn(budgetLabels,category)||!Number.isFinite(n)||n>=0)continue
+    totals.set(category,(totals.get(category)||0)+Math.round(-n*100))
+  }
+  return targets.filter(t=>t.user_id===userId&&t.alert_enabled!==false&&Object.hasOwn(budgetLabels,t.category)&&Number.isFinite(Number(t.amount))&&Number(t.amount)>0)
+    .map(t=>({category:t.category,limit:Math.round(Number(t.amount)*100)/100,spent:(totals.get(t.category)||0)/100}))
+    .filter(t=>t.spent>=t.limit+5&&t.spent>=t.limit*1.05)
+    .sort((a,b)=>(b.spent-b.limit)-(a.spent-a.limit))
+}
+export function buildExplicitBudgetNotice(evidence=[],language="fr",now=new Date()){
+  const kr=["kr","cr","kreol"].includes(language),p=(Array.isArray(evidence)?evidence:[]).find(x=>Object.hasOwn(budgetLabels,x.category)&&finite(x.limit)&&x.limit>0&&finite(x.spent)&&x.spent>=x.limit+5&&x.spent>=x.limit*1.05)
+  if(!p)return null
+  const label=budgetLabels[p.category][kr?1:0],month=new Intl.DateTimeFormat("en-CA",{timeZone:"Indian/Reunion",year:"numeric",month:"2-digit"}).format(now)
+  return {kind:"budget_target",key:"budget_target:"+month+":"+p.category+":"+Math.floor((p.spent-p.limit)/20),score:100,
+    text:kr?"Ou la dépassé lo budget ou té fixé pou "+label.toLowerCase()+".":"Les dépenses enregistrées dépassent l’objectif que vous avez fixé pour « "+label+" ».",
+    detail:label+" : "+money(p.spent)+" / "+money(p.limit),
+    rows:[{label:kr?"Out objectif":"Votre objectif",meta:money(p.limit)},{label:kr?"Bann dépans anrezistré":"Dépenses enregistrées",meta:money(p.spent)},{label:kr?"Dépasseman":"Dépassement",meta:money(p.spent-p.limit)}],
+    period:kr?"Bann transactions sa mwa-la, hors charges fixes ajoutées à part.":"Transactions du mois en cours, hors charges fixes ajoutées séparément.",
+    action:kr?"Vérifie sak ou la dépans, ek garde dabor larzan pou bann besoins essentiels.":"Vérifiez les achats de ce poste, puis préservez en priorité les dépenses essentielles. Un objectif dépassé n’est pas forcément un budget global déficitaire.",
+    destination:"depenses"}
 }

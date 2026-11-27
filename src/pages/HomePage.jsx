@@ -32,6 +32,7 @@ export default function HomePage({
   isPremium = false,
   budgetStats = {},
   budgetLoading = false,
+  budgetEvidence = [],
   onNavigate,
   onAddExpense,
 }) {
@@ -56,7 +57,7 @@ export default function HomePage({
         <p>{isKreol ? "Out bidzé, tout simplement." : "Votre budget, tout simplement."}</p>
       </header>
 
-      <ProactiveAdvisorNotice userId={user?.id} language={language} enabled={isPremium} onNavigate={onNavigate} />
+      <ProactiveAdvisorNotice userId={user?.id} language={language} enabled={isPremium} onNavigate={onNavigate} budgetEvidence={budgetEvidence} />
 
       <nav className="bkp-home-action-grid" aria-label={isKreol ? "Bann aksyon rapides" : "Accès rapides"}>
         {ACTIONS.map(action => {

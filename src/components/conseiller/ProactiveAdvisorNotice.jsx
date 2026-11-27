@@ -3,7 +3,7 @@ import { Sparkles, X, ChevronRight, ChevronDown } from "lucide-react"
 import { supabase } from "../../services/supabase"
 import { handoffToAdvisor } from "../../services/advisorHandoff"
 import { loadRecordedPurchases } from "../../../supabase/functions/assistant-aisupabase/engine/purchases/recordedPurchases.mjs"
-import { buildProactiveAdvisorNotice, shouldShowAdvisorNotice, noticeFingerprint, createNoticeLoader, loadAdministrativeReminders } from "../../services/ai/proactiveAdvisor"
+import { buildProactiveAdvisorNotice, shouldShowAdvisorNotice, noticeFingerprint, createNoticeLoader, loadAdministrativeReminders, buildExplicitBudgetNotice } from "../../services/ai/proactiveAdvisor"
 
 const loader=createNoticeLoader(async userId=>{
   const [summary,administrativeReminders]=await Promise.all([
@@ -27,7 +27,7 @@ function readDismissed(userId){
   }catch{return {at:0,fingerprints:[]}}
 }
 const buttonStyle={background:"#DCECE5",border:"1px solid #B7D8CD",color:"#286558",borderRadius:9,padding:"9px 12px",fontSize:13,fontWeight:650,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:6,fontFamily:"inherit"}
-export default function ProactiveAdvisorNotice({userId,language="fr",enabled=false,onNavigate}){
+export default function ProactiveAdvisorNotice({userId,language="fr",enabled=false,onNavigate,budgetEvidence=[]}){
   const [result,setResult]=useState(null)
   const [hidden,setHidden]=useState(null)
   const [expanded,setExpanded]=useState(false)
@@ -54,20 +54,23 @@ export default function ProactiveAdvisorNotice({userId,language="fr",enabled=fal
     }).catch(()=>{if(active)setResult(null)})
     return ()=>{active=false}
   },[userId,language,enabled,revision,sessionDismissed])
-  const notice=enabled&&result?.userId===userId&&result?.language===language?result.notice:null
-  const fingerprint=noticeFingerprint(notice)
+  const dataNotice=enabled&&result?.userId===userId&&result?.language===language?result.notice:null
   const stored=readDismissed(userId)
   const dismissed=sessionDismissed.userId===userId?{at:Math.max(stored.at,sessionDismissed.at),fingerprints:[...new Set([...stored.fingerprints,...sessionDismissed.fingerprints])]}:stored
-  if(!notice||hidden?.userId===userId&&hidden?.fingerprint===fingerprint||dismissed.fingerprints.includes(fingerprint)||!shouldShowAdvisorNotice(notice,notice.kind==="admin_reminder"?0:dismissed.at))return null
+  const budgetNotice=enabled&&userId?buildExplicitBudgetNotice(budgetEvidence,language):null
+  const eligibleBudget=budgetNotice&&!dismissed.fingerprints.includes(noticeFingerprint(budgetNotice))?budgetNotice:null
+  const notice=dataNotice?.kind==="admin_reminder"?dataNotice:eligibleBudget||dataNotice
+  const fingerprint=noticeFingerprint(notice)
+  if(!notice||hidden?.userId===userId&&hidden?.fingerprint===fingerprint||dismissed.fingerprints.includes(fingerprint)||!shouldShowAdvisorNotice(notice,["admin_reminder","budget_target"].includes(notice.kind)?0:dismissed.at))return null
   function dismiss(){
-    const at=notice.kind==="admin_reminder"?dismissed.at:Date.now()
+    const at=["admin_reminder","budget_target"].includes(notice.kind)?dismissed.at:Date.now()
     try{localStorage.setItem(keyFor(userId),JSON.stringify({at,fingerprints:[fingerprint,...dismissed.fingerprints.filter(x=>x!==fingerprint)].slice(0,12)}))}catch{}
     setSessionDismissed({userId,at,fingerprints:[fingerprint,...dismissed.fingerprints].slice(0,12)})
     setHidden({userId,fingerprint})
   }
   function open(){
     // Opening a suggestion is not the same as explicitly dismissing it.
-    if(["shoppingSavingsOnly","demarches"].includes(notice.destination) && typeof onNavigate==="function"){onNavigate(notice.destination);return}
+    if(["shoppingSavingsOnly","demarches","depenses"].includes(notice.destination) && typeof onNavigate==="function"){onNavigate(notice.destination);return}
     if(notice.prompt)handoffToAdvisor({mode:"general",prompt:notice.prompt})
   }
   return (
@@ -92,7 +95,7 @@ export default function ProactiveAdvisorNotice({userId,language="fr",enabled=fal
           <p style={{fontSize:12,lineHeight:1.5,margin:"5px 0 0",color:"#48665B"}}>{notice.period}</p>
         </div> : <p style={{fontWeight:650,fontSize:14,lineHeight:1.6,margin:"0 0 8px",overflowWrap:"anywhere"}}>{notice.detail}</p>}
         <p style={{fontSize:13,lineHeight:1.6,margin:"0 0 12px"}}>{notice.action}</p>
-        <button type="button" onClick={open} style={buttonStyle}>{notice.destination==="demarches"?(kr?"Voir mon démarche":"Voir ma démarche"):notice.destination==="shoppingSavingsOnly"?(kr?"Mon bann lékonomi":"Voir mes économies"):(kr?"Koz ek mon konseyé":"En parler au Conseiller")}<ChevronRight size={16} aria-hidden="true"/></button>
+        <button type="button" onClick={open} style={buttonStyle}>{notice.destination==="depenses"?(kr?"Voir mon bann dépans":"Voir mes dépenses"):notice.destination==="demarches"?(kr?"Voir mon démarche":"Voir ma démarche"):notice.destination==="shoppingSavingsOnly"?(kr?"Mon bann lékonomi":"Voir mes économies"):(kr?"Koz ek mon konseyé":"En parler au Conseiller")}<ChevronRight size={16} aria-hidden="true"/></button>
       </div>}
     </aside>
   )

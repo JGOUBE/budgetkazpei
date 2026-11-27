@@ -36,6 +36,7 @@ import { prepareAdvisorAideContext } from "../../services/advisorAideContext"
 import { buildAdvisorRequestBody } from "../../services/advisorRequestPayload"
 import { normalizeAdvisorAnswerFormatting } from "../../services/advisorAnswerFormatting"
 import { buildLocalBudgetPlanningAnswer } from "../../services/ai/budgetPlanning.js"
+import { buildBudgetScenario } from "../../../supabase/functions/assistant-aisupabase/engine/routing/budgetScenarios.mjs"
 import { buildLocalAdministrativeAction } from "../../../supabase/functions/assistant-aisupabase/engine/routing/localAdministrativeActions.mjs"
 import { buildLocalAidProcedureAnswer, isLocalAidProcedureRequest, buildLocalAidSourceAnswer, isLocalAidSourceRequest } from "../../services/advisorLocalAidAnswer"
 import {
@@ -679,7 +680,7 @@ export default function AssistantConseiller({
 
     // A short confirmation should continue the last offer rather than be
     // dismissed as off-topic. Use recorded figures without an AI call.
-    const planningAnswer = ["general","budget_depenses"].includes(currentMode) ? buildLocalBudgetPlanningAnswer({question:sentQuestion,insights:questionInsights,language:responseLanguage,unavailable:loadingInsights||Boolean(financialContextError)}) : null
+    const planningAnswer = buildBudgetScenario({question:sentQuestion,mode:currentMode,language:responseLanguage}) || (["general","budget_depenses"].includes(currentMode) ? buildLocalBudgetPlanningAnswer({question:sentQuestion,insights:questionInsights,language:responseLanguage,unavailable:loadingInsights||Boolean(financialContextError)}) : null)
     if (planningAnswer) {
       setHistory(prev => [{ id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, question: sentQuestion, answer: planningAnswer.answer, source: planningAnswer.source, language: responseLanguage, mode: "budget_depenses", createdAt: new Date().toISOString() }, ...prev].slice(0, 6))
       setLoadingAssistant(false)

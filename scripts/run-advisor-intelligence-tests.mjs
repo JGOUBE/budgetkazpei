@@ -120,3 +120,28 @@ assert.match(backend, /const memoryEnrichmentAllowed = false/)
 assert.doesNotMatch(backend, /source: "local_offtopic"/)
 
 console.log("OK: budget responses, short FR/KR topic changes, off-topic quotas, compact prompts and single-call safeguards.")
+
+import { buildBudgetScenario } from "../supabase/functions/assistant-aisupabase/engine/routing/budgetScenarios.mjs"
+import { buildExplicitBudgetEvidence,buildExplicitBudgetNotice } from "../src/services/ai/proactiveAdvisor.js"
+import { buildBudgetAdvisorContext } from "../src/services/ai/budgetAdvisorContext.js"
+assert.match(buildBudgetScenario({question:"Si j'économise 50 € par mois pendant 6 mois"}).answer,/300,00/)
+assert.match(buildBudgetScenario({question:"Si mi met de koté 50 € par mwa pendant 6 mwa",language:"kreol"}).answer,/300,00/)
+assert.match(buildBudgetScenario({question:"Je veux économiser 100 € en 3 mois"}).answer,/33,34/)
+assert.match(buildBudgetScenario({question:"J'ai 200 € pour 9 jours"}).answer,/22,22/)
+assert.match(buildBudgetScenario({question:"Avec 1800 € de revenus, 800 € de charges fixes, 600 € de dépenses variables"}).answer,/400,00/)
+assert.match(buildBudgetScenario({question:"Avec 1000 € de revenus 800 € de charges fixes 400 € de dépenses variables"}).answer,/manquerait.*200,00/)
+assert.equal(buildBudgetScenario({question:"J'ai 200 € pour 0 jours"}),null)
+assert.equal(buildBudgetScenario({question:"J'ai 200 € pour 9 jours et quelles aides CAF ?"}),null)
+assert.equal(buildBudgetScenario({question:"Je veux économiser 50 € par mois sur mes courses"}),null)
+assert.equal(buildBudgetScenario({question:"Si j'économise 50 € par mois pendant 6 mois",mode:"comprendre_courrier"}),null)
+const targetNow=new Date("2026-11-27T09:00:00Z"),targetUser="budget-test"
+const targetData={userId:targetUser,now:targetNow,transactions:[{user_id:targetUser,category:"alimentaire",amount:-250,date:"2026-11-24"},{user_id:"other",category:"alimentaire",amount:-900,date:"2026-11-24"},{user_id:targetUser,category:"alimentaire",amount:-900,date:"2026-10-24"},{user_id:targetUser,category:"alimentaire",amount:50,date:"2026-11-24"}],targets:[{user_id:targetUser,id:"uuid",category:"alimentaire",amount:200,alert_enabled:true}]}
+const evidence=buildExplicitBudgetEvidence(targetData)
+assert.deepEqual(evidence,[{category:"alimentaire",spent:250,limit:200}])
+assert.equal(buildExplicitBudgetEvidence({...targetData,loading:true}).length,0)
+assert.equal(buildExplicitBudgetEvidence({...targetData,targets:[{...targetData.targets[0],alert_enabled:false}]}).length,0)
+assert.equal(buildExplicitBudgetEvidence({...targetData,targets:[{...targetData.targets[0],user_id:"other"}]}).length,0)
+assert.equal(buildExplicitBudgetNotice(evidence,"fr",targetNow).kind,"budget_target")
+assert.match(buildExplicitBudgetNotice(evidence,"kreol",targetNow).text,/Ou la dépassé/)
+const targetContext=buildBudgetAdvisorContext({currentMonth:{transactionsCount:1,categories:[{id:"alimentaire",amount:250}]},budgetTargets:[{id:"uuid",category:"alimentaire",amount:200}]})
+assert.deepEqual(targetContext.budgetTargets,[{category:"alimentaire",amount:200,spent:250}])
