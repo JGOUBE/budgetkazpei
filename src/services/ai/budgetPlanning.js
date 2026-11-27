@@ -3,7 +3,7 @@
 // A theoretical envelope is never a bank balance or confirmed available cash.
 const cents=n=>Math.round(n*100)
 const euro=n=>new Intl.NumberFormat("fr-FR",{style:"currency",currency:"EUR"}).format(n/100)
-const norm=s=>String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[’']/g," ").replace(/[^\da-z,.\s€-]/g," ").replace(/\s+/g," ").trim().replace(/[.?!]+$/,"")
+const norm=s=>String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[’']/g," ").replace(/(?<=[a-z])-(?=[a-z])/g," ").replace(/[^\da-z,.\s€-]/g," ").replace(/\s+/g," ").trim().replace(/[.?!]+$/,"")
 const valid=n=>typeof n==="number"&&Number.isFinite(n)
 const moneyToken="(\\d{1,7}(?:[,.]\\d{1,2})?)\\s*(?:€|euros?)"
 const amount=s=>{const n=Number(String(s).replace(",","."));return n>0&&n<=1000000?cents(n):null}
