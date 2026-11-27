@@ -8,7 +8,7 @@ export function identifyPurchaseAction(question=""){
   const t=norm(question)
   if(/\b(?:caf|rsa|ccas|aide alimentaire|plus de quoi manger|pas de quoi manger|fiction|imagine|invente)\b/.test(t))return null
   if (/^(?:quels produits de mes achats ont change de prix|kels produits dann mon bann achats la sanze de pri)$/.test(t))return {kind:"price_changes"}
-  if (/^(?:quelles economies possibles sur mes achats|kels lekonomi possibles su mon bann achats)$/.test(t))return {kind:"opportunities"}
+  if (/^(?:je (?:veux|souhaite|voudrais|aimerais) (?:ameliorer|optimiser) mes (?:achats|courses)|comment (?:ameliorer|optimiser) mes (?:achats|courses)|quelles economies possibles sur mes achats|comment faire des economies sur mes courses|mi ve ameliore mon bann achats|mi ve ameliore mon bann courses|koman mi pe ameliore mon bann achats|kels lekonomi possibles su mon bann achats)$/.test(t))return {kind:"opportunities"}
   if (/^prepare mon liste courses selon mon bann labitid d achat$/.test(t))return {kind:"shopping_checklist"}
   if (/^poukwa mi depanse (?:plis|moins) pou mon bann courses$/.test(t))return {kind:"drivers"}
   const scope=/\b(?:mes courses|mes achats|mes depenses alimentaires|mon budget courses|mon budget alimentaire|mes tickets|mes habitudes d achat|mes habitudes alimentaires)\b/.test(t)

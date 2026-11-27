@@ -8,7 +8,7 @@ export function isDirectPurchaseAction(question="",action=null){
   const t=norm(question)
   if(t.length>160||/\b(?:et aussi|et pourquoi|et comment|et si|puis|mais|sans|avec|tout en|caf|rsa|ccas|aide|urgence|recette|enfants|sante|alimentation|sans gluten|allergie|diabete)\b/.test(t))return false
   if(action.kind==="price_changes")return /^(?:quels produits de mes achats ont change de prix|kels produits dann mon bann achats la sanze de pri)$/.test(t)
-  if(action.kind==="opportunities")return /^(?:quelles economies possibles sur mes achats|kels lekonomi possibles su mon bann achats)$/.test(t)
+  if(action.kind==="opportunities")return /^(?:je (?:veux|souhaite|voudrais|aimerais) (?:ameliorer|optimiser) mes (?:achats|courses)|comment (?:ameliorer|optimiser) mes (?:achats|courses)|quelles economies possibles sur mes achats|comment faire des economies sur mes courses|mi ve ameliore mon bann achats|mi ve ameliore mon bann courses|koman mi pe ameliore mon bann achats|kels lekonomi possibles su mon bann achats)$/.test(t)
   if(action.kind==="drivers")return /^(?:pourquoi mes courses (?:me )?coutent (?:plus|moins) cher|pourquoi mes depenses alimentaires (?:ont augmente|ont diminue)|pourquoi je depense (?:plus|moins) sur mes courses|explique(?: moi)? pourquoi mes courses (?:me )?coutent (?:plus|moins) cher|poukwa mi depanse (?:plis|moins) pou mon bann courses)$/.test(t)
   if(action.kind==="goal")return /^(?:je veux|je souhaite|j aimerais|comment puis je|comment)?\s*(?:economiser|reduire de)\s+\d+(?: \d{1,2})?\s*(?:euros? )?(?:par mois|chaque mois) sur (?:mes courses|mes achats|mon budget courses|mon budget alimentaire)$/.test(t)
   if(action.kind==="shopping_checklist")return /^(?:prepare|propose|fais) (?:moi )?(?:une|ma) liste de courses (?:selon|d apres|a partir de) mes habitudes d achat$|^prepare mon liste courses selon mon bann labitid d achat$/.test(t)
@@ -25,9 +25,19 @@ export function renderLocalPurchaseAction(plan,action,language="fr"){
     return (kr?"**Bann pri unitaires observé ki la changé**":"**Variations de prix unitaires observées**")+"\n\n"+rows.map(p=>"- "+p.label+" : "+euro(p.previousObservedUnitPrice)+"/"+(unit[p.unit]||p.unit)+" → "+euro(p.recentObservedUnitPrice)+"/"+(unit[p.unit]||p.unit)+" ("+(p.changePercent>0?"+":"")+p.changePercent+" %, "+p.observations+(kr?" jours d'achat":" jours d'achat")+").").join("\n\n")+"\n\n"+(kr?"Compare minm produit ek minm format. Pri observé pa garanti zordi.":"Comparez le même produit et le même format. Ces prix ont été observés sur vos tickets, ils ne sont pas garantis aujourd'hui.")
   }
   if(action.kind==="opportunities"){
-    const cases=plan.opportunities||[]
-    if(!cases.length)return kr?"Mi trouve poin poste assez régulier pou chiffre in piste fiable.":"Je ne trouve pas encore de poste d'achat suffisamment régulier pour chiffrer une piste fiable."
-    return (kr?"**Bann pistes lékonomi su out achats**":"**Pistes d'économies sur vos achats**")+"\n\n"+cases.map(f=>"- **"+f.label+"** : "+euro(f.recent30Spend)+(kr?" su 30 derniers jours complets. ":" sur les 30 derniers jours complets. ")+(kr?f.advice.kr:f.advice.fr)+(f.scenario25===null?"":(kr?" In baisse de 25 % i représente ":" Une réduction hypothétique de 25 % représenterait ")+euro(f.recent30Spend*.25)+(kr?" avan pri remplacement.":" avant le coût des éventuels remplacements."))).join("\n\n")
+    const cases=(plan.opportunities||[]).filter(f=>Number.isFinite(f.recent30Spend)&&f.recent30Spend>0&&f.advice).slice(0,2)
+    if(!cases.length){
+      const priorities=(plan.priorityProducts||[]).filter(p=>p.label&&Number.isFinite(p.recent30Spend)).slice(0,2)
+      return priorities.length
+        ? (kr?"Mi commenceré par compare bann produits ou aste souvan : ":"Je commencerais par comparer le prix de ces produits que vous achetez régulièrement : ")+priorities.map(p=>p.label+" ("+euro(p.recent30Spend)+")").join(", ")+". "+(kr?"Sa sé bann dépans anrezistré su 30 derniers jours complets. Mi pé pa chiffre in lékonomi san pri comparable.":"Ce sont vos dépenses enregistrées sur les 30 derniers jours complets. Je ne peux pas encore chiffrer une économie sans prix comparables.")
+        : (kr?"Mi pé pa ankor chiffre in lékonomi fiable. Pour out prochain courses, compare lo pri au kilo ou au litre ek vérifie sak i reste la kaz.":"Je n’ai pas encore assez de relevés pour chiffrer une économie fiable. Pour vos prochaines courses, comparez les prix au kilo ou au litre et vérifiez ce que vous avez déjà à la maison.")
+    }
+    const reductions=cases.filter(f=>f.scenario25!==null&&f.scenario25!==undefined)
+    const gross=reductions.reduce((s,f)=>s+Math.round(f.recent30Spend*100*.25),0)/100
+    const lines=cases.map(f=>"- **"+f.label+" : "+euro(f.recent30Spend)+".** "+(kr?f.advice.kr:f.advice.fr))
+    const intro=kr?"Dapré out bann tiké su 30 derniers jours complets, mi commenceré par sa :":"D’après vos tickets des 30 derniers jours complets, je commencerais par ces pistes :"
+    const scenario=gross>0?(kr?"\n\nSi ou baisse de 25 % bann dépenses ajustables citées, sa fé environ **"+euro(gross)+"** de dépans en moins, avan pri remplacement. Sé in exemple, pa in lékonomi garantie.":"\n\nSi vous réduisiez de 25 % les postes ajustables cités, cela représenterait environ **"+euro(gross)+"** de dépenses en moins, avant le coût des remplacements. C’est une piste, pas une économie garantie."):""
+    return intro+"\n\n"+lines.join("\n\n")+scenario+"\n\n"+(kr?"Pou out prochain courses, compare bann pri pou minm produit ek minm format. Pa besoin supprim tout sak ou aime.":"Pour vos prochaines courses, comparez le prix des mêmes produits et formats, sans renoncer à tout ce que vous aimez.")
   }
   if(action.kind==="drivers")return renderPurchaseDrivers(plan.drivers,language)||(kr?"Nana poin assez relevés pou explique sa différence-la.":"Je n’ai pas encore suffisamment de relevés comparables pour expliquer cette évolution de façon fiable.")
   if(action.kind==="goal"&&plan.goal){

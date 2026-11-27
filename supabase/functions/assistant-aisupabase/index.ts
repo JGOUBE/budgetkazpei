@@ -431,7 +431,7 @@ ANALYSE PERSONNALISÉE DES BUDGETS :
 - Pour expliquer une évolution des dépenses, exploite shoppingHabits.trends.drivers : les contributions sont des écarts observés, pas des causes prouvées. Ne cite les effets prix et quantités que si canExplainPriceQuantity est vrai ; les unités et libellés comparables ne garantissent pas une identité parfaite. Ne confonds jamais les produits absents des relevés avec des achats abandonnés. Si les données sont insuffisantes, dis-le.
 - Pour les produits réguliers, utilise shoppingHabits : dates start/end, available, observedVisits, products (purchaseVisits et purchaseDays). Ce sont des observations personnelles sur 90 jours et non des quantités consommées. Ne complète jamais la liste par des produits supposés ; si la période demandée diffère, indique la limite de ces données.
 - Une dépense du mois en cours n'est pas un mois complet. Ne compare pas mécaniquement un mois partiel à un mois entier ; précise la période et n'extrapole pas sans demande explicite.
-- Pour une analyse utile : donne un constat chiffré réellement présent, identifie un levier d'économie cohérent avec les catégories observées, et propose une action réaliste ; si les données ne suffisent pas, dis exactement laquelle manque.
+- Pour une analyse utile : commence par le constat qui répond à la question, puis deux ou trois conseils concrets. Ne récite pas le dernier ticket, ne répète pas les mêmes conseils et ne termine pas par une conclusion générique. Pour un simple conseil d'achat, vise 100 à 160 mots. N'évoque ni simulation officielle ni organisme pour une dépense personnelle. Cite le montant et la période uniquement s'ils sont réellement disponibles. Évite les libellés de caisse en majuscules ; si le produit est ambigu, ne le cite pas.
 - N'invente ni montant d'économies potentielles, ni meilleur magasin, ni prime éligible. Les prix historiques ne sont jamais des prix garantis aujourd'hui.
 
 PRIORITÉ DE RAISONNEMENT BUDGETKAZPEI :
@@ -1519,7 +1519,7 @@ Deno.serve(async (req) => {
             rawAnswer,
             context.language,
             toTrustedAmountClaims(trustedAidFacts),
-            context.mode === "budget_depenses"
+            (context.mode === "budget_depenses" || Boolean(purchaseIntent))
               ? [...collectBudgetAmounts(context.body?.localContext?.financial?.budgetAdvisorContext)]
               : [],
           )
@@ -1535,9 +1535,13 @@ Deno.serve(async (req) => {
         })
     // Only improve generic Markdown link labels pointing to exact, trusted
     // source URLs. Never rewrite any URL or add an invented reference.
-    const purchaseAdvice = recordedPurchases && /\b(?:alimentation|economi|economiser|economies|conseil|conseils|ameliorer|habitudes|depenses|achats)\b/i.test(context.question.normalize("NFD").replace(/[\u0300-\u036f]/g,"")) ? renderPurchaseAdviceCases(recordedPurchases, context.language, {preferences:purchasePreferences}) : ""
-    const answer = recordedPurchases
-      ? recordedPurchaseEvidence(recordedPurchases, context.language) + "\n\n" + (purchaseAdvice ? purchaseAdvice + "\n\n" : "") + (/\b(?:je ne peux pas acceder|je n ai pas acces|je ne peux pas consulter|je ne dispose pas de vos achats|je ne peux pas voir)\b/.test(checkedAnswer.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g," ")) ? (context.isKreol ? "Nou pé regarde bann produits-la pou prépare out prochains achats." : "Nous pouvons partir de ces produits pour comparer les prix et varier les prochains achats selon vos besoins.") : checkedAnswer)
+    // Do not concatenate three versions of the same advice. The model already
+    // receives the computed purchase facts. If a purchase-only reply invents
+    // a figure or denies access, fall back to the concise computed advice.
+    const purchaseOnly = Boolean(recordedPurchases?.available && purchaseIntent && !trustedAidFacts.length && !/\b(?:caf|apl|rsa|allocation|prestation|aide|prime|organisme|droit)\b/i.test(context.question.normalize("NFD").replace(/[\u0300-\u036f]/g,"")))
+    const purchaseAnswerInvalid = purchaseOnly && (reviewResult.issues.some((issue:any)=>issue.type==="amount") || /\b(?:je ne peux pas acceder|je n ai pas acces|je ne peux pas consulter|je ne dispose pas de vos achats|je ne peux pas voir)\b/.test(checkedAnswer.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ")))
+    const answer = purchaseAnswerInvalid
+      ? renderLocalPurchaseAction(buildPurchaseActionPlan(recordedPurchases,{kind:"opportunities"},purchasePreferences),{kind:"opportunities"},context.language) || recordedPurchaseEvidence(recordedPurchases,context.language)
       : briefConversation ? finishBriefConversation(checkedAnswer,context.language) : focusedAidPrompts ? clarifyLocalAidLinks(checkedAnswer, trustedAidFacts) : checkedAnswer
     const mentionedTrustedAids = findMentionedTrustedAids(answer, trustedAidFacts)
 
