@@ -13,9 +13,17 @@ const daysOK=n=>Number.isInteger(n)&&n>=1&&n<=366
 const monthsOK=n=>Number.isInteger(n)&&n>=1&&n<=120
 const kr=l=>["kr","cr","kreol"].includes(l)
 const result=(kind,answer)=>({kind,answer,source:"local_budget_scenario"})
+// Recognize common written durations only in the explicit duration slot.
+const durationWords={un:1,une:1,deux:2,des:2,trois:3,quatre:4,cinq:5,six:6,sept:7,huit:8,neuf:9,dix:10,onze:11,douze:12}
+function naturalDuration(text){
+  return text.replace(/\b(en|pendant|pour) (un|une|deux|trois|quatre|cinq|six|sept|huit|neuf|dix|onze|douze) (mois|mwa|jours?|zours?)\b/g,(_,prep,n,unit)=>prep+" "+durationWords[n]+" "+unit)
+    .replace(/\b(en|pendant) (?:un an|une annee)\b/g,"$1 12 mois")
+    .replace(/\bchaque mois\b/g,"par mois")
+    .replace(/^(si je mets|si mi met) ([\d ,.]+ euros?) de cote par (mois|mwa) /,"$1 de cote $2 par $3 ")
+}
 export function buildBudgetScenario({question="",language="fr",context=null,mode="general"}={}){
   if(!["general","budget_depenses"].includes(mode)||String(question).length>240||(String(question).match(/\?/g)||[]).length>1)return null
-  const t=norm(question),k=kr(language)
+  const t=naturalDuration(norm(question)),k=kr(language)
   let m=t.match(new RegExp("^(?:si j economise|si je mets de cote|si mi met de kote|si mi ekonomiz|si mi ekonomise) "+a+euros+" par (?:mois|mwa) pendant (\\d{1,3}) (?:mois|mwa)(?: combien (?:aurai je|j aurai|ca fait|ca fera|vais je economiser|mi sava gagne|mi nor[aé])(?: au total)?)?$"))
   if(m){
     const monthly=amount(m[1]),months=Number(m[2]);if(!positive(monthly)||!monthsOK(months))return null

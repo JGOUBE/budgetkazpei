@@ -145,3 +145,8 @@ assert.equal(buildExplicitBudgetNotice(evidence,"fr",targetNow).kind,"budget_tar
 assert.match(buildExplicitBudgetNotice(evidence,"kreol",targetNow).text,/Ou la dépassé/)
 const targetContext=buildBudgetAdvisorContext({currentMonth:{transactionsCount:1,categories:[{id:"alimentaire",amount:250}]},budgetTargets:[{id:"uuid",category:"alimentaire",amount:200}]})
 assert.deepEqual(targetContext.budgetTargets,[{category:"alimentaire",amount:200,spent:250}])
+
+assert.match(buildBudgetScenario({question:"Je veux économiser 600 € en six mois."}).answer,/100,00/)
+assert.match(buildBudgetScenario({question:"Si je mets 80 € de côté chaque mois pendant un an ?"}).answer,/960,00/)
+assert.match(buildBudgetScenario({question:"J'ai 100 € pour sept jours."}).answer,/14,28/)
+assert.equal(buildBudgetScenario({question:"Je veux économiser 600 € en six mois et quelles aides CAF ?"}),null)
