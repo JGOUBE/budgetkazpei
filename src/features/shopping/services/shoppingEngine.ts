@@ -147,17 +147,20 @@ function buildShoppingRows({ userId, transactionId, receipt, items }: { userId: 
 export async function listShoppingItems({
   userId,
   includeProductIdentity = false,
+  signal,
 }: {
   userId?: string
   includeProductIdentity?: boolean
+  signal?: AbortSignal
 }) {
   if (!userId) return []
 
-  const { data, error } = await supabase
+  const shoppingQuery = supabase
     .from("shopping_items")
     .select("*")
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
+  const { data, error } = await (signal ? shoppingQuery.abortSignal(signal) : shoppingQuery)
 
   if (error) throw error
   const shoppingItems = data || []
@@ -166,12 +169,13 @@ export async function listShoppingItems({
   const receiptIds = [...new Set(shoppingItems.map(item => item.receipt_id).filter(Boolean))]
   if (receiptIds.length === 0) return shoppingItems
 
-  const identityResult = await supabase
+  const identityQuery = supabase
     .from("receipt_items")
     .select("receipt_id,name,corrected_name,normalized_name,quantity,unit_price,total_price,market_product_id,market_matched,market_match_type,market_canonical_name,market_brand,market_package_format")
     .eq("user_id", userId)
     .eq("market_matched", true)
     .in("receipt_id", receiptIds)
+  const identityResult = await (signal ? identityQuery.abortSignal(signal) : identityQuery)
 
   if (identityResult.error) {
     console.warn("[shopping] Identités produits validées indisponibles, historique conservé sans enrichissement")

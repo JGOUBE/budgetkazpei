@@ -159,9 +159,9 @@ function buildBudgetTargets(insights = {}, categoryRows = []) {
   const currentByCategory = new Map(categoryRows.map(row => [row.category, row.amount]))
   return safeArray(insights.budgetTargets)
     .map(target => ({
-      category: target.id || target.category,
+      category: target.category || target.id,
       amount: positiveOrNull(target.budget ?? target.amount),
-      spent: rounded(currentByCategory.get(target.id || target.category)) || 0,
+      spent: rounded(currentByCategory.get(target.category || target.id)) || 0,
     }))
     .filter(target => target.category && target.amount !== null)
 }

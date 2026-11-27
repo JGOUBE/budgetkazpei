@@ -35,7 +35,10 @@ import { selectAidCandidatesForAdvisor } from "../../services/aidesRanking"
 import { prepareAdvisorAideContext } from "../../services/advisorAideContext"
 import { buildAdvisorRequestBody } from "../../services/advisorRequestPayload"
 import { normalizeAdvisorAnswerFormatting } from "../../services/advisorAnswerFormatting"
-import { buildLocalAidSourceAnswer, isLocalAidSourceRequest } from "../../services/advisorLocalAidAnswer"
+import { buildLocalBudgetPlanningAnswer } from "../../services/ai/budgetPlanning.js"
+import { buildBudgetScenario } from "../../../supabase/functions/assistant-aisupabase/engine/routing/budgetScenarios.mjs"
+import { buildLocalAdministrativeAction } from "../../../supabase/functions/assistant-aisupabase/engine/routing/localAdministrativeActions.mjs"
+import { buildLocalAidProcedureAnswer, isLocalAidProcedureRequest, buildLocalAidSourceAnswer, isLocalAidSourceRequest } from "../../services/advisorLocalAidAnswer"
 import {
   shouldLookupAdvisorAids,
   shouldUseLocalBudgetAnswer,
@@ -677,6 +680,24 @@ export default function AssistantConseiller({
 
     // A short confirmation should continue the last offer rather than be
     // dismissed as off-topic. Use recorded figures without an AI call.
+    const planningAnswer = buildBudgetScenario({question:sentQuestion,mode:currentMode,language:responseLanguage}) || (["general","budget_depenses"].includes(currentMode) ? buildLocalBudgetPlanningAnswer({question:sentQuestion,insights:questionInsights,language:responseLanguage,unavailable:loadingInsights||Boolean(financialContextError)}) : null)
+    if (planningAnswer) {
+      setHistory(prev => [{ id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, question: sentQuestion, answer: planningAnswer.answer, source: planningAnswer.source, language: responseLanguage, mode: "budget_depenses", createdAt: new Date().toISOString() }, ...prev].slice(0, 6))
+      setLoadingAssistant(false)
+      setPendingMessage(null)
+      setAssistantMode("general")
+      setAdvisorHandoffContext(null)
+      return
+    }
+    const administrativeAnswer = buildLocalAdministrativeAction({question:sentQuestion,mode:currentMode,language:responseLanguage})
+    if (administrativeAnswer) {
+      setHistory(prev => [{ id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, question: sentQuestion, answer: administrativeAnswer.answer, source: administrativeAnswer.source, language: responseLanguage, mode: currentMode, createdAt: new Date().toISOString() }, ...prev].slice(0, 6))
+      setLoadingAssistant(false)
+      setPendingMessage(null)
+      setAssistantMode("general")
+      setAdvisorHandoffContext(null)
+      return
+    }
     const habitAnswer = ["general", "budget_depenses", "trouver_aide"].includes(currentMode)
       ? buildLocalShoppingHabitAnswer({ question: sentQuestion, insights: questionInsights, language: responseLanguage, unavailable: Boolean(financialContextError) }) : null
     if (habitAnswer) {
@@ -767,14 +788,14 @@ export default function AssistantConseiller({
         conversationContext: preliminaryContext,
         recentHistory: history,
         handoffContext: advisorHandoffContext,
-      }) || isLocalAidSourceRequest(sentQuestion)
+      }) || isLocalAidSourceRequest(sentQuestion) || isLocalAidProcedureRequest(sentQuestion)
       const aides = needAidFacts ? await fetchAides() : []
 
       // An exact request for an existing aid's reference URL is answered from
       // the catalogue. No model, no backend Edge Function, and no fabricated
       // eligibility or amount. Keep the exchange for natural follow-ups.
       const localAid = ["general", "trouver_aide"].includes(currentMode)
-        ? buildLocalAidSourceAnswer({ question: sentQuestion, aides, language: responseLanguage })
+        ? (buildLocalAidProcedureAnswer({ question: sentQuestion, aides, language: responseLanguage }) || buildLocalAidSourceAnswer({ question: sentQuestion, aides, language: responseLanguage }))
         : null
       if (localAid) {
         setHistory(prev => [{

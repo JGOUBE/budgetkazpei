@@ -1,6 +1,7 @@
 import { useCallback, useState, useEffect } from "react"
 import { useAuth } from "./hooks/useAuth"
 import { useLanguage } from "./hooks/useLanguage"
+import { buildExplicitBudgetEvidence } from "./services/ai/proactiveAdvisor"
 import { useTransactions } from "./hooks/useTransactions"
 import { useBudgets } from "./hooks/useBudgets"
 import { useProfile } from "./hooks/useProfile"
@@ -320,7 +321,7 @@ function BudgetKazPeiApp({
 
   const hasPremiumAccess = isPremium || isPremiumPlus
 
-  const { customBudgets, saveBudgets } = useCustomBudgets(
+  const { customBudgets, saveBudgets, loading: budgetTargetsLoading } = useCustomBudgets(
     user?.id,
     hasPremiumAccess
   )
@@ -766,6 +767,7 @@ function BudgetKazPeiApp({
             onAddExpense={() => setShowModal(true)}
             budgetStats={{ revenus, depenses, solde }}
             budgetLoading={transactionsLoading || abonnementsLoading}
+            budgetEvidence={buildExplicitBudgetEvidence({userId:user?.id,transactions,targets:customBudgets,loading:transactionsLoading||budgetTargetsLoading})}
           />
         )}
 

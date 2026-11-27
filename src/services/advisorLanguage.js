@@ -1,9 +1,10 @@
 const KREOL_STRONG_MARKERS = [
   "mi", "moin", "mwin", "bann", "marmay", "zot", "aou", "kosa", "gagn",
   "domann", "koman", "koze", "koz", "travay", "nout", "ankor", "bonzour",
+  "bidze", "depans", "lekonomi", "mersi", "poukwa", "poukoi", "marmaille", "kourrie", "kombyin",
 ]
 
-const KREOL_WEAK_MARKERS = ["pou", "ek", "dann", "out", "na", "kaz", "pei", "renyon"]
+const KREOL_WEAK_MARKERS = ["pou", "ek", "dann", "out", "na", "kaz", "pei", "renyon", "zed", "aste", "pwin", "poin"]
 
 const FRENCH_MARKERS = [
   "je", "vous", "votre", "mes", "des", "les", "une", "pour", "avec", "dans",
@@ -41,7 +42,7 @@ export function detectExplicitAdvisorLanguage(message = "") {
   const text = normalizeText(message)
   if (!text) return null
 
-  const actionPattern = /\b(repond|reponds|repondez|tradui|traduis|traduire|ecri|ecris|ecrivez|parle|parlez|formule|formulez|explique|expliquez)\b/
+  const actionPattern = /\b(repond|reponds|repondez|repon|tradui|traduis|traduire|ecri|ecris|ecrivez|parle|parlez|koz|koze|formule|formulez|explique|expliquez|esplik)\b/
   if (!actionPattern.test(text) && !/^en (?:francais|kreol|creole)\b/.test(text)) return null
 
   const targets = [

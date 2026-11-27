@@ -22,12 +22,12 @@ import { useTheme } from "../../styles/ThemeProvider"
 
 const COLORS = createColorAliases({
   red: () => "#FB7185",
-  orange: () => "#FB923C",
+  orange: () => "#526B62",
 })
 
 function getReadableAccent(color, themeName = COLORS.themeName) {
   if (themeName !== "light") return color
-  if (color === COLORS.yellow) return "#B45309"
+  if (color === COLORS.yellow) return "#665144"
   if (color === COLORS.green) return "#15803D"
   if (color === COLORS.cyan) return "#0284C7"
   if (color === COLORS.purple) return "#6D28D9"
@@ -55,7 +55,7 @@ const SUIVI_STATUSES = [
     value: "en_attente",
     fr: "En attente",
     kr: "En attente",
-    icon: "🟠",
+    icon: "🔵",
     color: COLORS.accent,
     progress: 65,
   },
@@ -87,7 +87,7 @@ function getCategoryColor(category) {
   const colors = {
     emploi: "#38BDF8",
     logement: "#22C55E",
-    famille: "#F97316",
+    famille: "#496A3A",
     scolarite: "#A78BFA",
     etudiant: "#A78BFA",
     energie: "#FCD34D",
@@ -372,6 +372,7 @@ export default function DemarchesPage({
       prev.map(item => (item.id === demarcheId ? normalizedDemarche : item))
     )
 
+    window.dispatchEvent(new Event("budgetkazpei:demarches-updated"))
     if (statut === "obtenue") {
       setGainModalDemarche(normalizedDemarche)
     }
@@ -435,6 +436,7 @@ export default function DemarchesPage({
     )
 
     setGainModalDemarche(null)
+    window.dispatchEvent(new Event("budgetkazpei:demarches-updated"))
     return { data, error: null }
   }
 
@@ -461,6 +463,7 @@ export default function DemarchesPage({
     }
 
     setDemarches(prev => prev.filter(item => item.id !== id))
+    window.dispatchEvent(new Event("budgetkazpei:demarches-updated"))
   }
 
   async function fetchReminders() {
@@ -553,6 +556,7 @@ export default function DemarchesPage({
       },
     }))
 
+    window.dispatchEvent(new Event("budgetkazpei:demarches-updated"))
     return { data, error: null }
   }
 
@@ -588,6 +592,7 @@ export default function DemarchesPage({
       return next
     })
 
+    window.dispatchEvent(new Event("budgetkazpei:demarches-updated"))
     return { error: null }
   }
 

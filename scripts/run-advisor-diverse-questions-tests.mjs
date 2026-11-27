@@ -151,7 +151,9 @@ assert.equal(isSelfContainedNewQuestion("Combien ?"),false)
 const promptFr=buildSystemPrompt("fr","","general")
 const promptKr=buildSystemPrompt("kreol","","general")
 assert.match(promptFr,/OUVERTURE À TOUTES LES QUESTIONS/)
-assert.match(promptFr,/Combien de lunes possède Jupiter/)
+assert.match(promptFr,/courte réponse ou un avis prudent/)
+assert.match(promptFr,/directement ou indirectement liés/)
+assert.match(promptKr,/Pa fé in long développement/)
 assert.match(promptKr,/TOUT BANN KESTION/)
 const index=await readFile(new URL("../supabase/functions/assistant-aisupabase/index.ts",import.meta.url),"utf8")
 assert.match(index,/isProtectedAdvisorQuestion/)
@@ -646,3 +648,193 @@ assert.equal(buildPurchaseAdviceCases(adviceSummary,{excludedFamilies:["alcohol"
 const noCookSummary={available:true,adviceFamilies:[{key:"cakes",label:"Biscuits",purchaseDays:4,purchaseVisits:4,observedSpend:40}]}
 assert.doesNotMatch(renderPurchaseAdviceCases(noCookSummary,"fr",{preferences:{noCooking:true}}),/préparations maison/)
 assert.equal(extractPurchasePreferences("J'aime les biscuits").excludedFamilies.length,0)
+
+
+import { buildProactiveAdvisorNotice, buildProactiveAdvisorNotices, shouldShowAdvisorNotice, NOTICE_COOLDOWN, NOTICE_CACHE_TTL, noticeFingerprint, createNoticeLoader } from "../src/services/ai/proactiveAdvisor.js"
+import { isDirectPurchaseAction, renderLocalPurchaseAction } from "../supabase/functions/assistant-aisupabase/engine/purchases/localPurchaseActions.mjs"
+const noticeNow = new Date("2026-11-24T12:00:00Z")
+const noticeSummary={available:true,observedVisits:5,trends:{priceChanges:[{label:"Lait 1 L",unit:"l",observations:4,changePercent:25,previousObservedUnitPrice:2.8,recentObservedUnitPrice:3.5,lastDate:"2026-11-23"}]}}
+const notice=buildProactiveAdvisorNotice(noticeSummary,"fr",noticeNow)
+assert.equal(notice.kind,"price")
+assert.match(notice.detail,/25 %/)
+assert.equal(buildProactiveAdvisorNotice({...noticeSummary,truncated:true},"fr",noticeNow),null)
+assert.equal(buildProactiveAdvisorNotice({...noticeSummary,observedVisits:2},"fr",noticeNow),null)
+assert.equal(buildProactiveAdvisorNotice({...noticeSummary,trends:{priceChanges:[{...noticeSummary.trends.priceChanges[0],lastDate:"2026-10-01"}]}},"fr",noticeNow),null)
+assert.equal(buildProactiveAdvisorNotice({...noticeSummary,trends:{priceChanges:[{...noticeSummary.trends.priceChanges[0],lastDate:"invalid"}]}},"fr",noticeNow),null)
+assert.equal(buildProactiveAdvisorNotice({...noticeSummary,trends:{priceChanges:[{...noticeSummary.trends.priceChanges[0],changePercent:-20,recentObservedUnitPrice:2.24}]}},"fr",noticeNow).kind,"price_down")
+const opportunitySummary={available:true,observedVisits:5,adviceFamilies:[{key:"cakes",label:"Biscuits",recent30PurchaseDays:3,recent30Spend:40}]}
+assert.equal(buildProactiveAdvisorNotice(opportunitySummary,"fr",noticeNow).kind,"opportunity")
+assert.match(buildProactiveAdvisorNotice(opportunitySummary,"fr",noticeNow).action,/10,00/)
+assert.equal(buildProactiveAdvisorNotice({...opportunitySummary,adviceFamilies:[{key:"plain_preserves",label:"Conserves",recent30PurchaseDays:4,recent30Spend:50}]},"fr",noticeNow),null)
+assert.equal(buildProactiveAdvisorNotice({...noticeSummary,...{adviceFamilies:opportunitySummary.adviceFamilies}},"fr",noticeNow,[noticeFingerprint(notice)]).kind,"opportunity")
+assert.equal(shouldShowAdvisorNotice(notice,1000,1000+NOTICE_COOLDOWN-1),false)
+assert.equal(shouldShowAdvisorNotice(notice,1000,1000+NOTICE_COOLDOWN,noticeFingerprint(notice)),false)
+assert.equal(shouldShowAdvisorNotice(notice,1000,1000+NOTICE_COOLDOWN),true)
+let noticeReads=0
+const cacheLoader=createNoticeLoader(async id=>({available:true,id,calls:++noticeReads}))
+const [cacheA,cacheB]=await Promise.all([cacheLoader.get("test-a",1000),cacheLoader.get("test-a",1000)])
+assert.equal(noticeReads,1)
+assert.deepEqual(cacheA,cacheB)
+assert.equal((await cacheLoader.get("test-b",1001)).id,"test-b")
+assert.equal(noticeReads,2)
+await cacheLoader.get("test-b",1001+NOTICE_CACHE_TTL)
+assert.equal(noticeReads,3)
+cacheLoader.clear()
+await cacheLoader.get("test-b",1002+NOTICE_CACHE_TTL)
+assert.equal(noticeReads,4)
+assert.equal(isDirectPurchaseAction("Je veux économiser 50 € par mois sur mes courses",monthlyGoal),true)
+assert.equal(isDirectPurchaseAction("Je veux économiser 50 € par mois sur mes courses et comment demander le RSA ?",monthlyGoal),false)
+assert.equal(isDirectPurchaseAction("Je veux économiser 50 € par mois sur mes courses sans changer de magasin",monthlyGoal),false)
+assert.match(renderLocalPurchaseAction(actionPlan,monthlyGoal),/30,00/)
+assert.match(renderLocalPurchaseAction(actionPlan,monthlyGoal),/20,00/)
+assert.match(renderLocalPurchaseAction(actionPlan,monthlyGoal),/ne garantit pas/)
+assert.match(renderLocalPurchaseAction(actionPlan,{kind:"shopping_checklist"}),/Riz 1 kg/)
+assert.match(renderLocalPurchaseAction({...actionPlan,progress:{...actionPlan.progress,recent30:{spend:300,visits:5},prior30:{spend:350,visits:6}}},{kind:"progress"}),/ne prouve pas une économie réalisée/)
+
+import { buildPurchaseDrivers, renderPurchaseDrivers } from "../supabase/functions/assistant-aisupabase/engine/purchases/purchaseDrivers.mjs"
+const driverRows=[]
+for(let i=0;i<3;i++){
+  driverRows.push({product_name:"Produit "+i+" 1 kg",unit:"kg",quantity:2,price:6,created_at:"2026-11-"+(10+i),receipt_id:"recent-"+i})
+  driverRows.push({product_name:"Produit "+i+" 1 kg",unit:"kg",quantity:1,price:2,created_at:"2026-10-"+(10+i),receipt_id:"prior-"+i})
+}
+driverRows.push({product_name:"Produit seulement récent",unit:"piece",quantity:1,price:5,created_at:"2026-11-10",receipt_id:"recent-0"})
+driverRows.push({product_name:"Produit seulement ancien",unit:"piece",quantity:1,price:4,created_at:"2026-10-10",receipt_id:"prior-0"})
+const driverComparison={recent30:{spend:23},prior30:{spend:10},observedDifference:13}
+const drivers=buildPurchaseDrivers(driverRows,new Date("2026-11-24T12:00:00Z"),driverComparison)
+assert.equal(drivers.priceEffect,4.5)
+assert.equal(drivers.quantityEffect,7.5)
+assert.equal(drivers.onlyRecent,5)
+assert.equal(drivers.onlyPrior,-4)
+assert.equal(drivers.canExplainPriceQuantity,true)
+assert.equal(drivers.roundingResidual,0)
+assert.match(renderPurchaseDrivers(drivers),/quantités achetées/)
+assert.equal(buildPurchaseDrivers(driverRows,new Date("2026-11-24T12:00:00Z"),driverComparison,true),null)
+assert.equal(buildPurchaseDrivers(driverRows,new Date("2026-11-24T12:00:00Z"),{...driverComparison,recent30:{spend:99}}),null)
+assert.equal(identifyPurchaseAction("Pourquoi mes courses me coûtent plus cher ?").kind,"drivers")
+assert.equal(isDirectPurchaseAction("Pourquoi mes courses me coûtent plus cher ?",{kind:"drivers"}),true)
+assert.equal(isDirectPurchaseAction("Pourquoi mes courses me coûtent plus cher et comment obtenir une aide ?",{kind:"drivers"}),false)
+assert.equal(isPersonalPurchaseAnalysisQuestion("Pourquoi mes courses me coûtent plus cher ?"),true)
+assert.match(renderLocalPurchaseAction({available:true,drivers},{kind:"drivers"}),/Effet estimé/)
+
+for(const question of ["Quels produits de mes achats ont changé de prix ?","Quelles économies possibles sur mes achats ?","Kels produits dann mon bann achats la sanzé de pri ?","Kels lékonomi possibles su mon bann achats ?","Prépare mon liste courses selon mon bann labitid d'achat.","Poukwa mi dépansé plis pou mon bann courses ?"]){
+  const action=identifyPurchaseAction(question)
+  assert.ok(action,question)
+  assert.equal(isDirectPurchaseAction(question,action),true,question)
+  assert.equal(personalPurchaseIntent(question),"analysis",question)
+  assert.equal(isPersonalPurchaseAnalysisQuestion(question),true,question)
+}
+assert.equal(isDirectPurchaseAction("Quels produits de mes achats ont changé de prix et comment obtenir une aide ?",{kind:"price_changes"}),false)
+const localPricePlan=buildPurchaseActionPlan({...noticeSummary,trends:noticeSummary.trends},{kind:"price_changes"})
+assert.match(renderLocalPurchaseAction(localPricePlan,{kind:"price_changes"}),/25 %/)
+const localOpportunityPlan=buildPurchaseActionPlan({...planSummary,adviceFamilies:[{key:"cakes",label:"Biscuits",purchaseDays:4,purchaseVisits:4,observedSpend:90,recent30Spend:40,recent30PurchaseDays:3}]},{kind:"opportunities"})
+assert.match(renderLocalPurchaseAction(localOpportunityPlan,{kind:"opportunities"}),/10,00/)
+assert.doesNotMatch(renderLocalPurchaseAction(localOpportunityPlan,{kind:"opportunities"}),/90,00/)
+assert.equal(buildPurchaseActionPlan({...noticeSummary,truncated:true},{kind:"price_changes"}).priceChanges.length,0)
+
+const recurringNoticeSummary={available:true,truncated:false,observedVisits:9,products:[
+  {label:"Pains au chocolat x10",purchaseDays:5,purchaseVisits:5,lastObservedAt:"2026-11-23"},
+  {label:"Chocolat noir extra",purchaseDays:5,purchaseVisits:5,lastObservedAt:"2026-11-17"},
+  {label:"Gouda 300 g",purchaseDays:3,purchaseVisits:3,lastObservedAt:"2026-11-23"},
+  {label:"Produit ancien",purchaseDays:9,purchaseVisits:9,lastObservedAt:"2026-09-20"},
+  {label:"Produit ponctuel",purchaseDays:1,purchaseVisits:1,lastObservedAt:"2026-11-23"}
+],trends:{priceChanges:[],replenishment:[]},adviceFamilies:[]}
+const recurringNotice=buildProactiveAdvisorNotice(recurringNoticeSummary,"fr",noticeNow)
+assert.equal(recurringNotice.kind,"recurring")
+assert.equal(recurringNotice.destination,"shoppingSavingsOnly")
+assert.match(recurringNotice.detail,/Pains au chocolat x10 — 5 jours/)
+assert.match(recurringNotice.detail,/Chocolat noir extra — 5 jours/)
+assert.doesNotMatch(recurringNotice.detail,/Produit ancien|Produit ponctuel/)
+assert.equal(buildProactiveAdvisorNotice({...recurringNoticeSummary,truncated:true},"fr",noticeNow),null)
+assert.equal(buildProactiveAdvisorNotice({...recurringNoticeSummary,products:recurringNoticeSummary.products.slice(0,1)},"fr",noticeNow),null)
+assert.equal(buildProactiveAdvisorNotice({...recurringNoticeSummary,trends:noticeSummary.trends},"fr",noticeNow).kind,"price")
+assert.equal(buildProactiveAdvisorNotice(recurringNoticeSummary,"fr",noticeNow,[noticeFingerprint(recurringNotice)]),null)
+assert.equal(buildProactiveAdvisorNotice(recurringNoticeSummary,"kreol",noticeNow).destination,"shoppingSavingsOnly")
+
+assert.equal(identifyPurchaseAdviceFamily("Pains au chocolat x10"),"cakes")
+assert.equal(identifyPurchaseAdviceFamily("Chocolat noir extra 47 % 3 x 100 g"),"chocolate")
+assert.equal(identifyPurchaseAdviceFamily("Barquette de tomates 500 g"),null)
+assert.equal(identifyPurchaseAdviceFamily("Cake salé olives"),null)
+assert.equal(identifyPurchaseAdviceFamily("Chocolat pâtissier 200 g"),null)
+assert.equal(identifyPurchaseAdviceFamily("Lait chocolat 1 L"),null)
+assert.equal(identifyPurchaseAdviceFamily("Boîte de cassoulet haricots"),"prepared_meals")
+assert.equal(identifyPurchaseAdviceFamily("Boîte de haricots rouges"),"plain_preserves")
+assert.equal(buildPurchaseAdviceCases({...adviceSummary,truncated:true}).length,0)
+const gramRows=[0,7,14,21].map((age,i)=>({product_name:"Chocolat 300 g",created_at:new Date(trendNow.getTime()-age*86400000).toISOString(),receipt_id:"grams"+i,unit:"g",quantity:300,price:i<2?3.6:3}))
+const gramTrend=buildPurchaseTrends(gramRows,trendNow)
+assert.equal(gramTrend.priceChanges[0].unit,"kg")
+assert.equal(gramTrend.priceChanges[0].previousObservedUnitPrice,10)
+assert.equal(gramTrend.priceChanges[0].recentObservedUnitPrice,12)
+assert.equal(gramTrend.priceChanges[0].changePercent,20)
+const sweetNoticeSummary={available:true,observedVisits:5,adviceFamilies:[{key:"chocolate",label:"Chocolats et confiseries",recent30Spend:30,recent30PurchaseDays:3}]}
+assert.equal(buildProactiveAdvisorNotice(sweetNoticeSummary,"fr",noticeNow).kind,"opportunity")
+assert.equal(extractPurchasePreferences("Je veux garder le chocolat").excludedFamilies.includes("chocolate"),true)
+
+assert.equal(recurringNotice.rows.length,3)
+assert.ok(recurringNotice.rows.some(row=>row.label==="Pains au chocolat x10"&&row.meta==="5 jours d’achat"))
+assert.match(recurringNotice.period,/90 derniers jours/)
+
+import { buildLocalAdministrativeAction } from "../supabase/functions/assistant-aisupabase/engine/routing/localAdministrativeActions.mjs"
+import { buildLocalAidProcedureAnswer } from "../src/services/advisorLocalAidAnswer.js"
+assert.match(buildLocalAdministrativeAction({question:"Rédige un mail pour relancer mon dossier"}).answer,/\[date, si connue\]/)
+assert.match(buildLocalAdministrativeAction({question:"Rédige un courrier pour demander un rendez-vous"}).answer,/Objet : Demande de rendez-vous/)
+assert.match(buildLocalAdministrativeAction({question:"Quels justificatifs préparer pour une demande d'aide ?"}).answer,/indicative/)
+assert.equal(buildLocalAdministrativeAction({question:"Rédige un mail pour relancer mon dossier CAF refusé hier"}),null)
+assert.equal(buildLocalAdministrativeAction({question:"Rédige un mail pour relancer mon dossier et calcule mes droits"}),null)
+assert.equal(buildLocalAdministrativeAction({question:"Rédige un mail pour relancer mon dossier",action:"analyze_refusal"}),null)
+const exactAidFixture={id:"demo",nom:"Aide de test",actif:true,statut_verification:"source_confirmee",demarches_fr:"Contactez le service référent.",lien_officiel:"https://www.service-public.fr",date_verification:"2026-11-01"}
+assert.match(buildLocalAidProcedureAnswer({question:"Comment demander l'aide de test ?",aides:[exactAidFixture]}).answer,/Contactez le service référent/)
+assert.equal(buildLocalAidProcedureAnswer({question:"Comment demander l'aide de test si je gagne 1000 euros ?",aides:[exactAidFixture]}),null)
+assert.equal(buildLocalAidProcedureAnswer({question:"Comment demander l'aide de test ?",aides:[{...exactAidFixture,statut_verification:"non_verifie"}]}),null)
+const priorityNoticeSummary={...recurringNoticeSummary,priorityProducts:[{label:"Lait de chèvre 6x1 L",recent30Spend:32.76,recent30PurchaseDays:2},{label:"Gouda 300 g",recent30Spend:16.15,recent30PurchaseDays:3}]}
+const priorityNotice=buildProactiveAdvisorNotice(priorityNoticeSummary,"fr",noticeNow)
+assert.equal(priorityNotice.kind,"priority")
+assert.equal(priorityNotice.rows.length,2)
+assert.equal(priorityNotice.destination,"shoppingSavingsOnly")
+assert.match(priorityNotice.period,/30 derniers jours complets/)
+assert.equal(buildProactiveAdvisorNotice({...priorityNoticeSummary,truncated:true},"fr",noticeNow),null)
+
+import { buildBriefLocalConversation, finishBriefConversation, briefConversationFallback } from "../supabase/functions/assistant-aisupabase/engine/routing/briefConversation.mjs"
+assert.match(buildBriefLocalConversation("Pourquoi le ciel est bleu ?","fr"),/diffuse davantage/)
+assert.match(buildBriefLocalConversation("Poukwa lo syèl lé blé ?","kreol"),/Lo syèl/)
+assert.match(buildBriefLocalConversation("Quelle est la capitale du Japon ?","fr"),/Tokyo/)
+assert.match(buildBriefLocalConversation("Raconte-moi une histoire de dragon","fr"),/mon domaine/)
+assert.equal(buildBriefLocalConversation("Pourquoi le ciel est bleu et quel est mon budget ?","fr"),null)
+assert.equal(buildBriefLocalConversation("Quel budget pour les loisirs de mes enfants ?","fr"),null)
+assert.equal(buildBriefLocalConversation("Quelles aides pour ma famille ?","fr"),null)
+assert.match(finishBriefConversation("C'est une question intéressante.","fr"),/Mon rôle/)
+assert.match(briefConversationFallback("kreol"),/out bidzé/)
+assert.equal(classifyAdvisorSpendScope({question:"Quel budget prévoir pour les jeux vidéo de mes enfants ?"}),"useful")
+assert.equal(classifyAdvisorSpendScope({question:"Koman mi pé fé bann lékonomi ?"}),"useful")
+assert.equal(classifyAdvisorSpendScope({question:"Mi vé demann in zéd"}),"useful")
+
+import { buildAdministrativeReminderNotice } from "../src/services/ai/proactiveAdvisor.js"
+const reminderFixture={id:"r1",date:"2026-11-25",title:"Dossier de test",status:"a_preparer"}
+assert.equal(buildAdministrativeReminderNotice([reminderFixture],"fr",noticeNow).kind,"admin_reminder")
+assert.equal(buildAdministrativeReminderNotice([{...reminderFixture,status:"obtenue"}],"fr",noticeNow),null)
+assert.equal(buildAdministrativeReminderNotice([{...reminderFixture,date:"2026-12-20"}],"fr",noticeNow),null)
+assert.equal(buildProactiveAdvisorNotice({available:false,administrativeReminders:[reminderFixture]},"fr",noticeNow).destination,"demarches")
+assert.equal(buildProactiveAdvisorNotice({...noticeSummary,administrativeReminders:[reminderFixture]},"fr",noticeNow).kind,"admin_reminder")
+assert.match(buildAdministrativeReminderNotice([reminderFixture],"kreol",noticeNow).action,/pa in délai officiel/)
+
+import { buildMonthlyPlanningContext, identifyBudgetPlanningQuestion, buildLocalBudgetPlanningAnswer } from "../src/services/ai/budgetPlanning.js"
+const planningFixture={budgetAdvisorContext:{period:{type:"current_month_to_date"},income:{total:1500},expenses:{fixed:800,variable:400}},ranges:{current:{inclusiveEndDate:"2026-11-20"}},dataAvailability:{transactions:true,recurringCharges:true},currentMonth:{incomes:1500},currentTransactions:[1,3,5,7,10].map(d=>({amount:-80,date:"2026-11-"+String(d).padStart(2,"0")}))}
+assert.equal(buildMonthlyPlanningContext(planningFixture).margin,30000)
+assert.equal(buildMonthlyPlanningContext(planningFixture).daysRemaining,10)
+assert.match(buildLocalBudgetPlanningAnswer({question:"Combien puis-je dépenser par jour jusqu'à la fin du mois ?",insights:planningFixture}).answer,/30,00/)
+assert.match(buildLocalBudgetPlanningAnswer({question:"Je veux mettre 100 € de côté ce mois-ci",insights:planningFixture}).answer,/20,00/)
+assert.match(buildLocalBudgetPlanningAnswer({question:"Si je dépense 350 € de plus ce mois-ci",insights:planningFixture}).answer,/50,00/)
+assert.match(buildLocalBudgetPlanningAnswer({question:"Il me reste 100 € pour 7 jours"}).answer,/14,28/)
+assert.match(buildLocalBudgetPlanningAnswer({question:"Si je continue comme ça combien me restera-t-il à la fin du mois ?",insights:planningFixture}).answer,/100,00/)
+assert.match(buildLocalBudgetPlanningAnswer({question:"Koman tenir ziska la fin du mwa ?",insights:planningFixture,language:"kreol"}).answer,/out marge théorique/)
+assert.match(buildLocalBudgetPlanningAnswer({question:"Comment tenir jusqu'à la fin du mois ?",insights:planningFixture,unavailable:true}).answer,/il me manque/)
+assert.equal(buildMonthlyPlanningContext({...planningFixture,dataAvailability:{transactions:false,recurringCharges:true}}),null)
+assert.equal(buildMonthlyPlanningContext({...planningFixture,budgetAdvisorContext:{...planningFixture.budgetAdvisorContext,period:{type:"previous_month"}}}),null)
+assert.equal(identifyBudgetPlanningQuestion("Je veux mettre 100 € de côté ce mois-ci et quelles aides CAF ?"),null)
+assert.equal(identifyBudgetPlanningQuestion("Il me reste 100 € pour 0 jours"),null)
+assert.equal(identifyBudgetPlanningQuestion("Il me reste -100 € pour 7 jours"),null)
+assert.equal(identifyBudgetPlanningQuestion("Il me reste 100 € pour 7 jours et je n'ai plus de quoi manger"),null)
+
+assert.equal(buildMonthlyPlanningContext({...planningFixture,currentMonth:{incomes:0}}),null,"A configured income is not cash")
+assert.equal(buildMonthlyPlanningContext({...planningFixture,recurringCharges:[{nom:"Loyer",montant:80}],currentTransactions:[{label:"Loyer",amount:-80,date:"2026-11-01"}]}),null,"Potential duplicate fixed charge")
+assert.equal(identifyBudgetPlanningQuestion("Koman mi pé tini ziska la fin du mwa ?").kind,"daily")
+assert.match(buildLocalBudgetPlanningAnswer({question:"Comment tenir jusqu'à la fin du mois ?",insights:{...planningFixture,currentMonth:{incomes:0}}}).answer,/revenu prévu/)

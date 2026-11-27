@@ -643,3 +643,21 @@
   color: #286558 !important;
   box-shadow: none !important;
 }
+
+/* Flat mineral controls: remove remaining warm saturated legacy accents. */
+#root .bkp-app-2026 :is(button,[role="button"]):is([style*="rgb(249, 115, 22)"],[style*="rgb(251, 146, 60)"],[style*="rgb(234, 88, 12)"],[style*="#F97316"],[style*="#f97316"],[style*="#FB923C"],[style*="#fb923c"],[style*="#ea580c"],[style*="#EA580C"]) {
+  background: #E4ECE1 !important;
+  background-image: none !important;
+  color: #355B34 !important;
+  border-color: #BACCB0 !important;
+  box-shadow: none !important;
+}
+#root .bkp-app-2026 .bkp-header-lang {
+  background: #E7E4DB !important;
+  background-image: none !important;
+  border-color: #C7C3B5 !important;
+  color: #55483E !important;
+}
+#root .bkp-app-2026 .bkp-header-profile { background-image: none !important; }
+#root .bkp-app-2026 :is(button,[role="button"]):not(:disabled):hover { filter: none !important; }
+#root .bkp-app-2026 :is(button,[role="button"])::after { display: none !important; }

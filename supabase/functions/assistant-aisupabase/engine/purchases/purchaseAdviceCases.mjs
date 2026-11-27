@@ -2,6 +2,7 @@
 const CASES = Object.freeze({
   alcohol: {fr:"Si vous souhaitez réduire ce poste, essayez de supprimer certains achats d'alcool ou de les remplacer par des boissons sans alcool moins coûteuses.",kr:"Si ou vé baisse sa poste-la, essaye diminié certains achats alcool ou pran in boisson sans alcool moins cher."},
   cakes: {fr:"Remplacer quelques goûters achetés par des préparations maison peut être intéressant si les ingrédients, le temps et les préférences du foyer le permettent.",kr:"Prépar in parti bann gouté la kaz si pri ingrédients ek out tan i permet."},
+  chocolate: {fr:"Comparez le prix au kilo des chocolats et confiseries que vous appréciez. Si vous souhaitez réduire ce poste, envisagez un format ou une fréquence d’achat adaptés, sans supprimer vos plaisirs.",kr:"Compare pri au kilo bann chocolat ek bonbon ou aime. Si ou vé baisse sa poste-la, regarde format ou fréquence d’achat adaptée."},
   sweet_drinks: {fr:"Pour certains achats, comparez avec de l'eau ou une boisson non sucrée moins coûteuse.",kr:"Pou certains achats, compare avèk delo ou in boisson sans sik moins cher."},
   prepared_meals: {fr:"Comparez le coût par portion avec un plat maison préparé en plusieurs portions, en tenant compte du temps et des restes.",kr:"Compare pri par portion avèk in plat préparé la kaz, an gardan bann restes."},
   plain_preserves: {fr:"Les conserves simples peuvent être économiques et pratiques. Comparez le prix au poids égoutté, quand il est disponible, et la composition.",kr:"Bann conserves simples i pé être économiques. Compare pri au poids égoutté si li lé renseigné."},
@@ -10,7 +11,7 @@ const CASES = Object.freeze({
 })
 const round = value=>Math.round(value*100)/100
 export function buildPurchaseAdviceCases(summary={},preferences={}) {
-  if (!summary.available) return []
+  if (!summary.available || summary.truncated) return []
   return (summary.adviceFamilies||[])
     .filter(f=>CASES[f.key] && !(preferences.excludedFamilies||[]).includes(f.key) && f.purchaseDays>=2 && Number.isFinite(f.observedSpend) && f.observedSpend>0)
     .map(f=>({...f, advice:preferences.noCooking&&["cakes","prepared_meals"].includes(f.key)?{fr:"Comparez les formats et les prix par portion de produits qui vous conviennent, sans augmenter le temps passé en cuisine.",kr:"Compare bann formats ek pri par portion san passe plis tan dann la kwizine."}:CASES[f.key],

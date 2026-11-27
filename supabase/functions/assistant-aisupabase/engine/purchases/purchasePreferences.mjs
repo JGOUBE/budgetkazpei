@@ -1,6 +1,6 @@
 // Explicit conversational constraints only. Never infer preferences from purchases.
 const norm=s=>String(s||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim()
-const categories={alcohol:"alcool|biere|bieres|vin|vins|rhum",cakes:"gateaux?|biscuits?|gouters?",sweet_drinks:"sodas?|boissons? sucrees?",prepared_meals:"plats? prepares?",salty_snacks:"chips|aperitifs?",bottled_water:"eau en bouteille",plain_preserves:"conserves?"}
+const categories={alcohol:"alcool|biere|bieres|vin|vins|rhum",cakes:"gateaux?|biscuits?|gouters?|viennoiseries?|pains? au chocolat|croissants?|brioches?",chocolate:"chocolats?|bonbons?|confiseries?",sweet_drinks:"sodas?|boissons? sucrees?",prepared_meals:"plats? prepares?",salty_snacks:"chips|aperitifs?",bottled_water:"eau en bouteille",plain_preserves:"conserves?"}
 const keep="(?:je (?:veux|souhaite|prefere|tiens a) (?:garder|conserver|continuer a acheter)|je ne veux pas (?:reduire|supprimer|changer|arreter)|je ne souhaite pas (?:reduire|supprimer|changer)|sans (?:reduire|supprimer|changer|toucher a)|pas touche a|ne touche pas a)"
 const allow="(?:je (?:peux|veux|souhaite|suis pret a|suis prete a) (?:reduire|supprimer|diminuer)|finalement je peux (?:reduire|diminuer))"
 export function extractPurchasePreferences(question="",history=[]){

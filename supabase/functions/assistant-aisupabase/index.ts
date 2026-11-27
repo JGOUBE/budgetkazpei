@@ -1,5 +1,9 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2"
 import { extractPurchasePreferences, isPurchaseConstraintFollowUp } from "./engine/purchases/purchasePreferences.mjs"
+import { buildBriefLocalConversation, briefConversationFallback, finishBriefConversation } from "./engine/routing/briefConversation.mjs"
+import { buildBudgetScenario } from "./engine/routing/budgetScenarios.mjs"
+import { buildLocalAdministrativeAction } from "./engine/routing/localAdministrativeActions.mjs"
+import { isDirectPurchaseAction, renderLocalPurchaseAction } from "./engine/purchases/localPurchaseActions.mjs"
 import { identifyPurchaseAction, buildPurchaseActionPlan } from "./engine/purchases/purchaseActionPlan.mjs"
 import { renderPurchaseAdviceCases, buildPurchaseAdviceCases } from "./engine/purchases/purchaseAdviceCases.mjs"
 import { personalPurchaseIntent, loadRecordedPurchases, recordedPurchaseEvidence } from "./engine/purchases/recordedPurchases.mjs"
@@ -423,6 +427,7 @@ ANALYSE PERSONNALISÉE DES BUDGETS :
 - Si shoppingHabits.actionPlan.goal est présent, réponds directement à l’objectif mensuel : détaille les postes et réductions hypothétiques déjà calculées, leur total et le reliquat. Ne promets pas le montant cible si les pistes ne le couvrent pas ; ne confonds pas réduction brute et économie nette après remplacements. Si insufficientHistory, explique que les relevés sont insuffisants et propose une méthode sans inventer de montant.
 - Pour une liste de courses adaptée, utilise actionPlan.checklist comme vérification de stock, non comme ordre d’achat. Ne prétends pas avoir enregistré la liste. Pour un bilan, utilise actionPlan.progress : une baisse des dépenses enregistrées n’est pas une économie réalisée vérifiée, notamment si des tickets manquent.
 - Respecte actionPlan.preferences : les excludedFamilies sont des postes que l’utilisateur a explicitement souhaité conserver, ne propose aucune réduction sur eux. Si noCooking, ne suggère pas de recettes ou de cuisine maison ; si noExtraTrips, n’exige aucun changement de magasin ni déplacement supplémentaire. Lors d’une correction explicite, adapte le plan et ne répète pas une recommandation rejetée. Les préférences sont conversationnelles et ne constituent pas des caractéristiques permanentes du foyer.
+- Pour expliquer une évolution des dépenses, exploite shoppingHabits.trends.drivers : les contributions sont des écarts observés, pas des causes prouvées. Ne cite les effets prix et quantités que si canExplainPriceQuantity est vrai ; les unités et libellés comparables ne garantissent pas une identité parfaite. Ne confonds jamais les produits absents des relevés avec des achats abandonnés. Si les données sont insuffisantes, dis-le.
 - Pour les produits réguliers, utilise shoppingHabits : dates start/end, available, observedVisits, products (purchaseVisits et purchaseDays). Ce sont des observations personnelles sur 90 jours et non des quantités consommées. Ne complète jamais la liste par des produits supposés ; si la période demandée diffère, indique la limite de ces données.
 - Une dépense du mois en cours n'est pas un mois complet. Ne compare pas mécaniquement un mois partiel à un mois entier ; précise la période et n'extrapole pas sans demande explicite.
 - Pour une analyse utile : donne un constat chiffré réellement présent, identifie un levier d'économie cohérent avec les catégories observées, et propose une action réaliste ; si les données ne suffisent pas, dis exactement laquelle manque.
@@ -489,7 +494,7 @@ Consignes pour cette question :
 - Distingue clairement les hypothèses imaginaires, la créativité et les faits réels.
 - Tu n'as pas de recherche Internet en direct ici : pour les chiffres économiques, taux, lois, aides, prix, actualités ou titulaires d'une fonction, ne présente pas un chiffre mémorisé comme vérifié aujourd'hui. Précise ce qui doit être confirmé et nomme le site officiel adapté sans inventer de lien.
 - Si l'information est incertaine ou changeante sans vérification récente, dis-le sans inventer de source.
-- Une question simple mérite une réponse simple, sans renvoi systématique vers une démarche.
+- Une question simple mérite une réponse simple. Sur un sujet extérieur au métier du Conseiller, une réponse courte et une transition naturelle suffisent ; ne développe pas longuement. Sur un vrai sujet de budget, d’aides ou de démarches, reste pleinement utile.
 - Une suite courte comme « Oui, ça va encore augmenter ? » se rattache au sujet précédent vérifié (par exemple le carburant). Réponds à ce sujet, sans dévier vers un message hors sujet.
 - Pour une évolution future du prix, exprime l'incertitude et n'invente pas de prévision ou de prix actuel.
 - Ne transforme pas une réponse de culture générale ou une estimation non administrative en simulation CAF.`.trim()
@@ -716,8 +721,9 @@ async function callOpenAi(params: {
   systemPrompt: string
   userPrompt: string
   action: string
+  briefConversation?: boolean
 }) {
-  const { openAiKey, model, systemPrompt, userPrompt, action } = params
+  const { openAiKey, model, systemPrompt, userPrompt, action, briefConversation = false } = params
 
   const response = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -728,7 +734,7 @@ async function callOpenAi(params: {
     body: JSON.stringify({
       model,
       temperature: action === "analyze_refusal" ? 0.15 : 0.45,
-      max_tokens: action === "analyze_refusal" ? 1300 : 1100,
+      max_tokens: briefConversation ? 160 : action === "analyze_refusal" ? 1300 : 1100,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt },
@@ -950,6 +956,9 @@ Deno.serve(async (req) => {
 
     const context = contextResult.context as AssistantContext
 
+    const localAdministrative = (!context.action ? buildBudgetScenario({question:context.question,mode:context.mode,language:context.language}) : null) || buildLocalAdministrativeAction({question:context.question,mode:context.mode,language:context.language,action:context.action})
+    if (localAdministrative) return jsonResponse({success:true,answer:localAdministrative.answer,source:localAdministrative.source,language:context.language,mode:context.mode,consumed:false,openAiCallCount:0,recommendedAidIds:[],recommendedAidNames:[]})
+
     // Personal purchase questions use authenticated server data, even with an old client.
     const purchaseIntent = context.action !== "analyze_refusal" ? personalPurchaseIntent(context.question, context.body?.recentHistory) : null
     const purchaseHistory = Array.isArray(context.body?.recentHistory) ? context.body.recentHistory : []
@@ -957,9 +966,14 @@ Deno.serve(async (req) => {
     const purchaseAction = identifyPurchaseAction(context.question) || (isPurchaseConstraintFollowUp(context.question,purchaseHistory) ? purchaseHistory.slice(0,3).map((turn:any)=>identifyPurchaseAction(turn?.question||"")).find((action:any)=>action?.kind==="goal") || null : null)
     const recordedPurchases = purchaseIntent ? await loadRecordedPurchases(supabaseAdmin, context.userId) : null
     if (recordedPurchases) {
+      const actionPlan = buildPurchaseActionPlan(recordedPurchases, purchaseAction, purchasePreferences)
       const local = context.body.localContext || {}
       const financial = local.financial || {}
-      context.body.localContext = { ...local, financial: { ...financial, budgetAdvisorContext: { ...financial.budgetAdvisorContext, shoppingHabits: { ...recordedPurchases, actionPlan: buildPurchaseActionPlan(recordedPurchases, purchaseAction, purchasePreferences), adviceCases: buildPurchaseAdviceCases(recordedPurchases,purchasePreferences).map(({advice,...item})=>item) } } } }
+      context.body.localContext = { ...local, financial: { ...financial, budgetAdvisorContext: { ...financial.budgetAdvisorContext, shoppingHabits: { ...recordedPurchases, actionPlan, adviceCases: buildPurchaseAdviceCases(recordedPurchases,purchasePreferences).map(({advice,...item})=>item) } } } }
+      if (isDirectPurchaseAction(context.question,purchaseAction)) {
+        const directAnswer=renderLocalPurchaseAction(actionPlan,purchaseAction,context.language)
+        if(directAnswer) return jsonResponse({success:true,answer:directAnswer,source:"local_purchase_action",language:context.language,mode:context.mode,consumed:false,openAiCallCount:0,recommendedAidIds:[],recommendedAidNames:[]})
+      }
       if (purchaseIntent === "latest" || !recordedPurchases.available || !recordedPurchases.latestPurchases.length) {
         return jsonResponse({ success: true, answer: recordedPurchaseEvidence(recordedPurchases, context.language), source: "local_recorded_purchases", language: context.language, mode: context.mode, consumed: false, openAiCallCount: 0, recommendedAidIds: [], recommendedAidNames: [] })
       }
@@ -1118,7 +1132,8 @@ Deno.serve(async (req) => {
     let spendScope = purchaseIntent ? "useful" : classifyAdvisorSpendScope({
       question: context.question, mode: context.mode, action: context.action,
     })
-    if (spendScope === "offtopic" &&
+    const knownBriefAnswer = spendScope === "offtopic" && !context.allowBilingualResponse ? buildBriefLocalConversation(context.question,context.language) : null
+    if (spendScope === "offtopic" && !knownBriefAnswer &&
         (isContextualAdvisorFollowUp(context.question) ||
          isPotentialAdvisorFollowUp(context.question))) {
       // Never treat unverified client conversation history or a mode flag as
@@ -1138,6 +1153,16 @@ Deno.serve(async (req) => {
     if (spendScope === "offtopic" &&
         !isContextualAdvisorFollowUp(context.question)) {
       await clearTrustedAdvisorTopic(supabaseAdmin, context.userId)
+    }
+
+    // Known everyday questions and clear out-of-scope writing tasks are free.
+    // Unknown benign questions get at most one short, metered completion.
+    const briefConversation = spendScope === "offtopic"
+    if (briefConversation) {
+      const briefAnswer = context.allowBilingualResponse ? null : (knownBriefAnswer || buildBriefLocalConversation(context.question, context.language))
+      if (briefAnswer || !openAiKey) {
+        return jsonResponse({success:true,answer:briefAnswer || briefConversationFallback(context.language),source:"local_brief_conversation",language:context.language,mode:context.mode,consumed:false,openAiCallCount:0,recommendedAidIds:[],recommendedAidNames:[]})
+      }
     }
 
     // Load usage only for the chargeable path; local answers cost no queries.
@@ -1251,7 +1276,7 @@ Deno.serve(async (req) => {
             context.allowBilingualResponse,
           )
         : buildOpenQuestionSystemPrompt(
-            context.language, context.allowBilingualResponse,
+            context.language, context.allowBilingualResponse, briefConversation,
           )
 
     if (focusedAidPrompts) {
@@ -1355,9 +1380,7 @@ Deno.serve(async (req) => {
       // Show a friendly advisor answer instead of a technical error or a quota.
       // The server stops here: no OpenAI call, no usage counter increment.
       const guidance = isFreeChat
-        ? (context.isKreol
-            ? "Mi lé surtout la pou aide aou su out bidzé, out aides ek out démarches. Pou ke servis-la reste utile pou tout demoun, nou pé retourne su in kestyon pratique ? Par exemple : ou vé trouve in aide ou fé bann lekonomi ?"
-            : "Je suis surtout là pour vous aider à mieux gérer votre budget, trouver des aides et avancer dans vos démarches. Pour garder ce service utile à tous, je vous propose de revenir à ces sujets. Souhaitez-vous chercher des aides ou des pistes d’économies ?")
+        ? briefConversationFallback(context.language)
         : (context.isKreol
             ? "Ou la envoyé plizyèr kestyon a la suite. Pou garde le servis fluid, nou fait in ti poz su bann nouvelles demandes. Ou pé toujours consulte out bidzé ek bann aides, puis réessay in pe pli tar."
             : "Vous avez envoyé plusieurs demandes rapprochées. Pour préserver la disponibilité du service, je vous propose de reprendre la discussion un peu plus tard. Votre budget et le catalogue des aides restent consultables.")
@@ -1415,6 +1438,7 @@ Deno.serve(async (req) => {
       systemPrompt,
       userPrompt,
       action: context.action,
+      briefConversation,
     })
     const actualMicroeur = advisorCostMicroeur(openAiResult.data?.usage)
     if (openAiResult.ok && actualMicroeur === null) {
@@ -1446,6 +1470,7 @@ Deno.serve(async (req) => {
       }))
       console.log("OPENAI ERROR", JSON.stringify(openAiResult.data))
 
+      if (briefConversation) return jsonResponse({success:true,answer:briefConversationFallback(context.language),source:"local_brief_conversation",language:context.language,mode:context.mode,consumed:false,openAiCallCount:1,recommendedAidIds:[],recommendedAidNames:[]})
       return jsonResponse(
         {
           success: false,
@@ -1496,7 +1521,7 @@ Deno.serve(async (req) => {
     const purchaseAdvice = recordedPurchases && /\b(?:alimentation|economi|economiser|economies|conseil|conseils|ameliorer|habitudes|depenses|achats)\b/i.test(context.question.normalize("NFD").replace(/[\u0300-\u036f]/g,"")) ? renderPurchaseAdviceCases(recordedPurchases, context.language, {preferences:purchasePreferences}) : ""
     const answer = recordedPurchases
       ? recordedPurchaseEvidence(recordedPurchases, context.language) + "\n\n" + (purchaseAdvice ? purchaseAdvice + "\n\n" : "") + (/\b(?:je ne peux pas acceder|je n ai pas acces|je ne peux pas consulter|je ne dispose pas de vos achats|je ne peux pas voir)\b/.test(checkedAnswer.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g," ")) ? (context.isKreol ? "Nou pé regarde bann produits-la pou prépare out prochains achats." : "Nous pouvons partir de ces produits pour comparer les prix et varier les prochains achats selon vos besoins.") : checkedAnswer)
-      : focusedAidPrompts ? clarifyLocalAidLinks(checkedAnswer, trustedAidFacts) : checkedAnswer
+      : briefConversation ? finishBriefConversation(checkedAnswer,context.language) : focusedAidPrompts ? clarifyLocalAidLinks(checkedAnswer, trustedAidFacts) : checkedAnswer
     const mentionedTrustedAids = findMentionedTrustedAids(answer, trustedAidFacts)
 
     if (context.consumesExchange && answer) {
