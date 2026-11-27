@@ -439,6 +439,9 @@ function buildAffordabilityAnswer(insights) {
   if (context.currentAvailableMargin === null || grocery.optimizedBasketEstimate === null) {
     return missingResponse(ASSISTANT_INTENTS.BUDGET_SHOPPING_AFFORDABILITY, insights, "shopping")
   }
+  if (Number(grocery.missingPriceCount || 0) > 0) {
+    return response({fr: `Les produits chiffrés de ta liste représentent environ ${formatMontant(grocery.optimizedBasketEstimate)}, mais ${grocery.missingPriceCount} produit(s) n’ont pas de prix. Je ne peux donc pas confirmer que le panier complet rentre dans ta marge théorique.`, kr: `Bann produits avèk pri su out liste i fé environ ${formatMontant(grocery.optimizedBasketEstimate)}, mé ${grocery.missingPriceCount} produit(s) nana poin pri. Mi pé pa confirme panier entier i rentre dann out marge théorique.`, intent: ASSISTANT_INTENTS.BUDGET_SHOPPING_AFFORDABILITY, insights, actions: [action("shoppingList", "Voir ma liste de courses", "War ma liste courses")]})
+  }
   const fits = grocery.optimizedBasketEstimate <= context.currentAvailableMargin
   const after = context.currentAvailableMargin - grocery.optimizedBasketEstimate
   return response({

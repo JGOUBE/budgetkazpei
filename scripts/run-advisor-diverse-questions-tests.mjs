@@ -815,3 +815,21 @@ assert.equal(buildAdministrativeReminderNotice([{...reminderFixture,date:"2026-1
 assert.equal(buildProactiveAdvisorNotice({available:false,administrativeReminders:[reminderFixture]},"fr",noticeNow).destination,"demarches")
 assert.equal(buildProactiveAdvisorNotice({...noticeSummary,administrativeReminders:[reminderFixture]},"fr",noticeNow).kind,"admin_reminder")
 assert.match(buildAdministrativeReminderNotice([reminderFixture],"kreol",noticeNow).action,/pa in délai officiel/)
+
+import { buildMonthlyPlanningContext, identifyBudgetPlanningQuestion, buildLocalBudgetPlanningAnswer } from "../src/services/ai/budgetPlanning.js"
+const planningFixture={budgetAdvisorContext:{period:{type:"current_month_to_date"},income:{total:1500},expenses:{fixed:800,variable:400}},ranges:{current:{inclusiveEndDate:"2026-11-20"}},dataAvailability:{transactions:true,recurringCharges:true},currentMonth:{incomes:1500},currentTransactions:[1,3,5,7,10].map(d=>({amount:-80,date:"2026-11-"+String(d).padStart(2,"0")}))}
+assert.equal(buildMonthlyPlanningContext(planningFixture).margin,30000)
+assert.equal(buildMonthlyPlanningContext(planningFixture).daysRemaining,10)
+assert.match(buildLocalBudgetPlanningAnswer({question:"Combien puis-je dépenser par jour jusqu'à la fin du mois ?",insights:planningFixture}).answer,/30,00/)
+assert.match(buildLocalBudgetPlanningAnswer({question:"Je veux mettre 100 € de côté ce mois-ci",insights:planningFixture}).answer,/20,00/)
+assert.match(buildLocalBudgetPlanningAnswer({question:"Si je dépense 350 € de plus ce mois-ci",insights:planningFixture}).answer,/50,00/)
+assert.match(buildLocalBudgetPlanningAnswer({question:"Il me reste 100 € pour 7 jours"}).answer,/14,28/)
+assert.match(buildLocalBudgetPlanningAnswer({question:"Si je continue comme ça combien me restera-t-il à la fin du mois ?",insights:planningFixture}).answer,/100,00/)
+assert.match(buildLocalBudgetPlanningAnswer({question:"Koman tenir ziska la fin du mwa ?",insights:planningFixture,language:"kreol"}).answer,/out marge théorique/)
+assert.match(buildLocalBudgetPlanningAnswer({question:"Comment tenir jusqu'à la fin du mois ?",insights:planningFixture,unavailable:true}).answer,/il me manque/)
+assert.equal(buildMonthlyPlanningContext({...planningFixture,dataAvailability:{transactions:false,recurringCharges:true}}),null)
+assert.equal(buildMonthlyPlanningContext({...planningFixture,budgetAdvisorContext:{...planningFixture.budgetAdvisorContext,period:{type:"previous_month"}}}),null)
+assert.equal(identifyBudgetPlanningQuestion("Je veux mettre 100 € de côté ce mois-ci et quelles aides CAF ?"),null)
+assert.equal(identifyBudgetPlanningQuestion("Il me reste 100 € pour 0 jours"),null)
+assert.equal(identifyBudgetPlanningQuestion("Il me reste -100 € pour 7 jours"),null)
+assert.equal(identifyBudgetPlanningQuestion("Il me reste 100 € pour 7 jours et je n'ai plus de quoi manger"),null)
