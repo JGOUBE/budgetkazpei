@@ -474,7 +474,65 @@ function buildUnusualAnswer(insights) {
   return response({ fr, kr, intent: ASSISTANT_INTENTS.BUDGET_UNUSUAL_EXPENSE, insights, actions: [action("depenses", "Voir mes dépenses", "War mon bann dépans")] })
 }
 
+// An advice request needs an ordered decision, not a ranking of expenses.
+// Use observed amounts only; the trial percentage is explicitly hypothetical.
+function buildBudgetPriorityAnswer(insights) {
+  const c=contextOf(insights)
+  const valid=n=>typeof n==="number"&&Number.isFinite(n)
+  const rows=(c.spendingByCategory||[]).filter(r=>valid(r.amount)&&r.amount>0)
+  const charges=(c.recurringCharges||[]).filter(r=>valid(r.amount)&&r.amount>0)
+  const period=c.period?.label||"la période enregistrée"
+  const optional=rows.find(r=>r.category==="loisirs")
+  const food=rows.find(r=>r.category==="alimentaire")
+  const essential=charges.find(r=>r.category==="logement"||/\b(?:loyer|credit immobilier|loye)\b/.test(normalizeForAssistantMatch(r.label)))
+  const optionalCharge=charges.find(r=>["loisirs","telecom"].includes(r.category)&&!/\b(?:loyer|assurance|sante|mutuelle|credit|energie|eau)\b/.test(normalizeForAssistantMatch(r.label)))
+  if(!rows.length||(!charges.length&&!valid(c.currentAvailableMargin)))return null
+  const fr=["À ta place, je commencerais par les dépenses que tu peux ajuster, pas par celles dont tu as besoin."],kr=["A out place, mi commenceré par bann dépans ou pé ajusté, pa bann dépans indispensables."]
+  const actions=[]
+  if(essential){
+    fr.push("**Je protégerais le logement.** "+essential.label+" : "+formatMontant(essential.amount)+" par mois"+(["monthly","mensuel",undefined].includes(essential.frequency)?".":" (montant enregistré à vérifier).")+" Je ne compterais pas sur une baisse de cette charge pour équilibrer le budget.")
+    kr.push("**Mi garderé lo logement en priorité.** "+essential.label+" : "+formatMontant(essential.amount)+". Mi compteré pa su in baisse de sa sarz-la pou équilibre out bidzé.")
+  }
+  if(optional){
+    const trial=Math.round(optional.amount*5)/100
+    fr.push("**Je regarderais les loisirs en premier.** "+formatMontant(optional.amount)+" enregistrés ("+period+"). Un objectif d'essai de 5 % sur un montant comparable représenterait "+formatMontant(trial)+", si tu trouves des achats que tu souhaites vraiment espacer.")
+    kr.push("**Mi regarderé bann loizir en premier.** "+formatMontant(optional.amount)+" anrezistré ("+period+"). In essai de 5 % su minm montant i fé "+formatMontant(trial)+", si ou trouve bann achats ou vé espacé.")
+    actions.push(action("depenses","Revoir mes dépenses","Revoir mon bann dépans"))
+  }else if(food){
+    const trial=Math.round(food.amount*5)/100
+    const h=c.shoppingHabits
+    const examples=(h?.available&&!h?.truncated?(h.products||[]):[]).filter(p=>p.purchaseDays>=2&&p.label).slice(0,2).map(p=>String(p.label).slice(0,80)).join(" et ")
+    fr.push("**Je commencerais par les courses, sans réduire les repas.** Tu as enregistré "+formatMontant(food.amount)+" ("+period+"). "+(examples?"Compare d'abord les prix unitaires de "+examples+", à format comparable. ":"Compare d'abord les prix unitaires des produits que tu achètes souvent. ")+"À titre de repère, 5 % de ce montant représente "+formatMontant(trial)+". C'est un objectif d'essai, pas une économie constatée.")
+    kr.push("**Mi commenceré par bann courses, san diminié bann repas.** Ou la anrezistré "+formatMontant(food.amount)+" ("+period+"). "+(examples?"Compare dabor pri "+examples+", minm format. ":"Compare dabor pri à l'unité bann produits ou aste souvan. ")+"Pou in essai, 5 % de sa montant-la i fé "+formatMontant(trial)+". Sa lé pa in lékonomi garanti.")
+    actions.push(action("shoppingSavingsOnly","Comparer mes achats","Compare mon bann achats"))
+  }else if(optionalCharge){
+    fr.push("**Je vérifierais les contrats ajustables.** "+optionalCharge.label+" représente "+formatMontant(optionalCharge.amount)+" sur le relevé des charges. Compare les offres et les services réellement utilisés, sans résilier avant de vérifier les conditions.")
+    kr.push("**Mi vérifieré bann kontra ou pé ajusté.** "+optionalCharge.label+" i représente "+formatMontant(optionalCharge.amount)+" dann bann sarz. Compare bann offres ek services ou i utilise avan résilié.")
+    actions.push(action("abonnements","Revoir mes charges fixes","Revoir mon bann sarz fixes"))
+  }else{
+    fr.push("**Je vérifierais les achats reportables.** Je ne vois pas de poste clairement facultatif à réduire dans ces relevés. Je ne te proposerais donc pas une baisse chiffrée au hasard.")
+    kr.push("**Mi vérifieré bann achats ou pé reporte.** Mi trouve poin poste clairement facultatif dann relevés-la. Mi préfère pa invente in montant lékonomi.")
+  }
+  if(valid(c.currentAvailableMargin)){
+    if(c.currentAvailableMargin>0){
+      fr.push("**Je garderais une réserve.** La marge estimée est de "+formatMontant(c.currentAvailableMargin)+". Avant de mettre de côté, déduis les paiements qui restent à venir : ce n'est pas ton solde bancaire.")
+      kr.push("**Mi garderé in réserve.** Out marge estimé lé "+formatMontant(c.currentAvailableMargin)+". Avan mèt de koté, enlève sak reste pou payé : sa lé pa out solde bancaire.")
+    }else{
+      fr.push("**Je sécuriserais les prochaines dépenses.** La marge estimée "+(c.currentAvailableMargin<0?"est négative de "+formatMontant(-c.currentAvailableMargin):"est nulle")+". Vérifie les revenus et paiements attendus avant d'engager d'autres achats.")
+      kr.push("**Mi sécuriseré bann prochaines dépans.** Out marge estimé "+(c.currentAvailableMargin<0?"lé négative de "+formatMontant(-c.currentAvailableMargin):"lé à zéro")+". Vérifie sak i doi rentré ek sak reste pou payé.")
+    }
+  }else{
+    fr.push("Avant de fixer un objectif d'épargne, je vérifierais le montant qu'il te reste réellement après les dépenses prévues.")
+    kr.push("Avan fixe in objectif d'épargne, mi vérifieré kombyin i reste aou vraiment apré bann dépans prévues.")
+  }
+  if(!actions.length)actions.push(action("depenses","Voir mes dépenses","War mon bann dépans"))
+  // Preserve paragraphs for this structured conversational answer.
+  return {...response({fr:fr.join(" "),kr:kr.join(" "),intent:ASSISTANT_INTENTS.BUDGET_GENERAL,insights,actions}),fr:fr.join("\n\n"),kr:kr.join("\n\n")}
+}
+
 function buildGeneralBudgetAnswer(insights) {
+  const prioritized=buildBudgetPriorityAnswer(insights)
+  if(prioritized)return prioritized
   const context = contextOf(insights)
   const topCategory = context.spendingByCategory?.[0]
   const topCharge = context.recurringCharges?.[0]
