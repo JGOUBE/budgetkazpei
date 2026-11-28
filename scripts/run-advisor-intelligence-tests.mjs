@@ -150,3 +150,19 @@ assert.match(buildBudgetScenario({question:"Je veux économiser 600 € en six m
 assert.match(buildBudgetScenario({question:"Si je mets 80 € de côté chaque mois pendant un an ?"}).answer,/960,00/)
 assert.match(buildBudgetScenario({question:"J'ai 100 € pour sept jours."}).answer,/14,28/)
 assert.equal(buildBudgetScenario({question:"Je veux économiser 600 € en six mois et quelles aides CAF ?"}),null)
+
+import { hasExplicitCashEnvelope } from "../supabase/functions/assistant-aisupabase/engine/routing/budgetScenarios.mjs"
+const cashScenario="Il me reste 180 € pour 12 jours et je dois encore mettre 40 € d'essence. Comment m'organiser ?"
+const cashAnswer=buildBudgetScenario({question:cashScenario})
+assert.equal(cashAnswer.kind,"envelope_commitments")
+assert.match(cashAnswer.answer,/140,00/)
+assert.match(cashAnswer.answer,/11,66/)
+assert.doesNotMatch(cashAnswer.answer,/996,10/)
+assert.equal(shouldUseLocalBudgetAnswer({question:cashScenario,mode:"budget_depenses",intent:"budget_remaining"}),false)
+assert.match(buildBudgetScenario({question:"Il me reste 200 € pour dix jours et je dois payer 40 € d'essence et je dois payer 60 € de téléphone. Comment faire ?"}).answer,/10,00/)
+assert.match(buildBudgetScenario({question:"Il me reste 30 € pour 5 jours et je dois payer 40 € de carburant"}).answer,/manque.*10,00/)
+assert.match(buildBudgetScenario({question:"Mi nana 180 € pou 12 zour ek mi doi met 40 € pou essence. Kosa mi pe fer ?",language:"kreol"}).answer,/11,66/)
+assert.equal(buildBudgetScenario({question:"Il me reste 180 € pour 12 jours et je dois payer 40 € d'essence et quelles aides CAF ?"}),null)
+assert.equal(buildBudgetScenario({question:"Il me reste 180 € pour 12 jours et je dois payer 40 € d'essence mais j'attends 200 € demain"}),null)
+assert.equal(hasExplicitCashEnvelope("Il me reste 180 € pour 12 jours et j'attends un virement"),true)
+assert.equal(shouldUseLocalBudgetAnswer({question:"Il me reste 180 € pour 12 jours et j'attends un virement",mode:"budget_depenses",intent:"budget_remaining"}),false)

@@ -1,3 +1,4 @@
+import { hasExplicitCashEnvelope } from "../../supabase/functions/assistant-aisupabase/engine/routing/budgetScenarios.mjs"
 import { findPrimaryAidTopicIds, normalizeAidTopicText } from "./aidTopics.js"
 
 // Heuristics are deliberately conservative: they decide whether to retrieve
@@ -62,6 +63,7 @@ export function isSelfContainedNewQuestion(question = "") {
 }
 
 export function shouldUseLocalBudgetAnswer({question = "",mode = "general",intent = "unknown"} = {}) {
+  if (hasExplicitCashEnvelope(question)) return false
   if (intent === "unknown") return false
   if (looksPlayfulOrFictionalQuestion(question)) return false
   const text = normalizeAidTopicText(question)

@@ -36,7 +36,7 @@ import { prepareAdvisorAideContext } from "../../services/advisorAideContext"
 import { buildAdvisorRequestBody } from "../../services/advisorRequestPayload"
 import { normalizeAdvisorAnswerFormatting } from "../../services/advisorAnswerFormatting"
 import { buildLocalBudgetPlanningAnswer } from "../../services/ai/budgetPlanning.js"
-import { buildBudgetScenario } from "../../../supabase/functions/assistant-aisupabase/engine/routing/budgetScenarios.mjs"
+import { buildBudgetScenario, hasExplicitCashEnvelope } from "../../../supabase/functions/assistant-aisupabase/engine/routing/budgetScenarios.mjs"
 import { buildLocalAdministrativeAction } from "../../../supabase/functions/assistant-aisupabase/engine/routing/localAdministrativeActions.mjs"
 import { buildLocalAidProcedureAnswer, isLocalAidProcedureRequest, buildLocalAidSourceAnswer, isLocalAidSourceRequest } from "../../services/advisorLocalAidAnswer"
 import {
@@ -724,7 +724,7 @@ export default function AssistantConseiller({
       recentHistory: history,
       language: responseLanguage,
     })
-    const localBudgetFollowUp = (purchaseConstraintFollowUp || isPersonalPurchaseAnalysisQuestion(sentQuestion)) ? null : budgetConfirmation || budgetNoDataAdvice
+    const localBudgetFollowUp = (hasExplicitCashEnvelope(sentQuestion) || purchaseConstraintFollowUp || isPersonalPurchaseAnalysisQuestion(sentQuestion)) ? null : budgetConfirmation || budgetNoDataAdvice
     if (localBudgetFollowUp) {
       setHistory(prev => [
         {

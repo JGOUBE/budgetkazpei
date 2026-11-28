@@ -21,9 +21,49 @@ function naturalDuration(text){
     .replace(/\bchaque mois\b/g,"par mois")
     .replace(/^(si je mets|si mi met) ([\d ,.]+ euros?) de cote par (mois|mwa) /,"$1 de cote $2 par $3 ")
 }
+// Explicit cash envelopes take precedence over the recorded budget.
+// Parse only unambiguous, positive expenses; never silently drop a clause.
+const envelopeStart=new RegExp("^(?:j ai|il me reste|mi nana|mi reste|i reste a moin) "+a+euros+" (?:pour|pou) (?:les |le |bann )?(\\d{1,3}) (?:jours?|zours?)\\b")
+export function hasExplicitCashEnvelope(question=""){
+  return envelopeStart.test(naturalDuration(norm(question)))
+}
+function envelopeWithCommitments(t,k){
+  const head=t.match(envelopeStart)
+  if(!head)return null
+  const total=amount(head[1]),days=Number(head[2])
+  if(total===null||!daysOK(days))return null
+  let tail=t.slice(head[0].length).trim().replace(/^(?:restants|a venir|qui restent)\b/,"").trim()
+  // Strip only a recognized final question, not additional financial facts.
+  tail=tail.replace(/(?:^|[ .])(?:comment m organiser|comment faire|comment tenir|comment repartir mon budget|combien par jour|combien puis je depenser par jour|koman mi pe fer|kosa mi pe fer|koman m organize|kosa ou conseille a moin)$/,"").trim().replace(/[. ]+$/,"")
+  if(!tail)return null
+  const clauses=tail.split(/\s+(?:et|ek|puis)\s+/).map(s=>s.trim()).filter(Boolean)
+  const expenses=[]
+  const expensePattern=new RegExp("^(?:(?:je dois|il faut que je|mi doi|mi dois|mi bizin) (?:encore )?(?:mettre|payer|regler|prevoir|depenser|met|paye|prevwar|depans)|(?:j ai|mi nana) (?:encore )?(?:a payer|a regler|pou paye)|(?:il me faut|i fo a moin)) "+a+euros+"(?: (?:d |de |pour |pou |en )?([a-z][a-z ]{0,55}))?$")
+  for(let clause of clauses){
+    clause=clause.replace(/^(?:et|ek|mais|me) /,"").trim()
+    const m=clause.match(expensePattern)
+    if(!m)return null
+    const value=amount(m[1]),label=(m[2]||"").trim()
+    // Whitelist ordinary essential/fixed expenses. Unknown/ambiguous clauses
+    // go to the conversational route, not an incorrect local calculation.
+    if(!positive(value)||! /^(?:essence|gasoil|diesel|carburant|transport|bus|loyer|electricite|eau|facture|facture d eau|facture d electricite|telephone|internet|assurance|courses|alimentation|medicaments|pharmacie|cantine|delo|kouran|manze)$/.test(label))return null
+    expenses.push({value,label})
+  }
+  if(!expenses.length)return null
+  const reserved=expenses.reduce((s,e)=>s+e.value,0),left=total-reserved
+  const detail=expenses.map(e=>money(e.value)+" ("+e.label+")").join(" + ")
+  const intro=k?"Mi pars su "+money(total)+" ou la di pou "+days+" zour, pa su solde anrezistré dann l’appli.":"Je pars des "+money(total)+" dont tu disposes pour "+days+" jours, et non du solde enregistré dans l'application."
+  const reserve=k?"Mèt de koté "+detail+".":"Mets d'abord de côté "+detail+"."
+  if(left<0)return result("envelope_commitments",[intro,reserve,k?"I mank **"+money(-left)+"** rienk pou bann dépans prévues. Priorité bann besoins indispensables ; regarde si in paiement i pé être étalé.":"Il te manque déjà **"+money(-left)+"** pour couvrir ces dépenses. Priorise les besoins indispensables et vérifie si un paiement peut être échelonné."].join("\n\n"))
+  const daily=Math.floor(left/days)
+  return result("envelope_commitments",[intro,reserve,k?"I reste **"+money(left)+"** pou "+days+" zour, soit o maximum **"+money(daily)+" par zour**.":"Il te reste **"+money(left)+"** pour "+days+" jours, soit au maximum **"+money(daily)+" par jour**.",k?"Priorité manzé ek bann besoins indispensables. Si ou pé, gard in ti réserve pou l’imprévu.":"Priorise les repas et les autres besoins indispensables. Si possible, garde une petite réserve pour les imprévus. Si d'autres factures restent à payer, déduis-les avant de répartir cette somme."].join("\n\n"))
+}
+
 export function buildBudgetScenario({question="",language="fr",context=null,mode="general"}={}){
   if(!["general","budget_depenses"].includes(mode)||String(question).length>240||(String(question).match(/\?/g)||[]).length>1)return null
   const t=naturalDuration(norm(question)),k=kr(language)
+  const commitments=envelopeWithCommitments(t,k)
+  if(commitments)return commitments
   let m=t.match(new RegExp("^(?:si j economise|si je mets de cote|si mi met de kote|si mi ekonomiz|si mi ekonomise) "+a+euros+" par (?:mois|mwa) pendant (\\d{1,3}) (?:mois|mwa)(?: combien (?:aurai je|j aurai|ca fait|ca fera|vais je economiser|mi sava gagne|mi nor[aé])(?: au total)?)?$"))
   if(m){
     const monthly=amount(m[1]),months=Number(m[2]);if(!positive(monthly)||!monthsOK(months))return null
