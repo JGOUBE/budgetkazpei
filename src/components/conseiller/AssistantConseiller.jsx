@@ -35,6 +35,7 @@ import { selectAidCandidatesForAdvisor } from "../../services/aidesRanking"
 import { prepareAdvisorAideContext } from "../../services/advisorAideContext"
 import { buildAdvisorRequestBody } from "../../services/advisorRequestPayload"
 import { normalizeAdvisorAnswerFormatting } from "../../services/advisorAnswerFormatting"
+import { buildBudgetAlternativeAnswer } from "../../services/ai/budgetAlternatives.js"
 import { buildLocalBudgetPlanningAnswer } from "../../services/ai/budgetPlanning.js"
 import { buildBudgetScenario, hasExplicitCashEnvelope } from "../../../supabase/functions/assistant-aisupabase/engine/routing/budgetScenarios.mjs"
 import { buildLocalAdministrativeAction } from "../../../supabase/functions/assistant-aisupabase/engine/routing/localAdministrativeActions.mjs"
@@ -680,6 +681,15 @@ export default function AssistantConseiller({
 
     // A short confirmation should continue the last offer rather than be
     // dismissed as off-topic. Use recorded figures without an AI call.
+    const alternativeAnswer = buildBudgetAlternativeAnswer({question:sentQuestion,history,insights:questionInsights,language:responseLanguage,mode:currentMode,unavailable:loadingInsights||Boolean(financialContextError)})
+    if (alternativeAnswer) {
+      setHistory(prev => [{ id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, question: sentQuestion, ...alternativeAnswer, createdAt: new Date().toISOString() }, ...prev].slice(0, 6))
+      setLoadingAssistant(false)
+      setPendingMessage(null)
+      setAssistantMode("general")
+      setAdvisorHandoffContext(null)
+      return
+    }
     const planningAnswer = buildBudgetScenario({question:sentQuestion,mode:currentMode,language:responseLanguage}) || (["general","budget_depenses"].includes(currentMode) ? buildLocalBudgetPlanningAnswer({question:sentQuestion,insights:questionInsights,language:responseLanguage,unavailable:loadingInsights||Boolean(financialContextError)}) : null)
     if (planningAnswer) {
       setHistory(prev => [{ id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, question: sentQuestion, answer: planningAnswer.answer, source: planningAnswer.source, language: responseLanguage, mode: "budget_depenses", createdAt: new Date().toISOString() }, ...prev].slice(0, 6))

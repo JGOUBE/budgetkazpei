@@ -185,3 +185,20 @@ assert.doesNotMatch(deficit.fr,/Je garderais une réserve/)
 const optionalBudget=answerAssistantQuestion({question:"Comment améliorer mon budget ?",insights:{budgetAdvisorContext:{...strategyFixture.budgetAdvisorContext,spendingByCategory:[{category:"alimentaire",amount:455.96},{category:"loisirs",amount:100}]}}})
 assert.match(optionalBudget.fr,/loisirs en premier/)
 assert.doesNotMatch(optionalBudget.fr,/réduire les repas/)
+
+import { buildBudgetAlternativeAnswer } from "../src/services/ai/budgetAlternatives.js"
+const alternativeQuestion="Je ne souhaite pas réduire mes dépenses alimentaires, car je trouve que je fais déjà attention. Quelles autres solutions me proposes-tu ?"
+const altFixture={budgetAdvisorContext:{recurringCharges:[{label:"Loyer",amount:500,category:"logement",frequency:"monthly"},{label:"Forfait mobile",amount:20,category:"telecom",frequency:"monthly"},{label:"Assurance auto",amount:60,category:"assurances",frequency:"monthly"}]}}
+const alt=buildBudgetAlternativeAnswer({question:alternativeQuestion,insights:altFixture})
+assert.equal(alt.source,"local_budget_alternative")
+assert.match(alt.answer,/budget alimentaire tranquille/)
+assert.match(alt.answer,/Forfait mobile : 20,00/)
+assert.match(alt.answer,/Assurance auto : 60,00/)
+assert.doesNotMatch(alt.answer,/Loyer|CAF|promotions|cashback|simulation officielle/)
+assert.equal(alt.actions[0].target,"abonnements")
+assert.match(buildBudgetAlternativeAnswer({question:"Mi ve pa dimini mon bann courses, kosa lezot solutions ?",language:"kreol",insights:altFixture}).answer,/nou touche pa/)
+assert.equal(buildBudgetAlternativeAnswer({question:"Quelles autres solutions ?",history:[{question:alternativeQuestion,source:alt.source}],insights:altFixture}).source,alt.source)
+assert.equal(buildBudgetAlternativeAnswer({question:"Finalement je peux réduire mes courses, quelles autres solutions ?",history:[{question:alternativeQuestion,source:alt.source}],insights:altFixture}),null)
+assert.equal(buildBudgetAlternativeAnswer({question:"Quelles autres solutions ?",history:[{question:"Pourquoi le ciel est bleu ?"},{question:alternativeQuestion,source:alt.source}],insights:altFixture}),null)
+assert.equal(buildBudgetAlternativeAnswer({question:alternativeQuestion+" Et quelles aides CAF ?",insights:altFixture}),null)
+assert.match(buildBudgetAlternativeAnswer({question:alternativeQuestion,insights:altFixture,unavailable:true}).answer,/ne vois pas de contrat/)
